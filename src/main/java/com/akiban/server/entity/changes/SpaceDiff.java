@@ -163,10 +163,21 @@ public final class SpaceDiff {
                     assert origField.getUuid().equals(updatedField.getUuid()) : origField + " / " + updatedField;
                     if (handledUuids.contains(uuid))
                         return;
-                    if (!origField.getName().equals(updatedField.getName()))
+                    String origName = origField.getName();
+                    if (!origName.equals(updatedField.getName()))
                         out.renameField(origField.getUuid());
-                    if (!origField.getType().toLowerCase().equals(updatedField.getType().toLowerCase()))
-                        out.changeFieldType(uuid);
+                    if (!origField.getType().toLowerCase().equals(updatedField.getType().toLowerCase())) {
+                        Entity oldParent = (Entity) origLookups.getParent(uuid);
+                        boolean changingSpinal = oldParent.getIdentifying().contains(origName);
+                        if (!changingSpinal && (oldParent instanceof EntityCollection)) {
+                            EntityCollection collection = (EntityCollection) oldParent;
+                            changingSpinal = collection.getGroupingFields().contains(origName);
+                        }
+                        if (changingSpinal)
+                            out.error("Can't change type of identifying fields or grouping fields");
+                        else
+                            out.changeFieldType(uuid);
+                    }
                     if (!origField.getValidations().equals(updatedField.getValidations()))
                         out.changeFieldValidations(uuid);
                     if (!origField.getProperties().equals(updatedField.getProperties()))

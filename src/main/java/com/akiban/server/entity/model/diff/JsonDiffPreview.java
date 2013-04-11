@@ -17,6 +17,7 @@
 
 package com.akiban.server.entity.model.diff;
 
+import com.akiban.server.entity.changes.AbstractSpaceModificationHandler;
 import com.akiban.server.entity.changes.SpaceModificationHandler;
 import com.akiban.server.entity.model.Entity;
 import com.akiban.server.entity.model.EntityField;
@@ -38,7 +39,7 @@ import static com.akiban.util.JsonUtils.createJsonGenerator;
  * 
  * Generate change-log in json
  */
-public class JsonDiffPreview implements SpaceModificationHandler
+public class JsonDiffPreview extends AbstractSpaceModificationHandler
 {
     private final JsonGenerator jsonGen;
     private final Writer writer;
@@ -112,16 +113,6 @@ public class JsonDiffPreview implements SpaceModificationHandler
     }
 
     @Override
-    public void identifyingFieldsChanged() {
-        error("Can't change identifying fields");
-    }
-
-    @Override
-    public void groupingFieldsChanged() {
-        error("Can't change grouping fields");
-    }
-
-    @Override
     public void addEntity(Entity entity)
     {
         try
@@ -156,11 +147,6 @@ public class JsonDiffPreview implements SpaceModificationHandler
         {
             throw new DiffIOException(ex);
         }
-    }
-
-    @Override
-    public void moveEntity(Entity oldParent, Entity newParent) {
-        error("Can't move entities or collections");
     }
 
     @Override
@@ -321,46 +307,6 @@ public class JsonDiffPreview implements SpaceModificationHandler
     }
 
     @Override
-    public void addEntityValidation(Validation validation)
-    {
-        try
-        {
-            startObject();
-            entry("action", "add_entity_validation");
-            entry("destructive", false);
-            jsonGen.writeObjectFieldStart("new_validation");
-            jsonGen.writeObjectField(validation.getName(), validation.getValue());
-            jsonGen.writeEndObject();
-            endObject();
-        }
-        catch (IOException ex)
-        {
-            throw new DiffIOException(ex);
-        }
-        entityModified();
-    }
-
-    @Override
-    public void dropEntityValidation(Validation validation)
-    {
-        try
-        {
-            startObject();
-            entry("action", "drop_entity_validation");
-            entry("destructive", true);
-            jsonGen.writeObjectFieldStart("dropped_validation");
-            jsonGen.writeObjectField(validation.getName(), validation.getValue());
-            jsonGen.writeEndObject();
-            endObject();
-        }
-        catch (IOException ex)
-        {
-            throw new DiffIOException(ex);
-        }
-        entityModified();
-    }
-
-    @Override
     public void addIndex(String name)
     {
         try
@@ -387,25 +333,6 @@ public class JsonDiffPreview implements SpaceModificationHandler
             entry("action", "drop_index");
             entry("destructive", true);
             entry("name", name);
-            endObject();
-        }
-        catch (IOException ex)
-        {
-            throw new DiffIOException(ex);
-        }
-        entityModified();
-    }
-
-    @Override
-    public void renameIndex(EntityIndex index)
-    {
-        try
-        {
-            startObject();
-            entry("action", "rename_index");
-            entry("destructive", false);
-            entry("old_name", oldEntity.getIndexes().inverse().get(index));
-            entry("new_name", updatedEntity.getIndexes().inverse().get(index));
             endObject();
         }
         catch (IOException ex)

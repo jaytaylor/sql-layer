@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class DDLBasedSpaceModifier implements SpaceModificationHandler {
+public class DDLBasedSpaceModifier extends AbstractSpaceModificationHandler {
     private final DDLFunctions ddlFunctions;
     private final Session session;
     private final String schemaName;
@@ -84,17 +84,6 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     // SpaceModificationHandler
     //
 
-
-    @Override
-    public void identifyingFieldsChanged() {
-        errors.add("can't change identifying fields");
-    }
-
-    @Override
-    public void groupingFieldsChanged() {
-        errors.add("can't change grouping fields");
-    }
-
     @Override
     public void addEntity(Entity newEntity) {
         if (newEntity instanceof EntityCollection) {
@@ -119,11 +108,6 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
         else {
             ddlFunctions.dropGroup(session, new TableName(schemaName, dropped.getName()));
         }
-    }
-
-    @Override
-    public void moveEntity(Entity oldParent, Entity newParent) {
-        errors.add("Can't move entities");
     }
 
     @Override
@@ -169,16 +153,7 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
 
     @Override
     public void changeFieldType(UUID fieldUuid) {
-        String oldFieldName = oldEntity.fieldsByUuid().get(fieldUuid).getName();
-        boolean changingSpinal = oldEntity.getIdentifying().contains(oldFieldName);
-        if (!changingSpinal && (oldEntity instanceof EntityCollection)) {
-            EntityCollection oldCollection = (EntityCollection) oldEntity;
-            changingSpinal = oldCollection.getGroupingFields().contains(oldFieldName);
-        }
-        if (changingSpinal)
-            errors.add("Can't change type of identifying fields or grouping fields");
-        else
-            trackColumnModify(fieldUuid);
+        trackColumnModify(fieldUuid);
     }
 
     @Override
@@ -189,17 +164,6 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     @Override
     public void changeFieldProperties(UUID fieldUuid) {
         trackColumnModify(fieldUuid);
-    }
-
-
-    @Override
-    public void addEntityValidation(Validation validation) {
-        errors.add("Adding entity validations is not yet supported: " + validation);
-    }
-
-    @Override
-    public void dropEntityValidation(Validation validation) {
-        errors.add("Dropping entity validations is not yet supported: " + validation);
     }
 
     @Override
@@ -225,13 +189,6 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
             String table = candidate.leafMostTable().getName().getTableName();
             trackIndexChange(table, TableChange.createDrop(candidate.getIndexName().getName()));
         }
-    }
-
-    @Override
-    public void renameIndex(EntityIndex index) {
-        String oldName = oldEntity.getIndexes().inverse().get(index);
-        String newName = newEntity.getIndexes().inverse().get(index);
-        errors.add("Renaming index is not yet supported: " + oldName + "=>" + newName);
     }
 
     @Override
