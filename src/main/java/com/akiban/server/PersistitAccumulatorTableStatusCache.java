@@ -137,15 +137,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public void setUniqueId(long value) {
-            try {
-                this.uniqueID.set(value);
-            } catch (PersistitInterruptedException e) {
-                throw new PersistitAdapterException(e);
-            }
-        }
-
-        @Override
         public int getTableID() {
             return expectedID;
         }
@@ -235,11 +226,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
 
         @Override
         public long getUniqueID() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void setUniqueId(long value) {
             throw new UnsupportedOperationException();
         }
 
