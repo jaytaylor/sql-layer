@@ -123,4 +123,23 @@ public class SequenceDDLIT extends AISDDLITBase {
         assertEquals("next val after restart", 4, s1.nextValue(treeService()));
         txnService().commitTransaction(session());
     }
+
+    @Test
+    public void freshValueAfterDropAndRecreate() throws Exception {
+        final TableName seqName = new TableName("test", "s2");
+        final String create = "CREATE SEQUENCE "+seqName+" START WITH 1 INCREMENT BY 1";
+        final String drop = "DROP SEQUENCE "+seqName+" RESTRICT";
+        for(int i = 1; i <= 2; ++i) {
+            executeDDL(create);
+            Sequence s1 = ais().getSequence(seqName);
+            assertNotNull("s1, loop"+i, s1);
+
+            txnService().beginTransaction(session());
+            assertEquals("start val, loop"+i, 0, s1.currentValue(treeService()));
+            assertEquals("next val, loop"+i, 1, s1.nextValue(treeService()));
+            txnService().commitTransaction(session());
+
+            executeDDL(drop);
+        }
+    }
 }
