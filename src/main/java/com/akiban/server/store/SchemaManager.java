@@ -187,7 +187,7 @@ public interface SchemaManager {
     void dropSequence(Session session, Sequence sequence);
 
     /** Add the Routine to the current AIS */
-    void createRoutine(Session session, Routine routine);
+    void createRoutine(Session session, Routine routine, boolean replaceExisting);
     
     /** Drop the given routine from the current AIS. */
     void dropRoutine(Session session, TableName routineName);

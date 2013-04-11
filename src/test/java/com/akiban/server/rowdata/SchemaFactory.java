@@ -196,7 +196,7 @@ public class SchemaFactory {
         }
 
         @Override
-        public void createRoutine(Session session, Routine routine) {
+        public void createRoutine(Session session, Routine routine, boolean replaceExisting) {
             ais = AISMerge.mergeRoutine(ais, routine);
         }
     }
