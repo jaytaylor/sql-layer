@@ -55,7 +55,7 @@ import java.util.Set;
  * frozen. If you pass a frozen AIS into the merge, the copy process unfreeze the copy.
  */
 public class AISMerge {
-    public enum MergeType { ADD_TABLE, MODIFY_TABLE, ADD_INDEX }
+    public enum MergeType { ADD_TABLE, MODIFY_TABLE, ADD_INDEX, OTHER }
 
     private static class JoinChange {
         public final Join join;
@@ -119,6 +119,10 @@ public class AISMerge {
     /** Create a new AISMerge to be used for adding one, or more, index to a table. Also see {@link #mergeIndex(Index)}. */
     public static AISMerge newForAddIndex(NameGenerator generator, AkibanInformationSchema sourceAIS) {
         return new AISMerge(generator, copyAISForAdd(sourceAIS), null, MergeType.ADD_INDEX, null, null);
+    }
+
+    public static AISMerge newForOther(NameGenerator generator, AkibanInformationSchema sourceAIS) {
+        return new AISMerge(generator, copyAISForAdd(sourceAIS), null, MergeType.OTHER, null, null);
     }
 
     private AISMerge(NameGenerator nameGenerator, AkibanInformationSchema targetAIS, UserTable sourceTable,
@@ -644,14 +648,14 @@ public class AISMerge {
         newAIS.addView(newView);
     }
     
-    public static AkibanInformationSchema mergeSequence (AkibanInformationSchema oldAIS,
-                                                            Sequence sequence)
+    public AkibanInformationSchema mergeSequence(Sequence sequence)
     {
-        AkibanInformationSchema newAIS = copyAISForAdd(oldAIS);
-        newAIS.addSequence(sequence);
-        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
-        newAIS.freeze();
-        return newAIS;
+        Sequence newSeq = Sequence.create(targetAIS, sequence);
+        newSeq.setTreeName(nameGenerator.generateSequenceTreeName(newSeq));
+        targetAIS.addSequence(newSeq);
+        targetAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        targetAIS.freeze();
+        return targetAIS;
     }    
 
     public static AkibanInformationSchema mergeRoutine(AkibanInformationSchema oldAIS,

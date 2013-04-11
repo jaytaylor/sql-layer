@@ -192,7 +192,8 @@ public class SchemaFactory {
         
         @Override
         public void createSequence(Session session, Sequence sequence) {
-            ais = AISMerge.mergeSequence(ais, sequence);
+            AISMerge merge = AISMerge.newForOther(new DefaultNameGenerator(ais), ais);
+            ais = merge.mergeSequence(sequence);
         }
 
         @Override

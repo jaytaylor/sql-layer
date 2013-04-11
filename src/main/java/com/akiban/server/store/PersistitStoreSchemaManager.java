@@ -239,7 +239,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private static final String DELAYED_TREE_KEY = "delayedTree";
 
     private static final int SCHEMA_GEN_ACCUM_INDEX = 0;
-    private static final Accumulator.Type SCHEMA_GEN_ACCUM_TYPE = Accumulator.Type.SEQ;
 
     // Changed from 1 to 2 due to incompatibility related to index row changes (see bug 985007)
     private static final int PROTOBUF_PSSM_VERSION = 2;
@@ -807,14 +806,9 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     @Override
     public void createSequence(Session session, Sequence sequence) {
         checkSequenceName(session, sequence.getSequenceName(), false);
-        AkibanInformationSchema newAIS = AISMerge.mergeSequence(this.getAis(session), sequence);
+        AISMerge merge = AISMerge.newForOther(nameGenerator, getAis(session));
+        AkibanInformationSchema newAIS = merge.mergeSequence(sequence);
         saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(sequence.getSchemaName()));
-        try {
-            sequence.setStartWithAccumulator(treeService);
-        } catch (PersistitException e) {
-            LOG.error("Setting sequence starting value for sequence {} failed", sequence.getSequenceName().getDescription());
-            throw wrapPersistitException(session, e);
-        }
     }
     
     /** Drop the given sequence from the current AIS. */
@@ -1468,14 +1462,14 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         return !curVer.equals(tableVer);
     }
 
-    private Accumulator getGenerationAccumulator(Session session) throws PersistitException {
+    private Accumulator.SeqAccumulator getGenerationAccumulator(Session session) throws PersistitException {
         // treespace policy could split the _schema_ tree across volumes and give us multiple accumulators, which would
         // be very bad. Work around that with a fake/constant schema name. It isn't a problem if this somehow got changed
         // across a restart. Really, we want a constant, system-like volume to put this in.
         final String SCHEMA = "pssm";
         Exchange ex = schemaTreeExchange(session, SCHEMA);
         try {
-            return ex.getTree().getAccumulator(SCHEMA_GEN_ACCUM_TYPE, SCHEMA_GEN_ACCUM_INDEX);
+            return ex.getTree().getSeqAccumulator(SCHEMA_GEN_ACCUM_INDEX);
         } finally {
             treeService.releaseExchange(session, ex);
         }
@@ -1483,16 +1477,15 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     private long getGenerationSnapshot(Session session) {
         try {
-            return getGenerationAccumulator(session).getSnapshotValue(treeService.getDb().getTransaction());
+            return getGenerationAccumulator(session).getSnapshotValue();
         } catch(PersistitException e) {
             throw wrapPersistitException(session, e);
         }
     }
 
     private long getNextGeneration(Session session) {
-        final int ACCUM_UPDATE_VALUE = 1;   // irrelevant for SEQ types
         try {
-            return getGenerationAccumulator(session).update(ACCUM_UPDATE_VALUE, treeService.getDb().getTransaction());
+            return getGenerationAccumulator(session).allocate();
         } catch(PersistitException e) {
             throw wrapPersistitException(session, e);
         }
@@ -1538,14 +1531,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             // Memory only table changed, no reason to re-serialize
             mergedTable.setMemoryTableFactory(factory);
             unSavedAISChangeWithRowDefs(session, newAIS);
-        }
-        try {
-            if (mergedTable.getIdentityColumn() != null) {
-                mergedTable.getIdentityColumn().getIdentityGenerator().setStartWithAccumulator(treeService);
-            }
-        } catch (PersistitException ex) {
-            LOG.error("Setting sequence starting value for table {} failed", mergedTable.getName().getDescription());
-            throw wrapPersistitException(session, ex);
         }
         return newName;
     }
@@ -1691,8 +1676,28 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 .colBigInt("map_size", false)
                 .colBigInt("outstanding_count", false)
                 .colBigInt("task_queue_size", false);
-        UserTable table = builder.ais().getUserTable(factory.getName());
+
+        final int IDENT_MAX = 128;
+        builder.defaultSchema(TableName.SYS_SCHEMA);
+        builder.procedure("seq_tree_reset")
+               .language("java", Routine.CallingConvention.JAVA)
+               .paramStringIn("seq_schema", IDENT_MAX)
+               .paramStringIn("seq_name", IDENT_MAX)
+               .paramLongIn("new_value")
+               .externalName(SequenceFixUpRoutines.class.getCanonicalName(), "seq_tree_reset");
+        builder.procedure("seq_identity_default_to_always")
+                .language("java", Routine.CallingConvention.JAVA)
+                .paramStringIn("schema", IDENT_MAX)
+                .paramStringIn("table", IDENT_MAX)
+                .paramStringIn("column", IDENT_MAX)
+                .externalName(SequenceFixUpRoutines.class.getCanonicalName(), "seq_identity_default_to_always");
+
+        AkibanInformationSchema ais = builder.ais();
+        UserTable table = ais.getUserTable(factory.getName());
         registerMemoryInformationSchemaTable(table, factory);
+        for(Routine routine : ais.getRoutines().values()) {
+            registerSystemRoutine(routine);
+        }
     }
 
 

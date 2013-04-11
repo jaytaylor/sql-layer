@@ -1162,8 +1162,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 else {
                     final Exchange ex = pStore.getExchange(session, index);
                     try {
-                        AccumulatorAdapter accum =
-                                new AccumulatorAdapter(AccumInfo.ROW_COUNT, treeService(), ex.getTree());
+                        AccumulatorAdapter accum = new AccumulatorAdapter(AccumInfo.ROW_COUNT, ex.getTree());
                         accum.set(actual);
                     }
                     finally {
