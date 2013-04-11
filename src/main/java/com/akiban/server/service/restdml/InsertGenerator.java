@@ -23,8 +23,6 @@ import java.util.List;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -65,22 +63,7 @@ public class InsertGenerator extends OperatorGenerator{
         RowStream stream = assembleValueScan (table);
         stream = assembleProjectTable (stream, table);
         stream.operator = API.insert_Returning(stream.operator, true);
-
-        List<TPreparedExpression> pExpressions = null;
-        if (table.getPrimaryKey() != null) {
-            PrimaryKey key = table.getPrimaryKey();
-            int size  = key.getIndex().getKeyColumns().size();
-            pExpressions = new ArrayList<>(size);
-            for (IndexColumn column : key.getIndex().getKeyColumns()) {
-                int fieldIndex = column.getColumn().getPosition();
-                pExpressions.add (new TPreparedField(stream.rowType.typeInstanceAt(fieldIndex), fieldIndex));
-            }
-            stream.operator = API.project_Table(stream.operator,
-                    stream.rowType,
-                    schema().userTableRowType(table),
-                    null,
-                    pExpressions);
-        }
+        stream = projectTable(stream, table);
         return stream.operator; 
     }
     

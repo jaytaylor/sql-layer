@@ -16,15 +16,34 @@
  */
 package com.akiban.server.service.restdml;
 
+import static com.akiban.util.Strings.join;
+
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
-import com.akiban.server.service.restdml.OperatorGenerator.RowStream;
+import com.akiban.qp.operator.UpdateFunction;
+import com.akiban.server.explain.Attributes;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.Label;
+import com.akiban.server.explain.PrimitiveExplainer;
+import com.akiban.server.explain.Type;
+import com.akiban.server.explain.format.DefaultFormatter;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.sql.optimizer.ExpressionRowUpdateFunction;
 
 public class UpdateGenerator extends OperatorGenerator {
 
     private UserTable table;
+    private static final Logger logger = LoggerFactory.getLogger(UpdateGenerator.class);
 
     public UpdateGenerator(AkibanInformationSchema ais) {
         super(ais);
@@ -34,10 +53,69 @@ public class UpdateGenerator extends OperatorGenerator {
     protected Operator create(TableName tableName) {
         table = ais().getUserTable(tableName);
 
-        RowStream stream = assembleValueScan (table);
-        //stream = assembleProjectTable (stream, table);
+        RowStream stream = new RowStream ();
+        stream.operator = indexAncestorLookup(tableName); 
+        stream.rowType = schema().userTableRowType(table);
         
-        return null;
+        List<TPreparedExpression> updates = parameters(table);
+        for (Column column : table.getPrimaryKey().getColumns()) {
+            updates.set(column.getPosition(), null);
+        }
+            
+        UpdateFunction updateFunction = 
+                new ExpressionRowUpdateFunction(null, updates, stream.rowType);
+        stream.operator = API.update_Returning(stream.operator, updateFunction, true);
+        
+        ExplainContext explain = explainUpdateStatement(stream.operator, table, updates);
+        stream = projectTable (stream, table);
+        if (logger.isDebugEnabled()) {
+            DefaultFormatter formatter = new DefaultFormatter(table.getName().getSchemaName());
+            logger.debug("Update Plan for {}:\n{}", table,
+                         join(formatter.format(stream.operator.getExplainer(explain))));
+        }
+        
+        return stream.operator;
     }
+
+    
+    protected ExplainContext explainUpdateStatement(Operator plan, UserTable table, List<TPreparedExpression> updatesP) {
+        
+        ExplainContext explainContext = new ExplainContext();        
+        Attributes atts = new Attributes();
+        atts.put(Label.TABLE_SCHEMA, PrimitiveExplainer.getInstance(table.getName().getSchemaName()));
+        atts.put(Label.TABLE_NAME, PrimitiveExplainer.getInstance(table.getName().getTableName()));
+        for (Column column : table.getColumns()) {
+            if (updatesP.get(column.getPosition()) != null) {
+                atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getName()));
+                atts.put(Label.EXPRESSIONS, updatesP.get(column.getPosition()).getExplainer(explainContext));
+            }
+        }
+        explainContext.putExtraInfo(plan, new CompoundExplainer(Type.EXTRA_INFO, atts));
+        return explainContext;
+    }
+    
+/*    
+  Project_Default(caoi_insert.customers.customer_id)
+    Update_Returning(caoi_insert.customers SET customer_name = $1, customer_title = $2, primary_payment_code = $3, payment_status = $4, comment = $5)
+      AncestorLookup_Default(Index(caoi_insert.customers.PRIMARY) -> caoi_insert.customers)
+        IndexScan_Default(Index(caoi_insert.customers.PRIMARY), customer_id = $6)
+*/    
+/*
+ *          RowStream stream = assembleQuery (updateStatement.getInput());
+            UserTableRowType targetRowType = tableRowType(updateStatement.getTargetTable());
+            assert (stream.rowType == targetRowType);
+
+            List<UpdateColumn> updateColumns = updateStatement.getUpdateColumns();
+            List<Expression> updates = oldPartialAssembler.assembleUpdates(targetRowType, updateColumns,
+                    stream.fieldOffsets);
+            List<TPreparedExpression> updatesP = newPartialAssembler.assembleUpdates(targetRowType, updateColumns,
+                    stream.fieldOffsets);
+            UpdateFunction updateFunction = 
+                new ExpressionRowUpdateFunction(updates, updatesP, targetRowType);
+
+            stream.operator = API.update_Returning(stream.operator, updateFunction, usePValues);
+            stream.fieldOffsets = new ColumnSourceFieldOffsets (updateStatement.getTable(), targetRowType);
+    
+ */
 
 }

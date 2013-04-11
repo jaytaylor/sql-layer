@@ -16,9 +16,10 @@
  */
 package com.akiban.server.service.restdml;
 
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.Map.Entry;
 
 import org.codehaus.jackson.JsonNode;
@@ -27,7 +28,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CacheValueGenerator;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableIndex;
+import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API;
@@ -37,7 +38,12 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.externaldata.ExternalDataService;
+import com.akiban.server.service.externaldata.ExternalDataServiceImpl;
+import com.akiban.server.service.externaldata.JsonRowWriter;
 import com.akiban.server.service.externaldata.PlanGenerator;
+import com.akiban.server.service.externaldata.TableRowTracker;
+import com.akiban.server.service.externaldata.JsonRowWriter.WriteCapturePKRow;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
@@ -49,15 +55,17 @@ import com.akiban.util.AkibanAppender;
 public class UpsertProcessor extends DMLProcessor {
 
     private final InsertProcessor insertProcessor;
+    private final ExternalDataService extDataService;
     private OperatorGenerator updateGenerator;
-
     
     public UpsertProcessor(ConfigurationService configService,
             TreeService treeService, Store store,
             T3RegistryService t3RegistryService,
-            InsertProcessor insertProcessor) {
+            InsertProcessor insertProcessor,
+            ExternalDataService extDataService) {
         super(configService, treeService, store, t3RegistryService);
         this.insertProcessor = insertProcessor;
+        this.extDataService = extDataService;
     }
 
     
@@ -91,6 +99,7 @@ public class UpsertProcessor extends DMLProcessor {
                 }
                 if (arrayElement.isObject()) {
                     processRow (arrayElement, appender, context);
+                    context.queryContext.clear();
                 }
                 // else throw Bad Json Format Exception
             }
@@ -104,27 +113,24 @@ public class UpsertProcessor extends DMLProcessor {
             throw new NoSuchIndexException(Index.PRIMARY_KEY_CONSTRAINT);
         }
         
-        TableIndex pkIndex = context.table.getPrimaryKey().getIndex();
-        
+        PrimaryKey pkIndex = context.table.getPrimaryKey();
+        int pkFields = 0;
         Iterator<Entry<String,JsonNode>> i = node.getFields();
         while (i.hasNext()) {
             Entry<String,JsonNode> field =i.next();
             if (field.getValue().isValueNode()) {
                 Column column = getColumn (context.table, field.getKey());
                 context.allValues.put (column, field.getValue().asText());
-                if (pkIndex.getKeyColumns().contains(column)) {
-                    context.pkValues.put(column, field.getValue().asText());
+                if (pkIndex.getColumns().contains(column)) {
+                    pkFields++;
                 }
             }
         }
         
-        if (pkIndex.getKeyColumns().size() != context.pkValues.size()) {
+        if (pkIndex.getColumns().size() !=pkFields) {
             //TODO Write New error - code and message -> JsonNode object needs all PK field with values
             throw new RuntimeException();
         }
-        
-        
-        
         Row row = determineExistance (context);
         if (row != null) {
             runUpdate (appender, context, row);
@@ -134,7 +140,7 @@ public class UpsertProcessor extends DMLProcessor {
     }
 
     private Row determineExistance (UpdateContext context) {
-        PlanGenerator generator = context.table.getAIS().getCachedValue(this, CACHED_PLAN_GENERATOR);
+        PlanGenerator generator = context.table.getAIS().getCachedValue(extDataService, ExternalDataServiceImpl.CACHED_PLAN_GENERATOR);
         Operator plan = generator.generateAncestorPlan(context.table);
         Cursor cursor = null;
         try {
@@ -142,11 +148,12 @@ public class UpsertProcessor extends DMLProcessor {
 
             PValue pvalue = new PValue(MString.VARCHAR.instance(Integer.MAX_VALUE, false));
             int i = 0;
-            for (String value: context.pkValues.values()) {
-                pvalue.putString(value, null);
+            for (Column column : context.table.getPrimaryKey().getColumns()) {
+                pvalue.putString(context.allValues.get(column), null);
                 context.queryContext.setPValue(i, pvalue);
                 i++;
             }
+            cursor.open();
             return cursor.next();
         } finally {
             if (cursor != null) {
@@ -159,8 +166,23 @@ public class UpsertProcessor extends DMLProcessor {
         updateGenerator = getGenerator(CACHED_UPDATE_GENERATOR);
         Operator update =  updateGenerator.get(context.tableName);
         
+        Cursor cursor = null;
+        cursor = API.cursor(update, context.queryContext);
         
-        
+        PValue pvalue = new PValue(MString.VARCHAR.instance(Integer.MAX_VALUE, false));
+        List<Column> pkList = context.table.getPrimaryKey().getColumns();
+        int i = context.table.getPrimaryKey().getColumns().size();
+        for (Column column : context.table.getColumns()) {
+            if(!pkList.contains(column)) {
+                pvalue.putString(context.allValues.get(column), null);
+                context.queryContext.setPValue(i, pvalue);
+                i++;
+            }
+        }
+       
+        JsonRowWriter writer = new JsonRowWriter(new TableRowTracker(context.table, 0));
+        WriteCapturePKRow rowWriter = new WriteCapturePKRow();
+        writer.writeRows(cursor, appender, "\n", rowWriter);
     }
     
     private static final CacheValueGenerator<UpdateGenerator> CACHED_UPDATE_GENERATOR =
@@ -170,21 +192,12 @@ public class UpsertProcessor extends DMLProcessor {
                 return new UpdateGenerator(ais);
             }
         };
-
-    private static final CacheValueGenerator<PlanGenerator> CACHED_PLAN_GENERATOR =
-            new CacheValueGenerator<PlanGenerator>() {
-                @Override
-                public PlanGenerator valueFor(AkibanInformationSchema ais) {
-                    return new PlanGenerator(ais);
-                }
-            };
         
     private class UpdateContext {
         public TableName tableName;
         public UserTable table;
         public QueryContext queryContext;
         public Session session;
-        public Map<Column, String> pkValues;
         public Map<Column, String> allValues;
         
         public UpdateContext (TableName tableName, UserTable table, Session session) {
@@ -192,9 +205,7 @@ public class UpsertProcessor extends DMLProcessor {
             this.tableName = tableName;
             this.session = session;
             this.queryContext = newQueryContext(session, table);
-            pkValues = new TreeMap<>();
-            allValues = new TreeMap<>();
+            allValues = new HashMap<>();
         }
     }
-
 }
