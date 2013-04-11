@@ -563,6 +563,7 @@ public class TableChangeValidator {
         if((oldNull != newNull) ||
            !oldCol.getName().equals(newCol.getName()) ||
            !Objects.equal(oldCol.getDefaultValue(), newCol.getDefaultValue()) ||
+           !Objects.equal(oldCol.getDefaultIdentity(), newCol.getDefaultIdentity()) ||
            sequenceChanged(oldCol.getIdentityGenerator(), newCol.getIdentityGenerator())) {
           return ChangeLevel.METADATA;
         }
