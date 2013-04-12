@@ -61,8 +61,12 @@ public class ScriptCache {
         return getEntry(session, routineName).getScriptEvaluator();
     }
 
+    public ScriptPool<ScriptLibrary> getScriptLibrary(Session session, TableName routineName) {
+        return getEntry(session, routineName).getScriptLibrary();
+    }
+
     public ScriptPool<ScriptInvoker> getScriptInvoker(Session session, TableName routineName) {
-        return getEntry(session, routineName).getScriptInvoker();
+        return getEntry(session, routineName).getScriptInvoker(this, session);
     }
 
     protected ScriptEngineManager getManager(Session session) {
@@ -85,23 +89,25 @@ public class ScriptCache {
         return entry;
     }
 
-    static class CacheEntry {
+    class CacheEntry {
         private TableName routineName;
         private String script;
+        private TableName libraryName;
         private String function;
         private ScriptEngineFactory factory;
         private String threading;
         private boolean invocable, compilable;
         private ScriptPool<ScriptEvaluator> sharedEvaluatorPool;
-        private ScriptPool<ScriptInvoker> sharedInvokerPool;
+        private ScriptPool<ScriptLibrary> sharedLibraryPool;
         private ScriptEngine spareEngine;
 
         public CacheEntry(Routine routine, ScriptEngine engine) {
             routineName = routine.getName();
             script = routine.getDefinition();
+            libraryName = routineName; // TODO: Until qualified EXTERNAL NAME supported.
             function = routine.getMethodName();
             factory = engine.getFactory();
-            threading = (String) factory.getParameter("THREADING");
+            threading = (String)factory.getParameter("THREADING");
             invocable = (engine instanceof Invocable);
             compilable = (engine instanceof Compilable);
             spareEngine = engine;
@@ -127,9 +133,8 @@ public class ScriptCache {
                 }
             }
 
-            // Otherwise, every caller gets a new pool which only has the scope
-            // of the
-            // prepared statement, etc.
+            // Otherwise, every caller gets a new pool which only has
+            // the scope of the prepared statement, etc.
             ScriptEngine engine;
             synchronized (this) {
                 engine = spareEngine;
@@ -149,42 +154,54 @@ public class ScriptCache {
             }
         }
 
-        public ScriptPool<ScriptInvoker> getScriptInvoker() {
-            // TODO - talk with Mike about having a CacheEntry without a function -
-            // needed for the LIBRARY param styl
-            assert invocable ; //&& (function != null);
-            // Can share if at multi-threaded (or stronger), since we are
-            // invoking
-            // the function.
-            if ("MULTITHREADED".equals(threading) || "THREAD-ISOLATED".equals(threading)
-                    || "STATELESS".equals(threading)) {
+        public ScriptPool<ScriptLibrary> getScriptLibrary() {
+            assert invocable;
+            // Can share if at multi-threaded (or stronger), since we
+            // are invoking the function.
+            if ("MULTITHREADED".equals(threading) || 
+                "THREAD-ISOLATED".equals(threading) || 
+                "STATELESS".equals(threading)) {
                 synchronized (this) {
-                    if (sharedInvokerPool == null) {
+                    if (sharedLibraryPool == null) {
                         ScriptEngine engine = spareEngine;
                         if (engine != null)
                             spareEngine = null;
                         else
                             engine = factory.getScriptEngine();
-                        ScriptInvoker invoker = new Invoker(routineName, engine, script, function);
-                        sharedInvokerPool = new SharedPool<>(invoker);
+                        ScriptLibrary library = new Library(routineName, engine, script);
+                        sharedLibraryPool = new SharedPool<>(library);
                     }
-                    return sharedInvokerPool;
+                    return sharedLibraryPool;
                 }
             }
 
-            // Otherwise, every caller gets a new pool which only has the scope
-            // of the
-            // prepared statement, etc.
+            // Otherwise, every caller gets a new pool which only has
+            // the scope of the prepared statement, etc.
             ScriptEngine engine;
             synchronized (this) {
                 engine = spareEngine;
                 if (engine != null)
                     spareEngine = null;
             }
-            Invoker invoker = null;
+            Library library = null;
             if (engine != null)
-                invoker = new Invoker(routineName, engine, script, function);
-            return new InvokerPool(routineName, factory, script, function, invoker);
+                library = new Library(routineName, engine, script);
+            return new LibraryPool(routineName, factory, script, library);
+        }
+
+        public ScriptPool<ScriptInvoker> getScriptInvoker(ScriptCache cache, Session session) {
+            assert invocable && (function != null);
+            ScriptPool<ScriptLibrary> libraryPool;
+            if (routineName.equals(libraryName)) {
+                libraryPool = getScriptLibrary();
+            }
+            else {
+                synchronized (this) {
+                    spareEngine = null;
+                }
+                libraryPool = cache.getScriptLibrary(session, libraryName);
+            }
+            return new InvokerPool(libraryPool, function);
         }
     }
 
@@ -277,18 +294,14 @@ public class ScriptCache {
         }
     }
 
-    static class InvokerPool extends BasePool<ScriptInvoker> {
-        private final String function;
-
-        public InvokerPool(TableName routineName, ScriptEngineFactory factory, String script, String function,
-                Invoker initial) {
+    static class LibraryPool extends BasePool<ScriptLibrary> {
+        public LibraryPool(TableName routineName, ScriptEngineFactory factory, String script, Library initial) {
             super(routineName, factory, script, initial);
-            this.function = function;
         }
 
         @Override
-        protected Invoker create() {
-            return new Invoker(routineName, factory.getScriptEngine(), script, function);
+        protected Library create() {
+            return new Library(routineName, factory.getScriptEngine(), script);
         }
     }
 
@@ -396,14 +409,12 @@ public class ScriptCache {
         }
     }
 
-    static class Invoker implements ScriptInvoker {
+    static class Library implements ScriptLibrary {
         private final TableName routineName;
-        private final String function;
         private final Invocable invocable;
 
-        public Invoker(TableName routineName, ScriptEngine engine, String script, String function) {
+        public Library(TableName routineName, ScriptEngine engine, String script) {
             this.routineName = routineName;
-            this.function = function;
             setScriptName(routineName, engine);
             try {
                 if (engine instanceof Compilable) {
@@ -420,11 +431,6 @@ public class ScriptCache {
         }
 
         @Override
-        public String getFunctionName() {
-            return function;
-        }
-
-        @Override
         public String getEngineName() {
             return ((ScriptEngine) invocable).getFactory().getEngineName();
         }
@@ -435,7 +441,7 @@ public class ScriptCache {
         }
 
         @Override
-        public Object invoke(Object[] args) {
+        public Object invoke(String function, Object[] args) {
             logger.debug("Calling {} in {}", function, routineName);
             try {
                 return invocable.invokeFunction(function, args);
@@ -445,17 +451,50 @@ public class ScriptCache {
                 throw new ExternalRoutineInvocationException(routineName, ex);
             }
         }
-        
+    }
+
+    static class InvokerPool implements ScriptPool<ScriptInvoker> {
+        private final ScriptPool<ScriptLibrary> libraryPool;
+        private final String function;
+
+        public InvokerPool(ScriptPool<ScriptLibrary> libraryPool, String function) {
+            this.libraryPool = libraryPool;
+            this.function = function;
+        }
+
         @Override
-        public Object invokeNamedFunction(String functionName, Object[] args) {
-            logger.debug("Calling {} in {}", function, routineName);
-            try {
-                return invocable.invokeFunction(functionName, args);
-            } catch (ScriptException ex) {
-                throw new ExternalRoutineInvocationException(routineName, ex);
-            } catch (NoSuchMethodException ex) {
-                throw new ExternalRoutineInvocationException(routineName, ex);
-            }
+        public ScriptInvoker get() {
+            return new Invoker(libraryPool.get(), function);
+        }
+
+        @Override
+        public void put(ScriptInvoker elem, boolean success) {
+            libraryPool.put(elem.getLibrary(), success);
+        }
+    }
+
+    static class Invoker implements ScriptInvoker {
+        private final ScriptLibrary library;
+        private final String function;
+
+        public Invoker(ScriptLibrary library, String function) {
+            this.library = library;
+            this.function = function;
+        }
+
+        @Override
+        public ScriptLibrary getLibrary() {
+            return library;
+        }
+
+        @Override
+        public String getFunctionName() {
+            return function;
+        }
+
+        @Override
+        public Object invoke(Object[] args) {
+            return library.invoke(function, args);
         }
     }
 }
