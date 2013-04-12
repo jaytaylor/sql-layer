@@ -18,6 +18,7 @@
 package com.akiban.server.store;
 
 import com.akiban.ais.model.*;
+import com.akiban.ais.model.Index.IndexType;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
@@ -1554,6 +1555,12 @@ public class PersistitStore implements Store, Service {
     public void deleteIndexes(final Session session, final Collection<? extends Index> indexes) {
         List<TreeLink> links = new ArrayList<>(indexes.size());
         for(Index index : indexes) {
+            // no trees to drop
+            if (index.getIndexType() == IndexType.FULL_TEXT)
+            {
+                indexes.remove(index);
+                continue;
+            }
             final IndexDef indexDef = index.indexDef();
             if(indexDef == null) {
                 throw new IllegalStateException("indexDef is null for index: " + index);
