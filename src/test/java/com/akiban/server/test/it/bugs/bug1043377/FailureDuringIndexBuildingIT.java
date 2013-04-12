@@ -44,7 +44,7 @@ public final class FailureDuringIndexBuildingIT extends ITBase {
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider().bind(Store.class, ThrowsAfterBuildIndexesStore.class)
-                                              .bind(FullTextIndexService.class, FullTextIndexServiceImpl.class);
+                                              .bindAndRequire(FullTextIndexService.class, FullTextIndexServiceImpl.class);
     }
 
     @Override
@@ -80,9 +80,8 @@ public final class FailureDuringIndexBuildingIT extends ITBase {
     public static class ThrowsAfterBuildIndexesStore extends OperatorStore {
         @Inject
         public ThrowsAfterBuildIndexesStore(TreeService treeService, SchemaManager schemaManager,
-                                            LockService lockService, TransactionService transactionService,
-                                            FullTextIndexService ftService) {
-            super(treeService, null, schemaManager, lockService, transactionService, ftService);
+                                            LockService lockService, TransactionService transactionService) {
+            super(treeService, null, schemaManager, lockService, transactionService);
         }
 
         @Override

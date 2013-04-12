@@ -27,6 +27,7 @@ import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.text.FullTextIndexService;
 import com.akiban.server.service.tree.TreeLink;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
@@ -41,6 +42,8 @@ import java.util.Collection;
  */
 public interface Store {
 
+    void setFullTextService(FullTextIndexService ftService);
+    
     /** Get the RowDef for the given ID. Note, a transaction should be active before calling this. */
     RowDef getRowDef(Session session, int rowDefID);
 

@@ -261,14 +261,19 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     @Inject
     public OperatorStore(TreeService treeService, ConfigurationService config, SchemaManager schemaManager,
-                         LockService lockService, TransactionService transactionService,
-                         FullTextIndexService ftService) {
-        super(new PersistitStore(false, treeService, config, schemaManager, lockService, transactionService, ftService));
+                         LockService lockService, TransactionService transactionService) {
+        super(new PersistitStore(false, treeService, config, schemaManager, lockService, transactionService));
         this.treeService = treeService;
         this.config = config;
         this.schemaManager = schemaManager;
     }
 
+    @Override
+    public void setFullTextService(FullTextIndexService ftService)
+    {
+        getPersistitStore().setFullTextService(ftService);
+    }
+    
     @Override
     public PersistitStore getPersistitStore() {
         return super.getDelegate();

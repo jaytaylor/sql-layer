@@ -17,6 +17,8 @@
 
 package com.akiban.server.test;
 
+import com.akiban.server.service.text.FullTextIndexServiceImpl;
+import com.akiban.server.service.text.FullTextIndexService;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
@@ -34,7 +36,8 @@ public final class FailureOnStartupIT extends ApiTestBase {
 
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
-        return super.serviceBindingsProvider().bind(Store.class, BadStore.class);
+        return super.serviceBindingsProvider().bind(Store.class, BadStore.class)
+                                              .bindAndRequire(FullTextIndexService.class, FullTextIndexServiceImpl.class);
     }
 
     @Override

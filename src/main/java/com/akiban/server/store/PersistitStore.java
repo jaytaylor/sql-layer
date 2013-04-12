@@ -114,7 +114,7 @@ public class PersistitStore implements Store, Service {
 
     private final ConfigurationService config;
 
-    private final FullTextIndexService ftService;
+    private FullTextIndexService ftService;
     
     private final TreeService treeService;
 
@@ -146,15 +146,13 @@ public class PersistitStore implements Store, Service {
     private volatile float groupBlBufferAllocation;
 
     public PersistitStore(boolean updateGroupIndexes, TreeService treeService, ConfigurationService config,
-                          SchemaManager schemaManager, LockService lockService, TransactionService transactionService,
-                          FullTextIndexService ftService) {
+                          SchemaManager schemaManager, LockService lockService, TransactionService transactionService) {
         this.updateGroupIndexes = updateGroupIndexes;
         this.treeService = treeService;
         this.config = config;
         this.schemaManager = schemaManager;
         this.lockService = lockService;
         this.transactionService = transactionService;
-        this.ftService = ftService;
     }
 
     @Override
@@ -377,6 +375,10 @@ public class PersistitStore implements Store, Service {
     }
 
     // --------------------- Implement Store interface --------------------
+    public void setFullTextService(FullTextIndexService fts)
+    {
+        ftService = fts;
+    }
 
     public AkibanInformationSchema getAIS(Session session) {
         Bulkload bulkload = activeBulkload.get();
