@@ -41,6 +41,10 @@ public class MString extends TString
                 ? MString.VARCHAR.instance(0, true)
                 : MString.VARCHAR.instance(string.length(), false);
     }
+    
+    public static TInstance varchar() {
+        return MString.VARCHAR.instance(true);
+    }
 
     public static final MString CHAR = new MString(TypeId.CHAR_ID, "char");
     public static final MString VARCHAR = new MString(TypeId.VARCHAR_ID, "varchar");

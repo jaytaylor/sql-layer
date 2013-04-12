@@ -17,10 +17,8 @@
 package com.akiban.server.service.restdml;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 
 import org.codehaus.jackson.JsonNode;
@@ -31,13 +29,11 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.Types;
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
+import com.akiban.server.error.InvalidChildCollectionException;
 import com.akiban.server.error.KeyColumnMissingException;
 import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.service.config.ConfigurationService;
@@ -72,13 +68,9 @@ public class UpsertProcessor extends DMLProcessor {
 
     
     public String processUpsert(Session session, AkibanInformationSchema ais, TableName tableName, JsonNode node) {
-        setAIS(ais);
-
+        ProcessContext context = new ProcessContext (ais, session, tableName);
         StringBuilder builder = new StringBuilder();
         AkibanAppender appender = AkibanAppender.of(builder);
-
-        UserTable table = getTable(tableName);
-        UpdateContext context = new UpdateContext(tableName, table, session);
 
         processContainer (node, appender, context);
         
@@ -86,7 +78,7 @@ public class UpsertProcessor extends DMLProcessor {
 
     }
     
-    private void processContainer (JsonNode node, AkibanAppender appender, UpdateContext context) {
+    private void processContainer (JsonNode node, AkibanAppender appender, ProcessContext context) {
         boolean first = true;
         
         if (node.isObject()) {
@@ -110,7 +102,7 @@ public class UpsertProcessor extends DMLProcessor {
         } // else throw Bad Json Format Exception
     }
     
-    private void processRow(JsonNode node, AkibanAppender appender, UpdateContext context) {
+    private void processRow(JsonNode node, AkibanAppender appender, ProcessContext context) {
         
         if (context.table.getPrimaryKey() == null) {
             throw new NoSuchIndexException(Index.PRIMARY_KEY_CONSTRAINT);
@@ -121,7 +113,9 @@ public class UpsertProcessor extends DMLProcessor {
         Iterator<Entry<String,JsonNode>> i = node.getFields();
         while (i.hasNext()) {
             Entry<String,JsonNode> field =i.next();
-            if (field.getValue().isValueNode()) {
+            if (field.getValue().isContainerNode()) {
+                throw new InvalidChildCollectionException(field.getKey());
+            } else if (field.getValue().isValueNode()) {
                 Column column = getColumn (context.table, field.getKey());
                 if (field.getValue().isNull()) {
                     context.allValues.put(column, null);
@@ -135,7 +129,7 @@ public class UpsertProcessor extends DMLProcessor {
         }
         
         if (pkIndex.getColumns().size() !=pkFields) {
-            throw new KeyColumnMissingException(String.format("%s.%s", context.table.getName().toString(), pkIndex.getIndex().getIndexName()));
+            throw new KeyColumnMissingException(pkIndex.getIndex().getIndexName().toString());
         }
         Row row = determineExistance (context);
         if (row != null) {
@@ -145,14 +139,14 @@ public class UpsertProcessor extends DMLProcessor {
         }
     }
 
-    private Row determineExistance (UpdateContext context) {
+    private Row determineExistance (ProcessContext context) {
         PlanGenerator generator = context.table.getAIS().getCachedValue(extDataService, ExternalDataServiceImpl.CACHED_PLAN_GENERATOR);
         Operator plan = generator.generateAncestorPlan(context.table);
         Cursor cursor = null;
         try {
             cursor = API.cursor(plan, context.queryContext);
 
-            PValue pvalue = new PValue(MString.VARCHAR.instance(Integer.MAX_VALUE, false));
+            PValue pvalue = new PValue(MString.varchar());
             int i = 0;
             for (Column column : context.table.getPrimaryKey().getColumns()) {
                 pvalue.putString(context.allValues.get(column), null);
@@ -168,13 +162,13 @@ public class UpsertProcessor extends DMLProcessor {
         }
     }
     
-    private void runUpdate (AkibanAppender appender, UpdateContext context, Row oldRow) {
+    private void runUpdate (AkibanAppender appender, ProcessContext context, Row oldRow) {
         
-        UpdateGenerator updateGenerator = (UpdateGenerator)getGenerator(CACHED_UPDATE_GENERATOR);
+        UpdateGenerator updateGenerator = (UpdateGenerator)getGenerator(CACHED_UPDATE_GENERATOR, context);
 
         List<Column> pkList = context.table.getPrimaryKey().getColumns();
         List<Column> upList = new ArrayList<>();
-        PValue pvalue = new PValue(Column.generateTInstance(null, Types.VARCHAR, 65535L, null, true));
+        PValue pvalue = new PValue(MString.varchar());
         int i = pkList.size();
         for (Column column : context.table.getColumns()) {
             if (!pkList.contains(column) && context.allValues.containsKey(column)) {
@@ -203,24 +197,4 @@ public class UpsertProcessor extends DMLProcessor {
                 return new UpdateGenerator(ais);
             }
         };
-        
-    private class UpdateContext {
-        public TableName tableName;
-        public UserTable table;
-        public QueryContext queryContext;
-        public Session session;
-        public Map<Column, String> allValues;
-        
-        public UpdateContext (TableName tableName, UserTable table, Session session) {
-            this.table = table;
-            this.tableName = tableName;
-            this.session = session;
-            this.queryContext = newQueryContext(session, table);
-            allValues = new HashMap<>();
-        }
-    }
-
-    public class UseOverlayValue {
-    };
-    
 }

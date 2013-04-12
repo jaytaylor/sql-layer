@@ -27,7 +27,6 @@ import org.slf4j.LoggerFactory;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
@@ -41,6 +40,7 @@ import com.akiban.server.explain.Type;
 import com.akiban.server.explain.format.DefaultFormatter;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.texpressions.TCastExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedParameter;
@@ -69,7 +69,7 @@ public class UpdateGenerator extends OperatorGenerator {
         stream.operator = indexAncestorLookup(tableName); 
         stream.rowType = schema().userTableRowType(table);
 
-        TInstance varchar = Column.generateTInstance(null, Types.VARCHAR, 65535L, null, true);
+        TInstance varchar = MString.varchar();
         TPreparedExpression[] updates = new TPreparedExpression[table.getColumns().size()];
 
         // The Primary Key columns have already been added as query parameters
