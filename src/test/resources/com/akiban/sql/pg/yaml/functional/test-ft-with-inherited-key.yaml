@@ -17,10 +17,12 @@
 - Statement: SELECT SLEEP(7000);
 ---
 - Statement: SELECT * FROM t3 WHERE FULL_TEXT_SEARCH(name, 'fred');
-- output: [[111], [11], ['Fred']]
+- output: [[111, 11, 'Fred']]
 ---
 - Statement: UPDATE t2 SET pid = 2 WHERE pid = 1;
 ---
+- Statement: SELECT SLEEP(7000);
+---
 - Statement: SELECT * FROM t3 WHERE FULL_TEXT_SEARCH(name, 'fred');
-- output: [[111], [11], ['Fred']]
+- output: [[111, 11, 'Fred']]
 ...
