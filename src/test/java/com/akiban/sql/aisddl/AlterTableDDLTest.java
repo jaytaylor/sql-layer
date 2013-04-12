@@ -552,7 +552,7 @@ public class AlterTableDDLTest {
         parseAndRun("ALTER TABLE c ALTER COLUMN id SET INCREMENT BY -1");
         expectColumnChanges("MODIFY:id->id");
         expectIndexChanges();
-        expectFinalTable(C_NAME, "id MCOMPAT_ INTEGER(11) NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY -1)", "PRIMARY(id)");
+        expectFinalTable(C_NAME, "id MCOMPAT_ INTEGER(11) NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY -1)", "PRIMARY(id)");
     }
 
     @Test
@@ -561,7 +561,7 @@ public class AlterTableDDLTest {
         parseAndRun("ALTER TABLE c ALTER COLUMN id SET INCREMENT BY 5");
         expectColumnChanges("MODIFY:id->id");
         expectIndexChanges();
-        expectFinalTable(C_NAME, "id MCOMPAT_ INTEGER(11) NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY 5)", "PRIMARY(id)");
+        expectFinalTable(C_NAME, "id MCOMPAT_ INTEGER(11) NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 5)", "PRIMARY(id)");
     }
 
     @Test(expected=SequenceIntervalZeroException.class)

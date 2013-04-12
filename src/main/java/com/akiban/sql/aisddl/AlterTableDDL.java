@@ -17,7 +17,9 @@
 
 package com.akiban.sql.aisddl;
 
+import com.akiban.ais.model.Sequence;
 import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.error.SequenceIntervalZeroException;
 import com.akiban.sql.parser.AlterTableRenameColumnNode;
 import com.akiban.sql.parser.AlterTableRenameNode;
 import com.akiban.ais.AISCloner;
@@ -222,7 +224,38 @@ public class AlterTableDDL {
                 }
                 switch(modNode.getNodeType()) {
                     case NodeTypes.MODIFY_COLUMN_DEFAULT_NODE:
-                        column.setDefaultValue(TableDDL.getColumnDefault(modNode));
+                        if(modNode.isAutoincrementColumn()) {
+                            if(column.getDefaultIdentity() == null) {
+                                throw new IllegalArgumentException("Not an identity column");
+                            }
+                            int autoIncType = (int)modNode.getAutoinc_create_or_modify_Start_Increment();
+                            switch(autoIncType) {
+                                case ColumnDefinitionNode.MODIFY_AUTOINCREMENT_INC_VALUE: {
+                                    long newValue = modNode.getAutoincrementIncrement();
+                                    if(newValue == 0) {
+                                        throw new SequenceIntervalZeroException();
+                                    }
+                                    Sequence seq = column.getIdentityGenerator();
+                                    aisCopy.removeSequence(seq.getSequenceName());
+                                    Sequence newSeq = Sequence.create(aisCopy,
+                                                                      seq.getSchemaName(),
+                                                                      seq.getSequenceName().getTableName(),
+                                                                      seq.getStartsWith(),
+                                                                      modNode.getAutoincrementIncrement(),
+                                                                      seq.getMinValue(),
+                                                                      seq.getMaxValue(),
+                                                                      seq.isCycle());
+                                    aisCopy.addSequence(newSeq);
+                                    column.setIdentityGenerator(newSeq);
+                                } break;
+                                case ColumnDefinitionNode.MODIFY_AUTOINCREMENT_RESTART_VALUE:
+                                    throw new UnsupportedSQLException("Not yet implemented", modNode);
+                                default:
+                                    throw new IllegalStateException("Unknown autoIncType: " + autoIncType);
+                            }
+                        } else {
+                            column.setDefaultValue(TableDDL.getColumnDefault(modNode));
+                        }
                     break;
                     case NodeTypes.MODIFY_COLUMN_CONSTRAINT_NODE: // Type only comes from NULL
                         column.setNullable(true);
