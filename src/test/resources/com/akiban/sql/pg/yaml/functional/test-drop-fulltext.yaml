@@ -1,0 +1,8 @@
+# test drop full_text index
+---
+- CreateTable: t(id int, name varchar(224));
+---
+- Statement: CREATE INDEX idx on t(full_text(name));
+---
+- Statement: DROP INDEX t.idx;
+...

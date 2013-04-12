@@ -1031,7 +1031,14 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             for(String indexName : indexNamesToDrop) {
                 Index index = table.getIndex(indexName);
                 if(index == null) {
-                    throw new NoSuchIndexException (indexName);
+                    if (table instanceof UserTable)
+                    {
+                        index = ((UserTable)table).getFullTextIndex(indexName);
+                        if (index == null)
+                            throw new NoSuchIndexException (indexName);
+                    }
+                    else
+                        throw new NoSuchIndexException (indexName);
                 }
                 if(index.isPrimaryKey()) {
                     throw new ProtectedIndexException(indexName, table.getName());
