@@ -17,6 +17,8 @@
 
 package com.akiban.server.test.it.bugs.bug1043377;
 
+import com.akiban.server.service.text.FullTextIndexServiceImpl;
+import com.akiban.server.service.text.FullTextIndexService;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.persistitadapter.OperatorStore;
@@ -41,7 +43,8 @@ public final class FailureDuringIndexBuildingIT extends ITBase {
 
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
-        return super.serviceBindingsProvider().bind(Store.class, ThrowsAfterBuildIndexesStore.class);
+        return super.serviceBindingsProvider().bind(Store.class, ThrowsAfterBuildIndexesStore.class)
+                                              .bind(FullTextIndexService.class, FullTextIndexServiceImpl.class);
     }
 
     @Override
@@ -77,8 +80,9 @@ public final class FailureDuringIndexBuildingIT extends ITBase {
     public static class ThrowsAfterBuildIndexesStore extends OperatorStore {
         @Inject
         public ThrowsAfterBuildIndexesStore(TreeService treeService, SchemaManager schemaManager,
-                                            LockService lockService, TransactionService transactionService) {
-            super(treeService, null, schemaManager, lockService, transactionService);
+                                            LockService lockService, TransactionService transactionService,
+                                            FullTextIndexService ftService) {
+            super(treeService, null, schemaManager, lockService, transactionService, ftService);
         }
 
         @Override
