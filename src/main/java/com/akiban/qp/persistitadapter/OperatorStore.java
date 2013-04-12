@@ -17,6 +17,7 @@
 
 package com.akiban.qp.persistitadapter;
 
+import com.akiban.server.service.text.FullTextIndexService;
 import com.akiban.ais.model.*;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
@@ -260,8 +261,9 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     @Inject
     public OperatorStore(TreeService treeService, ConfigurationService config, SchemaManager schemaManager,
-                         LockService lockService, TransactionService transactionService) {
-        super(new PersistitStore(false, treeService, config, schemaManager, lockService, transactionService));
+                         LockService lockService, TransactionService transactionService,
+                         FullTextIndexService ftService) {
+        super(new PersistitStore(false, treeService, config, schemaManager, lockService, transactionService, ftService));
         this.treeService = treeService;
         this.config = config;
         this.schemaManager = schemaManager;

@@ -42,6 +42,7 @@ import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.text.FullTextIndexService;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.service.tree.TreeService;
@@ -113,6 +114,8 @@ public class PersistitStore implements Store, Service {
 
     private final ConfigurationService config;
 
+    private final FullTextIndexService ftService;
+    
     private final TreeService treeService;
 
     private final SchemaManager schemaManager;
@@ -143,13 +146,15 @@ public class PersistitStore implements Store, Service {
     private volatile float groupBlBufferAllocation;
 
     public PersistitStore(boolean updateGroupIndexes, TreeService treeService, ConfigurationService config,
-                          SchemaManager schemaManager, LockService lockService, TransactionService transactionService) {
+                          SchemaManager schemaManager, LockService lockService, TransactionService transactionService,
+                          FullTextIndexService ftService) {
         this.updateGroupIndexes = updateGroupIndexes;
         this.treeService = treeService;
         this.config = config;
         this.schemaManager = schemaManager;
         this.lockService = lockService;
         this.transactionService = transactionService;
+        this.ftService = ftService;
     }
 
     @Override
@@ -1558,6 +1563,7 @@ public class PersistitStore implements Store, Service {
             // no trees to drop
             if (index.getIndexType() == IndexType.FULL_TEXT)
             {
+                ftService.dropIndex(session, index.getIndexName());
                 indexes.remove(index);
                 continue;
             }
