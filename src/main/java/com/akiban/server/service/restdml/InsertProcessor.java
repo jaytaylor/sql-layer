@@ -166,7 +166,11 @@ public class InsertProcessor extends DMLProcessor {
     
     private void setValue (String field, JsonNode node, InsertContext context) {
         Column column = getColumn (context.table, field);
-        setValue (context.queryContext, column, node.asText());
+        if (node.isNull()) {
+            setValue (context.queryContext, column, null);
+        } else {
+            setValue (context.queryContext, column, node.asText());
+        }
     }
 
     private void runUpdate (InsertContext context, AkibanAppender appender) {

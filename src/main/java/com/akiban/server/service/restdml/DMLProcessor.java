@@ -116,6 +116,7 @@ public abstract class DMLProcessor {
             pvalue = new PValue(Column.generateTInstance(null, Types.VARCHAR, 65535L, null, true), value);
         }
         queryContext.setPValue(column.getPosition(), pvalue);
+        
     }
 
     protected OperatorGenerator getGenerator(CacheValueGenerator<? extends OperatorGenerator> generator) {

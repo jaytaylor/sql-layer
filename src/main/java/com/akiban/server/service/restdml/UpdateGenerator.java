@@ -18,6 +18,7 @@ package com.akiban.server.service.restdml;
 
 import static com.akiban.util.Strings.join;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -26,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
@@ -37,8 +39,11 @@ import com.akiban.server.explain.Label;
 import com.akiban.server.explain.PrimitiveExplainer;
 import com.akiban.server.explain.Type;
 import com.akiban.server.explain.format.DefaultFormatter;
+import com.akiban.server.types3.TCast;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.texpressions.TCastExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.sql.optimizer.ExpressionRowUpdateFunction;
+import com.akiban.server.types3.texpressions.TPreparedParameter;
 
 public class UpdateGenerator extends OperatorGenerator {
 
@@ -49,30 +54,54 @@ public class UpdateGenerator extends OperatorGenerator {
         super(ais);
     }
 
+    
     @Override
     protected Operator create(TableName tableName) {
+        table = ais().getUserTable(tableName);
+
+        return create (tableName, table.getColumns());
+    }
+    
+    protected Operator create (TableName tableName, List<Column> upColumns) {
         table = ais().getUserTable(tableName);
 
         RowStream stream = new RowStream ();
         stream.operator = indexAncestorLookup(tableName); 
         stream.rowType = schema().userTableRowType(table);
-        
-        List<TPreparedExpression> updates = parameters(table);
-        for (Column column : table.getPrimaryKey().getColumns()) {
-            updates.set(column.getPosition(), null);
+
+        TInstance varchar = Column.generateTInstance(null, Types.VARCHAR, 65535L, null, false);
+        TPreparedExpression[] updates = new TPreparedExpression[table.getColumns().size()];
+
+        // The Primary Key columns have already been added as query parameters
+        // by the indexAncestorLookup ($1,,) So start the new parameters from there
+        // And we don't want to add the PK columns as to be updated. 
+        List<Column> pkList = table.getPrimaryKey().getColumns();
+        int paramIndex = pkList.size();
+        int index = 0;
+        for (Column column : table.getColumns()) {
+            if (!pkList.contains(column) && upColumns.contains(column)) {
+                updates[index] =  new TPreparedParameter(paramIndex, varchar);
+                
+                if (!column.tInstance().equals(varchar)) {
+                    TCast cast = registryService().getCastsResolver().cast(varchar.typeClass(),
+                            column.tInstance().typeClass()); 
+                    updates[index] = new TCastExpression(updates[index], cast, column.tInstance(), queryContext());
+                }
+                paramIndex++;
+            }
+            index++;
         }
-            
         UpdateFunction updateFunction = 
-                new ExpressionRowUpdateFunction(null, updates, stream.rowType);
+                new UpsertRowUpdateFunction(Arrays.asList(updates), stream.rowType);
         stream.operator = API.update_Returning(stream.operator, updateFunction, true);
         
-        ExplainContext explain = explainUpdateStatement(stream.operator, table, updates);
-        stream = projectTable (stream, table);
-        if (logger.isDebugEnabled()) {
+        //stream = projectTable (stream, table);
+        //if (logger.isDebugEnabled()) {
+            ExplainContext explain = explainUpdateStatement(stream.operator, table, Arrays.asList(updates));
             DefaultFormatter formatter = new DefaultFormatter(table.getName().getSchemaName());
-            logger.debug("Update Plan for {}:\n{}", table,
+            logger.error("Update Plan for {}:\n{}", table,
                          join(formatter.format(stream.operator.getExplainer(explain))));
-        }
+        //}
         
         return stream.operator;
     }

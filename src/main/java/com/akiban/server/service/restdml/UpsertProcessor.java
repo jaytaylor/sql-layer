@@ -16,6 +16,7 @@
  */
 package com.akiban.server.service.restdml;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -30,6 +31,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
@@ -49,15 +51,16 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.t3expressions.T3RegistryService;
+import com.akiban.server.types3.mcompat.mtypes.MBinary;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.util.AkibanAppender;
+import com.akiban.util.WrappingByteSource;
 
 public class UpsertProcessor extends DMLProcessor {
 
     private final InsertProcessor insertProcessor;
     private final ExternalDataService extDataService;
-    private OperatorGenerator updateGenerator;
     
     public UpsertProcessor(ConfigurationService configService,
             TreeService treeService, Store store,
@@ -121,7 +124,11 @@ public class UpsertProcessor extends DMLProcessor {
             Entry<String,JsonNode> field =i.next();
             if (field.getValue().isValueNode()) {
                 Column column = getColumn (context.table, field.getKey());
-                context.allValues.put (column, field.getValue().asText());
+                if (field.getValue().isNull()) {
+                    context.allValues.put(column, null);
+                } else {
+                    context.allValues.put (column, field.getValue().asText());
+                }
                 if (pkIndex.getColumns().contains(column)) {
                     pkFields++;
                 }
@@ -163,23 +170,28 @@ public class UpsertProcessor extends DMLProcessor {
     }
     
     private void runUpdate (AkibanAppender appender, UpdateContext context, Row oldRow) {
-        updateGenerator = getGenerator(CACHED_UPDATE_GENERATOR);
-        Operator update =  updateGenerator.get(context.tableName);
         
-        Cursor cursor = null;
-        cursor = API.cursor(update, context.queryContext);
-        
-        PValue pvalue = new PValue(MString.VARCHAR.instance(Integer.MAX_VALUE, false));
+        UpdateGenerator updateGenerator = (UpdateGenerator)getGenerator(CACHED_UPDATE_GENERATOR);
+
         List<Column> pkList = context.table.getPrimaryKey().getColumns();
-        int i = context.table.getPrimaryKey().getColumns().size();
+        List<Column> upList = new ArrayList<>();
+        PValue pvalue = new PValue(Column.generateTInstance(null, Types.VARCHAR, 65535L, null, true));
+        int i = pkList.size();
         for (Column column : context.table.getColumns()) {
-            if(!pkList.contains(column)) {
-                pvalue.putString(context.allValues.get(column), null);
+            if (!pkList.contains(column) && context.allValues.containsKey(column)) {
+                if (context.allValues.get(column) == null) {
+                    pvalue.putNull();
+                } else {
+                    pvalue.putString(context.allValues.get(column), null);
+                }
                 context.queryContext.setPValue(i, pvalue);
+                upList.add(column);
                 i++;
             }
         }
-       
+        
+        Operator update = updateGenerator.create(context.tableName,upList);
+        Cursor cursor = API.cursor(update, context.queryContext);
         JsonRowWriter writer = new JsonRowWriter(new TableRowTracker(context.table, 0));
         WriteCapturePKRow rowWriter = new WriteCapturePKRow();
         writer.writeRows(cursor, appender, "\n", rowWriter);
@@ -208,4 +220,8 @@ public class UpsertProcessor extends DMLProcessor {
             allValues = new HashMap<>();
         }
     }
+
+    public class UseOverlayValue {
+    };
+    
 }
