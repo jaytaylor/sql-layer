@@ -335,6 +335,8 @@ public class DirectServiceImpl implements Service, DirectService {
             final byte[] content, final MediaType[] responseType) throws Exception {
         try (JDBCConnection conn = jdbcConnection(request, procName.getSchemaName());) {
 
+            conn.setAutoCommit(false);
+
             boolean completed = false;
             boolean repeat = true;
 
