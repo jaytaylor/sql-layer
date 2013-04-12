@@ -69,7 +69,7 @@ public class UpdateGenerator extends OperatorGenerator {
         stream.operator = indexAncestorLookup(tableName); 
         stream.rowType = schema().userTableRowType(table);
 
-        TInstance varchar = Column.generateTInstance(null, Types.VARCHAR, 65535L, null, false);
+        TInstance varchar = Column.generateTInstance(null, Types.VARCHAR, 65535L, null, true);
         TPreparedExpression[] updates = new TPreparedExpression[table.getColumns().size()];
 
         // The Primary Key columns have already been added as query parameters
@@ -95,14 +95,12 @@ public class UpdateGenerator extends OperatorGenerator {
                 new UpsertRowUpdateFunction(Arrays.asList(updates), stream.rowType);
         stream.operator = API.update_Returning(stream.operator, updateFunction, true);
         
-        //stream = projectTable (stream, table);
-        //if (logger.isDebugEnabled()) {
+        if (logger.isDebugEnabled()) {
             ExplainContext explain = explainUpdateStatement(stream.operator, table, Arrays.asList(updates));
             DefaultFormatter formatter = new DefaultFormatter(table.getName().getSchemaName());
-            logger.error("Update Plan for {}:\n{}", table,
+            logger.debug("Update Plan for {}:\n{}", table,
                          join(formatter.format(stream.operator.getExplainer(explain))));
-        //}
-        
+        }
         return stream.operator;
     }
 
@@ -122,29 +120,4 @@ public class UpdateGenerator extends OperatorGenerator {
         explainContext.putExtraInfo(plan, new CompoundExplainer(Type.EXTRA_INFO, atts));
         return explainContext;
     }
-    
-/*    
-  Project_Default(caoi_insert.customers.customer_id)
-    Update_Returning(caoi_insert.customers SET customer_name = $1, customer_title = $2, primary_payment_code = $3, payment_status = $4, comment = $5)
-      AncestorLookup_Default(Index(caoi_insert.customers.PRIMARY) -> caoi_insert.customers)
-        IndexScan_Default(Index(caoi_insert.customers.PRIMARY), customer_id = $6)
-*/    
-/*
- *          RowStream stream = assembleQuery (updateStatement.getInput());
-            UserTableRowType targetRowType = tableRowType(updateStatement.getTargetTable());
-            assert (stream.rowType == targetRowType);
-
-            List<UpdateColumn> updateColumns = updateStatement.getUpdateColumns();
-            List<Expression> updates = oldPartialAssembler.assembleUpdates(targetRowType, updateColumns,
-                    stream.fieldOffsets);
-            List<TPreparedExpression> updatesP = newPartialAssembler.assembleUpdates(targetRowType, updateColumns,
-                    stream.fieldOffsets);
-            UpdateFunction updateFunction = 
-                new ExpressionRowUpdateFunction(updates, updatesP, targetRowType);
-
-            stream.operator = API.update_Returning(stream.operator, updateFunction, usePValues);
-            stream.fieldOffsets = new ColumnSourceFieldOffsets (updateStatement.getTable(), targetRowType);
-    
- */
-
 }

@@ -51,11 +51,9 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.t3expressions.T3RegistryService;
-import com.akiban.server.types3.mcompat.mtypes.MBinary;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.util.AkibanAppender;
-import com.akiban.util.WrappingByteSource;
 
 public class UpsertProcessor extends DMLProcessor {
 
@@ -104,6 +102,7 @@ public class UpsertProcessor extends DMLProcessor {
                 if (arrayElement.isObject()) {
                     processRow (arrayElement, appender, context);
                     context.queryContext.clear();
+                    context.allValues.clear();
                 }
                 // else throw Bad Json Format Exception
             }
