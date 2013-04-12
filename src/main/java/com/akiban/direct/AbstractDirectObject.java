@@ -22,116 +22,355 @@ import java.math.BigInteger;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.Arrays;
 
 import com.akiban.sql.server.ServerJavaValues;
 
-public class AbstractDirectObject implements DirectObject {
+public abstract class AbstractDirectObject implements DirectObject {
 
+    private final static Object NOT_SET = new Object() {
+        @Override
+        public String toString() {
+            return "NOT_SET";
+        }
+    };
+
+    private static Column[] columns;
+
+    protected static class Column implements DirectColumn {
+
+        final int columnIndex;
+        final String columnName;
+        final String propertyName;
+        final String propertyType;
+        final int primaryKeyFieldIndex;
+        final int parentJoinFieldIndex;
+
+        protected Column(final int columnIndex, final String columnName, final String propertyName,
+                final String propertyType, final int primaryKeyFieldIndex, final int parentJoinFieldIndex) {
+            this.columnIndex = columnIndex;
+            this.columnName = columnName;
+            this.propertyName = propertyName;
+            this.propertyType = propertyType;
+            this.primaryKeyFieldIndex = primaryKeyFieldIndex;
+            this.parentJoinFieldIndex = parentJoinFieldIndex;
+        }
+
+        public int getColumnIndex() {
+            return columnIndex;
+        }
+
+        public String getColumnName() {
+            return columnName;
+        }
+
+        public String getPropertyName() {
+            return propertyName;
+        }
+
+        public String getPropertyType() {
+            return propertyType;
+        }
+    }
+
+    /**
+     * Static initializer of subclass passes a string declaring the columns.
+     * Format is columnName:propertyName:propertyType:primaryKeyFieldIndex:
+     * parentjoinField,...
+     * 
+     * @param columnSpecs
+     */
+    protected static void __init(final String columnSpecs) {
+        try {
+            String[] columnArray = columnSpecs.split(",");
+            columns = new Column[columnArray.length];
+            for (int index = 0; index < columnArray.length; index++) {
+                String[] v = columnArray[index].split(":");
+                columns[index] = new Column(index, v[0], v[1], v[2], Integer.parseInt(v[3]), Integer.parseInt(v[4]));
+            }
+        } catch (Exception e) {
+            throw new DirectException(e);
+        }
+    }
+
+    private Object[] updates;
     private ServerJavaValues values;
     private DirectResultSet rs;
 
     public void setResults(ServerJavaValues values, DirectResultSet rs) {
+        if (updates != null) {
+            throw new IllegalStateException("Updates not saved: " + updates);
+        }
         this.values = values;
         this.rs = rs;
+        updates = null;
     }
-    
-    public ServerJavaValues values() {
+
+    private ServerJavaValues values() {
         if (rs.hasRow()) {
             return values;
         }
         throw new IllegalStateException("No more rows");
     }
 
+    private Object[] updates() {
+        if (updates == null) {
+            updates = new Object[columns.length];
+            Arrays.fill(updates, NOT_SET);
+        }
+        return updates;
+    }
+
+    /**
+     * Instantiates (update) values for parent join fields. This method is
+     * invoked from {@link DirectIterableImpl#newInstance()}.
+     * 
+     * @param parent
+     */
+    void populateJoinFields(DirectObject parent) {
+        if (parent instanceof AbstractDirectObject) {
+            AbstractDirectObject ado = (AbstractDirectObject) parent;
+            if (parent != null) {
+                for (int index = 0; index < columns.length; index++) {
+                    Column c = columns[index];
+                    if (c.parentJoinFieldIndex >= 0) {
+                        updates[index] = ado.__getObject(c.parentJoinFieldIndex);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Issue either an INSERT or an UPDATE statement depending on whether this
+     * instance is bound to a result set.
+     */
     public void save() {
         // TODO
     }
 
     protected boolean __getBOOL(int p) {
-        return values().getBoolean(p);
+        if (updates == null || updates[p] == NOT_SET) {
+            return values().getBoolean(p);
+        } else {
+            return (boolean) updates[p];
+        }
+    }
+
+    protected void __setBOOL(int p, Boolean v) {
+        updates()[p] = v;
     }
 
     protected Date __getDATE(int p) {
-        return values().getDate(p);
+        if (updates == null || updates[p] == NOT_SET) {
+            return values().getDate(p);
+        } else {
+            return (Date) updates[p];
+        }
+    }
+
+    protected void __setDATE(int p, Date v) {
+        updates()[p] = v;
     }
 
     protected Date __getDATETIME(int p) {
-        return values().getDate(p);
+        if (updates == null || updates[p] == NOT_SET) {
+            return values().getDate(p);
+        } else {
+            return (Date) updates[p];
+        }
+    }
+
+    protected void __setDATETIME(int p, Date v) {
+        updates()[p] = v;
     }
 
     protected BigDecimal __getDECIMAL(int p) {
-        return values().getBigDecimal(p);
+        if (updates == null || updates[p] == NOT_SET) {
+            return values().getBigDecimal(p);
+        } else {
+            return (BigDecimal) updates[p];
+        }
+    }
+
+    protected void __setDECIMAL(int p, BigDecimal v) {
+        updates()[p] = v;
     }
 
     protected double __getDOUBLE(int p) {
-        return values().getDouble(p);
+        if (updates == null || updates[p] == NOT_SET) {
+            return values().getDouble(p);
+        } else {
+            return (double) updates[p];
+        }
+    }
+
+    protected void __setDOUBLE(int p, double v) {
+        updates()[p] = v;
     }
 
     protected float __getFLOAT(int p) {
-        return values().getFloat(p);
+        if (updates == null || updates[p] == NOT_SET) {
+            return values().getFloat(p);
+        } else {
+            return (float) updates[p];
+        }
+    }
+
+    protected void __setFLOAT(int p, float v) {
+        updates()[p] = v;
     }
 
     protected int __getINT(int p) {
-        return values().getInt(p);
+        if (updates == null || updates[p] == NOT_SET) {
+            return values().getInt(p);
+        } else {
+            return (int) updates[p];
+        }
+    }
+
+    protected void __setINT(int p, int v) {
+        updates()[p] = v;
     }
 
     protected int __getINTERVAL_MILLIS(int p) {
-        throw new UnsupportedOperationException("Don't know how to convert a INTERVAL_MILLIS from a ValueSource");
+        throw new UnsupportedOperationException("Don't know how to convert an INTERVAL_MILLIS from a ValueSource");
+    }
+
+    protected void __setINTERVAL_MILLIS(int p, int v) {
+        throw new UnsupportedOperationException("Don't know how to store an INTERVAL_MILLIS");
     }
 
     protected int __getINTERVAL_MONTH(int p) {
-        throw new UnsupportedOperationException("Don't know how to convert a INTERVAL_MONTH from a ValueSource");
+        throw new UnsupportedOperationException("Don't know how to convert an INTERVAL_MONTH from a ValueSource");
+    }
+
+    protected void __setINTERVAL_MONTH(int p, int v) {
+        throw new UnsupportedOperationException("Don't know how to store an INTERVAL_MONTH");
     }
 
     protected long __getLONG(int p) {
-        return values().getLong(p);
+        if (updates == null || updates[p] == NOT_SET) {
+            return values().getLong(p);
+        } else {
+            return (long) updates[p];
+        }
     }
 
-    protected Object __getNULL(int p) {
-        throw new UnsupportedOperationException("Don't know how to convert a NULL from a ValueSource");
-    }
-
-    protected Object __getRESULT_SET(int p) {
-        throw new UnsupportedOperationException("Don't know how to convert a RESULT_SET from a ValueSource");
+    protected void __setLONG(int p, long v) {
+        updates()[p] = v;
     }
 
     protected String __getTEXT(int p) {
-        return values().getString(p);
+        if (updates == null || updates[p] == NOT_SET) {
+            return values().getString(p);
+        } else {
+            return (String) updates[p];
+        }
+    }
+
+    protected void __setTEXT(int p, String v) {
+        updates()[p] = v;
     }
 
     protected Time __getTIME(int p) {
-        return values().getTime(p);
+        if (updates == null || updates[p] == NOT_SET) {
+            return values().getTime(p);
+        } else {
+            return (Time) updates[p];
+        }
+    }
+
+    protected void __setTIME(int p, Time v) {
+        updates()[p] = v;
     }
 
     protected Timestamp __getTIMESTAMP(int p) {
-        return values().getTimestamp(p);
+        if (updates == null || updates[p] == NOT_SET) {
+            return values().getTimestamp(p);
+        } else {
+            return (Timestamp) updates[p];
+        }
+    }
+
+    protected Object __getObject(int p) {
+        if (updates == null || updates[p] == NOT_SET) {
+            return values().getObject(p);
+        } else {
+            return updates[p];
+        }
+    }
+
+    protected void __setTIMESTAMP(int p, Timestamp v) {
+        updates()[p] = v;
     }
 
     protected long __getU_INT(int p) {
         throw new UnsupportedOperationException("Don't know how to convert a U_INT from a ValueSource");
     }
 
+    protected void __setU_INT(int p, long v) {
+        throw new UnsupportedOperationException("Don't know how to store a U_INT");
+    }
+
     protected BigInteger __getU_BIGINT(int p) {
         throw new UnsupportedOperationException("Don't know how to convert a U_BIGINT from a ValueSource");
+    }
+
+    protected void __setU_BIGINT(int p, BigInteger v) {
+        throw new UnsupportedOperationException("Don't know how to store a U_BIGINT");
     }
 
     protected BigDecimal __getU_DOUBLE(int p) {
         throw new UnsupportedOperationException("Don't know how to convert a U_DOUBLE from a ValueSource");
     }
 
+    protected void __setU_DOUBLE(int p, BigDecimal v) {
+        throw new UnsupportedOperationException("Don't know how to store a U_DOUBLE");
+    }
+
     protected double __getU_FLOAT(int p) {
         throw new UnsupportedOperationException("Don't know how to convert a U_FLOAT from a ValueSource");
     }
 
+    protected void __setU_FLOAT(int p, double v) {
+        throw new UnsupportedOperationException("Don't know how to store a U_FLOAT");
+    }
+
     protected String __getVARCHAR(int p) {
-        return values().getString(p);
+        if (updates == null || updates[p] == NOT_SET) {
+            return values().getString(p);
+        } else {
+            return (String) updates[p];
+        }
+    }
+
+    protected void __setVARCHAR(int p, String v) {
+        updates()[p] = v;
     }
 
     protected byte[] __getVARBINARY(int p) {
-        return values().getBytes(p);
+        if (updates == null || updates[p] == NOT_SET) {
+            return values().getBytes(p);
+        } else {
+            return (byte[]) updates[p];
+        }
+    }
+
+    protected void __setVARBINARY(int p, byte[] v) {
+        updates()[p] = v;
     }
 
     protected int __getYEAR(int p) {
-        return values().getInt(p);
+        if (updates == null || updates[p] == NOT_SET) {
+            return values().getInt(p);
+        } else {
+            return (int) updates[p];
+        }
+    }
+
+    protected void __setYEAR(int p, int v) {
+        updates()[p] = v;
     }
 
 }

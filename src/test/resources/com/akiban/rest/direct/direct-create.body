@@ -12,6 +12,8 @@ function customerNames(s) {
     for (customer in Iterator(extent.customers)) {
       result += "," + customer.name;
     }
+    customer.name = "Changed";
+    java.lang.System.out.println("customer.name=" + customer.name);
     return result;
 }
 
@@ -21,6 +23,6 @@ function orderNumbers(cid) {
     var customer = extent.getCustomer(cid); 
     for (order in customer.orders) {
        result += "," + order.oid;
-    }    
+    }
     return result;
 }

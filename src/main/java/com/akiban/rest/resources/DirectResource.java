@@ -18,14 +18,8 @@
 package com.akiban.rest.resources;
 
 import static com.akiban.rest.resources.ResourceHelper.JSONP_ARG_NAME;
-import static com.akiban.rest.resources.ResourceHelper.checkSchemaAccessible;
-import static com.akiban.rest.resources.ResourceHelper.checkTableAccessible;
-import static com.akiban.util.JsonUtils.createJsonGenerator;
 
-import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.List;
-import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DELETE;
@@ -42,12 +36,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import org.codehaus.jackson.JsonGenerator;
-
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Parameter;
-import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.TableName;
 import com.akiban.direct.ClassBuilder;
 import com.akiban.direct.ClassSourceWriter;
@@ -55,13 +44,9 @@ import com.akiban.direct.ClassXRefWriter;
 import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
 import com.akiban.rest.RestResponseBuilder.BodyGenerator;
-import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.NoSuchSchemaException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.types3.Attribute;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TInstance;
 
 /**
  * Easy access to the server version
@@ -74,8 +59,6 @@ public class DirectResource {
     private final static String SCHEMA_ARG_NAME = "schema";
     private final static String LANGUAGE = "language";
     private final static String FUNCTIONS = "functions";
-
-
 
     private final ResourceRequirements reqs;
 

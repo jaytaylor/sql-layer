@@ -23,9 +23,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import com.akiban.qp.row.Row;
 import com.akiban.sql.embedded.JDBCResultSet;
-import com.akiban.util.ShareHolder;
 
 /**
  * Very kludgey implementation by constructing SQL strings.
@@ -37,6 +35,7 @@ import com.akiban.util.ShareHolder;
 public class DirectIterableImpl<T> implements DirectIterable<T> {
 
     final Class<T> clazz;
+    final DirectObject parent;
     boolean hasNext;
 
     final String table;
@@ -49,9 +48,10 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
 
     JDBCResultSet resultSet;
 
-    public DirectIterableImpl(Class<T> clazz, String toTable) {
+    public DirectIterableImpl(Class<T> clazz, String toTable, DirectObject parent) {
         this.clazz = clazz;
         this.table = toTable;
+        this.parent = parent;
     }
 
     @Override
@@ -104,7 +104,7 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
 
     private boolean nextRow() {
         try {
-            
+
             boolean result = resultSet.next();
             return result;
         } catch (SQLException e) {
@@ -152,7 +152,7 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
         predicates.add(predicate);
         return this;
     }
-    
+
     @Override
     public DirectIterableImpl<T> where(final String columnName, Object literal) {
         StringBuilder sb = new StringBuilder(columnName).append(" = ");
@@ -164,7 +164,6 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
         predicates.add(sb.toString());
         return this;
     }
-    
 
     @Override
     public DirectIterableImpl<T> sort(final String column) {
@@ -185,5 +184,17 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
             return this;
         }
         throw new IllegalStateException("Limit already specified");
+    }
+
+    @Override
+    public T newInstance() throws DirectException {
+        try {
+            final T newInstance = clazz.newInstance();
+            AbstractDirectObject ado = (AbstractDirectObject)newInstance();
+            ado.populateJoinFields(parent);
+            return newInstance;
+        } catch (Exception e) {
+            throw new DirectException(e);
+        }
     }
 }

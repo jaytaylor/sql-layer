@@ -16,6 +16,7 @@
  */
 package com.akiban.direct;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -53,7 +54,7 @@ public abstract class ClassBuilder {
     public abstract void addMethod(String name, String returnType, String[] argumentTypes, String[] argumentNames,
             String[] body);
 
-    public abstract void addConstructor(String[] argumentTypes, String[] argumentNames, String[] body);
+    public abstract void addStaticInitializer(final String body);
 
     /*
      * (non-Javadoc)
@@ -89,7 +90,7 @@ public abstract class ClassBuilder {
     public static String schemaClassName(String schema) {
         return PACKAGE + "." + sanitize(INFLECTOR.classify(schema));
     }
-    
+
     public static String sanitize(final String s) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < s.length(); i++) {
@@ -242,7 +243,7 @@ public abstract class ClassBuilder {
         String className = PACKAGE + ".$$$" + asJavaName(schemaName, true) + "$$$"
                 + asJavaName(table.getName().getTableName(), true);
         startClass(className, false, "com.akiban.direct.AbstractDirectObject", new String[] { typeName }, IMPORTS);
-        addConstructor(NONE, NONE, NONE);
+        addStaticInitializer(columnMetadataString(table));
         addMethods(table, scn, typeName, className, false);
         end();
     }
@@ -250,6 +251,7 @@ public abstract class ClassBuilder {
     void startExtentClass(String schema, final String scn) throws CannotCompileException, NotFoundException {
         String className = PACKAGE + ".$$" + asJavaName(schema, true);
         startClass(className, false, "com.akiban.direct.AbstractDirectObject", new String[] { scn }, IMPORTS);
+        addStaticInitializer(null);
     }
 
     void addExtentAccessor(UserTable table, String scn, boolean iface) {
@@ -300,8 +302,10 @@ public abstract class ClassBuilder {
             Class<?> javaClass = javaClass(column);
             String[] getBody = new String[] { "return __get" + column.getType().akType() + "(" + column.getPosition()
                     + ")" };
-            String expr = addProperty(column.getName(), javaClass.getName(), asJavaName(column.getName(), false),
-                    iface ? null : getBody, iface ? null : UNSUPPORTED, true);
+            final String paramName = asJavaName(column.getName(), false);
+            String[] setBody = new String[] { "__set" + column.getType().akType() + "(" + column.getPosition() + ",$1)" };
+            String expr = addProperty(column.getName(), javaClass.getName(), paramName, iface ? null : getBody,
+                    iface ? null : setBody, true);
             getterMethods.put(column.getName(), expr);
         }
 
@@ -386,6 +390,53 @@ public abstract class ClassBuilder {
          */
         addMethod("copy", typeName, NONE, null, iface ? null : UNSUPPORTED);
     }
+    
+    /**
+     * Generate a Java command that will be executed as a static initializer and will
+     * give the base class metadata about the columns.
+     */
+    private String columnMetadataString(final UserTable table) {
+        String[] columnArray = new String[table == null ? 0 : table.getColumns().size()];
+        if (table != null) {
+            List<Column> pkColumns = table.getPrimaryKey().getColumns();
+            @SuppressWarnings("unchecked")
+            List<JoinColumn> joinColumns = table.getParentJoin() == null ? Collections.EMPTY_LIST : table.getParentJoin().getJoinColumns();
+            for (Column column : table.getColumns()) {
+                int index = column.getPosition();
+                String columnName = column.getName();
+                String propertyName = asJavaName(columnName, false);
+                String type = javaClass(column).getSimpleName();
+                int pkFieldIndex = -1;
+                int pjFieldIndex = -1;
+                for (int pkindex = 0; pkindex < pkColumns.size(); pkindex++) {
+                    if (pkColumns.get(pkindex) == column) {
+                        pkFieldIndex = pkindex;
+                        break;
+                    }
+                }
+                for (JoinColumn jc : joinColumns) {
+                    if (jc.getChild() == column) {
+                        pjFieldIndex = jc.getParent().getPosition();
+                        break;
+                    }
+                }
+                columnArray[index] = String.format("%s:%s:%s:%d:%d", columnName, propertyName, type, pkFieldIndex,
+                        pjFieldIndex);
+            }
+        }
+        StringBuilder sb = new StringBuilder("__init(\"");
+        for (int index = 0; index < columnArray.length; index++) {
+            assert columnArray[index] != null : "Missing column specification: " + index;
+            if (index > 0) {
+                sb.append(',');
+            }
+            sb.append(columnArray[index]);
+        }
+        sb.append("\")");
+        return sb.toString();
+    }
+
+
 
     private Class<?> javaClass(final Column column) {
         AkType type = column.getType().akType();
@@ -440,7 +491,8 @@ public abstract class ClassBuilder {
     }
 
     private String buildDirectIterableExpr(final String className, final String table) {
-        return String.format("(new com.akiban.direct.DirectIterableImpl" + "(%1$s.class, \"%2$s\"))", className, table);
+        return String.format("(new com.akiban.direct.DirectIterableImpl" + "(%1$s.class, \"%2$s\", this))", className,
+                table);
     }
 
     /**

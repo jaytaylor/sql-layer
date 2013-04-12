@@ -87,28 +87,13 @@ public class ClassObjectWriter extends ClassBuilder {
     }
 
     @Override
-    public void addConstructor(String[] argumentTypes, String[] argumentNames, String[] body) {
+    public void addStaticInitializer(final String body) {
         try {
             if (currentCtClass.isInterface()) {
                 return;
             }
-            CtClass[] parameters = new CtClass[argumentTypes.length];
-            for (int i = 0; i < argumentTypes.length; i++) {
-                parameters[i] = getCtClass(simpleName(argumentTypes[i]));
-            }
-            CtConstructor method = new CtConstructor(parameters, currentCtClass);
-            if (body != null) {
-                StringBuilder sb = new StringBuilder("{");
-                for (final String s : body) {
-                    sb.append(s);
-                    sb.append(";");
-                    sb.append('\n');
-                }
-                sb.append("}");
-                method.setBody(sb.toString());
-                method.setModifiers(method.getModifiers() & ~Modifier.ABSTRACT);
-            }
-            currentCtClass.addConstructor(method);
+            CtConstructor initializer = currentCtClass.makeClassInitializer();
+            initializer.setBody(body + ";");
         } catch (CannotCompileException e) {
             e.printStackTrace();
         }
