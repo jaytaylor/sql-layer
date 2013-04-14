@@ -180,7 +180,7 @@ public enum ErrorCode {
     INVALID_ARGUMENT_TYPE   ("22", "503", Importance.DEBUG, InvalidArgumentTypeException.class),
     ZERO_DATE_TIME          ("22", "504", Importance.DEBUG, ZeroDateTimeException.class),
     EXTERNAL_ROW_READER_EXCEPTION ("22", "505", Importance.DEBUG, ExternalRowReaderException.class),
-    SECURITY                ("22", "506", Importance.DEBUG, SecurityException.class),
+    SECURITY                ("22", "506", Importance.ERROR, SecurityException.class),
 
     // Class 23 - integrity constraint violation
     DUPLICATE_KEY           ("23", "501", Importance.DEBUG, DuplicateKeyException.class),
