@@ -19,7 +19,9 @@ package com.akiban.sql.aisddl;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.server.api.DDLFunctions;
+import com.akiban.server.error.DropSequenceNotAllowedException;
 import com.akiban.server.error.NoSuchSequenceException;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.CreateSequenceNode;
@@ -69,6 +71,11 @@ public class SequenceDDL {
             } 
             throw new NoSuchSequenceException (sequenceName);
         } else {
+            for (UserTable table : ddlFunctions.getAIS(session).getUserTables().values()) {
+                if (table.getIdentityColumn() != null && table.getIdentityColumn().getIdentityGenerator().equals(sequence)) {
+                    throw new DropSequenceNotAllowedException(sequence.getSequenceName().getTableName(), table.getName());
+                }
+            }
             ddlFunctions.dropSequence(session, sequenceName);
         }
     }
