@@ -72,7 +72,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         this.store = store;
         this.transactionService = transactionService;
         this.treeService = treeService;
-        store.setFullTextService(this);
     }
 
     /* FullTextIndexService */

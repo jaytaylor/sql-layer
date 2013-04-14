@@ -42,7 +42,6 @@ import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.text.FullTextIndexService;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.service.tree.TreeService;
@@ -114,8 +113,6 @@ public class PersistitStore implements Store, Service {
 
     private final ConfigurationService config;
 
-    private FullTextIndexService ftService;
-    
     private final TreeService treeService;
 
     private final SchemaManager schemaManager;
@@ -375,10 +372,6 @@ public class PersistitStore implements Store, Service {
     }
 
     // --------------------- Implement Store interface --------------------
-    public void setFullTextService(FullTextIndexService fts)
-    {
-        ftService = fts;
-    }
 
     public AkibanInformationSchema getAIS(Session session) {
         Bulkload bulkload = activeBulkload.get();
@@ -1565,7 +1558,6 @@ public class PersistitStore implements Store, Service {
             // no trees to drop
             if (index.getIndexType() == IndexType.FULL_TEXT)
             {
-                ftService.dropIndex(session, index.getIndexName());
                 indexes.remove(index);
                 continue;
             }

@@ -17,7 +17,6 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.server.service.text.FullTextIndexService;
 import com.akiban.ais.model.*;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
@@ -268,12 +267,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         this.schemaManager = schemaManager;
     }
 
-    @Override
-    public void setFullTextService(FullTextIndexService ftService)
-    {
-        getPersistitStore().setFullTextService(ftService);
-    }
-    
     @Override
     public PersistitStore getPersistitStore() {
         return super.getDelegate();
