@@ -686,7 +686,7 @@ public final class SchemaManagerIT extends ITBase {
         transactionallyUnchecked(new Runnable() {
             @Override
             public void run() {
-                schemaManager.createRoutine(session(), userR);
+                schemaManager.createRoutine(session(), userR, false);
             }
         });
 

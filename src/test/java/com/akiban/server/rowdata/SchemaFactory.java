@@ -31,6 +31,7 @@ import com.akiban.server.MemoryOnlyTableStatusCache;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.ddl.DDLFunctionsMockBase;
 import com.akiban.server.error.PersistitAdapterException;
+import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.routines.MockRoutineLoader;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.StandardException;
@@ -76,7 +77,12 @@ public class SchemaFactory {
     }
 
     public AkibanInformationSchema ais(String... ddl) {
-        return ais(new AkibanInformationSchema(), ddl);
+        return ais((ServiceManager)null, ddl);
+    }
+    
+    public AkibanInformationSchema ais(ServiceManager sm, String... ddl)
+    {
+        return ais(sm, new AkibanInformationSchema(), ddl);
     }
     
     public static AkibanInformationSchema loadAIS(File fromFile, String defaultSchema) {
@@ -89,11 +95,20 @@ public class SchemaFactory {
         }
     }
     
+    public AkibanInformationSchema ais(ServiceManager sm, AkibanInformationSchema baseAIS, String... ddl)
+    {
+        return ais(sm, new CreateOnlyDDLMock(baseAIS), null, ddl);
+    }
     public AkibanInformationSchema ais(AkibanInformationSchema baseAIS, String... ddl) {
         return ais(new CreateOnlyDDLMock(baseAIS), null, ddl);
     }
 
-    public AkibanInformationSchema ais(DDLFunctions ddlFunctions, Session session, String... ddl) {
+    public AkibanInformationSchema ais(DDLFunctions ddlFunctions, Session session, String... ddl)
+    {
+        return ais(null, ddlFunctions, session, ddl);
+    }
+    
+    public AkibanInformationSchema ais(ServiceManager sm, DDLFunctions ddlFunctions, Session session, String... ddl) {
         StringBuilder buffer = new StringBuilder();
         for (String line : ddl) {
             buffer.append(line);
@@ -110,7 +125,7 @@ public class SchemaFactory {
             if (stmt instanceof CreateTableNode) {
                 TableDDL.createTable(ddlFunctions , session , defaultSchema, (CreateTableNode) stmt, null);
             } else if (stmt instanceof CreateIndexNode) {
-                IndexDDL.createIndex(ddlFunctions, session, defaultSchema, (CreateIndexNode) stmt);
+                IndexDDL.createIndex(ddlFunctions, session, defaultSchema, (CreateIndexNode) stmt, sm);
             } else if (stmt instanceof CreateViewNode) {
                 ViewDDL.createView(ddlFunctions, session, defaultSchema, (CreateViewNode) stmt,
                                    new AISBinderContext(ddlFunctions.getAIS(session), defaultSchema), null);
@@ -192,11 +207,12 @@ public class SchemaFactory {
         
         @Override
         public void createSequence(Session session, Sequence sequence) {
-            ais = AISMerge.mergeSequence(ais, sequence);
+            AISMerge merge = AISMerge.newForOther(new DefaultNameGenerator(ais), ais);
+            ais = merge.mergeSequence(sequence);
         }
 
         @Override
-        public void createRoutine(Session session, Routine routine) {
+        public void createRoutine(Session session, Routine routine, boolean replaceExisting) {
             ais = AISMerge.mergeRoutine(ais, routine);
         }
     }

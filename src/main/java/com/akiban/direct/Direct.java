@@ -19,6 +19,10 @@ package com.akiban.direct;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.CacheValueGenerator;
+import com.akiban.sql.embedded.JDBCConnection;
+
 /**
  * TODO - Total hack that this is static - need to a way to get this into the
  * context for JDBCResultSet.
@@ -27,6 +31,8 @@ import java.util.Map;
  * 
  */
 public class Direct {
+
+    private static final Object CACHE_KEY = new Object();
 
     private final static Map<Class<?>, Class<? extends AbstractDirectObject>> classMap = new HashMap<>();
     private final static ThreadLocal<Map<Class<?>, AbstractDirectObject>> instanceMap = new ThreadLocal<Map<Class<?>, AbstractDirectObject>>() {
@@ -73,7 +79,17 @@ public class Direct {
         return o;
     }
     
-    public static void enter(DirectContextImpl dc) {
+    public static void enter(final String schemaName, AkibanInformationSchema ais) {
+        DirectClassLoader dcl = ais.getCachedValue(CACHE_KEY, new CacheValueGenerator<DirectClassLoader>() {
+
+            @Override
+            public DirectClassLoader valueFor(AkibanInformationSchema ais) {
+                return new DirectClassLoader(getClass().getClassLoader(), schemaName, ais);
+            }
+            
+        });
+        
+        final DirectContextImpl dc = new DirectContextImpl(schemaName, dcl);
         contextThreadLocal.set(dc);
         dc.enter();
     }

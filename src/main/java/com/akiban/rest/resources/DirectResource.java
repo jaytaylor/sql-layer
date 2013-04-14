@@ -24,30 +24,25 @@ import static com.akiban.util.JsonUtils.createJsonGenerator;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Parameter;
-import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.TableName;
 import com.akiban.direct.ClassBuilder;
 import com.akiban.direct.ClassSourceWriter;
@@ -55,14 +50,9 @@ import com.akiban.direct.ClassXRefWriter;
 import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
 import com.akiban.rest.RestResponseBuilder.BodyGenerator;
-import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.NoSuchSchemaException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.types3.Attribute;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TInstance;
-import org.codehaus.jackson.JsonGenerator;
 
 /**
  * Easy access to the server version
@@ -74,12 +64,9 @@ public class DirectResource {
     private final static String MODULE_ARG_NAME = "module";
     private final static String SCHEMA_ARG_NAME = "schema";
     private final static String LANGUAGE = "language";
-    private final static String PACKAGE = "com.akiban.direct.entity";
+    private final static String FUNCTIONS = "functions";
 
-    private final static String CREATE_PROCEDURE_FORMAT = "CREATE PROCEDURE %s (IN json_in VARCHAR(65535), OUT json_out VARCHAR(65535))"
-            + " LANGUAGE %s PARAMETER STYLE json AS $$%s$$";
 
-    private final static String DROP_PROCEDURE_FORMAT = "DROP PROCEDURE %s";
 
     private final ResourceRequirements reqs;
 
@@ -113,7 +100,7 @@ public class DirectResource {
                 if (ais.getSchema(schemaName) == null) {
                     throw new NoSuchSchemaException(schemaName);
                 }
-                ClassBuilder helper = new ClassSourceWriter(writer, PACKAGE, false);
+                ClassBuilder helper = new ClassSourceWriter(writer, false);
                 helper.writeGeneratedInterfaces(ais, tableName);
                 helper.close();
             }
@@ -136,7 +123,7 @@ public class DirectResource {
                 if (ais.getSchema(schemaName) == null) {
                     throw new NoSuchSchemaException(schemaName);
                 }
-                ClassBuilder helper = new ClassSourceWriter(writer, PACKAGE, false);
+                ClassBuilder helper = new ClassSourceWriter(writer, false);
                 helper.writeGeneratedClass(ais, tableName);
                 helper.close();
             }
@@ -153,11 +140,12 @@ public class DirectResource {
      * </pre></code This information can be used in an editor to support
      * context-specific code-completion. Note that:
      * <ul>
-     * <li>a methodName with parentheses also includes formal parameter names (which may be convenient for code-completion</li>
+     * <li>a methodName with parentheses also includes formal parameter names
+     * (which may be convenient for code-completion</li>
      * <li>a methodName without parentheses is actually a property name</li>
      * <li>returnType is either a className or is the empty string.</li>
      * </ul>
-     * For example, ["getItem( 
+     * For example, ["getItem(
      * 
      * @param request
      * @param table
@@ -181,7 +169,7 @@ public class DirectResource {
                 if (ais.getSchema(schemaName) == null) {
                     throw new NoSuchSchemaException(schemaName);
                 }
-                ClassBuilder helper = new ClassXRefWriter(writer, PACKAGE);
+                ClassBuilder helper = new ClassXRefWriter(writer);
                 helper.writeGeneratedXrefs(ais, tableName);
                 helper.close();
             }
@@ -190,133 +178,119 @@ public class DirectResource {
 
     @PUT
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("/procedure")
+    @Path("/library")
     public Response createProcedure(@Context final HttpServletRequest request,
             @QueryParam(MODULE_ARG_NAME) @DefaultValue("DefaultModule") final String module,
             @QueryParam(LANGUAGE) @DefaultValue("Javascript") final String language,
-            @QueryParam(JSONP_ARG_NAME) final String jsonp, final byte[] payload) {
+            @QueryParam(JSONP_ARG_NAME) final String jsonp, final String definition) {
         return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
             @Override
             public void write(PrintWriter writer) throws Exception {
-                final TableName procName = ResourceHelper.parseTableName(request, module);
-                final String sql = String.format(CREATE_PROCEDURE_FORMAT, procName, language, new String(payload));
-                reqs.restDMLService.runSQL(writer, request, sql, procName.getSchemaName());
+                reqs.directService.installLibrary(writer, request, module, definition, language);
             }
         }).build();
     }
 
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("/procedure")
+    @Path("/library")
     public Response deleteProcedure(@Context final HttpServletRequest request,
             @QueryParam(MODULE_ARG_NAME) @DefaultValue("DefaultModule") final String module,
             @QueryParam(JSONP_ARG_NAME) final String jsonp) {
         return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
             @Override
             public void write(PrintWriter writer) throws Exception {
-                final TableName procName = ResourceHelper.parseTableName(request, module);
-                final String sql = String.format(DROP_PROCEDURE_FORMAT, procName);
-                reqs.restDMLService.runSQL(writer, request, sql, procName.getSchemaName());
+                reqs.directService.removeLibrary(writer, request, module);
             }
         }).build();
-
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("/procedure/")
+    @Path("/procedure")
     public Response getProcedures(@Context final HttpServletRequest request,
             @QueryParam(SCHEMA_ARG_NAME) @DefaultValue("") final String schema,
-            @QueryParam(MODULE_ARG_NAME) @DefaultValue("") final String procName) {
-        final String schemaResolved = schema.isEmpty() ? ResourceHelper.getSchema(request) : schema;
-        if (procName.isEmpty())
-            checkSchemaAccessible(reqs.securityService, request, schemaResolved);
-        else
-            checkTableAccessible(reqs.securityService, request, new TableName(schemaResolved, procName));
+            @QueryParam(MODULE_ARG_NAME) @DefaultValue("") final String procName,
+            @QueryParam(FUNCTIONS) @DefaultValue("false") final boolean functionsOnly) {
         return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
             @Override
             public void write(PrintWriter writer) throws Exception {
-                try (Session session
-                             = reqs.sessionService.createSession();
-                     TransactionService.CloseableTransaction txn
-                             = reqs.transactionService.beginCloseableTransaction(session)) {
-                    JsonGenerator json = createJsonGenerator(writer);
-                    AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(session);
-
-                    if (procName.isEmpty()) {
-                        // Get all routines in the schema.
-                        json.writeStartObject(); {
-                            Schema schemaAIS = ais.getSchema(schemaResolved);
-                            if (schemaAIS != null) {
-                                for (Map.Entry<String, Routine> routineEntry : schemaAIS.getRoutines().entrySet()) {
-                                    json.writeFieldName(routineEntry.getKey());
-                                    writeProc(routineEntry.getValue(), json);
-                                }
-                            }
-                        } json.writeEndObject();
-                    }
-                    else {
-                        // Get just the one routine.
-                        Routine routine = ais.getRoutine(schemaResolved, procName);
-                        if (routine == null)
-                            throw new NoSuchRoutineException(schemaResolved, procName);
-                        writeProc(routine, json);
-                    }
-                    json.flush();
+                try (Session session = reqs.sessionService.createSession();
+                        TransactionService.CloseableTransaction txn = reqs.transactionService
+                                .beginCloseableTransaction(session)) {
+                    reqs.directService.reportStoredProcedures(writer, request, schema, procName, session, functionsOnly);
                     txn.commit();
                 }
             }
         }).build();
     }
 
-    private void writeProc(Routine routine, JsonGenerator json) throws IOException {
-        json.writeStartObject(); {
-            json.writeStringField("language", routine.getLanguage());
-            json.writeStringField("calling_convention", routine.getCallingConvention().name());
-            json.writeNumberField("max_dynamic_result_sets", routine.getDynamicResultSets());
-            json.writeStringField("definition", routine.getDefinition());
-            writeProcParams("parameters_in", routine.getParameters(), Parameter.Direction.IN, json);
-            writeProcParams("parameters_out", routine.getParameters(), Parameter.Direction.OUT, json);
-        } json.writeEndObject();
+    @GET
+    @Path("/call/{proc}{params:(/.*)?}")
+    public Response callGet(@Context final HttpServletRequest request, @PathParam("proc") final String proc,
+            @PathParam("params") final String pathParams, @Context final UriInfo uri) {
+        final TableName procName = ResourceHelper.parseTableName(request, proc);
+        ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
+        final MediaType[] responseType = new MediaType[1];
+
+        return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
+            @Override
+            public void write(PrintWriter writer) throws Exception {
+                reqs.directService.invokeRestEndpoint(writer, request, "GET", procName, pathParams,
+                        uri.getQueryParameters(), null, responseType);
+            }
+        }).build(responseType[0]);
     }
 
-    private void writeProcParams(String label, List<Parameter> parameters, Parameter.Direction direction,
-                                 JsonGenerator json) throws IOException
-    {
-        json.writeArrayFieldStart(label); {
-            for (int i = 0; i < parameters.size(); i++) {
-                Parameter param = parameters.get(i);
-                Parameter.Direction paramDir = param.getDirection();
-                final boolean isInteresting;
-                switch (paramDir) {
-                case RETURN:
-                    paramDir = Parameter.Direction.OUT;
-                case IN:
-                case OUT:
-                    isInteresting = (paramDir == direction);
-                    break;
-                case INOUT:
-                    isInteresting = true;
-                    break;
-                default:
-                    throw new IllegalStateException("don't know how to handle parameter " + param);
-                }
-                if (isInteresting) {
-                    json.writeStartObject(); {
-                        json.writeStringField("name", param.getName());
-                        json.writeNumberField("position", i);
-                        TInstance tInstance = param.tInstance();
-                        TClass tClass = param.tInstance().typeClass();
-                        json.writeStringField("type", tClass.name().unqualifiedName());
-                        json.writeObjectFieldStart("type_options"); {
-                            for (Attribute attr : tClass.attributes())
-                                json.writeObjectField(attr.name().toLowerCase(), tInstance.attributeToObject(attr));
-                        } json.writeEndObject();
-                        json.writeBooleanField("is_inout", paramDir == Parameter.Direction.INOUT);
-                        json.writeBooleanField("is_result", param.getDirection() == Parameter.Direction.RETURN);
-                    } json.writeEndObject();
-                }
+    @POST
+    @Path("/call/{proc}{params:(/.*)?}")
+    public Response callPost(@Context final HttpServletRequest request, @PathParam("proc") final String proc,
+            @PathParam("params") final String pathParams, @Context final UriInfo uri, final byte[] content) {
+        final TableName procName = ResourceHelper.parseTableName(request, proc);
+        ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
+        final MediaType[] responseType = new MediaType[1];
+
+        return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
+            @Override
+            public void write(PrintWriter writer) throws Exception {
+                reqs.directService.invokeRestEndpoint(writer, request, "POST", procName, pathParams,
+                        uri.getQueryParameters(), content, responseType);
             }
-        } json.writeEndArray();
+        }).build(responseType[0]);
     }
+
+    @PUT
+    @Path("/call/{proc}{params:(/.*)?}")
+    public Response callPut(@Context final HttpServletRequest request, @PathParam("proc") final String proc,
+            @PathParam("params") final String pathParams, @Context final UriInfo uri, final byte[] content) {
+        final TableName procName = ResourceHelper.parseTableName(request, proc);
+        ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
+        final MediaType[] responseType = new MediaType[1];
+
+        return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
+            @Override
+            public void write(PrintWriter writer) throws Exception {
+                reqs.directService.invokeRestEndpoint(writer, request, "PUT", procName, pathParams,
+                        uri.getQueryParameters(), content, responseType);
+            }
+        }).build(responseType[0]);
+    }
+
+    @DELETE
+    @Path("/call/{proc}{params:(/.*)?}")
+    public Response callDelete(@Context final HttpServletRequest request, @PathParam("proc") final String proc,
+            @PathParam("params") final String pathParams, @Context final UriInfo uri, final byte[] content) {
+        final TableName procName = ResourceHelper.parseTableName(request, proc);
+        ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
+        final MediaType[] responseType = new MediaType[1];
+
+        return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
+            @Override
+            public void write(PrintWriter writer) throws Exception {
+                reqs.directService.invokeRestEndpoint(writer, request, "DELETE", procName, pathParams,
+                        uri.getQueryParameters(), content, responseType);
+            }
+        }).build(responseType[0]);
+    }
+
 }

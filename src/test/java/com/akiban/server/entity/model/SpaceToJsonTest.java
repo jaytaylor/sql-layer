@@ -23,7 +23,7 @@ import com.akiban.util.JUnitUtils;
 import com.akiban.util.Strings;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
-import org.codehaus.jackson.JsonNode;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 

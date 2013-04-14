@@ -35,7 +35,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import org.codehaus.jackson.JsonNode;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -78,11 +78,11 @@ public class SecurityResource {
         if ((rolesNode == null) || !rolesNode.isArray()) {
             return badRequest(response, "roles array required");
         }
-        final String user = userNode.getValueAsText();
-        final String password = passwordNode.getValueAsText();
+        final String user = userNode.asText();
+        final String password = passwordNode.asText();
         final List<String> roles = new ArrayList<>();
         for (JsonNode elem : rolesNode) {
-            roles.add(elem.getValueAsText());
+            roles.add(elem.asText());
         }
         response.body(new RestResponseBuilder.BodyGenerator() {
             @Override

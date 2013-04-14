@@ -24,7 +24,7 @@ import com.akiban.server.entity.model.diff.JsonDiffPreview;
 import com.akiban.util.JUnitUtils;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
-import org.codehaus.jackson.JsonNode;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -93,8 +93,7 @@ public final class SpaceDiffTest {
         Space updated = Space.readSpace(testName + UPDATE_SUFFIX, SpaceDiffTest.class, uuidGenerator);
         JsonNode expected = readTree(new File(dir, testName + EXPECTED_SUFFIX));
         StringWriter writer = new StringWriter();
-        JsonDiffPreview diff = new JsonDiffPreview(writer);
-        new SpaceDiff(orig, updated).apply(diff);
+        JsonDiffPreview diff = SpaceDiff.apply(orig, updated, new JsonDiffPreview(writer));
         diff.finish();
         JsonNode actual = readTree(new StringReader(writer.toString()));
         assertEquals("changes", expected, actual);

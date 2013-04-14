@@ -393,9 +393,9 @@ public class TableChangeValidator {
         primaryKeyChanged = containsOldOrNew(indexChanges, Index.PRIMARY_KEY_CONSTRAINT);
 
         List<TableName> droppedSequences = new ArrayList<>();
+        List<String> addedIdentity = new ArrayList<>();
         Map<String,String> renamedColumns = new HashMap<>();
         for(TableChange change : columnChanges) {
-            Sequence seqToDrop = null;
             switch(change.getChangeType()) {
                 case MODIFY: {
                     if(!change.getOldName().equals(change.getNewName())) {
@@ -403,19 +403,23 @@ public class TableChangeValidator {
                     }
                     Column oldColumn = oldTable.getColumn(change.getOldName());
                     Column newColumn = newTable.getColumn(change.getNewName());
-                    if((oldColumn != null) && (oldColumn.getIdentityGenerator() != null) && (newColumn.getIdentityGenerator() == null)) {
-                        seqToDrop = oldColumn.getIdentityGenerator();
+                    if((oldColumn != null)) {
+                        Sequence oldSeq = oldColumn.getIdentityGenerator();
+                        Sequence newSeq = newColumn.getIdentityGenerator();
+                        if((oldSeq == null) && (newSeq != null)) {
+                            addedIdentity.add(newColumn.getName());
+                        } else if((oldSeq != null) && (newSeq == null)) {
+                            droppedSequences.add(oldSeq.getSequenceName());
+                        }
+                        // else both not null and not equal, not yet supported
                     }
                 } break;
                 case DROP: {
                     Column oldColumn = oldTable.getColumn(change.getOldName());
-                    if(oldColumn != null) {
-                        seqToDrop = oldColumn.getIdentityGenerator();
+                    if((oldColumn != null) && (oldColumn.getIdentityGenerator() != null)) {
+                        droppedSequences.add(oldColumn.getIdentityGenerator().getSequenceName());
                     }
                 } break;
-            }
-            if(seqToDrop != null) {
-                droppedSequences.add(seqToDrop.getSequenceName());
             }
         }
 
@@ -425,7 +429,7 @@ public class TableChangeValidator {
         TableName parentName = (newTable.getParentJoin() != null) ? newTable.getParentJoin().getParent().getName() : null;
         changedTables.add(new ChangedTableDescription(oldTable.getName(), newTable, renamedColumns,
                                                       parentChange, parentName, EMPTY_STRING_MAP, preserveIndexes,
-                                                      droppedSequences));
+                                                      droppedSequences, addedIdentity));
 
         if(!isParentChanged() && !primaryKeyChanged) {
             for(Index index : newTable.getIndexesIncludingInternal()) {
@@ -507,7 +511,7 @@ public class TableChangeValidator {
         parentRenames = (parentRenames != null) ? parentRenames : EMPTY_STRING_MAP;
         changedTables.add(new ChangedTableDescription(table.getName(), null, EMPTY_STRING_MAP,
                                                       parentChange, parentName, parentRenames, preserved,
-                                                      EMPTY_TABLE_NAME_LIST));
+                                                      EMPTY_TABLE_NAME_LIST, Collections.<String>emptyList()));
     }
 
     private static boolean containsOldOrNew(List<TableChange> changes, String name) {
@@ -563,6 +567,7 @@ public class TableChangeValidator {
         if((oldNull != newNull) ||
            !oldCol.getName().equals(newCol.getName()) ||
            !Objects.equal(oldCol.getDefaultValue(), newCol.getDefaultValue()) ||
+           !Objects.equal(oldCol.getDefaultIdentity(), newCol.getDefaultIdentity()) ||
            sequenceChanged(oldCol.getIdentityGenerator(), newCol.getIdentityGenerator())) {
           return ChangeLevel.METADATA;
         }

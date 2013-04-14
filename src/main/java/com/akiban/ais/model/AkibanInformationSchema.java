@@ -642,7 +642,7 @@ public class AkibanInformationSchema implements Traversable
         invalidateTableIdMap();
     }
     
-    void removeSequence (TableName name) {
+    public void removeSequence (TableName name) {
         sequences.remove(name);
         Schema schema = getSchema(name.getSchemaName());
         if (schema != null) {

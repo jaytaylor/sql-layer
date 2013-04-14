@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
@@ -752,7 +753,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         for (Sequence sequence : schema.getSequences().values()) {
             // Drop the sequences in this schema, but not the 
             // generator sequences, which will be dropped with the table. 
-            if (!(sequence.getSequenceName().getTableName().startsWith("_sequence-"))) {
+            if (!(sequence.getSequenceName().getTableName().startsWith(DefaultNameGenerator.IDENTITY_SEQUENCE_PREFIX))) {
                 sequencesToDrop.add(sequence);
             }
         }
@@ -1162,8 +1163,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 else {
                     final Exchange ex = pStore.getExchange(session, index);
                     try {
-                        AccumulatorAdapter accum =
-                                new AccumulatorAdapter(AccumInfo.ROW_COUNT, treeService(), ex.getTree());
+                        AccumulatorAdapter accum = new AccumulatorAdapter(AccumInfo.ROW_COUNT, ex.getTree());
                         accum.set(actual);
                     }
                     finally {
@@ -1192,9 +1192,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public void createRoutine(Session session, Routine routine)
+    public void createRoutine(Session session, Routine routine, boolean replaceExisting)
     {
-        schemaManager().createRoutine(session, routine);
+        schemaManager().createRoutine(session, routine, replaceExisting);
     }
 
     @Override

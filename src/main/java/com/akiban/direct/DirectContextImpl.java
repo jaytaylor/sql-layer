@@ -33,17 +33,23 @@ public class DirectContextImpl implements DirectContext {
         private Connection connection;
         private ClassLoader contextClassLoader;
         private DirectObject extent;
+        private boolean connectionOpened;
 
         private Connection getConnection() {
             if (connection == null) {
                 try {
                     connection = DriverManager.getConnection(CONNECTION_URL, space, "");
+                    connectionOpened = true;
                 } catch (SQLException e) {
                     e.printStackTrace();
                     throw new RuntimeException(e);
                 }
             }
             return connection;
+        }
+        
+        private void setConnection(final JDBCConnection connection) {
+            this.connection = connection;
         }
 
         private DirectObject getExtent() {
@@ -70,8 +76,11 @@ public class DirectContextImpl implements DirectContext {
             try {
                 if (connection != null) {
                     try {
-                        connection.close();
+                        if (connectionOpened) {
+                            connection.close();
+                        }
                         connection = null;
+                        connectionOpened = false;
                     } catch (SQLException e) {
                         throw new RuntimeException(e);
                     }
@@ -100,6 +109,10 @@ public class DirectContextImpl implements DirectContext {
     @Override
     public Connection getConnection() {
         return connectionThreadLocal.get().getConnection();
+    }
+    
+    public void setConnection(JDBCConnection connection) {
+        connectionThreadLocal.get().setConnection(connection);
     }
 
     @Override

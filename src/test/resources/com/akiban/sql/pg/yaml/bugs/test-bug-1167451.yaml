@@ -10,5 +10,5 @@
 - output: [[1]]
 ---
 - Statement: drop sequence `test`.`_sequence-122892222` restrict
-- error: [50027]
+- error: [50029]
 ...

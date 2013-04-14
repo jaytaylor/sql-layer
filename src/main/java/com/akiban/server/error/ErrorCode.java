@@ -180,7 +180,7 @@ public enum ErrorCode {
     INVALID_ARGUMENT_TYPE   ("22", "503", Importance.DEBUG, InvalidArgumentTypeException.class),
     ZERO_DATE_TIME          ("22", "504", Importance.DEBUG, ZeroDateTimeException.class),
     EXTERNAL_ROW_READER_EXCEPTION ("22", "505", Importance.DEBUG, ExternalRowReaderException.class),
-    SECURITY                ("22", "506", Importance.DEBUG, SecurityException.class),
+    SECURITY                ("22", "506", Importance.ERROR, SecurityException.class),
 
     // Class 23 - integrity constraint violation
     DUPLICATE_KEY           ("23", "501", Importance.DEBUG, DuplicateKeyException.class),
@@ -280,6 +280,10 @@ public enum ErrorCode {
 
     // Class 42/700 - full text errors
     FULL_TEXT_QUERY_PARSE   ("42", "700", Importance.DEBUG, FullTextQueryParseException.class),
+    
+    // Class 42/800 - Akiba Direct errors
+    CANT_CALL_SCRIPT_LIBRARY ("42", "800", Importance.DEBUG, CantCallScriptLibraryException.class),
+    SCRIPT_REGISTRATION_EXCEPTION ("42", "801", Importance.DEBUG, ScriptLibraryRegistrationException.class),
         
     // Class 44 - with check option violation
 
@@ -369,7 +373,9 @@ public enum ErrorCode {
     INVALID_ROUTINE         ("50", "024", Importance.DEBUG, InvalidRoutineException.class),
     INVALID_INDEX_ID        ("50", "025", Importance.DEBUG, InvalidIndexIDException.class),
     MODEL_BUILDER_ERROR     ("50", "026", Importance.DEBUG, ModelBuilderException.class),
-    DROP_SEQUENCE_NOT_ALLOWED ("50", "027", Importance.DEBUG, DropSequenceNotAllowedException.class),
+    COLUMN_NOT_GENERATED    ("50", "027", Importance.DEBUG, ColumnNotGeneratedException.class),
+    COLUMN_ALREADY_GENERATED ("50", "028", Importance.DEBUG, ColumnAlreadyGeneratedException.class),
+    DROP_SEQUENCE_NOT_ALLOWED ("50", "029", Importance.DEBUG, DropSequenceNotAllowedException.class),
 
     // Class 51 - Internal problems created by user configuration
     STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),

@@ -20,6 +20,7 @@ package com.akiban.server.types3.common.funcs;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.mcompat.mtypes.MString;
@@ -60,7 +61,7 @@ public final class DescribeExpression extends TScalarBase {
     }
 
     @Override
-    protected Constantness constness(int inputIndex, LazyList<? extends TPreptimeValue> values) {
+    protected Constantness constness(TPreptimeContext context, int inputIndex, LazyList<? extends TPreptimeValue> values) {
         return Constantness.CONST;
     }
 

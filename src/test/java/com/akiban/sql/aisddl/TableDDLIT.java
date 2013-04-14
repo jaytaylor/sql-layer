@@ -106,7 +106,7 @@ public class TableDDLIT extends AISDDLITBase {
         assertNotNull(table);
         assertEquals(table.getColumn(0).getType(), Types.INT);
         assertEquals(table.getPrimaryKey().getColumns().get(0), table.getColumn(0));
-        assertEquals(1000L, table.getColumn(0).getInitialAutoIncrementValue().longValue());
+        assertEquals(1000L, table.getColumn(0).getIdentityGenerator().getStartsWith());
     }
 
     @Test
@@ -367,7 +367,7 @@ public class TableDDLIT extends AISDDLITBase {
         assertEquals (1, column.getIdentityGenerator().getStartsWith());
         assertEquals (1, column.getIdentityGenerator().getIncrement());
         assertNotNull(column.getDefaultIdentity());
-        assertTrue(column.getDefaultIdentity().booleanValue());
+        assertFalse(column.getDefaultIdentity());
 
         assertNotNull (table.getIndex("c1"));
         Index index = table.getIndex("c1");

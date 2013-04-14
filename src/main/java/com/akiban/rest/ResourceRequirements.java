@@ -19,6 +19,7 @@ package com.akiban.rest;
 
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.restdml.DirectService;
 import com.akiban.server.service.restdml.RestDMLService;
 import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.SessionService;
@@ -29,6 +30,7 @@ import com.akiban.server.store.Store;
 public class ResourceRequirements {
     public final DXLService dxlService;
     public final RestDMLService restDMLService;
+    public final DirectService directService;
     public final SecurityService securityService;
     public final SessionService sessionService;
     public final TransactionService transactionService;
@@ -38,6 +40,7 @@ public class ResourceRequirements {
 
     public ResourceRequirements(DXLService dxlService,
                                 RestDMLService restDMLService,
+                                DirectService directService,
                                 SecurityService securityService,
                                 SessionService sessionService,
                                 TransactionService transactionService,
@@ -46,6 +49,7 @@ public class ResourceRequirements {
                                 ConfigurationService configService) {
         this.dxlService = dxlService;
         this.restDMLService = restDMLService;
+        this.directService = directService;
         this.securityService = securityService;
         this.sessionService = sessionService;
         this.transactionService = transactionService;

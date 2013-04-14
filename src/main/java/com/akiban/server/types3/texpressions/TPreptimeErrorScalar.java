@@ -54,7 +54,7 @@ public abstract class TPreptimeErrorScalar extends TScalarBase {
     }
 
     @Override
-    protected Constantness constness(int inputIndex, LazyList<? extends TPreptimeValue> values) {
+    protected Constantness constness(TPreptimeContext context, int inputIndex, LazyList<? extends TPreptimeValue> values) {
         return Constantness.NOT_CONST;
     }
 

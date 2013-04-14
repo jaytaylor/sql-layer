@@ -32,8 +32,7 @@ public class ClassObjectWriter extends ClassBuilder {
     private Stack<CtClass> ctClasses = new Stack<CtClass>();
     private CtClass currentCtClass;
 
-    public ClassObjectWriter(ClassPool classPool, String packageName) {
-        super(packageName);
+    public ClassObjectWriter(ClassPool classPool) {
         this.classPool = classPool;
     }
 

@@ -18,6 +18,7 @@
 package com.akiban.server.service.text;
 
 import com.akiban.ais.model.FullTextIndex;
+import com.akiban.ais.model.IndexName;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
 import static com.akiban.qp.operator.API.cursor;
@@ -27,9 +28,14 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
+import com.akiban.server.service.session.Session;
+import com.akiban.server.service.session.SessionServiceImpl;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.test.it.qp.TestRow;
 
+import com.akiban.server.types3.mcompat.mfuncs.WaitFunctionHelpers;
+import com.persistit.Exchange;
+import com.persistit.exception.PersistitException;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -39,12 +45,18 @@ import java.util.*;
 public class FullTextIndexServiceIT extends ITBase
 {
     public static final String SCHEMA = "test";
-
+    private static final long updateInterval = 1000L; // for testing
+    private static final long populateDelayInterval = 1000L;
     protected FullTextIndexService fullText;
     protected Schema schema;
     protected PersistitAdapter adapter;
     protected QueryContext queryContext;
 
+    private int c;
+    private int o;
+    private int i;
+    private int a;
+    
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
@@ -55,29 +67,31 @@ public class FullTextIndexServiceIT extends ITBase
     protected Map<String, String> startupConfigProperties() {
         Map<String, String> properties = new HashMap<>();
         properties.put("akserver.text.indexpath", "/tmp/aktext");
+        properties.put(FullTextIndexServiceImpl.UPDATE_INTERVAL, Long.toString(updateInterval));
+        properties.put(FullTextIndexServiceImpl.POPULATE_DELAY_INTERVAL, Long.toString(populateDelayInterval));
         return properties;
     }
 
     @Before
     public void createData() {
-        int c = createTable(SCHEMA, "c",
-                            "cid INT PRIMARY KEY NOT NULL",
-                            "name VARCHAR(128) COLLATE en_us_ci");
-        int o = createTable(SCHEMA, "o",
-                            "oid INT PRIMARY KEY NOT NULL",
-                            "cid INT NOT NULL",
-                            "GROUPING FOREIGN KEY(cid) REFERENCES c(cid)",
-                            "order_date DATE");
-        int i = createTable(SCHEMA, "i",
-                            "iid INT PRIMARY KEY NOT NULL",
-                            "oid INT NOT NULL",
-                            "GROUPING FOREIGN KEY(oid) REFERENCES o(oid)",
-                            "sku VARCHAR(10) NOT NULL");
-        int a = createTable(SCHEMA, "a",
-                            "aid INT PRIMARY KEY NOT NULL",
-                            "cid INT NOT NULL",
-                            "GROUPING FOREIGN KEY(cid) REFERENCES c(cid)",
-                            "state CHAR(2)");
+        c = createTable(SCHEMA, "c",
+                        "cid INT PRIMARY KEY NOT NULL",
+                        "name VARCHAR(128) COLLATE en_us_ci");
+        o = createTable(SCHEMA, "o",
+                        "oid INT PRIMARY KEY NOT NULL",
+                        "cid INT NOT NULL",
+                        "GROUPING FOREIGN KEY(cid) REFERENCES c(cid)",
+                        "order_date DATE");
+        i = createTable(SCHEMA, "i",
+                        "iid INT PRIMARY KEY NOT NULL",
+                        "oid INT NOT NULL",
+                        "GROUPING FOREIGN KEY(oid) REFERENCES o(oid)",
+                        "sku VARCHAR(10) NOT NULL");
+        a = createTable(SCHEMA, "a",
+                        "aid INT PRIMARY KEY NOT NULL",
+                        "cid INT NOT NULL",
+                        "GROUPING FOREIGN KEY(cid) REFERENCES c(cid)",
+                        "state CHAR(2)");
         writeRow(c, 1, "Fred Flintstone");
         writeRow(o, 101, 1, "2012-12-12");
         writeRow(i, 10101, 101, "ABCD");
@@ -99,11 +113,286 @@ public class FullTextIndexServiceIT extends ITBase
     }
 
     @Test
-    public void cDown() {
-        FullTextIndex index = createFullTextIndex(SCHEMA, "c", "idx_c", 
-                                                  "name", "i.sku", "a.state");
-        fullText.createIndex(session(), index.getIndexName());
+    public void testPopulateScheduling() throws InterruptedException, PersistitException
+    {
+        // This test is specifically for FullTextIndexServiceImpl.java
+        assertEquals(FullTextIndexServiceImpl.class, fullText.getClass());
+        FullTextIndexServiceImpl fullTextImpl = (FullTextIndexServiceImpl)fullText;
+        
+        // disable the populate worker (so it doesn't read all the entries
+        // out before we get a chance to look at the tree.
+        fullTextImpl.disablePopulateWorker();
+        
+        // create 3 indices
+        final FullTextIndex expecteds[] = new FullTextIndex[]
+        {
+            createFullTextIndex(serviceManager(),
+                                SCHEMA, "c", "idx1_c",
+                                "name"),
+        
+            createFullTextIndex(serviceManager(),
+                                SCHEMA, "c", "idx2_c",
+                                "i.sku"),
+            createFullTextIndex(serviceManager(),
+                                SCHEMA, "c", "idx3_c",
+                                "name", "i.sku")
+        };
 
+        
+        // read the entries out
+        traverse(fullTextImpl,
+                 new Visitor()
+                 {
+                    int n = 0;
+                    public void visit(IndexName idx)
+                    {
+                        assertEquals("entry[" + n + "]", expecteds[n++].getIndexName(),
+                                                         idx);
+                    }
+
+                    public void endOfTree()
+                    {
+                        assertEquals(expecteds.length, n);
+                    }
+                 });
+        
+
+        // let the worker do its job.
+        // (After it is done, the tree had better be empty)
+        fullTextImpl.enablePopulateWorker();
+        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
+
+        traverse(fullTextImpl,
+                 new Visitor()
+                 {
+                     int n = 0;
+                    
+                     @Override
+                     public void visit(IndexName idx)
+                     {
+                         ++n;
+                     }
+
+                     @Override
+                     public void endOfTree()
+                     {
+                         assertEquals (0, n);
+                     } 
+                 });
+        
+        // drop all the indices
+        Session session = new SessionServiceImpl().createSession();
+        for (FullTextIndex idx : expecteds)
+            fullTextImpl.dropIndex(session, idx.getIndexName());
+        session.close();
+    }
+
+
+    @Test
+    public void testDeleteIndex() throws PersistitException, InterruptedException
+    {
+     
+        // This test is specifically for FullTextIndexServiceImpl.java
+        assertEquals(FullTextIndexServiceImpl.class, fullText.getClass());
+        FullTextIndexServiceImpl fullTextImpl = (FullTextIndexServiceImpl)fullText;
+         
+        // <1> disable worker
+        fullTextImpl.disablePopulateWorker();
+
+        // <2> create 3 new indices
+         // create 3 indices
+        final FullTextIndex expecteds[] = new FullTextIndex[]
+        {
+            createFullTextIndex(serviceManager(),
+                                SCHEMA, "c", "idx4_c",
+                                "a.state"),
+        
+            createFullTextIndex(serviceManager(),
+                                SCHEMA, "c", "idx5_c",
+                                "i.sku", "a.state"),
+            createFullTextIndex(serviceManager(),
+                                SCHEMA, "c", "idx6_c",
+                                "name", "i.sku")
+        };
+
+        // <3> delete 2 of them
+        Session session = new SessionServiceImpl().createSession();
+        boolean sawNPE = false;
+        try
+        {
+            fullTextImpl.dropIndex(session, expecteds[0].getIndexName());
+        }
+        catch (NullPointerException e) // NPE is expected because, the index hasn't been
+        {                              // populated yet. But we're not testing that!
+            sawNPE = true;
+        }
+        assertTrue("NPE should have happened", sawNPE);
+        
+
+        sawNPE = false;
+        try
+        {
+            fullTextImpl.dropIndex(session, expecteds[1].getIndexName());
+        }
+        catch (NullPointerException e) // NPE is expected because, the index hasn't been
+        {                              // populated yet. But we're not testing that!
+            sawNPE = true;
+        }
+        assertTrue("NPE should have happened", sawNPE);
+        
+        // <4> check that the tree only has one entry now (ie., epxecteds2[2]
+        traverse(fullTextImpl,
+                 new Visitor()
+                 {
+                     int n = 0;
+                    
+                     @Override
+                     public void visit(IndexName idx)
+                     {
+                         assertEquals("entry[" + n++ + "]", expecteds[2].getIndexName(),
+                                                            idx);
+                     }
+
+                     @Override
+                     public void endOfTree()
+                     {
+                         assertEquals (1, n);
+                     } 
+                 });
+
+        // wake the worker up to do its job
+        fullTextImpl.enablePopulateWorker();
+        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
+        
+        // drop the remaining index
+        fullTextImpl.dropIndex(session, expecteds[2].getIndexName());
+        session.close();
+    }
+
+    private static interface Visitor
+    {
+        void visit(IndexName idx);
+        void endOfTree();
+    }
+    
+    
+    private static void traverse(FullTextIndexServiceImpl serv,
+                                 Visitor visitor) throws PersistitException
+    {
+         Session session = new SessionServiceImpl().createSession();
+
+         try
+         {
+             Exchange ex = serv.getPopulateExchange(session);
+             IndexName toPopulate;
+             while ((toPopulate = serv.nextInQueue(ex)) != null)
+                 visitor.visit(toPopulate);
+             visitor.endOfTree();
+         }
+         finally
+         {
+             session.close();
+         }
+    }
+
+    @Test
+    public void testUpdate() throws InterruptedException
+    {
+        
+        /*
+            Test plans:
+            1 - do a search, confirm that the rows come back as expected
+            2 - (With update worker enabled)
+                + insert new rows
+                + wait for the updates to be done
+                + do the search again and confirm that the new rows are found
+            3 - (With update worker NOT enable)
+                + disable update worker
+                + insert new rows
+                + do the search again and confirm that the new rows are NOT found
+
+         */
+
+        //CREATE INDEX cust_ft ON customers(FULL_TEXT(name, addresses.state, items.sku))
+
+        // part 1
+        FullTextIndex index = createFullTextIndex(serviceManager(),
+                                                  SCHEMA, "c", "idx_c", 
+                                                  "name", "i.sku", "a.state");
+
+        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
+        RowType rowType = rowType("c");
+        RowBase[] expected1 = new RowBase[]
+        {
+            row(rowType, 1L),
+            row(rowType, 3L)
+        };
+        FullTextQueryBuilder builder = new FullTextQueryBuilder(index, ais(), queryContext);
+        Operator plan = builder.scanOperator("flintstone", 15);
+        compareRows(expected1, cursor(plan, queryContext));
+
+        plan = builder.scanOperator("state:MA", 15);
+        compareRows(expected1, cursor(plan, queryContext));
+        
+        
+        // part 2
+        // write new rows
+        writeRow(c, 4, "John Watson");
+        writeRow(c, 5, "Sherlock Flintstone");
+        writeRow(c, 6, "Mycroft Holmes");
+        writeRow(c, 7, "Flintstone Lestrade");
+        
+        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
+        RowBase expected2[] = new RowBase[]
+        {
+            row(rowType, 1L),
+            row(rowType, 3L),
+            row(rowType, 5L),
+            row(rowType, 7L)
+        };
+
+        // confirm new changes
+        plan = builder.scanOperator("flintstone", 15);
+        compareRows(expected2, cursor(plan, queryContext));
+        
+        // part 3
+        ((FullTextIndexServiceImpl)fullText).disableUpdateWorker();
+        
+        writeRow(c, 8, "Flintstone Hudson");
+        writeRow(c, 9, "Jim Flintstone");
+        
+        // The worker has been disabled, waitOn should return immidately
+        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
+        
+        // confirm that new rows are not found (ie., expected2 still works)
+        plan = builder.scanOperator("flintstone", 15);
+        compareRows(expected2, cursor(plan, queryContext));
+        
+        ((FullTextIndexServiceImpl)fullText).enableUpdateWorker();
+        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
+        
+        // now the rows should be seen.
+        // (Because disabling the worker does not stop the changes fron being recorded)
+        RowBase expected3[] = new RowBase[]
+        {
+            row(rowType, 1L),
+            row(rowType, 3L),
+            row(rowType, 5L),
+            row(rowType, 7L),
+            row(rowType, 8L),
+            row(rowType, 9L)
+        };
+
+        plan = builder.scanOperator("flintstone", 15);
+        compareRows(expected3, cursor(plan, queryContext));
+    }
+
+    @Test
+    public void cDown() throws InterruptedException {
+        FullTextIndex index = createFullTextIndex(serviceManager(),
+                                                  SCHEMA, "c", "idx_c", 
+                                                  "name", "i.sku", "a.state");
+        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
         RowType rowType = rowType("c");
         RowBase[] expected = new RowBase[] {
             row(rowType, 1L),
@@ -115,14 +404,15 @@ public class FullTextIndexServiceIT extends ITBase
 
         plan = builder.scanOperator("state:MA", 10);
         compareRows(expected, cursor(plan, queryContext));
+        
     }
 
     @Test
-    public void oUpDown() {
-        FullTextIndex index = createFullTextIndex(SCHEMA, "o", "idx_o",
+    public void oUpDown() throws InterruptedException {
+        FullTextIndex index = createFullTextIndex(serviceManager(),
+                                                  SCHEMA, "o", "idx_o",
                                                   "c.name", "i.sku");
-        fullText.createIndex(session(), index.getIndexName());
-
+        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
         RowType rowType = rowType("o");
         RowBase[] expected = new RowBase[] {
             row(rowType, 1L, 101L)

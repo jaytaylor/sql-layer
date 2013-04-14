@@ -242,7 +242,7 @@ public interface DDLFunctions {
      * Create a stored routine.
      * @param routine Routine to create.
      */
-    void createRoutine(Session session, Routine routine);
+    void createRoutine(Session session, Routine routine, boolean replaceExisting);
     
     /**
      * Drop a stored routine.

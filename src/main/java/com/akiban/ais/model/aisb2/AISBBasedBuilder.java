@@ -214,29 +214,35 @@ public class AISBBasedBuilder
 
         @Override
         public NewUserTableBuilder colLong(String name) {
-            return colLong(name, NULLABLE_DEFAULT, null);
+            return colLong(name, NULLABLE_DEFAULT, null, null);
         }
 
         @Override
         public NewUserTableBuilder colLong(String name, boolean nullable) {
-            return colLong(name, nullable, null);
+            return colLong(name, nullable, null, null);
         }
 
         @Override
         public NewUserTableBuilder autoIncLong(String name, int initialValue) {
-            return colLong(name, false, initialValue);
+            return colLong(name, false, initialValue, true);
         }
 
-        private NewUserTableBuilder colLong(String name, boolean nullable, Integer initialAutoInc) {
+        @Override
+        public NewUserTableBuilder autoIncLong(String name, int initialValue, boolean always) {
+            return colLong(name, false, initialValue, !always);
+        }
+
+        private NewUserTableBuilder colLong(String name, boolean nullable, Integer initialAutoInc, Boolean defaultIdentity) {
             checkUsable();
             aisb.column(schema, userTable, name, uTableColumnPos++, "INT", 10L, null, nullable, false, null, null);
             if (initialAutoInc != null) {
+                assert defaultIdentity != null;
                 String sequenceName = "temp-seq-" + userTable + "-" + name;
                 long initValue = initialAutoInc.longValue();
                 aisb.sequence(schema, sequenceName, 
-                              initValue, 1L, Long.MIN_VALUE, Long.MAX_VALUE, 
+                              initValue, 1L, initValue, Long.MAX_VALUE,
                               false);
-                aisb.columnAsIdentity(schema, userTable, name, sequenceName, true);
+                aisb.columnAsIdentity(schema, userTable, name, sequenceName, defaultIdentity);
                 aisb.akibanInformationSchema().
                      getUserTable(schema, userTable).
                      getColumn(name).
