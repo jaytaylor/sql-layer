@@ -83,6 +83,7 @@ import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.dml.scan.Cursor;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.ScanRequest;
+import com.akiban.server.error.DropSequenceNotAllowedException;
 import com.akiban.server.error.ForeignConstraintDDLException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchGroupException;
@@ -1300,7 +1301,12 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         if (sequence == null) {
             throw new NoSuchSequenceException (sequenceName);
         }
-        
+
+        for (UserTable table : getAIS(session).getUserTables().values()) {
+            if (table.getIdentityColumn() != null && table.getIdentityColumn().getIdentityGenerator().equals(sequence)) {
+                throw new DropSequenceNotAllowedException(sequence.getSequenceName().getTableName(), table.getName());
+            }
+        }
         store().deleteSequences(session, Collections.singleton(sequence));
         schemaManager().dropSequence(session, sequence);
     }

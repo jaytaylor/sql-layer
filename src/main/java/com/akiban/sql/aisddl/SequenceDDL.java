@@ -71,11 +71,6 @@ public class SequenceDDL {
             } 
             throw new NoSuchSequenceException (sequenceName);
         } else {
-            for (UserTable table : ddlFunctions.getAIS(session).getUserTables().values()) {
-                if (table.getIdentityColumn() != null && table.getIdentityColumn().getIdentityGenerator().equals(sequence)) {
-                    throw new DropSequenceNotAllowedException(sequence.getSequenceName().getTableName(), table.getName());
-                }
-            }
             ddlFunctions.dropSequence(session, sequenceName);
         }
     }
