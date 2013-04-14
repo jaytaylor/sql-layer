@@ -265,6 +265,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     @Override
     public void stop() {
         Server localServer;
+        monitorService.deregisterServerMonitor(monitorService.getServerMonitors().get(ConnectionMonitor.SERVER_TYPE));
         synchronized (lock) {
             xOriginFilterEnabled = false;
             localServer = server;
@@ -351,7 +352,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     }
     
     private class ConnectionMonitor implements ServerMonitor {
-        private static final String SERVER_TYPE = "REST";
+        public static final String SERVER_TYPE = "REST";
         private final SelectChannelConnector connector;
         private final AtomicLong _statsStartedAt = new AtomicLong(System.currentTimeMillis());
         
@@ -378,6 +379,5 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         public int getSessionCount() {
             return connector.getConnections();
         }
-        
     }
 }
