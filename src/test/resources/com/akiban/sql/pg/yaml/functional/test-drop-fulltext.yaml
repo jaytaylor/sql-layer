@@ -4,5 +4,14 @@
 ---
 - Statement: CREATE INDEX idx on t(full_text(name));
 ---
+- Statement: SELECT SLEEP(7000);
+---
+- Statement: INSERT INTO t values (1, 'bar1'), (2, 'bar2'), (3, 'bar3'), (4, 'bar1');
+---
+- Statement: SELECT SLEEP(9000);
+---
+- Statement: SELECT id from t where full_text_search(name='bar1');
+- output: [[1], [4]]
+---
 - Statement: DROP INDEX t.idx;
 ...
