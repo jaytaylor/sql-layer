@@ -163,7 +163,6 @@ public class AISMerge {
                                                             Collection<ChangedTableDescription> changedTables)
     {
         final Set<Sequence> excludedSequences = new HashSet<>();
-        final Set<Sequence> newSequences = new HashSet<>();
         final Set<Group> excludedGroups = new HashSet<>();
         final Map<TableName,UserTable> filteredTables = new HashMap<>();
         for(ChangedTableDescription desc : changedTables) {
