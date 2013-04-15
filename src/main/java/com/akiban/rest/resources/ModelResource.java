@@ -23,6 +23,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.ais.util.UuidAssigner;
+import com.akiban.http.SimpleHandlerList;
 import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
 import com.akiban.server.entity.changes.DDLBasedSpaceModifier;
@@ -32,6 +33,7 @@ import com.akiban.server.entity.fromais.AisToSpace;
 import com.akiban.server.entity.model.Space;
 import com.akiban.server.entity.model.diff.JsonDiffPreview;
 import com.akiban.server.service.session.Session;
+import com.akiban.util.tap.InOutTap;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +63,10 @@ import static com.akiban.util.JsonUtils.readTree;
 @Path("/model")
 public final class ModelResource {
     private static final String OPTIONAL_SCHEMA = "{schema: (/[^/]*)?}";
-
+    private static final InOutTap MODEL_VIEW = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: model view");
+    private static final InOutTap MODEL_HASH = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: model view");
+    private static final InOutTap MODEL_PARSE = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: model parse");
+    
     private final ResourceRequirements reqs;
 
     public ModelResource(ResourceRequirements reqs) {
@@ -83,21 +88,26 @@ public final class ModelResource {
                               @PathParam("schema") String schemaParam) {
         final String schema = getSchemaName(request, schemaParam);
         checkSchemaAccessible(reqs.securityService, request, schema);
-        return RestResponseBuilder
-                .forRequest(request)
-                .body(new RestResponseBuilder.BodyGenerator() {
-                    @Override
-                    public void write(PrintWriter writer) throws Exception {
-                        try (Session session = reqs.sessionService.createSession();
-                             CloseableTransaction txn = reqs.transactionService.beginCloseableTransaction(session)) {
-                            Space space = spaceForAIS(session, schema);
-                            String json = space.toJson();
-                            writer.write(json);
-                            txn.commit();
+        MODEL_VIEW.in();
+        try {
+            return RestResponseBuilder
+                    .forRequest(request)
+                    .body(new RestResponseBuilder.BodyGenerator() {
+                        @Override
+                        public void write(PrintWriter writer) throws Exception {
+                            try (Session session = reqs.sessionService.createSession();
+                                 CloseableTransaction txn = reqs.transactionService.beginCloseableTransaction(session)) {
+                                Space space = spaceForAIS(session, schema);
+                                String json = space.toJson();
+                                writer.write(json);
+                                txn.commit();
+                            }
                         }
-                    }
-                })
-                .build();
+                    })
+                    .build();
+        } finally {
+            MODEL_VIEW.out();
+        }
     }
     
     @GET
@@ -107,21 +117,26 @@ public final class ModelResource {
                                 @PathParam("schema") String schemaParam) {
         final String schema = getSchemaName(request, schemaParam);
         checkSchemaAccessible(reqs.securityService, request, schema);
-        return RestResponseBuilder
-                .forRequest(request)
-                .body(new RestResponseBuilder.BodyGenerator() {
-                    @Override
-                    public void write(PrintWriter writer) throws Exception {
-                        try (Session session = reqs.sessionService.createSession();
-                             CloseableTransaction txn = reqs.transactionService.beginCloseableTransaction(session)) {
-                            Space space = spaceForAIS(session, schema);
-                            String json = space.toHash();
-                            writer.write(json);
-                            txn.commit();
+        MODEL_HASH.in();
+        try {
+            return RestResponseBuilder
+                    .forRequest(request)
+                    .body(new RestResponseBuilder.BodyGenerator() {
+                        @Override
+                        public void write(PrintWriter writer) throws Exception {
+                            try (Session session = reqs.sessionService.createSession();
+                                 CloseableTransaction txn = reqs.transactionService.beginCloseableTransaction(session)) {
+                                Space space = spaceForAIS(session, schema);
+                                String json = space.toHash();
+                                writer.write(json);
+                                txn.commit();
+                            }
                         }
-                    }
-                })
-                .build();
+                    })
+                    .build();
+        } finally {
+            MODEL_HASH.out();
+        }
     }
 
     @POST
@@ -135,34 +150,38 @@ public final class ModelResource {
                           final InputStream postInput) {
         final TableName tableName = ResourceHelper.parseTableName(request, table);
         checkTableAccessible(reqs.securityService, request, tableName);
-        
-        return RestResponseBuilder
-                .forRequest(request)
-                .body(new RestResponseBuilder.BodyGenerator() {
-                    @Override
-                    public void write(PrintWriter writer) throws Exception {
-                        boolean doCreate = Boolean.parseBoolean(create);
-                        JsonNode node = readTree(postInput);
-                        EntityParser parser = new EntityParser();
-                        parser.setStringWidth(parseInt(defaultWidth, DEFAULT_STRING_WIDTH));
-                        try (Session session = reqs.sessionService.createSession()) {
-                            final UserTable created;
-                            if(doCreate) {
-                                created = parser.parseAndCreate(reqs.dxlService.ddlFunctions(),
-                                                                session,
-                                                                tableName,
-                                                                node);
-                            } else {
-                                created = parser.parse(tableName, node);
-                                UuidAssigner uuidAssigner = new UuidAssigner();
-                                created.getAIS().traversePostOrder(uuidAssigner);
+        MODEL_PARSE.in();
+        try {
+            return RestResponseBuilder
+                    .forRequest(request)
+                    .body(new RestResponseBuilder.BodyGenerator() {
+                        @Override
+                        public void write(PrintWriter writer) throws Exception {
+                            boolean doCreate = Boolean.parseBoolean(create);
+                            JsonNode node = readTree(postInput);
+                            EntityParser parser = new EntityParser();
+                            parser.setStringWidth(parseInt(defaultWidth, DEFAULT_STRING_WIDTH));
+                            try (Session session = reqs.sessionService.createSession()) {
+                                final UserTable created;
+                                if(doCreate) {
+                                    created = parser.parseAndCreate(reqs.dxlService.ddlFunctions(),
+                                                                    session,
+                                                                    tableName,
+                                                                    node);
+                                } else {
+                                    created = parser.parse(tableName, node);
+                                    UuidAssigner uuidAssigner = new UuidAssigner();
+                                    created.getAIS().traversePostOrder(uuidAssigner);
+                                }
+                                Space currSpace = spaceForAIS(created.getAIS(), tableName.getSchemaName());
+                                writer.write(currSpace.toJson());
                             }
-                            Space currSpace = spaceForAIS(created.getAIS(), tableName.getSchemaName());
-                            writer.write(currSpace.toJson());
                         }
-                    }
-                })
-                .build();
+                    })
+                    .build();
+        } finally {
+            MODEL_PARSE.out();
+        }
     }
 
     @POST

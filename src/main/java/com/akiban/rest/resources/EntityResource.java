@@ -18,8 +18,10 @@
 package com.akiban.rest.resources;
 
 import com.akiban.ais.model.TableName;
+import com.akiban.http.SimpleHandlerList;
 import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
+import com.akiban.util.tap.InOutTap;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javax.servlet.http.HttpServletRequest;
@@ -51,6 +53,12 @@ import static com.akiban.util.JsonUtils.readTree;
 @Path("/entity/{entity}")
 public class EntityResource {
     private final ResourceRequirements reqs;
+    private static final InOutTap ENTITY_GET = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: entity GET");
+    private static final InOutTap ENTITY_POST = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: entity POST");
+    private static final InOutTap ENTITY_PUT = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: entity PUT");
+    private static final InOutTap ENTITY_DELETE = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: entity DELETE");
+    private static final InOutTap ENTITY_PATCH = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: entity PATCH");
+    private static final InOutTap ENTITY_JONQUIL = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: entity jonquil");
     
     public EntityResource(ResourceRequirements reqs) {
         this.reqs = reqs;
@@ -63,15 +71,20 @@ public class EntityResource {
                                    @QueryParam("depth") final Integer depth) {
         final TableName tableName = parseTableName(request, entity);
         checkTableAccessible(reqs.securityService, request, tableName);
-        return RestResponseBuilder
-                .forRequest(request)
-                .body(new RestResponseBuilder.BodyGenerator() {
-                    @Override
-                    public void write(PrintWriter writer) throws Exception {
-                        reqs.restDMLService.getAllEntities(writer, tableName, depth);
-                    }
-                })
-                .build();
+        ENTITY_GET.in();
+        try {
+            return RestResponseBuilder
+                    .forRequest(request)
+                    .body(new RestResponseBuilder.BodyGenerator() {
+                        @Override
+                        public void write(PrintWriter writer) throws Exception {
+                            reqs.restDMLService.getAllEntities(writer, tableName, depth);
+                        }
+                    })
+                    .build();
+        } finally {
+            ENTITY_GET.out();
+        }
     }
 
     @GET
@@ -83,15 +96,20 @@ public class EntityResource {
                                    @Context final UriInfo uri) {
         final TableName tableName = parseTableName(request, entity);
         checkTableAccessible(reqs.securityService, request, tableName);
-        return RestResponseBuilder
-                .forRequest(request)
-                .body(new RestResponseBuilder.BodyGenerator() {
-                    @Override
-                    public void write(PrintWriter writer) throws Exception {
-                        reqs.restDMLService.getEntities(writer, tableName, depth, getPKString(uri));
-                    }
-                })
-                .build();
+        ENTITY_GET.in();
+        try {
+            return RestResponseBuilder
+                    .forRequest(request)
+                    .body(new RestResponseBuilder.BodyGenerator() {
+                        @Override
+                        public void write(PrintWriter writer) throws Exception {
+                            reqs.restDMLService.getEntities(writer, tableName, depth, getPKString(uri));
+                        }
+                    })
+                    .build();
+        } finally {
+            ENTITY_GET.out();
+        }
     }
 
     @POST
@@ -121,16 +139,21 @@ public class EntityResource {
                                  final String query) {
         final TableName tableName = parseTableName(request, entity);
         checkTableAccessible(reqs.securityService, request, tableName);
-        return RestResponseBuilder
-                .forRequest(request)
-                .body(new RestResponseBuilder.BodyGenerator() {
-                    @Override
-                    public void write(PrintWriter writer) throws Exception {
-                        String sql = reqs.restDMLService.jonquilToSQL(tableName, query);
-                        reqs.restDMLService.runSQL(writer, request, sql, tableName.getSchemaName());
-                    }
-                })
-                .build();
+        ENTITY_JONQUIL.in();
+        try {
+            return RestResponseBuilder
+                    .forRequest(request)
+                    .body(new RestResponseBuilder.BodyGenerator() {
+                        @Override
+                        public void write(PrintWriter writer) throws Exception {
+                            String sql = reqs.restDMLService.jonquilToSQL(tableName, query);
+                            reqs.restDMLService.runSQL(writer, request, sql, tableName.getSchemaName());
+                        }
+                    })
+                    .build();
+        } finally {
+            ENTITY_JONQUIL.out();
+        }
     }
 
     @POST
@@ -141,16 +164,21 @@ public class EntityResource {
                                  final byte[] entityBytes) {
         final TableName tableName = parseTableName(request, entity);
         checkTableAccessible(reqs.securityService, request, tableName);
-        return RestResponseBuilder
-                .forRequest(request)
-                .body(new RestResponseBuilder.BodyGenerator() {
-                    @Override
-                    public void write(PrintWriter writer) throws Exception {
-                        final JsonNode node = readTree(entityBytes);
-                        reqs.restDMLService.insert(writer, tableName, node);
-                    }
-                })
-                .build();
+        ENTITY_POST.in();
+        try {
+            return RestResponseBuilder
+                    .forRequest(request)
+                    .body(new RestResponseBuilder.BodyGenerator() {
+                        @Override
+                        public void write(PrintWriter writer) throws Exception {
+                            final JsonNode node = readTree(entityBytes);
+                            reqs.restDMLService.insert(writer, tableName, node);
+                        }
+                    })
+                    .build();
+        } finally {
+            ENTITY_POST.out();
+        }
     }
 
     @PUT
@@ -162,16 +190,21 @@ public class EntityResource {
                                  @Context final UriInfo uri) {
         final TableName tableName = parseTableName(request, entity);
         checkTableAccessible(reqs.securityService, request, tableName);
-        return RestResponseBuilder
-                .forRequest(request)
-                .body(new RestResponseBuilder.BodyGenerator() {
-                    @Override
-                    public void write(PrintWriter writer) throws Exception {
-                        JsonNode node = readTree(entityBytes);
-                        reqs.restDMLService.update(writer, tableName, getPKString(uri), node);
-                    }
-                })
-                .build();
+        ENTITY_PUT.in();
+        try {
+            return RestResponseBuilder
+                    .forRequest(request)
+                    .body(new RestResponseBuilder.BodyGenerator() {
+                        @Override
+                        public void write(PrintWriter writer) throws Exception {
+                            JsonNode node = readTree(entityBytes);
+                            reqs.restDMLService.update(writer, tableName, getPKString(uri), node);
+                        }
+                    })
+                    .build();
+        } finally {
+            ENTITY_PUT.out();
+        }
     }
 
     @DELETE
@@ -181,6 +214,7 @@ public class EntityResource {
                                  @Context final UriInfo uri) {
         final TableName tableName = parseTableName(request, entity);
         checkTableAccessible(reqs.securityService, request, tableName);
+        ENTITY_DELETE.in();
         try {
             reqs.restDMLService.delete(tableName, getPKString(uri));
             return RestResponseBuilder
@@ -189,6 +223,8 @@ public class EntityResource {
                     .build();
         } catch (Exception e) {
             throw RestResponseBuilder.forRequest(request).wrapException(e);
+        } finally {
+            ENTITY_DELETE.out();
         }
     }
     
@@ -200,15 +236,20 @@ public class EntityResource {
             final byte[] entityBytes) {
         final TableName tableName = parseTableName(request, entity);
         checkTableAccessible(reqs.securityService, request, tableName);
-        return RestResponseBuilder
-                .forRequest(request)
-                .body(new RestResponseBuilder.BodyGenerator() {
-                    @Override
-                    public void write(PrintWriter writer) throws Exception {
-                        final JsonNode node = readTree(entityBytes);
-                        reqs.restDMLService.upsert(writer, tableName, node);
-                    }
-                })
-                .build();
+        ENTITY_PATCH.in();
+        try {
+            return RestResponseBuilder
+                    .forRequest(request)
+                    .body(new RestResponseBuilder.BodyGenerator() {
+                        @Override
+                        public void write(PrintWriter writer) throws Exception {
+                            final JsonNode node = readTree(entityBytes);
+                            reqs.restDMLService.upsert(writer, tableName, node);
+                        }
+                    })
+                    .build();
+        } finally {
+            ENTITY_PATCH.out();
+        }
     }
 }

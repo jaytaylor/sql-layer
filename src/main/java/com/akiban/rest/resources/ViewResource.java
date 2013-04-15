@@ -36,14 +36,17 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 import com.akiban.ais.model.TableName;
+import com.akiban.http.SimpleHandlerList;
 import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
 import com.akiban.server.error.WrongExpressionArityException;
+import com.akiban.util.tap.InOutTap;
 
 @Path("/view/{view}")
 
 public class ViewResource {
     private final ResourceRequirements reqs;
+    private static final InOutTap VIEW_GET = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: view GET");
     
     public ViewResource(ResourceRequirements reqs) {
         this.reqs = reqs;
@@ -56,6 +59,7 @@ public class ViewResource {
                                    @Context final UriInfo uri) {
         final TableName tableName = parseTableName(request, view);
         checkTableAccessible(reqs.securityService, request, tableName);
+        VIEW_GET.in();
         StringBuilder query = new StringBuilder();
         query.append("SELECT * FROM ");
         query.append(tableName.toString());
@@ -80,6 +84,7 @@ public class ViewResource {
 
         final String queryFinal = query.toString();
         final List<String> parameters = Collections.unmodifiableList(params);
+        try {        
         return RestResponseBuilder
                 .forRequest(request)
                 .body(new RestResponseBuilder.BodyGenerator() {
@@ -89,5 +94,8 @@ public class ViewResource {
                     }
                 })
                 .build();
+        } finally {
+            VIEW_GET.out();
+        }
     }
 }

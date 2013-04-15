@@ -22,6 +22,9 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.util.MultiException;
 
+import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.Tap;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -42,6 +45,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class SimpleHandlerList extends AbstractHandler {
     private final List<Handler> handlers = new CopyOnWriteArrayList<>();
     private Handler defaultHandler = null;
+    public static final InOutTap REST_TAP = Tap.createRecursiveTimer("rest: root");
+
 
     @Override
     public void handle(String target,
@@ -51,15 +56,20 @@ public class SimpleHandlerList extends AbstractHandler {
         if(!isStarted()) {
             return;
         }
-        for(Handler h : handlers) {
-            h.handle(target,baseRequest, request, response);
-            // Return once the request has been handled
-            if(baseRequest.isHandled()) {
-                return;
+        REST_TAP.in();
+        try {
+            for(Handler h : handlers) {
+                h.handle(target,baseRequest, request, response);
+                // Return once the request has been handled
+                if(baseRequest.isHandled()) {
+                    return;
+                }
             }
-        }
-        if (defaultHandler != null) {
-            defaultHandler.handle(target, baseRequest, request, response);
+            if (defaultHandler != null) {
+                defaultHandler.handle(target, baseRequest, request, response);
+            }
+        }finally {
+            REST_TAP.out();
         }
     }
 

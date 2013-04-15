@@ -18,8 +18,10 @@
 package com.akiban.rest.resources;
 
 import com.akiban.ais.model.TableName;
+import com.akiban.http.SimpleHandlerList;
 import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
+import com.akiban.util.tap.InOutTap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -42,7 +44,9 @@ import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT
 @Path("/call/{proc}")
 public class ProcedureCallResource {
     private final ResourceRequirements reqs;
-
+    private static final InOutTap CALL_GET = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: call GET");
+    private static final InOutTap CALL_POST = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: call POST");
+    
     public ProcedureCallResource(ResourceRequirements reqs) {
         this.reqs = reqs;
     }
@@ -54,16 +58,21 @@ public class ProcedureCallResource {
                             @Context final UriInfo uri) throws Exception {
         final TableName procName = ResourceHelper.parseTableName(request, proc);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
-        return RestResponseBuilder
-                .forRequest(request)
-                .body(new RestResponseBuilder.BodyGenerator() {
-                    @Override
-                    public void write(PrintWriter writer) throws Exception {
-                        reqs.restDMLService.callProcedure(writer, request, JSONP_ARG_NAME,
-                                                          procName, uri.getQueryParameters(), null);
-                    }
-                })
-                .build();
+        CALL_GET.in();
+        try {
+            return RestResponseBuilder
+                    .forRequest(request)
+                    .body(new RestResponseBuilder.BodyGenerator() {
+                        @Override
+                        public void write(PrintWriter writer) throws Exception {
+                            reqs.restDMLService.callProcedure(writer, request, JSONP_ARG_NAME,
+                                                              procName, uri.getQueryParameters(), null);
+                        }
+                    })
+                    .build();
+        } finally {
+            CALL_GET.out();
+        }
     }
 
     @POST
@@ -75,6 +84,8 @@ public class ProcedureCallResource {
                              final String jsonParams) throws Exception {
         final TableName procName = ResourceHelper.parseTableName(request, proc);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
+        CALL_POST.in();
+        try {
         return RestResponseBuilder
                 .forRequest(request)
                 .body(new RestResponseBuilder.BodyGenerator() {
@@ -85,6 +96,9 @@ public class ProcedureCallResource {
                     }
                 })
                 .build();
+        } finally {
+            CALL_POST.out();
+        }
     }
 
 }
