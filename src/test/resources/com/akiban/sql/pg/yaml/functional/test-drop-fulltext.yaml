@@ -3,12 +3,12 @@
 - CreateTable: t(id int, name varchar(224));
 ---
 - Statement: CREATE INDEX idx on t(full_text(name));
----
-- Statement: SELECT SLEEP(7000);
+--- # TODO: SLEEP will be replaced with a 'wait*' function, which force the index population and waits until that is done
+- Statement: SELECT SLEEP(5000);
 ---
 - Statement: INSERT INTO t values (1, 'bar1'), (2, 'bar2'), (3, 'bar3'), (4, 'bar1');
 ---
-- Statement: SELECT SLEEP(9000);
+- Statement: SELECT SLEEP(5000);
 ---
 - Statement: SELECT id from t where full_text_search(name='bar1');
 - output: [[1], [4]]
@@ -19,11 +19,27 @@
 ---
 - CreateTable: t2(id int, name varchar(32));
 ---
-- Statement: INSERT INTO t2 values (1, 'foo1'), (2, 'foo2'), (3, 'foo3'), (4, 'foo1');
+- Statement: INSERT INTO t2 VALUES (1, 'John'), (2, 'Sally');
 ---
 - Statement: CREATE INDEX t2_idx on t2(full_text(name));
 ---
-- Statement: SELECT SLEEP(9000);
+- Statement: SELECT SLEEP(5000);
+---
+- Statement: SELECT * FROM t2 WHERE FULL_TEXT_SEARCH(name, 'Jo*');
+- row_count: 0
+---
+- DropTable: t2;
+---
+- CreateTable: t2(id INT NOT NULL PRIMARY KEY, name VARCHAR(32) COLLATE en_ci);
+---
+- Statement: INSERT INTO t2 VALUES (1, 'John'), (2, 'Sally');
+---
+- Statement: CREATE INDEX t2_idx on t2(full_text(name));
+---
+- Statement: SELECT SLEEP(5000);
+---
+- Statement: SELECT * FROM t2 WHERE FULL_TEXT_SEARCH(name, 'Jo*');
+- output: [[1, 'John']]
 ---
 - DropTable: t2;
 ...
