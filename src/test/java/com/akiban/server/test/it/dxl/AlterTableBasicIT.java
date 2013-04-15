@@ -21,6 +21,7 @@ import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableName;
@@ -1186,5 +1187,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
         runAlter(ChangeLevel.METADATA, "ALTER TABLE c ALTER COLUMN id SET GENERATED ALWAYS AS IDENTITY");
         Column newColumn = getUserTable(id).getColumn("id");
         assertEquals("altered is always", false, newColumn.getDefaultIdentity());
+        seq = newColumn.getIdentityGenerator();
+        assertEquals("Sequence name prefix",
+                     true,
+                     seq.getSequenceName().getTableName().startsWith(DefaultNameGenerator.IDENTITY_SEQUENCE_PREFIX));
     }
 }

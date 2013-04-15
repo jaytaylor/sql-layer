@@ -89,11 +89,13 @@ public class AISMerge {
     private static class IdentityInfo {
         public final TableName tableName;
         public final String columnName;
+        public final boolean defaultIdentity;
         public final Sequence sequence;
 
-        public IdentityInfo(TableName tableName, String columnName, Sequence sequence) {
+        public IdentityInfo(TableName tableName, String columnName, boolean defaultIdentity, Sequence sequence) {
             this.tableName = tableName;
             this.columnName = columnName;
+            this.defaultIdentity = defaultIdentity;
             this.sequence = sequence;
         }
     }
@@ -237,8 +239,8 @@ public class AISMerge {
             }
 
             for(String name : desc.getIdentityAdded()) {
-                Sequence seq = newTable.getColumn(name).getIdentityGenerator();
-                identityToFix.add(new IdentityInfo(desc.getNewName(), name, seq));
+                Column col = newTable.getColumn(name);
+                identityToFix.add(new IdentityInfo(desc.getNewName(), name, col.getDefaultIdentity(), col.getIdentityGenerator()));
             }
         }
 
@@ -504,9 +506,8 @@ public class AISMerge {
         }
 
         for(IdentityInfo info : identityToFix) {
-            Sequence seq = mergeSequenceInternal(info.sequence);
-            UserTable table = targetAIS.getUserTable(info.tableName);
-            table.getColumn(info.columnName).setIdentityGenerator(seq);
+            addIdentitySequence(builder, info.tableName.getSchemaName(), info.tableName.getTableName(), info.columnName,
+                                info.defaultIdentity, info.sequence);
         }
 
         builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
@@ -558,20 +559,26 @@ public class AISMerge {
             }
             if (column.getDefaultIdentity() != null) {
                 TableName sequenceName = nameGenerator.generateIdentitySequenceName(new TableName(schemaName, tableName));
-                Sequence sequence = column.getIdentityGenerator();
-                builder.sequence(sequenceName.getSchemaName(), sequenceName.getTableName(),
-                        sequence.getStartsWith(), 
-                        sequence.getIncrement(), 
-                        sequence.getMinValue(), 
-                        sequence.getMaxValue(), 
-                        sequence.isCycle());
-                builder.columnAsIdentity(schemaName, tableName, column.getName(), sequenceName.getTableName(), column.getDefaultIdentity());
-                LOG.debug("Generated sequence: {}, with tree name; {}", sequenceName, sequence.getTreeName());
+                addIdentitySequence(builder, schemaName, tableName, column.getName(),
+                                    column.getDefaultIdentity(), column.getIdentityGenerator());
             }
             // Proactively cache, can go away if Column ever cleans itself up
             newColumn.getMaxStorageSize();
             newColumn.getPrefixSize();
         }
+    }
+
+    private void addIdentitySequence(AISBuilder builder, String schemaName, String tableName, String column,
+                                     boolean defaultIdentity, Sequence sequence) {
+        TableName sequenceName = nameGenerator.generateIdentitySequenceName(new TableName(schemaName, tableName));
+        Sequence newSeq = builder.sequence(sequenceName.getSchemaName(), sequenceName.getTableName(),
+                                           sequence.getStartsWith(),
+                                           sequence.getIncrement(),
+                                           sequence.getMinValue(),
+                                           sequence.getMaxValue(),
+                                           sequence.isCycle());
+        builder.columnAsIdentity(schemaName, tableName, column, sequenceName.getTableName(), defaultIdentity);
+        LOG.debug("Generated sequence: {}, with tree name; {}", sequenceName, newSeq.getTreeName());
     }
 
     private void addNewGroup (AISBuilder builder, UserTable rootTable) {
