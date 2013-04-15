@@ -19,6 +19,8 @@ package com.akiban.sql.aisddl;
 
 import com.akiban.ais.model.Sequence;
 import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.error.ColumnAlreadyGeneratedException;
+import com.akiban.server.error.ColumnNotGeneratedException;
 import com.akiban.sql.parser.AlterTableRenameColumnNode;
 import com.akiban.sql.parser.AlterTableRenameNode;
 import com.akiban.ais.AISCloner;
@@ -264,7 +266,7 @@ public class AlterTableDDL {
                     switch(autoIncType) {
                         case ColumnDefinitionNode.CREATE_AUTOINCREMENT: {
                             if(column.getIdentityGenerator() != null) {
-                                throw new IllegalArgumentException("Already an IDENTITY column");
+                                throw new ColumnAlreadyGeneratedException(column);
                             }
                             TableName name = tableCopy.getName();
                             TableDDL.setAutoIncrement(builder, name.getSchemaName(), name.getTableName(), modNode);
@@ -273,7 +275,7 @@ public class AlterTableDDL {
                         case ColumnDefinitionNode.MODIFY_AUTOINCREMENT_INC_VALUE: {
                             Sequence curSeq = column.getIdentityGenerator();
                             if(curSeq == null) {
-                                throw new IllegalArgumentException("Not an IDENTITY column");
+                                throw new ColumnNotGeneratedException(column);
                             }
                             aisCopy.removeSequence(curSeq.getSequenceName());
                             Sequence newSeq = Sequence.create(aisCopy,

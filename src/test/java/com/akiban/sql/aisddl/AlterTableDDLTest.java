@@ -33,6 +33,8 @@ import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.ais.util.TableChange;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.api.ddl.DDLFunctionsMockBase;
+import com.akiban.server.error.ColumnAlreadyGeneratedException;
+import com.akiban.server.error.ColumnNotGeneratedException;
 import com.akiban.server.error.DuplicateColumnNameException;
 import com.akiban.server.error.DuplicateIndexException;
 import com.akiban.server.error.JoinColumnMismatchException;
@@ -565,6 +567,12 @@ public class AlterTableDDLTest {
         expectFinalTable(C_NAME, "id MCOMPAT_ INTEGER(11) NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 5)", "PRIMARY(id)");
     }
 
+    @Test(expected=ColumnNotGeneratedException.class)
+    public void alterColumnSetIncrementInvalid() throws StandardException {
+        buildCWithID();
+        parseAndRun("ALTER TABLE c ALTER COLUMN id SET INCREMENT BY 5");
+    }
+
     //
     // ALTER COLUMN RESTART WITH <number>
     //
@@ -597,7 +605,7 @@ public class AlterTableDDLTest {
         expectFinalTable(C_NAME, "id MCOMPAT_ INTEGER(11) NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 42, INCREMENT BY 100)", "PRIMARY(id)");
     }
 
-    @Test(expected=UnsupportedSQLException.class)
+    @Test(expected=ColumnAlreadyGeneratedException.class)
     public void alterColumnSetGeneratedAlreadyGenerated() throws StandardException {
         buildCWithGeneratedID(1, true);
         parseAndRun("ALTER TABLE c ALTER COLUMN id SET GENERATED ALWAYS AS IDENTITY (START WITH 42, INCREMENT BY 100)");
