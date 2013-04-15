@@ -86,7 +86,7 @@ public class ViewDDL
                 type = new DataTypeDescriptor(TypeId.CHAR_ID, true, 0);
             }
             TableDDL.addColumn(builder, schemaName, viewName, rc.getName(), colpos++,
-                               type, type.isNullable(), false, null);
+                               type, type.isNullable(), null);
         }
         View view = builder.akibanInformationSchema().getView(schemaName, viewName);
         ddlFunctions.createView(session, view);
