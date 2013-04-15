@@ -558,7 +558,6 @@ public class AISMerge {
                 newColumn.setInitialAutoIncrementValue(column.getInitialAutoIncrementValue());
             }
             if (column.getDefaultIdentity() != null) {
-                TableName sequenceName = nameGenerator.generateIdentitySequenceName(new TableName(schemaName, tableName));
                 addIdentitySequence(builder, schemaName, tableName, column.getName(),
                                     column.getDefaultIdentity(), column.getIdentityGenerator());
             }
