@@ -19,7 +19,6 @@ package com.akiban.sql.aisddl;
 
 import com.akiban.ais.model.Sequence;
 import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.error.SequenceIntervalZeroException;
 import com.akiban.sql.parser.AlterTableRenameColumnNode;
 import com.akiban.sql.parser.AlterTableRenameNode;
 import com.akiban.ais.AISCloner;
@@ -124,8 +123,7 @@ public class AlterTableDDL {
         List<ColumnDefinitionNode> columnDefNodes = new ArrayList<>();
         List<FKConstraintDefinitionNode> fkDefNodes= new ArrayList<>();
         List<ConstraintDefinitionNode> conDefNodes = new ArrayList<>();
-        List<String> newCols = null;
-        
+
         for(TableElementNode node : elements) {
             switch(node.getNodeType()) {
                 case NodeTypes.COLUMN_DEFINITION_NODE: {
@@ -183,7 +181,6 @@ public class AlterTableDDL {
                 } break;
 
                 case NodeTypes.AT_RENAME_NODE:
-                    
                     TableName newName = DDLHelper.convertName(defaultSchema,
                                                               ((AlterTableRenameNode)node).newName());
                     TableName oldName = table.getName();
@@ -191,18 +188,14 @@ public class AlterTableDDL {
                     return ChangeLevel.METADATA;
                     
                 case NodeTypes.AT_RENAME_COLUMN_NODE:
-
                     AlterTableRenameColumnNode alterRenameCol = (AlterTableRenameColumnNode) node;
                     String oldColName = alterRenameCol.getName();
                     String newColName = alterRenameCol.newName();
                     final Column oldCol = table.getColumn(oldColName);
                     if (oldCol == null)
                         throw new NoSuchColumnException(oldColName);
-                    if (newCols == null)
-                        newCols = new ArrayList<>();
-                    newCols.add(newColName);
                     columnChanges.add(TableChange.createModify(oldColName, newColName));
-                    break;
+                break;
 
                 default:
                     return null; // Something unsupported
@@ -218,69 +211,11 @@ public class AlterTableDDL {
         for(ColumnDefinitionNode cdn : columnDefNodes) {
             if(cdn instanceof ModifyColumnNode) {
                 ModifyColumnNode modNode = (ModifyColumnNode) cdn;
-                Column column = tableCopy.getColumn(modNode.getColumnName());
-                if(column == null) {
-                    throw new NoSuchColumnException(modNode.getColumnName());
-                }
-                switch(modNode.getNodeType()) {
-                    case NodeTypes.MODIFY_COLUMN_DEFAULT_NODE:
-                        if(modNode.isAutoincrementColumn()) {
-                            if(column.getDefaultIdentity() == null) {
-                                throw new IllegalArgumentException("Not an identity column");
-                            }
-                            int autoIncType = (int)modNode.getAutoinc_create_or_modify_Start_Increment();
-                            switch(autoIncType) {
-                                case ColumnDefinitionNode.MODIFY_AUTOINCREMENT_INC_VALUE: {
-                                    long newValue = modNode.getAutoincrementIncrement();
-                                    if(newValue == 0) {
-                                        throw new SequenceIntervalZeroException();
-                                    }
-                                    Sequence seq = column.getIdentityGenerator();
-                                    aisCopy.removeSequence(seq.getSequenceName());
-                                    Sequence newSeq = Sequence.create(aisCopy,
-                                                                      seq.getSchemaName(),
-                                                                      seq.getSequenceName().getTableName(),
-                                                                      seq.getStartsWith(),
-                                                                      modNode.getAutoincrementIncrement(),
-                                                                      seq.getMinValue(),
-                                                                      seq.getMaxValue(),
-                                                                      seq.isCycle());
-                                    aisCopy.addSequence(newSeq);
-                                    column.setIdentityGenerator(newSeq);
-                                } break;
-                                case ColumnDefinitionNode.MODIFY_AUTOINCREMENT_RESTART_VALUE:
-                                    throw new UnsupportedSQLException("Not yet implemented", modNode);
-                                default:
-                                    throw new IllegalStateException("Unknown autoIncType: " + autoIncType);
-                            }
-                        } else {
-                            column.setDefaultValue(TableDDL.getColumnDefault(modNode));
-                        }
-                    break;
-                    case NodeTypes.MODIFY_COLUMN_CONSTRAINT_NODE: // Type only comes from NULL
-                        column.setNullable(true);
-                    break;
-                    case NodeTypes.MODIFY_COLUMN_CONSTRAINT_NOT_NULL_NODE: // Type only comes from NOT NULL
-                        column.setNullable(false);
-                    break;
-                    case NodeTypes.MODIFY_COLUMN_TYPE_NODE:
-                        tableCopy.dropColumn(modNode.getColumnName());
-                        TableDDL.addColumn(builder, table.getName().getSchemaName(), table.getName().getTableName(),
-                                           column.getName(), column.getPosition(), cdn.getType(), column.getNullable(),
-                                           column.getInitialAutoIncrementValue() != null,
-                                           column.getDefaultValue());
-                    break;
-                    default:
-                        throw new IllegalStateException("Unexpected node type: " + modNode);
-                }
+                handleModifyColumnNode(modNode, builder, tableCopy);
             } else {
                 TableDDL.addColumn(builder, cdn, table.getName().getSchemaName(), table.getName().getTableName(), pos++);
             }
         }
-        if (newCols != null)
-            for (String name : newCols)
-                if (tableCopy.getColumn(name) == null)
-                    throw new AkibanInternalException("New Columns " + newCols + " not created successfully");
         copyTableIndexes(table, tableCopy, columnChanges, indexChanges);
 
         IndexNameGenerator indexNamer = DefaultIndexNameGenerator.forTable(tableCopy);
@@ -314,6 +249,70 @@ public class AlterTableDDL {
         }
 
         return ddl.alterTable(session, table.getName(), tableCopy, columnChanges, indexChanges, context);
+    }
+
+    private static void handleModifyColumnNode(ModifyColumnNode modNode, AISBuilder builder, UserTable tableCopy) {
+        AkibanInformationSchema aisCopy = tableCopy.getAIS();
+        Column column = tableCopy.getColumn(modNode.getColumnName());
+        if(column == null) {
+            throw new NoSuchColumnException(modNode.getColumnName());
+        }
+        switch(modNode.getNodeType()) {
+            case NodeTypes.MODIFY_COLUMN_DEFAULT_NODE:
+                if(modNode.isAutoincrementColumn()) {
+                    int autoIncType = (int)modNode.getAutoinc_create_or_modify_Start_Increment();
+                    switch(autoIncType) {
+                        case ColumnDefinitionNode.CREATE_AUTOINCREMENT: {
+                            if(column.getIdentityGenerator() != null) {
+                                throw new IllegalArgumentException("Already an IDENTITY column");
+                            }
+                            TableName name = tableCopy.getName();
+                            TableDDL.setAutoIncrement(builder, name.getSchemaName(), name.getTableName(), modNode);
+                        }
+                        break;
+                        case ColumnDefinitionNode.MODIFY_AUTOINCREMENT_INC_VALUE: {
+                            Sequence curSeq = column.getIdentityGenerator();
+                            if(curSeq == null) {
+                                throw new IllegalArgumentException("Not an IDENTITY column");
+                            }
+                            aisCopy.removeSequence(curSeq.getSequenceName());
+                            Sequence newSeq = Sequence.create(aisCopy,
+                                                              curSeq.getSchemaName(),
+                                                              curSeq.getSequenceName().getTableName(),
+                                                              curSeq.getStartsWith(),
+                                                              modNode.getAutoincrementIncrement(),
+                                                              curSeq.getMinValue(),
+                                                              curSeq.getMaxValue(),
+                                                              curSeq.isCycle());
+                            aisCopy.addSequence(newSeq);
+                            column.setIdentityGenerator(newSeq);
+                        }
+                        break;
+                        case ColumnDefinitionNode.MODIFY_AUTOINCREMENT_RESTART_VALUE:
+                            // Requires Accumulator reset
+                            throw new UnsupportedSQLException("Not yet implemented", modNode);
+                        default:
+                            throw new IllegalStateException("Unknown autoIncType: " + autoIncType);
+                    }
+                } else {
+                    column.setDefaultValue(TableDDL.getColumnDefault(modNode));
+                }
+            break;
+            case NodeTypes.MODIFY_COLUMN_CONSTRAINT_NODE: // Type only comes from NULL
+                column.setNullable(true);
+            break;
+            case NodeTypes.MODIFY_COLUMN_CONSTRAINT_NOT_NULL_NODE: // Type only comes from NOT NULL
+                column.setNullable(false);
+            break;
+            case NodeTypes.MODIFY_COLUMN_TYPE_NODE:
+                tableCopy.dropColumn(modNode.getColumnName());
+                TableDDL.addColumn(builder, tableCopy.getName().getSchemaName(), tableCopy.getName().getTableName(),
+                                   column.getName(), column.getPosition(), modNode.getType(), column.getNullable(),
+                                   column.getDefaultValue());
+            break;
+            default:
+                throw new IllegalStateException("Unexpected node type: " + modNode);
+        }
     }
 
     private static void checkColumnChange(UserTable table, String columnName) {
