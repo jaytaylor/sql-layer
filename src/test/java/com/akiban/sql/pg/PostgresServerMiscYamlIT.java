@@ -23,6 +23,8 @@ import com.akiban.junit.Parameterization;
 import com.akiban.server.service.is.BasicInfoSchemaTablesService;
 import com.akiban.server.service.is.BasicInfoSchemaTablesServiceImpl;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
+import com.akiban.server.service.text.FullTextIndexService;
+import com.akiban.server.service.text.FullTextIndexServiceImpl;
 import com.akiban.sql.NamedParamsTestBase;
 import com.akiban.sql.embedded.EmbeddedJDBCService;
 import com.akiban.sql.embedded.EmbeddedJDBCServiceImpl;
@@ -79,13 +81,17 @@ public class PostgresServerMiscYamlIT extends PostgresServerYamlITBase {
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
                 .bindAndRequire(BasicInfoSchemaTablesService.class, BasicInfoSchemaTablesServiceImpl.class)
-                .bindAndRequire(EmbeddedJDBCService.class, EmbeddedJDBCServiceImpl.class);
+                .bindAndRequire(EmbeddedJDBCService.class, EmbeddedJDBCServiceImpl.class)
+                .bindAndRequire(FullTextIndexService.class, FullTextIndexServiceImpl.class);
     }
 
     @Override
     protected Map<String, String> startupConfigProperties() {
         // TODO: Remove whenever test-seq-fixup-routines.yaml no longer exists
         Map<String, String> props = new HashMap();
+        props.put("akserver.text.indexpath", "/tmp/aktext");
+        props.put(FullTextIndexServiceImpl.UPDATE_INTERVAL, Long.toString(1000));
+        props.put(FullTextIndexServiceImpl.POPULATE_DELAY_INTERVAL, Long.toString(1000));
         props.put("akserver.dxl.use_global_lock", "true");
         props.putAll(uniqueStartupConfigProperties(getClass()));
         return props;
