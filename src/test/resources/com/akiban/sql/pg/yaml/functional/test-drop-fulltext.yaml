@@ -3,7 +3,7 @@
 - CreateTable: t(id int, name varchar(224));
 ---
 - Statement: CREATE INDEX idx on t(full_text(name));
---- # TODO: SLEEP will be replaced with a 'wait*' function, which force the index population and waits until that is done
+--- # TODO: SLEEP will be replaced with a 'wait*' function, which forces the index population and waits until that is done
 - Statement: SELECT SLEEP(5000);
 ---
 - Statement: INSERT INTO t values (1, 'bar1'), (2, 'bar2'), (3, 'bar3'), (4, 'bar1');
