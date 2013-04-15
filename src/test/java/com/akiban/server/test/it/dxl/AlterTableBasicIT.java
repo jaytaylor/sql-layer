@@ -1180,11 +1180,10 @@ public class AlterTableBasicIT extends AlterTableITBase {
         Sequence seq = column.getIdentityGenerator();
         assertNotNull("id column has sequence", seq);
 
-        AkibanInformationSchema copy = AISCloner.clone(ais());
-        copy.getUserTable(id).getColumn("id").setDefaultIdentity(false);
-        runAlter(ChangeLevel.METADATA, C_NAME, copy.getUserTable(id),
-                 Arrays.asList(TableChange.createModify("id", "id")), Arrays.<TableChange>asList());
+        runAlter(ChangeLevel.METADATA, "ALTER TABLE c ALTER COLUMN id DROP DEFAULT");
+        assertNull("Old seq was dropped", ais().getSequence(seq.getSequenceName()));
 
+        runAlter(ChangeLevel.METADATA, "ALTER TABLE c ALTER COLUMN id SET GENERATED ALWAYS AS IDENTITY");
         Column newColumn = getUserTable(id).getColumn("id");
         assertEquals("altered is always", false, newColumn.getDefaultIdentity());
     }

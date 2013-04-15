@@ -86,6 +86,18 @@ public class AISMerge {
         }
     }
 
+    private static class IdentityInfo {
+        public final TableName tableName;
+        public final String columnName;
+        public final Sequence sequence;
+
+        public IdentityInfo(TableName tableName, String columnName, Sequence sequence) {
+            this.tableName = tableName;
+            this.columnName = columnName;
+            this.sequence = sequence;
+        }
+    }
+
     private static final Logger LOG = LoggerFactory.getLogger(AISMerge.class);
 
     /* state */
@@ -95,16 +107,17 @@ public class AISMerge {
     private final MergeType mergeType;
     private final List<JoinChange> changedJoins;
     private final Map<IndexName,IndexInfo> indexesToFix;
+    private final List<IdentityInfo> identityToFix;
 
 
     /** Legacy test constructor. Creates an AISMerge for adding a table with a new {@link DefaultNameGenerator}. */
     AISMerge(AkibanInformationSchema sourceAIS, UserTable newTable) {
-        this(new DefaultNameGenerator(sourceAIS), copyAISForAdd(sourceAIS), newTable, MergeType.ADD_TABLE, null, null);
+        this(new DefaultNameGenerator(sourceAIS), copyAISForAdd(sourceAIS), newTable, MergeType.ADD_TABLE, null, null, null);
     }
 
     /** Create a new AISMerge to be used for adding a new table. */
     public static AISMerge newForAddTable(NameGenerator generator, AkibanInformationSchema sourceAIS, UserTable newTable) {
-        return new AISMerge(generator, copyAISForAdd(sourceAIS), newTable, MergeType.ADD_TABLE, null, null);
+        return new AISMerge(generator, copyAISForAdd(sourceAIS), newTable, MergeType.ADD_TABLE, null, null, null);
     }
 
     /** Create a new AISMerge to be used for modifying a table. */
@@ -112,27 +125,30 @@ public class AISMerge {
                                              Collection<ChangedTableDescription> alteredTables) {
         List<JoinChange> changedJoins = new ArrayList<>();
         Map<IndexName,IndexInfo> indexesToFix = new HashMap<>();
-        AkibanInformationSchema targetAIS = copyAISForModify(sourceAIS, indexesToFix, changedJoins, alteredTables);
-        return new AISMerge(generator, targetAIS, null, MergeType.MODIFY_TABLE, changedJoins, indexesToFix);
+        List<IdentityInfo> identityToFix = new ArrayList<>();
+        AkibanInformationSchema targetAIS = copyAISForModify(sourceAIS, indexesToFix, changedJoins, identityToFix, alteredTables);
+        return new AISMerge(generator, targetAIS, null, MergeType.MODIFY_TABLE, changedJoins, indexesToFix, identityToFix);
     }
 
     /** Create a new AISMerge to be used for adding one, or more, index to a table. Also see {@link #mergeIndex(Index)}. */
     public static AISMerge newForAddIndex(NameGenerator generator, AkibanInformationSchema sourceAIS) {
-        return new AISMerge(generator, copyAISForAdd(sourceAIS), null, MergeType.ADD_INDEX, null, null);
+        return new AISMerge(generator, copyAISForAdd(sourceAIS), null, MergeType.ADD_INDEX, null, null, null);
     }
 
     public static AISMerge newForOther(NameGenerator generator, AkibanInformationSchema sourceAIS) {
-        return new AISMerge(generator, copyAISForAdd(sourceAIS), null, MergeType.OTHER, null, null);
+        return new AISMerge(generator, copyAISForAdd(sourceAIS), null, MergeType.OTHER, null, null, null);
     }
 
     private AISMerge(NameGenerator nameGenerator, AkibanInformationSchema targetAIS, UserTable sourceTable,
-                     MergeType mergeType, List<JoinChange> changedJoins, Map<IndexName,IndexInfo> indexesToFix) {
+                     MergeType mergeType, List<JoinChange> changedJoins, Map<IndexName,IndexInfo> indexesToFix,
+                     List<IdentityInfo> identityToFix) {
         this.nameGenerator = nameGenerator;
         this.targetAIS = targetAIS;
         this.sourceTable = sourceTable;
         this.mergeType = mergeType;
         this.changedJoins = changedJoins;
         this.indexesToFix = indexesToFix;
+        this.identityToFix = identityToFix;
     }
 
 
@@ -143,9 +159,11 @@ public class AISMerge {
     private static AkibanInformationSchema copyAISForModify(AkibanInformationSchema oldAIS,
                                                             Map<IndexName,IndexInfo> indexesToFix,
                                                             final List<JoinChange> joinsToFix,
+                                                            List<IdentityInfo> identityToFix,
                                                             Collection<ChangedTableDescription> changedTables)
     {
         final Set<Sequence> excludedSequences = new HashSet<>();
+        final Set<Sequence> newSequences = new HashSet<>();
         final Set<Group> excludedGroups = new HashSet<>();
         final Map<TableName,UserTable> filteredTables = new HashMap<>();
         for(ChangedTableDescription desc : changedTables) {
@@ -217,6 +235,11 @@ public class AISMerge {
 
             for(TableName name : desc.getDroppedSequences()) {
                 excludedSequences.add(oldAIS.getSequence(name));
+            }
+
+            for(String name : desc.getIdentityAdded()) {
+                Sequence seq = newTable.getColumn(name).getIdentityGenerator();
+                identityToFix.add(new IdentityInfo(desc.getNewName(), name, seq));
             }
         }
 
@@ -481,6 +504,12 @@ public class AISMerge {
             index.setTreeName((info.tree != null) ? info.tree : nameGenerator.generateIndexTreeName(index));
         }
 
+        for(IdentityInfo info : identityToFix) {
+            Sequence seq = mergeSequenceInternal(info.sequence);
+            UserTable table = targetAIS.getUserTable(info.tableName);
+            table.getColumn(info.columnName).setIdentityGenerator(seq);
+        }
+
         builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
         builder.akibanInformationSchema().freeze();
     }
@@ -650,13 +679,18 @@ public class AISMerge {
     
     public AkibanInformationSchema mergeSequence(Sequence sequence)
     {
-        Sequence newSeq = Sequence.create(targetAIS, sequence);
-        newSeq.setTreeName(nameGenerator.generateSequenceTreeName(newSeq));
-        targetAIS.addSequence(newSeq);
+        mergeSequenceInternal(sequence);
         targetAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
         targetAIS.freeze();
         return targetAIS;
-    }    
+    }
+
+    private Sequence mergeSequenceInternal(Sequence sequence)
+    {
+        Sequence newSeq = Sequence.create(targetAIS, sequence);
+        newSeq.setTreeName(nameGenerator.generateSequenceTreeName(newSeq));
+        return newSeq;
+    }
 
     public static AkibanInformationSchema mergeRoutine(AkibanInformationSchema oldAIS,
                                                        Routine routine) {

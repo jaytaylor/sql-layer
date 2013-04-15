@@ -546,6 +546,18 @@ public class AlterTableDDLTest {
     }
 
     //
+    // ALTER COLUMN DROP DEFAULT (where default is generated)
+    //
+    @Test
+    public void alterColumnDropDefaultGenerated() throws StandardException {
+        buildCWithGeneratedID(1, true);
+        parseAndRun("ALTER TABLE c ALTER COLUMN id DROP DEFAULT");
+        expectColumnChanges("MODIFY:id->id");
+        expectIndexChanges();
+        expectFinalTable(C_NAME, "id MCOMPAT_ INTEGER(11) NOT NULL", "PRIMARY(id)");
+    }
+
+    //
     // ALTER COLUMN SET INCREMENT BY <number>
     //
 

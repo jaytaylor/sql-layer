@@ -297,6 +297,13 @@ public class AlterTableDDL {
                             throw new IllegalStateException("Unknown autoIncType: " + autoIncType);
                     }
                 } else {
+                    // DROP DEFAULT will come though as a NULL default, clears both GENERATED and DEFAULT
+                    Sequence seq = column.getIdentityGenerator();
+                    if(seq != null) {
+                        column.setDefaultIdentity(null);
+                        column.setIdentityGenerator(null);
+                        aisCopy.removeSequence(seq.getSequenceName());
+                    }
                     column.setDefaultValue(TableDDL.getColumnDefault(modNode));
                 }
             break;
