@@ -275,6 +275,8 @@ public enum ErrorCode {
 
     // Class 42/600 - JSON interface errors
     KEY_COLUMN_MISMATCH     ("42", "600", Importance.DEBUG, KeyColumnMismatchException.class),
+    KEY_COLUMN_MISSING      ("42", "601", Importance.DEBUG, KeyColumnMissingException.class),
+    INVALID_CHILD_COLLECTION("42", "602", Importance.DEBUG, InvalidChildCollectionException.class),
 
     // Class 42/700 - full text errors
     FULL_TEXT_QUERY_PARSE   ("42", "700", Importance.DEBUG, FullTextQueryParseException.class),

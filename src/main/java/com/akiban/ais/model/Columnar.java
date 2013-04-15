@@ -110,6 +110,13 @@ public abstract class Columnar
     {
         return tableName.getSchemaName().equals(TableName.INFORMATION_SCHEMA);
     }
+    
+    public boolean isProtectedTable() {
+        return TableName.INFORMATION_SCHEMA.equals(tableName.getSchemaName()) ||
+                TableName.SECURITY_SCHEMA.equals(tableName.getSchemaName()) ||
+                TableName.SYS_SCHEMA.equals(tableName.getSchemaName()) ||
+                TableName.SQLJ_SCHEMA.equals(tableName.getSchemaName());
+    }
 
     public BitSet notNull()
     {

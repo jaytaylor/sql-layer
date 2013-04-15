@@ -23,15 +23,11 @@ import java.util.List;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
@@ -49,7 +45,6 @@ import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
 import com.akiban.server.types3.texpressions.TPreparedFunction;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
-import com.akiban.server.types3.texpressions.TPreparedParameter;
 import com.akiban.server.types3.texpressions.TValidatedScalar;
 
 public class InsertGenerator extends OperatorGenerator{
@@ -68,41 +63,8 @@ public class InsertGenerator extends OperatorGenerator{
         RowStream stream = assembleValueScan (table);
         stream = assembleProjectTable (stream, table);
         stream.operator = API.insert_Returning(stream.operator, true);
-
-        List<TPreparedExpression> pExpressions = null;
-        if (table.getPrimaryKey() != null) {
-            PrimaryKey key = table.getPrimaryKey();
-            int size  = key.getIndex().getKeyColumns().size();
-            pExpressions = new ArrayList<>(size);
-            for (IndexColumn column : key.getIndex().getKeyColumns()) {
-                int fieldIndex = column.getColumn().getPosition();
-                pExpressions.add (new TPreparedField(stream.rowType.typeInstanceAt(fieldIndex), fieldIndex));
-            }
-            stream.operator = API.project_Table(stream.operator,
-                    stream.rowType,
-                    schema().userTableRowType(table),
-                    null,
-                    pExpressions);
-        }
+        stream = projectTable(stream, table);
         return stream.operator; 
-    }
-    
-    protected RowStream assembleValueScan(UserTable table) {
-        RowStream stream = new RowStream();
-        List<BindableRow> bindableRows = new ArrayList<>();
-        
-        int nfields = table.getColumns().size();
-        TInstance[] types = new TInstance[nfields];
-        TInstance varchar = Column.generateTInstance(null, Types.VARCHAR, 65535L, null, false);
-        List<TPreparedExpression> tExprs = new ArrayList<>();
-        for (int index = 0; index < table.getColumns().size(); index++) {
-            tExprs.add(index, new TPreparedParameter(index, varchar));
-            types[index] = varchar;
-        }
-        stream.rowType =  schema().newValuesType(types);
-        bindableRows.add(BindableRow.of(stream.rowType, null, tExprs, queryContext()));
-        stream.operator = API.valuesScan_Default(bindableRows, stream.rowType);
-        return stream;
     }
     
     protected RowStream assembleProjectTable (RowStream input, UserTable table) {

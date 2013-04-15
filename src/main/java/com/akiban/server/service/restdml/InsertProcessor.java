@@ -30,7 +30,6 @@ import com.akiban.ais.model.CacheValueGenerator;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
@@ -69,39 +68,20 @@ public class InsertProcessor extends DMLProcessor {
                 }
             };
 
-    private class InsertContext {
-        public TableName tableName;
-        public UserTable table;
-        public QueryContext queryContext;
-        public Session session;
-        public Map<Column, PValueSource> pkValues;
-        public boolean anyUpdates;
+    public String processInsert(Session session, AkibanInformationSchema ais, TableName rootTable, JsonNode node) {
         
-        public InsertContext (TableName tableName, UserTable table, Session session) {
-            this.table = table;
-            this.tableName = tableName;
-            this.session = session;
-            this.queryContext = newQueryContext(session, table);
-        }
-    }
-    
-    public String processInsert(Session session, AkibanInformationSchema ais, TableName rootTable, JsonNode node) 
-            {
-        setAIS(ais);
-        insertGenerator = getGenerator(CACHED_INSERT_GENERATOR);
+        ProcessContext context = new ProcessContext ( ais, session, rootTable);
+        insertGenerator = getGenerator(CACHED_INSERT_GENERATOR, context);
 
         StringBuilder builder = new StringBuilder();
         AkibanAppender appender = AkibanAppender.of(builder);
-
-        UserTable table = getTable(rootTable);
-        InsertContext context = new InsertContext(rootTable, table, session);
 
         processContainer (node, appender, context);
         
         return appender.toString();
     }
     
-    private void processContainer (JsonNode node, AkibanAppender appender, InsertContext context) {
+    private void processContainer (JsonNode node, AkibanAppender appender, ProcessContext context) {
         boolean first = true;
         Map<Column, PValueSource> pkValues = null;
         
@@ -127,7 +107,7 @@ public class InsertProcessor extends DMLProcessor {
         
     }
     
-    private void processTable (JsonNode node, AkibanAppender appender, InsertContext context) {
+    private void processTable (JsonNode node, AkibanAppender appender, ProcessContext context) {
         
         // Pass one, insert fields from the table
         Iterator<Entry<String,JsonNode>> i = node.getFields();
@@ -151,11 +131,10 @@ public class InsertProcessor extends DMLProcessor {
                     builder.deleteCharAt(builder.length()-1);
                 } 
                 TableName tableName = TableName.parse(context.tableName.getSchemaName(), field.getKey());
-                UserTable table = getTable (tableName);
-                InsertContext newContext = new InsertContext(tableName, table, context.session);
+                ProcessContext newContext = new ProcessContext(context.ais(), context.session, tableName);
                 newContext.pkValues = context.pkValues;
                 appender.append(",\"");
-                appender.append(table.getNameForOutput());
+                appender.append(newContext.table.getNameForOutput());
                 appender.append("\":");
                 processContainer (field.getValue(), appender, newContext);
             }
@@ -166,12 +145,16 @@ public class InsertProcessor extends DMLProcessor {
         }
     }
     
-    private void setValue (String field, JsonNode node, InsertContext context) {
+    private void setValue (String field, JsonNode node, ProcessContext context) {
         Column column = getColumn (context.table, field);
-        setValue (context.queryContext, column, node.asText());
+        if (node.isNull()) {
+            setValue (context.queryContext, column, null);
+        } else {
+            setValue (context.queryContext, column, node.asText());
+        }
     }
 
-    private void runUpdate (InsertContext context, AkibanAppender appender) {
+    private void runUpdate (ProcessContext context, AkibanAppender appender) {
         assert context != null : "Bad Json format";
         LOG.trace("Insert row into: {}, values {}", context.tableName, context.queryContext);
         Operator insert = insertGenerator.create(context.table.getName());
@@ -208,16 +191,4 @@ public class InsertProcessor extends DMLProcessor {
         PValue result = new PValue(MString.varcharFor(appender.toString()), appender.toString());
         return result;
     }
-    
-    private void setValue (QueryContext queryContext, Column column, String value) {
-        PValue pvalue = null;
-        if (value == null) {
-            pvalue = new PValue(Column.generateTInstance(null, Types.VARCHAR, 65535L, null, true));
-            pvalue.putNull();
-        } else {
-            pvalue = new PValue(Column.generateTInstance(null, Types.VARCHAR, 65535L, null, true), value);
-        }
-        queryContext.setPValue(column.getPosition(), pvalue);
-    }
-    
 }
