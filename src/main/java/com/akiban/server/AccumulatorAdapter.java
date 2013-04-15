@@ -18,41 +18,41 @@
 package com.akiban.server;
 
 import com.akiban.server.error.PersistitAdapterException;
-import com.akiban.server.service.tree.TreeService;
 import com.persistit.Accumulator;
 import com.persistit.Exchange;
-import com.persistit.Transaction;
 import com.persistit.Tree;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
 
 public class AccumulatorAdapter {
 
-    public static long getSnapshot(AccumInfo accumInfo, TreeService treeService, Tree tree)
-    throws PersistitInterruptedException
-    {
+    public static long getSnapshot(AccumInfo accumInfo, Tree tree) throws PersistitInterruptedException {
         Accumulator accumulator = getAccumulator(accumInfo, tree);
-        Transaction txn = getCurrentTrx(treeService);
-        return accumulator.getSnapshotValue(txn);
+        return accumulator.getSnapshotValue();
     }
 
-    public static long updateAndGet(AccumInfo accumInfo, Exchange exchange, long value) {
-        Accumulator accumulator = getAccumulator(accumInfo, exchange.getTree());
-        return accumulator.update(value, exchange.getTransaction());
+    public static void sumAdd(AccumInfo accumInfo, Exchange exchange, long value) {
+        Accumulator.SumAccumulator sum = (Accumulator.SumAccumulator)getAccumulator(accumInfo, exchange.getTree());
+        sum.add(value);
     }
     
-    public static long getLiveValue(AccumInfo accumInfo, TreeService treeService, Tree tree)
-    {
+    public static long getLiveValue(AccumInfo accumInfo, Tree tree) {
         Accumulator accumulator = getAccumulator(accumInfo, tree);
         return accumulator.getLiveValue();
     }
 
     public long getSnapshot() throws PersistitInterruptedException {
-        return accumulator.getSnapshotValue(getCurrentTrx());
+        return accumulator.getSnapshotValue();
     }
 
-    public long updateAndGet(long value) {
-        return accumulator.update(value, getCurrentTrx());
+    public void sumAdd(long value) {
+        Accumulator.SumAccumulator sum = (Accumulator.SumAccumulator)accumulator;
+        sum.add(value);
+    }
+
+    public long seqAllocate() {
+        Accumulator.SeqAccumulator seq = (Accumulator.SeqAccumulator)accumulator;
+        return seq.allocate();
     }
 
     public long getLiveValue() {
@@ -67,32 +67,29 @@ public class AccumulatorAdapter {
         long current = getSnapshot();
         if(evenIfLess || value > current) {
             long diff = value - current;
-            this.updateAndGet(diff);
+            this.sumAdd(diff);
         }
     }
 
-    public AccumulatorAdapter(AccumInfo accumInfo, TreeService treeService, Tree tree) {
-        this.treeService = treeService;
+    public AccumulatorAdapter(AccumInfo accumInfo, Tree tree) {
         this.accumulator = getAccumulator(accumInfo, tree);
     }
 
     private static Accumulator getAccumulator(AccumInfo accumInfo, Tree tree) {
         try {
-            return tree.getAccumulator(accumInfo.getType(), accumInfo.getIndex());
+            switch(accumInfo.type) {
+                case SUM: return tree.getSumAccumulator(accumInfo.getIndex());
+                case MAX: return tree.getMaxAccumulator(accumInfo.getIndex());
+                case MIN: return tree.getMinAccumulator(accumInfo.getIndex());
+                case SEQ: return tree.getSeqAccumulator(accumInfo.getIndex());
+                default:
+                    throw new IllegalStateException("Unknown accumulator type: " + accumInfo.type);
+            }
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
         }
     }
 
-    private Transaction getCurrentTrx() {
-        return getCurrentTrx(treeService);
-    }
-
-    private static Transaction getCurrentTrx(TreeService treeService) {
-        return treeService.getDb().getTransaction();
-    }
-
-    private final TreeService treeService;
     private final Accumulator accumulator;
 
     /**
@@ -104,10 +101,16 @@ public class AccumulatorAdapter {
      * </p>
      */
     public static enum AccumInfo {
+        /** Ordinal value as used in the hkey. Write once. Attached to the PK tree. */
         ORDINAL(0, Accumulator.Type.SUM),
+        /** Size of a table or group index. Attached to PK tree and GI tree, respectively */
         ROW_COUNT(1, Accumulator.Type.SUM),
+        /** Source of values for hidden primary keys. Attached to the PK tree. */
         UNIQUE_ID(2, Accumulator.Type.SEQ),
+        /** Saves values from the MySQL adapter AUTO INCREMENT columns. Attached to the PK tree. */
         AUTO_INC(3, Accumulator.Type.SUM),
+        /** Source of values for SQL sequences. Attached to the sequence tree. */
+        SEQUENCE(4, Accumulator.Type.SEQ)
         ;
     
         AccumInfo(int index, Accumulator.Type type) {

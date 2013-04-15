@@ -1,8 +1,26 @@
-var params = JSON.parse(json_in);
-var result = params.param;
-var extent = com.akiban.direct.Direct.context.extent;
-for (customer in Iterator(extent.customers)) {
-  result += "," + customer.name;
-}
-result;
+function _register(registrar) {
+    registrar.register(
+        "method=GET path=cnames function=customerNames in=(QP:prefix String required) out=String");
+        
+    registrar.register(
+        "method=GET path=oids/(\\d*) function=orderNumbers in=(pp:1 int required) out=String"); 
+};
 
+function customerNames(s) {
+    var result = s;
+    var extent = Packages.com.akiban.direct.Direct.context.extent;
+    for (customer in Iterator(extent.customers)) {
+      result += "," + customer.name;
+    }
+    return result;
+}
+
+function orderNumbers(cid) {
+    var result = s;
+    var extent = Packages.com.akiban.direct.Direct.context.extent;
+    var customer = extent.getCustomer(cid); 
+    for (order in customer.orders) {
+       result += "," + order.oid;
+    }    
+    return result;
+}

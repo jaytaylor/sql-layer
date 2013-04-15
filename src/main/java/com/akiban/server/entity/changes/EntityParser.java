@@ -19,8 +19,11 @@ package com.akiban.server.entity.changes;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.codehaus.jackson.JsonNode;
+import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,10 +37,23 @@ import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.service.session.Session;
 
 public final class EntityParser {
+    public static final String PK_COL_NAME = "_id";
+
+    public static String parentRefColName(String parentName) {
+        return "_" + parentName + PK_COL_NAME;
+    }
+
+
     private static final Logger LOG = LoggerFactory.getLogger(EntityParser.class);
+    private final boolean alwaysWithPK;
     private int stringWidth = 128;
-    
-    public EntityParser () {
+
+    public EntityParser() {
+        this(false);
+    }
+
+    public EntityParser(boolean alwaysWithPK) {
+        this.alwaysWithPK = alwaysWithPK;
     }
         
     public void setStringWidth(int width) {
@@ -97,6 +113,12 @@ public final class EntityParser {
         // Pass one, insert fields from the table
         boolean columnsAdded = false;
         NewUserTableBuilder table = builder.userTable(tableName.getSchemaName(), tableName.getTableName());
+
+        if(alwaysWithPK) {
+            addPK(table);
+            columnsAdded = true;
+        }
+
         Iterator<Entry<String,JsonNode>> i = node.getFields();
         while (i.hasNext()) {
             Entry<String,JsonNode> field = i.next();
@@ -113,32 +135,45 @@ public final class EntityParser {
         }
         // pass 2: insert the child nodes
         boolean first = true;
-        String columnName = "_" + tableName.getTableName() + "_id";
         i = node.getFields();
         while (i.hasNext()) {
             Entry<String,JsonNode> field = i.next();
             if (field.getValue().isContainerNode()) {
                 LOG.trace("Creating child table {} - first {}", field.getKey(), first);
-                if (first) {
-                    table.autoIncLong(columnName, 0);
-                    table.pk(columnName);
-                    first = false;
+                if (first && !alwaysWithPK) {
+                    addPK(table);
                 }
+                first = false;
                 TableName childTable = TableName.parse(tableName.getSchemaName(), field.getKey());
                 processContainer (field.getValue(), builder, childTable);
                 NewUserTableBuilder child = builder.getUserTable(childTable);
-                child.colLong(columnName);
-                LOG.trace("Column added {}", columnName);
-                child.joinTo(tableName).on(columnName, columnName);
+                String parentRefName = parentRefColName(tableName.getTableName());
+                child.colLong(parentRefName);
+                LOG.trace("Column added {}", parentRefName);
+                child.joinTo(tableName).on(parentRefName, PK_COL_NAME);
                 builder.getUserTable(tableName);
             }
         }
     }
-    
+    private static final Pattern DATE_PATTERN = Pattern.compile("^((\\d+)-(\\d+)-(\\d+)).*");    
     private void addColumnToTable (JsonNode node, String name, NewUserTableBuilder table) {
         if (node.isTextual()) {
-            int  len = Math.max(node.asText().length(), stringWidth);
-            table.colString(name, len, true);
+            boolean dateColumn = false;
+            // Do a simple "could be a date" check first, if so, do an exact verify.
+            Matcher m = DATE_PATTERN.matcher(node.asText().trim());
+            if (m.matches()) {
+                try {
+                    ISODateTimeFormat.dateTimeParser().parseDateTime(node.asText());
+                    table.colDateTime(name, true);
+                    dateColumn = true;
+                } catch (IllegalArgumentException ex) {
+                    dateColumn = false;
+                }
+            }
+            if (!dateColumn) {
+                int  len = Math.max(node.asText().length(), stringWidth);
+                table.colString(name, len, true);
+            }
         } else if (node.isIntegralNumber()) {
             table.colBigInt(name, true);
         } else if (node.isDouble()) {
@@ -149,5 +184,10 @@ public final class EntityParser {
             // wild guess
             table.colString(name, stringWidth, true);
         }
+    }
+
+    private void addPK(NewUserTableBuilder builder) {
+        builder.autoIncLong(PK_COL_NAME, 1);
+        builder.pk(PK_COL_NAME);
     }
 }

@@ -31,7 +31,6 @@ import com.akiban.server.explain.Explainable;
 /** A Routine that uses Java native data types in its invocation API. */
 public abstract class ServerJavaRoutine implements Explainable
 {
-    private static final Object CACHE_KEY = new Object();
     private ServerQueryContext context;
     private ServerRoutineInvocation invocation;
 
@@ -57,16 +56,7 @@ public abstract class ServerJavaRoutine implements Explainable
     public void push() {
         ServerCallContextStack.push(context, invocation);
         AkibanInformationSchema ais = context.getServer().getAIS();
-        
-        DirectClassLoader dcl = ais.getCachedValue(CACHE_KEY, new CacheValueGenerator<DirectClassLoader>() {
-
-            @Override
-            public DirectClassLoader valueFor(AkibanInformationSchema ais) {
-                return new DirectClassLoader(getClass().getClassLoader(), context.getCurrentSchema(), ais);
-            }
-            
-        });
-        Direct.enter(new DirectContextImpl(context.getCurrentSchema(), dcl));
+        Direct.enter(context.getCurrentSchema(), ais);
     }
 
     public void pop(boolean success) {

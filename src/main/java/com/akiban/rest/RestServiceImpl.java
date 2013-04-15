@@ -22,10 +22,13 @@ import com.akiban.rest.resources.*;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.restdml.DirectService;
 import com.akiban.server.service.restdml.RestDMLService;
 import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
+import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.store.Store;
 import com.google.inject.Inject;
 import com.sun.jersey.api.core.DefaultResourceConfig;
 import com.sun.jersey.api.core.ResourceConfig;
@@ -40,11 +43,7 @@ public class RestServiceImpl implements RestService, Service {
     private final ConfigurationService configService;
 	private final HttpConductor http;
     // Used by various resources
-    private final RestDMLService restDMLService;
-    private final SessionService sessionService;
-    private final TransactionService transactionService;
-    private final SecurityService securityService;
-    private final DXLService dxlService;
+    private final ResourceRequirements reqs;
 
 	private volatile ServletContextHandler handler;
 	
@@ -53,17 +52,26 @@ public class RestServiceImpl implements RestService, Service {
     public RestServiceImpl(ConfigurationService configService,
                            HttpConductor http,
                            RestDMLService restDMLService,
+                           DirectService directService,
                            SessionService sessionService,
                            TransactionService transactionService,
                            SecurityService securityService,
-                           DXLService dxlService) {
+                           DXLService dxlService,
+                           Store store,
+                           TreeService treeService) {
         this.configService = configService;
 		this.http = http;
-        this.restDMLService = restDMLService;
-        this.sessionService = sessionService;
-        this.transactionService = transactionService;
-        this.securityService = securityService;
-        this.dxlService = dxlService;
+        this.reqs = new ResourceRequirements(
+            dxlService,
+            restDMLService,
+            directService,
+            securityService,
+            sessionService,
+            transactionService,
+            store,
+            treeService,
+            configService
+        );
     }
 
     @Override
@@ -96,9 +104,6 @@ public class RestServiceImpl implements RestService, Service {
 
     private ResourceConfig createResourceConfigV1() {
         DefaultResourceConfig config = new DefaultResourceConfig();
-        ResourceRequirements reqs = new ResourceRequirements(
-                dxlService, restDMLService, securityService, sessionService, transactionService, this
-        );
         config.getSingletons().addAll(Arrays.asList(
                 new EntityResource(reqs),
                 new FullTextResource(reqs),
@@ -109,8 +114,9 @@ public class RestServiceImpl implements RestService, Service {
                 new VersionResource(reqs),
                 new DirectResource(reqs),
                 new ViewResource(reqs),
-                // This must be last to capture anything not handled above 
-                new DefaultResource(reqs)
+                new BuilderResource(reqs),
+                // This must be last to capture anything not handled above
+                new DefaultResource()
         ));
         return config;
     }

@@ -42,7 +42,13 @@ public class Sequence implements TreeLink {
         ais.addSequence(sequence);
         return sequence; 
     }
-    
+
+    /** Create a copy of <code>seq</code>. Internal data (e.g. tree name) is not copied. */
+    public static Sequence create (AkibanInformationSchema ais, Sequence seq) {
+        return create(ais, seq.sequenceName.getSchemaName(), seq.sequenceName.getTableName(),
+                      seq.startsWith, seq.increment, seq.minValue, seq.maxValue, seq.cycle);
+    }
+
     protected Sequence (AkibanInformationSchema ais,
             String schemaName, 
             String sequenceName, 
@@ -55,13 +61,14 @@ public class Sequence implements TreeLink {
         AISInvariants.checkNullName(schemaName, "Sequence", "schema name");
         AISInvariants.checkNullName(sequenceName, "Sequence", "table name");
         AISInvariants.checkDuplicateSequence(ais, schemaName, sequenceName);
-        
+
         this.sequenceName = new TableName (schemaName, sequenceName);
         this.startsWith = start;
         this.increment = increment;
         this.minValue = minValue;
         this.maxValue = maxValue;
         this.cycle = cycle;
+        this.range = maxValue - minValue + 1;
     }
     
     public final TableName getSequenceName() {
@@ -108,6 +115,7 @@ public class Sequence implements TreeLink {
     private final long maxValue;
     private final boolean cycle;
 
+    private final long range;
     private AtomicReference<TreeCache> treeCache = new AtomicReference<>();
     
    
@@ -126,44 +134,42 @@ public class Sequence implements TreeLink {
     public TreeCache getTreeCache() {
         return treeCache.get();
     }
-    
-    public long nextValue(TreeService treeService) throws PersistitException {
-        
-        Tree tree = getTreeCache().getTree();
-        AccumulatorAdapter accum = new AccumulatorAdapter (AccumInfo.AUTO_INC, treeService, tree);
-        long value = accum.updateAndGet(increment);
-        
-        if (value > maxValue && increment > 0) {
-            if (cycle) {
-                value = minValue;
-                accum.set(value);
-            } else {
+
+    public long nextValue() throws PersistitException {
+        // Note: Ever increasing, always incremented by 1, rollbacks will leave gaps. See bug1167045 for discussion.
+        AccumulatorAdapter accum = getAdapter();
+        long rawSequence = accum.seqAllocate();
+
+        long nextValue = notCycled(rawSequence);
+        if (nextValue > maxValue || nextValue < minValue) {
+            if(!cycle) {
                 throw new SequenceLimitExceededException(this);
             }
-        } else if (value < minValue && increment < 0) {
-            if (cycle) {
-                value = maxValue;
-                accum.set(value);
-            } else {
-                throw new SequenceLimitExceededException (this);
-            }
+            nextValue = cycled(nextValue);
         }
-        return value;
+        return nextValue;
     }
 
-    public long currentValue(TreeService treeService) throws PersistitException {
-        Tree tree = getTreeCache().getTree();
-        AccumulatorAdapter accum = new AccumulatorAdapter (AccumInfo.AUTO_INC, treeService, tree);
-        return accum.getSnapshot(AccumInfo.AUTO_INC, treeService, tree);
+    public long currentValue() throws PersistitException {
+        AccumulatorAdapter accum = getAdapter();
+        return cycled(notCycled(accum.getSnapshot()));
     }
-    
-    public void setStartWithAccumulator(TreeService treeService) throws PersistitException {
+
+    private AccumulatorAdapter getAdapter() throws PersistitException {
         Tree tree = getTreeCache().getTree();
-        AccumulatorAdapter accum = new AccumulatorAdapter (AccumInfo.AUTO_INC, treeService, tree);
-        // Set the starting value to startsWith - increment, 
-        // which will be, on first call to nextValue() be updated to the start value
-        // TODO: This can cause problems if startsWith is within increment of 
-        // Long.MaxValue or Long.MinValue. 
-        accum.set(startsWith - increment);
+        return new AccumulatorAdapter(AccumInfo.SEQUENCE, tree);
+    }
+
+    private long notCycled(long rawSequence) {
+        // -1 so first is startsWith, second is startsWith+inc, etc
+        return startsWith + ((rawSequence - 1) * increment);
+    }
+
+    private long cycled(long notCycled) {
+        long mod = (notCycled - minValue) % range;
+        if(mod < 0) {
+            mod += range;
+        }
+        return minValue + mod;
     }
 }

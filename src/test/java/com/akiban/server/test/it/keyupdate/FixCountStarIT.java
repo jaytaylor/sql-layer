@@ -101,7 +101,7 @@ public final class FixCountStarIT extends ITBase {
                     PersistitStore store = store().getPersistitStore();
                     final Exchange ex = store.getExchange(session(), index);
                     try {
-                        new AccumulatorAdapter(AccumInfo.ROW_COUNT, treeService(), ex.getTree()).set(newVal);
+                        new AccumulatorAdapter(AccumInfo.ROW_COUNT, ex.getTree()).set(newVal);
                     }
                     catch (PersistitInterruptedException e) {
                         throw new PersistitAdapterException(e);

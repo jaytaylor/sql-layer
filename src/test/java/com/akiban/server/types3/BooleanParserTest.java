@@ -55,7 +55,12 @@ public final class BooleanParserTest {
         param(builder, "a1", false); // MySQL doesn't believe in steak sauce
         param(builder, "0", false);
         param(builder, "0.0", false);
-        param(builder, "true", false);
+
+        param(builder, "false", false);
+        param(builder, "f", false);
+        // Following are not MySQL compatible, but required for ActiveRecord.
+        param(builder, "true", true);
+        param(builder, "t", true);
 
         return builder.asList();
     }

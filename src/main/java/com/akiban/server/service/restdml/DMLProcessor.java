@@ -16,10 +16,14 @@
  */
 package com.akiban.server.service.restdml;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CacheValueGenerator;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
@@ -34,7 +38,9 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.t3expressions.T3RegistryService;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueSource;
 
 public abstract class DMLProcessor {
 
@@ -42,8 +48,6 @@ public abstract class DMLProcessor {
     private final TreeService treeService;
     private final Store store;
     private final T3RegistryService registryService;
-    private Schema schema;
-    private AkibanInformationSchema ais;
     
     public DMLProcessor (ConfigurationService configService, 
             TreeService treeService, 
@@ -55,48 +59,7 @@ public abstract class DMLProcessor {
         this.registryService = t3RegistryService;
     }
 
-    protected void setAIS (AkibanInformationSchema ais) {
-        this.ais = ais;
-        this.schema = SchemaCache.globalSchema(ais);
-    }
-    
-    protected QueryContext newQueryContext (Session session, UserTable table) {
-        QueryContext queryContext = new RestQueryContext(getAdapter(session, table));
-        setColumnsNull (queryContext, table);
-        return queryContext;
-    }
-    
-    protected StoreAdapter getAdapter(Session session, UserTable table) {
-        // no writing to the memory tables. 
-        if (table.hasMemoryTableFactory())
-            throw new ProtectedTableDDLException (table.getName());
-        StoreAdapter adapter = session.get(StoreAdapter.STORE_ADAPTER_KEY);
-        if (adapter == null)
-            adapter = new PersistitAdapter(schema, store, treeService, session, configService);
-        return adapter;
-    }
 
-    protected void setColumnsNull (QueryContext queryContext, UserTable table) {
-        for (Column column : table.getColumns()) {
-            PValue pvalue = new PValue (column.tInstance());
-            pvalue.putNull();
-            queryContext.setPValue(column.getPosition(), pvalue);
-        }
-    }
-    
-    protected UserTable getTable (TableName name) {
-        UserTable table = ais.getUserTable(name);
-        String schemaName = name.getSchemaName();
-        if (table == null) {
-            throw new NoSuchTableException(name.getSchemaName(), name.getTableName());
-        } else if (TableName.INFORMATION_SCHEMA.equals(schemaName) ||
-                   TableName.SECURITY_SCHEMA.equals(schemaName) ||
-                   TableName.SYS_SCHEMA.equals(schemaName) ||
-                   TableName.SQLJ_SCHEMA.equals(schemaName)) {
-            throw  new ProtectedTableDDLException (table.getName());
-        }
-        return table;
-    }
     
     protected Column getColumn (UserTable table, String field) {
         Column column = table.getColumn(field);
@@ -105,10 +68,81 @@ public abstract class DMLProcessor {
         }
         return column;
     }
-    
-    protected OperatorGenerator getGenerator(CacheValueGenerator<? extends OperatorGenerator> generator) {
-        OperatorGenerator gen = ais.getCachedValue(this, generator);
+
+    protected void setValue (QueryContext queryContext, Column column, String value) {
+        PValue pvalue = null;
+        if (value == null) {
+            pvalue = new PValue(MString.varchar());
+            pvalue.putNull();
+        } else {
+            pvalue = new PValue(MString.varcharFor(value), value);
+        }
+        queryContext.setPValue(column.getPosition(), pvalue);
+        
+    }
+
+    protected OperatorGenerator getGenerator(CacheValueGenerator<? extends OperatorGenerator> generator, ProcessContext context) {
+        OperatorGenerator gen = context.ais().getCachedValue(this, generator);
         gen.setT3Registry(registryService);
         return gen;
+    }
+    
+    public class ProcessContext {
+        public TableName tableName;
+        public UserTable table;
+        public QueryContext queryContext;
+        public Session session;
+        public Map<Column, PValueSource> pkValues;
+        public Map<Column, String> allValues;
+        public boolean anyUpdates;
+        private final AkibanInformationSchema ais;
+        private final Schema schema;
+        
+        public ProcessContext (AkibanInformationSchema ais, Session session, TableName tableName) {
+            this.tableName = tableName;
+            this.ais = ais;
+            this.session = session;
+            this.schema = SchemaCache.globalSchema(ais);
+            this.table = getTable();
+            this.queryContext = newQueryContext(); 
+            allValues = new HashMap<>();
+        }
+     
+        protected AkibanInformationSchema ais() {
+            return ais;
+        }
+        
+        private QueryContext newQueryContext () {
+            QueryContext queryContext = new RestQueryContext(getAdapter());
+            setColumnsNull (queryContext, table);
+            return queryContext;
+        }
+        
+        private StoreAdapter getAdapter() {
+            // no writing to the memory tables. 
+            if (table.hasMemoryTableFactory())
+                throw new ProtectedTableDDLException (table.getName());
+            StoreAdapter adapter = session.get(StoreAdapter.STORE_ADAPTER_KEY);
+            if (adapter == null)
+                adapter = new PersistitAdapter(schema, store, treeService, session, configService);
+            return adapter;
+        }
+
+        private UserTable getTable () {
+            UserTable table = ais.getUserTable(tableName);
+            if (table == null) {
+                throw new NoSuchTableException(tableName.getSchemaName(), tableName.getTableName());
+            } else if (table.isProtectedTable()) {
+                throw  new ProtectedTableDDLException (table.getName());
+            }
+            return table;
+        }
+        protected void setColumnsNull (QueryContext queryContext, UserTable table) {
+            for (Column column : table.getColumns()) {
+                PValue pvalue = new PValue (column.tInstance());
+                pvalue.putNull();
+                queryContext.setPValue(column.getPosition(), pvalue);
+            }
+        }
     }
 }

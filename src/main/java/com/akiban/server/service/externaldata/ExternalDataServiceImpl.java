@@ -67,7 +67,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     
     private static final Logger logger = LoggerFactory.getLogger(ExternalDataServiceImpl.class);
 
-    private static final CacheValueGenerator<PlanGenerator> CACHED_PLAN_GENERATOR =
+    public static final CacheValueGenerator<PlanGenerator> CACHED_PLAN_GENERATOR =
             new CacheValueGenerator<PlanGenerator>() {
                 @Override
                 public PlanGenerator valueFor(AkibanInformationSchema ais) {

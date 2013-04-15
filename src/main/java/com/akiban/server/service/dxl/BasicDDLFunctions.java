@@ -1162,8 +1162,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 else {
                     final Exchange ex = pStore.getExchange(session, index);
                     try {
-                        AccumulatorAdapter accum =
-                                new AccumulatorAdapter(AccumInfo.ROW_COUNT, treeService(), ex.getTree());
+                        AccumulatorAdapter accum = new AccumulatorAdapter(AccumInfo.ROW_COUNT, ex.getTree());
                         accum.set(actual);
                     }
                     finally {
@@ -1192,9 +1191,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public void createRoutine(Session session, Routine routine)
+    public void createRoutine(Session session, Routine routine, boolean replaceExisting)
     {
-        schemaManager().createRoutine(session, routine);
+        schemaManager().createRoutine(session, routine, replaceExisting);
     }
 
     @Override

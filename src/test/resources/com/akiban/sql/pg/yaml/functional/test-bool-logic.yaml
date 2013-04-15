@@ -1,0 +1,15 @@
+# bug 1084743
+---
+- CreateTable: t(id int);
+---
+- Statement: INSERT INTO t VALUES (1), (2), (3);
+---
+- Statement: SELECT id > 1 AND 0 FROM t;
+- output: [['false'], ['false'], ['false']]
+---
+- Statement: SELECT 1 < id AND 0 FROM t;
+- output: [['false'], ['false'], ['false']]
+---
+- Statement: SELECT 1 > id OR 1 FROM t;
+- output: [['true'], ['true'], ['true']]
+...

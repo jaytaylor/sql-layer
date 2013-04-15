@@ -31,7 +31,7 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.sql.server.ServerCallContextStack;
 import com.akiban.sql.server.ServerQueryContext;
-import com.akiban.sql.server.ServerSession;
+import com.akiban.util.Strings;
 
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -52,9 +52,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
 public class SecurityServiceImpl implements SecurityService, Service {
@@ -259,7 +257,6 @@ public class SecurityServiceImpl implements SecurityService, Service {
     public void deleteUser(String name) {
         Connection conn = null;
         PreparedStatement stmt = null;
-        boolean success = false;
         try {
             conn = openConnection();
             stmt = conn.prepareStatement(DELETE_USER_USER_ROLES_SQL);
@@ -287,7 +284,6 @@ public class SecurityServiceImpl implements SecurityService, Service {
     public void changeUserPassword(String name, String password) {
         Connection conn = null;
         PreparedStatement stmt = null;
-        boolean success = false;
         try {
             conn = openConnection();
             stmt = conn.prepareStatement(CHANGE_USER_PASSWORD_SQL);
@@ -315,7 +311,6 @@ public class SecurityServiceImpl implements SecurityService, Service {
         User user = null;
         Connection conn = null;
         PreparedStatement stmt = null;
-        boolean success = false;
         try {
             conn = openConnection();
             stmt = conn.prepareStatement(GET_USER_SQL);
@@ -347,7 +342,6 @@ public class SecurityServiceImpl implements SecurityService, Service {
         User user = null;
         Connection conn = null;
         PreparedStatement stmt = null;
-        boolean success = false;
         try {
             conn = openConnection();
             stmt = conn.prepareStatement(GET_USER_SQL);
@@ -434,18 +428,11 @@ public class SecurityServiceImpl implements SecurityService, Service {
         }
     }
 
-    protected final char[] HEX_UC = "0123456789ABCDEF".toCharArray();
-    protected final char[] HEX_LC = "0123456789abcdef".toCharArray();
-
     protected String formatMD5(byte[] md5, boolean forDigest) {
         StringBuilder str = new StringBuilder();
         str.append(forDigest ? "MD5:" : "md5");
-        final char[] hex = forDigest ? HEX_UC : HEX_LC;
-        for (int i = 0; i < md5.length; i++) {
-            int b = md5[i] & 0xFF;
-            str.append(hex[b >> 4]);
-            str.append(hex[b & 0xF]);
-        }
+        // Strings#formatMD5 wants toLowerCase for second parameter, inverse of the forDigest flag
+        str.append(Strings.formatMD5(md5, !forDigest));
         return str.toString();
     }
 
@@ -453,7 +440,6 @@ public class SecurityServiceImpl implements SecurityService, Service {
     public void clearAll(Session session) {
         Connection conn = null;
         Statement stmt = null;
-        boolean success = false;
         try {
             conn = openConnection();
             stmt = conn.createStatement();
@@ -461,7 +447,6 @@ public class SecurityServiceImpl implements SecurityService, Service {
             stmt.execute("DELETE FROM users");
             stmt.execute("DELETE FROM roles");
             conn.commit();
-            success = true;
         }
         catch (SQLException ex) {
             throw new SecurityException("Error adding role", ex);

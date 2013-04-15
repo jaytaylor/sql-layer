@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
+import com.akiban.ais.model.Sequence;
 import org.junit.Test;
 
 import com.akiban.ais.model.TableName;
@@ -91,5 +92,56 @@ public class SequenceDDLIT extends AISDDLITBase {
         executeDDL(sql);
         assertEquals(Collections.singletonList(MessageFormat.format(ErrorCode.NO_SUCH_SEQUENCE.getMessage(), "test", "not_exists")), getWarnings());
     }
-    
+
+    @Test
+    public void durableAfterRollbackAndRestart() throws Exception {
+        TableName seqName = new TableName("test", "s1");
+        String sql = "CREATE SEQUENCE "+seqName+" START WITH 1 INCREMENT BY 1";
+        executeDDL(sql);
+        Sequence s1 = ais().getSequence(seqName);
+        assertNotNull("s1", s1);
+
+        txnService().beginTransaction(session());
+        assertEquals("start val a", 0, s1.currentValue());
+        assertEquals("next val a", 1, s1.nextValue());
+        txnService().commitTransaction(session());
+
+        txnService().beginTransaction(session());
+        assertEquals("next val b", 2, s1.nextValue());
+        assertEquals("cur val b", 2, s1.currentValue());
+        txnService().rollbackTransactionIfOpen(session());
+
+        txnService().beginTransaction(session());
+        assertEquals("cur val c", 1, s1.currentValue());
+        // Expected gap, see nextValue() impl
+        assertEquals("next val c", 3, s1.nextValue());
+        txnService().commitTransaction(session());
+
+        safeRestartTestServices();
+
+        s1 = ais().getSequence(seqName);
+        txnService().beginTransaction(session());
+        assertEquals("cur val after restart", 3, s1.currentValue());
+        assertEquals("next val after restart", 4, s1.nextValue());
+        txnService().commitTransaction(session());
+    }
+
+    @Test
+    public void freshValueAfterDropAndRecreate() throws Exception {
+        final TableName seqName = new TableName("test", "s2");
+        final String create = "CREATE SEQUENCE "+seqName+" START WITH 1 INCREMENT BY 1";
+        final String drop = "DROP SEQUENCE "+seqName+" RESTRICT";
+        for(int i = 1; i <= 2; ++i) {
+            executeDDL(create);
+            Sequence s1 = ais().getSequence(seqName);
+            assertNotNull("s1, loop"+i, s1);
+
+            txnService().beginTransaction(session());
+            assertEquals("start val, loop"+i, 0, s1.currentValue());
+            assertEquals("next val, loop"+i, 1, s1.nextValue());
+            txnService().commitTransaction(session());
+
+            executeDDL(drop);
+        }
+    }
 }

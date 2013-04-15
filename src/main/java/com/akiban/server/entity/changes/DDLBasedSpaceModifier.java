@@ -20,6 +20,7 @@ package com.akiban.server.entity.changes;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Join;
+import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.NopVisitor;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -34,6 +35,7 @@ import com.akiban.server.service.session.Session;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -120,6 +122,24 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     public void beginAttributes(AttributeLookups oldLookups, AttributeLookups newLookups) {
         this.oldLookups = oldLookups;
         this.newLookups = newLookups;
+        // TODO: This goes away with entity.json refactoring as all columns are present
+        // The child side of the joins are hidden in entity.json. Find the old ones and copy the UUIds to the new table.
+        for(Attribute oldAttr : oldLookups.getAttributesByUuid().values()) {
+            Attribute newAttr = newLookups.attributeFor(oldAttr.getUUID());
+            if(newAttr != null &&
+               oldAttr.getAttributeType() == Attribute.AttributeType.COLLECTION &&
+               newAttr.getAttributeType() == Attribute.AttributeType.COLLECTION) {
+                UserTable oldTable = oldAIS.getUserTable(schemaName, oldLookups.nameFor(oldAttr.getUUID()));
+                UserTable newTable = newAIS.getUserTable(schemaName, newLookups.nameFor(newAttr.getUUID()));
+                Join oldJoin = oldTable.getParentJoin();
+                Join newJoin = newTable.getParentJoin();
+                Iterator<JoinColumn> oldIt = oldJoin.getJoinColumns().iterator();
+                Iterator<JoinColumn> newIt = newJoin.getJoinColumns().iterator();
+                while(oldIt.hasNext() && newIt.hasNext()) {
+                    newIt.next().getChild().setUuid(oldIt.next().getChild().getUuid());
+                }
+            }
+        }
     }
 
     @Override

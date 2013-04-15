@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
 
     Copyright (C) 2009-2013 Akiban Technologies, Inc.
@@ -16,7 +17,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 -->
-<?xml version="1.0" encoding="UTF-8"?>
 <project name="Akiban Server App Builder" default="usage" basedir="..">
     <!--
          Oracle and appbundler docs:

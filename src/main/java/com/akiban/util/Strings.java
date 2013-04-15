@@ -20,6 +20,8 @@ package com.akiban.util;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+
+import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -419,5 +421,9 @@ public abstract class Strings {
         } catch(UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
+    }
+    
+    public static String formatMD5(byte[] md5, boolean toLowerCase) {
+        return new String(Hex.encodeHex(md5, toLowerCase));
     }
 }

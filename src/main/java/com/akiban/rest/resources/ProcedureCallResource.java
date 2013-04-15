@@ -60,7 +60,7 @@ public class ProcedureCallResource {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
                         reqs.restDMLService.callProcedure(writer, request, JSONP_ARG_NAME,
-                                                          procName, uri.getQueryParameters());
+                                                          procName, uri.getQueryParameters(), null);
                     }
                 })
                 .build();
@@ -71,6 +71,7 @@ public class ProcedureCallResource {
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response postCall(@Context final HttpServletRequest request,
                              @PathParam("proc") String proc,
+                             @Context final UriInfo uri,
                              final String jsonParams) throws Exception {
         final TableName procName = ResourceHelper.parseTableName(request, proc);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
@@ -80,7 +81,7 @@ public class ProcedureCallResource {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
                         reqs.restDMLService.callProcedure(writer, request, JSONP_ARG_NAME,
-                                                          procName, jsonParams);
+                                                          procName, uri.getQueryParameters(), jsonParams);
                     }
                 })
                 .build();
