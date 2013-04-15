@@ -62,6 +62,11 @@ public class MockRoutineLoader implements RoutineLoader
     }
 
     @Override
+    public ScriptPool<ScriptLibrary> getScriptLibrary(Session session, TableName routineName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void unloadRoutine(Session session, TableName routineName) {
         throw new UnsupportedOperationException();
     }

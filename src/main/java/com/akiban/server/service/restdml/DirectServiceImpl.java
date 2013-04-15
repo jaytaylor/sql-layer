@@ -62,7 +62,8 @@ import com.akiban.server.service.restdml.EndpointMetadata.ParamCache;
 import com.akiban.server.service.restdml.EndpointMetadata.ParamMetadata;
 import com.akiban.server.service.restdml.EndpointMetadata.Tokenizer;
 import com.akiban.server.service.routines.RoutineLoader;
-import com.akiban.server.service.routines.ScriptInvoker;
+import com.akiban.server.service.routines.ScriptLibrary;
+import com.akiban.server.service.routines.ScriptPool;
 import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.types3.Attribute;
@@ -335,6 +336,8 @@ public class DirectServiceImpl implements Service, DirectService {
             final byte[] content, final MediaType[] responseType) throws Exception {
         try (JDBCConnection conn = jdbcConnection(request, procName.getSchemaName());) {
 
+            conn.setAutoCommit(false);
+
             boolean completed = false;
             boolean repeat = true;
 
@@ -394,9 +397,19 @@ public class DirectServiceImpl implements Service, DirectService {
 
         final Object[] args = createArgsArray(pathParams, queryParameters, content, cache, md);
 
-        final ScriptInvoker invoker = conn.getRoutineLoader()
-                .getScriptInvoker(conn.getSession(), new TableName(procName.getSchemaName(), md.routineName)).get();
-        Object result = invoker.invokeNamedFunction(md.function, args);
+        final ScriptPool<ScriptLibrary> libraryPool = conn.getRoutineLoader()
+            .getScriptLibrary(conn.getSession(), new TableName(procName.getSchemaName(),
+                                                               md.routineName));
+        final ScriptLibrary library = libraryPool.get();
+        boolean success = false;
+        Object result;
+        try {
+            result = library.invoke(md.function, args);
+            success = true;
+        }
+        finally {
+            libraryPool.put(library, success);
+        }
 
         switch (md.outParam.type) {
 
@@ -529,9 +542,11 @@ public class DirectServiceImpl implements Service, DirectService {
             for (final Routine routine : ais.getRoutines().values()) {
                 if (routine.getCallingConvention().equals(CallingConvention.SCRIPT_LIBRARY)
                         && routine.getDynamicResultSets() == 0 && routine.getParameters().isEmpty()) {
+                    final ScriptPool<ScriptLibrary> libraryPool = routineLoader.getScriptLibrary(session, routine.getName());
+                    final ScriptLibrary library = libraryPool.get();
+                    boolean success = false;
                     try {
-                        final ScriptInvoker invoker = routineLoader.getScriptInvoker(session, routine.getName()).get();
-                        invoker.invokeNamedFunction(DISTINGUISHED_REGISTRATION_METHOD_NAME,
+                        library.invoke(DISTINGUISHED_REGISTRATION_METHOD_NAME,
                                 new Object[] { new RestFunctionRegistrar() {
                                     @Override
                                     public void register(String specification) throws Exception {
@@ -539,9 +554,11 @@ public class DirectServiceImpl implements Service, DirectService {
                                                 .getTableName(), specification);
                                     }
                                 } });
+                        success = true;
                     } catch (ExternalRoutineInvocationException e) {
                         if (e.getCause() instanceof NoSuchMethodException) {
                             LOG.warn("Script library " + routine.getName() + " has no _register function");
+                            success = true;
                             return;
                         }
                         Throwable previous = e;
@@ -557,6 +574,8 @@ public class DirectServiceImpl implements Service, DirectService {
                         throw e;
                     } catch (Exception e) {
                         throw new RegistrationException(e);
+                    } finally {
+                        libraryPool.put(library, success);
                     }
                 }
             }

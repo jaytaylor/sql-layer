@@ -194,6 +194,11 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
     }
 
     @Override
+    public ScriptPool<ScriptLibrary> getScriptLibrary(Session session, TableName routineName) {
+        return scripts.getScriptLibrary(session, routineName);
+    }
+
+    @Override
     public void unloadRoutine(Session session, TableName routineName) {
         synchronized (loadablePlans) {
             loadablePlans.remove(routineName);
