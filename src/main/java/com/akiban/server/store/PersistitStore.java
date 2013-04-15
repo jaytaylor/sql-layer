@@ -1899,6 +1899,13 @@ public class PersistitStore implements Store, Service {
     @Override
     public void removeTrees(Session session, Table table) {
         Collection<TreeLink> treeLinks = new ArrayList<>();
+        // delete all fulltext indexes
+        if (table.isUserTable())
+        {
+            for (FullTextIndex idx : ((UserTable)table).getFullTextIndexes())
+                fullTextService.dropIndex(session, idx.getIndexName());
+        }
+
         // Add all index trees
         final Collection<TableIndex> tableIndexes = table.isUserTable() ? ((UserTable)table).getIndexesIncludingInternal() : table.getIndexes();
         final Collection<GroupIndex> groupIndexes = table.getGroupIndexes();
