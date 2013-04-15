@@ -37,6 +37,7 @@ public interface RestDMLService {
     public void insert(PrintWriter writer, TableName tableName, JsonNode node);
     public void delete(TableName tableName, String pks);
     public void update(PrintWriter writer, TableName tableName, String values, JsonNode node);
+    public void upsert(PrintWriter writer, TableName tableName, JsonNode node);
 
     public void insertNoTxn(Session session, PrintWriter writer, TableName tableName, JsonNode node);
     public void updateNoTxn(Session session, PrintWriter writer, TableName tableName, String values, JsonNode node);
@@ -50,8 +51,6 @@ public interface RestDMLService {
                               TableName procName, Map<String,List<String>> queryParams, String content) throws SQLException;
 
     public void fullTextSearch(PrintWriter writer, IndexName indexName, Integer depth, String query, Integer limit);
-    // TODO: Temporary.
-    public void refreshFullTextIndex(PrintWriter writer, IndexName indexName);
 
     public String jonquilToSQL(TableName tableName, String jonquil) throws IOException;
 }

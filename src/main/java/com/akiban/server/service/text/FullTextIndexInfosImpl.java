@@ -23,6 +23,7 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.error.FullTextQueryParseException;
+import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.service.session.Session;
 
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
@@ -65,6 +66,21 @@ public abstract class FullTextIndexInfosImpl implements FullTextIndexInfos
     protected abstract AkibanInformationSchema getAIS(Session session);
     protected abstract File getIndexPath();
 
+    protected FullTextIndexInfo getIndexToDrop(IndexName name)
+    {
+        synchronized(indexes)
+        {
+            FullTextIndexShared shared = indexes.get(name);
+            if (shared != null)
+            {
+                return shared.valueFor();
+            }
+            else
+            {
+                throw new NoSuchIndexException(name.toString());
+            }
+        }
+    }
     protected FullTextIndexInfo getIndex(Session session, IndexName name) {
         AkibanInformationSchema ais = getAIS(session);
         FullTextIndexInfo info;

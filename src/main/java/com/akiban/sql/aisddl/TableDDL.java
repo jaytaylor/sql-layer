@@ -195,7 +195,7 @@ public class TableDDL
                 }
             }
             else if (tableElement instanceof ConstraintDefinitionNode) {
-                addIndex (namer, builder, (ConstraintDefinitionNode)tableElement, schemaName, tableName);
+                addIndex (namer, builder, (ConstraintDefinitionNode)tableElement, schemaName, tableName, context);
             }
         }
         builder.basicSchemaIsComplete();
@@ -312,7 +312,7 @@ public class TableDDL
 
 
     public static String addIndex(IndexNameGenerator namer, AISBuilder builder, ConstraintDefinitionNode cdn,
-                                  String schemaName, String tableName)  {
+                                  String schemaName, String tableName, QueryContext context)  {
         // We don't (yet) have a constraint representation so override any provided
         UserTable table = builder.akibanInformationSchema().getUserTable(schemaName, tableName);
         final String constraint;
@@ -330,7 +330,7 @@ public class TableDDL
         } 
         // Indexes do things a little differently because they need to support Group indexes, Full Text and Geospacial
         else if (cdn.getConstraintType() == ConstraintDefinitionNode.ConstraintType.INDEX) {
-            return generateTableIndex(namer, builder, cdn, table);
+            return generateTableIndex(namer, builder, cdn, table, context);
         } else {
             throw new UnsupportedCheckConstraintException ();
         }
@@ -474,7 +474,8 @@ public class TableDDL
     private static String generateTableIndex(IndexNameGenerator namer, 
             AISBuilder builder, 
             ConstraintDefinitionNode cdn, 
-            Table table) {
+            Table table,
+            QueryContext context) {
         IndexDefinition id = ((IndexConstraintDefinitionNode)cdn);
         IndexColumnList columnList = id.getIndexColumnList();
         Index tableIndex;
@@ -485,7 +486,7 @@ public class TableDDL
 
         if (columnList.functionType() == IndexColumnList.FunctionType.FULL_TEXT) {
             logger.debug ("Building Full text index on table {}", table.getName()) ;
-            tableIndex = IndexDDL.buildFullTextIndex (builder, table.getName(), indexName, id);
+            tableIndex = IndexDDL.buildFullTextIndex (builder, table.getName(), indexName, id, context.getServiceManager());
         } else if (IndexDDL.checkIndexType (id, table.getName()) == Index.IndexType.TABLE) {
             logger.debug ("Building Table index on table {}", table.getName()) ;
             tableIndex = IndexDDL.buildTableIndex (builder, table.getName(), indexName, id);

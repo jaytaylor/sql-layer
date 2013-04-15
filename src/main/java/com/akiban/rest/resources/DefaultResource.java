@@ -60,6 +60,13 @@ public class DefaultResource {
         return buildResponse(request);
     }
 
+    @PATCH
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
+    public Response handlePatchNoResource(@Context HttpServletRequest request) {
+        return buildResponse (request);
+    }
+    
+    
     private Response buildResponse(HttpServletRequest request) {
         String msg = String.format("API %s not supported", request.getRequestURI());
         return RestResponseBuilder

@@ -26,6 +26,7 @@ import org.apache.lucene.util.Version;
 
 import java.io.Closeable;
 import java.io.IOException;
+import org.apache.lucene.index.IndexReader;
 
 public class Indexer implements Closeable
 {
@@ -34,8 +35,14 @@ public class Indexer implements Closeable
     
     public Indexer(FullTextIndexShared index, Analyzer analyzer) throws IOException {
         this.index = index;
+         
+        
         IndexWriterConfig iwc = new IndexWriterConfig(Version.LUCENE_40, analyzer);
-        this.writer = new IndexWriter(index.open(), iwc);
+        iwc.setMaxBufferedDeleteTerms(1); // The deletion needs to be reflected immediately (on disk)
+        
+        this.writer = new IndexWriter(index.open(),  iwc);
+        IndexReader r;
+        
     }
 
     public FullTextIndexShared getIndex() {

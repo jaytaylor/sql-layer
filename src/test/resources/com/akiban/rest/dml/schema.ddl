@@ -32,3 +32,9 @@ CREATE TABLE c5
 	cid int not null,
 	oid int not null
 );
+
+CREATE TABLE c6 (
+	cid int not null primary key,
+	name varchar (32),
+	address varchar (32)
+);

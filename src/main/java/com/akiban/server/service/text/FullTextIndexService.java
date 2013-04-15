@@ -27,7 +27,21 @@ import org.apache.lucene.search.Query;
 
 /** Full service that does index maintenance and querying. */
 public interface FullTextIndexService extends FullTextIndexInfos {
-    public long createIndex(Session session, IndexName name);
+        
+    /**
+     * This is a 'promise' to populate the given index, which is *being*
+     * created.
+     * @param name 
+     */
+    public void schedulePopulate(String schema, String table, String index);
+
+    /**
+     * Update the given index based on the changedRow 
+     * 
+     * @param name
+     * @param changedRow 
+     */
+    public void updateIndex(Session session, IndexName name, Iterable<byte[]> rows);
     public void dropIndex(Session session, IndexName name);
     public Cursor searchIndex(QueryContext context, IndexName name, 
                               Query query, int limit);

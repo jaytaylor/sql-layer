@@ -103,6 +103,11 @@ public class FullTextIndexShared implements CacheValueGenerator<FullTextIndexInf
         return ais.getCachedValue(this, this);
     }
 
+    public FullTextIndexInfo valueFor()
+    {
+        return new FullTextIndexInfo(this);
+    }
+
     @Override
     public FullTextIndexInfo valueFor(AkibanInformationSchema ais) {
         FullTextIndexInfo result = new FullTextIndexInfo(this);

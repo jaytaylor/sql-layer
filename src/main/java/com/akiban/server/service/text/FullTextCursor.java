@@ -103,7 +103,7 @@ public class FullTextCursor implements Cursor
         catch (IOException ex) {
             throw new AkibanInternalException("Error reading document", ex);
         }
-        HKey hkey = hkey(doc.getBinaryValue(IndexedField.KEY_FIELD));
+        HKey hkey = hkey(doc.get(IndexedField.KEY_FIELD));
         Row row = new HKeyRow(rowType, hkey, hKeyCache);
         logger.debug("FullTextCursor: yield {}", row);
         return row;
@@ -152,11 +152,12 @@ public class FullTextCursor implements Cursor
 
     /* Allocate a new <code>PersistitHKey</code> and copy the given
      * key bytes into it. */
-    protected HKey hkey(BytesRef keyBytes) {
+    protected HKey hkey(String encoded) {
         PersistitHKey hkey = (PersistitHKey)context.getStore().newHKey(rowType.hKey());
         Key key = hkey.key();
-        key.setEncodedSize(keyBytes.length);
-        System.arraycopy(keyBytes.bytes, keyBytes.offset, key.getEncodedBytes(), 0, keyBytes.length);
+        byte decodedBytes[] = RowIndexer.decodeString(encoded);
+        key.setEncodedSize(decodedBytes.length);
+        System.arraycopy(decodedBytes, 0, key.getEncodedBytes(), 0, decodedBytes.length);
         return hkey;
     }
 

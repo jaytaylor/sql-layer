@@ -100,6 +100,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     private final InsertProcessor insertProcessor;
     private final DeleteProcessor deleteProcessor;
     private final UpdateProcessor updateProcessor;
+    private final UpsertProcessor upsertProcessor;
     private final FullTextIndexService fullTextService;
 
     @Inject
@@ -123,6 +124,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         this.deleteProcessor = new DeleteProcessor (configService, treeService, store, registryService);
         this.updateProcessor = new UpdateProcessor (configService, treeService, store, registryService,
                 deleteProcessor, insertProcessor);
+        this.upsertProcessor = new UpsertProcessor (configService, treeService, store, registryService,
+                insertProcessor, extDataService);
     }
     
     /* Service */
@@ -202,6 +205,17 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
             updateNoTxn(session, writer, tableName, pks, node);
             txn.commit();
         }
+    }
+
+    @Override
+    public void upsert(PrintWriter writer, TableName tableName, JsonNode node) {
+        try (Session session = sessionService.createSession();
+                CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
+            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+            String pk = upsertProcessor.processUpsert(session, ais, tableName, node);
+            writer.write(pk);
+            txn.commit();
+        }        
     }
 
     @Override
@@ -634,14 +648,5 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                                             realDepth,
                                             true);
         }
-    }
-
-    // TODO: Temporary.
-    public void refreshFullTextIndex(PrintWriter writer, IndexName indexName) {
-        long count;
-        try (Session session = sessionService.createSession()) {
-            count = fullTextService.createIndex(session, indexName);
-        }
-        writer.write(String.format("{\"count\":%d}", count));
     }
 }

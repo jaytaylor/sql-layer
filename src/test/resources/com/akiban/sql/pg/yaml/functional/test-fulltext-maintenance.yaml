@@ -1,0 +1,49 @@
+# test that full text indices are updated (and populated) properly
+---
+- CreateTable: t (id int, name varchar(224));
+---
+- Statement: INSERT INTO  t VALUES (1, 'bar1');
+---
+- Statement: INSERT INTO  t VALUES (2, 'bar1');
+---
+- Statement: INSERT INTO  t VALUES (3, 'bar3');
+---
+- Statement: INSERT INTO  t VALUES (4, 'bar4');
+---
+- Statement: CREATE INDEX idx ON t (full_text(name));
+--- # should be long enough! (Could query the actual interval from AIS, but we'd need to parse the string!)
+- Statement: SELECT SLEEP (7000);
+---
+- Statement: select id from t where full_text_search(name = 'bar1');
+- output: [[1], [2]]
+---
+- Statement: UPDATE t set name='foo' WHERE id = 1;
+---
+- Statement: SELECT SLEEP(7000);
+---
+- Statement: select id from t where full_text_search(name = 'bar1');
+- output: [[2]]
+---
+- Statement: SELECT id from t where full_text_search(name = 'bar4');
+- output: [[4]]
+---
+- Statement: DELETE FROM t where id = 4;
+---
+- Statement: SELECT SLEEP(7000);
+---
+- Statement: SELECT id from t where full_text_search(name = 'bar4');
+- row_count: 0
+---
+- Create
+...
+
+CREATE TABLE t1(id INT NOT NULL PRIMARY KEY);
+CREATE TABLE t2(id INT NOT NULL PRIMARY KEY, pid INT NOT NULL, GROUPING FOREIGN KEY(pid) REFERENCES t1(id));
+CREATE TABLE t3(id INT NOT NULL PRIMARY KEY, pid INT NOT NULL, GROUPING FOREIGN KEY(pid) REFERENCES t2(id), name VARCHAR(16) COLLATE en_ci);
+INSERT INTO t1 VALUES(1),(2);
+INSERT INTO t2 VALUES(11, 1);
+INSERT INTO t3 VALUES(111, 11, 'Fred'),(112, 11, 'Barney');
+CREATE INDEX t3_ft ON t3(FULL_TEXT(name));
+SELECT * FROM t3 WHERE FULL_TEXT_SEARCH(name, 'fred');
+UPDATE t2 SET pid = 2 WHERE pid = 1;
+SELECT * FROM t3 WHERE FULL_TEXT_SEARCH(name, 'fred');

@@ -33,5 +33,4 @@ public class DeleteGenerator extends OperatorGenerator {
         // build delete operator.
         return API.delete_Returning(lookup, true, true);
     }       
-    
 }

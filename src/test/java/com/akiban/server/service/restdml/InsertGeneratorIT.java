@@ -36,7 +36,7 @@ import com.akiban.server.test.it.ITBase;
 public class InsertGeneratorIT extends ITBase {
 
     public static final String SCHEMA = "test";
-    private InsertGenerator insertGenerator;
+    private OperatorGenerator insertGenerator;
     
     @After
     public void commit() {
