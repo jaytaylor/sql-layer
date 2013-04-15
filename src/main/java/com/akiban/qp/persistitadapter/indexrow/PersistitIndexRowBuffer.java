@@ -201,7 +201,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
                     hasNull = pKey.isNull();
                 }
                 if (hasNull) {
-                    nullSeparator = index.nextNullSeparatorValue(adapter.persistit().treeService());
+                    nullSeparator = index.nextNullSeparatorValue();
                 }
             }
             // else: We're creating an index row to update or delete. Don't need a new null separator value.

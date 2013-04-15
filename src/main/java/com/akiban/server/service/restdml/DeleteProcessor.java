@@ -25,11 +25,9 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CacheValueGenerator;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
@@ -60,13 +58,11 @@ public class DeleteProcessor extends DMLProcessor {
             };
 
     public void processDelete (Session session, AkibanInformationSchema ais, TableName tableName, String identifiers) {
-        setAIS (ais);
-        deleteGenerator = getGenerator (CACHED_DELETE_GENERATOR);
+        ProcessContext context = new ProcessContext (ais, session, tableName);
+        
+        deleteGenerator = getGenerator (CACHED_DELETE_GENERATOR, context);
 
-        UserTable table = getTable (tableName);
-        QueryContext queryContext = newQueryContext (session, table);
-
-        Index pkIndex = table.getPrimaryKeyIncludingInternal().getIndex();
+        Index pkIndex = context.table.getPrimaryKeyIncludingInternal().getIndex();
         List<List<String>> pks = PrimaryKeyParser.parsePrimaryKeys(identifiers, pkIndex);
         
         PValue pvalue = new PValue(MString.VARCHAR.instance(Integer.MAX_VALUE, false));
@@ -74,13 +70,13 @@ public class DeleteProcessor extends DMLProcessor {
 
         try {
             Operator delete = deleteGenerator.get(tableName);
-            cursor = API.cursor(delete, queryContext);
+            cursor = API.cursor(delete, context.queryContext);
 
             for (List<String> key : pks) {
                 for (int i = 0; i < key.size(); i++) {
                     String akey = key.get(i);
                     pvalue.putString(akey, null);
-                    queryContext.setPValue(i, pvalue);
+                    context.queryContext.setPValue(i, pvalue);
                 }
     
                 cursor.open();

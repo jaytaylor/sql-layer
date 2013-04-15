@@ -32,6 +32,7 @@ import com.akiban.server.explain.Explainable;
 import com.akiban.server.explain.Label;
 import com.akiban.server.explain.PrimitiveExplainer;
 import com.akiban.server.service.routines.ScriptInvoker;
+import com.akiban.server.service.routines.ScriptLibrary;
 import com.akiban.server.service.routines.ScriptPool;
 
 import java.sql.ResultSet;
@@ -129,11 +130,12 @@ public class ScriptFunctionJavaRoutine extends ServerJavaRoutine
     public CompoundExplainer getExplainer(ExplainContext context) {
         Attributes atts = new Attributes();
         ScriptInvoker invoker = pool.get();
+        ScriptLibrary library = invoker.getLibrary();
         atts.put(Label.PROCEDURE_IMPLEMENTATION,
-                 PrimitiveExplainer.getInstance(invoker.getEngineName()));
+                 PrimitiveExplainer.getInstance(library.getEngineName()));
         atts.put(Label.PROCEDURE_IMPLEMENTATION, 
                  PrimitiveExplainer.getInstance(invoker.getFunctionName()));
-        if (invoker.isCompiled())
+        if (library.isCompiled())
             atts.put(Label.PROCEDURE_IMPLEMENTATION, 
                      PrimitiveExplainer.getInstance("compiled"));
         pool.put(invoker, true);        

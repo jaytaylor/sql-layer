@@ -38,8 +38,10 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.PrintWriter;
 
+import static com.akiban.rest.resources.ResourceHelper.IDENTIFIERS_MULTI;
 import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
 import static com.akiban.rest.resources.ResourceHelper.checkTableAccessible;
+import static com.akiban.rest.resources.ResourceHelper.getPKString;
 import static com.akiban.rest.resources.ResourceHelper.parseTableName;
 import static com.akiban.util.JsonUtils.readTree;
 
@@ -48,7 +50,6 @@ import static com.akiban.util.JsonUtils.readTree;
  */
 @Path("/entity/{entity}")
 public class EntityResource {
-    private static final String IDENTIFIERS_MULTI = "{identifiers:.*}";
     private final ResourceRequirements reqs;
     
     public EntityResource(ResourceRequirements reqs) {
@@ -94,11 +95,11 @@ public class EntityResource {
     }
 
     @POST
-    @Path("/ajdax/to-sql")
+    @Path("/jonquil/to-sql")
     @Consumes(MEDIATYPE_JSON_JAVASCRIPT)
-    public Response ajdaxToSQL(@Context final HttpServletRequest request,
-                          @PathParam("entity") String entity,
-                          final String query) {
+    public Response jonquilToSQL(@Context final HttpServletRequest request,
+                                 @PathParam("entity") String entity,
+                                 final String query) {
         final TableName tableName = parseTableName(request, entity);
         checkTableAccessible(reqs.securityService, request, tableName);
         return RestResponseBuilder
@@ -106,18 +107,18 @@ public class EntityResource {
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
-                        writer.write(reqs.restDMLService.ajdaxToSQL(tableName, query));
+                        writer.write(reqs.restDMLService.jonquilToSQL(tableName, query));
                     }
                 })
                 .build();
     }
 
     @POST
-    @Path("/ajdax/query")
+    @Path("/jonquil/query")
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
-    public Response ajdaxQuery(@Context final HttpServletRequest request,
-                          @PathParam("entity") String entity,
-                          final String query) {
+    public Response jonquilQuery(@Context final HttpServletRequest request,
+                                 @PathParam("entity") String entity,
+                                 final String query) {
         final TableName tableName = parseTableName(request, entity);
         checkTableAccessible(reqs.securityService, request, tableName);
         return RestResponseBuilder
@@ -125,7 +126,7 @@ public class EntityResource {
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
-                        String sql = reqs.restDMLService.ajdaxToSQL(tableName, query);
+                        String sql = reqs.restDMLService.jonquilToSQL(tableName, query);
                         reqs.restDMLService.runSQL(writer, request, sql, tableName.getSchemaName());
                     }
                 })
@@ -175,10 +176,28 @@ public class EntityResource {
 
     @DELETE
     @Path("/" + IDENTIFIERS_MULTI)
-    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response deleteEntity(@Context HttpServletRequest request,
                                  @PathParam("entity") String entity,
                                  @Context final UriInfo uri) {
+        final TableName tableName = parseTableName(request, entity);
+        checkTableAccessible(reqs.securityService, request, tableName);
+        try {
+            reqs.restDMLService.delete(tableName, getPKString(uri));
+            return RestResponseBuilder
+                    .forRequest(request)
+                    .status(Response.Status.NO_CONTENT)
+                    .build();
+        } catch (Exception e) {
+            throw RestResponseBuilder.forRequest(request).wrapException(e);
+        }
+    }
+    
+    @PATCH
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
+    public Response patchEntity(@Context HttpServletRequest request,
+            @PathParam("entity") String entity,
+            final byte[] entityBytes) {
         final TableName tableName = parseTableName(request, entity);
         checkTableAccessible(reqs.securityService, request, tableName);
         return RestResponseBuilder
@@ -186,16 +205,10 @@ public class EntityResource {
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
-                        reqs.restDMLService.delete(writer, tableName, getPKString(uri));
+                        final JsonNode node = readTree(entityBytes);
+                        reqs.restDMLService.upsert(writer, tableName, node);
                     }
                 })
                 .build();
-    }
-
-
-    private static String getPKString(UriInfo uri) {
-        String pks[] = uri.getPath(false).split("/");
-        assert pks.length > 0: uri;
-        return pks[pks.length - 1];
     }
 }

@@ -974,7 +974,13 @@ public class PersistitStore implements Store, Service {
                 }
                 for (Map.Entry<RowDef, AtomicLong> hiddenPkEntry : bulkload.hiddenPks.entrySet()) {
                     RowDef rowDef = hiddenPkEntry.getKey();
-                    rowDef.getTableStatus().setUniqueId(hiddenPkEntry.getValue().get());
+                    TableStatus status = rowDef.getTableStatus();
+                    long target = hiddenPkEntry.getValue().get();
+                    long diff = target - status.getUniqueID();
+                    while(diff > 0) {
+                        status.createNewUniqueID();
+                        --diff;
+                    }
                 }
             }
             finally {
@@ -1040,8 +1046,9 @@ public class PersistitStore implements Store, Service {
             if (!hEx.getValue().isDefined()) {
                 throw new NoSuchRowException(hEx.getKey());
             }
-            // record the deletion of the old row
-            addChangeFor(rowDef.userTable(), session, hEx.getKey());
+            // record the deletion of the old index row
+            if (deleteIndexes)
+                addChangeFor(rowDef.userTable(), session, hEx.getKey());
 
             // Remove the h-row
             hEx.remove();
@@ -1240,6 +1247,10 @@ public class PersistitStore implements Store, Service {
             int descendentOrdinal = descendentRowDef.getOrdinal();
             if ((tablesRequiringHKeyMaintenance == null || tablesRequiringHKeyMaintenance.get(descendentOrdinal))) {
                 PROPAGATE_HKEY_CHANGE_ROW_REPLACE_TAP.hit();
+                
+                // record the change
+                addChangeFor(descendentRowDef.userTable(), session, exchange.getKey());
+                
                 // Delete the current row from the tree. Don't call deleteRow, because we don't need to recompute
                 // the hkey.
                 exchange.remove();
@@ -1302,7 +1313,7 @@ public class PersistitStore implements Store, Service {
             try {
                 iEx.removeAll();
                 if (index.isGroupIndex()) {
-                    new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, treeService, iEx.getTree()).set(0);
+                    new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, iEx.getTree()).set(0);
                 }
             } catch (PersistitException e) {
                 throw new PersistitAdapterException(e);

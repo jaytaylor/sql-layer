@@ -146,9 +146,9 @@ public class RowIndexer implements Closeable
     {
         if (indexRows(cursor) == 0)
         {
-            writer.deleteDocuments(new Term(IndexedField.KEY_FIELD,
-                                            encodeBytes(hkeyBytes, 0, hkeyBytes.length)));
-            logger.debug("Deleted documents");
+            String encoded = encodeBytes(hkeyBytes, 0, hkeyBytes.length);
+            writer.deleteDocuments(new Term(IndexedField.KEY_FIELD, encoded));
+            logger.debug("Deleted documents with encoded byptes: " + encoded);
         }
     }
 

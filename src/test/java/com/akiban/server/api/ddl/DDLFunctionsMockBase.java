@@ -172,7 +172,7 @@ public class DDLFunctionsMockBase implements DDLFunctions {
     }
 
     @Override
-    public void createRoutine(Session session, Routine routine) {
+    public void createRoutine(Session session, Routine routine, boolean replaceExisting) {
         throw new UnsupportedOperationException();
     }
 

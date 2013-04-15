@@ -79,6 +79,4 @@ public interface TableStatus {
     void setRowCount(long rowCount);
 
     long getApproximateUniqueID();
-
-    void setUniqueId(long value);
 }

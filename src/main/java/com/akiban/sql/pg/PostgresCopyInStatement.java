@@ -179,7 +179,8 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
     }
 
     @Override
-    public void sendDescription(PostgresQueryContext context, boolean always) 
+    public void sendDescription(PostgresQueryContext context,
+                                boolean always, boolean params)
             throws IOException {
     }
 
