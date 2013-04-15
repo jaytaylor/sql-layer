@@ -409,7 +409,9 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                                                         @Override
                                                         public long getMinimumWaitTime()
                                                         {
-                                                            return maintenanceInterval;
+                                                            return updateWorker == null
+                                                                       ? 0 // worker is disabled. 
+                                                                       : maintenanceInterval;
                                                         }
                                                      }));
     

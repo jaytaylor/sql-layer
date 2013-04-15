@@ -33,6 +33,7 @@ import com.akiban.server.service.session.SessionServiceImpl;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.test.it.qp.TestRow;
 
+import com.akiban.server.types3.mcompat.mfuncs.WaitFunctionHelpers;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 import org.junit.Before;
@@ -159,7 +160,7 @@ public class FullTextIndexServiceIT extends ITBase
         // let the worker do its job.
         // (After it is done, the tree had better be empty)
         fullTextImpl.enablePopulateWorker();
-        Thread.sleep(populateDelayInterval * 5);
+        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
 
         traverse(fullTextImpl,
                  new Visitor()
@@ -261,7 +262,7 @@ public class FullTextIndexServiceIT extends ITBase
 
         // wake the worker up to do its job
         fullTextImpl.enablePopulateWorker();
-        Thread.sleep(populateDelayInterval * 5);
+        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
         
         // drop the remaining index
         fullTextImpl.dropIndex(session, expecteds[2].getIndexName());
@@ -303,7 +304,7 @@ public class FullTextIndexServiceIT extends ITBase
             1 - do a search, confirm that the rows come back as expected
             2 - (With update worker enabled)
                 + insert new rows
-                + sleep for sometime
+                + wait for the updates to be done
                 + do the search again and confirm that the new rows are found
             3 - (With update worker NOT enable)
                 + disable update worker
@@ -318,8 +319,8 @@ public class FullTextIndexServiceIT extends ITBase
         FullTextIndex index = createFullTextIndex(serviceManager(),
                                                   SCHEMA, "c", "idx_c", 
                                                   "name", "i.sku", "a.state");
-        //fullText.createIndex(session(), index.getIndexName());
-        Thread.sleep(populateDelayInterval * 5);
+
+        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
         RowType rowType = rowType("c");
         RowBase[] expected1 = new RowBase[]
         {
@@ -341,8 +342,7 @@ public class FullTextIndexServiceIT extends ITBase
         writeRow(c, 6, "Mycroft Holmes");
         writeRow(c, 7, "Flintstone Lestrade");
         
-        // sleep a bit (wait for the worker to do the update)
-        Thread.sleep(updateInterval * 5);
+        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
         RowBase expected2[] = new RowBase[]
         {
             row(rowType, 1L),
@@ -361,14 +361,15 @@ public class FullTextIndexServiceIT extends ITBase
         writeRow(c, 8, "Flintstone Hudson");
         writeRow(c, 9, "Jim Flintstone");
         
-        Thread.sleep(updateInterval * 2);
+        // The worker has been disabled, waitOn should return immidately
+        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
         
         // confirm that new rows are not found (ie., expected2 still works)
         plan = builder.scanOperator("flintstone", 15);
         compareRows(expected2, cursor(plan, queryContext));
         
         ((FullTextIndexServiceImpl)fullText).enableUpdateWorker();
-        Thread.sleep(updateInterval * 5);
+        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
         
         // now the rows should be seen.
         // (Because disabling the worker does not stop the changes fron being recorded)
@@ -391,7 +392,7 @@ public class FullTextIndexServiceIT extends ITBase
         FullTextIndex index = createFullTextIndex(serviceManager(),
                                                   SCHEMA, "c", "idx_c", 
                                                   "name", "i.sku", "a.state");
-        Thread.sleep(populateDelayInterval * 5);
+        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
         RowType rowType = rowType("c");
         RowBase[] expected = new RowBase[] {
             row(rowType, 1L),
@@ -411,7 +412,7 @@ public class FullTextIndexServiceIT extends ITBase
         FullTextIndex index = createFullTextIndex(serviceManager(),
                                                   SCHEMA, "o", "idx_o",
                                                   "c.name", "i.sku");
-        Thread.sleep(populateDelayInterval * 5);
+        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
         RowType rowType = rowType("o");
         RowBase[] expected = new RowBase[] {
             row(rowType, 1L, 101L)
