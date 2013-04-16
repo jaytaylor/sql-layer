@@ -9,7 +9,7 @@ function customerNames(s) {
     
     var newCustomer = extent.customers.newInstance();
     newCustomer.cid = 5;
-    newCustomer.name = "Newco";
+    newCustomer.name = "Some Name";
     newCustomer.save();
     
     for (customer in Iterator(extent.customers)) {
