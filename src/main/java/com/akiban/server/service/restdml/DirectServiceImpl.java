@@ -92,10 +92,6 @@ public class DirectServiceImpl implements Service, DirectService {
     private final static String IS_INOUT = "is_inout";
     private final static String IS_RESULT = "is_result";
 
-    private final static String COMMENT_ANNOTATION1 = "//##";
-    private final static String COMMENT_ANNOTATION2 = "##//";
-    private final static String ENDPOINT = "endpoint";
-
     private final static String DISTINGUISHED_REGISTRATION_METHOD_NAME = "_register";
 
     private final static String CREATE_PROCEDURE_FORMAT = "CREATE PROCEDURE \"%s\".\"%s\" ()"

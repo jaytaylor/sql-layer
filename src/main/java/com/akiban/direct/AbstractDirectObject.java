@@ -191,15 +191,15 @@ public abstract class AbstractDirectObject implements DirectObject {
         updates()[p] = v;
     }
 
-    protected Date __getDATETIME(int p) {
+    protected Timestamp __getDATETIME(int p) {
         if (updates == null || updates[p] == NOT_SET) {
-            return values().getDate(p);
+            return values().getTimestamp(p);
         } else {
-            return (Date) updates[p];
+            return (Timestamp) updates[p];
         }
     }
 
-    protected void __setDATETIME(int p, Date v) {
+    protected void __setDATETIME(int p, Timestamp v) {
         updates()[p] = v;
     }
 
@@ -405,7 +405,9 @@ public abstract class AbstractDirectObject implements DirectObject {
              */
             PreparedStatement stmt = rs == null ? __insertStatement() : __updateStatement();
             stmt.execute();
-
+            
+            updates = null;
+            
         } catch (SQLException e) {
             throw new DirectException(e);
         }
@@ -442,8 +444,8 @@ public abstract class AbstractDirectObject implements DirectObject {
                     updateValues.append('?');
                 }
             }
-            stmt = conn.prepareStatement(String.format(INSERT_STATEMENT, schemaName, tableName, updateColumns,
-                    updateValues));
+            final String sql = String.format(INSERT_STATEMENT, schemaName, tableName, updateColumns, updateValues);
+            stmt = conn.prepareStatement(sql);
             map.put(bs, stmt);
         } else {
             // Just in case
@@ -485,20 +487,19 @@ public abstract class AbstractDirectObject implements DirectObject {
             for (int index = 0; index < columns.length; index++) {
                 if (columns[index].parentJoinFieldIndex >= 0 || columns[index].primaryKeyFieldIndex >= 0) {
                     if (pkColumns.length() > 0) {
-                        pkColumns.append(',');
+                        pkColumns.append(" and ");
                     }
                     pkColumns.append(columns[index].columnName).append("=?");
-                } else {
-                    if (updates[index] != NOT_SET) {
-                        if (updateColumns.length() > 0) {
-                            updateColumns.append(',');
-                        }
-                        updateColumns.append('?');
+                }
+                if (updates[index] != NOT_SET) {
+                    if (updateColumns.length() > 0) {
+                        updateColumns.append(',');
                     }
+                    updateColumns.append(columns[index].getColumnName()).append("=?");
                 }
             }
-            stmt = conn.prepareStatement(String.format(UPDATE_STATEMENT, schemaName, tableName, updateColumns,
-                    pkColumns));
+            final String sql = String.format(UPDATE_STATEMENT, schemaName, tableName, updateColumns, pkColumns);
+            stmt = conn.prepareStatement(sql);
             map.put(bs, stmt);
         } else {
             // Just in case
@@ -507,17 +508,16 @@ public abstract class AbstractDirectObject implements DirectObject {
         int statementIndex = 1;
         for (int pass = 0; pass < 2; pass++) {
             for (int index = 0; index < columns.length; index++) {
-                if (columns[index].parentJoinFieldIndex >= 0 || columns[index].primaryKeyFieldIndex >= 0) {
-                    if (pass == 1) {
-                        stmt.setObject(statementIndex, __getObject(index));
+                if (pass == 0) {
+                    if (updates[index] != NOT_SET) {
+                        stmt.setObject(statementIndex, updates[index]);
                         statementIndex++;
                     }
-                } else {
-                    if (pass == 0) {
-                        if (updates[index] != NOT_SET) {
-                            stmt.setObject(statementIndex, updates[index]);
-                            statementIndex++;
-                        }
+                }
+                if (pass == 1) {
+                    if (columns[index].parentJoinFieldIndex >= 0 || columns[index].primaryKeyFieldIndex >= 0) {
+                        stmt.setObject(statementIndex, __getObject(index));
+                        statementIndex++;
                     }
                 }
             }
