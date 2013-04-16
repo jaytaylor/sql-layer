@@ -33,6 +33,7 @@ public class PlanGenerator
     private Schema schema;
     private Map<UserTable,Operator> scanPlans = new HashMap<>();
     private Map<UserTable,Operator> branchPlans = new HashMap<>();
+    private Map<UserTable,Operator> ancestorPlans = new HashMap<>();
 
     public PlanGenerator(AkibanInformationSchema ais) {
         this.schema = SchemaCache.globalSchema(ais);
@@ -68,5 +69,13 @@ public class PlanGenerator
         // No caching possible.
         return com.akiban.sql.optimizer.rule.PlanGenerator.generateBranchPlan(table, scan, scanType);
     }
-
+    
+    public Operator generateAncestorPlan (UserTable table) {
+        Operator plan = ancestorPlans.get(table);
+        if (plan != null) return plan;
+        
+        plan = com.akiban.sql.optimizer.rule.PlanGenerator.generateAncestorPlan(schema.ais(), table);
+        ancestorPlans.put(table, plan);
+        return plan;
+    }
 }

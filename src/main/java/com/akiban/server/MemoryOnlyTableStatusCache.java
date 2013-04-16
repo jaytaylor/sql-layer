@@ -102,13 +102,6 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public synchronized void setUniqueId(long value) {
-            if (value < uniqueID)
-                throw new IllegalArgumentException("can't decrement uniqueID from " + uniqueID + " to " + value);
-            this.uniqueID = value;
-        }
-
-        @Override
         public long getApproximateUniqueID() {
             return getUniqueID();
         }

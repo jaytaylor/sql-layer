@@ -42,7 +42,6 @@ public class UpdateProcessor extends DMLProcessor {
     }
 
     public String processUpdate (Session session, AkibanInformationSchema ais, TableName tableName, String values, JsonNode node) {
-        setAIS (ais);
         deleteProcessor.processDelete(session, ais, tableName, values);
         return insertProcessor.processInsert(session, ais, tableName, node);
         

@@ -610,7 +610,13 @@ public class PersistitStore implements Store, Service {
                 }
                 for (Map.Entry<RowDef, AtomicLong> hiddenPkEntry : bulkload.hiddenPks.entrySet()) {
                     RowDef rowDef = hiddenPkEntry.getKey();
-                    rowDef.getTableStatus().setUniqueId(hiddenPkEntry.getValue().get());
+                    TableStatus status = rowDef.getTableStatus();
+                    long target = hiddenPkEntry.getValue().get();
+                    long diff = target - status.getUniqueID();
+                    while(diff > 0) {
+                        status.createNewUniqueID();
+                        --diff;
+                    }
                 }
             }
             finally {
@@ -930,7 +936,7 @@ public class PersistitStore implements Store, Service {
             try {
                 iEx.removeAll();
                 if (index.isGroupIndex()) {
-                    new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, treeService, iEx.getTree()).set(0);
+                    new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, iEx.getTree()).set(0);
                 }
             } catch (PersistitException e) {
                 throw new PersistitAdapterException(e);

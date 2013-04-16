@@ -33,7 +33,7 @@ import com.akiban.server.types3.texpressions.TPreparedExpression;
 public class ExpressionRowUpdateFunction implements UpdateFunction
 {
     private final List<Expression> expressions;
-    protected final List<TPreparedExpression> pExpressions;
+    private final List<TPreparedExpression> pExpressions;
     private final RowType rowType;
 
     public ExpressionRowUpdateFunction(List<Expression> expressions, List<TPreparedExpression> pExpressions, RowType rowType) {

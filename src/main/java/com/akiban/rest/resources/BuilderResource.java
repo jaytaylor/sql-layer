@@ -77,8 +77,7 @@ public class BuilderResource {
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
-                        modelBuilder.create(tableName);
-                        restDMLService.getAllEntities(writer, tableName, 0);
+                        modelBuilder.getAll(writer, tableName);
                     }
                 })
                 .build();
@@ -97,8 +96,7 @@ public class BuilderResource {
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
-                        modelBuilder.create(tableName);
-                        restDMLService.getEntities(writer, tableName, 0, getPKString(uri));
+                        modelBuilder.getKeys(writer, tableName, getPKString(uri));
                     }
                 })
                 .build();

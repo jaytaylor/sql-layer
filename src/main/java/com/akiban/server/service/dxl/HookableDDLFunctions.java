@@ -146,11 +146,11 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public void createRoutine(Session session, Routine routine) {
+    public void createRoutine(Session session, Routine routine, boolean replaceExisting) {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.CREATE_ROUTINE);
-            delegate.createRoutine(session, routine);
+            delegate.createRoutine(session, routine, replaceExisting);
         }catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.CREATE_ROUTINE, t);

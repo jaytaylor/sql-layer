@@ -61,7 +61,8 @@ import com.akiban.server.service.restdml.EndpointMetadata.EndpointAddress;
 import com.akiban.server.service.restdml.EndpointMetadata.ParamCache;
 import com.akiban.server.service.restdml.EndpointMetadata.ParamMetadata;
 import com.akiban.server.service.routines.RoutineLoader;
-import com.akiban.server.service.routines.ScriptInvoker;
+import com.akiban.server.service.routines.ScriptLibrary;
+import com.akiban.server.service.routines.ScriptPool;
 import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.types3.Attribute;
@@ -97,7 +98,7 @@ public class DirectServiceImpl implements Service, DirectService {
 
     private final static String DISTINGUISHED_REGISTRATION_METHOD_NAME = "_register";
 
-    private final static String CREATE_PROCEDURE_FORMAT = "CREATE PROCEDURE \"%s\".\"%s\" ()"
+    private final static String CREATE_PROCEDURE_FORMAT = "CREATE OR REPLACE PROCEDURE \"%s\".\"%s\" ()"
             + " LANGUAGE %s PARAMETER STYLE LIBRARY AS $$%s$$";
 
     private final static String DROP_PROCEDURE_FORMAT = "DROP PROCEDURE \"%s\".\"%s\"";
@@ -145,21 +146,11 @@ public class DirectServiceImpl implements Service, DirectService {
             /*
              * TODO - once it becomes possible to execute DDL statements within
              * the scope of an existing transaction, the following should be
-             * changed. Right now we perform as many as three consecutive DDL
-             * operations (drop an existing procedure, create a new one and then
-             * drop it again if there's an error in the _register function) in
-             * separate transactions, and in each case we construct a new AIS.
+             * changed. Right now we perform consecutive DDL operations (create
+             * the procedure and then drop it again if there's an error in the
+             * _register function) in separate transactions, and in both cases
+             * we construct a new AIS.
              */
-            final AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(conn.getSession());
-            if (ais.getRoutine(procName) != null) {
-                try {
-                    final String drop = String.format(DROP_PROCEDURE_FORMAT, procName.getSchemaName(),
-                            procName.getTableName(), language, definition);
-                    statement.execute(drop);
-                } catch (Exception e) {
-                    LOG.error("Unable to remove invalid library " + module, e);
-                }
-            }
             final String create = String.format(CREATE_PROCEDURE_FORMAT, procName.getSchemaName(),
                     procName.getTableName(), language, definition);
             statement.execute(create);
@@ -344,6 +335,8 @@ public class DirectServiceImpl implements Service, DirectService {
             final byte[] content, final MediaType[] responseType) throws Exception {
         try (JDBCConnection conn = jdbcConnection(request, procName.getSchemaName());) {
 
+            conn.setAutoCommit(false);
+
             boolean completed = false;
             boolean repeat = true;
 
@@ -403,9 +396,19 @@ public class DirectServiceImpl implements Service, DirectService {
 
         final Object[] args = createArgsArray(pathParams, queryParameters, content, cache, md);
 
-        final ScriptInvoker invoker = conn.getRoutineLoader()
-                .getScriptInvoker(conn.getSession(), new TableName(procName.getSchemaName(), md.routineName)).get();
-        Object result = invoker.invokeNamedFunction(md.function, args);
+        final ScriptPool<ScriptLibrary> libraryPool = conn.getRoutineLoader()
+            .getScriptLibrary(conn.getSession(), new TableName(procName.getSchemaName(),
+                                                               md.routineName));
+        final ScriptLibrary library = libraryPool.get();
+        boolean success = false;
+        Object result;
+        try {
+            result = library.invoke(md.function, args);
+            success = true;
+        }
+        finally {
+            libraryPool.put(library, success);
+        }
 
         switch (md.outParam.type) {
 
@@ -538,9 +541,11 @@ public class DirectServiceImpl implements Service, DirectService {
             for (final Routine routine : ais.getRoutines().values()) {
                 if (routine.getCallingConvention().equals(CallingConvention.SCRIPT_LIBRARY)
                         && routine.getDynamicResultSets() == 0 && routine.getParameters().isEmpty()) {
+                    final ScriptPool<ScriptLibrary> libraryPool = routineLoader.getScriptLibrary(session, routine.getName());
+                    final ScriptLibrary library = libraryPool.get();
+                    boolean success = false;
                     try {
-                        final ScriptInvoker invoker = routineLoader.getScriptInvoker(session, routine.getName()).get();
-                        invoker.invokeNamedFunction(DISTINGUISHED_REGISTRATION_METHOD_NAME,
+                        library.invoke(DISTINGUISHED_REGISTRATION_METHOD_NAME,
                                 new Object[] { new RestFunctionRegistrar() {
                                     @Override
                                     public void register(String specification) throws Exception {
@@ -548,9 +553,11 @@ public class DirectServiceImpl implements Service, DirectService {
                                                 .getTableName(), specification);
                                     }
                                 } });
+                        success = true;
                     } catch (ExternalRoutineInvocationException e) {
                         if (e.getCause() instanceof NoSuchMethodException) {
                             LOG.warn("Script library " + routine.getName() + " has no _register function");
+                            success = true;
                             return;
                         }
                         Throwable previous = e;
@@ -566,6 +573,8 @@ public class DirectServiceImpl implements Service, DirectService {
                         throw e;
                     } catch (Exception e) {
                         throw new RegistrationException(e);
+                    } finally {
+                        libraryPool.put(library, success);
                     }
                 }
             }

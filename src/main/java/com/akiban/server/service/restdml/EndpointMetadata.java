@@ -22,6 +22,7 @@ import static com.akiban.util.JsonUtils.readTree;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.sql.Date;
+import java.sql.Timestamp;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,12 +63,13 @@ public class EndpointMetadata {
     final static String X_TYPE_DOUBLE = "double";
     final static String X_TYPE_STRING = "string";
     final static String X_TYPE_DATE = "date";
+    final static String X_TYPE_TIMESTAMP = "timestamp";
     final static String X_TYPE_BYTEARRAY = "bytearray";
     final static String X_TYPE_JSON = "json";
     final static String X_TYPE_VOID = "void";
 
     final static List<String> X_TYPES = Arrays.asList(new String[] { X_TYPE_INT, X_TYPE_LONG, X_TYPE_FLOAT,
-            X_TYPE_DOUBLE, X_TYPE_STRING, X_TYPE_DATE, X_TYPE_BYTEARRAY, X_TYPE_JSON, X_TYPE_VOID });
+            X_TYPE_DOUBLE, X_TYPE_STRING, X_TYPE_DATE, X_TYPE_TIMESTAMP, X_TYPE_BYTEARRAY, X_TYPE_JSON, X_TYPE_VOID });
 
     private final static Charset UTF8 = Charset.forName("UTF8");
 
@@ -132,6 +134,8 @@ public class EndpointMetadata {
             return asString(pm, v);
         case EndpointMetadata.X_TYPE_DATE:
             return asDate(pm, v);
+        case EndpointMetadata.X_TYPE_TIMESTAMP:
+            return asTimestamp(pm, v);
         case EndpointMetadata.X_TYPE_BYTEARRAY:
             assert v instanceof byte[];
             return v;
@@ -181,6 +185,14 @@ public class EndpointMetadata {
             return new Date(System.currentTimeMillis());
         }
         return Date.valueOf(s);
+    }
+
+    private static Timestamp asTimestamp(ParamMetadata pm, Object v) throws ParseException {
+        String s = asString(pm, v);
+        if ("now".equalsIgnoreCase(s)) {
+            return new Timestamp(System.currentTimeMillis());
+        }
+        return Timestamp.valueOf(s);
     }
 
     static EndpointMetadata createEndpointMetadata(final String schema, final String routineName,

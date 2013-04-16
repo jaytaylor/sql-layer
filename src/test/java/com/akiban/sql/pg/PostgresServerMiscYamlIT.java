@@ -31,6 +31,8 @@ import java.io.File;
 import java.io.FileFilter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -82,7 +84,12 @@ public class PostgresServerMiscYamlIT extends PostgresServerYamlITBase {
 
     @Override
     protected Map<String, String> startupConfigProperties() {
-        return uniqueStartupConfigProperties(getClass());
+        // TODO: Remove whenever test-seq-fixup-routines.yaml no longer exists
+        Map<String, String> props = new HashMap();
+        props.put("akserver.dxl.use_global_lock", "true");
+        props.putAll(uniqueStartupConfigProperties(getClass()));
+        return props;
+        //return uniqueStartupConfigProperties(getClass());
     }
 
     @Test

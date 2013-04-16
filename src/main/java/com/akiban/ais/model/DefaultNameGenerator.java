@@ -34,6 +34,8 @@ import org.slf4j.LoggerFactory;
 public class DefaultNameGenerator implements NameGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultNameGenerator.class);
 
+    public static final String IDENTITY_SEQUENCE_PREFIX = "_sequence-";
+
     // Use 1 as default offset because the AAM uses tableID 0 as a marker value.
     static final int USER_TABLE_ID_OFFSET = 1;
     static final int IS_TABLE_ID_OFFSET = 1000000000;
@@ -99,7 +101,7 @@ public class DefaultNameGenerator implements NameGenerator {
 
     @Override
     public TableName generateIdentitySequenceName(TableName tableName) {
-        TableName seqName = new TableName(tableName.getSchemaName(), "_sequence-" + tableName.hashCode());
+        TableName seqName = new TableName(tableName.getSchemaName(), IDENTITY_SEQUENCE_PREFIX + tableName.hashCode());
         return makeUnique(sequenceNames, seqName);
     }
 
