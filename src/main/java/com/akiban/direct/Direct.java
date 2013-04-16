@@ -66,17 +66,27 @@ public class Direct {
     public static AbstractDirectObject objectForRow(final Class<?> c) {
         AbstractDirectObject o = instanceMap.get().get(c);
         if (o == null) {
-            try {
-                Class<? extends AbstractDirectObject> cl = classMap.get(c);
-                o = cl.newInstance();
-            } catch (InstantiationException | IllegalAccessException | ClassCastException e) {
-                throw new RuntimeException(e);
-            }
+            o = newInstance(c);
             if (o != null) {
                 instanceMap.get().put(c, o);
             }
         }
         return o;
+    }
+    
+    /**
+     * Construct a new instance of an entity object of the given type.
+     * @param c Type (the interface class) of object
+     * @return A newly constructed implementation object
+     */
+    public static AbstractDirectObject newInstance(final Class<?> c) {
+        try {
+            Class<? extends AbstractDirectObject> cl = classMap.get(c);
+            return cl.newInstance();
+        } catch (InstantiationException | IllegalAccessException | ClassCastException e) {
+            throw new RuntimeException(e);
+        }
+        
     }
     
     public static void enter(final String schemaName, AkibanInformationSchema ais) {

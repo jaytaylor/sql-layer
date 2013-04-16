@@ -101,7 +101,7 @@ public abstract class ClassBuilder {
                 }
                 sb.append(ch);
             } else {
-                sb.append(String.format("_u%04h", ch));
+                sb.append(String.format("_u%04x", (int) ch));
             }
         }
         return sb.toString();
@@ -260,7 +260,7 @@ public abstract class ClassBuilder {
 
         String[] body = null;
         if (!iface) {
-            StringBuilder sb = new StringBuilder(buildDirectIterableExpr(className, tableName));
+            StringBuilder sb = new StringBuilder(buildDirectIterableExpr(className, table));
             body = new String[] { "return " + sb.toString() };
         }
         addMethod("get" + asJavaCollectionName(tableName, true), "com.akiban.direct.DirectIterable<" + className + ">",
@@ -280,7 +280,7 @@ public abstract class ClassBuilder {
                     names[i] = asJavaName(primaryKeyColumns.get(i).getName(), false);
                 }
 
-                StringBuilder sb = new StringBuilder(buildDirectIterableExpr(className, tableName));
+                StringBuilder sb = new StringBuilder(buildDirectIterableExpr(className, table));
                 for (int i = 0; i < primaryKeyColumns.size(); i++) {
                     sb.append(String.format(".where(\"%s\", %s)", primaryKeyColumns.get(i).getName(),
                             literal(javaClass(primaryKeyColumns.get(i)), "$" + (i + 1)), false));
@@ -314,11 +314,12 @@ public abstract class ClassBuilder {
          */
         Join parentJoin = table.getParentJoin();
         if (parentJoin != null) {
-            String parentTableName = parentJoin.getParent().getName().getTableName();
+            UserTable parentTable = parentJoin.getParent();
+            String parentTableName = parentTable.getName().getTableName();
             String parentClassName = scn + "$" + asJavaName(parentTableName, true);
             String[] body = null;
             if (!iface) {
-                StringBuilder sb = new StringBuilder(buildDirectIterableExpr(parentClassName, parentTableName));
+                StringBuilder sb = new StringBuilder(buildDirectIterableExpr(parentClassName, parentTable));
                 for (final JoinColumn jc : parentJoin.getJoinColumns()) {
                     sb.append(String.format(".where(\"%s\", %s)", jc.getParent().getName(),
                             literal(getterMethods, jc.getParent())));
@@ -357,7 +358,7 @@ public abstract class ClassBuilder {
                 }
                 String[] body = null;
                 if (!iface) {
-                    StringBuilder sb = new StringBuilder(buildDirectIterableExpr(childClassName, childTableName));
+                    StringBuilder sb = new StringBuilder(buildDirectIterableExpr(childClassName, join.getChild()));
                     for (final JoinColumn jc : join.getJoinColumns()) {
                         sb.append(String.format(".where(\"%s\", %s)", jc.getChild().getName(),
                                 literal(getterMethods, jc.getParent())));
@@ -374,7 +375,7 @@ public abstract class ClassBuilder {
             if (!primaryKeyColumns.isEmpty()) {
                 String[] body = null;
                 if (!iface) {
-                    StringBuilder sb = new StringBuilder(buildDirectIterableExpr(childClassName, childTableName));
+                    StringBuilder sb = new StringBuilder(buildDirectIterableExpr(childClassName, join.getChild()));
                     for (final JoinColumn jc : join.getJoinColumns()) {
                         sb.append(String.format(".where(\"%s\", %s)", jc.getChild().getName(),
                                 literal(getterMethods, jc.getParent())));
@@ -390,17 +391,18 @@ public abstract class ClassBuilder {
          */
         addMethod("copy", typeName, NONE, null, iface ? null : UNSUPPORTED);
     }
-    
+
     /**
-     * Generate a Java command that will be executed as a static initializer and will
-     * give the base class metadata about the columns.
+     * Generate a Java command that will be executed as a static initializer and
+     * will give the base class metadata about the columns.
      */
     private String columnMetadataString(final UserTable table) {
         String[] columnArray = new String[table == null ? 0 : table.getColumns().size()];
         if (table != null) {
             List<Column> pkColumns = table.getPrimaryKey().getColumns();
             @SuppressWarnings("unchecked")
-            List<JoinColumn> joinColumns = table.getParentJoin() == null ? Collections.EMPTY_LIST : table.getParentJoin().getJoinColumns();
+            List<JoinColumn> joinColumns = table.getParentJoin() == null ? Collections.EMPTY_LIST : table
+                    .getParentJoin().getJoinColumns();
             for (Column column : table.getColumns()) {
                 int index = column.getPosition();
                 String columnName = column.getName();
@@ -424,7 +426,10 @@ public abstract class ClassBuilder {
                         pjFieldIndex);
             }
         }
-        StringBuilder sb = new StringBuilder("__init(\"");
+        StringBuilder sb = new StringBuilder("__init(");
+        sb.append("\"").append(table.getName().getSchemaName()).append("\", ");
+        sb.append("\"").append(table.getName().getTableName()).append("\", ");
+        sb.append("\"");
         for (int index = 0; index < columnArray.length; index++) {
             assert columnArray[index] != null : "Missing column specification: " + index;
             if (index > 0) {
@@ -435,8 +440,6 @@ public abstract class ClassBuilder {
         sb.append("\")");
         return sb.toString();
     }
-
-
 
     private Class<?> javaClass(final Column column) {
         AkType type = column.getType().akType();
@@ -490,9 +493,9 @@ public abstract class ClassBuilder {
 
     }
 
-    private String buildDirectIterableExpr(final String className, final String table) {
-        return String.format("(new com.akiban.direct.DirectIterableImpl" + "(%1$s.class, \"%2$s\", this))", className,
-                table);
+    private String buildDirectIterableExpr(final String className, final UserTable table) {
+        return String.format("(new com.akiban.direct.DirectIterableImpl" + "(%s.class, \"%s\", this))",
+                className, table.getName().getTableName());
     }
 
     /**

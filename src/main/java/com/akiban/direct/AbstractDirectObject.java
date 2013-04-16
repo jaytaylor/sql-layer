@@ -19,14 +19,36 @@ package com.akiban.direct;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.sql.Connection;
 import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Arrays;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 import com.akiban.sql.server.ServerJavaValues;
 
 public abstract class AbstractDirectObject implements DirectObject {
+
+    private final static Map<Connection, Map<BitSet, PreparedStatement>> updateStatementCache = new WeakHashMap<>();
+    private final static Map<Connection, Map<BitSet, PreparedStatement>> insertStatementCache = new WeakHashMap<>();
+
+    /*
+     * 1. schema_name 2. tableName 3. comma-separated list of column names, 4.
+     * comma-separated list of '?' symbols.
+     */
+    private final static String INSERT_STATEMENT = "insert into \"%s\".\"%s\" (%s) values (%s)";
+
+    /*
+     * 1. schema name 2. table name 3. comma-separated list of column_name=?
+     * pairs 4. predicate: pkcolumn=?, ...
+     */
+    private final static String UPDATE_STATEMENT = "update \"%s\".\"%s\" set %s where %s";
 
     private final static Object NOT_SET = new Object() {
         @Override
@@ -36,6 +58,8 @@ public abstract class AbstractDirectObject implements DirectObject {
     };
 
     private static Column[] columns;
+    private static String schemaName;
+    private static String tableName;
 
     protected static class Column implements DirectColumn {
 
@@ -80,8 +104,10 @@ public abstract class AbstractDirectObject implements DirectObject {
      * 
      * @param columnSpecs
      */
-    protected static void __init(final String columnSpecs) {
+    protected static void __init(final String sName, final String tName, final String columnSpecs) {
         try {
+            schemaName = sName;
+            tableName = tName;
             String[] columnArray = columnSpecs.split(",");
             columns = new Column[columnArray.length];
             for (int index = 0; index < columnArray.length; index++) {
@@ -134,19 +160,11 @@ public abstract class AbstractDirectObject implements DirectObject {
                 for (int index = 0; index < columns.length; index++) {
                     Column c = columns[index];
                     if (c.parentJoinFieldIndex >= 0) {
-                        updates[index] = ado.__getObject(c.parentJoinFieldIndex);
+                        updates()[index] = ado.__getObject(c.parentJoinFieldIndex);
                     }
                 }
             }
         }
-    }
-
-    /**
-     * Issue either an INSERT or an UPDATE statement depending on whether this
-     * instance is bound to a result set.
-     */
-    public void save() {
-        // TODO
     }
 
     protected boolean __getBOOL(int p) {
@@ -371,6 +389,140 @@ public abstract class AbstractDirectObject implements DirectObject {
 
     protected void __setYEAR(int p, int v) {
         updates()[p] = v;
+    }
+
+    /**
+     * Issue either an INSERT or an UPDATE statement depending on whether this
+     * instance is bound to a result set.
+     */
+    public void save() {
+        try {
+            /*
+             * If rs == null then this instance was created via the
+             * DirectIterable#newInstance method and the intention is to INSERT
+             * it. If rs is not null, then this instance was selected from an
+             * existing table and the intention is to UPDATE it.
+             */
+            PreparedStatement stmt = rs == null ? __insertStatement() : __updateStatement();
+            stmt.execute();
+
+        } catch (SQLException e) {
+            throw new DirectException(e);
+        }
+    }
+
+    private PreparedStatement __insertStatement() throws SQLException {
+        assert updates != null : "No updates to save";
+        BitSet bs = new BitSet(columns.length);
+        for (int index = 0; index < updates.length; index++) {
+            if (updates[index] != NOT_SET) {
+                bs.set(index);
+            }
+        }
+        Connection conn = Direct.getContext().getConnection();
+        Map<BitSet, PreparedStatement> map = insertStatementCache.get(conn);
+        PreparedStatement stmt = null;
+        if (map == null) {
+            map = new HashMap<>();
+            insertStatementCache.put(conn, map);
+        } else {
+            stmt = map.get(bs);
+        }
+        if (stmt == null) {
+            StringBuilder updateColumns = new StringBuilder();
+            StringBuilder updateValues = new StringBuilder();
+
+            for (int index = 0; index < columns.length; index++) {
+                if (updates[index] != NOT_SET) {
+                    if (updateColumns.length() > 0) {
+                        updateColumns.append(',');
+                        updateValues.append(',');
+                    }
+                    updateColumns.append(columns[index].columnName);
+                    updateValues.append('?');
+                }
+            }
+            stmt = conn.prepareStatement(String.format(INSERT_STATEMENT, schemaName, tableName, updateColumns,
+                    updateValues));
+            map.put(bs, stmt);
+        } else {
+            // Just in case
+            stmt.clearParameters();
+        }
+        int statementIndex = 1;
+        for (int index = 0; index < columns.length; index++) {
+            if (updates[index] != NOT_SET) {
+                stmt.setObject(statementIndex, updates[index]);
+                statementIndex++;
+            }
+        }
+        return stmt;
+    }
+
+    private PreparedStatement __updateStatement() throws SQLException {
+        assert updates != null : "No updates to save";
+        BitSet bs = new BitSet(columns.length);
+        for (int index = 0; index < updates.length; index++) {
+            if (updates[index] != NOT_SET) {
+                bs.set(index);
+            }
+        }
+        Connection conn = Direct.getContext().getConnection();
+
+        Map<BitSet, PreparedStatement> map = updateStatementCache.get(conn);
+        synchronized (this) {
+            if (map == null) {
+                map = new HashMap<>();
+                updateStatementCache.put(conn, map);
+            }
+        }
+
+        PreparedStatement stmt = map.get(bs);
+        if (stmt == null) {
+            StringBuilder updateColumns = new StringBuilder();
+            StringBuilder pkColumns = new StringBuilder();
+
+            for (int index = 0; index < columns.length; index++) {
+                if (columns[index].parentJoinFieldIndex >= 0 || columns[index].primaryKeyFieldIndex >= 0) {
+                    if (pkColumns.length() > 0) {
+                        pkColumns.append(',');
+                    }
+                    pkColumns.append(columns[index].columnName).append("=?");
+                } else {
+                    if (updates[index] != NOT_SET) {
+                        if (updateColumns.length() > 0) {
+                            updateColumns.append(',');
+                        }
+                        updateColumns.append('?');
+                    }
+                }
+            }
+            stmt = conn.prepareStatement(String.format(UPDATE_STATEMENT, schemaName, tableName, updateColumns,
+                    pkColumns));
+            map.put(bs, stmt);
+        } else {
+            // Just in case
+            stmt.clearParameters();
+        }
+        int statementIndex = 1;
+        for (int pass = 0; pass < 2; pass++) {
+            for (int index = 0; index < columns.length; index++) {
+                if (columns[index].parentJoinFieldIndex >= 0 || columns[index].primaryKeyFieldIndex >= 0) {
+                    if (pass == 1) {
+                        stmt.setObject(statementIndex, __getObject(index));
+                        statementIndex++;
+                    }
+                } else {
+                    if (pass == 0) {
+                        if (updates[index] != NOT_SET) {
+                            stmt.setObject(statementIndex, updates[index]);
+                            statementIndex++;
+                        }
+                    }
+                }
+            }
+        }
+        return stmt;
     }
 
 }

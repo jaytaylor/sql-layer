@@ -48,8 +48,8 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
 
     JDBCResultSet resultSet;
 
-    public DirectIterableImpl(Class<T> clazz, String toTable, DirectObject parent) {
-        this.clazz = clazz;
+    public DirectIterableImpl(Class<T> ifaceClass, String toTable, DirectObject parent) {
+        this.clazz = ifaceClass;
         this.table = toTable;
         this.parent = parent;
     }
@@ -186,13 +186,13 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
         throw new IllegalStateException("Limit already specified");
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public T newInstance() throws DirectException {
         try {
-            final T newInstance = clazz.newInstance();
-            AbstractDirectObject ado = (AbstractDirectObject)newInstance();
-            ado.populateJoinFields(parent);
-            return newInstance;
+            final AbstractDirectObject newInstance = Direct.newInstance(clazz);
+            newInstance.populateJoinFields(parent);
+            return (T)newInstance;
         } catch (Exception e) {
             throw new DirectException(e);
         }

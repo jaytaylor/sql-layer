@@ -40,7 +40,7 @@ function _register(registrar) {
 function computeTotalCompensation(empno, start, end) {
 	var extent = com.akiban.direct.Direct.context.extent;
 	var emp = extent.getEmployee(empno);
-	//var newSalary = emp.salaries.newInstance();
+	var newSalary = emp.salaries.newInstance();
 	println("Computing total compensation for employee " + empno);
 	var total = 0;
 	var today = new Date();
