@@ -24,8 +24,8 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.sql.Date;
-import java.sql.Timestamp;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 
 import org.junit.After;
 import org.junit.Before;
@@ -33,7 +33,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.direct.COIDirectClasses.Iface;
+import com.akiban.direct.COIDirectClasses.Iface.Customer;
+import com.akiban.direct.COIDirectClasses.Iface.Order;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.sql.RegexFilenameFilter;
@@ -75,11 +76,11 @@ public final class DirectUpdateIT extends ITBase {
     public void testGetCustomerAndInterate() throws Exception {
         test(new TestExec() {
             public boolean exec() throws Exception {
-                final Iface.Customer customer = new DirectIterableImpl<Iface.Customer>(
-                        Iface.Customer.class, "customers", this).where("cid=1").single();
+                final Customer customer = new DirectIterableImpl<Customer>(
+                        Customer.class, "customers", this).where("cid=1").single();
                 assertEquals("Customer has cid", 1, customer.getCid());
                 int orderCount = 0;
-                for (Iface.Order order : customer.getOrders()) {
+                for (Order order : customer.getOrders()) {
                     orderCount++;
                     assertEquals("Customer's Order's Customer is correct", customer, order.getCustomer());
                 }
@@ -93,16 +94,16 @@ public final class DirectUpdateIT extends ITBase {
     public void insertNewOrderExpectSuccess() throws Exception {
         test(new TestExec() {
             public boolean exec() throws Exception {
-                final Iface.Customer customer = new DirectIterableImpl<Iface.Customer>(
-                        Iface.Customer.class, "customers", this).where("cid=1").single();
-                final Iface.Order newOrder = customer.getOrders().newInstance();
+                final Customer customer = new DirectIterableImpl<Customer>(
+                        Customer.class, "customers", this).where("cid=1").single();
+                final Order newOrder = customer.getOrders().newInstance();
 
                 newOrder.setOid(103);
                 newOrder.setOdate(java.sql.Date.valueOf("2011-03-03"));
                 newOrder.save();
 
                 int orderCount = 0;
-                for (Iface.Order o : customer.getOrders()) {
+                for (Order o : customer.getOrders()) {
                     orderCount++;
                     assertEquals("Customer's Order's Customer is correct", customer, o.getCustomer());
                 }
@@ -116,9 +117,9 @@ public final class DirectUpdateIT extends ITBase {
     public void updateOrderOnce() throws Exception {
         test(new TestExec() {
             public boolean exec() throws Exception {
-                final Iface.Customer customer = new DirectIterableImpl<Iface.Customer>(
-                        Iface.Customer.class, "customers", this).where("cid=1").single();
-                final Iface.Order order = customer.getOrder(101);
+                final Customer customer = new DirectIterableImpl<Customer>(
+                        Customer.class, "customers", this).where("cid=1").single();
+                final Order order = customer.getOrder(101);
                 assertNotNull("Customer 1 has an order with oid=101", order);
 
                 order.setOid(103);
@@ -126,7 +127,7 @@ public final class DirectUpdateIT extends ITBase {
                 order.save();
 
                 int orderCount = 0;
-                for (Iface.Order o : customer.getOrders()) {
+                for (Order o : customer.getOrders()) {
                     orderCount++;
                     assertEquals("Customer's Order's Customer is correct", customer, o.getCustomer());
                 }
@@ -140,16 +141,16 @@ public final class DirectUpdateIT extends ITBase {
     public void updateMultipleOrders() throws Exception {
         test(new TestExec() {
             public boolean exec() throws Exception {
-                final Iface.Customer customer = new DirectIterableImpl<Iface.Customer>(
-                        Iface.Customer.class, "customers", this).where("cid=1").single();
-                for (final Iface.Order order : customer.getOrders()) {
+                final Customer customer = new DirectIterableImpl<Customer>(
+                        Customer.class, "customers", this).where("cid=1").single();
+                for (final Order order : customer.getOrders()) {
                     Date newDate = Date.valueOf("2013-01-" + order.getOdate().toString().substring(8));
                     order.setOdate(newDate);
                     order.save();
                 }
                 int orderCount = 0;
                 Timestamp after = Timestamp.valueOf("2012-12-31 23:59:59");
-                for (Iface.Order o : customer.getOrders()) {
+                for (Order o : customer.getOrders()) {
                     if (o.getOdate().after(after)) {
                         orderCount++;
                     }
@@ -164,9 +165,9 @@ public final class DirectUpdateIT extends ITBase {
     public void insertNewOrderExpectFailure() throws Exception {
         test(new TestExec() {
             public boolean exec() throws Exception {
-                final Iface.Customer customer = new DirectIterableImpl<Iface.Customer>(
-                        Iface.Customer.class, "customers", this).where("cid=1").single();
-                final Iface.Order newOrder = customer.getOrders().newInstance();
+                final Customer customer = new DirectIterableImpl<Customer>(
+                        Customer.class, "customers", this).where("cid=1").single();
+                final Order newOrder = customer.getOrders().newInstance();
                 newOrder.setOid(101); // will collide
                 newOrder.setOdate(new java.sql.Date(System.currentTimeMillis()));
                 try {
@@ -187,11 +188,11 @@ public final class DirectUpdateIT extends ITBase {
     public void testCopy() throws Exception {
         test(new TestExec() {
             public boolean exec() throws Exception {
-                final Iface.Customer customer = new DirectIterableImpl<Iface.Customer>(
-                        Iface.Customer.class, "customers", this).where("cid=1").single();
-                Iface.Order copy1 = null;
-                Iface.Order copy2 = null;
-                for (final Iface.Order o : customer.getOrders().sort("cid")) {
+                final Customer customer = new DirectIterableImpl<Customer>(
+                        Customer.class, "customers", this).where("cid=1").single();
+                Order copy1 = null;
+                Order copy2 = null;
+                for (final Order o : customer.getOrders().sort("cid")) {
                     if (copy1 == null) {
                         copy1 = o.copy();
                     } else if (copy2 == null) {
