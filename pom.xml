@@ -393,6 +393,7 @@
                         <exclude>bin/akserver</exclude>
                         <exclude>**/*.options</exclude>
                         <!-- Files requiring a specific format (packaging control, test output, etc) -->
+                        <exclude>README.md</exclude>
                         <exclude>debian/**</exclude>
                         <exclude>redhat/**</exclude>
                         <exclude>macosx/**</exclude>
