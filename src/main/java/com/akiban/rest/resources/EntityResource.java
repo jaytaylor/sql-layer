@@ -191,4 +191,24 @@ public class EntityResource {
             throw RestResponseBuilder.forRequest(request).wrapException(e);
         }
     }
+    
+    @PATCH
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
+    public Response patchEntity(@Context HttpServletRequest request,
+            @PathParam("entity") String entity,
+            final byte[] entityBytes) {
+        final TableName tableName = parseTableName(request, entity);
+        checkTableAccessible(reqs.securityService, request, tableName);
+        return RestResponseBuilder
+                .forRequest(request)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        final JsonNode node = readTree(entityBytes);
+                        reqs.restDMLService.upsert(writer, tableName, node);
+                    }
+                })
+                .build();
+    }
 }

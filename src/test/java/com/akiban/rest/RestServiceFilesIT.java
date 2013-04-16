@@ -28,17 +28,21 @@ import com.akiban.sql.RegexFilenameFilter;
 import com.akiban.util.Strings;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonParseException;
+import org.eclipse.jetty.client.ContentExchange;
+import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.client.HttpExchange;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -89,9 +93,14 @@ public class RestServiceFilesIT extends ITBase {
     }
 
     protected final CaseParams caseParams;
+    protected final HttpClient httpClient;
 
-    public RestServiceFilesIT(CaseParams caseParams) {
+    public RestServiceFilesIT(CaseParams caseParams) throws Exception {
         this.caseParams = caseParams;
+        this.httpClient = new HttpClient();
+        httpClient.setConnectorType(HttpClient.CONNECTOR_SELECT_CHANNEL);
+        httpClient.setMaxConnectionsPerAddress(10);
+        httpClient.start();
     }
 
     @Override
@@ -107,7 +116,7 @@ public class RestServiceFilesIT extends ITBase {
     }
 
     public static File[] gatherRequestFiles(File dir) {
-        File[] result = dir.listFiles(new RegexFilenameFilter("*\\.(get|put|post|delete|query|explain)"));
+        File[] result = dir.listFiles(new RegexFilenameFilter(".*\\.(get|put|post|delete|query|explain|patch)"));
         Arrays.sort(result, new Comparator<File>() {
             public int compare(File f1, File f2) {
                 return f1.getName().compareTo(f2.getName());
@@ -184,15 +193,9 @@ public class RestServiceFilesIT extends ITBase {
         }
         File spaceFile = new File(subDir, "space.json");
         if(spaceFile.exists()) {
-            HttpURLConnection httpConn = openConnection(getRestURL("/model/apply/" + SCHEMA_NAME), "POST");
+            HttpExchange httpConn = openConnection(getRestURL("/model/apply/" + SCHEMA_NAME), "POST");
             postContents(httpConn, Strings.dumpFileToString(spaceFile).getBytes());
-            StringBuilder builder = new StringBuilder();
-            try {
-                Strings.readStreamTo(httpConn.getInputStream(), builder, true);
-            } catch(Exception e) {
-                Strings.readStreamTo(httpConn.getErrorStream(), builder, true);
-                throw new RuntimeException("Failing creating initial space: " + builder.toString(), e);
-            }
+            httpClient.send(httpConn);
             fullyDisconnect(httpConn);
         }
         for (File data : subDir.listFiles(new RegexFilenameFilter(".*\\.dat"))) {
@@ -200,21 +203,18 @@ public class RestServiceFilesIT extends ITBase {
         }
         String postURI = dumpFileIfExists(new File(subDir, "schema.prepost"));
         if (postURI != null) {
-            HttpURLConnection httpConn = openConnection(getRestURL(postURI.trim()), "POST");
+            HttpExchange httpConn = openConnection(getRestURL(postURI.trim()), "POST");
             postContents(httpConn, "[]".getBytes());
-            StringBuilder builder = new StringBuilder();
-            try {
-                Strings.readStreamTo(httpConn.getInputStream(), builder, true);
-            } catch(Exception e) {
-                Strings.readStreamTo(httpConn.getErrorStream(), builder, true);
-                throw new RuntimeException("Failing posting schema setup: " + builder.toString(), e);
-            }
+            httpClient.send(httpConn);
+            fullyDisconnect(httpConn);
         }
     }
     
     public void checkRequest() throws Exception {
         if (caseParams.checkURI != null && caseParams.checkExpected != null) {
-            HttpURLConnection httpConn = openConnection(getRestURL(caseParams.checkURI.trim()), "GET");
+            HttpExchange httpConn = openConnection(getRestURL(caseParams.checkURI.trim()), "GET");
+            httpClient.send(httpConn);
+            httpConn.waitForDone();
             try {
                 String actual = getOutput (httpConn);
                 compareExpected (caseParams.caseName + " check expected response ", caseParams.checkExpected, actual);
@@ -224,64 +224,59 @@ public class RestServiceFilesIT extends ITBase {
         }
     }
 
-    private static void postContents(HttpURLConnection httpConn, byte[] request) throws IOException {
-        httpConn.setDoInput(true);
-        httpConn.setFixedLengthStreamingMode(request.length);
-        httpConn.setRequestProperty("Content-Type", "application/json");
-        httpConn.setRequestProperty("Accept", "application/json");
-        httpConn.connect();
-        httpConn.getOutputStream().write(request);
+    private static void postContents(HttpExchange httpConn, byte[] request) throws IOException {
+        httpConn.setRequestContentType("application/json");
+        httpConn.setRequestHeader("Accept", "application/json");
+        httpConn.setRequestContentSource(new ByteArrayInputStream(request));
     }
 
+    @After
+    public void finish() throws Exception {
+        httpClient.stop();
+    }
+    
     @Test
     public void testRequest() throws Exception {
         loadDatabase(caseParams.subDir);
-
-        HttpURLConnection httpConn = openConnection (getRestURL(caseParams.requestURI), caseParams.requestMethod);
-
+        HttpExchange conn = openConnection(getRestURL(caseParams.requestURI), caseParams.requestMethod);
+        
         try {
             // Request
-            if (caseParams.requestMethod.equals("POST") || caseParams.requestMethod.equals("PUT")) {
+            if (caseParams.requestMethod.equals("POST") || 
+                caseParams.requestMethod.equals("PUT") || 
+                caseParams.requestMethod.equals("PATCH")) {
                 if (caseParams.requestBody == null) {
-                    throw new UnsupportedOperationException ("PUT/POST expects request body (<test>.body)");
+                    throw new UnsupportedOperationException ("PUT/POST/PATCH expects request body (<test>.body)");
                 }
                 LOG.debug(caseParams.requestBody);
-                postContents(httpConn, caseParams.requestBody.getBytes());
+                postContents(conn, caseParams.requestBody.getBytes() );
             } // else GET || DELETE
 
+            httpClient.send(conn);
+            conn.waitForDone();
             // Response
-            String actual = getOutput(httpConn);
+            String actual = getOutput(conn);
             if(!caseParams.expectedIgnore) {
                 compareExpected(caseParams.requestMethod + " response", caseParams.expectedResponse, actual);
             }
             if (caseParams.expectedHeader != null) {
-                compareHeaders(httpConn, caseParams.expectedHeader);
+                compareHeaders(conn, caseParams.expectedHeader);
             }
         } finally {
-            fullyDisconnect(httpConn);
+            fullyDisconnect(conn);
         }
         checkRequest();
     }
     
-    private HttpURLConnection openConnection(URL url, String requestMethod) throws IOException {
-        HttpURLConnection conn = (HttpURLConnection)url.openConnection();
-        conn.setUseCaches(false);
-        conn.setDoOutput(true);
-        conn.setRequestMethod(requestMethod);
-        return conn;
+    private HttpExchange openConnection(URL url, String requestMethod) throws IOException, URISyntaxException {
+        HttpExchange exchange = new ContentExchange(caseParams.expectedHeader != null);
+        exchange.setURI(url.toURI());
+        exchange.setMethod(requestMethod);
+        return exchange;
     }
      
-    private String getOutput(HttpURLConnection httpConn) throws IOException {
-        InputStream is;
-        try {
-            is = httpConn.getInputStream();
-        } catch(Exception e) {
-            is = httpConn.getErrorStream();
-        }
-        if (is == null) return null;
-        StringBuilder builder = new StringBuilder();
-        Strings.readStreamTo(is, builder, true);
-        return builder.toString().length() > 0 ? builder.toString() : null;
+    private String getOutput(HttpExchange httpConn) throws IOException {
+        return ((ContentExchange)httpConn).getResponseContent();
     }
     
     private void compareExpected(String assertMsg, String expected, String actual) throws IOException {
@@ -310,34 +305,27 @@ public class RestServiceFilesIT extends ITBase {
         }
     }
     
-    private void compareHeaders (HttpURLConnection httpConn, String checkHeaders) throws Exception {
+    private void compareHeaders (HttpExchange httpConn, String checkHeaders) throws Exception {
+        ContentExchange exch = (ContentExchange)httpConn;
+        
         String[] headerList = checkHeaders.split (Strings.NL);
         for (String header : headerList) {
             String[] nameValue = header.split(":", 2);
             
             if (nameValue[0].equals("responseCode")) {
-                assertEquals ("Headers Response", Integer.parseInt(nameValue[1].trim()), httpConn.getResponseCode());
+                assertEquals ("Headers Response", Integer.parseInt(nameValue[1].trim()), 
+                        exch.getResponseStatus());
             } else {
-                assertEquals ("Headers check", nameValue[1].trim(), httpConn.getHeaderField(nameValue[0]));
+                assertEquals ("Headers check", nameValue[1].trim(),
+                        exch.getResponseFields().getStringField(nameValue[0]));
             }
         }
     }
 
-    private void fullyDisconnect(HttpURLConnection httpConn) {
+    private void fullyDisconnect(HttpExchange httpConn) throws InterruptedException {
         // If there is a failure, leaving junk in any of the streams can cause cascading issues.
         // Get rid of anything left and disconnect.
-        try {
-            httpConn.getErrorStream().close();
-        } catch(Exception e) {
-        }
-        try {
-            httpConn.getInputStream().close();
-        } catch(Exception e) {
-        }
-        try {
-            httpConn.getOutputStream().close();
-        } catch(Exception e) {
-        }
-        httpConn.disconnect();
+        httpConn.waitForDone();
+        httpConn.reset();
     }
 }

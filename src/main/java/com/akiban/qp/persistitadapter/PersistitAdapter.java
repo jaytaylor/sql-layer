@@ -447,9 +447,9 @@ public class PersistitAdapter extends StoreAdapter
     private long sequenceValue (Sequence sequence, boolean getCurrentValue) {
         try {
             if (getCurrentValue) {
-                return sequence.currentValue(treeService);
+                return sequence.currentValue();
             } else {
-                return sequence.nextValue(treeService);
+                return sequence.nextValue();
             }
         } catch (PersistitException e) {
             rollbackIfNeeded(e);

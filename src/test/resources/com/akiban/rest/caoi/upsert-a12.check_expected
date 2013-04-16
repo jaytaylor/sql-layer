@@ -1,0 +1,4 @@
+[
+	{"aid": 101, "cid": 1, "state": "VT", "city": "Boston"},
+ 	{"aid": 201, "cid": 2, "state": "NY", "city": "Albany"}
+]

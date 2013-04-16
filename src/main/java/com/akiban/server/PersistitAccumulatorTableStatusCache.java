@@ -18,7 +18,6 @@
 package com.akiban.server;
 
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
-import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowDef;
@@ -138,27 +137,18 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public void setUniqueId(long value) {
-            try {
-                this.uniqueID.set(value);
-            } catch (PersistitInterruptedException e) {
-                throw new PersistitAdapterException(e);
-            }
-        }
-
-        @Override
         public int getTableID() {
             return expectedID;
         }
 
         @Override
         public void rowDeleted() {
-            rowCount.updateAndGet(-1);
+            rowCount.sumAdd(-1);
         }
 
         @Override
         public void rowsWritten(long count) {
-            rowCount.updateAndGet(count);
+            rowCount.sumAdd(count);
         }
 
         public void setOrdinal(int ordinal) throws PersistitInterruptedException {
@@ -167,7 +157,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
 
         @Override
         public long createNewUniqueID() throws PersistitInterruptedException {
-            return uniqueID.updateAndGet(1);
+            return uniqueID.seqAllocate();
         }
 
         @Override
@@ -188,10 +178,10 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             } else {
                 checkExpectedRowDefID(expectedID, rowDef);
                 Tree tree = getTreeForRowDef(rowDef);
-                ordinal = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ORDINAL, treeService, tree);
-                rowCount = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, treeService, tree);
-                uniqueID = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.UNIQUE_ID, treeService, tree);
-                autoIncrement = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.AUTO_INC, treeService, tree);
+                ordinal = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ORDINAL, tree);
+                rowCount = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, tree);
+                uniqueID = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.UNIQUE_ID, tree);
+                autoIncrement = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.AUTO_INC, tree);
             }
         }
 
@@ -236,11 +226,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
 
         @Override
         public long getUniqueID() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void setUniqueId(long value) {
             throw new UnsupportedOperationException();
         }
 

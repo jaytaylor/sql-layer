@@ -33,7 +33,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.direct.COIDirectClasses.Interface;
+import com.akiban.direct.COIDirectClasses.Iface;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.sql.RegexFilenameFilter;
@@ -41,7 +41,7 @@ import com.akiban.sql.embedded.EmbeddedJDBCService;
 import com.akiban.sql.embedded.EmbeddedJDBCServiceImpl;
 import com.akiban.sql.embedded.JDBCConnection;
 
-public final class DirectUpdateIT extends ITBase implements DirectObject {
+public final class DirectUpdateIT extends ITBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(DirectUpdateIT.class.getName());
 
@@ -73,106 +73,144 @@ public final class DirectUpdateIT extends ITBase implements DirectObject {
 
     @Test
     public void testGetCustomerAndInterate() throws Exception {
-        JDBCConnection conn = (JDBCConnection) Direct.getContext().getConnection();
-        conn.beginTransaction();
-        try {
-            final Interface.Customer customer = new DirectIterableImpl<Interface.Customer>(Interface.Customer.class,
-                    "customers", this).where("cid=1").single();
-            assertEquals("Customer has cid", 1, customer.getCid());
-            int orderCount = 0;
-            for (Interface.Order order : customer.getOrders()) {
-                orderCount++;
-                assertEquals("Customer's Order's Customer is correct", customer, order.getCustomer());
+        test(new TestExec() {
+            public boolean exec() throws Exception {
+                final Iface.Customer customer = new DirectIterableImpl<Iface.Customer>(
+                        Iface.Customer.class, "customers", this).where("cid=1").single();
+                assertEquals("Customer has cid", 1, customer.getCid());
+                int orderCount = 0;
+                for (Iface.Order order : customer.getOrders()) {
+                    orderCount++;
+                    assertEquals("Customer's Order's Customer is correct", customer, order.getCustomer());
+                }
+                assertEquals("Customer 1 has 2 orders", 2, orderCount);
+                return true;
             }
-            assertEquals("Customer 1 has 2 orders", 2, orderCount);
-        } finally {
-            conn.commitTransaction();
-        }
+        });
     }
 
     @Test
     public void insertNewOrderExpectSuccess() throws Exception {
-        JDBCConnection conn = (JDBCConnection) Direct.getContext().getConnection();
-        conn.beginTransaction();
-        boolean commit = false;
-        try {
-            final Interface.Customer customer = new DirectIterableImpl<Interface.Customer>(Interface.Customer.class,
-                    "customers", this).where("cid=1").single();
-            final Interface.Order newOrder = customer.getOrders().newInstance();
+        test(new TestExec() {
+            public boolean exec() throws Exception {
+                final Iface.Customer customer = new DirectIterableImpl<Iface.Customer>(
+                        Iface.Customer.class, "customers", this).where("cid=1").single();
+                final Iface.Order newOrder = customer.getOrders().newInstance();
 
-            newOrder.setOid(103);
-            newOrder.setOdate(java.sql.Date.valueOf("2011-03-03"));
-            newOrder.save();
+                newOrder.setOid(103);
+                newOrder.setOdate(java.sql.Date.valueOf("2011-03-03"));
+                newOrder.save();
 
-            int orderCount = 0;
-            for (Interface.Order o : customer.getOrders()) {
-                orderCount++;
-                assertEquals("Customer's Order's Customer is correct", customer, o.getCustomer());
+                int orderCount = 0;
+                for (Iface.Order o : customer.getOrders()) {
+                    orderCount++;
+                    assertEquals("Customer's Order's Customer is correct", customer, o.getCustomer());
+                }
+                assertEquals("Customer 1 now has 3 orders", 3, orderCount);
+                return true;
             }
-            assertEquals("Customer 1 now has 3 orders", 3, orderCount);
-            commit = true;
-
-        } finally {
-            if (commit) {
-                conn.commitTransaction();
-            }
-        }
+        });
     }
 
     @Test
     public void updateOrderOnce() throws Exception {
-        JDBCConnection conn = (JDBCConnection) Direct.getContext().getConnection();
-        conn.beginTransaction();
-        boolean commit = false;
-        try {
-            final Interface.Customer customer = new DirectIterableImpl<Interface.Customer>(Interface.Customer.class,
-                    "customers", this).where("cid=1").single();
-            final Interface.Order order = customer.getOrder(101);
-            assertNotNull("Customer 1 has an order with oid=101", order);
+        test(new TestExec() {
+            public boolean exec() throws Exception {
+                final Iface.Customer customer = new DirectIterableImpl<Iface.Customer>(
+                        Iface.Customer.class, "customers", this).where("cid=1").single();
+                final Iface.Order order = customer.getOrder(101);
+                assertNotNull("Customer 1 has an order with oid=101", order);
 
-            order.setOid(103);
-            order.setOdate(java.sql.Date.valueOf("2011-03-03"));
-            order.save();
+                order.setOid(103);
+                order.setOdate(java.sql.Date.valueOf("2011-03-03"));
+                order.save();
 
-            int orderCount = 0;
-            for (Interface.Order o : customer.getOrders()) {
-                orderCount++;
-                assertEquals("Customer's Order's Customer is correct", customer, o.getCustomer());
+                int orderCount = 0;
+                for (Iface.Order o : customer.getOrders()) {
+                    orderCount++;
+                    assertEquals("Customer's Order's Customer is correct", customer, o.getCustomer());
+                }
+                assertEquals("Customer 1 now has 2 orders", 2, orderCount);
+                return true;
             }
-            assertEquals("Customer 1 now has 2 orders", 2, orderCount);
-            commit = true;
-
-        } finally {
-            if (commit) {
-                conn.commitTransaction();
-            }
-        }
-
+        });
     }
 
     @Test
     public void updateMultipleOrders() throws Exception {
+        test(new TestExec() {
+            public boolean exec() throws Exception {
+                final Iface.Customer customer = new DirectIterableImpl<Iface.Customer>(
+                        Iface.Customer.class, "customers", this).where("cid=1").single();
+                for (final Iface.Order order : customer.getOrders()) {
+                    Date newDate = Date.valueOf("2013-01-" + order.getOdate().toString().substring(8));
+                    order.setOdate(newDate);
+                    order.save();
+                }
+                int orderCount = 0;
+                Timestamp after = Timestamp.valueOf("2012-12-31 23:59:59");
+                for (Iface.Order o : customer.getOrders()) {
+                    if (o.getOdate().after(after)) {
+                        orderCount++;
+                    }
+                }
+                assertEquals("Customer 1 now has 2 orders in 2013", 2, orderCount);
+                return true;
+            }
+        });
+    }
+
+    @Test
+    public void insertNewOrderExpectFailure() throws Exception {
+        test(new TestExec() {
+            public boolean exec() throws Exception {
+                final Iface.Customer customer = new DirectIterableImpl<Iface.Customer>(
+                        Iface.Customer.class, "customers", this).where("cid=1").single();
+                final Iface.Order newOrder = customer.getOrders().newInstance();
+                newOrder.setOid(101); // will collide
+                newOrder.setOdate(new java.sql.Date(System.currentTimeMillis()));
+                try {
+                    newOrder.save();
+                    fail("Should have failed");
+                } catch (DirectException e) {
+                    assertTrue("Should wrap a SQLException",
+                            SQLException.class.isAssignableFrom(e.getCause().getClass()));
+                } catch (Exception e) {
+                    fail("Wrong type of exception: " + e);
+                }
+                return false;
+            }
+        });
+    }
+
+    @Test
+    public void testCopy() throws Exception {
+        test(new TestExec() {
+            public boolean exec() throws Exception {
+                final Iface.Customer customer = new DirectIterableImpl<Iface.Customer>(
+                        Iface.Customer.class, "customers", this).where("cid=1").single();
+                Iface.Order copy1 = null;
+                Iface.Order copy2 = null;
+                for (final Iface.Order o : customer.getOrders().sort("cid")) {
+                    if (copy1 == null) {
+                        copy1 = o.copy();
+                    } else if (copy2 == null) {
+                        copy2 = o.copy();
+                    }
+                }
+                assertEquals("copy1 should be order 101", 101, copy1.getOid());
+                assertEquals("copy2 should be order 102", 102, copy2.getOid());
+                return true;
+            }
+        });
+    }
+
+    private void test(TestExec te) throws Exception {
         JDBCConnection conn = (JDBCConnection) Direct.getContext().getConnection();
         conn.beginTransaction();
         boolean commit = false;
         try {
-            final Interface.Customer customer = new DirectIterableImpl<Interface.Customer>(Interface.Customer.class,
-                    "customers", this).where("cid=1").single();
-            for (final Interface.Order order : customer.getOrders()) {
-                Date newDate = Date.valueOf("2013-01-" + order.getOdate().toString().substring(8));
-                order.setOdate(newDate);
-                order.save();
-            }
-            int orderCount = 0;
-            Timestamp after = Timestamp.valueOf("2012-12-31 23:59:59");
-            for (Interface.Order o : customer.getOrders()) {
-                if (o.getOdate().after(after)) {
-                    orderCount++;
-                }
-            }
-            assertEquals("Customer 1 now has 2 orders in 2013", 2, orderCount);
-            commit = true;
-
+            commit = te.exec();
         } finally {
             if (commit) {
                 conn.commitTransaction();
@@ -180,31 +218,8 @@ public final class DirectUpdateIT extends ITBase implements DirectObject {
         }
     }
 
-    @Test
-    public void insertNewOrderExpectFailure() throws Exception {
-        JDBCConnection conn = (JDBCConnection) Direct.getContext().getConnection();
-        conn.beginTransaction();
-        boolean commit = false;
-        try {
-            final Interface.Customer customer = new DirectIterableImpl<Interface.Customer>(Interface.Customer.class,
-                    "customers", this).where("cid=1").single();
-            final Interface.Order newOrder = customer.getOrders().newInstance();
-            newOrder.setOid(101); // will collide
-            newOrder.setOdate(new java.sql.Date(System.currentTimeMillis()));
-            try {
-                newOrder.save();
-                fail("Should have failed");
-            } catch (DirectException e) {
-                assertTrue("Should wrap a SQLException", SQLException.class.isAssignableFrom(e.getCause().getClass()));
-            } catch (Exception e) {
-                fail("Wrong type of exception: " + e);
-            }
-
-        } finally {
-            if (commit) {
-                conn.commitTransaction();
-            }
-        }
+    interface TestExec extends DirectObject {
+        boolean exec() throws Exception;
     }
 
     private void loadDatabase() throws Exception {

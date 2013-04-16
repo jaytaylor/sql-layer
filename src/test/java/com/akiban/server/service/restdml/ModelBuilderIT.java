@@ -24,12 +24,16 @@ import com.akiban.server.error.ModelBuilderException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.util.JsonUtils;
 import com.akiban.util.Strings;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.node.ArrayNode;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Arrays;
 import java.util.Map;
@@ -245,6 +249,46 @@ public class ModelBuilderIT extends ITBase {
         // Same contents, but ID is present and server didn't output spaces
         String expected = ("{\"_id\": 1," + SIMPLE_JSON_1.substring(1)).replaceAll(" ", "");
         expectFullRows(tid, createNewRow(tid, 1L, expected));
+    }
+
+    @Test
+    public void getAll() throws IOException {
+        builder.insert(NULL_WRITER, TABLE_NAME, SIMPLE_JSON_1);
+        builder.insert(NULL_WRITER, TABLE_NAME, SIMPLE_JSON_1);
+
+        StringWriter writer = new StringWriter();
+        PrintWriter pw = new PrintWriter(writer);
+        builder.getAll(pw, TABLE_NAME);
+
+        String output = writer.toString();
+        JsonNode node = JsonUtils.readTree(output);
+        assertTrue("Array node type", node.isArray());
+        assertEquals("Array size", 2, node.size());
+        for(int i = 0; i < node.size(); ++i) {
+            JsonNode subNode = node.get(i);
+            assertEquals("field count", 2, subNode.size());
+            assertEquals("id value", i+1, subNode.get(EntityParser.PK_COL_NAME).asInt());
+            assertEquals("name value", "foo", subNode.get("name").asText());
+        }
+    }
+
+    @Test
+    public void getKeys() throws IOException {
+        builder.insert(NULL_WRITER, TABLE_NAME, SIMPLE_JSON_1);
+        builder.insert(NULL_WRITER, TABLE_NAME, SIMPLE_JSON_1);
+
+        StringWriter writer = new StringWriter();
+        PrintWriter pw = new PrintWriter(writer);
+        builder.getKeys(pw, TABLE_NAME, "2");
+
+        String output = writer.toString();
+        JsonNode node = JsonUtils.readTree(output);
+        assertTrue("Array node type", node.isArray());
+        assertEquals("Array size", 1, node.size());
+        JsonNode subNode = node.get(0);
+        assertEquals("field count", 2, subNode.size());
+        assertEquals("id value", 2, subNode.get(EntityParser.PK_COL_NAME).asInt());
+        assertEquals("name value", "foo", subNode.get("name").asText());
     }
 
     @Test(expected=ModelBuilderException.class)

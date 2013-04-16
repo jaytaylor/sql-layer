@@ -57,6 +57,20 @@ public class JDBCResultSet implements DirectResultSet
         context = new EmbeddedQueryContext(this);
         values = new Values();
     }
+    
+    /**
+     * Copy constructor used in Akiban Direct to implement the copy() method.
+     * The resulting ResultSet 
+     * @param rs
+     */
+    protected JDBCResultSet(JDBCResultSet rs) {
+        this.statement = rs.statement;
+        this.metaData = rs.metaData;
+        this.cursor = null;
+        this.context = rs.context;
+        this.values = new Values();
+        this.row = rs.row;
+    }
 
     protected class Values extends ServerJavaValues {
         @Override
@@ -1526,4 +1540,9 @@ public class JDBCResultSet implements DirectResultSet
     public boolean hasRow() {
         return row != null;
     }
+    
+    protected ServerJavaValues getValues() {
+        return values;
+    }
+    
 }

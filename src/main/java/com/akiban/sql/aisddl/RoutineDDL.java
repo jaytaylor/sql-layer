@@ -251,7 +251,10 @@ public class RoutineDDL {
                                          aliasInfo.calledOnNullInput());
         
         Routine routine = builder.akibanInformationSchema().getRoutine(tableName);
-        ddlFunctions.createRoutine(session, routine);
+        boolean replaceExisting = createAlias.isCreateOrReplace();
+        if (replaceExisting)
+            routineLoader.unloadRoutine(session, tableName);
+        ddlFunctions.createRoutine(session, routine, replaceExisting);
     }
 
     public static void dropRoutine(DDLFunctions ddlFunctions,

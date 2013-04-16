@@ -389,7 +389,8 @@ public abstract class ClassBuilder {
         /*
          * Add boilerplate methods
          */
-        addMethod("copy", typeName, NONE, null, iface ? null : UNSUPPORTED);
+        String[] body = new String[]{"return (" + typeName + ")(super.copyInstance(" + typeName + ".class))"};
+        addMethod("copy", typeName, NONE, null, iface ? null : body);
     }
 
     /**

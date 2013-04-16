@@ -24,7 +24,7 @@ public class COIDirectClasses {
     // com.akiban.direct.ClassBuilder}.
     // ------------------------------------------------------------------------------------------
     //
-    interface Interface extends DirectObject {
+    interface Iface extends DirectObject {
         interface Address {
             public int getAid();
 
@@ -116,7 +116,7 @@ public class COIDirectClasses {
         }
     }
 
-    static class Test$Customer extends com.akiban.direct.AbstractDirectObject implements Interface.Customer {
+    static class Test$Customer extends com.akiban.direct.AbstractDirectObject implements Iface.Customer {
         static {
             __init("test", "customers", "cid:cid:int:0:-1,name:name:String:-1:-1");
         }
@@ -137,34 +137,34 @@ public class COIDirectClasses {
             __setVARCHAR(1, name);
         }
 
-        public Interface.Address getAddress(int aid) {
-            return (new com.akiban.direct.DirectIterableImpl<Interface.Address>(Interface.Address.class, "addresses", this))
+        public Iface.Address getAddress(int aid) {
+            return (new com.akiban.direct.DirectIterableImpl<Iface.Address>(Iface.Address.class, "addresses", this))
                     .where("cid", Integer.valueOf(getCid())).where("aid", Integer.valueOf(aid)).single();
         }
 
-        public com.akiban.direct.DirectIterable<Interface.Address> getAddresses() {
-            return (new com.akiban.direct.DirectIterableImpl<Interface.Address>(Interface.Address.class, "addresses", this)).where("cid",
+        public com.akiban.direct.DirectIterable<Iface.Address> getAddresses() {
+            return (new com.akiban.direct.DirectIterableImpl<Iface.Address>(Iface.Address.class, "addresses", this)).where("cid",
                     Integer.valueOf(getCid()));
         }
 
-        public Interface.Order getOrder(int oid) {
-            return (new com.akiban.direct.DirectIterableImpl<Interface.Order>(Interface.Order.class, "orders", this))
+        public Iface.Order getOrder(int oid) {
+            return (new com.akiban.direct.DirectIterableImpl<Iface.Order>(Iface.Order.class, "orders", this))
                     .where("cid", Integer.valueOf(getCid())).where("oid", Integer.valueOf(oid)).single();
         }
 
-        public com.akiban.direct.DirectIterable<Interface.Order> getOrders() {
-            return (new com.akiban.direct.DirectIterableImpl<Interface.Order>(Interface.Order.class, "orders", this)).where("cid",
+        public com.akiban.direct.DirectIterable<Iface.Order> getOrders() {
+            return (new com.akiban.direct.DirectIterableImpl<Iface.Order>(Iface.Order.class, "orders", this)).where("cid",
                     Integer.valueOf(getCid()));
         }
 
-        public Interface.Customer copy() {
-            // TODO;
-            throw new UnsupportedOperationException();
+        public Iface.Customer copy() {
+            return (Iface.Customer)(super.copyInstance(Iface.Customer.class));
         }
+
 
     }
 
-    static class Test$Order extends com.akiban.direct.AbstractDirectObject implements Interface.Order {
+    static class Test$Order extends com.akiban.direct.AbstractDirectObject implements Iface.Order {
         static {
             __init("test", "orders", "oid:oid:int:0:-1,cid:cid:int:-1:0,odate:odate:Date:-1:-1");
         }
@@ -193,29 +193,29 @@ public class COIDirectClasses {
             __setDATE(2, odate);
         }
 
-        public Interface.Item getItem(int iid) {
-            return (new com.akiban.direct.DirectIterableImpl<Interface.Item>(Interface.Item.class, "items", this))
+        public Iface.Item getItem(int iid) {
+            return (new com.akiban.direct.DirectIterableImpl<Iface.Item>(Iface.Item.class, "items", this))
                     .where("oid", Integer.valueOf(getOid())).where("iid", Integer.valueOf(iid)).single();
         }
 
-        public com.akiban.direct.DirectIterable<Interface.Item> getItems() {
-            return (new com.akiban.direct.DirectIterableImpl<Interface.Item>(Interface.Item.class, "items", this)).where("oid",
+        public com.akiban.direct.DirectIterable<Iface.Item> getItems() {
+            return (new com.akiban.direct.DirectIterableImpl<Iface.Item>(Iface.Item.class, "items", this)).where("oid",
                     Integer.valueOf(getOid()));
         }
 
-        public Interface.Order copy() {
-            // TODO;
-            throw new UnsupportedOperationException();
-        }
-
-        public Interface.Customer getCustomer() {
-            return (new com.akiban.direct.DirectIterableImpl<Interface.Customer>(Interface.Customer.class, "customers", this))
+        public Iface.Customer getCustomer() {
+            return (new com.akiban.direct.DirectIterableImpl<Iface.Customer>(Iface.Customer.class, "customers", this))
                     .where("cid", Integer.valueOf(getCid())).single();
         }
 
+        public Iface.Order copy() {
+            return (Iface.Order)(super.copyInstance(Iface.Order.class));
+        }
+
+
     }
 
-    static class Test$Item extends com.akiban.direct.AbstractDirectObject implements Interface.Item {
+    static class Test$Item extends com.akiban.direct.AbstractDirectObject implements Iface.Item {
         static {
             __init("test", "items", "iid:iid:int:0:-1,oid:oid:int:-1:0,sku:sku:String:-1:-1");
         }
@@ -244,19 +244,18 @@ public class COIDirectClasses {
             __setVARCHAR(2, sku);
         }
 
-        public Interface.Order getOrder() {
-            return (new com.akiban.direct.DirectIterableImpl<Interface.Order>(Interface.Order.class, "orders", this)).where(
+        public Iface.Order getOrder() {
+            return (new com.akiban.direct.DirectIterableImpl<Iface.Order>(Iface.Order.class, "orders", this)).where(
                     "oid", Integer.valueOf(getOid())).single();
         }
 
-        public Interface.Item copy() {
-            // TODO;
-            throw new UnsupportedOperationException();
+        public Iface.Item copy() {
+            return (Iface.Item)(super.copyInstance(Iface.Item.class));
         }
 
     }
 
-    static class Test$Address extends com.akiban.direct.AbstractDirectObject implements Interface.Address {
+    static class Test$Address extends com.akiban.direct.AbstractDirectObject implements Iface.Address {
         static {
             __init("test", "addresses",
                     "aid:aid:int:0:-1,cid:cid:int:-1:0,state:state:String:-1:-1,city:city:String:-1:-1");
@@ -294,23 +293,22 @@ public class COIDirectClasses {
             __setVARCHAR(3, city);
         }
 
-        public Interface.Customer getCustomer() {
-            return (new com.akiban.direct.DirectIterableImpl<Interface.Customer>(Interface.Customer.class, "customers", this))
+        public Iface.Customer getCustomer() {
+            return (new com.akiban.direct.DirectIterableImpl<Iface.Customer>(Iface.Customer.class, "customers", this))
                     .where("cid", Integer.valueOf(getCid())).single();
         }
 
-        public Interface.Address copy() {
-            // TODO;
-            throw new UnsupportedOperationException();
+        public Iface.Address copy() {
+            return (Iface.Address)(super.copyInstance(Iface.Address.class));
         }
 
     }
     
     static void registerDirect() {
-        Direct.registerDirectObjectClass(Interface.Address.class, Test$Address.class);
-        Direct.registerDirectObjectClass(Interface.Customer.class, Test$Customer.class);
-        Direct.registerDirectObjectClass(Interface.Order.class, Test$Order.class);
-        Direct.registerDirectObjectClass(Interface.Item.class, Test$Item.class);
+        Direct.registerDirectObjectClass(Iface.Address.class, Test$Address.class);
+        Direct.registerDirectObjectClass(Iface.Customer.class, Test$Customer.class);
+        Direct.registerDirectObjectClass(Iface.Order.class, Test$Order.class);
+        Direct.registerDirectObjectClass(Iface.Item.class, Test$Item.class);
     }
 
 }

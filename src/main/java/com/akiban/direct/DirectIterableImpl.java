@@ -34,19 +34,19 @@ import com.akiban.sql.embedded.JDBCResultSet;
  */
 public class DirectIterableImpl<T> implements DirectIterable<T> {
 
-    final Class<T> clazz;
-    final DirectObject parent;
-    boolean hasNext;
+    private final Class<T> clazz;
+    private final DirectObject parent;
+    private boolean hasNext;
 
-    final String table;
-    final List<String> predicates = new ArrayList<String>();
-    final List<String> sorts = new ArrayList<String>();
-    String limit;
+    private final String table;
+    private final List<String> predicates = new ArrayList<String>();
+    private final List<String> sorts = new ArrayList<String>();
+    private String limit;
 
-    boolean initialized;
-    String sql;
+    private boolean initialized;
+    private String sql;
 
-    JDBCResultSet resultSet;
+    private JDBCResultSet resultSet;
 
     public DirectIterableImpl(Class<T> ifaceClass, String toTable, DirectObject parent) {
         this.clazz = ifaceClass;
