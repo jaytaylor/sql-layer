@@ -21,8 +21,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
-import org.codehaus.jackson.JsonNode;
-
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CacheValueGenerator;
 import com.akiban.ais.model.Column;
@@ -50,6 +48,7 @@ import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.util.AkibanAppender;
+import com.fasterxml.jackson.databind.JsonNode;
 
 public class UpsertProcessor extends DMLProcessor {
 
@@ -110,7 +109,7 @@ public class UpsertProcessor extends DMLProcessor {
         
         PrimaryKey pkIndex = context.table.getPrimaryKey();
         int pkFields = 0;
-        Iterator<Entry<String,JsonNode>> i = node.getFields();
+        Iterator<Entry<String,JsonNode>> i = node.fields();
         while (i.hasNext()) {
             Entry<String,JsonNode> field =i.next();
             if (field.getValue().isContainerNode()) {

@@ -17,20 +17,18 @@
 
 package com.akiban.server.entity.model;
 
-import java.util.UUID;
+final class EntityUtil {
 
-public final class Util {
+    private EntityUtil() {}
 
-    public static UUID parseUUID(String string) {
-        if (string == null)
-            return null;
-        UUID uuid;
+    public static <T> T cast(Object o, Class<T> target) {
+        if (o == null)
+            throw new IllegalEntityDefinition("expected " + target.getSimpleName() + " but found null");
         try {
-            uuid = UUID.fromString(string);
+            return target.cast(o);
+        } catch (ClassCastException e) {
+            throw new IllegalEntityDefinition("expected " + target.getSimpleName()
+                    + " but found found " + o.getClass().getSimpleName());
         }
-        catch (IllegalArgumentException e) {
-            throw new IllegalEntityDefinition("invalid uuid");
-        }
-        return uuid;
     }
 }

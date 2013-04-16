@@ -22,15 +22,15 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Join;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.entity.model.AbstractEntityVisitor;
-import com.akiban.server.entity.model.Attribute;
 import com.akiban.server.entity.model.Entity;
-import com.akiban.server.entity.model.EntityColumn;
+import com.akiban.server.entity.model.EntityCollection;
+import com.akiban.server.entity.model.EntityField;
+import com.akiban.server.entity.model.EntityVisitor;
+import com.akiban.server.entity.model.IndexField;
 import com.akiban.server.entity.model.EntityIndex;
 import com.akiban.server.entity.model.Validation;
 import com.akiban.server.types3.TClass;
@@ -41,17 +41,17 @@ import com.google.common.collect.BiMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.Collection;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.UUID;
 
-public class EntityToAIS extends AbstractEntityVisitor {
+public class EntityToAIS implements EntityVisitor {
     private static final Logger LOG = LoggerFactory.getLogger(EntityToAIS.class);
 
     private static final boolean ATTR_REQUIRED_DEFAULT = false;
@@ -59,10 +59,8 @@ public class EntityToAIS extends AbstractEntityVisitor {
 
     private final String schemaName;
     private final AISBuilder builder = new AISBuilder();
-    private final List<TableInfo> tableInfoStack = new ArrayList<>();
+    private final Deque<TableInfo> tableInfoStack = new ArrayDeque<>();
     private TableName groupName = null;
-    private TableInfo curTable = null;
-    private Set<String> uniqueValidations = new HashSet<>();
 
     private static final Function<String, TypeInfo> typeNameResolver = createTypeNameResolver();
 
@@ -86,94 +84,171 @@ public class EntityToAIS extends AbstractEntityVisitor {
     //
 
     @Override
-    public void visitEntity(String name, Entity entity) {
+    public void enterTopEntity(Entity entity) {
+        String name = entity.getName();
         builder.createGroup(name, schemaName);
         groupName = new TableName(schemaName, name);
-        beginTable(name, entity.uuid());
+        startTable(entity);
         builder.addTableToGroup(groupName, schemaName, name);
+        finishTable(entity);
     }
 
     @Override
-    public void leaveEntity() {
-        curTable = null;
+    public void leaveTopEntity() {
+        tableInfoStack.pop();
+        assert tableInfoStack.isEmpty() : tableInfoStack;
+        builder.basicSchemaIsComplete();
+        builder.groupingIsComplete();
         groupName = null;
-        uniqueValidations.clear();
     }
 
-    @Override
-    public void visitScalar(String name, Attribute scalar) {
-        TypeInfo scalarType = typeNameResolver.apply(scalar.getType());
+    private void visitField(Entity entity, int fieldIndex) {
+        EntityField field = entity.getFields().get(fieldIndex);
+        String name = field.getName();
+        TypeInfo scalarType = typeNameResolver.apply(field.getType());
         assert scalarType != null : name;
         ColumnInfo info = getColumnInfo(scalarType,
-                                        scalar.getProperties(),
-                                        scalar.getValidation());
-        if(scalar.isSpinal()) {
+                                        field.getProperties(),
+                                        field.getValidations());
+        if (entity.getIdentifying().contains(name))
             info.nullable = false;
-            addSpinalColumn(name, scalar.getSpinePos());
-        }
-        Column column = builder.column(schemaName, curTable.name,
-                                       name, curTable.nextColPos++,
+        Column column = builder.column(schemaName, entity.getName(),
+                                       name, fieldIndex,
                                        scalarType.type.name(), info.param1, info.param2,
                                        info.nullable, false /*isAutoInc*/,
                                        info.charset, info.collation);
-        column.setUuid(scalar.getUUID());
+        column.setUuid(field.getUuid());
     }
 
     @Override
-    public void visitCollection(String name, Attribute collection) {
-        TableInfo parent = curTable;
-        beginTable(name, collection.getUUID());
-        parent.childTables.add(curTable);
+    public void enterCollections() {
+        // Nothing
+    }
+
+    @Override
+    public void enterCollection(EntityCollection collection) {
+        final TableInfo parentInfo = tableInfoStack.peek();
+        final UserTable childTable = startTable(collection);
+        // FKs
+        buildFks(collection, childTable, parentInfo);
+
+        // Done
+        finishTable(collection);
+    }
+
+    private void buildFks(EntityCollection childEntity, UserTable childTable, TableInfo parentInfo) {
+        final Entity parentEntity = parentInfo.entity;
+        UserTable parentTable = parentInfo.table;
+        List<String> pkFields = parentEntity.getIdentifying();
+        if (pkFields.isEmpty())
+            throw new IllegalArgumentException(parentTable + " has no PK, but has child " + childEntity);
+        final List<String> fkFields = childEntity.getGroupingFields();
+        final boolean generateFkCols = fkFields.isEmpty();
+        if ((!generateFkCols) && (childEntity.getGroupingFields().size() != parentEntity.getIdentifying().size()))
+            throw new IllegalArgumentException("grouping fields don't match: " + childEntity);
+
+        String parentName = parentEntity.getName();
+        String joinName = childEntity.getName() + "_" + parentName;
+        builder.joinTables(joinName, schemaName, parentName, schemaName, childEntity.getName());
+
+        for (int i = 0, len = pkFields.size(), offset = childTable.getColumns().size(); i < len; ++i) {
+            String parentColName = pkFields.get(i);
+            Column parentCol = parentTable.getColumn(parentColName);
+            String childColName;
+            if (generateFkCols) {
+                childColName = createColumnName(childTable.getColumns(), parentColName + "_ref");
+                Column newCol = Column.create(childTable, parentCol, childColName, i + offset);
+                // Should be exactly the same *except* UUID
+                newCol.setUuid(null);
+            }
+            else {
+                childColName = fkFields.get(i);
+            }
+            builder.joinColumns(joinName,
+                    schemaName, parentName, parentColName,
+                    schemaName, childEntity.getName(), childColName);
+            builder.addJoinToGroup(groupName, joinName, 0);
+        }
     }
 
     @Override
     public void leaveCollection() {
-        endTable();
+        tableInfoStack.pop();
     }
 
     @Override
-    public void leaveEntityAttributes() {
-        endTable();
-        builder.basicSchemaIsComplete();
-        builder.groupingIsComplete();
+    public void leaveCollections() {
     }
 
-    @Override
-    public void visitEntityValidations(Set<Validation> validations) {
+    private Set<String> getUniqueIndexes(Set<Validation> validations) {
+        Set<String> uniques = new HashSet<>(validations.size());
         for(Validation v : validations) {
             if("unique".equals(v.getName())) {
                 String indexName = (String)v.getValue();
-                uniqueValidations.add(indexName);
+                if (!uniques.add(indexName))
+                    LOG.warn("Duplicate UNIQUE constraint on index: {}", indexName);
             } else {
                 LOG.warn("Ignored entity validation on {}: {}", groupName, v);
             }
         }
+        return uniques;
     }
 
-    @Override
-    public void visitIndexes(BiMap<String, EntityIndex> indexes) {
+    private void visitIndexes(BiMap<String, EntityIndex> indexes, Entity context, Set<String> uniques) {
         for(Map.Entry<String,EntityIndex> entry : indexes.entrySet()) {
             String indexName = entry.getKey();
-            List<EntityColumn> columns = entry.getValue().getColumns();
-            boolean isGI = isMultiTable(columns);
-            boolean isUnique = uniqueValidations.contains(indexName);
+            List<IndexField> columns = entry.getValue().getFields();
+            boolean isGI = isMultiTable(columns, context);
+            boolean isUnique = uniques.remove(indexName);
             if(isGI) {
                 if(isUnique) {
                     throw new IllegalArgumentException("Unique group index not allowed");
                 }
                 builder.groupIndex(groupName, indexName, false, GI_JOIN_TYPE_DEFAULT);
                 int pos = 0;
-                for(EntityColumn col : columns) {
-                    builder.groupIndexColumn(groupName, indexName, schemaName, col.getTable(), col.getColumn(), pos++);
+                for(IndexField col : columns) {
+                    TableName colName = getFieldName(col, context);
+                    if (!isCurrentOrAncestor(colName.getSchemaName()))
+                        throw new IllegalArgumentException(indexName + ": "
+                                + colName + " belongs to a table that isn't an ancestor of " + context);
+                    builder.groupIndexColumn(groupName, indexName, schemaName,
+                            colName.getSchemaName(), colName.getTableName(), pos++);
                 }
             } else {
-                builder.index(schemaName, columns.get(0).getTable(), indexName, isUnique, Index.KEY_CONSTRAINT);
+                builder.index(schemaName, context.getName(), indexName, isUnique, Index.KEY_CONSTRAINT);
                 int pos = 0;
-                for(EntityColumn col : columns) {
-                    builder.indexColumn(schemaName, col.getTable(), indexName, col.getColumn(), pos++, true, null);
+                for(IndexField col : columns) {
+                    TableName colName = getFieldName(col, context);
+                    builder.indexColumn(schemaName, colName.getSchemaName(), indexName,
+                            colName.getTableName(), pos++, true, null);
                 }
             }
         }
+        if (!uniques.isEmpty())
+            throw new IllegalArgumentException("UNIQUE constraint for undefined index(es) on " + context
+                    + ": " + uniques);
+    }
+
+    private boolean isCurrentOrAncestor(String tableName) {
+        for (TableInfo table : tableInfoStack) {
+            if (table.entity.getName().equals(tableName))
+                return true;
+        }
+        return false;
+    }
+
+    private TableName getFieldName(IndexField indexField, Entity context) {
+        TableName theColName;
+        if (indexField instanceof IndexField.QualifiedFieldName) {
+            IndexField.QualifiedFieldName qualified = (IndexField.QualifiedFieldName) indexField;
+            theColName = new TableName(qualified.getEntityName(), qualified.getFieldName());
+        }
+        else if (indexField instanceof IndexField.FieldName) {
+            IndexField.FieldName fieldName = (IndexField.FieldName) indexField;
+            theColName = new TableName(context.getName(), fieldName.getFieldName());
+        }
+        else throw new AssertionError(indexField);
+        return theColName;
     }
 
     //
@@ -188,57 +263,31 @@ public class EntityToAIS extends AbstractEntityVisitor {
     // Helpers
     //
 
-    private void addSpinalColumn(String name, int spinePos) {
-        while(curTable.spinalCols.size() <= spinePos) {
-            curTable.spinalCols.add(null);
-        }
-        curTable.spinalCols.set(spinePos, name);
-    }
-
-    private void beginTable(String name, UUID uuid) {
+    private UserTable startTable(Entity entity) {
+        String name = entity.getName();
         UserTable table = builder.userTable(schemaName, name);
-        table.setUuid(uuid);
-        curTable = new TableInfo(name, table);
-        tableInfoStack.add(curTable);
+        table.setUuid(entity.getUuid());
+        // fields
+        for (int f = 0, len = entity.getFields().size(); f < len; f++)
+            visitField(entity, f);
+        // PK
+        List<String> pkFields = entity.getIdentifying();
+        if (!pkFields.isEmpty()) {
+            builder.index(schemaName, name, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+            int pos = 0;
+            for(String column : pkFields)
+                builder.indexColumn(schemaName, name, Index.PRIMARY_KEY_CONSTRAINT, column, pos++, true, null);
+        }
+
+        // done
+        tableInfoStack.push(new TableInfo(table, entity));
+        return table;
     }
 
-    private void endTable() {
-        // Create joins to children.
-        // Parent spinal columns are automatically propagated to each child.
-        if(curTable.spinalCols.isEmpty() && !curTable.childTables.isEmpty()) {
-            throw new IllegalArgumentException("Has collections but no spine: " + curTable.name);
-        }
-        for(TableInfo child : curTable.childTables) {
-            String joinName = child.name + "_" + curTable.name;
-            builder.joinTables(joinName, schemaName, curTable.name, schemaName, child.name);
-
-            for(String parentColName : curTable.spinalCols) {
-                Column parentCol = curTable.table.getColumn(parentColName);
-                String childColName = createColumnName(child.table.getColumns(), parentColName + "_ref");
-                Column newCol = Column.create(child.table, parentCol, childColName, child.nextColPos++);
-                // Should be exactly the same *except* UUID
-                newCol.setUuid(null);
-                builder.joinColumns(joinName,
-                                    schemaName, curTable.name, parentColName,
-                                    schemaName, child.name, childColName);
-            }
-        }
-        if(tableInfoStack.size() == 1) {
-            // Create PKs at the end (root to leaf) so IDs are ordered as such. Shouldn't matter but is safe.
-            createPrimaryKeys(builder, schemaName, curTable);
-            addJoinsToGroup(builder, groupName, curTable);
-        }
-        tableInfoStack.remove(tableInfoStack.size() - 1);
-        curTable = tableInfoStack.isEmpty() ? null : tableInfoStack.get(tableInfoStack.size() - 1);
-    }
-
-    private static void addJoinsToGroup(AISBuilder builder, TableName groupName, TableInfo curTable) {
-        for(TableInfo child : curTable.childTables) {
-            List<Join> joins = child.table.getCandidateParentJoins();
-            assert joins.size() == 1 : joins;
-            builder.addJoinToGroup(groupName, joins.get(0).getName(), 0);
-            addJoinsToGroup(builder, groupName, child);
-        }
+    private void finishTable(Entity entity) {
+        // secondary indexes
+        Set<String> uniques = getUniqueIndexes(entity.getValidations());
+        visitIndexes(entity.getIndexes(), entity, uniques);
     }
 
     private static String createColumnName(List<Column> curColumns, String proposed) {
@@ -251,19 +300,6 @@ public class EntityToAIS extends AbstractEntityVisitor {
             }
         }
         return newName;
-    }
-
-    private static void createPrimaryKeys(AISBuilder builder, String schemaName, TableInfo table) {
-        if(!table.spinalCols.isEmpty()) {
-            builder.index(schemaName, table.name, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-            int pos = 0;
-            for(String column : table.spinalCols) {
-                builder.indexColumn(schemaName, table.name, Index.PRIMARY_KEY_CONSTRAINT, column, pos++, true, null);
-            }
-        }
-        for(TableInfo child : table.childTables) {
-            createPrimaryKeys(builder, schemaName, child);
-        }
     }
 
     private static ColumnInfo getColumnInfo(TypeInfo type, Map<String,Object> props, Collection<Validation> validations)
@@ -313,10 +349,13 @@ public class EntityToAIS extends AbstractEntityVisitor {
         return info;
     }
 
-    private static boolean isMultiTable(List<EntityColumn> columns) {
-        for(int i = 1; i < columns.size(); ++i) {
-            if(!columns.get(0).getTable().equals(columns.get(i).getTable())) {
-                return true;
+    private static boolean isMultiTable(List<IndexField> columns, Entity context) {
+        for (IndexField field : columns) {
+            if (field instanceof IndexField.QualifiedFieldName) {
+                IndexField.QualifiedFieldName qualified = (IndexField.QualifiedFieldName) field;
+                String fieldEntity = qualified.getEntityName();
+                if (!fieldEntity.equals(context.getName()))
+                    return true;
             }
         }
         return false;
@@ -342,24 +381,18 @@ public class EntityToAIS extends AbstractEntityVisitor {
         return (o != null) ? o.toString() : null;
     }
 
-
     private static class TableInfo {
-        public final String name;
         public final UserTable table;
-        public final List<String> spinalCols;
-        public final List<TableInfo> childTables;
-        public int nextColPos;
+        public final Entity entity;
 
-        public TableInfo(String name, UserTable table) {
-            this.name = name;
+        private TableInfo(UserTable table, Entity entity) {
             this.table = table;
-            this.spinalCols = new ArrayList<>();
-            this.childTables = new ArrayList<>();
+            this.entity = entity;
         }
 
         @Override
         public String toString() {
-            return name;
+            return entity.toString();
         }
     }
 

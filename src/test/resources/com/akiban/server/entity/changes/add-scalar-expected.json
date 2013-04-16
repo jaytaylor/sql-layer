@@ -1,6 +1,6 @@
 [
     {
-        "action": "add_attribute", 
+        "action": "add_field",
         "destructive": false, 
         "uuid": "257e9b59-e77f-4a4d-a5da-00c7c2261875"
     }

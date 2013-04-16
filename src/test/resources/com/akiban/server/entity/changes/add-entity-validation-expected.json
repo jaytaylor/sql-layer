@@ -1,7 +1,3 @@
 [
-    {
-        "action": "add_entity_validation", 
-        "new_validation": {"unique": "id"},
-        "destructive": false
-    }
+    {"error":"Adding entity validations is not yet supported: unique: id"}
 ]

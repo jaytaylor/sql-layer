@@ -61,6 +61,7 @@ public final class JUnitUtils {
         try {
             List<T> copy = new ArrayList<>(collection);
             collection.clear(); // good enough proxy for all modifications, for the JDK classes anyway
+            collection.add(null);
             collection.addAll(copy); // restore the contents, in case someone wants to look in a debugger
             fail("collection is modifable: " + message);
         } catch (UnsupportedOperationException e) {

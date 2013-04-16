@@ -52,8 +52,8 @@ import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.sql.optimizer.rule.PlanGenerator;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.JsonUtils;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.node.ObjectNode;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -344,13 +344,13 @@ public class ModelBuilder {
 
     private static void removeUnknownFields(UserTable table, JsonNode node) {
         if(node.isArray()) {
-            Iterator<JsonNode> it = node.getElements();
+            Iterator<JsonNode> it = node.elements();
             while(it.hasNext()) {
                 removeUnknownFields(table, it.next());
             }
         }
         else {
-            Iterator<Map.Entry<String,JsonNode>> fieldIt = node.getFields();
+            Iterator<Map.Entry<String,JsonNode>> fieldIt = node.fields();
             while(fieldIt.hasNext()) {
                 Map.Entry<String,JsonNode> pair = fieldIt.next();
                 String itName = pair.getKey();
