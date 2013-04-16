@@ -176,7 +176,7 @@ public abstract class AbstractDirectObject implements DirectObject {
         }
     }
 
-    protected void __setBOOL(int p, Boolean v) {
+    protected void __setBOOL(int p, boolean v) {
         updates()[p] = v;
     }
 

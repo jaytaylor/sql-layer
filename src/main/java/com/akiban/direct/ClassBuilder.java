@@ -397,11 +397,12 @@ public abstract class ClassBuilder {
      * Generate a Java command that will be executed as a static initializer and
      * will give the base class metadata about the columns.
      */
+    @SuppressWarnings("unchecked")
     private String columnMetadataString(final UserTable table) {
         String[] columnArray = new String[table == null ? 0 : table.getColumns().size()];
         if (table != null) {
-            List<Column> pkColumns = table.getPrimaryKey().getColumns();
-            @SuppressWarnings("unchecked")
+            PrimaryKey pk = table.getPrimaryKey();
+            List<Column> pkColumns = pk == null ? Collections.EMPTY_LIST : pk.getColumns();
             List<JoinColumn> joinColumns = table.getParentJoin() == null ? Collections.EMPTY_LIST : table
                     .getParentJoin().getJoinColumns();
             for (Column column : table.getColumns()) {
@@ -449,7 +450,7 @@ public abstract class ClassBuilder {
         case DATE:
             return java.sql.Date.class;
         case DATETIME:
-            return java.sql.Date.class;
+            return java.sql.Timestamp.class;
         case DECIMAL:
             return java.math.BigDecimal.class;
         case DOUBLE:
