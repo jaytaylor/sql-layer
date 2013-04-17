@@ -648,4 +648,6 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                                             true);
         }
     }
+    
+     private static final JsonFactory oldJsonFactory = new JsonFactory(new ObjectMapper()); // for Jonquil
 }
