@@ -200,7 +200,8 @@ public class EndpointMetadata {
         EndpointMetadata em = new EndpointMetadata();
         em.schemaName = schema;
         em.routineName = routineName;
-
+        em.inParams = new ParamMetadata[0];
+        
         Tokenizer tokens = new Tokenizer(specification, ",= ");
 
         while (tokens.hasMore()) {
@@ -267,6 +268,7 @@ public class EndpointMetadata {
                         + specification);
             }
         }
+        em.validate();
         return em;
     }
 
@@ -314,7 +316,6 @@ public class EndpointMetadata {
             }
         }
         return pm;
-
     }
 
     /**
@@ -660,7 +661,7 @@ public class EndpointMetadata {
                     index++;
                     break;
                 }
-                if (!Character.isLetterOrDigit(c) || (first && !Character.isLetter(c))) {
+                if (!Character.isJavaIdentifierPart(c) || (first && !Character.isJavaIdentifierStart(c))) {
                     throw new IllegalArgumentException("Invalid character in name: " + source);
                 }
                 result.append(c);
@@ -748,6 +749,22 @@ public class EndpointMetadata {
             return Arrays.equals((ParamMetadata[]) a, (ParamMetadata[]) b);
         } else {
             return a.equals(b);
+        }
+    }
+    
+    private void validate() {
+        notNull(schemaName, "schema name");
+        notNull(routineName, "routine name");
+        notNull(method, "'method='");
+        notNull(name, "'path='");
+        notNull(function, "'function='");
+        notNull(inParams, "'in='");
+        notNull(outParam, "'out='");
+    }
+    
+    private void notNull(final Object v, final String name) {
+        if (v == null) {
+            throw new IllegalArgumentException(name + " not specified in " + toString());
         }
     }
 

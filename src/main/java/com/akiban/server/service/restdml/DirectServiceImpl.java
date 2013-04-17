@@ -33,10 +33,11 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 
-import com.fasterxml.jackson.core.JsonGenerator;
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +53,6 @@ import com.akiban.rest.RestFunctionRegistrar;
 import com.akiban.rest.RestServiceImpl;
 import com.akiban.rest.resources.ResourceHelper;
 import com.akiban.server.error.ExternalRoutineInvocationException;
-import com.akiban.server.error.MalformedRequestException;
 import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.ScriptLibraryRegistrationException;
 import com.akiban.server.service.Service;
@@ -70,6 +70,7 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.sql.embedded.EmbeddedJDBCService;
 import com.akiban.sql.embedded.JDBCConnection;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.google.inject.Inject;
 import com.persistit.exception.RollbackException;
 
@@ -92,10 +93,7 @@ public class DirectServiceImpl implements Service, DirectService {
     private final static String IS_INOUT = "is_inout";
     private final static String IS_RESULT = "is_result";
 
-    private final static String COMMENT_ANNOTATION1 = "//##";
-    private final static String COMMENT_ANNOTATION2 = "##//";
-    private final static String ENDPOINT = "endpoint";
-
+    private final static int TRANSACTION_RETRY_COUNT = 3;
     private final static String DISTINGUISHED_REGISTRATION_METHOD_NAME = "_register";
 
     private final static String CREATE_PROCEDURE_FORMAT = "CREATE OR REPLACE PROCEDURE \"%s\".\"%s\" ()"
@@ -205,8 +203,12 @@ public class DirectServiceImpl implements Service, DirectService {
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
         EndpointMap endpointMap = null;
 
+        try {
         if (functionsOnly) {
             endpointMap = getEndpointMap(session);
+        }
+        } catch (RegistrationException e) {
+            throw new ScriptLibraryRegistrationException(e);
         }
 
         if (module.isEmpty()) {
@@ -338,23 +340,24 @@ public class DirectServiceImpl implements Service, DirectService {
             conn.setAutoCommit(false);
 
             boolean completed = false;
-            boolean repeat = true;
+            int repeat = TRANSACTION_RETRY_COUNT;
 
-            while (repeat) {
+            while (--repeat >= 0) {
                 try {
                     Direct.enter(procName.getSchemaName(), dxlService.ddlFunctions().getAIS(conn.getSession()));
                     Direct.getContext().setConnection(conn);
-                    repeat = false;
                     conn.beginTransaction();
                     invokeRestFunction(writer, conn, method, procName, pathParams, queryParameters, content,
                             request.getContentType(), responseType);
                     conn.commitTransaction();
                     completed = true;
+                    return;
                 } catch (RollbackException e) {
-                    repeat = true;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    throw e;
+                    if (repeat == 0) {
+                        throw e;
+                    }
+                } catch (RegistrationException e) {
+                    throw new ScriptLibraryRegistrationException(e);
                 } finally {
                     try {
                         if (!completed) {
@@ -389,9 +392,7 @@ public class DirectServiceImpl implements Service, DirectService {
 
         EndpointMetadata md = selectEndpoint(list, pathParams, requestType, responseType, cache);
         if (md == null) {
-            // TODO - Is this the correct Exception? Is there a way to convey
-            // this without logged stack trace?
-            throw new MalformedRequestException("No matching endpoint");
+            throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
         }
 
         final Object[] args = createArgsArray(pathParams, queryParameters, content, cache, md);
@@ -471,7 +472,7 @@ public class DirectServiceImpl implements Service, DirectService {
                 if (candidate.pattern != null) {
                     Matcher matcher = candidate.getParamPathMatcher(cache, pathParams);
                     if (matcher.matches()) {
-                        if (responseType != null && candidate.expectedContentType != null
+                        if (requestType != null && candidate.expectedContentType != null
                                 && !requestType.startsWith(candidate.expectedContentType)) {
                             continue;
                         }
@@ -558,7 +559,7 @@ public class DirectServiceImpl implements Service, DirectService {
                         if (e.getCause() instanceof NoSuchMethodException) {
                             LOG.warn("Script library " + routine.getName() + " has no _register function");
                             success = true;
-                            return;
+                            continue;
                         }
                         Throwable previous = e;
                         Throwable current;

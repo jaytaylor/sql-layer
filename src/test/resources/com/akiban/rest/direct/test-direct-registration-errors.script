@@ -1,0 +1,21 @@
+PUT     /direct/library?module=test.proc1&language=Javascript @direct-create.body
+EQUALS  {"functions":2}\n
+
+PUT     /direct/library?module=test.proc2&language=Javascript @bad-direct-create.body
+CONTAINS Invalid function specification
+
+PUT     /direct/library?module=test.proc2&language=Javascript @missing-direct-create.body
+EQUALS  {"functions":2}\n
+
+GET     /direct/call/test.cnames?prefix=SomeParameterValue
+EQUALS  SomeParameterValue,John Smith,Willy Jones,Jane Smith,Jonathan Smyth\n
+
+DELETE  /direct/library?module=test.proc1
+PUT     /direct/library?module=test.proc2&language=Javascript @bad-direct-create.body
+PUT     /direct/library?module=test.proc1&language=Javascript @direct-create.body
+GET     /direct/call/test.cnames?prefix=SomeParameterValue
+EQUALS  SomeParameterValue,John Smith,Willy Jones,Jane Smith,Jonathan Smyth\n
+
+PUT     /direct/library?module=test.proc1&language=Javascript return foo;
+GET     /direct/call/test.cnames?prefix=SomeParameterValue
+EQUALS  SomeParameterValue,John Smith,Willy Jones,Jane Smith,Jonathan Smyth\n

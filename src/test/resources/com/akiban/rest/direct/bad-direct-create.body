@@ -1,12 +1,12 @@
 function _register(registrar) {
     registrar.register(
-        "method=GET path=cnames function=customer_Names in=(QP:prefix String required) out=String");
+        "method=GET path=cnames function=customerNames out=String");
         
     registrar.register(
-        "method=GET path=oids/(\\d*) function=order_Numbers in=(pp:1 int required) out=String"); 
+        "method=GET path=oids/(\\d*) function=orderNumbers in=(pp:1 int required)"); 
 };
 
-function customer_Names(s) {
+function customerNames(s) {
     var result = s;
     var extent = Packages.com.akiban.direct.Direct.context.extent;
     for (customer in Iterator(extent.customers)) {
@@ -15,7 +15,7 @@ function customer_Names(s) {
     return result;
 }
 
-function order_Numbers(cid) {
+function orderNumbers(cid) {
     var result = s;
     var extent = Packages.com.akiban.direct.Direct.context.extent;
     var customer = extent.getCustomer(cid); 
