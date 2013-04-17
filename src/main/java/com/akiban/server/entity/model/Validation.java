@@ -18,13 +18,12 @@
 package com.akiban.server.entity.model;
 
 import com.akiban.util.ArgumentValidation;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
-import java.util.TreeSet;
 
 public final class Validation implements Comparable<Validation> {
 
@@ -71,15 +70,12 @@ public final class Validation implements Comparable<Validation> {
         return valueString.compareTo(oValueString);
     }
 
-    public static Set<Validation> createValidations(Collection<Map<String, ?>> validations) {
-        Set<Validation> result = new TreeSet<>();
-        for (Map<String, ?> validation : validations) {
-            if (!result.add(new Validation(validation)))
-                throw new IllegalEntityDefinition("duplicate validation:" + validation);
-        }
-        return Collections.unmodifiableSet(result);
+    @JsonValue
+    public Object asJsonValue() {
+        return Collections.singletonMap(name, value);
     }
 
+    @JsonCreator
     Validation(Map<String, ?> validation) {
         if (validation.size() != 1)
             throw new IllegalEntityDefinition("illegal validation definition (map must have one entry)");

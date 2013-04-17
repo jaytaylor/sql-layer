@@ -1,8 +1,3 @@
 [
-    {
-        "action": "rename_index", 
-        "new_name": "name_idx", 
-        "destructive": false, 
-        "old_name": "name"
-    }
+    {"error":"Renaming index is not yet supported: [name]"}
 ]

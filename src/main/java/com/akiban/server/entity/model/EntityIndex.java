@@ -17,14 +17,32 @@
 
 package com.akiban.server.entity.model;
 
+import com.akiban.ais.model.Index;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.collect.ImmutableList;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public final class EntityIndex {
 
-    public List<EntityColumn> getColumns() {
-        return columns;
+    public List<IndexField> getFields() {
+        return fields;
+    }
+
+    void setFields(List<IndexField> fields) {
+        this.fields = ImmutableList.copyOf(fields);
+    }
+
+    public IndexType getType() {
+        return type;
+    }
+
+    void setType(IndexType type) {
+        this.type = type;
     }
 
     @Override
@@ -33,27 +51,76 @@ public final class EntityIndex {
         if (o == null || getClass() != o.getClass()) return false;
 
         EntityIndex that = (EntityIndex) o;
-        return columns.equals(that.columns);
+        return fields.equals(that.fields);
 
     }
 
     @Override
     public int hashCode() {
-        return columns.hashCode();
+        return fields.hashCode();
     }
 
     @Override
     public String toString() {
-        return columns.toString();
+        return fields.toString();
     }
 
-    public EntityIndex(List<EntityColumn> columns) {
-        this.columns = ImmutableList.copyOf(columns);
+    @JsonValue
+    public Object asJsonValue() {
+        if (type == null)
+            return fields;
+        Map<String, Object> asMap = new HashMap<>();
+        asMap.put("fields", fields);
+        asMap.put("type", type.name().toLowerCase());
+        return fields;
     }
 
-    public static EntityIndex create(List<EntityColumn> columns) {
-        return new EntityIndex(columns);
+    @JsonCreator
+    public static EntityIndex create(Object def) {
+        EntityIndex result;
+        if (def instanceof List) {
+            result = createIndexFields(def);
+        }
+        else if (def instanceof Map) {
+            Map<?,?> asMap = EntityUtil.cast(def, Map.class);
+            Object fieldObj = asMap.get("fields");
+            String typeObj = EntityUtil.cast(asMap.get("type"), String.class);
+            result = createIndexFields(fieldObj);
+            result.type = IndexType.valueOf(typeObj.toUpperCase());
+        }
+        else {
+            throw new IllegalEntityDefinition("expected index definition");
+        }
+        return result;
     }
 
-    private final List<EntityColumn> columns;
+    private static EntityIndex createIndexFields(Object def) {
+        List<?> defList = EntityUtil.cast(def, List.class);
+        List<IndexField> fields = new ArrayList<>(defList.size());
+        for (Object field : defList)
+            fields.add(IndexField.create(field));
+        return new EntityIndex(fields, null);
+    }
+
+    public EntityIndex(List<IndexField> fields, IndexType type) {
+        this.fields = ImmutableList.copyOf(fields);
+        this.type = type;
+    }
+
+    private ImmutableList<IndexField> fields;
+    private IndexType type;
+
+    public enum IndexType {
+        LEFT, RIGHT, FULL_TEXT;
+
+        public static IndexType valueOf(Index.JoinType aisJoinType) {
+            if (aisJoinType == null)
+                return null;
+            switch (aisJoinType) {
+            case LEFT:  return LEFT;
+            case RIGHT: return RIGHT;
+            default: throw new AssertionError(aisJoinType);
+            }
+        }
+    }
 }

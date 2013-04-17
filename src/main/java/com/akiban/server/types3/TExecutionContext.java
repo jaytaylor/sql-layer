@@ -88,6 +88,11 @@ public final class TExecutionContext {
             queryContext.notifyClient(level, errorCode, message);
     }
 
+    public QueryContext getQueryContext()
+    {
+        return queryContext;
+    }
+    
     public void warnClient(InvalidOperationException exception) {
         if (queryContext == null)
             logger.warn("no query context on which to report exception", exception);
@@ -95,6 +100,11 @@ public final class TExecutionContext {
             queryContext.warnClient(exception);
     }
 
+    public void logError (String msg)
+    {
+        logger.error(msg);
+    }
+    
     public Locale getCurrentLocale()
     {
         // TODO: need to get this from the session

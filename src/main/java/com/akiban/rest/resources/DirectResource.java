@@ -42,12 +42,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import org.codehaus.jackson.JsonGenerator;
-
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Parameter;
-import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.TableName;
 import com.akiban.direct.ClassBuilder;
 import com.akiban.direct.ClassSourceWriter;
@@ -55,13 +50,9 @@ import com.akiban.direct.ClassXRefWriter;
 import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
 import com.akiban.rest.RestResponseBuilder.BodyGenerator;
-import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.NoSuchSchemaException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.types3.Attribute;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TInstance;
 
 /**
  * Easy access to the server version

@@ -24,6 +24,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
@@ -31,6 +32,8 @@ import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.ais.util.TableChange;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.api.ddl.DDLFunctionsMockBase;
+import com.akiban.server.error.ColumnAlreadyGeneratedException;
+import com.akiban.server.error.ColumnNotGeneratedException;
 import com.akiban.server.error.DuplicateColumnNameException;
 import com.akiban.server.error.DuplicateIndexException;
 import com.akiban.server.error.JoinColumnMismatchException;
@@ -42,6 +45,7 @@ import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchUniqueException;
 import com.akiban.server.error.UnsupportedCheckConstraintException;
+import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.sql.StandardException;
@@ -208,7 +212,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("ADD:new");
         expectIndexChanges();
         if (Types3Switch.ON) {
-            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21) NOT NULL", "new MCOMPAT_ BIGINT(21) NOT NULL", "UNIQUE new(new)");
+            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21) NOT NULL", "new MCOMPAT_ BIGINT(21) NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)", "UNIQUE new(new)");
         } else {
             expectFinalTable(A_NAME, "aid bigint NOT NULL", "new bigint NOT NULL", "UNIQUE new(new)");
         }
@@ -221,7 +225,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("ADD:new");
         expectIndexChanges("ADD:PRIMARY");
         if (Types3Switch.ON) {
-            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21) NOT NULL", "new MCOMPAT_ BIGINT(21) NOT NULL", "UNIQUE new(new)", "PRIMARY(new)");
+            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21) NOT NULL", "new MCOMPAT_ BIGINT(21) NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)", "UNIQUE new(new)", "PRIMARY(new)");
         } else {
             expectFinalTable(A_NAME, "aid bigint NOT NULL", "new bigint NOT NULL", "UNIQUE new(new)", "PRIMARY(new)");
         }
@@ -537,6 +541,84 @@ public class AlterTableDDLTest {
         else
             expectFinalTable(I_NAME, "id bigint NOT NULL", "oid bigint NULL", "i_i double NULL", "__akiban_fk2(oid)", "PRIMARY(id)", "join(oid->id)");
         expectUnchangedTables(C_NAME, O_NAME, A_NAME);
+    }
+
+    //
+    // ALTER COLUMN DROP DEFAULT (where default is generated)
+    //
+    @Test
+    public void alterColumnDropDefaultGenerated() throws StandardException {
+        buildCWithGeneratedID(1, true);
+        parseAndRun("ALTER TABLE c ALTER COLUMN id DROP DEFAULT");
+        expectColumnChanges("MODIFY:id->id");
+        expectIndexChanges();
+        expectFinalTable(C_NAME, "id MCOMPAT_ INTEGER(11) NOT NULL", "PRIMARY(id)");
+    }
+
+    //
+    // ALTER COLUMN SET INCREMENT BY <number>
+    //
+
+    @Test
+    public void alterColumnSetIncrementByLess() throws StandardException {
+        buildCWithGeneratedID(1, true);
+        parseAndRun("ALTER TABLE c ALTER COLUMN id SET INCREMENT BY -1");
+        expectColumnChanges("MODIFY:id->id");
+        expectIndexChanges();
+        expectFinalTable(C_NAME, "id MCOMPAT_ INTEGER(11) NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY -1)", "PRIMARY(id)");
+    }
+
+    @Test
+    public void alterColumnSetIncrementByMore() throws StandardException {
+        buildCWithGeneratedID(1, true);
+        parseAndRun("ALTER TABLE c ALTER COLUMN id SET INCREMENT BY 5");
+        expectColumnChanges("MODIFY:id->id");
+        expectIndexChanges();
+        expectFinalTable(C_NAME, "id MCOMPAT_ INTEGER(11) NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 5)", "PRIMARY(id)");
+    }
+
+    @Test(expected=ColumnNotGeneratedException.class)
+    public void alterColumnSetIncrementInvalid() throws StandardException {
+        buildCWithID();
+        parseAndRun("ALTER TABLE c ALTER COLUMN id SET INCREMENT BY 5");
+    }
+
+    //
+    // ALTER COLUMN RESTART WITH <number>
+    //
+
+    @Test(expected=UnsupportedSQLException.class)
+    public void alterColumnRestartWith() throws StandardException {
+        buildCWithGeneratedID(1, true);
+        parseAndRun("ALTER TABLE c ALTER COLUMN id RESTART WITH 10");
+    }
+
+    //
+    // ALTER COLUMN [SET] GENERATED <BY DEFAULT | ALWAYS>
+    //
+
+    @Test
+    public void alterColumnSetGeneratedByDefault() throws StandardException {
+        buildCWithID();
+        parseAndRun("ALTER TABLE c ALTER COLUMN id SET GENERATED BY DEFAULT AS IDENTITY (START WITH 10, INCREMENT BY 50)");
+        expectColumnChanges("MODIFY:id->id");
+        expectIndexChanges();
+        expectFinalTable(C_NAME, "id MCOMPAT_ INTEGER(11) NOT NULL GENERATED BY DEFAULT AS IDENTITY (START WITH 10, INCREMENT BY 50)", "PRIMARY(id)");
+    }
+
+    @Test
+    public void alterColumnSetGeneratedAlways() throws StandardException {
+        buildCWithID();
+        parseAndRun("ALTER TABLE c ALTER COLUMN id SET GENERATED ALWAYS AS IDENTITY (START WITH 42, INCREMENT BY 100)");
+        expectColumnChanges("MODIFY:id->id");
+        expectIndexChanges();
+        expectFinalTable(C_NAME, "id MCOMPAT_ INTEGER(11) NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 42, INCREMENT BY 100)", "PRIMARY(id)");
+    }
+
+    @Test(expected=ColumnAlreadyGeneratedException.class)
+    public void alterColumnSetGeneratedAlreadyGenerated() throws StandardException {
+        buildCWithGeneratedID(1, true);
+        parseAndRun("ALTER TABLE c ALTER COLUMN id SET GENERATED ALWAYS AS IDENTITY (START WITH 42, INCREMENT BY 100)");
     }
 
     //
@@ -1155,6 +1237,14 @@ public class AlterTableDDLTest {
         builder.userTable(A_NAME).colBigInt("id", false).colBigInt("other_id", true).pk("id");
     }
 
+    private void buildCWithGeneratedID(int startWith, boolean always) {
+        builder.userTable(C_NAME).autoIncLong("id", startWith, always).pk("id");
+    }
+
+    private void buildCWithID() {
+        builder.userTable(C_NAME).colLong("id", false).pk("id");
+    }
+
     private static class DDLFunctionsMock extends DDLFunctionsMockBase {
         final AkibanInformationSchema ais;
         final List<String> columnChangeDesc = new ArrayList<>();
@@ -1211,6 +1301,17 @@ public class AlterTableDDLTest {
             if(defaultVal != null) {
                 sb.append(" DEFAULT ");
                 sb.append(defaultVal);
+            }
+            Boolean identity = col.getDefaultIdentity();
+            if(identity != null) {
+                Sequence seq = col.getIdentityGenerator();
+                sb.append(" GENERATED ");
+                sb.append(identity ? "BY DEFAULT" : "ALWAYS");
+                sb.append(" AS IDENTITY (START WITH ");
+                sb.append(seq.getStartsWith());
+                sb.append(", INCREMENT BY ");
+                sb.append(seq.getIncrement());
+                sb.append(')');
             }
         }
         for(Index index : table.getIndexes()) {

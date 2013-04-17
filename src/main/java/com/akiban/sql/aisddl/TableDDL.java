@@ -213,7 +213,7 @@ public class TableDDL
             // BIGINT NOT NULL 
             DataTypeDescriptor bigint = new DataTypeDescriptor (TypeId.BIGINT_ID, false);
             addColumn (builder, schemaName, tableName, cdn.getColumnName(), colpos,
-                    bigint, false, true, getColumnDefault(cdn));
+                    bigint, false, getColumnDefault(cdn));
             // GENERATED ALWAYS AS IDENTITY
             setAutoIncrement (builder, schemaName, tableName, cdn.getColumnName(), false, 1, 1);
             // UNIQUE (KEY)
@@ -221,24 +221,25 @@ public class TableDDL
             builder.index(schemaName, tableName, cdn.getColumnName(), true, constraint);
             builder.indexColumn(schemaName, tableName, cdn.getColumnName(), cdn.getColumnName(), 0, true, null);
         } else {
-            boolean autoIncrement = cdn.isAutoincrementColumn();
-            
             addColumn(builder, schemaName, tableName, cdn.getColumnName(), colpos,
-                      cdn.getType(), cdn.getType().isNullable(), autoIncrement, getColumnDefault(cdn));
+                      cdn.getType(), cdn.getType().isNullable(), getColumnDefault(cdn));
            
-            if (autoIncrement) {
-                // if the cdn has a default node-> GENERATE BY DEFAULT
-                // if no default node -> GENERATE ALWAYS
-                Boolean defaultIdentity = cdn.getDefaultNode() != null;
-                setAutoIncrement (builder, schemaName, tableName, cdn.getColumnName(),
-                        defaultIdentity, cdn.getAutoincrementStart(), cdn.getAutoincrementIncrement());
+            if (cdn.isAutoincrementColumn()) {
+                setAutoIncrement(builder, schemaName, tableName, cdn);
             }
         }
     }
 
-    static void setAutoIncrement (final AISBuilder builder, 
-            String schemaName, String tableName, String columnName, boolean defaultIdentity, 
-            long start, long increment) {
+    public static void setAutoIncrement(AISBuilder builder, String schema, String table, ColumnDefinitionNode cdn) {
+        // if the cdn has a default node-> GENERATE BY DEFAULT
+        // if no default node -> GENERATE ALWAYS
+        Boolean defaultIdentity = cdn.getDefaultNode() != null;
+        setAutoIncrement(builder, schema, table, cdn.getColumnName(),
+                         defaultIdentity, cdn.getAutoincrementStart(), cdn.getAutoincrementIncrement());
+    }
+
+    public static void setAutoIncrement(AISBuilder builder, String schemaName, String tableName, String columnName,
+                                        boolean defaultIdentity, long start, long increment) {
         // The merge process will generate a real sequence name
         final String sequenceName = "temp-sequence-1"; 
         builder.sequence(schemaName, sequenceName, 
@@ -267,7 +268,7 @@ public class TableDDL
 
     static void addColumn(final AISBuilder builder,
                           final String schemaName, final String tableName, final String columnName,
-                          int colpos, DataTypeDescriptor type, boolean nullable, boolean autoIncrement,
+                          int colpos, DataTypeDescriptor type, boolean nullable,
                           final String defaultValue) {
         Long[] typeParameters = new Long[2];
         Type builderType = columnType(type, typeParameters, schemaName, tableName, columnName);
@@ -280,7 +281,7 @@ public class TableDDL
                        colpos,
                        builderType.name(), typeParameters[0], typeParameters[1],
                        nullable,
-                       autoIncrement,
+                       false,
                        charset, collation,
                        defaultValue);
     }

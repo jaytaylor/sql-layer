@@ -1,5 +1,5 @@
 [
     {
-        "error": "Can't make non-spinal attribute spinal"
+        "error": "Can't change identifying fields"
     }
 ]

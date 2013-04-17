@@ -75,12 +75,12 @@ public class AISBuilder {
         return nameGenerator;
     }
 
-    public void sequence (String schemaName, String sequenceName,
-            long start, long increment,
-            long minValue, long maxValue, boolean cycle) {
+    public Sequence sequence(String schemaName, String sequenceName,
+                             long start, long increment, long minValue, long maxValue, boolean cycle) {
         LOG.trace("sequence: {}.{} ", schemaName,sequenceName);
         Sequence identityGenerator = Sequence.create(ais, schemaName, sequenceName, start, increment, minValue, maxValue, cycle);
         identityGenerator.setTreeName(nameGenerator.generateSequenceTreeName(identityGenerator));
+        return identityGenerator;
     }
     
     public UserTable userTable(String schemaName, String tableName) {

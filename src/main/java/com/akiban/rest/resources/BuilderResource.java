@@ -24,7 +24,7 @@ import com.akiban.server.service.restdml.ModelBuilder;
 import com.akiban.server.service.restdml.RestDMLService;
 import com.akiban.server.service.security.SecurityService;
 import com.akiban.util.JsonUtils;
-import org.codehaus.jackson.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DELETE;
@@ -77,8 +77,7 @@ public class BuilderResource {
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
-                        modelBuilder.create(tableName);
-                        restDMLService.getAllEntities(writer, tableName, 0);
+                        modelBuilder.getAll(writer, tableName);
                     }
                 })
                 .build();
@@ -97,8 +96,7 @@ public class BuilderResource {
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
-                        modelBuilder.create(tableName);
-                        restDMLService.getEntities(writer, tableName, 0, getPKString(uri));
+                        modelBuilder.getKeys(writer, tableName, getPKString(uri));
                     }
                 })
                 .build();
