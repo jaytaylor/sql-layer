@@ -310,43 +310,9 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     private class DefaultUpdateWorker extends TimerTask
     {
         @Override
-        // 'sync' because only one worker can work at a time?
-        public synchronized void run()
+        public void run()
         {
-            updateRunning = true;
-            Session session = sessionService.createSession();
-            boolean transaction = true;
-            try
-            {
-                transactionService.beginTransaction(session);
-                HKeyBytesStream rows = persistitStore.getChangedRows(session);
-                if (rows != null) // if tree is not empty
-                {
-                    do
-                    {
-                        updateIndex(session,
-                                    rows.getIndexName(),
-                                    rows);
-                    }
-                    while (rows.nextIndex());
-                    rows.removeAll(); // done updating. remove all entries
-                }
-                transaction= false;
-            }
-            catch(PersistitException e)
-            {
-                throw new AkibanInternalException("Error while maintaning full_text indices");
-            }
-            finally
-            {
-                if (transaction)
-                    transactionService.rollbackTransaction(session);
-                else
-                    transactionService.commitTransaction(session);
-                session.close();
-                backgroundWorks.get(updateWork).notifyObservers();
-                updateRunning = false;
-            }
+            runUpdate();
         }
     }; 
     
@@ -434,50 +400,10 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     private class DefaultPopulateWorker extends TimerTask
     {
         @Override
-        public synchronized void run()
+        public void run()
         {
-            populateRunning = true;
-            Session session = sessionService.createSession();
-            boolean transaction = true;
-            try
-            {
-                transactionService.beginTransaction(session);
-                Exchange ex = getPopulateExchange(session);
-                IndexName toPopulate;
-                while ((toPopulate = nextInQueue(ex)) != null)
-                {
-                    if (stillExists(session, toPopulate))
-                        createIndex(session, toPopulate);
-                    else
-                        logger.debug("FullTextIndex " + toPopulate + " deleted before population");
-                }
-                ex.removeAll();
-                hasScheduled = false;
-                transaction = false;
-            }
-            catch (PersistitException ex1)
-            {
-                throw new AkibanInternalException("Error while populating full_text indices", ex1);
-            }
-            finally
-            {
-                if (transaction)
-                    transactionService.rollbackTransaction(session);
-                else
-                    transactionService.commitTransaction(session);
-                session.close();
-                backgroundWorks.get(populateWork).notifyObservers();
-                populateRunning = false;
-            }
+            runPopulate();
         }
-        
-        private boolean stillExists(Session session, IndexName indexName)
-        {
-            AkibanInformationSchema ais = getAIS(session);
-            UserTable table = ais.getUserTable(indexName.getFullTableName());
-            return !(table == null ||  table.getFullTextIndex(indexName.getName()) == null);
-        }
-
     };
 
     // ---------- mostly for testing ---------------
@@ -528,6 +454,88 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
 
 
     //----------- private helpers -----------
+    private synchronized void runPopulate()
+    {
+        populateRunning = true;
+        Session session = sessionService.createSession();
+        boolean transaction = true;
+        try
+        {
+            transactionService.beginTransaction(session);
+            Exchange ex = getPopulateExchange(session);
+            IndexName toPopulate;
+            while ((toPopulate = nextInQueue(ex)) != null)
+            {
+                if (stillExists(session, toPopulate))
+                    createIndex(session, toPopulate);
+                else
+                    logger.debug("FullTextIndex " + toPopulate + " deleted before population");
+            }
+            ex.removeAll();
+            hasScheduled = false;
+            transaction = false;
+        }
+        catch (PersistitException ex1)
+        {
+            throw new AkibanInternalException("Error while populating full_text indices", ex1);
+        }
+        finally
+        {
+            if (transaction)
+                transactionService.rollbackTransaction(session);
+            else
+                transactionService.commitTransaction(session);
+            session.close();
+            backgroundWorks.get(populateWork).notifyObservers();
+            populateRunning = false;
+        }
+    }
+    
+    private boolean stillExists(Session session, IndexName indexName)
+    {
+        AkibanInformationSchema ais = getAIS(session);
+        UserTable table = ais.getUserTable(indexName.getFullTableName());
+        return !(table == null ||  table.getFullTextIndex(indexName.getName()) == null);
+    }
+    
+    private synchronized void runUpdate()
+    {
+        updateRunning = true;
+        Session session = sessionService.createSession();
+        boolean transaction = true;
+        try
+        {
+            transactionService.beginTransaction(session);
+            HKeyBytesStream rows = persistitStore.getChangedRows(session);
+            if (rows != null) // if tree is not empty
+            {
+                do
+                {
+                    updateIndex(session,
+                                rows.getIndexName(),
+                                rows);
+                }
+                while (rows.nextIndex());
+                rows.removeAll(); // done updating. remove all entries
+            }
+            transaction= false;
+        }
+        catch(PersistitException e)
+        {
+            throw new AkibanInternalException("Error while maintaning full_text indices");
+        }
+        finally
+        {
+            if (transaction)
+                transactionService.rollbackTransaction(session);
+            else
+                transactionService.commitTransaction(session);
+            session.close();
+            backgroundWorks.get(updateWork).notifyObservers();
+            updateRunning = false;
+        }
+    }
+
     private boolean forceUpdate()
     {
         // worker is disabled or is already running
@@ -539,6 +547,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         new Thread(updateWorker).start();
         return true;
     }
+    
     
     /**
      * If the populate job is not already running, force the worker to wake
