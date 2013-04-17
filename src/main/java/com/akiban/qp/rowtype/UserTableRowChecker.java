@@ -32,11 +32,6 @@ public class UserTableRowChecker implements ConstraintChecker
     {
         for (int f = 0; f < fields; f++) {
             if (notNull.get(f) && isNull(row, f, usePValues)) {
-                // if this column is an identity column, null is allowed
-                // 
-                if (f == identityColumn) {
-                    continue;
-                }
                 TableName tableName = table.getName();
                 throw new NotNullViolationException(tableName.getSchemaName(),
                                                     tableName.getTableName(),
@@ -57,7 +52,6 @@ public class UserTableRowChecker implements ConstraintChecker
         fields = rowType.nFields();
         table = rowType.userTable();
         notNull = table.notNull();
-        identityColumn = table.getIdentityColumn() != null ? table.getIdentityColumn().getPosition().intValue() : -1;
     }
 
     public UserTableRowChecker(UserTable userTable)
@@ -65,10 +59,8 @@ public class UserTableRowChecker implements ConstraintChecker
         fields = userTable.getColumnsIncludingInternal().size();
         table = userTable;
         notNull = table.notNull();
-        identityColumn = table.getIdentityColumn() != null ? table.getIdentityColumn().getPosition().intValue() : -1;
     }
 
-    private final int identityColumn;
     private final int fields;
     private final UserTable table;
     private final BitSet notNull;

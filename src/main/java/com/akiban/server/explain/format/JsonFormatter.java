@@ -24,8 +24,8 @@ import com.akiban.server.explain.Label;
 
 import com.akiban.server.error.AkibanInternalException;
 
-import org.codehaus.jackson.JsonEncoding;
-import org.codehaus.jackson.JsonGenerator;
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonGenerator;
 
 import java.io.Writer;
 import java.util.List;

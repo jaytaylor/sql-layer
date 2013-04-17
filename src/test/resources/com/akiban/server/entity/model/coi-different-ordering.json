@@ -1,42 +1,62 @@
 {
-    "entities" : {
-        "customer" : {
-            "attributes" : {
-                "id" : {
-                    "spinal_pos" : 0,
-                    "scalar" : "8644c36b-f881-4369-a06b-59e3fc580309",
-                    "type" : "integer"
-                },
-                "last_name" : {
-                    "properties" : {
-                        "charset" : "utf8"
-                    },
-                    "type" : "varchar",
-                    "validation" : [
-                        { "max_length" : 64 },
-                        { "required" : false }
-                    ],
-                    "scalar" : "257e9b59-e77f-4a4d-a5da-00c7c2261875"
-                },
-                "orders" : {
-                    "attributes" : {
-                        "id" : {
-                            "spinal_pos" : 0,
-                            "type" : "integer",
-                            "scalar" : "58dd53b7-e8a1-488b-a751-c83f9beca04c"
+    "entities": [
+        {
+            "fields": [
+                {
+                    "type": "integer", 
+                    "name": "id", 
+                    "uuid": "8644c36b-f881-4369-a06b-59e3fc580309"
+                }, 
+                {
+                    "properties": {
+                        "charset": "utf8"
+                    }, 
+                    "validations": [
+                        {
+                            "max_length": 64
+                        }, 
+                        {
+                            "required": false
                         }
-                    },
-                    "collection" : "c5cedd91-9751-41c2-9417-8c29117ca2c9"
+                    ], 
+                    "type": "varchar", 
+                    "name": "last_name", 
+                    "uuid": "257e9b59-e77f-4a4d-a5da-00c7c2261875"
                 }
-            },
-            "indexes" : {
-                "orderplaced_lastname" : [ ["orders", "placed"], ["customer", "last_name"] ]
-            },
-            "entity" : "2a57b59e-e1b7-4377-996e-a5c04e0abf29",
-            "validation" : [
-                { "unique" : [ ["customer", "last_name"], ["customer", "first_name"] ] },
-                { "unique" : [ ["orders", "placed"] ] }
-            ]
+            ], 
+            "identifying": [
+                "id"
+            ], 
+            "collections": [
+                {
+                    "name": "orders", 
+                    "identifying": [
+                        "id"
+                    ], 
+                    "fields": [
+                        {
+                            "type": "integer", 
+                            "name": "id", 
+                            "uuid": "58dd53b7-e8a1-488b-a751-c83f9beca04c"
+                        }
+                    ], 
+                    "validations": [
+                        {
+                            "unique": "orderplaced_lastname"
+                        }, 
+                        {
+                            "unique": "orders_placed"
+                        }
+                    ], 
+                    "indexes": {
+                        "orders_placed": [ "placed" ],
+                        "orderplaced_lastname": [ "placed", [ "customer", "last_name" ] ]
+                    }, 
+                    "uuid": "c5cedd91-9751-41c2-9417-8c29117ca2c9"
+                }
+            ], 
+            "name": "customer", 
+            "uuid": "2a57b59e-e1b7-4377-996e-a5c04e0abf29"
         }
-    }
+    ]
 }

@@ -17,18 +17,17 @@
 
 package com.akiban.server.service.restdml;
 
+import com.akiban.ais.model.IndexName;
+import com.akiban.ais.model.TableName;
+import com.fasterxml.jackson.databind.JsonNode;
+
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
-
-import org.codehaus.jackson.JsonNode;
-
-import com.akiban.ais.model.IndexName;
-import com.akiban.ais.model.TableName;
 import com.akiban.server.service.session.Session;
 
 public interface RestDMLService {

@@ -15,22 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.entity.model;
+package com.akiban.server.error;
 
-import java.util.UUID;
+import com.akiban.ais.model.Column;
 
-public final class Util {
-
-    public static UUID parseUUID(String string) {
-        if (string == null)
-            return null;
-        UUID uuid;
-        try {
-            uuid = UUID.fromString(string);
-        }
-        catch (IllegalArgumentException e) {
-            throw new IllegalEntityDefinition("invalid uuid");
-        }
-        return uuid;
+public class ColumnNotGeneratedException extends InvalidOperationException {
+    public ColumnNotGeneratedException(Column column) {
+        super(ErrorCode.COLUMN_NOT_GENERATED,
+              column.getColumnar().getName().getSchemaName(),
+              column.getColumnar().getName().getTableName(),
+              column.getName());
     }
 }

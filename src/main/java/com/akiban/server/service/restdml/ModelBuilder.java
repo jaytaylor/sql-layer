@@ -47,16 +47,19 @@ import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
+import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.sql.optimizer.rule.PlanGenerator;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.JsonUtils;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.node.ObjectNode;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import static com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
@@ -101,6 +104,42 @@ public class ModelBuilder {
         try (Session session = sessionService.createSession()) {
             UserTable curTable = ddlFunctions.getUserTable(session, tableName);
             return isBuilderTable(curTable);
+        }
+    }
+
+    public void getAll(PrintWriter writer, TableName tableName) throws IOException {
+        try (Session session = sessionService.createSession();
+             CloseableTransaction txn = txnService.beginCloseableTransaction(session)) {
+             createInternal(session, tableName);
+            Cursor cursor = groupScanCursor(session, tableName);
+            writer.append('[');
+            scanCursor(writer, cursor, true);
+            writer.append(']');
+        }
+    }
+
+    public void getKeys(PrintWriter writer, TableName tableName, String identifiers) throws IOException {
+        try (Session session = sessionService.createSession();
+             CloseableTransaction txn = txnService.beginCloseableTransaction(session)) {
+            createInternal(session, tableName);
+            AkibanInformationSchema ais = ddlFunctions.getAIS(session);
+            UserTable table = ais.getUserTable(tableName);
+            List<List<String>> keys = PrimaryKeyParser.parsePrimaryKeys(identifiers, table.getPrimaryKey().getIndex());
+            Operator plan = PlanGenerator.generateBranchPlan(ais, table);
+            QueryContext context = queryContext(session, ais);
+            Cursor cursor = API.cursor(plan, context);
+            boolean first = true;
+            writer.append('[');
+            for(List<String> pk : keys) {
+                for(int i = 0; i < pk.size(); i++) {
+                    PValue pvalue = new PValue(MString.varchar());
+                    pvalue.putString(pk.get(i), null);
+                    context.setPValue(i, pvalue);
+                }
+                first = scanCursor(writer, cursor, first);
+            }
+            writer.append(']');
+            txn.commit();
         }
     }
 
@@ -260,12 +299,36 @@ public class ModelBuilder {
         }
     }
 
+    private QueryContext queryContext(Session session, AkibanInformationSchema ais) {
+        PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), store, treeService, session, configService);
+        return new SimpleQueryContext(adapter);
+    }
+
     private Cursor groupScanCursor(Session session, TableName tableName) {
         UserTable table = ddlFunctions.getUserTable(session, tableName);
         Operator plan = PlanGenerator.generateScanPlan(table.getAIS(), table);
-        PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(table.getAIS()), store, treeService, session, configService);
-        QueryContext queryContext = new SimpleQueryContext(adapter);
-        return API.cursor(plan, queryContext);
+        return API.cursor(plan, queryContext(session, table.getAIS()));
+    }
+
+    private boolean scanCursor(PrintWriter writer, Cursor cursor, boolean first) throws IOException {
+        Row row;
+        cursor.open();
+        try {
+            while((row = cursor.next()) != null) {
+                if(!first) {
+                    writer.append(",\n");
+                }
+                first = false;
+                long id = row.pvalue(0).getInt64();
+                String json = row.pvalue(1).getString();
+                ObjectNode node = (ObjectNode)JsonUtils.readTree(json);
+                node.put(EntityParser.PK_COL_NAME, id);
+                writer.write(node.toString());
+            }
+        } finally {
+            cursor.close();
+        }
+        return first;
     }
 
 
@@ -281,13 +344,13 @@ public class ModelBuilder {
 
     private static void removeUnknownFields(UserTable table, JsonNode node) {
         if(node.isArray()) {
-            Iterator<JsonNode> it = node.getElements();
+            Iterator<JsonNode> it = node.elements();
             while(it.hasNext()) {
                 removeUnknownFields(table, it.next());
             }
         }
         else {
-            Iterator<Map.Entry<String,JsonNode>> fieldIt = node.getFields();
+            Iterator<Map.Entry<String,JsonNode>> fieldIt = node.fields();
             while(fieldIt.hasNext()) {
                 Map.Entry<String,JsonNode> pair = fieldIt.next();
                 String itName = pair.getKey();

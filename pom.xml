@@ -148,14 +148,9 @@
             <version>49.1</version>
         </dependency>
         <dependency>
-            <groupId>org.codehaus.jackson</groupId>
-            <artifactId>jackson-core-asl</artifactId>
-            <version>1.9.11</version>
-        </dependency>
-        <dependency>
-            <groupId>org.codehaus.jackson</groupId>
-            <artifactId>jackson-mapper-asl</artifactId>
-            <version>1.9.11</version>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.1.4</version>
         </dependency>
         <dependency>
             <groupId>commons-codec</groupId>
@@ -393,6 +388,7 @@
                         <exclude>bin/akserver</exclude>
                         <exclude>**/*.options</exclude>
                         <!-- Files requiring a specific format (packaging control, test output, etc) -->
+                        <exclude>README.md</exclude>
                         <exclude>debian/**</exclude>
                         <exclude>redhat/**</exclude>
                         <exclude>macosx/**</exclude>
