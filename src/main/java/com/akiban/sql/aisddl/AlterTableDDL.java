@@ -224,7 +224,7 @@ public class AlterTableDDL {
         TableName newName = tableCopy.getName();
         for(ConstraintDefinitionNode cdn : conDefNodes) {
             assert cdn.getConstraintType() != ConstraintType.DROP : cdn;
-            String name = TableDDL.addIndex(indexNamer, builder, cdn, newName.getSchemaName(), newName.getTableName());
+            String name = TableDDL.addIndex(indexNamer, builder, cdn, newName.getSchemaName(), newName.getTableName(), context);
             indexChanges.add(TableChange.createAdd(name));
         }
 

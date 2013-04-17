@@ -648,15 +648,6 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                                             true);
         }
     }
-
-    // TODO: Temporary.
-    public void refreshFullTextIndex(PrintWriter writer, IndexName indexName) {
-        long count;
-        try (Session session = sessionService.createSession()) {
-            count = fullTextService.createIndex(session, indexName);
-        }
-        writer.write(String.format("{\"count\":%d}", count));
-    }
-
-    private static final JsonFactory oldJsonFactory = new JsonFactory(new ObjectMapper()); // for Jonquil
+    
+     private static final JsonFactory oldJsonFactory = new JsonFactory(new ObjectMapper()); // for Jonquil
 }
