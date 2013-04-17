@@ -17,6 +17,7 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
+import com.akiban.server.service.BackgroundObserver;
 import com.akiban.server.service.BackgroundObserverImpl;
 import com.akiban.server.service.BackgroundWork;
 import java.util.LinkedList;
@@ -34,19 +35,20 @@ public class WaitFunctionHelpers
     {
         if (works != null)
         {
-            List<BackgroundObserverImpl> waiters = new LinkedList<>();
+            List<BackgroundObserver> waiters = new LinkedList<>();
             for (BackgroundWork wk : works)
             {
                 // This work doesn't require wait time
                 if (wk.getMinimumWaitTime() <= 0)
                     continue;
 
-                // request the task to be executed
-                wk.forceExecution();
-                
                 // add observer
                 BackgroundObserverImpl w = new BackgroundObserverImpl();
                 wk.addObserver(w);
+
+                // request the task to be executed
+                wk.forceExecution();
+                
                 waiters.add(w);
             }
 
@@ -55,7 +57,7 @@ public class WaitFunctionHelpers
             while (true)
             {
                 allAwaken = true;
-                for (BackgroundObserverImpl w : waiters)
+                for (BackgroundObserver w : waiters)
                 {
                     allAwaken &= w.backgroundFinished();
                 }

@@ -390,13 +390,19 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                                                              return forcePopulate();
                                                          }
 
-                                                        @Override
-                                                        public long getMinimumWaitTime()
-                                                        {
-                                                            return hasScheduled
-                                                                     ? populateDelayInterval
-                                                                     : 0;
-                                                        }
+                                                         @Override
+                                                         public long getMinimumWaitTime()
+                                                         {
+                                                             return populateEnabled && hasScheduled
+                                                                      ? populateDelayInterval
+                                                                      : 0;
+                                                         }
+                                                        
+                                                         @Override
+                                                         public String toString()
+                                                         {
+                                                             return "POPULATE";
+                                                         }
                                                      },
                                                      new BackgroundWorkBase()
                                                      {
@@ -406,16 +412,21 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                                                              return forceUpdate();
                                                          }
 
-                                                        @Override
-                                                        public long getMinimumWaitTime()
-                                                        {
-                                                            return updateWorker == null
-                                                                       ? 0 // worker is disabled. 
-                                                                       : maintenanceInterval;
-                                                        }
+                                                         @Override
+                                                         public long getMinimumWaitTime()
+                                                         {
+                                                             return updateWorker == null
+                                                                        ? 0 // worker is disabled. 
+                                                                        : maintenanceInterval;
+                                                         }
+                                                         
+                                                         @Override
+                                                         public String toString()
+                                                         {
+                                                             return "UPDATE";
+                                                         }
                                                      }));
-    
-    
+
     private static final int populateWork = 0;
     private static final int updateWork = 1;
     
@@ -553,16 +564,15 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             // cancel scheduled task
             populateTimer.cancel();
 
-            // get a new timer
-            // (So schedulePopulate can schedule new task if new index is created)
-            populateTimer = new Timer();
-
             // execute the task
             // in a different thread
             // because we'd otherwise get "transaction already began" exception
             //  as each thread only has one session)
             new Thread(populateWorker()).start();
 
+            // get a new timer
+            // (So schedulePopulate can schedule new task if new index is created)
+            populateTimer = new Timer();
         }
        
         return true;

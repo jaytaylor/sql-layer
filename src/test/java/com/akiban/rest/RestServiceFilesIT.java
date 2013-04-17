@@ -17,6 +17,7 @@
 
 package com.akiban.rest;
 
+import com.akiban.server.service.text.FullTextIndexService;
 import com.akiban.http.HttpConductor;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
@@ -24,6 +25,7 @@ import com.akiban.server.service.is.BasicInfoSchemaTablesService;
 import com.akiban.server.service.is.BasicInfoSchemaTablesServiceImpl;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.server.types3.mcompat.mfuncs.WaitFunctionHelpers;
 import com.akiban.sql.RegexFilenameFilter;
 import com.akiban.util.Strings;
 import org.codehaus.jackson.JsonNode;
@@ -185,7 +187,7 @@ public class RestServiceFilesIT extends ITBase {
         return new URL("http", "localhost", port, context + request);
     }
 
-    private void loadDatabase(String subDirName) throws Exception {
+    private void loadDatabase(String subDirName, FullTextIndexService ftService) throws Exception {
         File subDir = new File(RESOURCE_DIR, subDirName);
         File schemaFile = new File(subDir, "schema.ddl");
         if(schemaFile.exists()) {
@@ -201,12 +203,29 @@ public class RestServiceFilesIT extends ITBase {
         for (File data : subDir.listFiles(new RegexFilenameFilter(".*\\.dat"))) {
             loadDataFile(SCHEMA_NAME, data);
         }
+
         String postURI = dumpFileIfExists(new File(subDir, "schema.prepost"));
         if (postURI != null) {
             HttpExchange httpConn = openConnection(getRestURL(postURI.trim()), "POST");
             postContents(httpConn, "[]".getBytes());
             httpClient.send(httpConn);
             fullyDisconnect(httpConn);
+        }
+        
+        // The file should  contain only the name of the wait function
+        // (Don't need to make a SELECT node here)
+        String waitFunc = dumpFileIfExists(new File(subDir, "background.wait"));
+        if (waitFunc != null)
+        {
+            switch(waitFunc.trim().toLowerCase())
+            {
+                case "fulltext_maintenance_wait":
+                    WaitFunctionHelpers.waitOn(ftService.getBackgroundWorks());
+                    break;
+
+                default:
+                    throw new UnsupportedOperationException("Unknown Wait Function: " + waitFunc);
+            }
         }
     }
     
@@ -237,9 +256,8 @@ public class RestServiceFilesIT extends ITBase {
     
     @Test
     public void testRequest() throws Exception {
-        loadDatabase(caseParams.subDir);
+        loadDatabase(caseParams.subDir, serviceManager().getServiceByClass(FullTextIndexService.class));
         HttpExchange conn = openConnection(getRestURL(caseParams.requestURI), caseParams.requestMethod);
-        
         try {
             // Request
             if (caseParams.requestMethod.equals("POST") || 

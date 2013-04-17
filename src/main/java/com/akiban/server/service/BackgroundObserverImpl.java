@@ -24,7 +24,7 @@ package com.akiban.server.service;
  */
 public class BackgroundObserverImpl implements BackgroundObserver
 {
-    private boolean hasFinished = false;
+    private  volatile boolean hasFinished = false;
     public BackgroundObserverImpl ()
     {
     }
