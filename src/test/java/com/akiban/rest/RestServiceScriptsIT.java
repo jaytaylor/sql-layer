@@ -338,7 +338,7 @@ public class RestServiceScriptsIT extends ITBase {
 
     private void executeRestCall(final String command, final String address, final String contents) throws Exception {
         try {
-            result.conn = openConnection(getRestURL(address), command);
+            result.conn = openConnection(address, command);
             httpClient.send(result.conn);
             if (contents != null) {
                 postContents(result.conn, contents.getBytes());
@@ -354,10 +354,15 @@ public class RestServiceScriptsIT extends ITBase {
         }
     }
 
-    private HttpExchange openConnection(URL url, String requestMethod) throws IOException, URISyntaxException {
+    private HttpExchange openConnection(String address, String requestMethod) throws IOException, URISyntaxException {
+        String[] pieces = address.split("\\|");
+        URL url = getRestURL(pieces[0]);
         HttpExchange exchange = new ContentExchange(true);
         exchange.setURI(url.toURI());
         exchange.setMethod(requestMethod);
+        if (pieces.length > 1) {
+            exchange.setRequestContentType(pieces[1]);
+        }
         return exchange;
     }
 

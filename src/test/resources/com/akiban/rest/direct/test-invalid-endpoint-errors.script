@@ -1,0 +1,18 @@
+# Normal registration
+#
+PUT     /direct/library?module=test.proc1&language=Javascript @direct-create.body
+EQUALS  {"functions":2}\n
+
+# Try incorrect methods - expect 404 errors
+#
+PUT     /direct/call/test.cnames?prefix=SomeParameterValue @
+CONTAINS 404
+CONTAINS Not Found
+POST     /direct/call/test.cnames?prefix=SomeParameterValue @
+CONTAINS 404
+CONTAINS Not Found
+DELETE   /direct/call/test.cnames?prefix=SomeParameterValue @
+CONTAINS 404
+CONTAINS Not Found
+
+
