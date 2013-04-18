@@ -469,13 +469,13 @@ public class DirectServiceImpl implements Service, DirectService {
         EndpointMetadata md = null;
         if (list != null) {
             for (final EndpointMetadata candidate : list) {
+                if (requestType != null && candidate.expectedContentType != null
+                        && !requestType.startsWith(candidate.expectedContentType)) {
+                    continue;
+                }
                 if (candidate.pattern != null) {
                     Matcher matcher = candidate.getParamPathMatcher(cache, pathParams);
                     if (matcher.matches()) {
-                        if (requestType != null && candidate.expectedContentType != null
-                                && !requestType.startsWith(candidate.expectedContentType)) {
-                            continue;
-                        }
                         md = candidate;
                         break;
                     }

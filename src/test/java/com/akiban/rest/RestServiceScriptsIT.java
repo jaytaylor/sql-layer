@@ -253,6 +253,7 @@ public class RestServiceScriptsIT extends ITBase {
                     result.conn = null;
                     if (pieces.length < 2) {
                         error("Missing argument");
+                        continue;
                     }
                     executeRestCall(command, pieces[1], null);
                     break;
@@ -261,6 +262,7 @@ public class RestServiceScriptsIT extends ITBase {
                     result.conn = null;
                     if (pieces.length < 2) {
                         error("Missing argument");
+                        continue;
                     }
                     executeRestCall("GET", "/sql/query?q=" + trimAndURLEncode(value(line, 1)), null);
                     break;
@@ -268,6 +270,7 @@ public class RestServiceScriptsIT extends ITBase {
                     result.conn = null;
                     if (pieces.length < 2) {
                         error("Missing argument");
+                        continue;
                     }
                     executeRestCall("GET", "/sql/explain?q=" + trimAndURLEncode(value(line, 1)), null);
                     break;
@@ -278,6 +281,7 @@ public class RestServiceScriptsIT extends ITBase {
                     pieces = line.split(" ", 3);
                     if (pieces.length < 3) {
                         error("Missing argument");
+                        continue;
                     }
                     String contents  = value(line, 2);
                     executeRestCall(command, pieces[1], contents);
@@ -286,12 +290,14 @@ public class RestServiceScriptsIT extends ITBase {
                 case "EQUALS":
                     if (pieces.length < 2) {
                         error("Missing argument");
+                        continue;
                     }
                     compareStrings("Incorrect response", value(line, 1), result.output);
                     break;
                 case "CONTAINS":
                     if (pieces.length < 2) {
                         error("Missing argument");
+                        continue;
                     }
                     if (!result.output.contains(value(line, 1))) {
                         error("Incorrect response");
@@ -300,18 +306,21 @@ public class RestServiceScriptsIT extends ITBase {
                 case "JSONEQ":
                     if (pieces.length < 2) {
                         error("Missing argument");
+                        continue;
                     }
                     compareAsJSON("Unexpected response", value(line, 1), result.output);
                     break;
                 case "HEADERS":
                     if (pieces.length < 2) {
                         error("Missing argument");
+                        continue;
                     }
                     compareHeaders(result.conn, value(line, 1));
                     break;
                 case "NOTEMPTY":
                     if (result.output.isEmpty() || result.conn == null) {
                         error("Expected non-empty response");
+                        continue;
                     }
                     break;
                 case "EMPTY":

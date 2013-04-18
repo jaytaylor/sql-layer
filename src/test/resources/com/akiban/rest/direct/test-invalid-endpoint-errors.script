@@ -16,3 +16,8 @@ CONTAINS 404
 CONTAINS Not Found
 
 
+PUT /direct/library?module=test.proc1&language=Javascript function _register(registrar) {registrar.register("method=GET path=x function=x in=(JSON:prefix String required) out=String");};
+GET /direct/call/test.x|text/plain
+CONTAINS 404
+CONTAINS Not Found
+

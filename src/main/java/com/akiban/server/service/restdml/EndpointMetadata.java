@@ -507,6 +507,8 @@ public class EndpointMetadata {
                 String s;
                 if (content instanceof byte[]) {
                     s = new String((byte[]) content, UTF8);
+                } else if (content == null) {
+                    s = "";
                 } else {
                     s = (String) content;
                 }
