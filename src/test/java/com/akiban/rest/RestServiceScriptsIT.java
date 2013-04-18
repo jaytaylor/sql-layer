@@ -211,15 +211,7 @@ public class RestServiceScriptsIT extends ITBase {
     }
 
     private void error(String message, String s) {
-        String error = String.format("%s in %s:%d", message, caseParams.caseName, lineNumber);
-        if (s != null) {
-            s = s.trim();
-            if (s.length() > 50) {
-                error += " <" + s.substring(0, 47) + "...>";
-            } else {
-                error += " <" + s + ">";
-            }
-        }
+        String error = String.format("%s in %s:%d <%s>", message, caseParams.caseName, lineNumber, s);
         errors.add(error);
     }
 
@@ -248,6 +240,9 @@ public class RestServiceScriptsIT extends ITBase {
                 String command = pieces[0].toUpperCase();
 
                 switch (command) {
+                case "DEBUG":
+                    System.out.println("DEBUG executed on line " + lineNumber);
+                    break;
                 case "GET":
                 case "DELETE": {
                     result.conn = null;
@@ -346,12 +341,17 @@ public class RestServiceScriptsIT extends ITBase {
     }
 
     private void executeRestCall(final String command, final String address, final String contents) throws Exception {
+        String[] pieces = address.split("\\|");
         try {
-            result.conn = openConnection(address, command);
-            httpClient.send(result.conn);
+            result.conn = openConnection(pieces[0], command);
             if (contents != null) {
                 postContents(result.conn, contents.getBytes());
             }
+            // After postContents to override default
+            if (pieces.length > 1) {
+                result.conn.setRequestContentType(pieces[1]);
+            }
+            httpClient.send(result.conn);
             result.conn.waitForDone();
             result.output = getOutput(result.conn);
         } catch (Exception e) {
@@ -364,14 +364,10 @@ public class RestServiceScriptsIT extends ITBase {
     }
 
     private HttpExchange openConnection(String address, String requestMethod) throws IOException, URISyntaxException {
-        String[] pieces = address.split("\\|");
-        URL url = getRestURL(pieces[0]);
+        URL url = getRestURL(address);
         HttpExchange exchange = new ContentExchange(true);
         exchange.setURI(url.toURI());
         exchange.setMethod(requestMethod);
-        if (pieces.length > 1) {
-            exchange.setRequestContentType(pieces[1]);
-        }
         return exchange;
     }
 
@@ -388,7 +384,7 @@ public class RestServiceScriptsIT extends ITBase {
                 s = Strings.dumpFileToString(new File(new File(RESOURCE_DIR, caseParams.subDir), s.substring(1)));
             }
         } else {
-            s = s.replace("\\n", "\n").replace("\\t", "\t");
+            s = s.replace("\\n", "\n").replace("\\n", "\t");
         }
         return s;
     }
@@ -402,7 +398,7 @@ public class RestServiceScriptsIT extends ITBase {
     }
 
     private void compareStrings(String assertMsg, String expected, String actual) {
-        if (!expected.equals(expected)) {
+        if (!expected.equals(actual)) {
             error(assertMsg, diff(expected, actual));
         }
     }
