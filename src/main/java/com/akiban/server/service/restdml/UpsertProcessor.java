@@ -143,15 +143,20 @@ public class UpsertProcessor extends DMLProcessor {
         Operator plan = generator.generateAncestorPlan(context.table);
         Cursor cursor = null;
         try {
-            cursor = API.cursor(plan, context.queryContext);
 
             PValue pvalue = new PValue(MString.varchar());
             int i = 0;
             for (Column column : context.table.getPrimaryKey().getColumns()) {
+                // bug 1169995 - a null value in the PK won't match anything,
+                // return null to force the insert. 
+                if (context.allValues.get(column) == null) {
+                    return null;
+                }
                 pvalue.putString(context.allValues.get(column), null);
                 context.queryContext.setPValue(i, pvalue);
                 i++;
             }
+            cursor = API.cursor(plan, context.queryContext);
             cursor.open();
             return cursor.next();
         } finally {
