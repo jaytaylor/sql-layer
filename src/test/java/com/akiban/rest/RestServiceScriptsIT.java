@@ -1,10 +1,10 @@
 /**
- * Copyright (C) 2009-2013 Akiban Technologies, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
+ * Copyright (C) 2009-2013 Akiban Technologies, Inc.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -18,20 +18,24 @@
 package com.akiban.rest;
 
 import static com.akiban.util.JsonUtils.readTree;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+
+import junit.framework.ComparisonFailure;
 
 import org.eclipse.jetty.client.ContentExchange;
 import org.eclipse.jetty.client.HttpClient;
@@ -54,6 +58,43 @@ import com.akiban.util.Strings;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 
+/**
+ * Scripted tests for REST end-points. Code was largely copied from
+ * RestServiceFilesIT. Difference is that this version finds files with the
+ * suffix ".script" and executes the command stream located in them. Commands are:
+ * 
+ * <pre>
+ * GET address
+ * DELETE address
+ * QUERY query
+ * EXPLAIN query
+ * POST address content
+ * PUT address content
+ * PATCH address content
+ * EQUALS expected
+ * CONTAINS expected
+ * JSONEQ expected
+ * HEADERS expected
+ * EMPTY
+ * NOTEMPTY
+ * </pre>
+ * 
+ * where address is a path relative the resource end-point, content is a string
+ * value that is converted to bytes and sent with POST, PUT and PATCH
+ * operations, and expected is a value used in comparison with the most recently
+ * returned content. The values of the query, content and expected fields may be
+ * specified in-line, or as a reference to another file as in @filename. For
+ * in-line values, the character sequences "\n", "\t" and "\r" are converted to
+ * the corresponding new-line, tab and return characters. This transformation is
+ * not done if the value is supplied as a file reference. An empty string can be
+ * specified as simply @, e.g.:
+ * 
+ * <pre>
+ * POST    /builder/implode/test.customers @
+ * </pre>
+ * 
+ * @author peter
+ */
 @RunWith(NamedParameterizedRunner.class)
 public class RestServiceScriptsIT extends ITBase {
     private static final Logger LOG = LoggerFactory.getLogger(RestServiceScriptsIT.class.getName());
@@ -216,6 +257,20 @@ public class RestServiceScriptsIT extends ITBase {
                     executeRestCall(command, pieces[1], null);
                     break;
                 }
+                case "QUERY":
+                    result.conn = null;
+                    if (pieces.length < 2) {
+                        error("Missing argument");
+                    }
+                    executeRestCall("GET", "/sql/query?q=" + trimAndURLEncode(value(line, 1)), null);
+                    break;
+                case "EXPLAIN":
+                    result.conn = null;
+                    if (pieces.length < 2) {
+                        error("Missing argument");
+                    }
+                    executeRestCall("GET", "/sql/explain?q=" + trimAndURLEncode(value(line, 1)), null);
+                    break;
                 case "POST":
                 case "PUT":
                 case "PATCH": {
@@ -224,11 +279,7 @@ public class RestServiceScriptsIT extends ITBase {
                     if (pieces.length < 3) {
                         error("Missing argument");
                     }
-                    String contents = pieces[2];
-                    if (contents.startsWith("@")) {
-                        contents = Strings.dumpFileToString(new File(new File(RESOURCE_DIR, caseParams.subDir),
-                                contents.substring(1)));
-                    }
+                    String contents  = value(line, 2);
                     executeRestCall(command, pieces[1], contents);
                     break;
                 }
@@ -236,27 +287,27 @@ public class RestServiceScriptsIT extends ITBase {
                     if (pieces.length < 2) {
                         error("Missing argument");
                     }
-                    compareStrings("Incorrect response", expected(line), result.output);
+                    compareStrings("Incorrect response", value(line, 1), result.output);
                     break;
                 case "CONTAINS":
                     if (pieces.length < 2) {
                         error("Missing argument");
                     }
-                    if (!result.output.contains(expected(line))) {
+                    if (!result.output.contains(value(line, 1))) {
                         error("Incorrect response");
                     }
                     break;
-                case "JSONEQUALS":
+                case "JSONEQ":
                     if (pieces.length < 2) {
                         error("Missing argument");
                     }
-                    compareExpected("Unexpected response", expected(line), result.output);
+                    compareAsJSON("Unexpected response", value(line, 1), result.output);
                     break;
                 case "HEADERS":
                     if (pieces.length < 2) {
                         error("Missing argument");
                     }
-                    compareHeaders(result.conn, expected(line));
+                    compareHeaders(result.conn, value(line, 1));
                     break;
                 case "NOTEMPTY":
                     if (result.output.isEmpty() || result.conn == null) {
@@ -276,7 +327,13 @@ public class RestServiceScriptsIT extends ITBase {
         } finally {
             result.conn = null;
         }
-        assertEquals("Errors in test", "[]", errors.toString());
+        if (!errors.isEmpty()) {
+            String failMessage = "Failed with " + errors.size() + " errors:";
+            for (String s : errors) {
+                failMessage += "\n  " + s;
+            }
+            fail(failMessage);
+        }
     }
 
     private void executeRestCall(final String command, final String address, final String contents) throws Exception {
@@ -308,26 +365,37 @@ public class RestServiceScriptsIT extends ITBase {
         return ((ContentExchange) httpConn).getResponseContent();
     }
 
-    private String expected(String line) throws IOException {
-        String s = line.split(" ", 2)[1];
+    private String value(String line, int index) throws IOException {
+        String s = line.split(" ", index + 1)[index];
         if (s.startsWith("@")) {
-            s = Strings.dumpFileToString(new File(new File(RESOURCE_DIR, caseParams.subDir), s.substring(1)));
+            if (s.length() == 1) {
+                s = "";
+            } else {
+                s = Strings.dumpFileToString(new File(new File(RESOURCE_DIR, caseParams.subDir), s.substring(1)));
+            }
         } else {
             s = s.replace("\\n", "\n").replace("\\t", "\t");
         }
         return s;
     }
 
+    private static String trimAndURLEncode(String s) throws UnsupportedEncodingException {
+        return URLEncoder.encode(s.trim().replaceAll("\\s+", " "), "UTF-8");
+    }
+
+    private String diff(String a, String b) {
+        return new ComparisonFailure("", a, b).getMessage();
+    }
+
     private void compareStrings(String assertMsg, String expected, String actual) {
         if (!expected.equals(expected)) {
-            error(assertMsg, expected);
+            error(assertMsg, diff(expected, actual));
         }
     }
 
-    private void compareExpected(String assertMsg, String expected, String actual) throws IOException {
+    private void compareAsJSON(String assertMsg, String expected, String actual) throws IOException {
         JsonNode expectedNode = null;
         JsonNode actualNode = null;
-        boolean skipNodeCheck = false;
         String expectedTrimmed = (expected != null) ? expected.trim() : "";
         String actualTrimmed = (actual != null) ? actual.trim() : "";
         try {
@@ -342,10 +410,12 @@ public class RestServiceScriptsIT extends ITBase {
             // not horrible yet.
         }
         // Try manual equals and then assert strings for pretty print
-        if (expectedNode != null && actualNode != null && !expectedNode.equals(actualNode)) {
-            error(assertMsg);
-        } else if (!skipNodeCheck) {
-            error(assertMsg);
+        if (expectedNode != null && actualNode != null) {
+            if (!expectedNode.equals(actualNode)) {
+                error(assertMsg, diff(expectedNode.toString(), actualNode.toString()));
+            }
+        } else {
+            compareStrings(assertMsg, expected, actual);
         }
     }
 
