@@ -129,7 +129,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                                "WHERE t.tgrelid = '(-?\\d+)' AND (?:t.tgconstraint = 0|" + // 2
                                "\\(not tgisconstraint  OR NOT EXISTS  \\(SELECT 1 FROM pg_catalog.pg_depend d    JOIN pg_catalog.pg_constraint c ON \\(d.refclassid = c.tableoid AND d.refobjid = c.oid\\)    WHERE d.classid = t.tableoid AND d.objid = t.oid AND d.deptype = 'i' AND c.contype = 'f'\\)\\))(?:\\s+ORDER BY 1)?;?", true),
         PSQL_DESCRIBE_VIEW("SELECT pg_catalog.pg_get_viewdef\\('(-?\\d+)'::pg_catalog.oid, true\\);?", true),
-        CHARTIO_TABLES("SELECT NULL AS TABLE_CAT, n.nspname AS TABLE_SCHEM, c.relname AS TABLE_NAME,  CASE n.nspname ~ '^pg_' OR n.nspname = 'information_schema'  WHEN true THEN CASE  WHEN n.nspname = 'pg_catalog' OR n.nspname = 'information_schema' THEN CASE c.relkind   WHEN 'r' THEN 'SYSTEM TABLE'   WHEN 'v' THEN 'SYSTEM VIEW'   WHEN 'i' THEN 'SYSTEM INDEX'   ELSE NULL   END  WHEN n.nspname = 'pg_toast' THEN CASE c.relkind   WHEN 'r' THEN 'SYSTEM TOAST TABLE'   WHEN 'i' THEN 'SYSTEM TOAST INDEX'   ELSE NULL   END  ELSE CASE c.relkind   WHEN 'r' THEN 'TEMPORARY TABLE'   WHEN 'i' THEN 'TEMPORARY INDEX'   WHEN 'S' THEN 'TEMPORARY SEQUENCE'   WHEN 'v' THEN 'TEMPORARY VIEW'   ELSE NULL   END  END  WHEN false THEN CASE c.relkind  WHEN 'r' THEN 'TABLE'  WHEN 'i' THEN 'INDEX'  WHEN 'S' THEN 'SEQUENCE'  WHEN 'v' THEN 'VIEW'  WHEN 'c' THEN 'TYPE'  WHEN 'f' THEN 'FOREIGN TABLE'  ELSE NULL  END  ELSE NULL  END  AS TABLE_TYPE, d.description AS REMARKS  FROM pg_catalog.pg_namespace n, pg_catalog.pg_class c  LEFT JOIN pg_catalog.pg_description d ON (c.oid = d.objoid AND d.objsubid = 0)  LEFT JOIN pg_catalog.pg_class dc ON (d.classoid=dc.oid AND dc.relname='pg_class')  LEFT JOIN pg_catalog.pg_namespace dn ON (dn.oid=dc.relnamespace AND dn.nspname='pg_catalog')  WHERE c.relnamespace = n.oid  AND (false  OR ( c.relkind = 'r' AND n.nspname !~ '^pg_' AND n.nspname <> 'information_schema' )  OR ( c.relkind = 'v' AND n.nspname <> 'pg_catalog' AND n.nspname <> 'information_schema' ) )  ORDER BY TABLE_TYPE,TABLE_SCHEM,TABLE_NAME");
+        CHARTIO_TABLES("SELECT NULL AS TABLE_CAT, n.nspname AS TABLE_SCHEM, c.relname AS TABLE_NAME,  CASE n.nspname ~ '^pg_' OR n.nspname = 'information_schema'  WHEN true THEN CASE  WHEN n.nspname = 'pg_catalog' OR n.nspname = 'information_schema' THEN CASE c.relkind   WHEN 'r' THEN 'SYSTEM TABLE'   WHEN 'v' THEN 'SYSTEM VIEW'   WHEN 'i' THEN 'SYSTEM INDEX'   ELSE NULL   END  WHEN n.nspname = 'pg_toast' THEN CASE c.relkind   WHEN 'r' THEN 'SYSTEM TOAST TABLE'   WHEN 'i' THEN 'SYSTEM TOAST INDEX'   ELSE NULL   END  ELSE CASE c.relkind   WHEN 'r' THEN 'TEMPORARY TABLE'   WHEN 'i' THEN 'TEMPORARY INDEX'   WHEN 'S' THEN 'TEMPORARY SEQUENCE'   WHEN 'v' THEN 'TEMPORARY VIEW'   ELSE NULL   END  END  WHEN false THEN CASE c.relkind  WHEN 'r' THEN 'TABLE'  WHEN 'i' THEN 'INDEX'  WHEN 'S' THEN 'SEQUENCE'  WHEN 'v' THEN 'VIEW'  WHEN 'c' THEN 'TYPE'  WHEN 'f' THEN 'FOREIGN TABLE'  ELSE NULL  END  ELSE NULL  END  AS TABLE_TYPE, d.description AS REMARKS  FROM pg_catalog.pg_namespace n, pg_catalog.pg_class c  LEFT JOIN pg_catalog.pg_description d ON (c.oid = d.objoid AND d.objsubid = 0)  LEFT JOIN pg_catalog.pg_class dc ON (d.classoid=dc.oid AND dc.relname='pg_class')  LEFT JOIN pg_catalog.pg_namespace dn ON (dn.oid=dc.relnamespace AND dn.nspname='pg_catalog')  WHERE c.relnamespace = n.oid  AND (false  OR ( c.relkind = 'r' AND n.nspname !~ '^pg_' AND n.nspname <> 'information_schema' )  OR ( c.relkind = 'v' AND n.nspname <> 'pg_catalog' AND n.nspname <> 'information_schema' ) )  ORDER BY TABLE_TYPE,TABLE_SCHEM,TABLE_NAME "),
+        CHARTIO_KEYS("SELECT NULL AS TABLE_CAT, n.nspname AS TABLE_SCHEM,   ct.relname AS TABLE_NAME, a.attname AS COLUMN_NAME,   \\(i.keys\\).n AS KEY_SEQ, ci.relname AS PK_NAME FROM pg_catalog.pg_class ct   JOIN pg_catalog.pg_attribute a ON \\(ct.oid = a.attrelid\\)   JOIN pg_catalog.pg_namespace n ON \\(ct.relnamespace = n.oid\\)   JOIN \\(SELECT i.indexrelid, i.indrelid, i.indisprimary,              information_schema._pg_expandarray\\(i.indkey\\) AS keys         FROM pg_catalog.pg_index i\\) i     ON \\(a.attnum = \\(i.keys\\).x AND a.attrelid = i.indrelid\\)   JOIN pg_catalog.pg_class ci ON \\(ci.oid = i.indexrelid\\) WHERE true  AND ct.relname = E'(.+)' AND i.indisprimary  ORDER BY table_name, pk_name, key_seq", true);
 
         private String sql;
         private Pattern pattern;
@@ -331,6 +332,11 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             names = new String[] { "table_cat", "table_schem", "table_name", "table_type", "remarks" };
             types = new PostgresType[] { IDENT_PG_TYPE, IDENT_PG_TYPE, IDENT_PG_TYPE, LIST_TYPE_PG_TYPE, CHAR0_PG_TYPE };
             break;
+        case CHARTIO_KEYS:
+            ncols = 6;
+            names = new String[] { "table_cat", "table_schem", "table_name", "column_name", "key_seq", "pk_name" };
+            types = new PostgresType[] { IDENT_PG_TYPE, IDENT_PG_TYPE, IDENT_PG_TYPE, IDENT_PG_TYPE, INT2_PG_TYPE, IDENT_PG_TYPE };
+            break;
         default:
             return;
         }
@@ -423,6 +429,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             break;
         case CHARTIO_TABLES:
             nrows = chartioTablesQuery(server, messenger, encoder, maxrows, usePVals);
+            break;
+        case CHARTIO_KEYS:
+            nrows = chartioKeysQuery(server, messenger, encoder, maxrows, usePVals);
             break;
         }
         {        
@@ -1149,6 +1158,51 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             nrows++;
             if ((maxrows > 0) && (nrows >= maxrows)) {
                 break;
+            }
+        }
+        return nrows;
+    }
+
+    private int chartioKeysQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+        int nrows = 0;
+        String name = groups.get(1);
+        AkibanInformationSchema ais = server.getAIS();
+        List<UserTable> tables = new ArrayList<>();
+        for (UserTable table : ais.getUserTables().values()) {
+            TableName tableName = table.getName();
+            if (server.isSchemaAccessible(tableName.getSchemaName()) &&
+                tableName.getTableName().equalsIgnoreCase(name)) {
+                tables.add(table);
+            }
+        }
+        Collections.sort(tables, tablesByName);
+        rows:
+        for (UserTable table : tables) {
+            TableName tableName = table.getName();
+            TableIndex index = table.getIndex(Index.PRIMARY_KEY_CONSTRAINT);
+            if (index != null) {
+                short seq = 1;
+                for (IndexColumn column : index.getKeyColumns()) {
+                    messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+                    messenger.writeShort(6); // 6 columns for this query
+                    writeColumn(messenger, encoder, usePVals, 
+                                null, IDENT_PG_TYPE);
+                    writeColumn(messenger, encoder, usePVals, 
+                                tableName.getSchemaName(), IDENT_PG_TYPE);
+                    writeColumn(messenger, encoder, usePVals, 
+                                tableName.getTableName(), IDENT_PG_TYPE);
+                    writeColumn(messenger, encoder, usePVals, 
+                                column.getColumn().getName(), IDENT_PG_TYPE);
+                    writeColumn(messenger, encoder, usePVals, 
+                                seq++, INT2_PG_TYPE);
+                    writeColumn(messenger, encoder, usePVals, 
+                                index.getIndexName().getName(), IDENT_PG_TYPE);
+                    messenger.sendMessage();
+                    nrows++;
+                    if ((maxrows > 0) && (nrows >= maxrows)) {
+                        break rows;
+                    }
+                }
             }
         }
         return nrows;
