@@ -20,6 +20,8 @@ package com.akiban.http;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.monitor.MonitorService;
+import com.akiban.server.service.monitor.ServerMonitor;
 import com.akiban.server.service.security.SecurityService;
 import com.google.inject.Inject;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
@@ -48,6 +50,7 @@ import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 public final class HttpConductorImpl implements HttpConductor, Service {
     private static final Logger logger = LoggerFactory.getLogger(HttpConductorImpl.class);
@@ -68,6 +71,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
 
     private final ConfigurationService configurationService;
     private final SecurityService securityService;
+    private final MonitorService monitorService;
 
     private final Object lock = new Object();
     private SimpleHandlerList handlerList;
@@ -81,9 +85,11 @@ public final class HttpConductorImpl implements HttpConductor, Service {
 
     @Inject
     public HttpConductorImpl(ConfigurationService configurationService,
-                             SecurityService securityService) {
+                             SecurityService securityService,
+                             MonitorService monitor) {
         this.configurationService = configurationService;
         this.securityService = securityService;
+        this.monitorService = monitor;
 
         jerseyLogging = java.util.logging.Logger.getLogger("com.sun.jersey");
         jerseyLogging.setLevel(java.util.logging.Level.OFF);
@@ -192,8 +198,10 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         connector.setMaxIdleTime(300000);
         connector.setAcceptQueueSize(12000);
         connector.setLowResourcesConnections(25000);
+        connector.setStatsOn(true);
 
         localServer.setConnectors(new Connector[]{connector});
+        monitorService.registerServerMonitor(new ConnectionMonitor(connector));
 
         SimpleHandlerList localHandlerList = new SimpleHandlerList();
 
@@ -257,6 +265,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     @Override
     public void stop() {
         Server localServer;
+        monitorService.deregisterServerMonitor(monitorService.getServerMonitors().get(ConnectionMonitor.SERVER_TYPE));
         synchronized (lock) {
             xOriginFilterEnabled = false;
             localServer = server;
@@ -339,6 +348,36 @@ public final class HttpConductorImpl implements HttpConductor, Service {
                     logger.warn("Cannot call JDBC close method", ex);
                 }
             }
+        }
+    }
+    
+    private class ConnectionMonitor implements ServerMonitor {
+        public static final String SERVER_TYPE = "REST";
+        private final SelectChannelConnector connector;
+        private final AtomicLong _statsStartedAt = new AtomicLong(System.currentTimeMillis());
+        
+        public ConnectionMonitor(SelectChannelConnector connector) {
+            this.connector = connector;
+        }
+        
+        @Override
+        public String getServerType() {
+            return SERVER_TYPE;
+        }
+
+        @Override
+        public int getLocalPort() {
+            return connector.getPort();
+        }
+
+        @Override
+        public long getStartTimeMillis() {
+            return _statsStartedAt.get();
+        }
+
+        @Override
+        public int getSessionCount() {
+            return connector.getConnections();
         }
     }
 }
