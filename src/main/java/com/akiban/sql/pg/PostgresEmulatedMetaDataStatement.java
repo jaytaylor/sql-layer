@@ -130,7 +130,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                                "\\(not tgisconstraint  OR NOT EXISTS  \\(SELECT 1 FROM pg_catalog.pg_depend d    JOIN pg_catalog.pg_constraint c ON \\(d.refclassid = c.tableoid AND d.refobjid = c.oid\\)    WHERE d.classid = t.tableoid AND d.objid = t.oid AND d.deptype = 'i' AND c.contype = 'f'\\)\\))(?:\\s+ORDER BY 1)?;?", true),
         PSQL_DESCRIBE_VIEW("SELECT pg_catalog.pg_get_viewdef\\('(-?\\d+)'::pg_catalog.oid, true\\);?", true),
         CHARTIO_TABLES("SELECT NULL AS TABLE_CAT, n.nspname AS TABLE_SCHEM, c.relname AS TABLE_NAME,  CASE n.nspname ~ '^pg_' OR n.nspname = 'information_schema'  WHEN true THEN CASE  WHEN n.nspname = 'pg_catalog' OR n.nspname = 'information_schema' THEN CASE c.relkind   WHEN 'r' THEN 'SYSTEM TABLE'   WHEN 'v' THEN 'SYSTEM VIEW'   WHEN 'i' THEN 'SYSTEM INDEX'   ELSE NULL   END  WHEN n.nspname = 'pg_toast' THEN CASE c.relkind   WHEN 'r' THEN 'SYSTEM TOAST TABLE'   WHEN 'i' THEN 'SYSTEM TOAST INDEX'   ELSE NULL   END  ELSE CASE c.relkind   WHEN 'r' THEN 'TEMPORARY TABLE'   WHEN 'i' THEN 'TEMPORARY INDEX'   WHEN 'S' THEN 'TEMPORARY SEQUENCE'   WHEN 'v' THEN 'TEMPORARY VIEW'   ELSE NULL   END  END  WHEN false THEN CASE c.relkind  WHEN 'r' THEN 'TABLE'  WHEN 'i' THEN 'INDEX'  WHEN 'S' THEN 'SEQUENCE'  WHEN 'v' THEN 'VIEW'  WHEN 'c' THEN 'TYPE'  WHEN 'f' THEN 'FOREIGN TABLE'  ELSE NULL  END  ELSE NULL  END  AS TABLE_TYPE, d.description AS REMARKS  FROM pg_catalog.pg_namespace n, pg_catalog.pg_class c  LEFT JOIN pg_catalog.pg_description d ON (c.oid = d.objoid AND d.objsubid = 0)  LEFT JOIN pg_catalog.pg_class dc ON (d.classoid=dc.oid AND dc.relname='pg_class')  LEFT JOIN pg_catalog.pg_namespace dn ON (dn.oid=dc.relnamespace AND dn.nspname='pg_catalog')  WHERE c.relnamespace = n.oid  AND (false  OR ( c.relkind = 'r' AND n.nspname !~ '^pg_' AND n.nspname <> 'information_schema' )  OR ( c.relkind = 'v' AND n.nspname <> 'pg_catalog' AND n.nspname <> 'information_schema' ) )  ORDER BY TABLE_TYPE,TABLE_SCHEM,TABLE_NAME "),
-        CHARTIO_KEYS("SELECT NULL AS TABLE_CAT, n.nspname AS TABLE_SCHEM,   ct.relname AS TABLE_NAME, a.attname AS COLUMN_NAME,   \\(i.keys\\).n AS KEY_SEQ, ci.relname AS PK_NAME FROM pg_catalog.pg_class ct   JOIN pg_catalog.pg_attribute a ON \\(ct.oid = a.attrelid\\)   JOIN pg_catalog.pg_namespace n ON \\(ct.relnamespace = n.oid\\)   JOIN \\(SELECT i.indexrelid, i.indrelid, i.indisprimary,              information_schema._pg_expandarray\\(i.indkey\\) AS keys         FROM pg_catalog.pg_index i\\) i     ON \\(a.attnum = \\(i.keys\\).x AND a.attrelid = i.indrelid\\)   JOIN pg_catalog.pg_class ci ON \\(ci.oid = i.indexrelid\\) WHERE true  AND ct.relname = E'(.+)' AND i.indisprimary  ORDER BY table_name, pk_name, key_seq", true);
+        CHARTIO_KEYS("SELECT NULL AS TABLE_CAT, n.nspname AS TABLE_SCHEM,   ct.relname AS TABLE_NAME, a.attname AS COLUMN_NAME,   \\(i.keys\\).n AS KEY_SEQ, ci.relname AS PK_NAME FROM pg_catalog.pg_class ct   JOIN pg_catalog.pg_attribute a ON \\(ct.oid = a.attrelid\\)   JOIN pg_catalog.pg_namespace n ON \\(ct.relnamespace = n.oid\\)   JOIN \\(SELECT i.indexrelid, i.indrelid, i.indisprimary,              information_schema._pg_expandarray\\(i.indkey\\) AS keys         FROM pg_catalog.pg_index i\\) i     ON \\(a.attnum = \\(i.keys\\).x AND a.attrelid = i.indrelid\\)   JOIN pg_catalog.pg_class ci ON \\(ci.oid = i.indexrelid\\) WHERE true  AND ct.relname = E'(.+)' AND i.indisprimary  ORDER BY table_name, pk_name, key_seq", true),
+        CHARTIO_COLUMNS("SELECT \\* FROM \\(SELECT n.nspname,c.relname,a.attname,a.atttypid,a.attnotnull OR \\(t.typtype = 'd' AND t.typnotnull\\) AS attnotnull,a.atttypmod,a.attlen,row_number\\(\\) OVER \\(PARTITION BY a.attrelid ORDER BY a.attnum\\) AS attnum, pg_catalog.pg_get_expr\\(def.adbin, def.adrelid\\) AS adsrc,dsc.description,t.typbasetype,t.typtype  FROM pg_catalog.pg_namespace n  JOIN pg_catalog.pg_class c ON \\(c.relnamespace = n.oid\\)  JOIN pg_catalog.pg_attribute a ON \\(a.attrelid=c.oid\\)  JOIN pg_catalog.pg_type t ON \\(a.atttypid = t.oid\\)  LEFT JOIN pg_catalog.pg_attrdef def ON \\(a.attrelid=def.adrelid AND a.attnum = def.adnum\\)  LEFT JOIN pg_catalog.pg_description dsc ON \\(c.oid=dsc.objoid AND a.attnum = dsc.objsubid\\)  LEFT JOIN pg_catalog.pg_class dc ON \\(dc.oid=dsc.classoid AND dc.relname='pg_class'\\)  LEFT JOIN pg_catalog.pg_namespace dn ON \\(dc.relnamespace=dn.oid AND dn.nspname='pg_catalog'\\)  WHERE a.attnum > 0 AND NOT a.attisdropped  AND c.relname LIKE E'(.+)'\\) c WHERE true  ORDER BY nspname,c.relname,attnum ", true);
 
         private String sql;
         private Pattern pattern;
@@ -187,6 +188,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         new PostgresType(PostgresType.TypeOid.BOOL_TYPE_OID, (short)1, -1, AkType.BOOL, AkBool.INSTANCE.instance(FIELDS_NULLABLE));
     static final PostgresType INT2_PG_TYPE = 
         new PostgresType(PostgresType.TypeOid.INT2_TYPE_OID, (short)2, -1, AkType.LONG, MNumeric.SMALLINT.instance(FIELDS_NULLABLE));
+    static final PostgresType INT4_PG_TYPE = 
+        new PostgresType(PostgresType.TypeOid.INT4_TYPE_OID, (short)4, -1, AkType.LONG, MNumeric.INT.instance(FIELDS_NULLABLE));
     static final PostgresType OID_PG_TYPE = 
         new PostgresType(PostgresType.TypeOid.OID_TYPE_OID, (short)4, -1, AkType.LONG, MNumeric.INT.instance(FIELDS_NULLABLE));
     static final PostgresType TYPNAME_PG_TYPE = 
@@ -337,6 +340,11 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             names = new String[] { "table_cat", "table_schem", "table_name", "column_name", "key_seq", "pk_name" };
             types = new PostgresType[] { IDENT_PG_TYPE, IDENT_PG_TYPE, IDENT_PG_TYPE, IDENT_PG_TYPE, INT2_PG_TYPE, IDENT_PG_TYPE };
             break;
+        case CHARTIO_COLUMNS:
+            ncols = 12;
+            names = new String[] { "nspname", "relname", "attname", "atttypid", "attnotnull", "atttypmod", "attlen", "attnum", "adsrc", "description", "typbasetype", "typtype" };
+            types = new PostgresType[] { IDENT_PG_TYPE, IDENT_PG_TYPE, IDENT_PG_TYPE, OID_PG_TYPE, CHAR1_PG_TYPE, INT4_PG_TYPE, INT2_PG_TYPE, INT2_PG_TYPE, CHAR0_PG_TYPE, CHAR0_PG_TYPE, OID_PG_TYPE, CHAR1_PG_TYPE };
+            break;
         default:
             return;
         }
@@ -432,6 +440,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             break;
         case CHARTIO_KEYS:
             nrows = chartioKeysQuery(server, messenger, encoder, maxrows, usePVals);
+            break;
+        case CHARTIO_COLUMNS:
+            nrows = chartioColumnsQuery(server, messenger, encoder, maxrows, usePVals);
             break;
         }
         {        
@@ -1181,7 +1192,6 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             TableName tableName = table.getName();
             TableIndex index = table.getIndex(Index.PRIMARY_KEY_CONSTRAINT);
             if (index != null) {
-                short seq = 1;
                 for (IndexColumn column : index.getKeyColumns()) {
                     messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
                     messenger.writeShort(6); // 6 columns for this query
@@ -1194,7 +1204,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                     writeColumn(messenger, encoder, usePVals, 
                                 column.getColumn().getName(), IDENT_PG_TYPE);
                     writeColumn(messenger, encoder, usePVals, 
-                                seq++, INT2_PG_TYPE);
+                                (short)(column.getPosition() + 1), INT2_PG_TYPE);
                     writeColumn(messenger, encoder, usePVals, 
                                 index.getIndexName().getName(), IDENT_PG_TYPE);
                     messenger.sendMessage();
@@ -1202,6 +1212,60 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                     if ((maxrows > 0) && (nrows >= maxrows)) {
                         break rows;
                     }
+                }
+            }
+        }
+        return nrows;
+    }
+
+    private int chartioColumnsQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+        int nrows = 0;
+        String name = groups.get(1);
+        AkibanInformationSchema ais = server.getAIS();
+        List<UserTable> tables = new ArrayList<>();
+        for (UserTable table : ais.getUserTables().values()) {
+            TableName tableName = table.getName();
+            if (server.isSchemaAccessible(tableName.getSchemaName()) &&
+                tableName.getTableName().equalsIgnoreCase(name)) {
+                tables.add(table);
+            }
+        }
+        Collections.sort(tables, tablesByName);
+        rows:
+        for (UserTable table : tables) {
+            TableName tableName = table.getName();
+            for (Column column : table.getColumns()) {
+                PostgresType type = PostgresType.fromAIS(column);
+                messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+                messenger.writeShort(12); // 12 columns for this query
+                writeColumn(messenger, encoder, usePVals, 
+                            tableName.getSchemaName(), IDENT_PG_TYPE);
+                writeColumn(messenger, encoder, usePVals, 
+                            tableName.getTableName(), IDENT_PG_TYPE);
+                writeColumn(messenger, encoder, usePVals, 
+                            column.getName(), IDENT_PG_TYPE);
+                writeColumn(messenger, encoder, usePVals, 
+                            type.getOid(), OID_PG_TYPE);
+                writeColumn(messenger, encoder, usePVals, 
+                            column.getNullable() ? "t" : "f", CHAR1_PG_TYPE);
+                writeColumn(messenger, encoder, usePVals, 
+                            type.getModifier(), INT4_PG_TYPE);
+                writeColumn(messenger, encoder, usePVals, 
+                            type.getLength(), INT2_PG_TYPE);
+                writeColumn(messenger, encoder, usePVals, 
+                            (short)(column.getPosition() + 1), INT2_PG_TYPE);
+                writeColumn(messenger, encoder, usePVals, 
+                            null, CHAR0_PG_TYPE);
+                writeColumn(messenger, encoder, usePVals, 
+                            null, CHAR0_PG_TYPE);
+                writeColumn(messenger, encoder, usePVals, 
+                            0, OID_PG_TYPE);
+                writeColumn(messenger, encoder, usePVals, 
+                            "b", CHAR1_PG_TYPE);
+                messenger.sendMessage();
+                nrows++;
+                if ((maxrows > 0) && (nrows >= maxrows)) {
+                    break rows;
                 }
             }
         }
