@@ -204,9 +204,9 @@ public class DirectServiceImpl implements Service, DirectService {
         EndpointMap endpointMap = null;
 
         try {
-        if (functionsOnly) {
-            endpointMap = getEndpointMap(session);
-        }
+            if (functionsOnly) {
+                endpointMap = getEndpointMap(session);
+            }
         } catch (RegistrationException e) {
             throw new ScriptLibraryRegistrationException(e);
         }
@@ -336,7 +336,7 @@ public class DirectServiceImpl implements Service, DirectService {
             final TableName procName, final String pathParams, final MultivaluedMap<String, String> queryParameters,
             final byte[] content, final MediaType[] responseType) throws Exception {
         try (JDBCConnection conn = jdbcConnection(request, procName.getSchemaName());) {
-
+            LOG.debug("Invoking {} {}", request.getMethod(), request.getRequestURI());
             conn.setAutoCommit(false);
 
             boolean completed = false;
@@ -397,17 +397,17 @@ public class DirectServiceImpl implements Service, DirectService {
 
         final Object[] args = createArgsArray(pathParams, queryParameters, content, cache, md);
 
-        final ScriptPool<ScriptLibrary> libraryPool = conn.getRoutineLoader()
-            .getScriptLibrary(conn.getSession(), new TableName(procName.getSchemaName(),
-                                                               md.routineName));
+        final ScriptPool<ScriptLibrary> libraryPool = conn.getRoutineLoader().getScriptLibrary(conn.getSession(),
+                new TableName(procName.getSchemaName(), md.routineName));
         final ScriptLibrary library = libraryPool.get();
         boolean success = false;
         Object result;
+
+        LOG.debug("Endpoint {}", md);
         try {
             result = library.invoke(md.function, args);
             success = true;
-        }
-        finally {
+        } finally {
             libraryPool.put(library, success);
         }
 
@@ -542,7 +542,8 @@ public class DirectServiceImpl implements Service, DirectService {
             for (final Routine routine : ais.getRoutines().values()) {
                 if (routine.getCallingConvention().equals(CallingConvention.SCRIPT_LIBRARY)
                         && routine.getDynamicResultSets() == 0 && routine.getParameters().isEmpty()) {
-                    final ScriptPool<ScriptLibrary> libraryPool = routineLoader.getScriptLibrary(session, routine.getName());
+                    final ScriptPool<ScriptLibrary> libraryPool = routineLoader.getScriptLibrary(session,
+                            routine.getName());
                     final ScriptLibrary library = libraryPool.get();
                     boolean success = false;
                     try {
@@ -550,6 +551,8 @@ public class DirectServiceImpl implements Service, DirectService {
                                 new Object[] { new RestFunctionRegistrar() {
                                     @Override
                                     public void register(String specification) throws Exception {
+                                        LOG.debug("Registering endpoint in routine {}: {}", routine.getName(),
+                                                specification);
                                         EndpointMap.this.register(routine.getName().getSchemaName(), routine.getName()
                                                 .getTableName(), specification);
                                     }
@@ -571,8 +574,10 @@ public class DirectServiceImpl implements Service, DirectService {
                         }
                         throw e;
                     } catch (RegistrationException e) {
+                        LOG.warn("Endpoint registration failure {} in routine {}", e, routine.getName());
                         throw e;
                     } catch (Exception e) {
+                        LOG.warn("Endpoint registration failure {} in routine {}", e, routine.getName());
                         throw new RegistrationException(e);
                     } finally {
                         libraryPool.put(library, success);
@@ -580,7 +585,6 @@ public class DirectServiceImpl implements Service, DirectService {
                 }
             }
         }
-
 
         void register(final String schema, final String routine, final String spec) throws Exception {
 
