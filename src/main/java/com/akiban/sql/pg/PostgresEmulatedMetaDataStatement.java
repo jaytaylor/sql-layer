@@ -128,7 +128,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                                "FROM pg_catalog.pg_trigger t\\s+" +
                                "WHERE t.tgrelid = '(-?\\d+)' AND (?:t.tgconstraint = 0|" + // 2
                                "\\(not tgisconstraint  OR NOT EXISTS  \\(SELECT 1 FROM pg_catalog.pg_depend d    JOIN pg_catalog.pg_constraint c ON \\(d.refclassid = c.tableoid AND d.refobjid = c.oid\\)    WHERE d.classid = t.tableoid AND d.objid = t.oid AND d.deptype = 'i' AND c.contype = 'f'\\)\\))(?:\\s+ORDER BY 1)?;?", true),
-        PSQL_DESCRIBE_VIEW("SELECT pg_catalog.pg_get_viewdef\\('(-?\\d+)'::pg_catalog.oid, true\\);?", true);
+        PSQL_DESCRIBE_VIEW("SELECT pg_catalog.pg_get_viewdef\\('(-?\\d+)'::pg_catalog.oid, true\\);?", true),
+        CHARTIO_TABLES("SELECT NULL AS TABLE_CAT, n.nspname AS TABLE_SCHEM, c.relname AS TABLE_NAME,  CASE n.nspname ~ '^pg_' OR n.nspname = 'information_schema'  WHEN true THEN CASE  WHEN n.nspname = 'pg_catalog' OR n.nspname = 'information_schema' THEN CASE c.relkind   WHEN 'r' THEN 'SYSTEM TABLE'   WHEN 'v' THEN 'SYSTEM VIEW'   WHEN 'i' THEN 'SYSTEM INDEX'   ELSE NULL   END  WHEN n.nspname = 'pg_toast' THEN CASE c.relkind   WHEN 'r' THEN 'SYSTEM TOAST TABLE'   WHEN 'i' THEN 'SYSTEM TOAST INDEX'   ELSE NULL   END  ELSE CASE c.relkind   WHEN 'r' THEN 'TEMPORARY TABLE'   WHEN 'i' THEN 'TEMPORARY INDEX'   WHEN 'S' THEN 'TEMPORARY SEQUENCE'   WHEN 'v' THEN 'TEMPORARY VIEW'   ELSE NULL   END  END  WHEN false THEN CASE c.relkind  WHEN 'r' THEN 'TABLE'  WHEN 'i' THEN 'INDEX'  WHEN 'S' THEN 'SEQUENCE'  WHEN 'v' THEN 'VIEW'  WHEN 'c' THEN 'TYPE'  WHEN 'f' THEN 'FOREIGN TABLE'  ELSE NULL  END  ELSE NULL  END  AS TABLE_TYPE, d.description AS REMARKS  FROM pg_catalog.pg_namespace n, pg_catalog.pg_class c  LEFT JOIN pg_catalog.pg_description d ON (c.oid = d.objoid AND d.objsubid = 0)  LEFT JOIN pg_catalog.pg_class dc ON (d.classoid=dc.oid AND dc.relname='pg_class')  LEFT JOIN pg_catalog.pg_namespace dn ON (dn.oid=dc.relnamespace AND dn.nspname='pg_catalog')  WHERE c.relnamespace = n.oid  AND (false  OR ( c.relkind = 'r' AND n.nspname !~ '^pg_' AND n.nspname <> 'information_schema' )  OR ( c.relkind = 'v' AND n.nspname <> 'pg_catalog' AND n.nspname <> 'information_schema' ) )  ORDER BY TABLE_TYPE,TABLE_SCHEM,TABLE_NAME");
 
         private String sql;
         private Pattern pattern;
@@ -325,6 +326,11 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             names = new String[] { "pg_get_viewdef" };
             types = new PostgresType[] { VIEWDEF_PG_TYPE };
             break;
+        case CHARTIO_TABLES:
+            ncols = 5;
+            names = new String[] { "table_cat", "table_schem", "table_name", "table_type", "remarks" };
+            types = new PostgresType[] { IDENT_PG_TYPE, IDENT_PG_TYPE, IDENT_PG_TYPE, LIST_TYPE_PG_TYPE, CHAR0_PG_TYPE };
+            break;
         default:
             return;
         }
@@ -414,6 +420,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             break;
         case PSQL_DESCRIBE_VIEW:
             nrows = psqlDescribeViewQuery(server, messenger, encoder, maxrows, usePVals);
+            break;
+        case CHARTIO_TABLES:
+            nrows = chartioTablesQuery(server, messenger, encoder, maxrows, usePVals);
             break;
         }
         {        
@@ -1104,6 +1113,45 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                     view.getDefinition(), VIEWDEF_PG_TYPE);
         messenger.sendMessage();
         return 1;
+    }
+
+    private int chartioTablesQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+        int nrows = 0;
+        List<Columnar> tables = new ArrayList<>();
+        AkibanInformationSchema ais = server.getAIS();
+        tables.addAll(ais.getUserTables().values());
+        tables.addAll(ais.getViews().values());
+        Iterator<Columnar> iter = tables.iterator();
+        while (iter.hasNext()) {
+            TableName name = iter.next().getName();
+            if (name.getSchemaName().equals(TableName.INFORMATION_SCHEMA) ||
+                name.getSchemaName().equals(TableName.SECURITY_SCHEMA) ||
+                !server.isSchemaAccessible(name.getSchemaName()))
+                iter.remove();
+        }
+        Collections.sort(tables, tablesByName);
+        for (Columnar table : tables) {
+            TableName name = table.getName();
+            messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+            messenger.writeShort(5); // 5 columns for this query
+            writeColumn(messenger, encoder, usePVals, 
+                        null, IDENT_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, 
+                        name.getSchemaName(), IDENT_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, 
+                        name.getTableName(), IDENT_PG_TYPE);
+            String type = table.isView() ? "VIEW" : "TABLE";
+            writeColumn(messenger, encoder, usePVals, 
+                        type, LIST_TYPE_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, 
+                        null, CHAR0_PG_TYPE);
+            messenger.sendMessage();
+            nrows++;
+            if ((maxrows > 0) && (nrows >= maxrows)) {
+                break;
+            }
+        }
+        return nrows;
     }
 
 }
