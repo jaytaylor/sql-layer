@@ -17,24 +17,6 @@
 
 package com.akiban.rest;
 
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.nio.charset.Charset;
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
-
-import org.codehaus.jackson.JsonParseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.akiban.rest.resources.ResourceHelper;
 import com.akiban.server.Quote;
 import com.akiban.server.error.ErrorCode;
@@ -42,6 +24,22 @@ import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.util.AkibanAppender;
+import org.codehaus.jackson.JsonParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.nio.charset.Charset;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class RestResponseBuilder {
     public interface BodyGenerator {

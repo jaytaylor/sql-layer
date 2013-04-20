@@ -20,9 +20,11 @@ package com.akiban.server.service.text;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.persistitadapter.PersistitHKey;
+import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.qp.util.PersistitKey;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.ShareHolder;
 import com.persistit.Key;
@@ -39,6 +41,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexReader;
 
 /** Given <code>Row</code>s in hkey order, create <code>Document</code>s. */
 public class RowIndexer implements Closeable
@@ -50,7 +57,8 @@ public class RowIndexer implements Closeable
     private IndexWriter writer;
     private Document currentDocument;
     private long documentCount;
-    private BytesRef keyBytes;
+    //private BytesRef keyBytes;
+    private String keyEncodedString;
     private boolean updating;
     
     private static final Logger logger = LoggerFactory.getLogger(RowIndexer.class);
@@ -134,10 +142,21 @@ public class RowIndexer implements Closeable
         return documentCount;
     }
 
+    protected void updateDocument(Cursor cursor, byte hkeyBytes[]) throws IOException
+    {
+        if (indexRows(cursor) == 0)
+        {
+            String encoded = encodeBytes(hkeyBytes, 0, hkeyBytes.length);
+            writer.deleteDocuments(new Term(IndexedField.KEY_FIELD, encoded));
+            logger.debug("Deleted documents with encoded byptes: " + encoded);
+        }
+    }
+
     protected void addDocument() throws IOException {
         if (currentDocument != null) {
             if (updating) {
-                writer.updateDocument(new Term(IndexedField.KEY_FIELD, keyBytes), 
+                
+                writer.updateDocument(new Term(IndexedField.KEY_FIELD, keyEncodedString), 
                                       currentDocument);
                 logger.debug("Updated {}", currentDocument);
             }
@@ -152,8 +171,8 @@ public class RowIndexer implements Closeable
 
     protected void getKeyBytes(Row row) {
         Key key = ((PersistitHKey)row.hKey()).key();
-        keyBytes = new BytesRef(key.getEncodedBytes(), 0, key.getEncodedSize());
-        Field field = new StoredField(IndexedField.KEY_FIELD, keyBytes);
+        keyEncodedString = encodeBytes(key.getEncodedBytes(), 0, key.getEncodedSize());
+        Field field = new StringField(IndexedField.KEY_FIELD, keyEncodedString, Store.YES);
         currentDocument.add(field);
     }
 
@@ -164,6 +183,18 @@ public class RowIndexer implements Closeable
             Field field = indexedField.getField(value);
             currentDocument.add(field);
         }
+    }
+
+    static String encodeBytes(byte bytes[], int offset, int length)
+    {
+        // TODO: needs to be more efficient?
+        String ret = Base64.encodeBase64String(Arrays.copyOfRange(bytes, offset, length));
+        return ret;
+    }
+    
+    static byte[] decodeString(String st)
+    {
+        return Base64.decodeBase64(st);
     }
 
     @Override
