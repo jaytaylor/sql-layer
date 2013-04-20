@@ -200,7 +200,6 @@ public class EndpointMetadata {
         EndpointMetadata em = new EndpointMetadata();
         em.schemaName = schema;
         em.routineName = routineName;
-        em.inParams = new ParamMetadata[0];
         
         Tokenizer tokens = new Tokenizer(specification, ",= ");
 

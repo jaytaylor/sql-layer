@@ -18,8 +18,14 @@
 package com.akiban.rest.resources;
 
 import static com.akiban.rest.resources.ResourceHelper.JSONP_ARG_NAME;
+import static com.akiban.rest.resources.ResourceHelper.checkSchemaAccessible;
+import static com.akiban.rest.resources.ResourceHelper.checkTableAccessible;
+import static com.akiban.util.JsonUtils.createJsonGenerator;
 
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DELETE;
@@ -59,6 +65,8 @@ public class DirectResource {
     private final static String SCHEMA_ARG_NAME = "schema";
     private final static String LANGUAGE = "language";
     private final static String FUNCTIONS = "functions";
+
+
 
     private final ResourceRequirements reqs;
 
@@ -210,8 +218,7 @@ public class DirectResource {
                 try (Session session = reqs.sessionService.createSession();
                         TransactionService.CloseableTransaction txn = reqs.transactionService
                                 .beginCloseableTransaction(session)) {
-                    reqs.directService
-                            .reportStoredProcedures(writer, request, schema, procName, session, functionsOnly);
+                    reqs.directService.reportStoredProcedures(writer, request, schema, procName, session, functionsOnly);
                     txn.commit();
                 }
             }
@@ -225,6 +232,7 @@ public class DirectResource {
         final TableName procName = ResourceHelper.parseTableName(request, proc);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
         final MediaType[] responseType = new MediaType[1];
+
         return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
             @Override
             public void write(PrintWriter writer) throws Exception {
@@ -241,6 +249,7 @@ public class DirectResource {
         final TableName procName = ResourceHelper.parseTableName(request, proc);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
         final MediaType[] responseType = new MediaType[1];
+
         return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
             @Override
             public void write(PrintWriter writer) throws Exception {
@@ -248,7 +257,6 @@ public class DirectResource {
                         uri.getQueryParameters(), content, responseType);
             }
         }).build(responseType[0]);
-
     }
 
     @PUT
@@ -258,6 +266,7 @@ public class DirectResource {
         final TableName procName = ResourceHelper.parseTableName(request, proc);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
         final MediaType[] responseType = new MediaType[1];
+
         return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
             @Override
             public void write(PrintWriter writer) throws Exception {
@@ -274,6 +283,7 @@ public class DirectResource {
         final TableName procName = ResourceHelper.parseTableName(request, proc);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
         final MediaType[] responseType = new MediaType[1];
+
         return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
             @Override
             public void write(PrintWriter writer) throws Exception {
