@@ -601,7 +601,8 @@ public class DirectServiceImpl implements Service, DirectService {
                     list.add(em);
                 }
             } catch (Exception e) {
-                throw new RegistrationException("Invalid function specification: " + spec, e);
+                String msg = e instanceof IllegalArgumentException ? e.getMessage() : "";
+                throw new RegistrationException("Invalid function specification: " + spec + " - " + msg, e);
             }
         }
     }

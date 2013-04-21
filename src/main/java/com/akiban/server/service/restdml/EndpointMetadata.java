@@ -200,7 +200,7 @@ public class EndpointMetadata {
         EndpointMetadata em = new EndpointMetadata();
         em.schemaName = schema;
         em.routineName = routineName;
-        
+
         Tokenizer tokens = new Tokenizer(specification, ",= ");
 
         while (tokens.hasMore()) {
@@ -752,7 +752,7 @@ public class EndpointMetadata {
             return a.equals(b);
         }
     }
-    
+
     private void validate() {
         notNull(schemaName, "schema name");
         notNull(routineName, "routine name");
@@ -762,7 +762,7 @@ public class EndpointMetadata {
         notNull(inParams, "'in='");
         notNull(outParam, "'out='");
     }
-    
+
     private void notNull(final Object v, final String name) {
         if (v == null) {
             throw new IllegalArgumentException(name + " not specified in " + toString());
@@ -777,11 +777,15 @@ public class EndpointMetadata {
             append(sb, pattern.toString());
         }
         append(sb, " ", FUNCTION, "=", function, " ", IN, "=(");
-        for (int index = 0; index < inParams.length; index++) {
-            if (index > 0) {
-                sb.append(", ");
+        if (inParams == null) {
+            sb.append("null");
+        } else {
+            for (int index = 0; index < inParams.length; index++) {
+                if (index > 0) {
+                    sb.append(", ");
+                }
+                sb.append(inParams[index]);
             }
-            sb.append(inParams[index]);
         }
         append(sb, ") ", OUT, "=");
         if (outParam == null) {
