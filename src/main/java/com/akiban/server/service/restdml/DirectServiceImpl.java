@@ -354,7 +354,9 @@ public class DirectServiceImpl implements Service, DirectService {
                     return;
                 } catch (RollbackException e) {
                     if (repeat == 0) {
-                        throw e;
+                        LOG.error("Transaction failed " + TRANSACTION_RETRY_COUNT + " times: "
+                                + request.getRequestURI());
+                        throw new WebApplicationException(HttpStatus.SC_INTERNAL_SERVER_ERROR);
                     }
                 } catch (RegistrationException e) {
                     throw new ScriptLibraryRegistrationException(e);
