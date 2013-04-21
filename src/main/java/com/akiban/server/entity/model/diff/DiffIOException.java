@@ -19,6 +19,11 @@ package com.akiban.server.entity.model.diff;
 
 public class DiffIOException extends RuntimeException
 {
+
+    public DiffIOException(String message) {
+        super(message);
+    }
+
     public DiffIOException (Throwable cause)
     {
         super(cause);

@@ -17,40 +17,76 @@
 
 package com.akiban.server.entity.model;
 
-import com.google.common.collect.BiMap;
-
-import java.util.Set;
-
-public abstract class AbstractEntityVisitor implements EntityVisitor<RuntimeException> {
+public abstract class AbstractEntityVisitor implements EntityVisitor {
     @Override
-    public void visitEntity(String name, Entity entity) {
+    public void enterTopEntity(Entity entity) {
+        visitEntityInternal(entity);
     }
 
     @Override
-    public void leaveEntity() {
+    public void leaveTopEntity() {
+        leaveEntity();
     }
 
     @Override
-    public void visitScalar(String name, Attribute scalar) {
+    public void enterCollections() {
     }
 
     @Override
-    public void visitCollection(String name, Attribute collection) {
+    public void enterCollection(EntityCollection collection) {
+        visitEntityInternal(collection);
     }
 
     @Override
     public void leaveCollection() {
+        leaveEntity();
     }
 
     @Override
-    public void leaveEntityAttributes() {
+    public void leaveCollections() {
     }
 
-    @Override
-    public void visitEntityValidations(Set<Validation> validations) {
+    /**
+     * Visits any entity, regardless of whether it's top-level or a collection.
+     * This is invoked from {@linkplain #enterTopEntity} and {@linkplain #enterCollection}, so if you use this
+     * method and override either of those, make sure to invoke <tt>super</tt> within the override.
+     * @param entity the entity to visit
+     */
+    protected void visitEntity(Entity entity) {
     }
 
-    @Override
-    public void visitIndexes(BiMap<String, EntityIndex> indexes) {
+    /**
+     * Visits any EntityElement: entities, collections and fields.
+     * This is invoked from {@linkplain #enterTopEntity} and {@linkplain #enterCollection}, so if you use this
+     * method and override either of those, make sure to invoke <tt>super</tt> within the override.
+     * @param element the entity to visit
+     */
+    protected void visitEntityElement(EntityElement element) {
+    }
+
+    /**
+     * Leaves any entity, regardless of whether it's top-level or a collection.
+     * This is invoked from {@linkplain #leaveTopEntity} and {@linkplain #leaveCollection}, so if you use this
+     * method and override either of those, make sure to invoke <tt>super</tt> within the override.
+     */
+    protected void leaveEntity() {
+    }
+
+    protected void visitEntityField(EntityField field) {
+    }
+
+    /**
+     * Default visiting of an entity. We could have also just had this be the default implementation of
+     * {@linkplain #visitEntity}, but then the API gets a bit more complicated in terms of which methods you can
+     * and can't override (without calling super).
+     * @param entity
+     */
+    private void visitEntityInternal(Entity entity) {
+        visitEntityElement(entity);
+        visitEntity(entity);
+        for (EntityField field : entity.getFields()) {
+            visitEntityElement(field);
+            visitEntityField(field);
+        }
     }
 }

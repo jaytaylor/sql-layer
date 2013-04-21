@@ -35,9 +35,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response.Status;
 
-import org.codehaus.jackson.JsonNode;
-
 import com.akiban.ais.model.TableName;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Easy access to the server version
@@ -90,7 +89,7 @@ public class EndpointMetadata {
         case EndpointMetadata.X_TYPE_INT:
             if (v instanceof JsonNode) {
                 if (((JsonNode) v).isInt()) {
-                    return ((JsonNode) v).getIntValue();
+                    return ((JsonNode) v).intValue();
                 } else {
                     break;
                 }
@@ -101,7 +100,7 @@ public class EndpointMetadata {
         case EndpointMetadata.X_TYPE_LONG:
             if (v instanceof JsonNode) {
                 if (((JsonNode) v).isLong()) {
-                    return ((JsonNode) v).getLongValue();
+                    return ((JsonNode) v).longValue();
                 } else {
                     break;
                 }
@@ -112,7 +111,7 @@ public class EndpointMetadata {
         case EndpointMetadata.X_TYPE_FLOAT:
             if (v instanceof JsonNode) {
                 if (((JsonNode) v).isFloatingPointNumber()) {
-                    return ((JsonNode) v).getNumberValue().floatValue();
+                    return ((JsonNode) v).numberValue().floatValue();
                 } else {
                     break;
                 }
@@ -123,7 +122,7 @@ public class EndpointMetadata {
         case EndpointMetadata.X_TYPE_DOUBLE:
             if (v instanceof JsonNode) {
                 if (((JsonNode) v).isNumber()) {
-                    return ((JsonNode) v).getNumberValue().doubleValue();
+                    return ((JsonNode) v).numberValue().doubleValue();
                 } else {
                     break;
                 }
@@ -151,7 +150,7 @@ public class EndpointMetadata {
     private static String asString(ParamMetadata pm, Object v) {
         if (v instanceof JsonNode) {
             if (((JsonNode) v).isTextual()) {
-                return ((JsonNode) v).getTextValue();
+                return ((JsonNode) v).textValue();
             } else {
                 throw new IllegalArgumentException("JsonNode " + v + " is not textual");
             }

@@ -1,22 +1,31 @@
 {
-    "entities" : {
-        "customers" : {
-            "entity" : null,
-            "attributes" : {
-                "name" : {
-                    "scalar" : null,
-                    "type" : "varchar"
-                },
-                "orders" : {
-                    "collection" : null,
-                    "attributes" : {
-                        "placed" : {
-                            "scalar" : null,
-                            "type" : "date"
-                        }
-                    }
+    "entities": [
+        {
+            "fields": [
+                {
+                    "type": "varchar",
+                    "name": "name",
+                    "uuid": null
                 }
-            }
+            ],
+            "collections": [
+                {
+                    "fields": [
+                        {
+                            "type": "date",
+                            "name": "placed",
+                            "uuid": null
+                        }
+                    ],
+                    "name": "orders",
+                    "uuid": null
+                }
+            ],
+            "name": "customers",
+            "uuid": null
         }
-    }
+    ]
 }
+
+
+

@@ -32,7 +32,7 @@ import com.akiban.server.entity.fromais.AisToSpace;
 import com.akiban.server.entity.model.Space;
 import com.akiban.server.entity.model.diff.JsonDiffPreview;
 import com.akiban.server.service.session.Session;
-import org.codehaus.jackson.JsonNode;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -199,13 +199,12 @@ public final class ModelResource {
                             // Cannot have transaction when attempting to perform DDL
                             Space curSpace = spaceForAIS(session, schema);
                             Space newSpace = Space.create(new InputStreamReader(postInput), Space.randomUUIDs);
-                            SpaceDiff diff = new SpaceDiff(curSpace, newSpace);
 
                             boolean success = true;
                             JsonDiffPreview jsonSummary = new JsonDiffPreview(writer);
                             if(doApply) {
                                 DDLBasedSpaceModifier modifier = new DDLBasedSpaceModifier(reqs.dxlService.ddlFunctions(), session, schema, newSpace);
-                                diff.apply(modifier);
+                                SpaceDiff.apply(curSpace, newSpace, modifier);
                                 if(modifier.hadError()) {
                                     success = false;
                                     for(String err : modifier.getErrors()) {
@@ -213,10 +212,10 @@ public final class ModelResource {
                                     }
                                 }
                                 // re-create the diff against the new AIS
-                                diff = new SpaceDiff(curSpace, spaceForAIS(session, schema));
+                                newSpace = spaceForAIS(session, schema);
                             }
                             if(success) {
-                                diff.apply(jsonSummary);
+                                SpaceDiff.apply(curSpace, newSpace, jsonSummary);
                             }
                             if (doApply)
                                 jsonSummary.describeModifiedEntities();

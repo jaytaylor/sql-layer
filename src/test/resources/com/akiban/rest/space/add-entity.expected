@@ -5,12 +5,11 @@
         "uuid": "42c90072-773a-11e2-a740-980e7188419e"
     },
     {
-        "modified_entities": {
-            "an_entity": {
-                "attributes": {
-                    "id": {
-                        "scalar": "55dd742c-773a-11e2-8617-1cd2f046605f",
-                        "validation": [
+        "modified_entities": [
+            {
+                "fields": [
+                    {
+                        "validations": [
                             {
                                 "required": true
                             },
@@ -19,11 +18,16 @@
                             }
                         ],
                         "type": "integer",
-                        "spinal_pos": 0
+                        "name": "id",
+                        "uuid": "55dd742c-773a-11e2-8617-1cd2f046605f"
                     }
-                },
-                "entity": "42c90072-773a-11e2-a740-980e7188419e"
+                ],
+                "identifying": [
+                    "id"
+                ],
+                "name": "an_entity",
+                "uuid": "42c90072-773a-11e2-a740-980e7188419e"
             }
-        }
+        ]
     }
 ]

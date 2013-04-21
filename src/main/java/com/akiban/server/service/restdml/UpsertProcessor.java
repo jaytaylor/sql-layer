@@ -21,8 +21,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
-import org.codehaus.jackson.JsonNode;
-
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CacheValueGenerator;
 import com.akiban.ais.model.Column;
@@ -50,6 +48,7 @@ import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.util.AkibanAppender;
+import com.fasterxml.jackson.databind.JsonNode;
 
 public class UpsertProcessor extends DMLProcessor {
 
@@ -110,7 +109,7 @@ public class UpsertProcessor extends DMLProcessor {
         
         PrimaryKey pkIndex = context.table.getPrimaryKey();
         int pkFields = 0;
-        Iterator<Entry<String,JsonNode>> i = node.getFields();
+        Iterator<Entry<String,JsonNode>> i = node.fields();
         while (i.hasNext()) {
             Entry<String,JsonNode> field =i.next();
             if (field.getValue().isContainerNode()) {
@@ -144,15 +143,20 @@ public class UpsertProcessor extends DMLProcessor {
         Operator plan = generator.generateAncestorPlan(context.table);
         Cursor cursor = null;
         try {
-            cursor = API.cursor(plan, context.queryContext);
 
             PValue pvalue = new PValue(MString.varchar());
             int i = 0;
             for (Column column : context.table.getPrimaryKey().getColumns()) {
+                // bug 1169995 - a null value in the PK won't match anything,
+                // return null to force the insert. 
+                if (context.allValues.get(column) == null) {
+                    return null;
+                }
                 pvalue.putString(context.allValues.get(column), null);
                 context.queryContext.setPValue(i, pvalue);
                 i++;
             }
+            cursor = API.cursor(plan, context.queryContext);
             cursor.open();
             return cursor.next();
         } finally {

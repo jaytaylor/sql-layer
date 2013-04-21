@@ -22,7 +22,7 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.codehaus.jackson.JsonNode;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -119,7 +119,7 @@ public final class EntityParser {
             columnsAdded = true;
         }
 
-        Iterator<Entry<String,JsonNode>> i = node.getFields();
+        Iterator<Entry<String,JsonNode>> i = node.fields();
         while (i.hasNext()) {
             Entry<String,JsonNode> field = i.next();
             if (field.getValue().isValueNode()) {
@@ -135,7 +135,7 @@ public final class EntityParser {
         }
         // pass 2: insert the child nodes
         boolean first = true;
-        i = node.getFields();
+        i = node.fields();
         while (i.hasNext()) {
             Entry<String,JsonNode> field = i.next();
             if (field.getValue().isContainerNode()) {

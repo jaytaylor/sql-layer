@@ -20,12 +20,16 @@ package com.akiban.server.service.text;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.FullTextIndex;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.row.HKeyRow;
 import com.akiban.qp.rowtype.HKeyRowType;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
@@ -50,7 +54,8 @@ public class FullTextIndexInfo
     private Map<Column,IndexedField> fieldsByColumn;
     private Map<RowType,List<IndexedField>> fieldsByRowType;
     private String defaultFieldName;
-
+    private Operator plan;
+    
     public FullTextIndexInfo(FullTextIndexShared shared) {
         this.shared = shared;
     }
@@ -63,7 +68,9 @@ public class FullTextIndexInfo
         }
         index = table.getFullTextIndex(name.getName());
         if (index == null) {
-            throw new NoSuchIndexException(name.getName());
+            NoSuchIndexException ret =  new NoSuchIndexException(name.getName());
+            ret.printStackTrace();
+            throw ret;
         }
         schema = SchemaCache.globalSchema(ais);
         indexedRowType = schema.userTableRowType(table);
@@ -87,6 +94,8 @@ public class FullTextIndexInfo
             }
             fields.add(entry.getValue());
         }
+        
+        plan = computePlan();
     }
 
     public FullTextIndex getIndex() {
@@ -137,6 +146,74 @@ public class FullTextIndexInfo
         Operator plan = API.groupScan_Default(indexedRowType.userTable().getGroup());
         Set<RowType> rowTypes = getRowTypes();
         plan = API.filter_Default(plan, rowTypes);
+        return plan;
+    }
+    
+    
+    
+    private Operator computePlan()
+    {
+        Operator ret = null;
+
+        Group group = indexedRowType.userTable().getGroup();
+        Set<UserTableRowType> ancestors = new HashSet<>();
+        boolean hasDesc = false;
+
+        for (IndexColumn ic : index.getKeyColumns())
+        {
+            UserTable colUserTable = ic.getColumn().getUserTable();
+
+            if (!hasDesc && !colUserTable.equals(indexedRowType.userTable()))
+                // if any column in the index def belongs to a table
+                // that is a descendant of this indexed row's table
+                // (meaning this indexed row has descendant(s))
+                hasDesc = colUserTable.isDescendantOf(indexedRowType.userTable());
+            
+            // if the indexed table is a child of this column's table
+            // (meaning this indexed row has parent(s))
+            // collect all ancestor's rowtype
+            if (indexedRowType.userTable().isDescendantOf(colUserTable))
+                ancestors.add(schema.userTableRowType(colUserTable));
+        }
+
+        if (hasDesc)
+        {
+            ancestors.remove(indexedRowType);
+
+            ret = API.branchLookup_Nested(group, 
+                                           hKeyRowType,
+                                           indexedRowType,
+                                           API.InputPreservationOption.DISCARD_INPUT,
+                                           0);
+            if (!ancestors.isEmpty())
+            {
+                
+                ret = API.ancestorLookup_Default(ret,
+                                                 group,
+                                                 indexedRowType, 
+                                                 ancestors, 
+                                                 API.InputPreservationOption.KEEP_INPUT);
+            }
+        }
+        else
+        {
+            // has at least one ancestor (which is itself)
+            ancestors.add(indexedRowType);
+            ret = API.ancestorLookup_Nested(group,
+                                            hKeyRowType,
+                                            ancestors,
+                                            0);
+        }
+          
+        return ret;
+    }
+    /**
+     * 
+     * @param row
+     * @return the operator plan to get to every row related to this index row
+     */
+    public Operator getOperator()
+    {
         return plan;
     }
 

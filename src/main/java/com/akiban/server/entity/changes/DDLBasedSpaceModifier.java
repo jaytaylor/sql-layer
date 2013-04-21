@@ -20,14 +20,13 @@ package com.akiban.server.entity.changes;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Join;
-import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.NopVisitor;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.TableChange;
 import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.entity.model.Attribute;
 import com.akiban.server.entity.model.Entity;
+import com.akiban.server.entity.model.EntityCollection;
 import com.akiban.server.entity.model.EntityIndex;
 import com.akiban.server.entity.model.Space;
 import com.akiban.server.entity.model.Validation;
@@ -35,39 +34,34 @@ import com.akiban.server.service.session.Session;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class DDLBasedSpaceModifier implements SpaceModificationHandler {
+public class DDLBasedSpaceModifier extends AbstractSpaceModificationHandler {
     private final DDLFunctions ddlFunctions;
     private final Session session;
     private final String schemaName;
-    private final SpaceLookups newSpaceLookup;
     private final AkibanInformationSchema oldAIS;
     private final AkibanInformationSchema newAIS;
     private final List<String> errors = new ArrayList<>();
 
     // Per entity change information. Tracked after beginEntity() and executed in endEntity()
-    private final List<UserTable> dropTables = new ArrayList<>();
     private final List<String> dropGroupIndexes = new ArrayList<>();
-    private final List<UserTable> newTables = new ArrayList<>();
     private final List<Index> newGroupIndexes = new ArrayList<>();
     private final Map<String,TableChangeInfo> tableChanges = new HashMap<>();
 
     // Current entity being visited.
-    private Entity entity;
-    private String entityOldName;
-    private AttributeLookups oldLookups;
-    private AttributeLookups newLookups;
+    private int level;
+    private Entity oldEntity;
+    private Entity newEntity;
+    private Entity oldTopEntity;
 
 
     public DDLBasedSpaceModifier(DDLFunctions ddlFunctions, Session session, String schemaName, Space newSpace) {
         this.ddlFunctions = ddlFunctions;
         this.session = session;
         this.schemaName = schemaName;
-        this.newSpaceLookup = new SpaceLookups(newSpace);
         this.oldAIS = ddlFunctions.getAIS(session);
         EntityToAIS eToAIS = new EntityToAIS(schemaName);
         newSpace.visit(eToAIS);
@@ -91,141 +85,90 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     //
 
     @Override
-    public void addEntity(Entity newEntity, String name) {
-        UserTable newRoot = newAIS.getUserTable(schemaName, name);
-        createTableRecursively(newRoot);
-        if(!newRoot.getGroup().getIndexes().isEmpty()) {
-            ddlFunctions.createIndexes(session, newRoot.getGroup().getIndexes());
+    public void addEntity(Entity newEntity) {
+        if (newEntity instanceof EntityCollection) {
+            UserTable table = newAIS.getUserTable(schemaName, newEntity.getName());
+            createTableRecursively(table);
         }
-    }
-
-    @Override
-    public void dropEntity(Entity dropped, String oldName) {
-        ddlFunctions.dropGroup(session, new TableName(schemaName, oldName));
-    }
-
-    @Override
-    public void beginEntity(Entity entity, String name) {
-        this.entity = entity;
-        entityOldName = name;
-    }
-
-    @Override
-    public void renameEntity(UUID entityUuid, String oldName) {
-        assert entity.uuid().equals(entityUuid);
-        entityOldName = oldName;
-        String newName = newSpaceLookup.getName(entityUuid);
-        trackTableRename(oldName, newName);
-    }
-
-    @Override
-    public void beginAttributes(AttributeLookups oldLookups, AttributeLookups newLookups) {
-        this.oldLookups = oldLookups;
-        this.newLookups = newLookups;
-        // TODO: This goes away with entity.json refactoring as all columns are present
-        // The child side of the joins are hidden in entity.json. Find the old ones and copy the UUIds to the new table.
-        for(Attribute oldAttr : oldLookups.getAttributesByUuid().values()) {
-            Attribute newAttr = newLookups.attributeFor(oldAttr.getUUID());
-            if(newAttr != null &&
-               oldAttr.getAttributeType() == Attribute.AttributeType.COLLECTION &&
-               newAttr.getAttributeType() == Attribute.AttributeType.COLLECTION) {
-                UserTable oldTable = oldAIS.getUserTable(schemaName, oldLookups.nameFor(oldAttr.getUUID()));
-                UserTable newTable = newAIS.getUserTable(schemaName, newLookups.nameFor(newAttr.getUUID()));
-                Join oldJoin = oldTable.getParentJoin();
-                Join newJoin = newTable.getParentJoin();
-                Iterator<JoinColumn> oldIt = oldJoin.getJoinColumns().iterator();
-                Iterator<JoinColumn> newIt = newJoin.getJoinColumns().iterator();
-                while(oldIt.hasNext() && newIt.hasNext()) {
-                    newIt.next().getChild().setUuid(oldIt.next().getChild().getUuid());
-                }
+        else {
+            UserTable newRoot = newAIS.getUserTable(schemaName, newEntity.getName());
+            createTableRecursively(newRoot);
+            if(!newRoot.getGroup().getIndexes().isEmpty()) {
+                ddlFunctions.createIndexes(session, newRoot.getGroup().getIndexes());
             }
         }
     }
 
     @Override
-    public void addAttribute(UUID attributeUuid) {
-        UUID parent = newLookups.getParentAttribute(attributeUuid);
-        Attribute attr = newLookups.attributeFor(attributeUuid);
-        String attrName = newLookups.nameFor(attributeUuid);
-        switch(attr.getAttributeType()) {
-            case SCALAR:
-                trackColumnChange(getParentName(parent), TableChange.createAdd(attrName));
-            break;
-            case COLLECTION:
-                newTables.add(newAIS.getUserTable(schemaName, attrName));
-            break;
-            default:
-                unknownAttributeType(attr);
+    public void dropEntity(Entity dropped) {
+        if (dropped instanceof EntityCollection) {
+            UserTable table = ddlFunctions.getUserTable(session, new TableName(schemaName, dropped.getName()));
+            dropTableRecursively(table);
+        }
+        else {
+            ddlFunctions.dropGroup(session, new TableName(schemaName, dropped.getName()));
         }
     }
 
     @Override
-    public void dropAttribute(Attribute dropped) {
-        UUID parent = oldLookups.getParentAttribute(dropped.getUUID());
-        String oldName = oldLookups.nameFor(dropped.getUUID());
-        switch(dropped.getAttributeType()) {
-            case SCALAR:
-                trackColumnChange(getParentName(parent), TableChange.createDrop(oldName));
-            break;
-            case COLLECTION:
-                dropTables.add(ddlFunctions.getUserTable(session, new TableName(schemaName, oldName)));
-            break;
-            default:
-                unknownAttributeType(dropped);
+    public void beginEntity(Entity oldEntity, Entity newEntity) {
+        if (level++ == 0) {
+            assert oldTopEntity == null : oldEntity;
+            oldTopEntity = oldEntity;
         }
+        this.oldEntity = oldEntity;
+        this.newEntity = newEntity;
     }
 
     @Override
-    public void renameAttribute(UUID attributeUuid, String oldName) {
-        UUID parent = newLookups.getParentAttribute(attributeUuid);
-        Attribute attr = newLookups.attributeFor(attributeUuid);
-        String newName = newLookups.nameFor(attributeUuid);
-        switch(attr.getAttributeType()) {
-            case SCALAR:
-                trackColumnChange(getParentName(parent), TableChange.createModify(oldName, newName));
-            break;
-            case COLLECTION:
-                trackTableRename(oldName, newName);
-            break;
-            default:
-                unknownAttributeType(attr);
-        }
+    public void renameEntity() {
+        trackTableRename(oldEntity.getName(), newEntity.getName());
     }
 
     @Override
-    public void changeScalarType(UUID scalarUuid, Attribute afterChange) {
-        trackColumnModify(scalarUuid);
+    public void addField(UUID added) {
+        String name = getFieldName(added, newEntity);
+        trackColumnChange(newEntity.getName(), TableChange.createAdd(name));
     }
 
     @Override
-    public void changeScalarValidations(UUID scalarUuid, Attribute afterChange) {
-        trackColumnModify(scalarUuid);
+    public void dropField(UUID dropped) {
+        String oldName = getFieldName(dropped, oldEntity);
+        trackColumnChange(oldEntity.getName(), TableChange.createDrop(oldName));
     }
 
     @Override
-    public void changeScalarProperties(UUID scalarUuid, Attribute afterChange) {
-        trackColumnModify(scalarUuid);
+    public void renameField(UUID fieldUuid) {
+        String oldName = getFieldName(fieldUuid, oldEntity);
+        String newName = getFieldName(fieldUuid, newEntity);
+        trackColumnChange(oldEntity.getName(), TableChange.createModify(oldName, newName));
     }
 
     @Override
-    public void endAttributes() {
-        oldLookups = null;
-        newLookups = null;
+    public void fieldOrderChanged(UUID fieldUuid) {
+        String oldName = getFieldName(fieldUuid, oldEntity);
+        String newName = getFieldName(fieldUuid, newEntity);
+        trackColumnChange(oldEntity.getName(), TableChange.createModify(oldName, newName));
     }
 
     @Override
-    public void addEntityValidation(Validation validation) {
-        errors.add("Adding entity validations is not yet supported: " + validation);
+    public void changeFieldType(UUID fieldUuid) {
+        trackColumnModify(fieldUuid);
     }
 
     @Override
-    public void dropEntityValidation(Validation validation) {
-        errors.add("Dropping entity validations is not yet supported: " + validation);
+    public void changeFieldValidations(UUID fieldUuid) {
+        trackColumnModify(fieldUuid);
+    }
+
+    @Override
+    public void changeFieldProperties(UUID fieldUuid) {
+        trackColumnModify(fieldUuid);
     }
 
     @Override
     public void addIndex(String name) {
-        String entityName = newSpaceLookup.getName(entity.uuid());
+        String entityName = newEntity.getName();
         UserTable rootTable = newAIS.getUserTable(schemaName, entityName);
         Index candidate = findOneIndex(rootTable, name);
         if(candidate.isGroupIndex()) {
@@ -237,8 +180,8 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     }
 
     @Override
-    public void dropIndex(String name, EntityIndex index) {
-        UserTable oldTable = oldAIS.getUserTable(schemaName, entityOldName);
+    public void dropIndex(String name) {
+        UserTable oldTable = oldAIS.getUserTable(schemaName, oldEntity.getName());
         Index candidate = findOneIndex(oldTable, name);
         if(candidate.isGroupIndex()) {
             dropGroupIndexes.add(name);
@@ -249,28 +192,19 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     }
 
     @Override
-    public void renameIndex(EntityIndex index, String oldName, String newName) {
-        errors.add("Renaming index is not yet supported: " + oldName + "=>" + newName);
-    }
-
-    @Override
     public void endEntity() {
+        if (--level != 0)
+            return;
         if(!errors.isEmpty()) {
             resetPerEntityData();
             return;
         }
 
         if(!dropGroupIndexes.isEmpty()) {
-            TableName oldGroupName = new TableName(schemaName, entityOldName);
+            TableName oldGroupName = new TableName(schemaName, oldTopEntity.getName());
             ddlFunctions.dropGroupIndexes(session, oldGroupName, dropGroupIndexes);
         }
-        for(UserTable table : dropTables) {
-            dropTableRecursively(table);
-        }
-        for(UserTable table : newTables) {
-            createTableRecursively(table);
-        }
-        UserTable oldRoot = oldAIS.getUserTable(schemaName, entityOldName);
+        UserTable oldRoot = oldAIS.getUserTable(schemaName, oldTopEntity.getName());
         oldRoot.traverseTableAndDescendants(new NopVisitor() {
             @Override
             public void visitUserTable(UserTable table) {
@@ -320,17 +254,15 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
         return changeSet;
     }
 
-    private String getParentName(UUID parentUuid) {
-        return (parentUuid == null) ? entityOldName : oldLookups.nameFor(parentUuid);
+    private static String getFieldName(UUID fieldUuid, Entity entity) {
+        return entity.fieldsByUuid().get(fieldUuid).getName();
     }
 
     private void resetPerEntityData() {
-        entity = null;
-        entityOldName = null;
-        newLookups = null;
-        dropTables.clear();
+        oldTopEntity = null;
+        oldEntity = null;
+        newEntity = null;
         dropGroupIndexes.clear();
-        newTables.clear();
         newGroupIndexes.clear();
         tableChanges.clear();
     }
@@ -340,10 +272,9 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     }
 
     private void trackColumnModify(UUID columnUuid) {
-        UUID parent = newLookups.getParentAttribute(columnUuid);
-        String oldName = oldLookups.nameFor(columnUuid);
-        String newName = newLookups.nameFor(columnUuid);
-        trackColumnChange(getParentName(parent), TableChange.createModify(oldName, newName));
+        String oldName = getFieldName(columnUuid, oldEntity);
+        String newName = getFieldName(columnUuid, newEntity);
+        trackColumnChange(oldEntity.getName(), TableChange.createModify(oldName, newName));
     }
 
     private void trackIndexChange(String tableName, TableChange indexChange) {
@@ -376,11 +307,6 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
         }
         return candidates.get(0);
     }
-
-    private static void unknownAttributeType(Attribute a) {
-        throw new IllegalStateException("Unknown attribute type: " + a);
-    }
-
 
     private static class TableChangeInfo {
         public String newName;

@@ -17,18 +17,17 @@
 
 package com.akiban.server.service.restdml;
 
+import com.akiban.ais.model.IndexName;
+import com.akiban.ais.model.TableName;
+import com.fasterxml.jackson.databind.JsonNode;
+
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
-
-import org.codehaus.jackson.JsonNode;
-
-import com.akiban.ais.model.IndexName;
-import com.akiban.ais.model.TableName;
 import com.akiban.server.service.session.Session;
 
 public interface RestDMLService {
@@ -51,8 +50,6 @@ public interface RestDMLService {
                               TableName procName, Map<String,List<String>> queryParams, String content) throws SQLException;
 
     public void fullTextSearch(PrintWriter writer, IndexName indexName, Integer depth, String query, Integer limit);
-    // TODO: Temporary.
-    public void refreshFullTextIndex(PrintWriter writer, IndexName indexName);
 
     public String jonquilToSQL(TableName tableName, String jonquil) throws IOException;
 }
