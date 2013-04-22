@@ -18,10 +18,10 @@
 package com.akiban.rest.resources;
 
 import com.akiban.ais.model.TableName;
-import com.akiban.http.SimpleHandlerList;
 import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
 import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.Tap;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javax.servlet.http.HttpServletRequest;
@@ -53,12 +53,12 @@ import static com.akiban.util.JsonUtils.readTree;
 @Path("/entity/{entity}")
 public class EntityResource {
     private final ResourceRequirements reqs;
-    private static final InOutTap ENTITY_GET = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: entity GET");
-    private static final InOutTap ENTITY_POST = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: entity POST");
-    private static final InOutTap ENTITY_PUT = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: entity PUT");
-    private static final InOutTap ENTITY_DELETE = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: entity DELETE");
-    private static final InOutTap ENTITY_PATCH = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: entity PATCH");
-    private static final InOutTap ENTITY_JONQUIL = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: entity jonquil");
+    private static final InOutTap ENTITY_GET = Tap.createTimer("rest: entity GET");
+    private static final InOutTap ENTITY_POST = Tap.createTimer("rest: entity POST");
+    private static final InOutTap ENTITY_PUT = Tap.createTimer("rest: entity PUT");
+    private static final InOutTap ENTITY_DELETE = Tap.createTimer("rest: entity DELETE");
+    private static final InOutTap ENTITY_PATCH = Tap.createTimer("rest: entity PATCH");
+    private static final InOutTap ENTITY_JONQUIL = Tap.createTimer("rest: entity jonquil");
     
     public EntityResource(ResourceRequirements reqs) {
         this.reqs = reqs;

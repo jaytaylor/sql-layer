@@ -36,17 +36,17 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 import com.akiban.ais.model.TableName;
-import com.akiban.http.SimpleHandlerList;
 import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.Tap;
 
 @Path("/view/{view}")
 
 public class ViewResource {
     private final ResourceRequirements reqs;
-    private static final InOutTap VIEW_GET = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: view GET");
+    private static final InOutTap VIEW_GET = Tap.createTimer("rest: view GET");
     
     public ViewResource(ResourceRequirements reqs) {
         this.reqs = reqs;

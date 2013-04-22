@@ -18,10 +18,10 @@
 package com.akiban.rest.resources;
 
 import com.akiban.ais.model.TableName;
-import com.akiban.http.SimpleHandlerList;
 import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
 import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.Tap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -44,8 +44,8 @@ import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT
 @Path("/call/{proc}")
 public class ProcedureCallResource {
     private final ResourceRequirements reqs;
-    private static final InOutTap CALL_GET = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: call GET");
-    private static final InOutTap CALL_POST = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: call POST");
+    private static final InOutTap CALL_GET = Tap.createTimer("rest: call GET");
+    private static final InOutTap CALL_POST = Tap.createTimer("rest: call POST");
     
     public ProcedureCallResource(ResourceRequirements reqs) {
         this.reqs = reqs;

@@ -17,10 +17,10 @@
 
 package com.akiban.rest.resources;
 
-import com.akiban.http.SimpleHandlerList;
 import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
 import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.Tap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -38,9 +38,9 @@ import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT
 @Path("/sql")
 public class SQLResource {
     private final ResourceRequirements reqs;
-    private static final InOutTap SQL_QUERY = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: sql query");
-    private static final InOutTap SQL_EXPLAIN = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: sql explain");
-    private static final InOutTap SQL_EXECUTE = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: sql execute");
+    private static final InOutTap SQL_QUERY = Tap.createTimer("rest: sql query");
+    private static final InOutTap SQL_EXPLAIN = Tap.createTimer("rest: sql explain");
+    private static final InOutTap SQL_EXECUTE = Tap.createTimer("rest: sql execute");
 
     public SQLResource(ResourceRequirements reqs) {
         this.reqs = reqs;

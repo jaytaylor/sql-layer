@@ -18,7 +18,6 @@
 package com.akiban.rest.resources;
 
 import com.akiban.ais.model.TableName;
-import com.akiban.http.SimpleHandlerList;
 import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
 import com.akiban.server.service.restdml.ModelBuilder;
@@ -26,6 +25,7 @@ import com.akiban.server.service.restdml.RestDMLService;
 import com.akiban.server.service.security.SecurityService;
 import com.akiban.util.JsonUtils;
 import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.Tap;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import javax.servlet.http.HttpServletRequest;
@@ -52,13 +52,13 @@ public class BuilderResource {
     private final SecurityService securityService;
     private final RestDMLService restDMLService;
     private final ModelBuilder modelBuilder;
-    private static final InOutTap BUILDER_GET = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: builder GET");
-    private static final InOutTap BUILDER_GET_ALL = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: builder getall");
-    private static final InOutTap BUILDER_POST = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: builder POST");
-    private static final InOutTap BUILDER_PUT = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: builder PUT");
-    private static final InOutTap BUILDER_DELETE = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: builder DELETE");
-    private static final InOutTap BUILDER_EXPLODE = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: builder explode");
-    private static final InOutTap BUILDER_IMPLODE = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: builder implode");
+    private static final InOutTap BUILDER_GET = Tap.createTimer("rest: builder GET");
+    private static final InOutTap BUILDER_GET_ALL = Tap.createTimer("rest: builder getall");
+    private static final InOutTap BUILDER_POST = Tap.createTimer("rest: builder POST");
+    private static final InOutTap BUILDER_PUT = Tap.createTimer("rest: builder PUT");
+    private static final InOutTap BUILDER_DELETE = Tap.createTimer("rest: builder DELETE");
+    private static final InOutTap BUILDER_EXPLODE = Tap.createTimer("rest: builder explode");
+    private static final InOutTap BUILDER_IMPLODE = Tap.createTimer("rest: builder implode");
     
     public BuilderResource(ResourceRequirements reqs) {
         this.securityService = reqs.securityService;

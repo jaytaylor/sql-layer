@@ -18,10 +18,10 @@
 package com.akiban.rest.resources;
 
 import com.akiban.ais.model.IndexName;
-import com.akiban.http.SimpleHandlerList;
 import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
 import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.Tap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -41,7 +41,7 @@ import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT
 @Path("/text/{table}/{index}")
 public class FullTextResource {
     private final ResourceRequirements reqs;
-    private static final InOutTap TEXT_GET = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: text get");
+    private static final InOutTap TEXT_GET = Tap.createTimer("rest: text get");
 
     public FullTextResource(ResourceRequirements reqs) {
         this.reqs = reqs;

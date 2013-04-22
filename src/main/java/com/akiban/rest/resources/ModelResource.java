@@ -23,7 +23,6 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.ais.util.UuidAssigner;
-import com.akiban.http.SimpleHandlerList;
 import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
 import com.akiban.server.entity.changes.DDLBasedSpaceModifier;
@@ -34,6 +33,7 @@ import com.akiban.server.entity.model.Space;
 import com.akiban.server.entity.model.diff.JsonDiffPreview;
 import com.akiban.server.service.session.Session;
 import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.Tap;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,9 +63,9 @@ import static com.akiban.util.JsonUtils.readTree;
 @Path("/model")
 public final class ModelResource {
     private static final String OPTIONAL_SCHEMA = "{schema: (/[^/]*)?}";
-    private static final InOutTap MODEL_VIEW = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: model view");
-    private static final InOutTap MODEL_HASH = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: model view");
-    private static final InOutTap MODEL_PARSE = SimpleHandlerList.REST_TAP.createSubsidiaryTap("rest: model parse");
+    private static final InOutTap MODEL_VIEW = Tap.createTimer("rest: model view");
+    private static final InOutTap MODEL_HASH = Tap.createTimer("rest: model view");
+    private static final InOutTap MODEL_PARSE = Tap.createTimer("rest: model parse");
     
     private final ResourceRequirements reqs;
 

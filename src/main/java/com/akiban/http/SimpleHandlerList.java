@@ -45,7 +45,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class SimpleHandlerList extends AbstractHandler {
     private final List<Handler> handlers = new CopyOnWriteArrayList<>();
     private Handler defaultHandler = null;
-    public static final InOutTap REST_TAP = Tap.createRecursiveTimer("rest: root");
+    public static final InOutTap REST_TAP = Tap.createTimer("rest: root");
 
 
     @Override
