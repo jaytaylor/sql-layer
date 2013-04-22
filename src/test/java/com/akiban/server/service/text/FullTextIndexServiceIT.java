@@ -45,8 +45,6 @@ import java.util.*;
 public class FullTextIndexServiceIT extends ITBase
 {
     public static final String SCHEMA = "test";
-    private static final long updateInterval = 1000L; // for testing
-    private static final long populateDelayInterval = 1000L;
     protected FullTextIndexService fullText;
     protected Schema schema;
     protected PersistitAdapter adapter;
@@ -61,15 +59,6 @@ public class FullTextIndexServiceIT extends ITBase
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
                 .bindAndRequire(FullTextIndexService.class, FullTextIndexServiceImpl.class);
-    }
-
-    @Override
-    protected Map<String, String> startupConfigProperties() {
-        Map<String, String> properties = new HashMap<>();
-        properties.put("akserver.text.indexpath", "/tmp/aktext");
-        properties.put(FullTextIndexServiceImpl.UPDATE_INTERVAL, Long.toString(updateInterval));
-        properties.put(FullTextIndexServiceImpl.POPULATE_DELAY_INTERVAL, Long.toString(populateDelayInterval));
-        return properties;
     }
 
     @Before
