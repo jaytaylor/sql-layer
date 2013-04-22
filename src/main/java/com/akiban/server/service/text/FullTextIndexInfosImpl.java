@@ -18,6 +18,7 @@
 package com.akiban.server.service.text;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.IndexName;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.rowtype.RowType;
@@ -66,21 +67,25 @@ public abstract class FullTextIndexInfosImpl implements FullTextIndexInfos
     protected abstract AkibanInformationSchema getAIS(Session session);
     protected abstract File getIndexPath();
 
-    protected FullTextIndexInfo getIndexToDrop(IndexName name)
+    protected FullTextIndexInfo getIndexToDrop(FullTextIndex idx)
     {
         synchronized(indexes)
         {
-            FullTextIndexShared shared = indexes.get(name);
+            FullTextIndexShared shared = indexes.get(idx.getIndexName());
             if (shared != null)
             {
                 return shared.valueFor();
             }
             else
             {
-                return null;
+                return FullTextIndexShared.constructIndexToDrop(idx.getIndexName(),
+                                                                getIndexPath(),
+                                                                idx.getTreeName())
+                                               .valueFor();
             }
         }
     }
+
     protected FullTextIndexInfo getIndex(Session session, IndexName name) {
         AkibanInformationSchema ais = getAIS(session);
         FullTextIndexInfo info;

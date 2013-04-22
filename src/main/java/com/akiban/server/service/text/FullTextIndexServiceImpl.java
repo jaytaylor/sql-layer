@@ -18,6 +18,7 @@
 package com.akiban.server.service.text;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.TableName;
@@ -142,18 +143,15 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     }
     
     @Override
-    public void dropIndex(Session session, IndexName name) {
+    public void dropIndex(Session session, FullTextIndex idx) {
         // delete 'promise' for population, if any
-        deleteFromTree(session, name);
+        deleteFromTree(session, idx.getIndexName());
         
         // delete documents
-        synchronized (indexes) {
-            FullTextIndexShared shared = indexes.get(name);
-            if (shared != null)
-            {
-                shared.valueFor().deletePath();
-                indexes.remove(name);
-            }
+        FullTextIndexInfo idxInfo = getIndexToDrop(idx);
+        idxInfo.deletePath();
+        synchronized (indexes) {    
+            indexes.remove(idx.getIndexName());
         }
     }
 

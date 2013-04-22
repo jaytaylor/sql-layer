@@ -1904,7 +1904,7 @@ public class PersistitStore implements Store, Service {
         if (table.isUserTable())
         {
             for (FullTextIndex idx : ((UserTable)table).getOwnFullTextIndexes())
-                fullTextService.dropIndex(session, idx.getIndexName());
+                fullTextService.dropIndex(session, idx);
         }
 
         // Add all index trees
@@ -1951,7 +1951,7 @@ public class PersistitStore implements Store, Service {
             // no trees to drop
             if (index.getIndexType() == IndexType.FULL_TEXT)
             {
-                fullTextService.dropIndex(session, index.getIndexName());
+                fullTextService.dropIndex(session, (FullTextIndex)index);
                 indexes.remove(index);
                 continue;
             }

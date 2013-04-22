@@ -42,6 +42,13 @@ public class FullTextIndexShared implements CacheValueGenerator<FullTextIndexInf
     private Indexer indexer;
     private Searcher searcher;
 
+    protected static FullTextIndexShared constructIndexToDrop(IndexName name, File basePath, String treeName)
+    {
+        FullTextIndexShared ret = new FullTextIndexShared(name);
+        ret.path = new File(basePath, treeName);
+        return ret;
+    }
+
     public FullTextIndexShared(IndexName name) {
         this.name = name;
     }
