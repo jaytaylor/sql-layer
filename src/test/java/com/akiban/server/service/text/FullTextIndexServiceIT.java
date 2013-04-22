@@ -200,9 +200,9 @@ public class FullTextIndexServiceIT extends ITBase
 
         // <3> delete 2 of them
         Session session = new SessionServiceImpl().createSession();
-        fullTextImpl.deleteFromTree(session, expecteds[0].getIndexName());        
-        fullTextImpl.deleteFromTree(session, expecteds[1].getIndexName());
-        
+        deleteFullTextIndex(serviceManager(), expecteds[0].getIndexName());
+        deleteFullTextIndex(serviceManager(), expecteds[1].getIndexName());
+
         // <4> check that the tree only has one entry now (ie., epxecteds2[2]
         traverse(fullTextImpl,
                  new Visitor()
@@ -222,15 +222,6 @@ public class FullTextIndexServiceIT extends ITBase
                          assertEquals (1, n);
                      } 
                  });
-
-        // put the two indices back to the tree, because they
-        // being removed from it only means no populations
-        // (The two still exist in other places)
-        // We need to put them back so tearDown() works properly,
-        // which would expect to drop all tables and indices including these
-        IndexName toPopulates[] = {expecteds[0].getIndexName(), expecteds[1].getIndexName()};
-        for (IndexName idx : toPopulates)
-            fullTextImpl.schedulePopulate(idx.getSchemaName(), idx.getTableName(), idx.getName());
         
         // wake the worker up to do its job
         fullTextImpl.enablePopulateWorker();

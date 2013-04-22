@@ -266,6 +266,9 @@ public class FullTextIndexInfo
 
     public void deletePath() {
         File path = shared.getPath();
+        // no doc to delete
+        if (!path.exists() || path.listFiles() == null)
+            return;
         for (File f : path.listFiles()) {
             f.delete();
         }

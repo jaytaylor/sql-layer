@@ -767,6 +767,12 @@ public class ApiTestBase {
         return ddl().getAIS(session()).getGroup(groupName).getIndex(indexName);
     }
 
+    protected final void deleteFullTextIndex(ServiceManager sm, IndexName name)
+    {
+        ddl().dropTableIndexes(session(), name.getFullTableName(), Arrays.asList(name.getName()));
+        updateAISGeneration();
+    }
+    
     protected final FullTextIndex createFullTextIndex(ServiceManager sm, String schema, String table, String indexName, String... indexCols) {
         AkibanInformationSchema tempAIS = createIndexInternal(schema, table, indexName, "FULL_TEXT(" + Strings.join(Arrays.asList(indexCols), ",") + ")");
         Index tempIndex = tempAIS.getUserTable(schema, table).getFullTextIndex(indexName);
