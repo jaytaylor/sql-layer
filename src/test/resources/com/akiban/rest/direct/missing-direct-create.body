@@ -1,12 +1,7 @@
-function _register(registrar) {
-    registrar.register(
-        "method=GET path=cnames function=customer_Names in=(QP:prefix String required) out=String");
-};
 
-function customer_Names(s) {
+function customerNames(s) {
     var result = s;
     var extent = Packages.com.akiban.direct.Direct.context.extent;
-        
     for (customer in Iterator(extent.customers)) {
       result += "," + customer.name;
     }

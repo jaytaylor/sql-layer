@@ -267,6 +267,7 @@ public class EndpointMetadata {
                         + specification);
             }
         }
+        em.validate();
         return em;
     }
 
@@ -314,7 +315,6 @@ public class EndpointMetadata {
             }
         }
         return pm;
-
     }
 
     /**
@@ -506,6 +506,8 @@ public class EndpointMetadata {
                 String s;
                 if (content instanceof byte[]) {
                     s = new String((byte[]) content, UTF8);
+                } else if (content == null) {
+                    s = "";
                 } else {
                     s = (String) content;
                 }
@@ -660,7 +662,7 @@ public class EndpointMetadata {
                     index++;
                     break;
                 }
-                if (!Character.isLetterOrDigit(c) || (first && !Character.isLetter(c))) {
+                if (!Character.isJavaIdentifierPart(c) || (first && !Character.isJavaIdentifierStart(c))) {
                     throw new IllegalArgumentException("Invalid character in name: " + source);
                 }
                 result.append(c);
@@ -751,6 +753,22 @@ public class EndpointMetadata {
         }
     }
 
+    private void validate() {
+        notNull(schemaName, "schema name");
+        notNull(routineName, "routine name");
+        notNull(method, "'method='");
+        notNull(name, "'path='");
+        notNull(function, "'function='");
+        notNull(inParams, "'in='");
+        notNull(outParam, "'out='");
+    }
+
+    private void notNull(final Object v, final String name) {
+        if (v == null) {
+            throw new IllegalArgumentException(name + " not specified in " + toString());
+        }
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -759,11 +777,15 @@ public class EndpointMetadata {
             append(sb, pattern.toString());
         }
         append(sb, " ", FUNCTION, "=", function, " ", IN, "=(");
-        for (int index = 0; index < inParams.length; index++) {
-            if (index > 0) {
-                sb.append(", ");
+        if (inParams == null) {
+            sb.append("null");
+        } else {
+            for (int index = 0; index < inParams.length; index++) {
+                if (index > 0) {
+                    sb.append(", ");
+                }
+                sb.append(inParams[index]);
             }
-            sb.append(inParams[index]);
         }
         append(sb, ") ", OUT, "=");
         if (outParam == null) {

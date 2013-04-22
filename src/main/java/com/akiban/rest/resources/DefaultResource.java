@@ -67,7 +67,7 @@ public class DefaultResource {
     }
     
     
-    private Response buildResponse(HttpServletRequest request) {
+    static Response buildResponse(HttpServletRequest request) {
         String msg = String.format("API %s not supported", request.getRequestURI());
         return RestResponseBuilder
                 .forRequest(request)

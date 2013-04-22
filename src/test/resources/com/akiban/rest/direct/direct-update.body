@@ -2,7 +2,7 @@ function _register(registrar) {
     registrar.register(
         "method=GET path=cnames function=customerNames in=(QP:prefix String required) out=String");
     registrar.register(
-        "method=PUT path=cadd/(\\\\d+) function=addCustomer in=(PP:cid int required, JSON:name string required) out=void");
+        "method=PUT path=cadd/(\\\\d+) function=addCustomer in=(PP:1 int required, JSON:name string required) out=void");
     registrar.register(
         "method=POST path=cchange function=changeCustomerName in=(JSON:cid int required, JSON:name string required) out=void");
 };
@@ -14,14 +14,12 @@ function customerNames(s) {
     for (customer in Iterator(extent.customers)) {
       result += "," + customer.name;
     }
-    customer.name = "Changed";
-    java.lang.System.out.println("customer.name=" + customer.name);
     return result;
 }
 
 function addCustomer(cid, name) {
     var extent = Packages.com.akiban.direct.Direct.context.extent;
-    var customer = extend.customers.newInstance();
+    var customer = extent.customers.newInstance();
     customer.cid = cid;
     customer.name = name;
     customer.save();
@@ -29,7 +27,7 @@ function addCustomer(cid, name) {
 
 function changeCustomerName(cid, name) {
     var extent = Packages.com.akiban.direct.Direct.context.extent;
-    var customer = extend.customers.getCustomer(cid);
+    var customer = extent.getCustomer(cid);
     customer.setName(name);
     customer.save();
 }

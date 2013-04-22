@@ -61,8 +61,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 /**
  * Scripted tests for REST end-points. Code was largely copied from
  * RestServiceFilesIT. Difference is that this version finds files with the
- * suffix ".script" and executes the command stream located in them. Commands
- * are:
+ * suffix ".script" and executes the command stream located in them. Commands are:
  * 
  * <pre>
  * GET address
@@ -98,12 +97,6 @@ import com.fasterxml.jackson.databind.JsonNode;
  */
 @RunWith(NamedParameterizedRunner.class)
 public class RestServiceScriptsIT extends ITBase {
-
-    private static void debug(int lineNumber) {
-        // Set a breakpoint here to debug on DEBUG statements
-        System.out.println("DEBUG executed on line " + lineNumber);
-    }
-
     private static final Logger LOG = LoggerFactory.getLogger(RestServiceScriptsIT.class.getName());
 
     private static final File RESOURCE_DIR = new File("src/test/resources/"
@@ -248,7 +241,7 @@ public class RestServiceScriptsIT extends ITBase {
 
                 switch (command) {
                 case "DEBUG":
-                    debug(lineNumber);
+                    System.out.println("DEBUG executed on line " + lineNumber);
                     break;
                 case "GET":
                 case "DELETE": {
@@ -285,7 +278,7 @@ public class RestServiceScriptsIT extends ITBase {
                         error("Missing argument");
                         continue;
                     }
-                    String contents = value(line, 2);
+                    String contents  = value(line, 2);
                     executeRestCall(command, pieces[1], contents);
                     break;
                 }
@@ -363,7 +356,10 @@ public class RestServiceScriptsIT extends ITBase {
             result.output = getOutput(result.conn);
         } catch (Exception e) {
             result.output = e.toString();
-            fullyDisconnect(result.conn);
+        } finally {
+            if (result.conn != null) {
+                fullyDisconnect(result.conn);
+            }
         }
     }
 

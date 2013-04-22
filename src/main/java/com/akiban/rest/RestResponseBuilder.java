@@ -145,7 +145,9 @@ public class RestResponseBuilder {
 
     public WebApplicationException wrapException(Throwable e) {
         final ErrorCode code;
-        if(e instanceof InvalidOperationException) {
+        if (e instanceof WebApplicationException) {
+            return (WebApplicationException)e;
+        } else if(e instanceof InvalidOperationException) {
             code = ((InvalidOperationException)e).getCode();
         } else if(e instanceof SQLException) {
             code = ErrorCode.valueOfCode(((SQLException)e).getSQLState());
