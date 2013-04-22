@@ -127,7 +127,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     {
         try
         {
-            // see if there exists a promise for populating this index
             Exchange ex = getPopulateExchange(session);
             ex.clear().append(name.getSchemaName())
                       .append(name.getTableName())
@@ -144,11 +143,17 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     
     @Override
     public void dropIndex(Session session, IndexName name) {
+        // delete 'promise' for population, if any
         deleteFromTree(session, name);
-        FullTextIndexInfo index = getIndexToDrop(name);
-        index.deletePath();
+        
+        // delete documents
         synchronized (indexes) {
-            indexes.remove(name);
+            FullTextIndexShared shared = indexes.get(name);
+            if (shared != null)
+            {
+                shared.valueFor().deletePath();
+                indexes.remove(name);
+            }
         }
     }
 

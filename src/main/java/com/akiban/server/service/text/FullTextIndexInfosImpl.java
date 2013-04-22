@@ -77,7 +77,7 @@ public abstract class FullTextIndexInfosImpl implements FullTextIndexInfos
             }
             else
             {
-                throw new NoSuchIndexException(name.toString());
+                return null;
             }
         }
     }
