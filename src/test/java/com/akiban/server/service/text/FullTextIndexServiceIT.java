@@ -41,7 +41,6 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import java.util.*;
-import org.junit.Ignore;
 
 public class FullTextIndexServiceIT extends ITBase
 {
