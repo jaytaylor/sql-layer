@@ -123,9 +123,8 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         }
     }
 
-    @Override
-    public void dropIndex(Session session, IndexName name) {
-        
+    void deleteFromTree(Session session, IndexName name)
+    {
         try
         {
             // see if there exists a promise for populating this index
@@ -136,16 +135,20 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             
             if (ex.traverse(Key.Direction.EQ, true, 0))
                 ex.fetchAndRemove();
-
-            FullTextIndexInfo index = getIndexToDrop(name);
-            index.deletePath();
-            synchronized (indexes) {
-                indexes.remove(name);
-            }
         }
         catch (PersistitException e)
         {
             throw new AkibanInternalException("Error while removing index", e);
+        }
+    }
+    
+    @Override
+    public void dropIndex(Session session, IndexName name) {
+        deleteFromTree(session, name);
+        FullTextIndexInfo index = getIndexToDrop(name);
+        index.deletePath();
+        synchronized (indexes) {
+            indexes.remove(name);
         }
     }
 

@@ -41,6 +41,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import java.util.*;
+import org.junit.Ignore;
 
 public class FullTextIndexServiceIT extends ITBase
 {
@@ -179,12 +180,6 @@ public class FullTextIndexServiceIT extends ITBase
                          assertEquals (0, n);
                      } 
                  });
-        
-        // drop all the indices
-        Session session = new SessionServiceImpl().createSession();
-        for (FullTextIndex idx : expecteds)
-            fullTextImpl.dropIndex(session, idx.getIndexName());
-        session.close();
     }
 
 
@@ -217,28 +212,8 @@ public class FullTextIndexServiceIT extends ITBase
 
         // <3> delete 2 of them
         Session session = new SessionServiceImpl().createSession();
-        boolean sawNPE = false;
-        try
-        {
-            fullTextImpl.dropIndex(session, expecteds[0].getIndexName());
-        }
-        catch (NullPointerException e) // NPE is expected because, the index hasn't been
-        {                              // populated yet. But we're not testing that!
-            sawNPE = true;
-        }
-        assertTrue("NPE should have happened", sawNPE);
-        
-
-        sawNPE = false;
-        try
-        {
-            fullTextImpl.dropIndex(session, expecteds[1].getIndexName());
-        }
-        catch (NullPointerException e) // NPE is expected because, the index hasn't been
-        {                              // populated yet. But we're not testing that!
-            sawNPE = true;
-        }
-        assertTrue("NPE should have happened", sawNPE);
+        fullTextImpl.deleteFromTree(session, expecteds[0].getIndexName());        
+        fullTextImpl.deleteFromTree(session, expecteds[1].getIndexName());
         
         // <4> check that the tree only has one entry now (ie., epxecteds2[2]
         traverse(fullTextImpl,
@@ -260,12 +235,19 @@ public class FullTextIndexServiceIT extends ITBase
                      } 
                  });
 
+        // put the two indices back to the tree, because they
+        // being removed from it only means no populations
+        // (The two still exist in other places)
+        // We need to put them back so tearDown() works properly,
+        // which would expect to drop all tables and indices including these
+        IndexName toPopulates[] = {expecteds[0].getIndexName(), expecteds[1].getIndexName()};
+        for (IndexName idx : toPopulates)
+            fullTextImpl.schedulePopulate(idx.getSchemaName(), idx.getTableName(), idx.getName());
+        
         // wake the worker up to do its job
         fullTextImpl.enablePopulateWorker();
         WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
         
-        // drop the remaining index
-        fullTextImpl.dropIndex(session, expecteds[2].getIndexName());
         session.close();
     }
 

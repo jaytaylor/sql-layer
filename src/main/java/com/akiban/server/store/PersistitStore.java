@@ -1903,7 +1903,16 @@ public class PersistitStore implements Store, Service {
         if (table.isUserTable())
         {
             for (FullTextIndex idx : ((UserTable)table).getFullTextIndexes())
-                fullTextService.dropIndex(session, idx.getIndexName());
+            {
+                IndexName idxName = idx.getIndexName();
+                // only drop the index if it really belongs to this table
+                // 
+                // Eg., (In CAOI), ft_idx is created on c ('i.sku', 'c.name')
+                // Both 'i' and 'c' would then have an index called 'ft_idx'
+                // We don't want to call `dropIndex` twice.
+                if (idxName.getFullTableName().equals(table.getName()))
+                    fullTextService.dropIndex(session, idxName);
+            }
         }
 
         // Add all index trees
