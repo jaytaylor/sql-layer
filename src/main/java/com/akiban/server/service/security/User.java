@@ -25,11 +25,15 @@ public class User implements Principal
 {
     private final int id;
     private final String name;
+    private final String basicPassword;
+    private final String digestPassword;
     private final List<String> roles;
 
-    protected User(int id, String name, List<String> roles) {
+    protected User(int id, String name, String basicPassword, String digestPassword, List<String> roles) {
         this.id = id;
         this.name = name;
+        this.basicPassword = basicPassword;
+        this.digestPassword = digestPassword;
         this.roles = roles;
     }
 
@@ -40,6 +44,18 @@ public class User implements Principal
     @Override
     public String getName() {
         return name;
+    }
+
+    public String getBasicPassword() {
+        return basicPassword;
+    }
+
+    public String getDigestPassword() {
+        return digestPassword;
+    }
+
+    public List<String> getRoles() {
+        return roles;
     }
 
     public boolean hasRole(String role) {

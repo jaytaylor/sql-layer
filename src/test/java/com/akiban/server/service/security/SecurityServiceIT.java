@@ -101,6 +101,9 @@ public class SecurityServiceIT extends ITBase
         assertNotNull("user found", user);
         assertTrue("user has role", user.hasRole("rest-user"));
         assertFalse("user does not have role", user.hasRole("admin"));
+        assertEquals("users roles", "[rest-user]", user.getRoles().toString());
+        assertEquals("user password basic", "MD5:5F4DCC3B5AA765D61D8327DEB882CF99", user.getBasicPassword());
+        assertEquals("user password digest", "MD5:740C53C6C7EE87EEEE489E8CE4116048", user.getDigestPassword());
     }
 
     @Test
