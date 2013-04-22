@@ -1899,20 +1899,12 @@ public class PersistitStore implements Store, Service {
     @Override
     public void removeTrees(Session session, Table table) {
         Collection<TreeLink> treeLinks = new ArrayList<>();
+
         // delete all fulltext indexes
         if (table.isUserTable())
         {
-            for (FullTextIndex idx : ((UserTable)table).getFullTextIndexes())
-            {
-                IndexName idxName = idx.getIndexName();
-                // only drop the index if it really belongs to this table
-                // 
-                // Eg., (In CAOI), ft_idx is created on c ('i.sku', 'c.name')
-                // Both 'i' and 'c' would then have an index called 'ft_idx'
-                // We don't want to call `dropIndex` twice.
-                if (idxName.getFullTableName().equals(table.getName()))
-                    fullTextService.dropIndex(session, idxName);
-            }
+            for (FullTextIndex idx : ((UserTable)table).getOwnFullTextIndexes())
+                fullTextService.dropIndex(session, idx.getIndexName());
         }
 
         // Add all index trees
