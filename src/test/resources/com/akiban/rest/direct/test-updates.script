@@ -1,0 +1,15 @@
+# Install a library
+#
+PUT /direct/library?module=test.updates1&language=javascript @direct-update.body
+EQUALS  {"functions":3}\n
+
+# Verify data access
+#
+GET     /direct/call/test.cnames?prefix=SomeParameterValue
+EQUALS  SomeParameterValue,John Smith,Willy Jones,Jane Smith,Jonathan Smyth\n
+
+# Insert a new customer
+#
+PUT     /direct/call/test.cadd/4 {"name":"Mary Johnson"}
+GET     /direct/call/test.cnames?prefix=SomeParameterValue
+EQUALS  SomeParameterValue,John Smith,Willy Jones,Jane Smith,Jonathan Smyth,Mary Johnson\n

@@ -6,12 +6,7 @@ function _register(registrar) {
 function customerNames(s) {
     var result = s;
     var extent = Packages.com.akiban.direct.Direct.context.extent;
-    
-    var newCustomer = extent.customers.newInstance();
-    newCustomer.cid = 5;
-    newCustomer.name = "Some Name";
-    newCustomer.save();
-    
+        
     for (customer in Iterator(extent.customers)) {
       result += "," + customer.name;
     }
