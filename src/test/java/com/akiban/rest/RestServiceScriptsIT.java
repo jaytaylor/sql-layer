@@ -302,6 +302,7 @@ public class RestServiceScriptsIT extends ITBase {
                         continue;
                     }
                     if (!result.output.contains(value(line, 1))) {
+                        LOG.error("Incorrect value - actual returned value is:\n{}", result.output);
                         error("Incorrect response");
                     }
                     break;
@@ -403,6 +404,7 @@ public class RestServiceScriptsIT extends ITBase {
 
     private void compareStrings(String assertMsg, String expected, String actual) {
         if (!expected.equals(actual)) {
+            LOG.error("Incorrect value - actual returned value is:\n{}", actual);
             error(assertMsg, diff(expected, actual));
         }
     }
