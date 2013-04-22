@@ -48,7 +48,6 @@ public class HttpThreadedLoginIT extends ITBase
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
-            .bindAndRequire(EmbeddedJDBCService.class, EmbeddedJDBCServiceImpl.class)
             .bindAndRequire(RestService.class, RestServiceImpl.class);
     }
 
