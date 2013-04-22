@@ -89,9 +89,6 @@ public class PostgresServerMiscYamlIT extends PostgresServerYamlITBase {
     protected Map<String, String> startupConfigProperties() {
         // TODO: Remove whenever test-seq-fixup-routines.yaml no longer exists
         Map<String, String> props = new HashMap();
-        props.put("akserver.text.indexpath", "/tmp/aktext");
-        props.put(FullTextIndexServiceImpl.UPDATE_INTERVAL, Long.toString(1000));
-        props.put(FullTextIndexServiceImpl.POPULATE_DELAY_INTERVAL, Long.toString(1000));
         props.put("akserver.dxl.use_global_lock", "true");
         props.putAll(uniqueStartupConfigProperties(getClass()));
         return props;
