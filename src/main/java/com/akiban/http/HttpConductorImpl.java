@@ -70,7 +70,6 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     private final ConfigurationService configurationService;
     private final SecurityService securityService;
     private final MonitorService monitorService;
-    private final EmbeddedJDBCService embeddedJDBCService;
 
     private final Object lock = new Object();
     private SimpleHandlerList handlerList;
@@ -85,12 +84,10 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     @Inject
     public HttpConductorImpl(ConfigurationService configurationService,
                              SecurityService securityService,
-                             MonitorService monitor,
-                             EmbeddedJDBCService embeddedJDBCService) {
+                             MonitorService monitor) {
         this.configurationService = configurationService;
         this.securityService = securityService;
         this.monitorService = monitor;
-        this.embeddedJDBCService = embeddedJDBCService;
 
         jerseyLogging = java.util.logging.Logger.getLogger("com.sun.jersey");
         jerseyLogging.setLevel(java.util.logging.Level.OFF);
