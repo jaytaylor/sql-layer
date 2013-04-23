@@ -281,12 +281,12 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
 
     // Register as a result of beginning a transaction (which is implicit).
     protected void registerSessionMonitor() {
-        reqs.monitor().registerSessionMonitor(sessionMonitor);
+        reqs.monitor().registerSessionMonitor(sessionMonitor, session);
     }
 
     // Deregister when transaction is committed, rolled back, or connection closed.
     protected void deregisterSessionMonitor() {
-        reqs.monitor().deregisterSessionMonitor(sessionMonitor);
+        reqs.monitor().deregisterSessionMonitor(sessionMonitor, session);
     }
 
     protected AkServerInterface getAkServer() {

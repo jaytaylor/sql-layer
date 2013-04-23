@@ -17,6 +17,8 @@
 
 package com.akiban.server.service.monitor;
 
+import com.akiban.server.service.session.Session;
+
 import java.util.Collection;
 import java.util.Map;
 
@@ -34,13 +36,16 @@ public interface MonitorService {
     int allocateSessionId();
 
     /** Register the given session monitor. */
-    void registerSessionMonitor(SessionMonitor sessionMonitor);
+    void registerSessionMonitor(SessionMonitor sessionMonitor, Session session);
 
     /** Deregister the given session monitor. */
-    void deregisterSessionMonitor(SessionMonitor sessionMonitor);
+    void deregisterSessionMonitor(SessionMonitor sessionMonitor, Session session);
 
     /** Get the session monitor for the given session id. */
     SessionMonitor getSessionMonitor(int sessionId);
+
+    /** Get the session monitor for the given session. */
+    SessionMonitor getSessionMonitor(Session session);
 
     /** Get all registered session monitors. */
     Collection<SessionMonitor> getSessionMonitors();
