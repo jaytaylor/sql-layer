@@ -1,0 +1,46 @@
+# Normal registration
+#
+PUT     /direct/library?module=test.proc1&language=Javascript @direct-create.body
+EQUALS  {"functions":2}\n
+
+# Try mismatched methods - expect 404 errors
+#
+PUT     /direct/call/test.cnames?prefix=SomeParameterValue @
+CONTAINS 404
+CONTAINS Not Found
+POST     /direct/call/test.cnames?prefix=SomeParameterValue @
+CONTAINS 404
+CONTAINS Not Found
+DELETE   /direct/call/test.cnames?prefix=SomeParameterValue @
+CONTAINS 404
+CONTAINS Not Found
+
+PUT     /direct/library?module=test.proc1&language=Javascript function _register(registrar) {registrar.register("method=GET path=x function=x in=(JSON:prefix String required) out=String");};
+GET     /direct/call/test.x|text/plain
+CONTAINS 404
+CONTAINS Not Found
+
+# Mismatched method GET / POST
+#
+PUT     /direct/library?module=test.proc1&language=Javascript function _register(registrar) {registrar.register("method=GET path=x function=x in=(JSON:prefix String required) out=String");};
+POST    /direct/call/test.x|text/plain {"prefix": "SomeParamaterValue"}
+CONTAINS 404
+CONTAINS Not Found
+
+# Mismatched method POST / PUT
+#
+PUT     /direct/library?module=test.proc1&language=Javascript function _register(registrar) {registrar.register("method=POST path=x function=x in=(JSON:prefix String required) out=String");};
+PUT     /direct/call/test.x|application/json {"prefix": "SomeParamaterValue"}
+CONTAINS 404
+CONTAINS Not Found
+
+# Mismatched request type application/json / text/plain
+#
+PUT     /direct/library?module=test.proc1&language=Javascript function _register(registrar) {registrar.register("method=POST path=x function=x in=(JSON:prefix String required) out=String");};
+POST    /direct/call/test.x|text/plain {"prefix": "SomeParamaterValue"}
+CONTAINS 404
+CONTAINS Not Found
+
+
+
+

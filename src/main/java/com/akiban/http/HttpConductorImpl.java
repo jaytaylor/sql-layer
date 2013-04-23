@@ -17,19 +17,18 @@
 
 package com.akiban.http;
 
-import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.monitor.MonitorService;
 import com.akiban.server.service.monitor.ServerMonitor;
 import com.akiban.server.service.security.SecurityService;
+import com.akiban.sql.embedded.EmbeddedJDBCService;
 import com.google.inject.Inject;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.security.Authenticator;
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
-import org.eclipse.jetty.security.JDBCLoginService;
 import org.eclipse.jetty.security.LoginService;
 import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.security.authentication.DigestAuthenticator;
@@ -45,8 +44,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.servlet.FilterRegistration;
 import javax.servlet.ServletException;
-import java.io.IOException;
-import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -59,6 +56,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     private static final String CONFIG_PORT_PROPERTY = CONFIG_HTTP_PREFIX + "port";
     private static final String CONFIG_SSL_PROPERTY = CONFIG_HTTP_PREFIX + "ssl";
     private static final String CONFIG_LOGIN_PROPERTY = CONFIG_HTTP_PREFIX + "login";
+    private static final String CONFIG_LOGIN_CACHE_SECONDS = CONFIG_HTTP_PREFIX + "login_cache_seconds";
     private static final String CONFIG_XORIGIN_PREFIX = CONFIG_HTTP_PREFIX + "cross_origin.";
     private static final String CONFIG_XORIGIN_ENABLED = CONFIG_XORIGIN_PREFIX + "enabled";
     private static final String CONFIG_XORIGIN_ORIGINS = CONFIG_XORIGIN_PREFIX + "allowed_origins";
@@ -152,6 +150,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         String portProperty = configurationService.getProperty(CONFIG_PORT_PROPERTY);
         String sslProperty = configurationService.getProperty(CONFIG_SSL_PROPERTY);
         String loginProperty = configurationService.getProperty(CONFIG_LOGIN_PROPERTY);
+        int loginCacheSeconds = Integer.parseInt(configurationService.getProperty(CONFIG_LOGIN_CACHE_SECONDS));
         int portLocal;
         boolean ssl;
         AuthenticationType login;
@@ -210,20 +209,20 @@ public final class HttpConductorImpl implements HttpConductor, Service {
                 localServer.setHandler(localHandlerList);
             }
             else {
-                String resource;
+                SecurityServiceLoginService.CredentialType credentialType;
                 Authenticator authenticator;
                 switch (login) {
                 case BASIC:
-                    resource = "basic.properties";
+                    credentialType = SecurityServiceLoginService.CredentialType.BASIC;
                     authenticator = new BasicAuthenticator();
                     break;
                 case DIGEST:
-                    resource = "digest.properties";
+                    credentialType = SecurityServiceLoginService.CredentialType.DIGEST;
                     authenticator = new DigestAuthenticator();
                     break;
                 default:
                     assert false : "Unexpected authentication type " + login;
-                    resource = null;
+                    credentialType = null;
                     authenticator = null;
                 }
                 Constraint constraint = new Constraint(authenticator.getAuthMethod(),
@@ -238,9 +237,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
                 sh.setAuthenticator(authenticator);
                 sh.setConstraintMappings(Collections.singletonList(cm));
 
-                LoginService loginService =
-                    new SingleThreadJDBCLoginService(SecurityService.REALM, 
-                                                     HttpConductorImpl.class.getResource(resource).toString());
+                LoginService loginService = new SecurityServiceLoginService(securityService, credentialType, loginCacheSeconds);
                 sh.setLoginService(loginService);
 
                 sh.setHandler(localHandlerList);
@@ -315,42 +312,6 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         return result;
     }
 
-    // Embedded JDBC is single-threaded, but login service assumes it
-    // is thread-safe.  Also, it does not close its ResultSet, which
-    // leaves a transaction active. So just close connection around
-    // each use.  Login service is already
-    // synchronized. Unfortunately, this needs a private method.
-    static class SingleThreadJDBCLoginService extends JDBCLoginService {
-        private Method closeMethod;
-
-        public SingleThreadJDBCLoginService(String name, String config)
-                throws IOException {
-            super(name, config);
-            try {
-                closeMethod = JDBCLoginService.class.getDeclaredMethod("closeConnection", null);
-                closeMethod.setAccessible(true);
-            }
-            catch (Exception ex) {
-                throw new AkibanInternalException("Cannot get JDBC close method", ex);
-            }
-        }
-
-        @Override
-        protected org.eclipse.jetty.server.UserIdentity loadUser(String username) {
-            try {
-                return super.loadUser(username);
-            }
-            finally {
-                try {
-                    closeMethod.invoke(this);
-                }
-                catch (Exception ex) {
-                    logger.warn("Cannot call JDBC close method", ex);
-                }
-            }
-        }
-    }
-    
     private class ConnectionMonitor implements ServerMonitor {
         public static final String SERVER_TYPE = "REST";
         private final SelectChannelConnector connector;

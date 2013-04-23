@@ -1784,7 +1784,7 @@ public class OperatorAssembler extends BaseRule
             stream.operator = API.using_BloomFilter(lstream.operator,
                                                     lstream.rowType,
                                                     bloomFilter.getEstimatedSize(),
-                                                    pos,
+                                                    pos + loopBindingsOffset,
                                                     stream.operator,
                                                     collators,
                                                     usePValues);
@@ -1812,7 +1812,7 @@ public class OperatorAssembler extends BaseRule
                                                      fields,
                                                      tFields,
                                                      collators,
-                                                     pos);
+                                                     pos + loopBindingsOffset);
             return stream;
         }
 

@@ -204,7 +204,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
             roles.add(rs1.getString(2));
         }
         rs1.close();
-        return new User(rs.getInt(1), rs.getString(2), roles);
+        return new User(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getString(4), roles);
     }
 
     @Override
@@ -212,12 +212,14 @@ public class SecurityServiceImpl implements SecurityService, Service {
         int id;
         Connection conn = null;
         PreparedStatement stmt = null;
+        String basicPassword = basicPassword(password);
+        String digestPassword = digestPassword(name, password);
         try {
             conn = openConnection();
             stmt = conn.prepareStatement(ADD_USER_SQL);
             stmt.setString(1, name);
-            stmt.setString(2, basicPassword(password));
-            stmt.setString(3, digestPassword(name, password));
+            stmt.setString(2, basicPassword);
+            stmt.setString(3, digestPassword);
             stmt.setString(4, md5Password(name, password));
             int nrows = stmt.executeUpdate();
             if (nrows != 1) {
@@ -250,7 +252,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
         finally {
             cleanup(conn, stmt);
         }
-        return new User(id, name, new ArrayList<>(roles));
+        return new User(id, name, basicPassword, digestPassword, new ArrayList<>(roles));
     }
 
     @Override

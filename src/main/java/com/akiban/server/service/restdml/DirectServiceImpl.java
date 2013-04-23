@@ -33,10 +33,11 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +53,6 @@ import com.akiban.rest.RestFunctionRegistrar;
 import com.akiban.rest.RestServiceImpl;
 import com.akiban.rest.resources.ResourceHelper;
 import com.akiban.server.error.ExternalRoutineInvocationException;
-import com.akiban.server.error.MalformedRequestException;
 import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.ScriptLibraryRegistrationException;
 import com.akiban.server.service.Service;
@@ -70,6 +70,7 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.sql.embedded.EmbeddedJDBCService;
 import com.akiban.sql.embedded.JDBCConnection;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.google.inject.Inject;
 import com.persistit.exception.RollbackException;
 
@@ -92,10 +93,7 @@ public class DirectServiceImpl implements Service, DirectService {
     private final static String IS_INOUT = "is_inout";
     private final static String IS_RESULT = "is_result";
 
-    private final static String COMMENT_ANNOTATION1 = "//##";
-    private final static String COMMENT_ANNOTATION2 = "##//";
-    private final static String ENDPOINT = "endpoint";
-
+    private final static int TRANSACTION_RETRY_COUNT = 3;
     private final static String DISTINGUISHED_REGISTRATION_METHOD_NAME = "_register";
 
     private final static String CREATE_PROCEDURE_FORMAT = "CREATE OR REPLACE PROCEDURE \"%s\".\"%s\" ()"
@@ -205,8 +203,12 @@ public class DirectServiceImpl implements Service, DirectService {
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
         EndpointMap endpointMap = null;
 
-        if (functionsOnly) {
-            endpointMap = getEndpointMap(session);
+        try {
+            if (functionsOnly) {
+                endpointMap = getEndpointMap(session);
+            }
+        } catch (RegistrationException e) {
+            throw new ScriptLibraryRegistrationException(e);
         }
 
         if (module.isEmpty()) {
@@ -334,27 +336,30 @@ public class DirectServiceImpl implements Service, DirectService {
             final TableName procName, final String pathParams, final MultivaluedMap<String, String> queryParameters,
             final byte[] content, final MediaType[] responseType) throws Exception {
         try (JDBCConnection conn = jdbcConnection(request, procName.getSchemaName());) {
-
+            LOG.debug("Invoking {} {}", request.getMethod(), request.getRequestURI());
             conn.setAutoCommit(false);
 
             boolean completed = false;
-            boolean repeat = true;
+            int repeat = TRANSACTION_RETRY_COUNT;
 
-            while (repeat) {
+            while (--repeat >= 0) {
                 try {
                     Direct.enter(procName.getSchemaName(), dxlService.ddlFunctions().getAIS(conn.getSession()));
                     Direct.getContext().setConnection(conn);
-                    repeat = false;
                     conn.beginTransaction();
                     invokeRestFunction(writer, conn, method, procName, pathParams, queryParameters, content,
                             request.getContentType(), responseType);
                     conn.commitTransaction();
                     completed = true;
+                    return;
                 } catch (RollbackException e) {
-                    repeat = true;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    throw e;
+                    if (repeat == 0) {
+                        LOG.error("Transaction failed " + TRANSACTION_RETRY_COUNT + " times: "
+                                + request.getRequestURI());
+                        throw new WebApplicationException(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                    }
+                } catch (RegistrationException e) {
+                    throw new ScriptLibraryRegistrationException(e);
                 } finally {
                     try {
                         if (!completed) {
@@ -389,24 +394,22 @@ public class DirectServiceImpl implements Service, DirectService {
 
         EndpointMetadata md = selectEndpoint(list, pathParams, requestType, responseType, cache);
         if (md == null) {
-            // TODO - Is this the correct Exception? Is there a way to convey
-            // this without logged stack trace?
-            throw new MalformedRequestException("No matching endpoint");
+            throw new WebApplicationException(HttpServletResponse.SC_NOT_FOUND);
         }
 
         final Object[] args = createArgsArray(pathParams, queryParameters, content, cache, md);
 
-        final ScriptPool<ScriptLibrary> libraryPool = conn.getRoutineLoader()
-            .getScriptLibrary(conn.getSession(), new TableName(procName.getSchemaName(),
-                                                               md.routineName));
+        final ScriptPool<ScriptLibrary> libraryPool = conn.getRoutineLoader().getScriptLibrary(conn.getSession(),
+                new TableName(procName.getSchemaName(), md.routineName));
         final ScriptLibrary library = libraryPool.get();
         boolean success = false;
         Object result;
+
+        LOG.debug("Endpoint {}", md);
         try {
             result = library.invoke(md.function, args);
             success = true;
-        }
-        finally {
+        } finally {
             libraryPool.put(library, success);
         }
 
@@ -468,13 +471,13 @@ public class DirectServiceImpl implements Service, DirectService {
         EndpointMetadata md = null;
         if (list != null) {
             for (final EndpointMetadata candidate : list) {
+                if (requestType != null && candidate.expectedContentType != null
+                        && !requestType.startsWith(candidate.expectedContentType)) {
+                    continue;
+                }
                 if (candidate.pattern != null) {
                     Matcher matcher = candidate.getParamPathMatcher(cache, pathParams);
                     if (matcher.matches()) {
-                        if (responseType != null && candidate.expectedContentType != null
-                                && !requestType.startsWith(candidate.expectedContentType)) {
-                            continue;
-                        }
                         md = candidate;
                         break;
                     }
@@ -541,7 +544,8 @@ public class DirectServiceImpl implements Service, DirectService {
             for (final Routine routine : ais.getRoutines().values()) {
                 if (routine.getCallingConvention().equals(CallingConvention.SCRIPT_LIBRARY)
                         && routine.getDynamicResultSets() == 0 && routine.getParameters().isEmpty()) {
-                    final ScriptPool<ScriptLibrary> libraryPool = routineLoader.getScriptLibrary(session, routine.getName());
+                    final ScriptPool<ScriptLibrary> libraryPool = routineLoader.getScriptLibrary(session,
+                            routine.getName());
                     final ScriptLibrary library = libraryPool.get();
                     boolean success = false;
                     try {
@@ -549,6 +553,8 @@ public class DirectServiceImpl implements Service, DirectService {
                                 new Object[] { new RestFunctionRegistrar() {
                                     @Override
                                     public void register(String specification) throws Exception {
+                                        LOG.debug("Registering endpoint in routine {}: {}", routine.getName(),
+                                                specification);
                                         EndpointMap.this.register(routine.getName().getSchemaName(), routine.getName()
                                                 .getTableName(), specification);
                                     }
@@ -558,7 +564,7 @@ public class DirectServiceImpl implements Service, DirectService {
                         if (e.getCause() instanceof NoSuchMethodException) {
                             LOG.warn("Script library " + routine.getName() + " has no _register function");
                             success = true;
-                            return;
+                            continue;
                         }
                         Throwable previous = e;
                         Throwable current;
@@ -570,8 +576,10 @@ public class DirectServiceImpl implements Service, DirectService {
                         }
                         throw e;
                     } catch (RegistrationException e) {
+                        LOG.warn("Endpoint registration failure {} in routine {}", e, routine.getName());
                         throw e;
                     } catch (Exception e) {
+                        LOG.warn("Endpoint registration failure {} in routine {}", e, routine.getName());
                         throw new RegistrationException(e);
                     } finally {
                         libraryPool.put(library, success);
@@ -579,7 +587,6 @@ public class DirectServiceImpl implements Service, DirectService {
                 }
             }
         }
-
 
         void register(final String schema, final String routine, final String spec) throws Exception {
 
@@ -596,7 +603,8 @@ public class DirectServiceImpl implements Service, DirectService {
                     list.add(em);
                 }
             } catch (Exception e) {
-                throw new RegistrationException("Invalid function specification: " + spec, e);
+                String msg = e instanceof IllegalArgumentException ? e.getMessage() : "";
+                throw new RegistrationException("Invalid function specification: " + spec + " - " + msg, e);
             }
         }
     }

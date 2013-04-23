@@ -751,6 +751,15 @@ public class PostgresServerConnection extends ServerSessionBase
         if (statementCache != null)
             pstmt = statementCache.get(sql);
         if (pstmt == null) {
+            for (PostgresStatementParser parser : unparsedGenerators) {
+                pstmt = parser.parse(this, sql, null);
+                if (pstmt != null) {
+                    pstmt.setAISGeneration(ais.getGeneration());
+                    break;
+                }
+            }
+        }
+        if (pstmt == null) {
             StatementNode stmt;
             List<ParameterNode> params;
             try {

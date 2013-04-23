@@ -26,8 +26,6 @@ package com.akiban.direct;
  */
 public class DirectException extends RuntimeException {
 
-    private static final long serialVersionUID = 9217986178149864740L;
-
     public DirectException(final Exception e) {
         super(e);
     }
