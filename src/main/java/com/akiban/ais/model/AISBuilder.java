@@ -137,6 +137,18 @@ public class AISBuilder {
         return column;
     }
 
+    public void columnAsIdentity(String schemaName, String tableName, String columnName,
+                                 long start, long increment, boolean defaultIdentity) {
+        // The merge process will generate a real sequence name
+        int count = 0;
+        String sequenceName = "temp-sequence";
+        while(ais.getSequence(new TableName(schemaName, sequenceName)) != null) {
+            sequenceName = sequenceName + count++;
+        }
+        sequence(schemaName, sequenceName, start, increment, Long.MIN_VALUE, Long.MAX_VALUE, false);
+        columnAsIdentity(schemaName, tableName, columnName, sequenceName, defaultIdentity);
+    }
+
     public void columnAsIdentity (String schemaName, String tableName, String columnName,
             String sequenceName, Boolean defaultIdentity) {
         LOG.trace("column as identity: " + schemaName + "." + tableName + "." + columnName + ": " + sequenceName);
