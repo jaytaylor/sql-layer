@@ -153,6 +153,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
                 PostgresOutputter<Row> outputter = null;
                 if (outputResult) {
                     outputter = getRowOutputter(context);
+                    outputter.beforeData();
                 }
                 Row row;
                 while ((row = cursor.next()) != null) {
