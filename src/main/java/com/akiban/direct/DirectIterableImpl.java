@@ -104,7 +104,6 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
 
     private boolean nextRow() {
         try {
-
             boolean result = resultSet.next();
             return result;
         } catch (SQLException e) {

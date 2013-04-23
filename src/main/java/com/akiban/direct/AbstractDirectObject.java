@@ -43,7 +43,7 @@ public abstract class AbstractDirectObject implements DirectObject {
      * 1. schema_name 2. tableName 3. comma-separated list of column names, 4.
      * comma-separated list of '?' symbols.
      */
-    private final static String INSERT_STATEMENT = "insert into \"%s\".\"%s\" (%s) values (%s)";
+    private final static String INSERT_STATEMENT = "insert into \"%s\".\"%s\" (%s) values (%s) returning *";
 
     /*
      * 1. schema name 2. table name 3. comma-separated list of column_name=?
@@ -428,10 +428,35 @@ public abstract class AbstractDirectObject implements DirectObject {
              * it. If rs is not null, then this instance was selected from an
              * existing table and the intention is to UPDATE it.
              */
-            PreparedStatement stmt = rs == null ? __insertStatement() : __updateStatement();
-            stmt.execute();
+            if (rs == null) {
+                PreparedStatement stmt = __insertStatement();
+                stmt.execute();
+                JDBCResultSet returningResultSet = (JDBCResultSet)stmt.getGeneratedKeys();
+                try {
+                    if (returningResultSet.next()) {
+                        rs = new JDBCResultSet((JDBCResultSet)returningResultSet) {
+                            @Override
+                            public boolean next() throws SQLException {
+                                throw new SQLException("Copy is frozen");
+                            }
+                            
+                            private JDBCResultSet copyValues() {
+                                values = getValues();
+                                return this;
+                            }
+                        }.copyValues();
+                    }
+                } catch (SQLException e) {
+                    throw new DirectException(e);
+                }
 
-            updates = null;
+                updates = null;
+            } else {
+                PreparedStatement stmt = __updateStatement();
+                stmt.execute();
+                updates = null;
+                
+            }
 
         } catch (SQLException e) {
             throw new DirectException(e);
