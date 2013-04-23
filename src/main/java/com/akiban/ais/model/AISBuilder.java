@@ -139,14 +139,14 @@ public class AISBuilder {
 
     public void columnAsIdentity(String schemaName, String tableName, String columnName,
                                  long start, long increment, boolean defaultIdentity) {
-        // The merge process will generate a real sequence name
+        // The merge process will generate the *real* sequence name
         int count = 0;
-        String sequenceName = "temp-sequence";
-        while(ais.getSequence(new TableName(schemaName, sequenceName)) != null) {
-            sequenceName = sequenceName + count++;
+        TableName sequenceName = nameGenerator.generateIdentitySequenceName(new TableName(schemaName, tableName));
+        while(ais.getSequence(sequenceName) != null) {
+            sequenceName = new TableName(schemaName, sequenceName.getTableName() + count++);
         }
-        sequence(schemaName, sequenceName, start, increment, Long.MIN_VALUE, Long.MAX_VALUE, false);
-        columnAsIdentity(schemaName, tableName, columnName, sequenceName, defaultIdentity);
+        sequence(schemaName, sequenceName.getTableName(), start, increment, Long.MIN_VALUE, Long.MAX_VALUE, false);
+        columnAsIdentity(schemaName, tableName, columnName, sequenceName.getTableName(), defaultIdentity);
     }
 
     public void columnAsIdentity (String schemaName, String tableName, String columnName,

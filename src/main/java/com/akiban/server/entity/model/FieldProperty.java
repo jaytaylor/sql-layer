@@ -53,11 +53,15 @@ public abstract class FieldProperty {
                 return new IdentityProperty(isDefault,
                                             seq.getStartsWith(),
                                             seq.getIncrement());
-            } else if(o instanceof Map) {
+            }
+            if(o instanceof Map) {
                 Map map = (Map)o;
                 return new IdentityProperty(EntityUtil.cast(map.get("default"), Boolean.class),
                                             EntityUtil.cast(map.get("start"), Number.class),
                                             EntityUtil.cast(map.get("increment"), Number.class));
+            }
+            if(o instanceof IdentityProperty) {
+                return (IdentityProperty)o;
             }
             throw new IllegalArgumentException("Can't create from: " + o);
         }

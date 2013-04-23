@@ -26,6 +26,8 @@ import com.akiban.junit.Parameterization;
 import com.akiban.server.entity.model.Space;
 import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.util.JUnitUtils;
+import com.akiban.util.JsonUtils;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Maps;
@@ -67,14 +69,16 @@ public final class AisToSpaceTest {
     }
 
     @Test
-    public void test() {
+    public void test() throws IOException {
         Space expectedSpace = Space.readSpace(testName + ".json", AisToSpaceTest.class, null);
 
         AkibanInformationSchema ais = SchemaFactory.loadAIS(new File(testDir, testName + ".ddl"), "test_schema");
         ais.traversePostOrder(new SetUuidAssigner());
         Space actualSpace = AisToSpace.create(ais, null);
 
-        assertEquals("space json", normalizeJson(expectedSpace.toJson()), normalizeJson(actualSpace.toJson()));
+        JsonNode expectedNode = JsonUtils.readTree(expectedSpace.toJson());
+        JsonNode actualNode = JsonUtils.readTree(actualSpace.toJson());
+        assertEquals("space json", expectedNode, actualNode);
     }
 
     private class SetUuidAssigner extends NopVisitor {

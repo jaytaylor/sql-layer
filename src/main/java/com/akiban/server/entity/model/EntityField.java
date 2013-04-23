@@ -42,12 +42,7 @@ public final class EntityField extends EntityElement {
     }
 
     public void setProperties(Map<String, Object> properties) {
-        TreeMap<String,Object> map = new TreeMap<>(properties);
-        Object identity = map.get(FieldProperty.IdentityProperty.PROPERTY_NAME);
-        if(identity != null) {
-            map.put(FieldProperty.IdentityProperty.PROPERTY_NAME, FieldProperty.IdentityProperty.create(identity));
-        }
-        this.properties = Collections.unmodifiableMap(map);
+        this.properties = Collections.unmodifiableMap(new TreeMap<>(properties));
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

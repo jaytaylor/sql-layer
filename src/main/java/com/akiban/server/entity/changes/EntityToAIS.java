@@ -30,6 +30,7 @@ import com.akiban.server.entity.model.Entity;
 import com.akiban.server.entity.model.EntityCollection;
 import com.akiban.server.entity.model.EntityField;
 import com.akiban.server.entity.model.EntityVisitor;
+import com.akiban.server.entity.model.FieldProperty;
 import com.akiban.server.entity.model.IndexField;
 import com.akiban.server.entity.model.EntityIndex;
 import com.akiban.server.entity.model.Validation;
@@ -117,6 +118,9 @@ public class EntityToAIS implements EntityVisitor {
                                        scalarType.type.name(), info.param1, info.param2,
                                        info.nullable, false /*isAutoInc*/,
                                        info.charset, info.collation);
+        if (info.identity != null)
+            builder.columnAsIdentity(schemaName, entity.getName(), name,
+                                     info.identity.getStart(), info.identity.getIncrement(), info.identity.isDefault());
         column.setUuid(field.getUuid());
     }
 
@@ -343,6 +347,10 @@ public class EntityToAIS implements EntityVisitor {
                 }
             }
         }
+        Object identity = fullProps.remove(FieldProperty.IdentityProperty.PROPERTY_NAME.toUpperCase());
+        if(identity != null) {
+            info.identity = FieldProperty.IdentityProperty.create(identity);
+        }
         if (!fullProps.isEmpty()) {
             LOG.warn("unused properties or validations for column of type {}: {}", type.tClass, fullProps);
         }
@@ -430,5 +438,6 @@ public class EntityToAIS implements EntityVisitor {
         public String charset;
         public String collation;
         public boolean nullable = !ATTR_REQUIRED_DEFAULT;
+        public FieldProperty.IdentityProperty identity;
     }
 }

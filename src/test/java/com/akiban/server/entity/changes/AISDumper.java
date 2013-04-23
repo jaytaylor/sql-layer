@@ -22,6 +22,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.protobuf.ProtobufWriter;
 
@@ -52,6 +53,9 @@ public class AISDumper {
                 index.setIndexId(-1);
                 index.setTreeName(null);
             }
+        }
+        for(Sequence sequence : clone.getSequences().values()) {
+            sequence.setTreeName(null);
         }
         return new ProtobufWriter(selector).save(clone).toString();
     }
