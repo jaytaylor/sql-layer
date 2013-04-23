@@ -1,0 +1,653 @@
+#
+# Bloom filter in subquery of query with parameters.
+# Make sure binding indexes are straight.
+#
+#
+# many-to-many
+#
+---
+- CreateTable: names(id INT NOT NULL PRIMARY KEY, name VARCHAR(128))
+---
+- Statement: CREATE UNIQUE INDEX by_name ON names(name)
+---
+- CreateTable: props(id INT NOT NULL PRIMARY KEY, name VARCHAR(128))
+---
+- Statement: CREATE UNIQUE INDEX prop_name ON props(name)
+---
+- CreateTable: name_props(id INT NOT NULL PRIMARY KEY, prop_id INT NOT NULL, name_id INT NOT NULL, GROUPING FOREIGN KEY(name_id) REFERENCES names(id))
+# Put in enough data to choose Bloom filter.
+---
+- Statement: CREATE UNIQUE INDEX name_props ON name_props(name_id, prop_id)
+---
+- Statement: INSERT INTO props VALUES(1, 'abc'), (2, 'xyz');
+---
+- Statement: INSERT INTO names VALUES(1, 'Akiban')
+---
+- Statement: INSERT INTO name_props VALUES(1, 1, 1), (2, 2, 1)
+---
+- Statement: INSERT INTO names VALUES(4, 'Spoqrzt')
+---
+- Statement: INSERT INTO name_props VALUES(5, 1, 4)
+---
+- Statement: INSERT INTO names VALUES(5, 'Ioukhwfzpl')
+---
+- Statement: INSERT INTO name_props VALUES(6, 1, 5)
+---
+- Statement: INSERT INTO names VALUES(6, 'Gzwucp')
+---
+- Statement: INSERT INTO name_props VALUES(7, 1, 6)
+---
+- Statement: INSERT INTO names VALUES(7, 'Zgewwy')
+---
+- Statement: INSERT INTO name_props VALUES(8, 1, 7)
+---
+- Statement: INSERT INTO names VALUES(8, 'Pbvbk')
+---
+- Statement: INSERT INTO name_props VALUES(9, 1, 8)
+---
+- Statement: INSERT INTO names VALUES(9, 'Jxbtff')
+---
+- Statement: INSERT INTO name_props VALUES(10, 1, 9)
+---
+- Statement: INSERT INTO names VALUES(10, 'Rafcp')
+---
+- Statement: INSERT INTO name_props VALUES(11, 1, 10)
+---
+- Statement: INSERT INTO names VALUES(11, 'Zjvqntazs')
+---
+- Statement: INSERT INTO name_props VALUES(12, 1, 11)
+---
+- Statement: INSERT INTO names VALUES(12, 'Ibpudfbtxc')
+---
+- Statement: INSERT INTO name_props VALUES(13, 1, 12)
+---
+- Statement: INSERT INTO names VALUES(13, 'Hbksgv')
+---
+- Statement: INSERT INTO name_props VALUES(14, 1, 13)
+---
+- Statement: INSERT INTO names VALUES(14, 'Mdhbz')
+---
+- Statement: INSERT INTO name_props VALUES(15, 1, 14)
+---
+- Statement: INSERT INTO names VALUES(15, 'Rivcwdnnn')
+---
+- Statement: INSERT INTO name_props VALUES(16, 1, 15)
+---
+- Statement: INSERT INTO names VALUES(16, 'Brfjsk')
+---
+- Statement: INSERT INTO name_props VALUES(17, 1, 16)
+---
+- Statement: INSERT INTO names VALUES(18, 'Sbcrqbxqxzr')
+---
+- Statement: INSERT INTO name_props VALUES(19, 1, 18)
+---
+- Statement: INSERT INTO names VALUES(31, 'Ahfntcvnl')
+---
+- Statement: INSERT INTO name_props VALUES(32, 1, 31)
+---
+- Statement: INSERT INTO names VALUES(33, 'Kxgam')
+---
+- Statement: INSERT INTO name_props VALUES(34, 1, 33)
+---
+- Statement: INSERT INTO names VALUES(34, 'Octwh')
+---
+- Statement: INSERT INTO name_props VALUES(35, 1, 34)
+---
+- Statement: INSERT INTO names VALUES(35, 'Snatm')
+---
+- Statement: INSERT INTO name_props VALUES(36, 1, 35)
+---
+- Statement: INSERT INTO names VALUES(36, 'Kinjs')
+---
+- Statement: INSERT INTO name_props VALUES(37, 1, 36)
+---
+- Statement: INSERT INTO names VALUES(37, 'Eccqtjzg')
+---
+- Statement: INSERT INTO name_props VALUES(38, 1, 37)
+---
+- Statement: INSERT INTO names VALUES(38, 'Thdeljlud')
+---
+- Statement: INSERT INTO name_props VALUES(39, 1, 38)
+---
+- Statement: INSERT INTO names VALUES(39, 'Ocfrhu')
+---
+- Statement: INSERT INTO name_props VALUES(40, 1, 39)
+---
+- Statement: INSERT INTO names VALUES(40, 'Ljogrtgeiu')
+---
+- Statement: INSERT INTO name_props VALUES(41, 1, 40)
+---
+- Statement: INSERT INTO names VALUES(41, 'Btpvkvmkle')
+---
+- Statement: INSERT INTO name_props VALUES(42, 1, 41)
+---
+- Statement: INSERT INTO names VALUES(42, 'Plzcbtl')
+---
+- Statement: INSERT INTO name_props VALUES(43, 1, 42)
+---
+- Statement: INSERT INTO names VALUES(43, 'Iufyrfw')
+---
+- Statement: INSERT INTO name_props VALUES(44, 1, 43)
+---
+- Statement: INSERT INTO names VALUES(44, 'Zaqevll')
+---
+- Statement: INSERT INTO name_props VALUES(45, 1, 44)
+---
+- Statement: INSERT INTO names VALUES(45, 'Dfmfeklpgw')
+---
+- Statement: INSERT INTO name_props VALUES(46, 1, 45)
+---
+- Statement: INSERT INTO names VALUES(46, 'Mynjcxgaw')
+---
+- Statement: INSERT INTO name_props VALUES(47, 1, 46)
+---
+- Statement: INSERT INTO names VALUES(47, 'Ybaghbzp')
+---
+- Statement: INSERT INTO name_props VALUES(48, 1, 47)
+---
+- Statement: INSERT INTO names VALUES(58, 'Dhivpsiznkk')
+---
+- Statement: INSERT INTO name_props VALUES(59, 1, 58)
+---
+- Statement: INSERT INTO names VALUES(59, 'Panofztcjd')
+---
+- Statement: INSERT INTO name_props VALUES(60, 1, 59)
+---
+- Statement: INSERT INTO names VALUES(60, 'Yienwzfpt')
+---
+- Statement: INSERT INTO name_props VALUES(61, 1, 60)
+---
+- Statement: INSERT INTO names VALUES(61, 'Zfshqgrgylx')
+---
+- Statement: INSERT INTO name_props VALUES(62, 1, 61)
+---
+- Statement: INSERT INTO names VALUES(62, 'Souapplpfr')
+---
+- Statement: INSERT INTO name_props VALUES(63, 1, 62)
+---
+- Statement: INSERT INTO names VALUES(63, 'Rhcmmyainf')
+---
+- Statement: INSERT INTO name_props VALUES(64, 1, 63)
+---
+- Statement: INSERT INTO names VALUES(64, 'Vceohrds')
+---
+- Statement: INSERT INTO name_props VALUES(65, 1, 64)
+---
+- Statement: INSERT INTO names VALUES(65, 'Gbcmlg')
+---
+- Statement: INSERT INTO name_props VALUES(66, 1, 65)
+---
+- Statement: INSERT INTO names VALUES(66, 'Yrzktqraf')
+---
+- Statement: INSERT INTO name_props VALUES(67, 1, 66)
+---
+- Statement: INSERT INTO names VALUES(67, 'Mgqpgoiecy')
+---
+- Statement: INSERT INTO name_props VALUES(68, 1, 67)
+---
+- Statement: INSERT INTO names VALUES(76, 'Hmrsj')
+---
+- Statement: INSERT INTO name_props VALUES(77, 1, 76)
+---
+- Statement: INSERT INTO names VALUES(78, 'Gvfmntnsgwn')
+---
+- Statement: INSERT INTO name_props VALUES(79, 1, 78)
+---
+- Statement: INSERT INTO names VALUES(79, 'Zuaszsxzy')
+---
+- Statement: INSERT INTO name_props VALUES(80, 1, 79)
+---
+- Statement: INSERT INTO names VALUES(82, 'Fmvci')
+---
+- Statement: INSERT INTO name_props VALUES(83, 1, 82)
+---
+- Statement: INSERT INTO names VALUES(90, 'Gaptjxia')
+---
+- Statement: INSERT INTO name_props VALUES(91, 1, 90)
+---
+- Statement: INSERT INTO names VALUES(92, 'Zyvnsklsyda')
+---
+- Statement: INSERT INTO name_props VALUES(93, 1, 92)
+---
+- Statement: INSERT INTO names VALUES(96, 'Gojhf')
+---
+- Statement: INSERT INTO name_props VALUES(97, 1, 96)
+---
+- Statement: INSERT INTO names VALUES(105, 'Qknhonhsetk')
+---
+- Statement: INSERT INTO name_props VALUES(106, 1, 105)
+---
+- Statement: INSERT INTO names VALUES(107, 'Qfukqa')
+---
+- Statement: INSERT INTO name_props VALUES(108, 1, 107)
+---
+- Statement: INSERT INTO names VALUES(110, 'Gpvgz')
+---
+- Statement: INSERT INTO name_props VALUES(111, 1, 110)
+---
+- Statement: INSERT INTO names VALUES(111, 'Zqnbkziw')
+---
+- Statement: INSERT INTO name_props VALUES(112, 1, 111)
+---
+- Statement: INSERT INTO names VALUES(112, 'Ixaujvp')
+---
+- Statement: INSERT INTO name_props VALUES(113, 1, 112)
+---
+- Statement: INSERT INTO names VALUES(119, 'Tvkzkswznpa')
+---
+- Statement: INSERT INTO name_props VALUES(120, 1, 119)
+---
+- Statement: INSERT INTO names VALUES(120, 'Roofci')
+---
+- Statement: INSERT INTO name_props VALUES(121, 1, 120)
+---
+- Statement: INSERT INTO names VALUES(124, 'Tptkxttdyl')
+---
+- Statement: INSERT INTO name_props VALUES(125, 1, 124)
+---
+- Statement: INSERT INTO names VALUES(125, 'Inzugej')
+---
+- Statement: INSERT INTO name_props VALUES(126, 1, 125)
+---
+- Statement: INSERT INTO names VALUES(126, 'Evsmj')
+---
+- Statement: INSERT INTO name_props VALUES(127, 1, 126)
+---
+- Statement: INSERT INTO names VALUES(133, 'Vjmgvogph')
+---
+- Statement: INSERT INTO name_props VALUES(134, 1, 133)
+---
+- Statement: INSERT INTO names VALUES(134, 'Bzrggr')
+---
+- Statement: INSERT INTO name_props VALUES(135, 1, 134)
+---
+- Statement: INSERT INTO names VALUES(135, 'Xpvvsn')
+---
+- Statement: INSERT INTO name_props VALUES(136, 1, 135)
+---
+- Statement: INSERT INTO names VALUES(137, 'Nwavmftfwc')
+---
+- Statement: INSERT INTO name_props VALUES(138, 1, 137)
+---
+- Statement: INSERT INTO names VALUES(138, 'Qqbprawuzqa')
+---
+- Statement: INSERT INTO name_props VALUES(139, 1, 138)
+---
+- Statement: INSERT INTO names VALUES(140, 'Kbjrvsiy')
+---
+- Statement: INSERT INTO name_props VALUES(141, 1, 140)
+---
+- Statement: INSERT INTO names VALUES(142, 'Wgunros')
+---
+- Statement: INSERT INTO name_props VALUES(143, 1, 142)
+---
+- Statement: INSERT INTO names VALUES(150, 'Yeinuylr')
+---
+- Statement: INSERT INTO name_props VALUES(151, 1, 150)
+---
+- Statement: INSERT INTO names VALUES(155, 'Hpcgv')
+---
+- Statement: INSERT INTO name_props VALUES(156, 1, 155)
+---
+- Statement: INSERT INTO names VALUES(160, 'Tcgmsuuyp')
+---
+- Statement: INSERT INTO name_props VALUES(161, 1, 160)
+---
+- Statement: INSERT INTO names VALUES(161, 'Bawdd')
+---
+- Statement: INSERT INTO name_props VALUES(162, 1, 161)
+---
+- Statement: INSERT INTO names VALUES(167, 'Rhcuvv')
+---
+- Statement: INSERT INTO name_props VALUES(168, 1, 167)
+---
+- Statement: INSERT INTO names VALUES(168, 'Bprojkuo')
+---
+- Statement: INSERT INTO name_props VALUES(169, 1, 168)
+---
+- Statement: INSERT INTO names VALUES(172, 'Ociwj')
+---
+- Statement: INSERT INTO name_props VALUES(173, 1, 172)
+---
+- Statement: INSERT INTO names VALUES(179, 'Vagmrpfcyic')
+---
+- Statement: INSERT INTO name_props VALUES(180, 1, 179)
+---
+- Statement: INSERT INTO names VALUES(182, 'Rcspmlskni')
+---
+- Statement: INSERT INTO name_props VALUES(183, 1, 182)
+---
+- Statement: INSERT INTO names VALUES(184, 'Dyilbdvvrgz')
+---
+- Statement: INSERT INTO name_props VALUES(185, 1, 184)
+---
+- Statement: INSERT INTO names VALUES(187, 'Qbuglimfh')
+---
+- Statement: INSERT INTO name_props VALUES(188, 1, 187)
+---
+- Statement: INSERT INTO names VALUES(188, 'Pzqmibcchwf')
+---
+- Statement: INSERT INTO name_props VALUES(189, 1, 188)
+---
+- Statement: INSERT INTO names VALUES(193, 'Zbjalczrzle')
+---
+- Statement: INSERT INTO name_props VALUES(194, 1, 193)
+---
+- Statement: INSERT INTO names VALUES(195, 'Xktkbgltpx')
+---
+- Statement: INSERT INTO name_props VALUES(196, 1, 195)
+---
+- Statement: INSERT INTO names VALUES(204, 'Ccgekvv')
+---
+- Statement: INSERT INTO name_props VALUES(205, 1, 204)
+---
+- Statement: INSERT INTO names VALUES(206, 'Lburgexb')
+---
+- Statement: INSERT INTO name_props VALUES(207, 1, 206)
+---
+- Statement: INSERT INTO names VALUES(208, 'Qqpkdldd')
+---
+- Statement: INSERT INTO name_props VALUES(209, 1, 208)
+---
+- Statement: INSERT INTO names VALUES(211, 'Vyalmcnaji')
+---
+- Statement: INSERT INTO name_props VALUES(212, 1, 211)
+---
+- Statement: INSERT INTO names VALUES(231, 'Rkpzdhwmv')
+---
+- Statement: INSERT INTO name_props VALUES(232, 1, 231)
+---
+- Statement: INSERT INTO names VALUES(235, 'Azgrj')
+---
+- Statement: INSERT INTO name_props VALUES(236, 1, 235)
+---
+- Statement: INSERT INTO names VALUES(243, 'Lmvfmjpse')
+---
+- Statement: INSERT INTO name_props VALUES(244, 1, 243)
+---
+- Statement: INSERT INTO names VALUES(244, 'Wlvbgh')
+---
+- Statement: INSERT INTO name_props VALUES(245, 1, 244)
+---
+- Statement: INSERT INTO names VALUES(245, 'Xhjtszv')
+---
+- Statement: INSERT INTO name_props VALUES(246, 1, 245)
+---
+- Statement: INSERT INTO names VALUES(246, 'Cypbzp')
+---
+- Statement: INSERT INTO name_props VALUES(247, 1, 246)
+---
+- Statement: INSERT INTO names VALUES(250, 'Gfmcxqpk')
+---
+- Statement: INSERT INTO name_props VALUES(251, 1, 250)
+---
+- Statement: INSERT INTO names VALUES(251, 'Iurtdx')
+---
+- Statement: INSERT INTO name_props VALUES(252, 1, 251)
+---
+- Statement: INSERT INTO names VALUES(252, 'Hogcz')
+---
+- Statement: INSERT INTO name_props VALUES(253, 1, 252)
+---
+- Statement: INSERT INTO names VALUES(253, 'Lpaxfnx')
+---
+- Statement: INSERT INTO name_props VALUES(254, 1, 253)
+---
+- Statement: INSERT INTO names VALUES(255, 'Izdnpbkkor')
+---
+- Statement: INSERT INTO name_props VALUES(256, 1, 255)
+---
+- Statement: INSERT INTO names VALUES(257, 'Jixea')
+---
+- Statement: INSERT INTO name_props VALUES(258, 1, 257)
+---
+- Statement: INSERT INTO names VALUES(258, 'Ymekhl')
+---
+- Statement: INSERT INTO name_props VALUES(259, 1, 258)
+---
+- Statement: INSERT INTO names VALUES(259, 'Mzbvyitcox')
+---
+- Statement: INSERT INTO name_props VALUES(260, 1, 259)
+---
+- Statement: INSERT INTO names VALUES(260, 'Ccmxsx')
+---
+- Statement: INSERT INTO name_props VALUES(261, 1, 260)
+---
+- Statement: INSERT INTO names VALUES(261, 'Qdmdrw')
+---
+- Statement: INSERT INTO name_props VALUES(262, 1, 261)
+---
+- Statement: INSERT INTO names VALUES(265, 'Jfnrcxcus')
+---
+- Statement: INSERT INTO name_props VALUES(266, 1, 265)
+---
+- Statement: INSERT INTO names VALUES(269, 'Cabnpmrif')
+---
+- Statement: INSERT INTO name_props VALUES(270, 1, 269)
+---
+- Statement: INSERT INTO names VALUES(270, 'Nxtlj')
+---
+- Statement: INSERT INTO name_props VALUES(271, 1, 270)
+---
+- Statement: INSERT INTO names VALUES(271, 'Nirumol')
+---
+- Statement: INSERT INTO name_props VALUES(272, 1, 271)
+---
+- Statement: INSERT INTO names VALUES(274, 'Cbgqzhfc')
+---
+- Statement: INSERT INTO name_props VALUES(275, 1, 274)
+---
+- Statement: INSERT INTO names VALUES(275, 'Uuymwulh')
+---
+- Statement: INSERT INTO name_props VALUES(276, 1, 275)
+---
+- Statement: INSERT INTO names VALUES(278, 'Cmxjfbveufw')
+---
+- Statement: INSERT INTO name_props VALUES(279, 1, 278)
+---
+- Statement: INSERT INTO names VALUES(282, 'Axmldjgsmi')
+---
+- Statement: INSERT INTO name_props VALUES(283, 1, 282)
+---
+- Statement: INSERT INTO names VALUES(283, 'Cjdxu')
+---
+- Statement: INSERT INTO name_props VALUES(284, 1, 283)
+---
+- Statement: INSERT INTO names VALUES(284, 'Rintirs')
+---
+- Statement: INSERT INTO name_props VALUES(285, 1, 284)
+---
+- Statement: INSERT INTO names VALUES(286, 'Diogq')
+---
+- Statement: INSERT INTO name_props VALUES(287, 1, 286)
+---
+- Statement: INSERT INTO names VALUES(287, 'Smlssuf')
+---
+- Statement: INSERT INTO name_props VALUES(288, 1, 287)
+---
+- Statement: INSERT INTO names VALUES(302, 'Sqxputcbuo')
+---
+- Statement: INSERT INTO name_props VALUES(306, 1, 302)
+---
+- Statement: INSERT INTO names VALUES(303, 'Uokodyujib')
+---
+- Statement: INSERT INTO name_props VALUES(307, 1, 303)
+---
+- Statement: INSERT INTO names VALUES(306, 'Fhvtb')
+---
+- Statement: INSERT INTO name_props VALUES(309, 1, 306)
+---
+- Statement: INSERT INTO names VALUES(309, 'Jxyoebhitu')
+---
+- Statement: INSERT INTO name_props VALUES(312, 1, 309)
+---
+- Statement: INSERT INTO names VALUES(313, 'Vdbzx')
+---
+- Statement: INSERT INTO name_props VALUES(316, 1, 313)
+---
+- Statement: INSERT INTO names VALUES(314, 'Mrhbp')
+---
+- Statement: INSERT INTO name_props VALUES(317, 1, 314)
+---
+- Statement: INSERT INTO names VALUES(316, 'Gagfonyc')
+---
+- Statement: INSERT INTO name_props VALUES(319, 1, 316)
+---
+- Statement: INSERT INTO names VALUES(319, 'Ildajaitiml')
+---
+- Statement: INSERT INTO name_props VALUES(322, 1, 319)
+---
+- Statement: INSERT INTO names VALUES(321, 'Sqzjf')
+---
+- Statement: INSERT INTO name_props VALUES(324, 1, 321)
+---
+- Statement: INSERT INTO names VALUES(323, 'Ajzpld')
+---
+- Statement: INSERT INTO name_props VALUES(326, 1, 323)
+---
+- Statement: INSERT INTO names VALUES(332, 'Efnqimxicz')
+---
+- Statement: INSERT INTO name_props VALUES(335, 1, 332)
+---
+- Statement: INSERT INTO names VALUES(333, 'Fkjycsc')
+---
+- Statement: INSERT INTO name_props VALUES(336, 1, 333)
+---
+- Statement: INSERT INTO names VALUES(335, 'Htuhdv')
+---
+- Statement: INSERT INTO name_props VALUES(338, 1, 335)
+---
+- Statement: INSERT INTO names VALUES(336, 'Jiimafkm')
+---
+- Statement: INSERT INTO name_props VALUES(339, 1, 336)
+---
+- Statement: INSERT INTO names VALUES(343, 'Qeowxwxhw')
+---
+- Statement: INSERT INTO name_props VALUES(346, 1, 343)
+---
+- Statement: INSERT INTO names VALUES(345, 'Odhfoetvtl')
+---
+- Statement: INSERT INTO name_props VALUES(348, 1, 345)
+---
+- Statement: INSERT INTO names VALUES(347, 'Ebnlngmcoz')
+---
+- Statement: INSERT INTO name_props VALUES(350, 1, 347)
+---
+- Statement: INSERT INTO names VALUES(348, 'Ujaoaznaf')
+---
+- Statement: INSERT INTO name_props VALUES(351, 1, 348)
+---
+- Statement: INSERT INTO names VALUES(349, 'Dkelvsyx')
+---
+- Statement: INSERT INTO name_props VALUES(352, 1, 349)
+---
+- Statement: INSERT INTO names VALUES(350, 'Gypaowuiwrq')
+---
+- Statement: INSERT INTO name_props VALUES(353, 1, 350)
+---
+- Statement: INSERT INTO names VALUES(352, 'Pjrtpa')
+---
+- Statement: INSERT INTO name_props VALUES(355, 1, 352)
+---
+- Statement: INSERT INTO names VALUES(354, 'Gsskcpumlv')
+---
+- Statement: INSERT INTO name_props VALUES(357, 1, 354)
+---
+- Statement: INSERT INTO names VALUES(357, 'Qxvifr')
+---
+- Statement: INSERT INTO name_props VALUES(360, 1, 357)
+---
+- Statement: INSERT INTO names VALUES(358, 'Exgxst')
+---
+- Statement: INSERT INTO name_props VALUES(361, 1, 358)
+---
+- Statement: INSERT INTO names VALUES(359, 'Vfgeg')
+---
+- Statement: INSERT INTO name_props VALUES(362, 1, 359)
+---
+- Statement: INSERT INTO names VALUES(360, 'Geophzjom')
+---
+- Statement: INSERT INTO name_props VALUES(363, 1, 360)
+---
+- Statement: INSERT INTO names VALUES(364, 'Mplftlfnhbn')
+---
+- Statement: INSERT INTO name_props VALUES(367, 1, 364)
+---
+- Statement: INSERT INTO names VALUES(365, 'Zfmegtbik')
+---
+- Statement: INSERT INTO name_props VALUES(368, 1, 365)
+---
+- Statement: INSERT INTO names VALUES(366, 'Qpgyatglvsj')
+---
+- Statement: INSERT INTO name_props VALUES(369, 1, 366)
+---
+- Statement: INSERT INTO names VALUES(367, 'Gctqwogue')
+---
+- Statement: INSERT INTO name_props VALUES(370, 1, 367)
+---
+- Statement: INSERT INTO names VALUES(369, 'Kmydbmjnwsr')
+---
+- Statement: INSERT INTO name_props VALUES(372, 1, 369)
+---
+- Statement: INSERT INTO names VALUES(370, 'Pllzgznffmw')
+---
+- Statement: INSERT INTO name_props VALUES(373, 1, 370)
+---
+- Statement: INSERT INTO names VALUES(371, 'Rwhpidslf')
+---
+- Statement: INSERT INTO name_props VALUES(374, 1, 371)
+---
+- Statement: INSERT INTO names VALUES(372, 'Epmyfpkgbp')
+---
+- Statement: INSERT INTO name_props VALUES(375, 1, 372)
+---
+- Statement: INSERT INTO names VALUES(373, 'Pzbjmzbau')
+---
+- Statement: INSERT INTO name_props VALUES(376, 1, 373)
+---
+- Statement: INSERT INTO names VALUES(374, 'Ltqyrvkd')
+---
+- Statement: INSERT INTO name_props VALUES(377, 1, 374)
+---
+- Statement: INSERT INTO names VALUES(375, 'Tahzvwx')
+---
+- Statement: INSERT INTO name_props VALUES(378, 1, 375)
+---
+- Statement: INSERT INTO names VALUES(376, 'Wmhyad')
+---
+- Statement: INSERT INTO name_props VALUES(379, 1, 376)
+---
+- Statement: INSERT INTO names VALUES(377, 'Genmrjpjy')
+---
+- Statement: INSERT INTO name_props VALUES(380, 1, 377)
+---
+- Statement: INSERT INTO names VALUES(378, 'Hvgveuxdxx')
+---
+- Statement: INSERT INTO name_props VALUES(381, 1, 378)
+---
+- Statement: INSERT INTO names VALUES(379, 'Ucpqhstzspe')
+---
+- Statement: INSERT INTO name_props VALUES(382, 1, 379)
+---
+- Statement: INSERT INTO names VALUES(380, 'Voxbnvcffsh')
+---
+- Statement: INSERT INTO name_props VALUES(383, 1, 380)
+---
+- Statement: INSERT INTO names VALUES(381, 'Jydaimev')
+---
+- Statement: INSERT INTO name_props VALUES(384, 1, 381)
+---
+- Statement: SET OutputFormat = 'json'
+---
+- Statement: SELECT id, name, (SELECT p.id, p.name FROM props p INNER JOIN name_props np ON p.id = np.prop_id WHERE np.name_id = names.id) AS props FROM names WHERE name = ?
+- params: [['Akiban']]
+- output: [['{"id":1,"name":"Akiban","props":[{"id":1,"name":"abc"},{"id":2,"name":"xyz"}]}']]
+---
+- Statement: ALTER TABLE name_props ALL UPDATE STATISTICS
+---
+- Statement: SELECT id, name, (SELECT p.id, p.name FROM props p INNER JOIN name_props np ON p.id = np.prop_id WHERE np.name_id = names.id) AS props FROM names WHERE name = ?
+- params: [['Akiban']]
+- output: [['{"id":1,"name":"Akiban","props":[{"id":1,"name":"abc"},{"id":2,"name":"xyz"}]}']]
+---
+- Statement: SET OutputFormat TO DEFAULT;
+...
