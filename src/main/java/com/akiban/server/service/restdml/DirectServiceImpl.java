@@ -33,11 +33,11 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 
-import org.eclipse.jetty.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -357,7 +357,7 @@ public class DirectServiceImpl implements Service, DirectService {
                     if (repeat == 0) {
                         LOG.error("Transaction failed " + TRANSACTION_RETRY_COUNT + " times: "
                                 + request.getRequestURI());
-                        throw new WebApplicationException(HttpStatus.INTERNAL_SERVER_ERROR_500);
+                        throw new WebApplicationException(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                     }
                 } catch (RegistrationException e) {
                     throw new ScriptLibraryRegistrationException(e);
@@ -395,7 +395,7 @@ public class DirectServiceImpl implements Service, DirectService {
 
         EndpointMetadata md = selectEndpoint(list, pathParams, requestType, responseType, cache);
         if (md == null) {
-            throw new WebApplicationException(HttpStatus.NOT_FOUND_404);
+            throw new WebApplicationException(HttpServletResponse.SC_NOT_FOUND);
         }
 
         final Object[] args = createArgsArray(pathParams, queryParameters, content, cache, md);
