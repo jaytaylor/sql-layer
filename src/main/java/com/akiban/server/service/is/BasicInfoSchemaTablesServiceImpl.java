@@ -328,20 +328,32 @@ public class BasicInfoSchemaTablesServiceImpl
                     case DECIMAL:
                         precision = column.getTypeParameter1().intValue();
                         scale = column.getTypeParameter2().intValue();
-                    break;
+                        break;
                     case VARCHAR:
                     case TEXT:
                         charAndColl = column.getCharsetAndCollation();
-                    break;
+                        break;
+                    default:
+                        break;
                 }
                 
                 String sequenceSchema = null;
                 String sequenceName = null;
                 String identityGeneration = null;
+                long identityStart = 0, 
+                        identityIncrement = 0, 
+                        identityMin = 0, 
+                        identityMax = 0;
+                String identityCycle = null;
                 if (column.getIdentityGenerator() != null) {
                     sequenceSchema = column.getIdentityGenerator().getSequenceName().getSchemaName();
                     sequenceName   = column.getIdentityGenerator().getSequenceName().getTableName();
                     identityGeneration = column.getDefaultIdentity() ? "BY DEFAULT" : "ALWAYS";
+                    identityStart = column.getIdentityGenerator().getStartsWith();
+                    identityIncrement = column.getIdentityGenerator().getIncrement();
+                    identityMin = column.getIdentityGenerator().getMinValue();
+                    identityMax = column.getIdentityGenerator().getMaxValue();
+                    identityCycle = boolResult(column.getIdentityGenerator().isCycle()); 
                 }
                 
                 return new ValuesRow(rowType,
@@ -355,7 +367,6 @@ public class BasicInfoSchemaTablesServiceImpl
                                      precision,
                                      scale,
                                      column.getPrefixSize(),
-                                     column.getInitialAutoIncrementValue(),
                                      charAndColl != null ? CHARSET_SCHEMA : null,
                                      charAndColl != null ? charAndColl.charset() : null,
                                      charAndColl != null ? COLLATION_SCHEMA : null,
@@ -363,6 +374,11 @@ public class BasicInfoSchemaTablesServiceImpl
                                      sequenceSchema,
                                      sequenceName,
                                      identityGeneration,
+                                     identityGeneration != null ? identityStart : null,
+                                     identityGeneration != null ? identityIncrement : null,
+                                     identityGeneration != null ? identityMin : null,
+                                     identityGeneration != null ? identityMax : null,
+                                     identityCycle,
                                      column.getDefaultValue(),
                                      ++rowCounter /*hidden pk*/);
             }
@@ -1466,12 +1482,11 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("column_name", IDENT_MAX, false)
                 .colBigInt("position", false)
                 .colString("type", DESCRIPTOR_MAX, false)
-                .colString("nullable", 3, false)
+                .colString("nullable", YES_NO_MAX, false)
                 .colBigInt("length", false)
                 .colBigInt("precision", true)
                 .colBigInt("scale", true)
                 .colBigInt("prefix_size", true)
-                .colBigInt("identity_start", true)
                 .colString("character_set_schema", IDENT_MAX, true)
                 .colString("character_set_name", IDENT_MAX, true)
                 .colString("collation_schema", IDENT_MAX, true)
@@ -1479,6 +1494,11 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("sequence_schema", IDENT_MAX, true)
                 .colString("sequence_name", IDENT_MAX, true)
                 .colString("identity_generation", IDENT_MAX, true)
+                .colBigInt("identity_start", true)
+                .colBigInt("identity_increment", true)
+                .colBigInt("identity_maximum", true)
+                .colBigInt("identity_minimum", true)
+                .colString("identity_cycle", YES_NO_MAX, true)
                 .colString("column_default", PATH_MAX, true);
         //primary key(schema_name, table_name, column_name)
         //foreign key(schema_name, table_name) references TABLES (schema_name, table_name)
