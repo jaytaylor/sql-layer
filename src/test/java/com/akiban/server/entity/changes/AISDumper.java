@@ -26,6 +26,12 @@ import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.protobuf.ProtobufWriter;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import static com.akiban.ais.protobuf.ProtobufWriter.WriteSelector;
 import static com.akiban.ais.protobuf.ProtobufWriter.SingleSchemaSelector;
 
@@ -33,6 +39,7 @@ public class AISDumper {
     public static String dumpDeterministicAIS(AkibanInformationSchema ais, String schema) {
         WriteSelector selector = new SingleSchemaSelector(schema);
         AkibanInformationSchema clone = AISCloner.clone(ais, selector);
+        Map<Sequence,Column> identityColumns = new HashMap<>();
         for(UserTable table : clone.getUserTables().values()) {
             table.setTableId(-1);
             table.setVersion(null);
@@ -40,6 +47,9 @@ public class AISDumper {
                 column.clearMaxAndPrefixSize();
                 if(column.getName().endsWith("_ref") || column.getName().endsWith("_ref$1")) {
                     column.setUuid(null);
+                }
+                if(column.getIdentityGenerator() != null) {
+                    identityColumns.put(column.getIdentityGenerator(), column);
                 }
             }
             for(Index index : table.getIndexesIncludingInternal()) {
@@ -54,8 +64,17 @@ public class AISDumper {
                 index.setTreeName(null);
             }
         }
-        for(Sequence sequence : clone.getSequences().values()) {
-            sequence.setTreeName(null);
+        // Get rid of generated tree and sequence names
+        List<Sequence> sequences = new ArrayList<>(clone.getSequences().values());
+        for(int i = 0; i < sequences.size(); ++i) {
+            Sequence s = sequences.get(i);
+            clone.removeSequence(s.getSequenceName());
+            Sequence newSeq = Sequence.create(clone, s.getSchemaName(), "_sequence-" + i,
+                                              s.getStartsWith(), s.getIncrement(), s.getMinValue(), s.getMaxValue(), s.isCycle());
+            Column identity = identityColumns.get(s);
+            if(identity != null) {
+                identity.setIdentityGenerator(newSeq);
+            }
         }
         return new ProtobufWriter(selector).save(clone).toString();
     }

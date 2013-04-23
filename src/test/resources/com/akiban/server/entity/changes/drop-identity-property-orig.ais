@@ -12,7 +12,7 @@ schemas {
       defaultIdentity: true
       sequence {
         schemaName: "test"
-        tableName: "_sequence-3556595"
+        tableName: "_sequence-0"
       }
       uuid: "a7a4138a-ac2b-11e2-afa0-25657188419e"
     }
@@ -39,7 +39,7 @@ schemas {
     rootTableName: "a"
   }
   sequences {
-    sequenceName: "_sequence-3556595"
+    sequenceName: "_sequence-0"
     start: 5
     increment: 10
     minValue: -9223372036854775808

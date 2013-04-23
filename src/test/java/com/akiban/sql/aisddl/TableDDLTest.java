@@ -273,24 +273,9 @@ public class TableDDLTest {
         TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
     }
     
-    @Test
-    public void multipleSerialColumns() throws StandardException {
-        makeSeparateAIS();
-        dropTable = TableName.create(DEFAULT_SCHEMA, DEFAULT_TABLE);
-        builder.userTable(DEFAULT_SCHEMA, DEFAULT_TABLE);
-        String[] columns = {"c1", "c2"};
-        for(int i = 0; i < columns.length; ++i) {
-            String col = columns[i];
-            builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, col, i, "bigint", 0L, 0L, false, true, null, null);
-            builder.sequence(DEFAULT_SCHEMA, "sequence_"+col, 1, 1, 0, 1000, false);
-            builder.columnAsIdentity(DEFAULT_SCHEMA, DEFAULT_TABLE, col, "sequence_"+col, true);
-            builder.index(DEFAULT_SCHEMA, DEFAULT_TABLE, col, true, Index.UNIQUE_KEY_CONSTRAINT);
-            builder.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, col, col, 0, true, null);
-        }
-        builder.basicSchemaIsComplete();
-        builder.groupingIsComplete();
-
-        String sql = "Create Table " + DEFAULT_TABLE + " (c1 SERIAL, c2 SERIAL)";
+    @Test (expected=DuplicateSequenceNameException.class)
+    public void duplicateSerialColumns() throws StandardException {
+        String sql = "CREATE TABLE t1 (c1 SERIAL, c2 SERIAL)";
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue(stmt instanceof CreateTableNode);
         TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
