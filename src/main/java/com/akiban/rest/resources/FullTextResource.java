@@ -20,8 +20,6 @@ package com.akiban.rest.resources;
 import com.akiban.ais.model.IndexName;
 import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
-import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.Tap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -41,7 +39,6 @@ import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT
 @Path("/text/{table}/{index}")
 public class FullTextResource {
     private final ResourceRequirements reqs;
-    private static final InOutTap TEXT_GET = Tap.createTimer("rest: text get");
 
     public FullTextResource(ResourceRequirements reqs) {
         this.reqs = reqs;
@@ -57,19 +54,14 @@ public class FullTextResource {
                                @QueryParam("size") final Integer limit) throws Exception {
         final IndexName indexName = new IndexName(ResourceHelper.parseTableName(request, table), index);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, indexName.getSchemaName());
-        TEXT_GET.in();
-        try {
-            return RestResponseBuilder
-                    .forRequest(request)
-                    .body(new RestResponseBuilder.BodyGenerator() {
-                        @Override
-                        public void write(PrintWriter writer) throws Exception {
-                            reqs.restDMLService.fullTextSearch(writer, indexName, depth, query, limit);
-                        }
-                    })
-                    .build();
-        } finally {
-            TEXT_GET.out();
-        }
+        return RestResponseBuilder
+                .forRequest(request)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        reqs.restDMLService.fullTextSearch(writer, indexName, depth, query, limit);
+                    }
+                })
+                .build();
     }
 }

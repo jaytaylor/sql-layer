@@ -88,26 +88,24 @@ public final class ModelResource {
                               @PathParam("schema") String schemaParam) {
         final String schema = getSchemaName(request, schemaParam);
         checkSchemaAccessible(reqs.securityService, request, schema);
-        MODEL_VIEW.in();
-        try {
-            return RestResponseBuilder
-                    .forRequest(request)
-                    .body(new RestResponseBuilder.BodyGenerator() {
-                        @Override
-                        public void write(PrintWriter writer) throws Exception {
-                            try (Session session = reqs.sessionService.createSession();
-                                 CloseableTransaction txn = reqs.transactionService.beginCloseableTransaction(session)) {
-                                Space space = spaceForAIS(session, schema);
-                                String json = space.toJson();
-                                writer.write(json);
-                                txn.commit();
-                            }
+        return RestResponseBuilder
+                .forRequest(request)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        MODEL_VIEW.in();
+                        try (Session session = reqs.sessionService.createSession();
+                             CloseableTransaction txn = reqs.transactionService.beginCloseableTransaction(session)) {
+                            Space space = spaceForAIS(session, schema);
+                            String json = space.toJson();
+                            writer.write(json);
+                            txn.commit();
+                        } finally {
+                            MODEL_VIEW.out();
                         }
-                    })
-                    .build();
-        } finally {
-            MODEL_VIEW.out();
-        }
+                    }
+                })
+                .build();
     }
     
     @GET
@@ -117,26 +115,24 @@ public final class ModelResource {
                                 @PathParam("schema") String schemaParam) {
         final String schema = getSchemaName(request, schemaParam);
         checkSchemaAccessible(reqs.securityService, request, schema);
-        MODEL_HASH.in();
-        try {
-            return RestResponseBuilder
-                    .forRequest(request)
-                    .body(new RestResponseBuilder.BodyGenerator() {
-                        @Override
-                        public void write(PrintWriter writer) throws Exception {
-                            try (Session session = reqs.sessionService.createSession();
-                                 CloseableTransaction txn = reqs.transactionService.beginCloseableTransaction(session)) {
-                                Space space = spaceForAIS(session, schema);
-                                String json = space.toHash();
-                                writer.write(json);
-                                txn.commit();
-                            }
+        return RestResponseBuilder
+                .forRequest(request)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        MODEL_HASH.in();
+                        try (Session session = reqs.sessionService.createSession();
+                             CloseableTransaction txn = reqs.transactionService.beginCloseableTransaction(session)) {
+                            Space space = spaceForAIS(session, schema);
+                            String json = space.toHash();
+                            writer.write(json);
+                            txn.commit();
+                        } finally {
+                            MODEL_HASH.out();
                         }
-                    })
-                    .build();
-        } finally {
-            MODEL_HASH.out();
-        }
+                    }
+                })
+                .build();
     }
 
     @POST
@@ -150,38 +146,36 @@ public final class ModelResource {
                           final InputStream postInput) {
         final TableName tableName = ResourceHelper.parseTableName(request, table);
         checkTableAccessible(reqs.securityService, request, tableName);
-        MODEL_PARSE.in();
-        try {
-            return RestResponseBuilder
-                    .forRequest(request)
-                    .body(new RestResponseBuilder.BodyGenerator() {
-                        @Override
-                        public void write(PrintWriter writer) throws Exception {
-                            boolean doCreate = Boolean.parseBoolean(create);
-                            JsonNode node = readTree(postInput);
-                            EntityParser parser = new EntityParser();
-                            parser.setStringWidth(parseInt(defaultWidth, DEFAULT_STRING_WIDTH));
-                            try (Session session = reqs.sessionService.createSession()) {
-                                final UserTable created;
-                                if(doCreate) {
-                                    created = parser.parseAndCreate(reqs.dxlService.ddlFunctions(),
-                                                                    session,
-                                                                    tableName,
-                                                                    node);
-                                } else {
-                                    created = parser.parse(tableName, node);
-                                    UuidAssigner uuidAssigner = new UuidAssigner();
-                                    created.getAIS().traversePostOrder(uuidAssigner);
-                                }
-                                Space currSpace = spaceForAIS(created.getAIS(), tableName.getSchemaName());
-                                writer.write(currSpace.toJson());
+        return RestResponseBuilder
+                .forRequest(request)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        boolean doCreate = Boolean.parseBoolean(create);
+                        JsonNode node = readTree(postInput);
+                        EntityParser parser = new EntityParser();
+                        parser.setStringWidth(parseInt(defaultWidth, DEFAULT_STRING_WIDTH));
+                        MODEL_PARSE.in();
+                        try (Session session = reqs.sessionService.createSession()) {
+                            final UserTable created;
+                            if(doCreate) {
+                                created = parser.parseAndCreate(reqs.dxlService.ddlFunctions(),
+                                                                session,
+                                                                tableName,
+                                                                node);
+                            } else {
+                                created = parser.parse(tableName, node);
+                                UuidAssigner uuidAssigner = new UuidAssigner();
+                                created.getAIS().traversePostOrder(uuidAssigner);
                             }
+                            Space currSpace = spaceForAIS(created.getAIS(), tableName.getSchemaName());
+                            writer.write(currSpace.toJson());
+                        } finally {
+                            MODEL_PARSE.out();
                         }
-                    })
-                    .build();
-        } finally {
-            MODEL_PARSE.out();
-        }
+                    }
+                })
+                .build();
     }
 
     @POST

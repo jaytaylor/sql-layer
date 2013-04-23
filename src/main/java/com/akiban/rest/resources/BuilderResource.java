@@ -24,8 +24,6 @@ import com.akiban.server.service.restdml.ModelBuilder;
 import com.akiban.server.service.restdml.RestDMLService;
 import com.akiban.server.service.security.SecurityService;
 import com.akiban.util.JsonUtils;
-import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.Tap;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import javax.servlet.http.HttpServletRequest;
@@ -52,13 +50,6 @@ public class BuilderResource {
     private final SecurityService securityService;
     private final RestDMLService restDMLService;
     private final ModelBuilder modelBuilder;
-    private static final InOutTap BUILDER_GET = Tap.createTimer("rest: builder GET");
-    private static final InOutTap BUILDER_GET_ALL = Tap.createTimer("rest: builder getall");
-    private static final InOutTap BUILDER_POST = Tap.createTimer("rest: builder POST");
-    private static final InOutTap BUILDER_PUT = Tap.createTimer("rest: builder PUT");
-    private static final InOutTap BUILDER_DELETE = Tap.createTimer("rest: builder DELETE");
-    private static final InOutTap BUILDER_EXPLODE = Tap.createTimer("rest: builder explode");
-    private static final InOutTap BUILDER_IMPLODE = Tap.createTimer("rest: builder implode");
     
     public BuilderResource(ResourceRequirements reqs) {
         this.securityService = reqs.securityService;
@@ -81,20 +72,15 @@ public class BuilderResource {
                            @PathParam("entity") String entityName) {
         final TableName tableName = parseTableName(request, entityName);
         checkTableAccessible(securityService, request, tableName);
-        BUILDER_GET_ALL.in();
-        try {
-            return RestResponseBuilder
-                    .forRequest(request)
-                    .body(new RestResponseBuilder.BodyGenerator() {
-                        @Override
-                        public void write(PrintWriter writer) throws Exception {
-                            modelBuilder.getAll(writer, tableName);
-                        }
-                    })
-                    .build();
-        } finally {
-            BUILDER_GET_ALL.out();
-        }
+        return RestResponseBuilder
+                .forRequest(request)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        modelBuilder.getAll(writer, tableName);
+                    }
+                })
+                .build();
     }
 
     @GET
@@ -105,20 +91,15 @@ public class BuilderResource {
                               @Context final UriInfo uri) {
         final TableName tableName = parseTableName(request, entityName);
         checkTableAccessible(securityService, request, tableName);
-        BUILDER_GET.in();
-        try {
-            return RestResponseBuilder
-                    .forRequest(request)
-                    .body(new RestResponseBuilder.BodyGenerator() {
-                        @Override
-                        public void write(PrintWriter writer) throws Exception {
-                            modelBuilder.getKeys(writer, tableName, getPKString(uri));
-                        }
-                    })
-                    .build();
-        } finally {
-            BUILDER_GET.out();
-        }
+        return RestResponseBuilder
+                .forRequest(request)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        modelBuilder.getKeys(writer, tableName, getPKString(uri));
+                    }
+                })
+                .build();
     }
 
     @POST
@@ -129,20 +110,15 @@ public class BuilderResource {
                          final String entityData) {
         final TableName tableName = parseTableName(request, entityName);
         checkTableAccessible(securityService, request, tableName);
-        BUILDER_POST.in();
-        try {
-            return RestResponseBuilder
-                    .forRequest(request)
-                    .body(new RestResponseBuilder.BodyGenerator() {
-                        @Override
-                        public void write(PrintWriter writer) throws Exception {
-                            modelBuilder.insert(writer, tableName, entityData);
-                        }
-                    })
-                    .build();
-        } finally {
-            BUILDER_POST.out();
-        }
+        return RestResponseBuilder
+                .forRequest(request)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        modelBuilder.insert(writer, tableName, entityData);
+                    }
+                })
+                .build();
     }
 
     @PUT
@@ -154,20 +130,15 @@ public class BuilderResource {
                         final String entityData) {
         final TableName tableName = parseTableName(request, entityName);
         checkTableAccessible(securityService, request, tableName);
-        BUILDER_PUT.in();
-        try {
-            return RestResponseBuilder
-                    .forRequest(request)
-                    .body(new RestResponseBuilder.BodyGenerator() {
-                        @Override
-                        public void write(PrintWriter writer) throws Exception {
-                            modelBuilder.update(writer, tableName, getPKString(uri), entityData);
-                        }
-                    })
-                    .build();
-        } finally {
-            BUILDER_PUT.out();
-        }
+        return RestResponseBuilder
+                .forRequest(request)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        modelBuilder.update(writer, tableName, getPKString(uri), entityData);
+                    }
+                })
+                .build();
     }
 
     @DELETE
@@ -177,7 +148,6 @@ public class BuilderResource {
                            @Context final UriInfo uri) {
         final TableName tableName = parseTableName(request, entityName);
         checkTableAccessible(securityService, request, tableName);
-        BUILDER_DELETE.in();
         try {
             modelBuilder.create(tableName);
             restDMLService.delete(tableName, getPKString(uri));
@@ -187,8 +157,6 @@ public class BuilderResource {
                     .build();
         } catch (Exception e) {
             throw RestResponseBuilder.forRequest(request).wrapException(e);
-        } finally {
-            BUILDER_DELETE.out();
         }
     }
 
@@ -221,20 +189,15 @@ public class BuilderResource {
                             @PathParam("entity") String entityName) {
         final TableName tableName = parseTableName(request, entityName);
         checkTableAccessible(securityService, request, tableName);
-        BUILDER_EXPLODE.in();
-        try {
-            return RestResponseBuilder
-                    .forRequest(request)
-                    .body(new RestResponseBuilder.BodyGenerator() {
-                        @Override
-                        public void write(PrintWriter writer) throws Exception {
-                            modelBuilder.explode(writer, tableName);
-                        }
-                    })
-                    .build();
-        } finally {
-            BUILDER_EXPLODE.out();
-        }
+        return RestResponseBuilder
+                .forRequest(request)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        modelBuilder.explode(writer, tableName);
+                    }
+                })
+                .build();
     }
 
     @POST
@@ -244,19 +207,14 @@ public class BuilderResource {
                             @PathParam("entity") String entityName) {
         final TableName tableName = parseTableName(request, entityName);
         checkTableAccessible(securityService, request, tableName);
-        BUILDER_IMPLODE.in();
-        try {
-            return RestResponseBuilder
-                    .forRequest(request)
-                    .body(new RestResponseBuilder.BodyGenerator() {
-                        @Override
-                        public void write(PrintWriter writer) throws Exception {
-                            modelBuilder.implode(writer, tableName);
-                        }
-                    })
-                    .build();
-        } finally {
-            BUILDER_IMPLODE.out();
-        }
+        return RestResponseBuilder
+                .forRequest(request)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        modelBuilder.implode(writer, tableName);
+                    }
+                })
+                .build();
     }
 }

@@ -38,9 +38,6 @@ import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT
 @Path("/sql")
 public class SQLResource {
     private final ResourceRequirements reqs;
-    private static final InOutTap SQL_QUERY = Tap.createTimer("rest: sql query");
-    private static final InOutTap SQL_EXPLAIN = Tap.createTimer("rest: sql explain");
-    private static final InOutTap SQL_EXECUTE = Tap.createTimer("rest: sql execute");
 
     public SQLResource(ResourceRequirements reqs) {
         this.reqs = reqs;
@@ -52,20 +49,15 @@ public class SQLResource {
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response query(@Context final HttpServletRequest request,
                           @QueryParam("q") final String query) {
-        SQL_QUERY.in();
-        try {
-            return RestResponseBuilder
-                    .forRequest(request)
-                    .body(new RestResponseBuilder.BodyGenerator() {
-                        @Override
-                        public void write(PrintWriter writer) throws Exception {
-                            reqs.restDMLService.runSQL(writer, request, query, null);
-                        }
-                    })
-                    .build();
-        } finally {
-            SQL_QUERY.out();
-        }
+        return RestResponseBuilder
+                .forRequest(request)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        reqs.restDMLService.runSQL(writer, request, query, null);
+                    }
+                })
+                .build();
     }
 
     /** Explain a single SQL statement specified by the 'q' query parameter. */
@@ -74,20 +66,15 @@ public class SQLResource {
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response explain(@Context final HttpServletRequest request,
                             @QueryParam("q") final String query) {
-        SQL_EXPLAIN.in();
-        try {
-            return RestResponseBuilder
-                    .forRequest(request)
-                    .body(new RestResponseBuilder.BodyGenerator() {
-                        @Override
-                        public void write(PrintWriter writer) throws Exception {
-                            reqs.restDMLService.explainSQL(writer, request, query);
-                        }
-                    })
-                    .build();
-        } finally {
-            SQL_EXPLAIN.out();
-        }
+        return RestResponseBuilder
+                .forRequest(request)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        reqs.restDMLService.explainSQL(writer, request, query);
+                    }
+                })
+                .build();
     }
 
     /** Run multiple SQL statements (single transaction) specified by semi-colon separated strings in the POST body. */
@@ -96,21 +83,16 @@ public class SQLResource {
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response execute(@Context final HttpServletRequest request,
                             final byte[] postBytes) {
-        SQL_EXECUTE.in();
         String input = new String(postBytes);
         final String[] statements = input.split(";");
-        try {
-            return RestResponseBuilder
-                    .forRequest(request)
-                    .body(new RestResponseBuilder.BodyGenerator() {
-                        @Override
-                        public void write(PrintWriter writer) throws Exception {
-                            reqs.restDMLService.runSQL(writer, request, Arrays.asList(statements));
-                        }
-                    })
-                    .build();
-        } finally {
-            SQL_EXECUTE.out();
-        }
+        return RestResponseBuilder
+                .forRequest(request)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        reqs.restDMLService.runSQL(writer, request, Arrays.asList(statements));
+                    }
+                })
+                .build();
     }
 }
