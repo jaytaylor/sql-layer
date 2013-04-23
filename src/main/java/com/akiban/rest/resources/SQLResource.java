@@ -19,8 +19,6 @@ package com.akiban.rest.resources;
 
 import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
-import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.Tap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
