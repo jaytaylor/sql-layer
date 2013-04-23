@@ -37,7 +37,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 
-import org.apache.http.HttpStatus;
+import org.eclipse.jetty.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -357,7 +357,7 @@ public class DirectServiceImpl implements Service, DirectService {
                     if (repeat == 0) {
                         LOG.error("Transaction failed " + TRANSACTION_RETRY_COUNT + " times: "
                                 + request.getRequestURI());
-                        throw new WebApplicationException(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                        throw new WebApplicationException(HttpStatus.INTERNAL_SERVER_ERROR_500);
                     }
                 } catch (RegistrationException e) {
                     throw new ScriptLibraryRegistrationException(e);
@@ -395,7 +395,7 @@ public class DirectServiceImpl implements Service, DirectService {
 
         EndpointMetadata md = selectEndpoint(list, pathParams, requestType, responseType, cache);
         if (md == null) {
-            throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
+            throw new WebApplicationException(HttpStatus.NOT_FOUND_404);
         }
 
         final Object[] args = createArgsArray(pathParams, queryParameters, content, cache, md);
