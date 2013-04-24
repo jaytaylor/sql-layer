@@ -386,9 +386,6 @@ public class PersistitStore implements Store, Service {
 
                 byte ret[] = ex.getValue().getByteArray();
 
-                ++innerModCount;
-                ++modCount;
-
                 return ret;
             }
 
