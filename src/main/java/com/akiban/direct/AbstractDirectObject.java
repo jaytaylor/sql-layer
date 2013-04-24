@@ -31,9 +31,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-import com.akiban.sql.embedded.JDBCResultSet;
-import com.akiban.sql.server.ServerJavaValues;
-
 public abstract class AbstractDirectObject implements DirectObject {
 
     private final static Map<Connection, Map<BitSet, PreparedStatement>> updateStatementCache = new WeakHashMap<>();
@@ -121,23 +118,14 @@ public abstract class AbstractDirectObject implements DirectObject {
     }
 
     private Object[] updates;
-    private ServerJavaValues values;
     private DirectResultSet rs;
 
-    public void setResults(ServerJavaValues values, DirectResultSet rs) {
+    public void setResults(DirectResultSet rs) {
         if (updates != null) {
             throw new IllegalStateException("Updates not saved: " + updates);
         }
-        this.values = values;
         this.rs = rs;
         updates = null;
-    }
-
-    private ServerJavaValues values() {
-        if (rs.hasRow()) {
-            return values;
-        }
-        throw new IllegalStateException("No more rows");
     }
 
     private Object[] updates() {
@@ -170,7 +158,11 @@ public abstract class AbstractDirectObject implements DirectObject {
 
     protected boolean __getBOOL(int p) {
         if (updates == null || updates[p] == NOT_SET) {
-            return values().getBoolean(p);
+            try {
+                return rs.getBoolean(p + 1);
+            } catch (SQLException e) {
+                throw (RuntimeException)e.getCause();
+            }
         } else {
             return (boolean) updates[p];
         }
@@ -182,7 +174,11 @@ public abstract class AbstractDirectObject implements DirectObject {
 
     protected Date __getDATE(int p) {
         if (updates == null || updates[p] == NOT_SET) {
-            return values().getDate(p);
+            try {
+                return rs.getDate(p + 1);
+            } catch (SQLException e) {
+                throw (RuntimeException)e.getCause();
+            }
         } else {
             return (Date) updates[p];
         }
@@ -194,7 +190,11 @@ public abstract class AbstractDirectObject implements DirectObject {
 
     protected Timestamp __getDATETIME(int p) {
         if (updates == null || updates[p] == NOT_SET) {
-            return values().getTimestamp(p);
+            try {
+                return rs.getTimestamp(p + 1);
+            } catch (SQLException e) {
+                throw (RuntimeException)e.getCause();
+            }
         } else {
             return (Timestamp) updates[p];
         }
@@ -206,7 +206,11 @@ public abstract class AbstractDirectObject implements DirectObject {
 
     protected BigDecimal __getDECIMAL(int p) {
         if (updates == null || updates[p] == NOT_SET) {
-            return values().getBigDecimal(p);
+            try {
+                return rs.getBigDecimal(p + 1);
+            } catch (SQLException e) {
+                throw (RuntimeException)e.getCause();
+            }
         } else {
             return (BigDecimal) updates[p];
         }
@@ -218,7 +222,11 @@ public abstract class AbstractDirectObject implements DirectObject {
 
     protected double __getDOUBLE(int p) {
         if (updates == null || updates[p] == NOT_SET) {
-            return values().getDouble(p);
+            try {
+                return rs.getDouble(p + 1);
+            } catch (SQLException e) {
+                throw (RuntimeException)e.getCause();
+            }
         } else {
             return (double) updates[p];
         }
@@ -230,7 +238,11 @@ public abstract class AbstractDirectObject implements DirectObject {
 
     protected float __getFLOAT(int p) {
         if (updates == null || updates[p] == NOT_SET) {
-            return values().getFloat(p);
+            try {
+                return rs.getFloat(p + 1);
+            } catch (SQLException e) {
+                throw (RuntimeException)e.getCause();
+            }
         } else {
             return (float) updates[p];
         }
@@ -242,7 +254,11 @@ public abstract class AbstractDirectObject implements DirectObject {
 
     protected int __getINT(int p) {
         if (updates == null || updates[p] == NOT_SET) {
-            return values().getInt(p);
+            try {
+                return rs.getInt(p + 1);
+            } catch (SQLException e) {
+                throw (RuntimeException)e.getCause();
+            }
         } else {
             return (int) updates[p];
         }
@@ -270,7 +286,11 @@ public abstract class AbstractDirectObject implements DirectObject {
 
     protected long __getLONG(int p) {
         if (updates == null || updates[p] == NOT_SET) {
-            return values().getLong(p);
+            try {
+                return rs.getLong(p + 1);
+            } catch (SQLException e) {
+                throw (RuntimeException)e.getCause();
+            }
         } else {
             return (long) updates[p];
         }
@@ -282,7 +302,11 @@ public abstract class AbstractDirectObject implements DirectObject {
 
     protected String __getTEXT(int p) {
         if (updates == null || updates[p] == NOT_SET) {
-            return values().getString(p);
+            try {
+                return rs.getString(p + 1);
+            } catch (SQLException e) {
+                throw (RuntimeException)e.getCause();
+            }
         } else {
             return (String) updates[p];
         }
@@ -294,7 +318,11 @@ public abstract class AbstractDirectObject implements DirectObject {
 
     protected Time __getTIME(int p) {
         if (updates == null || updates[p] == NOT_SET) {
-            return values().getTime(p);
+            try {
+                return rs.getTime(p + 1);
+            } catch (SQLException e) {
+                throw (RuntimeException)e.getCause();
+            }
         } else {
             return (Time) updates[p];
         }
@@ -306,7 +334,11 @@ public abstract class AbstractDirectObject implements DirectObject {
 
     protected Timestamp __getTIMESTAMP(int p) {
         if (updates == null || updates[p] == NOT_SET) {
-            return values().getTimestamp(p);
+            try {
+                return rs.getTimestamp(p + 1);
+            } catch (SQLException e) {
+                throw (RuntimeException)e.getCause();
+            }
         } else {
             return (Timestamp) updates[p];
         }
@@ -314,7 +346,11 @@ public abstract class AbstractDirectObject implements DirectObject {
 
     protected Object __getObject(int p) {
         if (updates == null || updates[p] == NOT_SET) {
-            return values().getObject(p);
+            try {
+                return rs.getObject(p + 1);
+            } catch (SQLException e) {
+                throw (RuntimeException)e.getCause();
+            }
         } else {
             return updates[p];
         }
@@ -358,7 +394,11 @@ public abstract class AbstractDirectObject implements DirectObject {
 
     protected String __getVARCHAR(int p) {
         if (updates == null || updates[p] == NOT_SET) {
-            return values().getString(p);
+            try {
+                return rs.getString(p + 1);
+            } catch (SQLException e) {
+                throw (RuntimeException)e.getCause();
+            }
         } else {
             return (String) updates[p];
         }
@@ -370,7 +410,11 @@ public abstract class AbstractDirectObject implements DirectObject {
 
     protected byte[] __getVARBINARY(int p) {
         if (updates == null || updates[p] == NOT_SET) {
-            return values().getBytes(p);
+            try {
+                return rs.getBytes(p + 1);
+            } catch (SQLException e) {
+                throw (RuntimeException)e.getCause();
+            }
         } else {
             return (byte[]) updates[p];
         }
@@ -382,7 +426,11 @@ public abstract class AbstractDirectObject implements DirectObject {
 
     protected int __getYEAR(int p) {
         if (updates == null || updates[p] == NOT_SET) {
-            return values().getInt(p);
+            try {
+                return rs.getInt(p + 1);
+            } catch (SQLException e) {
+                throw (RuntimeException)e.getCause();
+            }
         } else {
             return (int) updates[p];
         }
@@ -407,7 +455,7 @@ public abstract class AbstractDirectObject implements DirectObject {
             if (rs == null) {
                 PreparedStatement stmt = __insertStatement();
                 stmt.execute();
-                rs = (JDBCResultSet)stmt.getGeneratedKeys();
+                rs = (DirectResultSet)stmt.getGeneratedKeys();
                 try {
                     rs.next();
                 } catch (SQLException e) {

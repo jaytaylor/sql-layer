@@ -1517,7 +1517,7 @@ public class JDBCResultSet implements DirectResultSet
 
         AbstractDirectObject o = Direct.objectForRow(c);
         if (o != null) {
-            o.setResults(values, this);
+            o.setResults(this);
             return o;
         }
         throw new JDBCException("No entity class for row");
