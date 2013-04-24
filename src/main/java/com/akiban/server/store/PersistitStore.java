@@ -302,23 +302,13 @@ public class PersistitStore implements Store, Service {
             return new StreamIterator(moreRows);
         }
 
-        /**
-         * remove all change-entries 
-         * 
-         * 
-         */
-        public void removeAll() throws PersistitException
-        {
-            ex.removeAll(); 
-            ++modCount;
-        }
-
         private class StreamIterator implements Iterator<byte[]>
         {
 
             private boolean hasNext;
             private int innerModCount = modCount;
 
+            private boolean first = true;
             private StreamIterator (boolean hasNext)
             {
                 this.hasNext = hasNext;
@@ -327,18 +317,18 @@ public class PersistitStore implements Store, Service {
             @Override
             public boolean hasNext()
             {
-                return hasNext;
-            }
-
-            @Override
-            public byte[] next()
-            {
+                if (first)
+                {
+                    first = false;
+                    return hasNext;
+                }
+                
                 try
                 {
                     if (innerModCount != modCount)
                         throw new ConcurrentModificationException();
 
-                    byte ret[] = ex.getValue().getByteArray();
+                    // check if next entry exists
                     boolean seeNewIndex = false;
                     boolean hasMore;
                     hasNext = (hasMore = ex.next(true)) 
@@ -362,27 +352,53 @@ public class PersistitStore implements Store, Service {
                     if (seeNewIndex)  
                         // back up one entry, because we have read past the last
                         // entry that has the same schema.table.indexName
-                        ex.previous(); 
+                        ex.previous(true);
                     ++innerModCount;
                     ++modCount;
-
-                    return ret;
+                    return hasNext;
                 }
                 catch (PersistitException ex)
                 {
-                    throw new AkibanInternalException("Error retrieving rows from Exchange", ex);
+                    throw new AkibanInternalException("Error while retrieving update entries");
                 }
             }
 
             @Override
-            public void remove()
+            public byte[] next()
             {
-                throw new UnsupportedOperationException("Not supported yet.");
+                
+                if (innerModCount != modCount)
+                    throw new ConcurrentModificationException();
+
+                byte ret[] = ex.getValue().getByteArray();
+
+                ++innerModCount;
+                ++modCount;
+
+                return ret;
+            }
+
+            @Override
+            public void remove()
+            {   
+                try
+                {
+                    if (innerModCount != modCount)
+                        throw new ConcurrentModificationException();
+
+                    ex.fetchAndRemove();
+                    ++innerModCount;
+                    ++modCount;
+                }
+                catch (PersistitException ex)
+                {
+                    throw new AkibanInternalException("Error while retrieving update entries");
+                }
             }   
         }
 
         /**
-         * Skip all entries whose indexName is that of a non-existing index,
+         * Delete all entries whose indexName is that of a non-existing index,
          * or whose indexId is not the same as that of the the current index (with the same name)
          * 
          * @param ex
@@ -400,8 +416,6 @@ public class PersistitStore implements Store, Service {
             // KEY: Schema | Table | indexName | indexID | ...
             Key key = ex.getKey();
             key.reset();
-            
-            key.reset();
             assert indexName.getSchemaName().equals(key.decodeString()) 
                     : "Unexpected schema" ;
             assert indexName.getTableName().equals(key.decodeString())
@@ -418,7 +432,9 @@ public class PersistitStore implements Store, Service {
                 boolean seeNewIndex = false;
 
                 do
-                { /*do nothing (skipping deleted 'index')*/}
+                {
+                    ex.fetchAndRemove();
+                }
                 while ((hasMore = ex.next(true))
                                  && !(seeNewIndex = seeNewIndex(indexName.getSchemaName(),
                                                                 indexName.getTableName(),
@@ -431,7 +447,7 @@ public class PersistitStore implements Store, Service {
 
                 else if (seeNewIndex) // back up one entry in order not to 
                 {                     // go past the last pair
-                    ex.previous(true);
+                    ex.previous();
                     
                     // Saw new index,
                     // hence do the checking again,
