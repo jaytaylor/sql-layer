@@ -392,30 +392,6 @@ public abstract class AbstractDirectObject implements DirectObject {
         updates()[p] = v;
     }
 
-    protected DirectObject copyInstance(final Class<?> clazz) {
-        final AbstractDirectObject newInstance = Direct.newInstance(clazz);
-        if (rs != null) {
-            newInstance.rs = new JDBCResultSet((JDBCResultSet)rs) {
-                @Override
-                public boolean next() throws SQLException {
-                    throw new SQLException("Copy is frozen");
-                }
-                
-                private JDBCResultSet copyValues(AbstractDirectObject ado) {
-                    ado.values = getValues();
-                    return this;
-                }
-            }.copyValues(newInstance);
-            
-        }
-        if (updates != null) {
-            newInstance.updates = new Object[updates.length];
-            System.arraycopy(updates, 0, newInstance.updates, 0, updates.length);
-        }
-        return newInstance;
-
-    }
-
     /**
      * Issue either an INSERT or an UPDATE statement depending on whether this
      * instance is bound to a result set.
@@ -431,31 +407,17 @@ public abstract class AbstractDirectObject implements DirectObject {
             if (rs == null) {
                 PreparedStatement stmt = __insertStatement();
                 stmt.execute();
-                JDBCResultSet returningResultSet = (JDBCResultSet)stmt.getGeneratedKeys();
+                rs = (JDBCResultSet)stmt.getGeneratedKeys();
                 try {
-                    if (returningResultSet.next()) {
-                        rs = new JDBCResultSet((JDBCResultSet)returningResultSet) {
-                            @Override
-                            public boolean next() throws SQLException {
-                                throw new SQLException("Copy is frozen");
-                            }
-                            
-                            private JDBCResultSet copyValues() {
-                                values = getValues();
-                                return this;
-                            }
-                        }.copyValues();
-                    }
+                    rs.next();
                 } catch (SQLException e) {
                     throw new DirectException(e);
                 }
-
                 updates = null;
             } else {
                 PreparedStatement stmt = __updateStatement();
                 stmt.execute();
                 updates = null;
-                
             }
 
         } catch (SQLException e) {

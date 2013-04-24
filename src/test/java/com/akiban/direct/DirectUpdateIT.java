@@ -184,28 +184,6 @@ public final class DirectUpdateIT extends ITBase {
         });
     }
 
-    @Test
-    public void testCopy() throws Exception {
-        test(new TestExec() {
-            public boolean exec() throws Exception {
-                final Customer customer = new DirectIterableImpl<Customer>(
-                        Customer.class, "customers", this).where("cid=1").single();
-                Order copy1 = null;
-                Order copy2 = null;
-                for (final Order o : customer.getOrders().sort("cid")) {
-                    if (copy1 == null) {
-                        copy1 = o.copy();
-                    } else if (copy2 == null) {
-                        copy2 = o.copy();
-                    }
-                }
-                assertEquals("copy1 should be order 101", 101, copy1.getOid());
-                assertEquals("copy2 should be order 102", 102, copy2.getOid());
-                return true;
-            }
-        });
-    }
-
     private void test(TestExec te) throws Exception {
         JDBCConnection conn = (JDBCConnection) Direct.getContext().getConnection();
         conn.beginTransaction();

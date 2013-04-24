@@ -44,8 +44,6 @@ public class COIDirectClasses {
 
             public Customer getCustomer();
 
-            public Address copy();
-
             public void save();
         }
 
@@ -66,8 +64,6 @@ public class COIDirectClasses {
 
             public DirectIterable<Order> getOrders();
 
-            public Customer copy();
-
             public void save();
         }
 
@@ -85,8 +81,6 @@ public class COIDirectClasses {
             public void setSku(String sku);
 
             public Order getOrder();
-
-            public Item copy();
 
             public void save();
         }
@@ -109,8 +103,6 @@ public class COIDirectClasses {
             public Item getItem(int iid);
 
             public DirectIterable<Item> getItems();
-
-            public Order copy();
 
             public void save();
         }
@@ -156,11 +148,6 @@ public class COIDirectClasses {
             return (new com.akiban.direct.DirectIterableImpl<Iface.Order>(Iface.Order.class, "orders", this)).where("cid",
                     Integer.valueOf(getCid()));
         }
-
-        public Iface.Customer copy() {
-            return (Iface.Customer)(super.copyInstance(Iface.Customer.class));
-        }
-
 
     }
 
@@ -208,11 +195,6 @@ public class COIDirectClasses {
                     .where("cid", Integer.valueOf(getCid())).single();
         }
 
-        public Iface.Order copy() {
-            return (Iface.Order)(super.copyInstance(Iface.Order.class));
-        }
-
-
     }
 
     static class Test$Item extends com.akiban.direct.AbstractDirectObject implements Iface.Item {
@@ -247,10 +229,6 @@ public class COIDirectClasses {
         public Iface.Order getOrder() {
             return (new com.akiban.direct.DirectIterableImpl<Iface.Order>(Iface.Order.class, "orders", this)).where(
                     "oid", Integer.valueOf(getOid())).single();
-        }
-
-        public Iface.Item copy() {
-            return (Iface.Item)(super.copyInstance(Iface.Item.class));
         }
 
     }
@@ -296,10 +274,6 @@ public class COIDirectClasses {
         public Iface.Customer getCustomer() {
             return (new com.akiban.direct.DirectIterableImpl<Iface.Customer>(Iface.Customer.class, "customers", this))
                     .where("cid", Integer.valueOf(getCid())).single();
-        }
-
-        public Iface.Address copy() {
-            return (Iface.Address)(super.copyInstance(Iface.Address.class));
         }
 
     }

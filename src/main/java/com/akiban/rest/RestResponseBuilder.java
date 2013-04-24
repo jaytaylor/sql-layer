@@ -19,6 +19,8 @@ package com.akiban.rest;
 
 import com.akiban.rest.resources.ResourceHelper;
 import com.akiban.server.Quote;
+import com.akiban.server.error.DirectEndpointNotFoundException;
+import com.akiban.server.error.DirectTransactionFailedException;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchRoutineException;
@@ -146,10 +148,6 @@ public class RestResponseBuilder {
     public WebApplicationException wrapException(Throwable e) {
         final ErrorCode code;
 
-        if(e instanceof WebApplicationException) {
-            e = e.getCause();
-        }
-        
         if(e instanceof InvalidOperationException) {
             code = ((InvalidOperationException)e).getCode();
         } else if(e instanceof SQLException) {
@@ -207,6 +205,8 @@ public class RestResponseBuilder {
         Map<Class, Response.Status> map = new HashMap<>();
         map.put(NoSuchTableException.class, Response.Status.NOT_FOUND);
         map.put(NoSuchRoutineException.class, Response.Status.NOT_FOUND);
+        map.put(DirectEndpointNotFoundException.class, Response.Status.NOT_FOUND);
+        map.put(DirectTransactionFailedException.class, Response.Status.INTERNAL_SERVER_ERROR);
         map.put(JsonParseException.class, Response.Status.BAD_REQUEST);
         return map;
     }

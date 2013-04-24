@@ -78,6 +78,8 @@ import com.fasterxml.jackson.databind.JsonNode;
  * HEADERS expected
  * EMPTY
  * NOTEMPTY
+ * SHOW
+ * DEBUG
  * </pre>
  * 
  * where address is a path relative the resource end-point, content is a string
@@ -93,6 +95,11 @@ import com.fasterxml.jackson.databind.JsonNode;
  * <pre>
  * POST    /builder/implode/test.customers @
  * </pre>
+ * 
+ * The SHOW and DEBUG commands are useful for debugging. SHOW simply prints out
+ * the actual content of the last REST response. The DEBUG command calls the
+ * static method {@link #debug(int)}. You can set a debugger breakpoint inside
+ * that method.
  * 
  * @author peter
  */
@@ -330,6 +337,11 @@ public class RestServiceScriptsIT extends ITBase {
                     if (!result.output.isEmpty()) {
                         error("Expected empty response");
                     }
+                    break;
+                case "SHOW":
+                    int status = result.conn == null ? -1 : ((ContentExchange)result.conn).getResponseStatus(); 
+                    System.out.printf("At line %d the most recent response status is %d. " + "The value is:\n%s\n",
+                            lineNumber, status, result.output);
                     break;
                 default:
                     result.conn = null;

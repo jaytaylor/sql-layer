@@ -386,11 +386,6 @@ public abstract class ClassBuilder {
                         + childClassName + ">", NONE, null, body);
             }
         }
-        /*
-         * Add boilerplate methods
-         */
-        String[] body = new String[]{"return (" + typeName + ")(super.copyInstance(" + typeName + ".class))"};
-        addMethod("copy", typeName, NONE, null, iface ? null : body);
     }
 
     /**
