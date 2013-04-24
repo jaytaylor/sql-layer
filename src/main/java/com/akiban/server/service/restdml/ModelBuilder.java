@@ -52,6 +52,8 @@ import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.sql.optimizer.rule.PlanGenerator;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.JsonUtils;
+import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.Tap;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -66,6 +68,12 @@ import static com.akiban.server.service.transaction.TransactionService.Closeable
 
 public class ModelBuilder {
     public static final String DATA_COL_NAME = "_data";
+    private static final InOutTap BUILDER_GET = Tap.createTimer("rest: builder GET");
+    private static final InOutTap BUILDER_GET_ALL = Tap.createTimer("rest: builder getall");
+    private static final InOutTap BUILDER_POST = Tap.createTimer("rest: builder POST");
+    private static final InOutTap BUILDER_PUT = Tap.createTimer("rest: builder PUT");
+    private static final InOutTap BUILDER_EXPLODE = Tap.createTimer("rest: builder explode");
+    private static final InOutTap BUILDER_IMPLODE = Tap.createTimer("rest: builder implode");
 
 
     private final SessionService sessionService;
@@ -108,6 +116,7 @@ public class ModelBuilder {
     }
 
     public void getAll(PrintWriter writer, TableName tableName) throws IOException {
+        BUILDER_GET_ALL.in();
         try (Session session = sessionService.createSession();
              CloseableTransaction txn = txnService.beginCloseableTransaction(session)) {
              createInternal(session, tableName);
@@ -115,10 +124,13 @@ public class ModelBuilder {
             writer.append('[');
             scanCursor(writer, cursor, true);
             writer.append(']');
+        } finally {
+            BUILDER_GET_ALL.out();
         }
     }
 
     public void getKeys(PrintWriter writer, TableName tableName, String identifiers) throws IOException {
+        BUILDER_GET.in();
         try (Session session = sessionService.createSession();
              CloseableTransaction txn = txnService.beginCloseableTransaction(session)) {
             createInternal(session, tableName);
@@ -140,10 +152,13 @@ public class ModelBuilder {
             }
             writer.append(']');
             txn.commit();
+        } finally {
+            BUILDER_GET.out();
         }
     }
 
     public void insert(PrintWriter writer, TableName tableName, String data) {
+        BUILDER_POST.in();
         try (Session session = sessionService.createSession();
              CloseableTransaction txn = txnService.beginCloseableTransaction(session)) {
             createInternal(session, tableName);
@@ -152,10 +167,13 @@ public class ModelBuilder {
             node.put(ModelBuilder.DATA_COL_NAME, data);
             restDMLService.insertNoTxn(session, writer, tableName, node);
             txn.commit();
+        } finally {
+            BUILDER_POST.out();
         }
     }
 
     public void update(PrintWriter writer, TableName tableName, String id, String data) {
+        BUILDER_PUT.in();
         try (Session session = sessionService.createSession();
              CloseableTransaction txn = txnService.beginCloseableTransaction(session)) {
             createInternal(session, tableName);
@@ -164,10 +182,13 @@ public class ModelBuilder {
             node.put(ModelBuilder.DATA_COL_NAME, data);
             restDMLService.updateNoTxn(session, writer, tableName, id, node);
             txn.commit();
+        } finally {
+            BUILDER_PUT.out();
         }
     }
 
     public void explode(PrintWriter writer, TableName tableName) throws IOException {
+        BUILDER_EXPLODE.in();
         try (Session session = sessionService.createSession()) {
             // Find the last row
             Row row = getLastRow(session, tableName);
@@ -213,10 +234,13 @@ public class ModelBuilder {
             summaryNode.put("exploded", tableName.getTableName());
             summaryNode.put("rows", convertedRows);
             writer.append(summaryNode.toString());
+        } finally {
+            BUILDER_EXPLODE.out();
         }
     }
 
     public void implode(PrintWriter writer, TableName tableName) {
+        BUILDER_IMPLODE.in();
         try (Session session = sessionService.createSession()) {
             UserTable curTable = ddlFunctions.getUserTable(session, tableName);
             if(!curTable.isRoot()) {
@@ -252,6 +276,8 @@ public class ModelBuilder {
             summaryNode.put("imploded", tableName.getTableName());
             summaryNode.put("rows", tracker.getRowCount());
             writer.append(summaryNode.toString());
+        } finally {
+            BUILDER_IMPLODE.out();
         }
     }
 
