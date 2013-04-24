@@ -316,11 +316,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             throw new AkibanInternalException("Error updating index", e);
         }
     }
-
-    public static class ExchangeWrapper
-    {
-        
-    }
     
     private volatile boolean updateRunning = false;
     private class DefaultUpdateWorker extends TimerTask
