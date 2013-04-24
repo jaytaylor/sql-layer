@@ -64,6 +64,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.rmi.RemoteException;
 import java.util.*;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -165,6 +166,17 @@ public class PersistitStore implements Store, Service {
                                                             FULL_TEXT_TABLE));
     }
 
+    private final Semaphore updateSem = new Semaphore(1);
+    private synchronized void enter()
+    {
+        updateSem.acquireUninterruptibly();
+    }
+    
+    private synchronized void leave()
+    {
+        updateSem.release();
+    }
+
     private void addChange(Session session,
                            String schema,
                            String table,
@@ -181,7 +193,9 @@ public class PersistitStore implements Store, Service {
         ex.getValue().clear().putByteArray(rowHKey.getEncodedBytes(),
                                            0,
                                            rowHKey.getEncodedSize());
+        enter();
         ex.store();
+        leave();
     }
 
     private void addChangeFor(UserTable tb, Session session, Key hKey) throws PersistitException
@@ -386,7 +400,9 @@ public class PersistitStore implements Store, Service {
                     if (innerModCount != modCount)
                         throw new ConcurrentModificationException();
 
+                    enter();
                     ex.fetchAndRemove();
+                    leave();
                     ++innerModCount;
                     ++modCount;
                 }

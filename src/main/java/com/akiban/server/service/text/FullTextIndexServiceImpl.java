@@ -631,7 +631,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         populateSem.release();
     }
     
-    private Semaphore populateSem = new Semaphore(1);
+    private final Semaphore populateSem = new Semaphore(1);
     protected Exchange getPopulateExchange(Session session) throws PersistitException
     {
         Exchange ret = treeService.getExchange(session,
