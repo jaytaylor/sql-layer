@@ -27,6 +27,8 @@ import com.akiban.server.error.AuthenticationFailedException;
 import com.akiban.server.error.SecurityException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.monitor.MonitorService;
+import com.akiban.server.service.monitor.UserMonitor;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.sql.server.ServerCallContextStack;
@@ -81,6 +83,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
 
     private final ConfigurationService configService;
     private final SchemaManager schemaManager;
+    private final MonitorService monitor;
 
     private boolean restrictUserSchema;
 
@@ -88,9 +91,11 @@ public class SecurityServiceImpl implements SecurityService, Service {
 
     @Inject
     public SecurityServiceImpl(ConfigurationService configService,
-                               SchemaManager schemaManager) {
+                               SchemaManager schemaManager,
+                               MonitorService monitor) {
         this.configService = configService;
         this.schemaManager = schemaManager;
+        this.monitor = monitor;
     }
 
     // Connections are not thread safe, and prepared statements remember a Session,
@@ -273,6 +278,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
                 throw new SecurityException("Failed to delete user");
             }
             conn.commit();
+            monitor.deregisterUserMonitor(name);
         }
         catch (SQLException ex) {
             throw new SecurityException("Error deleting user", ex);
@@ -336,6 +342,9 @@ public class SecurityServiceImpl implements SecurityService, Service {
         if (session != null) {
             session.put(SESSION_KEY, user);
         }
+        if (monitor.getUserMonitor(user.getName()) == null) {
+            monitor.registerUserMonitor(new UserMonitorImpl(user.getName()));
+        }
         return user;
     }
 
@@ -366,6 +375,9 @@ public class SecurityServiceImpl implements SecurityService, Service {
         }
         if (session != null) {
             session.put(SESSION_KEY, user);
+        }
+        if (monitor.getUserMonitor(user.getName()) == null) {
+            monitor.registerUserMonitor(new UserMonitorImpl(user.getName()));
         }
         return user;
     }

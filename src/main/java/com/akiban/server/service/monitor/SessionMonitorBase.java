@@ -32,6 +32,7 @@ public abstract class SessionMonitorBase implements SessionMonitor {
     private long currentStatementEndTime = -1;
     private int rowsProcessed = 0;
     private int statementCount = 0;
+    private UserMonitor user = null; 
 
     protected SessionMonitorBase(int sessionID) {
         this.sessionID = sessionID;
@@ -65,6 +66,9 @@ public abstract class SessionMonitorBase implements SessionMonitor {
     public void endStatement(int rowsProcessed) {
         currentStatementEndTime = System.currentTimeMillis();
         this.rowsProcessed = rowsProcessed;
+        if (user != null) {
+            user.statementRun();
+        }
     }
 
     // Caller can sequence all stages and avoid any gaps at the cost of more complicated
@@ -166,6 +170,10 @@ public abstract class SessionMonitorBase implements SessionMonitor {
 
     public List<PreparedStatementMonitor> getPreparedStatements() {
         return Collections.emptyList();
+    }
+    
+    public void setUserMonitor(UserMonitor monitor) {
+        this.user = monitor;
     }
 
 }
