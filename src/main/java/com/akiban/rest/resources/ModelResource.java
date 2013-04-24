@@ -32,6 +32,8 @@ import com.akiban.server.entity.fromais.AisToSpace;
 import com.akiban.server.entity.model.Space;
 import com.akiban.server.entity.model.diff.JsonDiffPreview;
 import com.akiban.server.service.session.Session;
+import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.Tap;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +63,10 @@ import static com.akiban.util.JsonUtils.readTree;
 @Path("/model")
 public final class ModelResource {
     private static final String OPTIONAL_SCHEMA = "{schema: (/[^/]*)?}";
-
+    private static final InOutTap MODEL_VIEW = Tap.createTimer("rest: model view");
+    private static final InOutTap MODEL_HASH = Tap.createTimer("rest: model view");
+    private static final InOutTap MODEL_PARSE = Tap.createTimer("rest: model parse");
+    
     private final ResourceRequirements reqs;
 
     public ModelResource(ResourceRequirements reqs) {
@@ -88,12 +93,15 @@ public final class ModelResource {
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
+                        MODEL_VIEW.in();
                         try (Session session = reqs.sessionService.createSession();
                              CloseableTransaction txn = reqs.transactionService.beginCloseableTransaction(session)) {
                             Space space = spaceForAIS(session, schema);
                             String json = space.toJson();
                             writer.write(json);
                             txn.commit();
+                        } finally {
+                            MODEL_VIEW.out();
                         }
                     }
                 })
@@ -112,12 +120,15 @@ public final class ModelResource {
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
+                        MODEL_HASH.in();
                         try (Session session = reqs.sessionService.createSession();
                              CloseableTransaction txn = reqs.transactionService.beginCloseableTransaction(session)) {
                             Space space = spaceForAIS(session, schema);
                             String json = space.toHash();
                             writer.write(json);
                             txn.commit();
+                        } finally {
+                            MODEL_HASH.out();
                         }
                     }
                 })
@@ -135,7 +146,6 @@ public final class ModelResource {
                           final InputStream postInput) {
         final TableName tableName = ResourceHelper.parseTableName(request, table);
         checkTableAccessible(reqs.securityService, request, tableName);
-        
         return RestResponseBuilder
                 .forRequest(request)
                 .body(new RestResponseBuilder.BodyGenerator() {
@@ -145,6 +155,7 @@ public final class ModelResource {
                         JsonNode node = readTree(postInput);
                         EntityParser parser = new EntityParser();
                         parser.setStringWidth(parseInt(defaultWidth, DEFAULT_STRING_WIDTH));
+                        MODEL_PARSE.in();
                         try (Session session = reqs.sessionService.createSession()) {
                             final UserTable created;
                             if(doCreate) {
@@ -159,6 +170,8 @@ public final class ModelResource {
                             }
                             Space currSpace = spaceForAIS(created.getAIS(), tableName.getSchemaName());
                             writer.write(currSpace.toJson());
+                        } finally {
+                            MODEL_PARSE.out();
                         }
                     }
                 })

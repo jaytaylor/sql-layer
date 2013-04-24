@@ -50,7 +50,7 @@ public class BuilderResource {
     private final SecurityService securityService;
     private final RestDMLService restDMLService;
     private final ModelBuilder modelBuilder;
-
+    
     public BuilderResource(ResourceRequirements reqs) {
         this.securityService = reqs.securityService;
         this.restDMLService = reqs.restDMLService;

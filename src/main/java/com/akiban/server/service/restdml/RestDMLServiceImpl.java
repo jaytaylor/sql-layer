@@ -56,6 +56,8 @@ import com.akiban.sql.embedded.JDBCConnection;
 import com.akiban.sql.embedded.JDBCParameterMetaData;
 import com.akiban.sql.embedded.JDBCResultSet;
 import com.akiban.util.AkibanAppender;
+import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.Tap;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Function;
@@ -101,6 +103,18 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     private final UpdateProcessor updateProcessor;
     private final UpsertProcessor upsertProcessor;
     private final FullTextIndexService fullTextService;
+    private static final InOutTap ENTITY_GET = Tap.createTimer("rest: entity GET");
+    private static final InOutTap ENTITY_POST = Tap.createTimer("rest: entity POST");
+    private static final InOutTap ENTITY_PUT = Tap.createTimer("rest: entity PUT");
+    private static final InOutTap ENTITY_DELETE = Tap.createTimer("rest: entity DELETE");
+    private static final InOutTap ENTITY_PATCH = Tap.createTimer("rest: entity PATCH");
+    private static final InOutTap ENTITY_SQL = Tap.createTimer("rest: entity sql");
+    private static final InOutTap ENTITY_EXPLAIN = Tap.createTimer("rest: entity explain");
+    private static final InOutTap ENTITY_PARAM = Tap.createTimer("rest: entity sql parameter");
+    
+    private static final InOutTap ENTITY_TEXT = Tap.createTimer("rest: entity text");
+    private static final InOutTap ENTITY_CALL = Tap.createTimer("rest: entity call");
+
 
     @Inject
     public RestDMLServiceImpl(SessionService sessionService,
@@ -149,6 +163,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     @Override
     public void getAllEntities(PrintWriter writer, TableName tableName, Integer depth) {
         int realDepth = (depth != null) ? Math.max(depth, 0) : -1;
+        ENTITY_GET.in();
         try (Session session = sessionService.createSession()) {
             extDataService.dumpAllAsJson(session,
                     writer,
@@ -156,12 +171,15 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                     tableName.getTableName(),
                     realDepth,
                     true);
+        } finally {
+            ENTITY_GET.out();
         }
     }
 
     @Override
     public void getEntities(PrintWriter writer, TableName tableName, Integer depth, String identifiers) {
         int realDepth = (depth != null) ? Math.max(depth, 0) : -1;
+        ENTITY_GET.in();
         try (Session session = sessionService.createSession();
              CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
             UserTable uTable = dxlService.ddlFunctions().getUserTable(session, tableName);
@@ -175,46 +193,60 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                     realDepth,
                     false);
             txn.commit();
+        } finally {
+            ENTITY_GET.out();
         }
     }
 
     @Override
     public void insert(PrintWriter writer, TableName tableName, JsonNode node)  {
+        ENTITY_POST.in();
         try (Session session = sessionService.createSession();
              CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
             insertNoTxn(session, writer, tableName, node);
             txn.commit();
+        } finally {
+            ENTITY_POST.out();
         }
     }
 
     @Override
     public void delete(TableName tableName, String identifier) {
+        ENTITY_DELETE.in();
         try (Session session = sessionService.createSession();
              CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
             AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
             deleteProcessor.processDelete(session, ais, tableName, identifier);
             txn.commit();
+        } finally {
+            ENTITY_DELETE.out();
         }
     }
 
     @Override
     public void update(PrintWriter writer, TableName tableName, String pks, JsonNode node) {
+        ENTITY_PUT.in();
         try (Session session = sessionService.createSession();
              CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
             updateNoTxn(session, writer, tableName, pks, node);
             txn.commit();
+        } finally {
+            ENTITY_PUT.out();
         }
     }
 
     @Override
     public void upsert(PrintWriter writer, TableName tableName, JsonNode node) {
+        ENTITY_PATCH.in();
         try (Session session = sessionService.createSession();
                 CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
             AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
             String pk = upsertProcessor.processUpsert(session, ais, tableName, node);
             writer.write(pk);
             txn.commit();
-        }        
+        } finally {
+            ENTITY_PATCH.out();
+        }
     }
 
     @Override
@@ -250,14 +282,18 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
 
     @Override
     public void explainSQL(PrintWriter writer, HttpServletRequest request, String sql) throws IOException, SQLException {
+        ENTITY_EXPLAIN.in();
         try (JDBCConnection conn = jdbcConnection(request)) {
             new JsonFormatter().format(conn.explain(sql), writer);
+        } finally {
+            ENTITY_EXPLAIN.out();
         }
     }
 
     @Override
     public void callProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
                                  TableName procName, Map<String,List<String>> queryParams, String content) throws SQLException {
+        ENTITY_CALL.in();
         try (JDBCConnection conn = jdbcConnection(request, procName.getSchemaName());
              JDBCCallableStatement call = conn.prepareCall(procName)) {
             Routine routine = call.getRoutine();
@@ -270,6 +306,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                 callDefaultProcedure(writer, request, jsonpArgName, call, queryParams, content);
                 break;
             }
+        } finally {
+            ENTITY_CALL.out();
         }
     }
 
@@ -468,6 +506,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     private void runSQLParameterized(PrintWriter writer,
                                     HttpServletRequest request, String sql, List<String> params,
                                     OutputType outputType, CommitMode commitMode) throws SQLException {
+        ENTITY_PARAM.in();
         try (Connection conn = jdbcConnection(request);
                 final PreparedStatement s = conn.prepareStatement(sql)) {
             int index = 1;
@@ -486,12 +525,15 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                         }
                     }
             });
+        } finally {
+            ENTITY_PARAM.out();
         }
     }
 
     private void runSQLFlat(PrintWriter writer,
             HttpServletRequest request, final List<String> sqlList, String schema,
             OutputType outputType, CommitMode commitMode) throws SQLException {
+        ENTITY_SQL.in();
         try (JDBCConnection conn = jdbcConnection(request);
               final Statement s = conn.createStatement()) {
             if (schema != null)
@@ -515,6 +557,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                             return null;
                         }
             });
+        } finally {
+            ENTITY_SQL.out();
         }
     }
 
@@ -635,6 +679,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     public void fullTextSearch(PrintWriter writer, IndexName indexName, Integer depth, String query, Integer limit) {
         int realDepth = (depth != null) ? Math.max(depth, 0) : -1;
         int realLimit = (limit != null) ? limit.intValue() : -1;
+        ENTITY_TEXT.in();
         FullTextQueryBuilder builder = new FullTextQueryBuilder(indexName, 
                                                                 fullTextService);
         try (Session session = sessionService.createSession()) {
@@ -646,6 +691,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                                             fullTextService.searchRowType(session, indexName),
                                             realDepth,
                                             true);
+        } finally {
+            ENTITY_TEXT.out();
         }
     }
     

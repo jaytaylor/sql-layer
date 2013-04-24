@@ -42,7 +42,7 @@ import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT
 @Path("/call/{proc}")
 public class ProcedureCallResource {
     private final ResourceRequirements reqs;
-
+    
     public ProcedureCallResource(ResourceRequirements reqs) {
         this.reqs = reqs;
     }
@@ -86,5 +86,4 @@ public class ProcedureCallResource {
                 })
                 .build();
     }
-
 }
