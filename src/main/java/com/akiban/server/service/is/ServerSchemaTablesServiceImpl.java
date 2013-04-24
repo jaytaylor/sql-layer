@@ -19,6 +19,8 @@ package com.akiban.server.service.is;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryPoolMXBean;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -43,6 +45,8 @@ import com.akiban.server.service.monitor.PreparedStatementMonitor;
 import com.akiban.server.service.monitor.ServerMonitor;
 import com.akiban.server.service.monitor.SessionMonitor;
 import com.akiban.server.service.monitor.UserMonitor;
+import com.akiban.server.service.security.SecurityService;
+import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
@@ -65,20 +69,23 @@ public class ServerSchemaTablesServiceImpl
     static final TableName SERVER_PREPARED_STATEMENTS = new TableName (SCHEMA_NAME, "server_prepared_statements");
     static final TableName SERVER_CURSORS = new TableName (SCHEMA_NAME, "server_cursors");
     static final TableName SERVER_USERS = new TableName (SCHEMA_NAME, "server_users");
-    
+
     private final MonitorService monitor;
     private final ConfigurationService configService;
     private final AkServerInterface serverInterface;
+    private final SecurityService securityService;
     
     @Inject
     public ServerSchemaTablesServiceImpl (SchemaManager schemaManager, 
                                           MonitorService monitor, 
                                           ConfigurationService configService,
-                                          AkServerInterface serverInterface) {
+                                          AkServerInterface serverInterface,
+                                          SecurityService securityService) {
         super(schemaManager);
         this.monitor = monitor;
         this.configService = configService;
         this.serverInterface = serverInterface;
+        this.securityService = securityService;
     }
 
     @Override
@@ -118,6 +125,33 @@ public class ServerSchemaTablesServiceImpl
         // nothing
     }
     
+    protected Collection<SessionMonitor> getAccessibleSessions(Session session) {
+        if (securityService.hasRestrictedAccess(session)) {
+            return monitor.getSessionMonitors();
+        }
+        else {
+            SessionMonitor sm = monitor.getSessionMonitor(session);
+            if (sm == null) {
+                return Collections.emptyList();
+            }
+            else {
+                return Collections.singletonList(sm);
+            }
+        }
+    }
+
+    protected Collection<UserMonitor> getAccessibleUsers (Session session) {
+        if (securityService.hasRestrictedAccess(session)) {
+            return monitor.getUserMonitors();
+        } else {
+            UserMonitor um = monitor.getUserMonitor(session);
+            if (um == null) {
+                return Collections.emptyList();
+            } else {
+                return Collections.singletonList(um);
+            }
+        }
+    }
     private class InstanceSummary extends BasicFactoryBase {
 
         public InstanceSummary(TableName sourceTable) {
@@ -126,7 +160,7 @@ public class ServerSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan(getRowType(adapter));
+            return new Scan(adapter.getSession(), getRowType(adapter));
         }
 
         @Override
@@ -136,7 +170,7 @@ public class ServerSchemaTablesServiceImpl
         
         private class Scan extends BaseScan {
             
-            public Scan (RowType rowType) {
+            public Scan (Session session, RowType rowType) {
                 super(rowType);
             }
 
@@ -162,7 +196,7 @@ public class ServerSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan (getRowType(adapter));
+            return new Scan (adapter.getSession(), getRowType(adapter));
         }
 
         @Override
@@ -172,7 +206,7 @@ public class ServerSchemaTablesServiceImpl
         
         private class Scan extends BaseScan {
             final Iterator<ServerMonitor> servers = monitor.getServerMonitors().values().iterator(); 
-            public Scan(RowType rowType) {
+            public Scan(Session session, RowType rowType) {
                 super(rowType);
             }
 
@@ -202,7 +236,7 @@ public class ServerSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan (getRowType(adapter));
+            return new Scan (adapter.getSession(), getRowType(adapter));
         }
 
         @Override
@@ -211,9 +245,10 @@ public class ServerSchemaTablesServiceImpl
         }
         
         private class Scan extends BaseScan {
-            final Iterator<SessionMonitor> sessions = monitor.getSessionMonitors().iterator(); 
-            public Scan(RowType rowType) {
+            final Iterator<SessionMonitor> sessions;
+            public Scan(Session session, RowType rowType) {
                 super(rowType);
+                sessions = getAccessibleSessions(session).iterator();
             }
 
             @Override
@@ -256,7 +291,7 @@ public class ServerSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan (getRowType(adapter));
+            return new Scan (adapter.getSession(), getRowType(adapter));
         }
 
         @Override
@@ -267,7 +302,7 @@ public class ServerSchemaTablesServiceImpl
         private class Scan extends BaseScan {
 
             private final ErrorCode[] codes = ErrorCode.values();
-            public Scan(RowType rowType) {
+            public Scan(Session session, RowType rowType) {
                 super(rowType);
             }
 
@@ -292,7 +327,7 @@ public class ServerSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan (getRowType(adapter));
+            return new Scan (adapter.getSession(), getRowType(adapter));
         }
 
         @Override
@@ -303,7 +338,7 @@ public class ServerSchemaTablesServiceImpl
         private class Scan extends BaseScan {
             private Iterator<Map.Entry<String,String>> propertyIt;
 
-            public Scan(RowType rowType) {
+            public Scan(Session session, RowType rowType) {
                 super(rowType);
                 propertyIt = configService.getProperties().entrySet().iterator();
             }
@@ -328,7 +363,7 @@ public class ServerSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan (getRowType(adapter));
+            return new Scan (adapter.getSession(), getRowType(adapter));
         }
 
         @Override
@@ -339,7 +374,7 @@ public class ServerSchemaTablesServiceImpl
         private class Scan extends BaseScan {
             private final Iterator<MemoryPoolMXBean> it;
 
-            public Scan(RowType rowType) {
+            public Scan(Session session, RowType rowType) {
                 super(rowType);
                 it = ManagementFactory.getMemoryPoolMXBeans().iterator();
             }
@@ -368,7 +403,7 @@ public class ServerSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan (getRowType(adapter));
+            return new Scan (adapter.getSession(), getRowType(adapter));
         }
 
         @Override
@@ -379,7 +414,7 @@ public class ServerSchemaTablesServiceImpl
         private class Scan extends BaseScan {
             private final Iterator<GarbageCollectorMXBean> it;
 
-            public Scan(RowType rowType) {
+            public Scan(Session session, RowType rowType) {
                 super(rowType);
                 it = ManagementFactory.getGarbageCollectorMXBeans().iterator();
             }
@@ -410,7 +445,7 @@ public class ServerSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan (getRowType(adapter));
+            return new Scan (adapter.getSession(), getRowType(adapter));
         }
 
         @Override
@@ -422,7 +457,7 @@ public class ServerSchemaTablesServiceImpl
             private final TapReport[] reports;
             private int it = 0;
 
-            public Scan(RowType rowType) {
+            public Scan(Session session, RowType rowType) {
                 super(rowType);
                 reports = getAllReports();
             }
@@ -451,7 +486,7 @@ public class ServerSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan (getRowType(adapter));
+            return new Scan (adapter.getSession(), getRowType(adapter));
         }
 
         @Override
@@ -463,11 +498,12 @@ public class ServerSchemaTablesServiceImpl
         }
         
         private class Scan extends BaseScan {
-            final Iterator<SessionMonitor> sessions = monitor.getSessionMonitors().iterator(); 
+            final Iterator<SessionMonitor> sessions;
             Iterator<PreparedStatementMonitor> statements = null;
 
-            public Scan(RowType rowType) {
+            public Scan(Session session, RowType rowType) {
                 super(rowType);
+                sessions = getAccessibleSessions(session).iterator();
             }
 
             @Override
@@ -501,7 +537,7 @@ public class ServerSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan (getRowType(adapter));
+            return new Scan (adapter.getSession(), getRowType(adapter));
         }
 
         @Override
@@ -513,11 +549,12 @@ public class ServerSchemaTablesServiceImpl
         }
         
         private class Scan extends BaseScan {
-            final Iterator<SessionMonitor> sessions = monitor.getSessionMonitors().iterator(); 
+            final Iterator<SessionMonitor> sessions;
             Iterator<CursorMonitor> statements = null;
 
-            public Scan(RowType rowType) {
+            public Scan(Session session, RowType rowType) {
                 super(rowType);
+                sessions = getAccessibleSessions(session).iterator();
             }
 
             @Override
@@ -552,7 +589,7 @@ public class ServerSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan (getRowType(adapter));
+            return new Scan (adapter.getSession(), getRowType(adapter));
         }
 
         @Override
@@ -561,10 +598,11 @@ public class ServerSchemaTablesServiceImpl
         }
         
         private class Scan extends BaseScan {
-            final Iterator<UserMonitor> users = monitor.getUserMonitors().values().iterator();
+            final Iterator<UserMonitor> users;
 
-            public Scan(RowType rowType) {
+            public Scan(Session session, RowType rowType) {
                 super(rowType);
+                users = getAccessibleUsers(session).iterator();
             }
 
             @Override

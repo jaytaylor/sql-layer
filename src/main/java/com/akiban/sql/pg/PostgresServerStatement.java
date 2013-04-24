@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.ConnectionTerminatedException;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.SecurityException;
 import com.akiban.server.error.UnsupportedConfigurationException;
 import com.akiban.sql.parser.AlterServerNode;
 
@@ -135,6 +136,8 @@ public class PostgresServerStatement implements PostgresStatement {
     }
 
     protected void doOperation (PostgresServerSession session) throws Exception {
+        if (!session.getSecurityService().hasRestrictedAccess(session.getSession()))
+            throw new SecurityException("Operation not allowed");
         PostgresServerConnection current = (PostgresServerConnection)session;
         PostgresServer server = current.getServer();
         Integer sessionId = statement.getSessionID();

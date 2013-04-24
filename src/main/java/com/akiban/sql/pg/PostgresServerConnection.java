@@ -133,7 +133,8 @@ public class PostgresServerConnection extends ServerSessionBase
                 }
             };
         sessionMonitor.setRemoteAddress(socket.getInetAddress().getHostAddress());
-        reqs.monitor().registerSessionMonitor(sessionMonitor);
+        session = reqs.sessionService().createSession();
+        reqs.monitor().registerSessionMonitor(sessionMonitor, session);
     }
 
     public void start() {
@@ -328,7 +329,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 transaction = null;
             }
             server.removeConnection(sessionId);
-            reqs.monitor().deregisterSessionMonitor(sessionMonitor);
+            reqs.monitor().deregisterSessionMonitor(sessionMonitor, session);
         }
     }
 
@@ -431,7 +432,6 @@ public class PostgresServerConnection extends ServerSessionBase
         logger.debug("Properties: {}", clientProperties);
         setProperties(clientProperties);
 
-        session = reqs.sessionService().createSession();
         // TODO: Not needed right now and not a convenient time to
         // encounter schema lock from long-running DDL.
         // But see comment in initParser(): what if we wanted to warn

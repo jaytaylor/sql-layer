@@ -175,5 +175,9 @@ public abstract class SessionMonitorBase implements SessionMonitor {
     public void setUserMonitor(UserMonitor monitor) {
         this.user = monitor;
     }
+    
+    public UserMonitor getUserMonitor() {
+        return this.user;
+    }
 
 }

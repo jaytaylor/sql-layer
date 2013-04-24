@@ -76,4 +76,7 @@ public interface SessionMonitor {
 
     /** Get any prepared statements. */
     List<PreparedStatementMonitor> getPreparedStatements();
+    
+    /** Get the user monitor for this session */
+    UserMonitor getUserMonitor();
 }

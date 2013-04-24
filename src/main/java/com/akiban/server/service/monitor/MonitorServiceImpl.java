@@ -21,6 +21,7 @@ import com.akiban.server.error.QueryLogCloseException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
+import com.akiban.server.service.session.Session;
 
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -44,6 +45,9 @@ public class MonitorServiceImpl implements Service, MonitorService, MonitorMXBea
     private static final String QUERY_LOG_THRESHOLD = "akserver.querylog.exec_time_threshold";
     
     private static final Logger logger = LoggerFactory.getLogger(MonitorServiceImpl.class);
+
+    public static final Session.Key<SessionMonitor> SESSION_KEY = 
+        Session.Key.named("SESSION_MONITOR");
 
     private final ConfigurationService config;
 
@@ -127,20 +131,27 @@ public class MonitorServiceImpl implements Service, MonitorService, MonitorMXBea
     }
 
     @Override
-    public void registerSessionMonitor(SessionMonitor sessionMonitor) {
+    public void registerSessionMonitor(SessionMonitor sessionMonitor, Session session) {
         SessionMonitor old = sessions.put(sessionMonitor.getSessionId(), sessionMonitor);
         assert ((old == null) || (old == sessionMonitor));
+        session.put(SESSION_KEY, sessionMonitor);
     }
 
     @Override
-    public void deregisterSessionMonitor(SessionMonitor sessionMonitor) {
+    public void deregisterSessionMonitor(SessionMonitor sessionMonitor, Session session) {
         SessionMonitor old = sessions.remove(sessionMonitor.getSessionId());
         assert ((old == null) || (old == sessionMonitor));
+        session.remove(SESSION_KEY);
     }
 
     @Override
     public SessionMonitor getSessionMonitor(int sessionId) {
         return sessions.get(sessionId);
+    }
+
+    @Override
+    public SessionMonitor getSessionMonitor(Session session) {
+        return session.get(SESSION_KEY);
     }
 
     @Override
@@ -324,15 +335,21 @@ public class MonitorServiceImpl implements Service, MonitorService, MonitorMXBea
         assert (monitor== null || monitor == userMonitor);
     }
     
-    /** Get the user montitor for the given user name. */
+    /** Get the user monitor for the given user name. */
     @Override 
     public UserMonitor getUserMonitor(String userName) {
         return users.get(userName); 
     }
     
+    /** Get the user monitor for the session user */
+    @Override
+    public UserMonitor getUserMonitor(Session session) {
+       return session.get(SESSION_KEY).getUserMonitor();
+    }
+
     /** Get all the user monitors. */
     @Override
-    public Map<String, UserMonitor> getUserMonitors() {
-        return users;
+    public Collection<UserMonitor> getUserMonitors() {
+        return users.values();
     }
 }

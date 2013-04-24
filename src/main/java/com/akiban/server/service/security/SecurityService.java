@@ -36,6 +36,7 @@ public interface SecurityService
 
     public boolean isAccessible(Session session, String schema);
     public boolean isAccessible(HttpServletRequest request, String schema);
+    public boolean hasRestrictedAccess(Session session);
 
     public void addRole(String name);
     public void deleteRole(String name);
