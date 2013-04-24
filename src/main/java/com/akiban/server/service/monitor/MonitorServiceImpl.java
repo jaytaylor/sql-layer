@@ -321,14 +321,14 @@ public class MonitorServiceImpl implements Service, MonitorService, MonitorMXBea
         assert (monitor == null || monitor == userMonitor);
     }
 
-    /** Deregister the montor for the given user */
+    /** Deregister the monitor for the given user */
     @Override
     public void deregisterUserMonitor (String userName) {
-        if (users.containsKey(userName)) {
-            users.remove(userName);
-        }
+        UserMonitor monitor = users.remove(userName);
+        assert(monitor == null || monitor.getUserName().equals(userName));
     }
-    /** Deregister the given user montitor. */
+    
+    /** Deregister the given user monitor. */
     @Override
     public void deregisterUserMonitor (UserMonitor userMonitor) {
         UserMonitor monitor = users.remove(userMonitor.getUserName());
