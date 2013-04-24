@@ -449,7 +449,9 @@ public class PersistitStore implements Store, Service {
 
                 do
                 {
+                    enter();
                     ex.fetchAndRemove();
+                    leave();
                 }
                 while ((hasMore = ex.next(true))
                                  && !(seeNewIndex = seeNewIndex(indexName.getSchemaName(),
