@@ -114,6 +114,11 @@ public class ServerSessionITBase extends ITBase {
         }
 
         @Override
+        public boolean hasRestrictedAccess(com.akiban.server.service.session.Session session) {
+            return true;
+        }
+
+        @Override
         public void addRole(String name) {
             throw new UnsupportedOperationException();
         }

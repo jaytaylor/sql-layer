@@ -481,6 +481,13 @@ public class SecurityServiceImpl implements SecurityService, Service {
             TableName.SYS_SCHEMA.equals(schema);
     }
 
+    @Override
+    public boolean hasRestrictedAccess(Session session) {
+        User user = session.get(SESSION_KEY);
+        if (user == null) return true; // Not authenticated = open.
+        return user.hasRole(ADMIN_ROLE);
+    }
+
     /* Service */
     
     @Override
