@@ -1,10 +1,10 @@
 [
   {
-    "name": "Jane Smith",
-    "cid": 3
-  },
-  {
     "name": "John Smith",
     "cid": 1
+  },
+  {
+    "name": "Jane Smith",
+    "cid": 3
   }
 ]
