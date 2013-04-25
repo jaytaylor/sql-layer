@@ -28,6 +28,7 @@ import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.entity.model.Entity;
 import com.akiban.server.entity.model.EntityCollection;
+import com.akiban.server.entity.model.FieldProperty;
 import com.akiban.server.entity.model.IndexField;
 import com.akiban.server.entity.model.EntityField;
 import com.akiban.server.entity.model.EntityIndex;
@@ -72,6 +73,9 @@ final class EntityBuilder {
                     properties.put(attrName, attrValue);
                 else
                     validations.add(new Validation(attrName, attrValue));
+            }
+            if(column.getDefaultIdentity() != null) {
+                properties.put(FieldProperty.IdentityProperty.PROPERTY_NAME, FieldProperty.IdentityProperty.create(column));
             }
             fields.add(scalar);
         }

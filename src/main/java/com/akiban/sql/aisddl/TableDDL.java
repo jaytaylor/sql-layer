@@ -240,15 +240,8 @@ public class TableDDL
 
     public static void setAutoIncrement(AISBuilder builder, String schemaName, String tableName, String columnName,
                                         boolean defaultIdentity, long start, long increment) {
-        // The merge process will generate a real sequence name
-        final String sequenceName = "temp-sequence-1"; 
-        builder.sequence(schemaName, sequenceName, 
-                start, increment,  
-                Long.MIN_VALUE, Long.MAX_VALUE, 
-                false);
         // make the column an identity column 
-        builder.columnAsIdentity(schemaName, tableName, columnName, sequenceName, defaultIdentity);
-        builder.userTableInitialAutoIncrement(schemaName, tableName, start);
+        builder.columnAsIdentity(schemaName, tableName, columnName, start, increment, defaultIdentity);
     }
     
     static String getColumnDefault(ColumnDefinitionNode cdn) {
