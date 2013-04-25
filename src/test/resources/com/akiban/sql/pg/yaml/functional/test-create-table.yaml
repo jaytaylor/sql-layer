@@ -28,6 +28,12 @@
 # mediumint is now supported
 - CreateTable: table_mediumint (mediumint_field mediumint)
 ---
+# text is now supported
+- CreateTable: table_text (text_field text)
+---
+
+# Test not yet supported types
+
 # enum is not supported
 - CreateTable: table_enum (enum_field enum)
 - error: [50008]
@@ -36,14 +42,6 @@
 - CreateTable: table_xml (xml_field xml)
 - error: [50008]
 ---
-
-# Test not yet supported types
-
-# text is not supported yet
-- CreateTable: table_text (text_field text)
-- error: [50008]
----
-
 # Bug 941657 -- number of fk columns != number of pk columns
 - CreateTable: parent (pid int not null, primary key(pid))
 ---
