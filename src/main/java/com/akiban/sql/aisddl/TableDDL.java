@@ -539,6 +539,13 @@ public class TableDDL
         
         types.put(TypeId.BLOB_ID, Types.LONGBLOB);
         types.put(TypeId.CLOB_ID, Types.LONGTEXT);
+        types.put(TypeId.TEXT_ID, Types.TEXT);
+        types.put(TypeId.TINYBLOB_ID, Types.TINYBLOB);
+        types.put(TypeId.TINYTEXT_ID, Types.TINYTEXT);
+        types.put(TypeId.MEDIUMBLOB_ID, Types.MEDIUMBLOB);
+        types.put(TypeId.MEDIUMTEXT_ID, Types.MEDIUMTEXT);
+        types.put(TypeId.LONGBLOB_ID, Types.LONGBLOB);
+        types.put(TypeId.LONGTEXT_ID, Types.LONGTEXT);
         return Collections.unmodifiableMap(types);
         
     }        
