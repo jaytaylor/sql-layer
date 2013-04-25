@@ -35,6 +35,8 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.SearcherManager;
+import org.apache.lucene.search.Sort;
+import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.util.BytesRef;
 
@@ -54,6 +56,10 @@ public class FullTextCursor implements Cursor
     private IndexSearcher searcher;
     private TopDocs results;
     private int position;
+
+    public static final Sort SORT = new Sort(SortField.FIELD_SCORE,
+                                             new SortField(IndexedField.KEY_FIELD,
+                                                           SortField.Type.STRING));
 
     private static final Logger logger = LoggerFactory.getLogger(FullTextCursor.class);
 
@@ -78,7 +84,7 @@ public class FullTextCursor implements Cursor
         }
         else {
             try {
-                results = searcher.search(query, limit);
+                results = searcher.search(query, limit, SORT);
             }
             catch (IOException ex) {
                 throw new AkibanInternalException("Error searching index", ex);
