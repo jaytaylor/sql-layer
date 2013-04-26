@@ -5,7 +5,7 @@ EQUALS  {"functions":2}\n
 
 # Delete the library
 #
-DELETE  /direct/library?module=test.proc1&language=Javascript
+DELETE  /direct/library?module=test.proc1
 EQUALS  {"functions":0}\n
 
 # Reinstall it
@@ -16,8 +16,13 @@ PUT     /direct/library?module=test.proc1&language=Javascript @direct-create.bod
 #
 GET     /direct/call/test.cnames?prefix=SomeParameterValue
 EQUALS  SomeParameterValue,John Smith,Willy Jones,Jane Smith,Jonathan Smyth\n
+
 GET     /direct/call/test.cnames?prefix=SomeOtherParameterValue
 EQUALS  SomeOtherParameterValue,John Smith,Willy Jones,Jane Smith,Jonathan Smyth\n
+
+GET     /direct/call/test.cnames_json
+JSONEQ  ["John Smith","Willy Jones","Jane Smith","Jonathan Smyth"]
+
 
 # Delete the library#
 #
@@ -26,5 +31,4 @@ DELETE  /direct/library?module=test.proc1&language=Javascript
 # Attempt to invoke end point should return a 404
 #
 GET     /direct/call/test.cnames?prefix=SomeOtherParameterValue
-CONTAINS Not Found
-CONTAINS 404
+HEADERS responseCode:404

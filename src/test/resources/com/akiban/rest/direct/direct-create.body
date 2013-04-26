@@ -1,26 +1,26 @@
 function _register(registrar) {
     registrar.register(
-        "method=GET path=cnames function=customer_Names in=(QP:prefix String required) out=String");
-        
+        "method=GET path=cnames function=customer_names in=(QP:prefix String required) out=String");
     registrar.register(
-        "method=GET path=oids/(\\d*) function=order_Numbers in=(pp:1 int required) out=String"); 
+        "method=GET path=cnames_json function=customer_names_as_json in=() out=json");
 };
 
-function customer_Names(s) {
+function customer_names(s) {
     var result = s;
     var extent = Packages.com.akiban.direct.Direct.context.extent;
+        
     for (customer in Iterator(extent.customers)) {
       result += "," + customer.name;
     }
     return result;
 }
 
-function order_Numbers(cid) {
-    var result = s;
+function customer_names_as_json() {
+    var result = [];
     var extent = Packages.com.akiban.direct.Direct.context.extent;
-    var customer = extent.getCustomer(cid); 
-    for (order in customer.orders) {
-       result += "," + order.oid;
-    }    
+        
+    for (customer in Iterator(extent.customers)) {
+      result.push(customer.name);
+    }
     return result;
 }

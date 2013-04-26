@@ -15,26 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.direct;
+package com.akiban.server.error;
 
-/**
- * An Iterable expanded to accept selection, limit and sort capabilities.
- * 
- * @author peter
- *
- */
-public interface DirectIterable<T> extends Iterable<T> {
 
-    public DirectIterable<T> where(String predicate);
-
-    public DirectIterable<T> where(String columnName, Object literal);
-
-    public DirectIterable<T> sort(String sort);
-    
-    public DirectIterable<T> sort(String sort, String direction);
-    
-    public DirectIterable<T> limit(String limit);
-    
-    public T newInstance();
-    
+public class DirectTransactionFailedException extends InvalidOperationException {
+    public DirectTransactionFailedException(Object... args) {
+        super(ErrorCode.DIRECT_TRANSACTION_FAILED, args);
+    }
 }

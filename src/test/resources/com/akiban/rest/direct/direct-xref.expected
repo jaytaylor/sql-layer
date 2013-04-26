@@ -12,6 +12,5 @@
     ["getCustomer()","Customer"],
     ["getItem(iid)","Item"],
     ["getItems()",""],
-    ["copy()","Order"],
     ["save()",""]]
 }

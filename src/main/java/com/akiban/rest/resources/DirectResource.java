@@ -18,14 +18,8 @@
 package com.akiban.rest.resources;
 
 import static com.akiban.rest.resources.ResourceHelper.JSONP_ARG_NAME;
-import static com.akiban.rest.resources.ResourceHelper.checkSchemaAccessible;
-import static com.akiban.rest.resources.ResourceHelper.checkTableAccessible;
-import static com.akiban.util.JsonUtils.createJsonGenerator;
 
-import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.List;
-import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DELETE;
@@ -65,8 +59,6 @@ public class DirectResource {
     private final static String SCHEMA_ARG_NAME = "schema";
     private final static String LANGUAGE = "language";
     private final static String FUNCTIONS = "functions";
-
-
 
     private final ResourceRequirements reqs;
 

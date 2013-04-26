@@ -97,11 +97,6 @@ public class ClassXRefWriter extends ClassSourceWriterBase {
     }
 
     @Override
-    public void addConstructor(final String[] argumentTypes, final String[] argumentNames, final String[] body) {
-        // ignore
-    }
-
-    @Override
     public String addProperty(final String name, final String type, final String argName, final String[] getBody,
             final String[] setBody, final boolean hasSetter) {
         String caseConverted = asJavaName(name, false);
@@ -111,6 +106,11 @@ public class ClassXRefWriter extends ClassSourceWriterBase {
          */
         addMethod(caseConverted, type, null, null, null);
         return super.addProperty(name, type, argName, getBody, setBody, hasSetter);
+    }
+    
+    @Override
+    public void addStaticInitializer(final String body) {
+        // ignore
     }
 
     /*

@@ -227,7 +227,7 @@ public class EndpointMetadata {
                     em.name = v;
                 } else {
                     em.name = v.substring(0, p);
-                    em.pattern = Pattern.compile(v.substring(p));
+                    em.pattern = Pattern.compile(v.substring(p + 1));
                 }
                 break;
             }
@@ -576,7 +576,7 @@ public class EndpointMetadata {
         @Override
         public boolean equals(Object other) {
             EndpointAddress ea = (EndpointAddress) other;
-            return name.equals(ea.name) && method.equals(ea.method);
+            return name.equals(ea.name) && method.equals(ea.method) && schema.equals(ea.schema);
         }
 
     }
@@ -774,7 +774,7 @@ public class EndpointMetadata {
         StringBuilder sb = new StringBuilder();
         append(sb, METHOD, "=", method, " ", PATH, "=", name);
         if (pattern != null) {
-            append(sb, pattern.toString());
+            append(sb, "/", pattern.toString());
         }
         append(sb, " ", FUNCTION, "=", function, " ", IN, "=(");
         if (inParams == null) {
@@ -802,7 +802,7 @@ public class EndpointMetadata {
 
     Matcher getParamPathMatcher(final ParamCache cache, final String pathParamString) {
         if (cache.matcher == null) {
-            cache.matcher = pattern.matcher(pathParamString);
+            cache.matcher = pattern.matcher(pathParamString.isEmpty() ? pathParamString : pathParamString.substring(1));
         }
         return cache.matcher;
     }
