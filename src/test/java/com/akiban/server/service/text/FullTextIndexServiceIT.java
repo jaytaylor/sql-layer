@@ -111,7 +111,45 @@ public class FullTextIndexServiceIT extends ITBase
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
     }
+    
+    @Test
+    public void testConcurrent_schedule_run_Populate()
+    {
+        // This test is specifically for FullTextIndexServiceImpl.java
+        assertEquals(FullTextIndexServiceImpl.class, fullText.getClass());
+        FullTextIndexServiceImpl fullTextImpl = (FullTextIndexServiceImpl)fullText;
 
+        // Two threads should run *at the same time* 
+        // where
+        //      - one tries to add a new entry to the tree
+        //      - the other one tries to run populate(), 
+        //        which would remove entries from the tree 
+
+        // disable the populate worker (quiet things down!)
+        fullTextImpl.disablePopulateWorker();
+        
+        // create 2 indcies (this should add 2 entries to the tree)
+        final FullTextIndex expecteds[] = new FullTextIndex[]
+        {
+            createFullTextIndex(serviceManager(),
+                                SCHEMA, "c", "ft_idx_c", 
+                                "name"),
+            
+            createFullTextIndex(serviceManager(),
+                                SCHEMA, "i", "ft_idx_i",
+                                "i.sku")
+        };
+        
+        // get a thread to run the populate
+        fullTextImpl.runPopulate();
+        
+        // get this one to create another ft index 
+        // (hopefully the two would run at the same time???)
+        createFullTextIndex(serviceManager(),
+                            SCHEMA, "a", "ft_idx_a",
+                            "a.state");
+    }
+        
     @Test
     public void testPopulateScheduling() throws InterruptedException, PersistitException
     {

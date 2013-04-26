@@ -64,7 +64,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.rmi.RemoteException;
 import java.util.*;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -166,17 +165,6 @@ public class PersistitStore implements Store, Service {
                                                             FULL_TEXT_TABLE));
     }
 
-    private final Semaphore updateSem = new Semaphore(1);
-    private synchronized void enter()
-    {
-        updateSem.acquireUninterruptibly();
-    }
-    
-    private synchronized void leave()
-    {
-        updateSem.release();
-    }
-
     private void addChange(Session session,
                            String schema,
                            String table,
@@ -193,9 +181,7 @@ public class PersistitStore implements Store, Service {
         ex.getValue().clear().putByteArray(rowHKey.getEncodedBytes(),
                                            0,
                                            rowHKey.getEncodedSize());
-        enter();
         ex.store();
-        leave();
     }
 
     private void addChangeFor(UserTable tb, Session session, Key hKey) throws PersistitException
@@ -316,13 +302,23 @@ public class PersistitStore implements Store, Service {
             return new StreamIterator(moreRows);
         }
 
+        /**
+         * remove all change-entries 
+         * 
+         * 
+         */
+        public void removeAll() throws PersistitException
+        {
+            ex.removeAll(); 
+            ++modCount;
+        }
+
         private class StreamIterator implements Iterator<byte[]>
         {
 
             private boolean hasNext;
             private int innerModCount = modCount;
 
-            private boolean first = true;
             private StreamIterator (boolean hasNext)
             {
                 this.hasNext = hasNext;
@@ -331,18 +327,18 @@ public class PersistitStore implements Store, Service {
             @Override
             public boolean hasNext()
             {
-                if (first)
-                {
-                    first = false;
-                    return hasNext;
-                }
-                
+                return hasNext;
+            }
+
+            @Override
+            public byte[] next()
+            {
                 try
                 {
                     if (innerModCount != modCount)
                         throw new ConcurrentModificationException();
 
-                    // check if next entry exists
+                    byte ret[] = ex.getValue().getByteArray();
                     boolean seeNewIndex = false;
                     boolean hasMore;
                     hasNext = (hasMore = ex.next(true)) 
@@ -366,52 +362,27 @@ public class PersistitStore implements Store, Service {
                     if (seeNewIndex)  
                         // back up one entry, because we have read past the last
                         // entry that has the same schema.table.indexName
-                        ex.previous(true);
+                        ex.previous(); 
                     ++innerModCount;
                     ++modCount;
-                    return hasNext;
+
+                    return ret;
                 }
                 catch (PersistitException ex)
                 {
-                    throw new AkibanInternalException("Error while retrieving update entries");
+                    throw new AkibanInternalException("Error retrieving rows from Exchange", ex);
                 }
-            }
-
-            @Override
-            public byte[] next()
-            {
-                
-                if (innerModCount != modCount)
-                    throw new ConcurrentModificationException();
-
-                byte ret[] = ex.getValue().getByteArray();
-
-                return ret;
             }
 
             @Override
             public void remove()
-            {   
-                try
-                {
-                    if (innerModCount != modCount)
-                        throw new ConcurrentModificationException();
-
-                    enter();
-                    ex.fetchAndRemove();
-                    leave();
-                    ++innerModCount;
-                    ++modCount;
-                }
-                catch (PersistitException ex)
-                {
-                    throw new AkibanInternalException("Error while retrieving update entries");
-                }
+            {
+                throw new UnsupportedOperationException("Not supported yet.");
             }   
         }
 
         /**
-         * Delete all entries whose indexName is that of a non-existing index,
+         * Skip all entries whose indexName is that of a non-existing index,
          * or whose indexId is not the same as that of the the current index (with the same name)
          * 
          * @param ex
@@ -429,6 +400,8 @@ public class PersistitStore implements Store, Service {
             // KEY: Schema | Table | indexName | indexID | ...
             Key key = ex.getKey();
             key.reset();
+            
+            key.reset();
             assert indexName.getSchemaName().equals(key.decodeString()) 
                     : "Unexpected schema" ;
             assert indexName.getTableName().equals(key.decodeString())
@@ -445,11 +418,7 @@ public class PersistitStore implements Store, Service {
                 boolean seeNewIndex = false;
 
                 do
-                {
-                    enter();
-                    ex.fetchAndRemove();
-                    leave();
-                }
+                { /*do nothing (skipping deleted 'index')*/}
                 while ((hasMore = ex.next(true))
                                  && !(seeNewIndex = seeNewIndex(indexName.getSchemaName(),
                                                                 indexName.getTableName(),
@@ -462,7 +431,7 @@ public class PersistitStore implements Store, Service {
 
                 else if (seeNewIndex) // back up one entry in order not to 
                 {                     // go past the last pair
-                    ex.previous();
+                    ex.previous(true);
                     
                     // Saw new index,
                     // hence do the checking again,

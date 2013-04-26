@@ -23,7 +23,6 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.service.BackgroundWork;
 import com.akiban.server.service.session.Session;
 
-import java.util.Iterator;
 import java.util.List;
 import org.apache.lucene.search.Query;
 
@@ -43,7 +42,7 @@ public interface FullTextIndexService extends FullTextIndexInfos {
      * @param name
      * @param changedRow 
      */
-    public void updateIndex(Session session, IndexName name, Iterator<byte[]> rows);
+    public void updateIndex(Session session, IndexName name, Iterable<byte[]> rows);
     
     /**
      * TODO: move this to <pre>Service</pre> ?

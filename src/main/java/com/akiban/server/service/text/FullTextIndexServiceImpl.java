@@ -18,7 +18,6 @@
 package com.akiban.server.service.text;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -34,7 +33,6 @@ import com.akiban.qp.row.HKeyRow;
 import com.akiban.qp.rowtype.HKeyRowType;
 import com.akiban.qp.util.HKeyCache;
 import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.service.BackgroundObserver;
 import com.akiban.server.service.BackgroundWork;
 import com.akiban.server.service.BackgroundWorkBase;
 import com.akiban.server.service.Service;
@@ -62,13 +60,9 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.Semaphore;
 
 
 public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements FullTextIndexService, Service {
@@ -97,6 +91,8 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
 
     private volatile Timer populateTimer;
     private long populateDelayInterval;
+
+    private final Byte populateTreeLock = 1;
 
     private static final Logger logger = LoggerFactory.getLogger(FullTextIndexServiceImpl.class);
 
@@ -137,11 +133,10 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                       .append(name.getName());
             
             if (ex.traverse(Key.Direction.EQ, true, 0))
-            {
-                enter();
-                ex.fetchAndRemove();
-                leave();
-            }
+                synchronized(populateTreeLock)
+                {
+                    ex.fetchAndRemove();
+                }
 
             FullTextIndexInfo index = getIndex(session, name);
             index.deletePath();
@@ -257,7 +252,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     }
 
     @Override
-    public void updateIndex(Session session, IndexName name, Iterator<byte[]> rows)         
+    public void updateIndex(Session session, IndexName name, Iterable<byte[]> rows)         
     {
         try
         {
@@ -277,19 +272,14 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             {
                 Operator operator = indexInfo.getOperator();
                 int n = 0;
-                while (rows.hasNext())
+                for (byte row[] : rows)
                 {
-                    byte row[] = rows.next();
-                    
                     HKeyRow hkeyRow = toHKeyRow(row, indexInfo.getHKeyRowType(),
                                                 adapter, cache);
                     queryContext.setRow(0, hkeyRow);
                     cursor = API.cursor(operator, queryContext);
                     rowIndexer.updateDocument(cursor, row);
-
-                    rows.remove();
                 }
-
                 success = true;
             }
             finally
@@ -316,7 +306,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             throw new AkibanInternalException("Error updating index", e);
         }
     }
-    
+
     private volatile boolean updateRunning = false;
     private class DefaultUpdateWorker extends TimerTask
     {
@@ -465,7 +455,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
 
 
     //----------- private helpers -----------
-    private synchronized void runPopulate()
+    protected synchronized void runPopulate()
     {
         populateRunning = true;
         Session session = sessionService.createSession();
@@ -481,10 +471,10 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                     createIndex(session, toPopulate);
                 else
                     logger.debug("FullTextIndex " + toPopulate + " deleted before population");
-
-                enter();
-                ex.fetchAndRemove();
-                leave();
+            }
+            synchronized(populateTreeLock)
+            {
+                ex.removeAll();
             }
             hasScheduled = false;
             transaction = false;
@@ -527,9 +517,10 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                 {
                     updateIndex(session,
                                 rows.getIndexName(),
-                                rows.iterator());
+                                rows);
                 }
                 while (rows.nextIndex());
+                rows.removeAll(); // done updating. remove all entries
             }
             transaction= false;
         }
@@ -621,17 +612,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             return null;
     }
     
-    private synchronized void enter()
-    {
-        populateSem.acquireUninterruptibly();
-    }
-    
-    private synchronized void leave()
-    {
-        populateSem.release();
-    }
-    
-    private final Semaphore populateSem = new Semaphore(1);
     protected Exchange getPopulateExchange(Session session) throws PersistitException
     {
         Exchange ret = treeService.getExchange(session,
@@ -662,9 +642,10 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
 
         // VALUE: <empty>
 
-        enter();
-        ex.store();
-        leave();
+        synchronized(populateTreeLock)
+        {
+            ex.store();
+        }
         return true;
     }
 
