@@ -25,7 +25,6 @@ import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.service.restdml.DirectInvocation;
 import com.akiban.util.AkibanAppender;
 import org.codehaus.jackson.JsonParseException;
 import org.slf4j.Logger;

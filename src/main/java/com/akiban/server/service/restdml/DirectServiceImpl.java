@@ -35,7 +35,6 @@ import java.util.regex.Matcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +48,6 @@ import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.TableName;
 import com.akiban.direct.Direct;
 import com.akiban.rest.RestFunctionRegistrar;
-import com.akiban.rest.RestServiceImpl;
 import com.akiban.rest.resources.ResourceHelper;
 import com.akiban.server.error.DirectEndpointNotFoundException;
 import com.akiban.server.error.DirectTransactionFailedException;
