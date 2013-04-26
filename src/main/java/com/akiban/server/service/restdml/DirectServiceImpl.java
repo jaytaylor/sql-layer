@@ -422,7 +422,7 @@ public class DirectServiceImpl implements Service, DirectService {
                 writer.write(em.outParam.defaultValue.toString());
             }
             break;
-
+            
         case EndpointMetadata.X_TYPE_JSON:
             JsonGenerator json = createJsonGenerator(writer);
             if (result != null) {
