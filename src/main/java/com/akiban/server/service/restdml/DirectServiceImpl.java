@@ -428,7 +428,7 @@ public class DirectServiceImpl implements Service, DirectService {
             } else if (em.outParam.defaultValue != null) {
                 json.writeObject(em.outParam.defaultValue);
             }
-            json.close();
+            json.flush();
             break;
 
         case EndpointMetadata.X_TYPE_VOID:
