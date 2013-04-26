@@ -20,7 +20,6 @@ package com.akiban.server.service.restdml;
 import java.io.PrintWriter;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 
 import com.akiban.ais.model.TableName;
@@ -36,8 +35,11 @@ public interface DirectService {
     public void reportStoredProcedures(PrintWriter writer, HttpServletRequest request, String query, String module,
             Session session, boolean functionsOnly) throws Exception;
 
-    public void invokeRestEndpoint(PrintWriter writer, HttpServletRequest request, String method, TableName procName,
-            String pathParams, MultivaluedMap<String, String> queryParameters, byte[] content, MediaType[] responseType)
-            throws Exception;
+    public DirectInvocation prepareRestInvocation(final String method, final TableName procName,
+            final String pathParams, final MultivaluedMap<String, String> queryParameters, final byte[] content,
+            final HttpServletRequest request) throws Exception;
+        
+    public void invokeRestEndpoint(final PrintWriter writer, final HttpServletRequest request, final String method,
+            final DirectInvocation in) throws Exception;
 
 }

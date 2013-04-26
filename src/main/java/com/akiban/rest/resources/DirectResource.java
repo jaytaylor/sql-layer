@@ -45,6 +45,7 @@ import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
 import com.akiban.rest.RestResponseBuilder.BodyGenerator;
 import com.akiban.server.error.NoSuchSchemaException;
+import com.akiban.server.service.restdml.DirectInvocation;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
 
@@ -223,15 +224,25 @@ public class DirectResource {
             @PathParam("params") final String pathParams, @Context final UriInfo uri) {
         final TableName procName = ResourceHelper.parseTableName(request, proc);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
-        final MediaType[] responseType = new MediaType[1];
-
-        return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
+        
+        return RestResponseBuilder.forRequest(request).body(new DirectBodyGenerator() {
+            
+            @Override
+            public void prepare(Response.ResponseBuilder builder) {
+                try {
+                    invocation = reqs.directService.prepareRestInvocation("GET", procName, pathParams, uri.getQueryParameters(), null, request);
+                    setHeaders(builder);
+                } catch (Exception e) {
+                    latentException = e;
+                }
+            }
+            
             @Override
             public void write(PrintWriter writer) throws Exception {
-                reqs.directService.invokeRestEndpoint(writer, request, "GET", procName, pathParams,
-                        uri.getQueryParameters(), null, responseType);
+                reqs.directService.invokeRestEndpoint(
+                        writer, request, "GET", invocation);
             }
-        }).build(responseType[0]);
+        }).build();
     }
 
     @POST
@@ -240,15 +251,26 @@ public class DirectResource {
             @PathParam("params") final String pathParams, @Context final UriInfo uri, final byte[] content) {
         final TableName procName = ResourceHelper.parseTableName(request, proc);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
-        final MediaType[] responseType = new MediaType[1];
 
-        return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
+        
+        return RestResponseBuilder.forRequest(request).body(new DirectBodyGenerator() {
+            
+            @Override
+            public void prepare(Response.ResponseBuilder builder) {
+                try {
+                    invocation = reqs.directService.prepareRestInvocation("POST", procName, pathParams, uri.getQueryParameters(), content, request);
+                    setHeaders(builder);
+                } catch (Exception e) {
+                    latentException = e;
+                }
+            }
+            
             @Override
             public void write(PrintWriter writer) throws Exception {
-                reqs.directService.invokeRestEndpoint(writer, request, "POST", procName, pathParams,
-                        uri.getQueryParameters(), content, responseType);
+                reqs.directService.invokeRestEndpoint(
+                        writer, request, "POST", invocation);
             }
-        }).build(responseType[0]);
+        }).build();
     }
 
     @PUT
@@ -257,15 +279,25 @@ public class DirectResource {
             @PathParam("params") final String pathParams, @Context final UriInfo uri, final byte[] content) {
         final TableName procName = ResourceHelper.parseTableName(request, proc);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
-        final MediaType[] responseType = new MediaType[1];
 
-        return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
+        return RestResponseBuilder.forRequest(request).body(new DirectBodyGenerator() {
+
+            @Override
+            public void prepare(Response.ResponseBuilder builder) {
+                try {
+                    invocation = reqs.directService.prepareRestInvocation("PUT", procName, pathParams, uri.getQueryParameters(), content, request);
+                    setHeaders(builder);
+                } catch (Exception e) {
+                    latentException = e;
+                }
+            }
+            
             @Override
             public void write(PrintWriter writer) throws Exception {
-                reqs.directService.invokeRestEndpoint(writer, request, "PUT", procName, pathParams,
-                        uri.getQueryParameters(), content, responseType);
+                reqs.directService.invokeRestEndpoint(
+                        writer, request, "PUT", invocation);
             }
-        }).build(responseType[0]);
+        }).build();
     }
 
     @DELETE
@@ -274,15 +306,50 @@ public class DirectResource {
             @PathParam("params") final String pathParams, @Context final UriInfo uri, final byte[] content) {
         final TableName procName = ResourceHelper.parseTableName(request, proc);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
-        final MediaType[] responseType = new MediaType[1];
 
-        return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
+        return RestResponseBuilder.forRequest(request).body(new DirectBodyGenerator() {
+
+            @Override
+            public void prepare(Response.ResponseBuilder builder) {
+                try {
+                    invocation = reqs.directService.prepareRestInvocation("POST", procName, pathParams, uri.getQueryParameters(), content, request);
+                    setHeaders(builder);
+                } catch (Exception e) {
+                    latentException = e;
+                }
+            }
+            
             @Override
             public void write(PrintWriter writer) throws Exception {
-                reqs.directService.invokeRestEndpoint(writer, request, "DELETE", procName, pathParams,
-                        uri.getQueryParameters(), content, responseType);
+                reqs.directService.invokeRestEndpoint(
+                        writer, request, "DELETE", invocation);
             }
-        }).build(responseType[0]);
+        }).build();
+
     }
 
+    private abstract class DirectBodyGenerator extends BodyGenerator {
+        
+        DirectInvocation invocation;
+        
+        Exception latentException;
+        
+        @Override
+        protected void throwPendingThrowable() throws Throwable {
+            if (latentException != null) {
+                throw latentException;
+            }
+        }
+        
+        @Override
+        protected void finish() throws Exception {
+            if (invocation != null) {
+                invocation.finish();
+            }
+        }
+        
+        void setHeaders(Response.ResponseBuilder builder) {
+            invocation.getEndpointMetadata().putResponseHeaders(builder);
+        }
+    }
 }

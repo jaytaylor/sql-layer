@@ -33,10 +33,9 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -110,7 +109,8 @@ public class DirectServiceImpl implements Service, DirectService {
     private final DXLService dxlService;
     private final EmbeddedJDBCService jdbcService;
     private final RoutineLoader routineLoader;
-
+    
+    
     @Inject
     public DirectServiceImpl(SecurityService securityService, DXLService dxlService, EmbeddedJDBCService jdbcService,
             RoutineLoader routineLoader) {
@@ -334,120 +334,118 @@ public class DirectServiceImpl implements Service, DirectService {
         json.writeEndArray();
     }
 
-    @Override
-    public void invokeRestEndpoint(final PrintWriter writer, final HttpServletRequest request, final String method,
-            final TableName procName, final String pathParams, final MultivaluedMap<String, String> queryParameters,
-            final byte[] content, final MediaType[] responseType) throws Exception {
-        try (JDBCConnection conn = jdbcConnection(request, procName.getSchemaName());) {
-            LOG.debug("Invoking {} {}", method, request.getRequestURI());
-            conn.setAutoCommit(false);
+    public DirectInvocation prepareRestInvocation(final String method, final TableName procName,
+            final String pathParams, final MultivaluedMap<String, String> queryParameters, final byte[] content,
+            final HttpServletRequest request) throws Exception {
 
-            boolean completed = false;
-            int repeat = TRANSACTION_RETRY_COUNT;
-
-            while (--repeat >= 0) {
-                try {
-                    Direct.enter(procName.getSchemaName(), dxlService.ddlFunctions().getAIS(conn.getSession()));
-                    Direct.getContext().setConnection(conn);
-                    conn.beginTransaction();
-                    invokeRestFunction(writer, conn, method, procName, pathParams, queryParameters, content,
-                            request, responseType);
-                    conn.commitTransaction();
-                    completed = true;
-                    return;
-                } catch (RollbackException e) {
-                    if (repeat == 0) {
-                        LOG.error("Transaction failed " + TRANSACTION_RETRY_COUNT + " times: "
-                                + request.getRequestURI());
-                        throw new DirectTransactionFailedException(method, request.getRequestURI());
-                    }
-                } catch (RegistrationException e) {
-                    throw new ScriptLibraryRegistrationException(e);
-                } finally {
-                    try {
-                        if (!completed) {
-                            conn.rollbackTransaction();
-                        }
-                    } finally {
-                        Direct.leave();
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Invokes a function in a script library. The identity of the function is
-     * determined from multiple factors including the schema name, the library
-     * routine name, the URI of the request, the content type of the request,
-     * etc. This method is called by {@link RestServiceImpl} which validates
-     * security and supplies the JDBCConnection
-     */
-
-    private void invokeRestFunction(final PrintWriter writer, JDBCConnection conn, final String method,
-            final TableName procName, final String pathParams, final MultivaluedMap<String, String> queryParameters,
-            final byte[] content, final HttpServletRequest request, final MediaType[] responseType) throws Exception {
-
+        JDBCConnection conn = jdbcConnection(request, procName.getSchemaName());
         ParamCache cache = new ParamCache();
         final EndpointMap endpointMap = getEndpointMap(conn.getSession());
         final List<EndpointMetadata> list;
         synchronized (endpointMap) {
             list = endpointMap.getMap().get(new EndpointAddress(method, procName));
         }
-
-        EndpointMetadata md = selectEndpoint(list, pathParams, request.getContentType(), responseType, cache);
-        if (md == null) {
+        EndpointMetadata em = selectEndpoint(list, pathParams, request.getContentType(), cache);
+        if (em == null) {
             throw new DirectEndpointNotFoundException(method, request.getRequestURI());
         }
+        final Object[] args = createArgsArray(pathParams, queryParameters, content, cache, em);
+        return new DirectInvocation(conn, procName, em, args);
+    }
 
-        final Object[] args = createArgsArray(pathParams, queryParameters, content, cache, md);
+    public void invokeRestEndpoint(final PrintWriter writer, final HttpServletRequest request, final String method,
+            final DirectInvocation in) throws Exception {
+        LOG.debug("Invoking {} {}", method, request.getRequestURI());
 
-        final ScriptPool<ScriptLibrary> libraryPool = conn.getRoutineLoader().getScriptLibrary(conn.getSession(),
-                new TableName(procName.getSchemaName(), md.routineName));
+        JDBCConnection conn = in.getConnection();
+        conn.setAutoCommit(false);
+        boolean completed = false;
+        int repeat = TRANSACTION_RETRY_COUNT;
+
+        while (--repeat >= 0) {
+            try {
+                Direct.enter(in.getProcName().getSchemaName(), dxlService.ddlFunctions().getAIS(conn.getSession()));
+                Direct.getContext().setConnection(conn);
+                conn.beginTransaction();
+                invokeRestFunction(writer, in);
+                conn.commitTransaction();
+                completed = true;
+                return;
+            } catch (RollbackException e) {
+                if (repeat == 0) {
+                    LOG.error("Transaction failed " + TRANSACTION_RETRY_COUNT + " times: " + request.getRequestURI());
+                    throw new DirectTransactionFailedException(method, request.getRequestURI());
+                }
+            } catch (RegistrationException e) {
+                throw new ScriptLibraryRegistrationException(e);
+            } finally {
+                try {
+                    if (!completed) {
+                        conn.rollbackTransaction();
+                    }
+                } finally {
+                    Direct.leave();
+                }
+            }
+        }
+    }
+
+
+    private void invokeRestFunction(final PrintWriter writer, DirectInvocation in) throws Exception {
+        EndpointMetadata em = in.getEndpointMetadata();
+        Object[] args = in.getArgs();
+
+        final ScriptPool<ScriptLibrary> libraryPool = in
+                .getConnection()
+                .getRoutineLoader()
+                .getScriptLibrary(in.getConnection().getSession(),
+                        new TableName(in.getProcName().getSchemaName(), em.routineName));
         final ScriptLibrary library = libraryPool.get();
+
         boolean success = false;
         Object result;
 
-        LOG.debug("Endpoint {}", md);
+        LOG.debug("Endpoint {}", in.getEndpointMetadata());
         try {
-            result = library.invoke(md.function, args);
+            result = library.invoke(em.function, args);
             success = true;
         } finally {
             libraryPool.put(library, success);
         }
 
-        switch (md.outParam.type) {
+        switch (em.outParam.type) {
 
         case EndpointMetadata.X_TYPE_STRING:
-            responseType[0] = MediaType.TEXT_PLAIN_TYPE;
             if (result != null) {
                 writer.write(result.toString());
-            } else if (md.outParam.defaultValue != null) {
-                writer.write(md.outParam.defaultValue.toString());
+            } else if (em.outParam.defaultValue != null) {
+                writer.write(em.outParam.defaultValue.toString());
             }
             break;
 
         case EndpointMetadata.X_TYPE_JSON:
-            responseType[0] = MediaType.APPLICATION_JSON_TYPE;
+            JsonGenerator json = createJsonGenerator(writer);
             if (result != null) {
-                writer.write(result.toString());
-            } else if (md.outParam.defaultValue != null) {
-                writer.write(md.outParam.defaultValue.toString());
+                json.writeObject(result);
+            } else if (em.outParam.defaultValue != null) {
+                json.writeObject(em.outParam.defaultValue);
             }
+            json.close();
+            break;
+
+        case EndpointMetadata.X_TYPE_VOID:
             break;
 
         case EndpointMetadata.X_TYPE_BYTEARRAY:
-            responseType[0] = MediaType.APPLICATION_OCTET_STREAM_TYPE;
-            // TODO: Unsupported - need to add a path for writing a stream
-            break;
+            /*
+             * intentionally falls through TODO: support X_TYPE_BYTEARRAY
+             */
 
         default:
-            // No response type specified
-            responseType[0] = null;
-            break;
+            assert false : "Invalid output type";
         }
     }
-
+    
     /**
      * Select a registered <code>EndpointMetadata</code> from the supplied list.
      * The first candidate in the list that matches the end-point pattern
@@ -470,8 +468,8 @@ public class DirectServiceImpl implements Service, DirectService {
      * @return the selected <code>EndpointMetadata</code> or <code>null</code>.
      */
     EndpointMetadata selectEndpoint(final List<EndpointMetadata> list, final String pathParams,
-            final String requestType, final MediaType[] responseType, ParamCache cache) {
-        EndpointMetadata md = null;
+            final String requestType, ParamCache cache) {
+        EndpointMetadata em = null;
         if (list != null) {
             for (final EndpointMetadata candidate : list) {
                 if (requestType != null && candidate.expectedContentType != null
@@ -481,18 +479,18 @@ public class DirectServiceImpl implements Service, DirectService {
                 if (candidate.pattern != null) {
                     Matcher matcher = candidate.getParamPathMatcher(cache, pathParams);
                     if (matcher.matches()) {
-                        md = candidate;
+                        em = candidate;
                         break;
                     }
                 } else {
                     if (pathParams == null || pathParams.isEmpty()) {
-                        md = candidate;
+                        em = candidate;
                         break;
                     }
                 }
             }
         }
-        return md;
+        return em;
     }
 
     /**
@@ -513,17 +511,17 @@ public class DirectServiceImpl implements Service, DirectService {
      *            <code>null</code> in the case of a GET request.
      * @param cache
      *            A cache for partial results
-     * @param md
+     * @param em
      *            The <code>EndpointMetadata</code> instance selected by
      *            {@link #selectEndpoint(List, String, String, MediaType[], ParamCache)}
      * @return the argument array
      * @throws Exception
      */
     Object[] createArgsArray(final String pathParams, final MultivaluedMap<String, String> queryParameters,
-            final byte[] content, ParamCache cache, EndpointMetadata md) throws Exception {
-        final Object[] args = new Object[md.inParams.length];
-        for (int index = 0; index < md.inParams.length; index++) {
-            final ParamMetadata pm = md.inParams[index];
+            final byte[] content, ParamCache cache, EndpointMetadata em) throws Exception {
+        final Object[] args = new Object[em.inParams.length];
+        for (int index = 0; index < em.inParams.length; index++) {
+            final ParamMetadata pm = em.inParams[index];
             Object v = pm.source.value(pathParams, queryParameters, content, cache);
             args[index] = EndpointMetadata.convertType(pm, v);
         }

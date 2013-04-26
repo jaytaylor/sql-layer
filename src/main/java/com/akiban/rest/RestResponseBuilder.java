@@ -44,8 +44,19 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class RestResponseBuilder {
-    public interface BodyGenerator {
-        public void write(PrintWriter writer) throws Exception;
+    
+    public abstract static class BodyGenerator {
+        
+        protected abstract void write(PrintWriter writer) throws Exception;
+        
+        protected  void throwPendingThrowable() throws Throwable {
+        }
+        
+        protected void prepare(Response.ResponseBuilder builder) {
+        }
+        
+        protected void finish() throws Exception {
+        }
     }
 
     private static final Charset UTF8 = Charset.forName("UTF-8");
@@ -58,7 +69,6 @@ public class RestResponseBuilder {
     private String outputBody;
     private String jsonp;
     private int status;
-
 
     public RestResponseBuilder(HttpServletRequest request, String jsonp) {
         this.request = request;
@@ -94,32 +104,49 @@ public class RestResponseBuilder {
     }
 
     public Response build() {
-        if(outputBody == null && outputGenerator == null && jsonp == null) {
+        if (outputBody == null && outputGenerator == null && jsonp == null) {
             status(Response.Status.NO_CONTENT);
         }
         if (isJsonp) {
             status(Response.Status.OK);
         }
         Response.ResponseBuilder builder;
-        
+
         if (this.status == Response.Status.NO_CONTENT.getStatusCode()) {
-            builder = Response.status(status).type((MediaType)null);
+            builder = Response.status(status).type((MediaType) null);
+            if (isJsonp) {
+                builder.type(ResourceHelper.APPLICATION_JAVASCRIPT_TYPE);
+            }
+            return builder.build();
+        } else if (outputGenerator != null) {
+            builder = Response.status(status);
+            try {
+                outputGenerator.prepare(builder);
+                if (isJsonp) {
+                    builder.type(ResourceHelper.APPLICATION_JAVASCRIPT_TYPE);
+                }
+                builder.entity(createStreamingOutput());
+                return builder.build();
+            } catch (WebApplicationException e) {
+                throw e;
+            } catch (Throwable t) {
+                wrapException(t);
+                throw t;
+            } finally {
+                try {
+                    outputGenerator.finish();
+                } catch (Exception e) {
+                    LOG.error("Exception while closing BodyGenerator", e);
+                }
+            }
         } else {
-            builder = Response.status(status).entity(createStreamingOutput());
+            builder = Response.status(status);
+            if (isJsonp) {
+                builder.type(ResourceHelper.APPLICATION_JAVASCRIPT_TYPE);
+            }
+            builder.entity(createStreamingOutput());
+            return builder.build();
         }
-        if(isJsonp) {
-            builder.type(ResourceHelper.APPLICATION_JAVASCRIPT_TYPE);
-        }
-        return builder.build();
-    }
-    
-    public Response build(MediaType type) {
-        if(outputBody == null && outputGenerator == null && jsonp == null) {
-            status(Response.Status.NO_CONTENT);
-        }
-        Response.ResponseBuilder builder = Response.status(status).entity(createStreamingOutput());
-        builder.type(type);
-        return builder.build();
     }
 
     public static void formatJsonError(StringBuilder builder, String code, String message) {
@@ -178,6 +205,9 @@ public class RestResponseBuilder {
             @Override
             public void write(OutputStream output)  {
                 try {
+                    if (outputGenerator != null) {
+                        outputGenerator.throwPendingThrowable();
+                    }
                     PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, UTF8), false);
                     if(isJsonp) {
                         writer.write(jsonp);
