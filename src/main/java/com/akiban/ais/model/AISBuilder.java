@@ -141,7 +141,7 @@ public class AISBuilder {
                                  long start, long increment, boolean defaultIdentity) {
         // The merge process will generate the *real* sequence name
         // Note: This will generate the same name twice and is intended for now, see bug1168552 discussion.
-        String sequenceName = "temp-sequence-1";
+        String sequenceName = tableName + "-temp-sequence-1";
         sequence(schemaName, sequenceName, start, increment, Long.MIN_VALUE, Long.MAX_VALUE, false);
         columnAsIdentity(schemaName, tableName, columnName, sequenceName, defaultIdentity);
     }
