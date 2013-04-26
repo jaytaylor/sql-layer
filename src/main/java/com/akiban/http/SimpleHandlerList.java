@@ -22,6 +22,8 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.util.MultiException;
 
+import com.akiban.server.service.monitor.MonitorStage;
+import com.akiban.sql.server.ServerSessionMonitor;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
@@ -53,10 +55,18 @@ public class SimpleHandlerList extends AbstractHandler {
                        Request baseRequest,
                        HttpServletRequest request,
                        HttpServletResponse response) throws IOException, ServletException {
+        ServerSessionMonitor monitor = null;
         if(!isStarted()) {
             return;
         }
         REST_TAP.in();
+        Object obj = baseRequest.getConnection().getAssociatedObject();
+        if (obj instanceof ServerSessionMonitor) {
+            monitor = (ServerSessionMonitor)obj;
+            monitor.setRemoteAddress(request.getRemoteAddr());
+            monitor.startStatement(request.getMethod(), request.getRequestURI());
+            monitor.enterStage(MonitorStage.EXECUTE);
+        }
         try {
             for(Handler h : handlers) {
                 h.handle(target,baseRequest, request, response);
@@ -70,6 +80,10 @@ public class SimpleHandlerList extends AbstractHandler {
             }
         }finally {
             REST_TAP.out();
+            if (monitor != null) {
+                monitor.leaveStage();
+                monitor.endStatement(1);
+            }
         }
     }
 
