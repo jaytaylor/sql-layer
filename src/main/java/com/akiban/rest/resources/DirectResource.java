@@ -349,7 +349,7 @@ public class DirectResource {
         }
         
         void setHeaders(Response.ResponseBuilder builder) {
-            invocation.getEndpointMetadata().putResponseHeaders(builder);
+            invocation.getEndpointMetadata().setResponseHeaders(builder);
         }
     }
 }

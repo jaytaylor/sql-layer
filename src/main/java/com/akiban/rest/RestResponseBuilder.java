@@ -222,7 +222,7 @@ public class RestResponseBuilder {
                         writer.write(')');
                     }
                     writer.write('\n');
-                    writer.flush();
+//                    writer.flush();
                     writer.close();
                 } catch(Throwable t) {
                     throw wrapException(t);

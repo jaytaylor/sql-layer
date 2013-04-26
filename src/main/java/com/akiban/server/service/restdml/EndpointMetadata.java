@@ -789,7 +789,7 @@ public class EndpointMetadata {
         StringBuilder sb = new StringBuilder();
         append(sb, METHOD, "=", method, " ", PATH, "=", name);
         if (pattern != null) {
-            append(sb, pattern.toString());
+            append(sb, "/", pattern.toString());
         }
         append(sb, " ", FUNCTION, "=", function, " ", IN, "=(");
         if (inParams == null) {
@@ -842,7 +842,7 @@ public class EndpointMetadata {
                 && equals(em.pattern, pattern) && equals(em.outParam, outParam) && equals(em.inParams, inParams);
     }
 
-    public void putResponseHeaders(final Response.ResponseBuilder builder) {
+    public void setResponseHeaders(final Response.ResponseBuilder builder) {
         switch (outParam.type) {
 
         case EndpointMetadata.X_TYPE_STRING:
