@@ -426,14 +426,16 @@ public class DirectServiceImpl implements Service, DirectService {
                 writer.write(md.outParam.defaultValue.toString());
             }
             break;
-
+            
         case EndpointMetadata.X_TYPE_JSON:
             responseType[0] = MediaType.APPLICATION_JSON_TYPE;
+            JsonGenerator json = createJsonGenerator(writer);
             if (result != null) {
-                writer.write(result.toString());
+                json.writeObject(result);
             } else if (md.outParam.defaultValue != null) {
-                writer.write(md.outParam.defaultValue.toString());
+                json.writeObject(md.outParam.defaultValue);
             }
+            json.close();
             break;
 
         case EndpointMetadata.X_TYPE_BYTEARRAY:

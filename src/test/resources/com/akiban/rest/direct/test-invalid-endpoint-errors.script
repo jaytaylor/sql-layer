@@ -1,7 +1,7 @@
 # Normal registration
 #
 PUT     /direct/library?module=test.proc1&language=Javascript @direct-create.body
-EQUALS  {"functions":1}\n
+EQUALS  {"functions":2}\n
 
 # Try mismatched methods - expect 404 errors
 #
