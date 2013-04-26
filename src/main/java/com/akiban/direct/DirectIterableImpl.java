@@ -23,9 +23,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import com.akiban.qp.row.Row;
 import com.akiban.sql.embedded.JDBCResultSet;
-import com.akiban.util.ShareHolder;
 
 /**
  * Very kludgey implementation by constructing SQL strings.
@@ -36,22 +34,24 @@ import com.akiban.util.ShareHolder;
  */
 public class DirectIterableImpl<T> implements DirectIterable<T> {
 
-    final Class<T> clazz;
-    boolean hasNext;
+    private final Class<T> clazz;
+    private final DirectObject parent;
+    private boolean hasNext;
 
-    final String table;
-    final List<String> predicates = new ArrayList<String>();
-    final List<String> sorts = new ArrayList<String>();
-    String limit;
+    private final String table;
+    private final List<String> predicates = new ArrayList<String>();
+    private final List<String> sorts = new ArrayList<String>();
+    private String limit;
 
-    boolean initialized;
-    String sql;
+    private boolean initialized;
+    private String sql;
 
-    JDBCResultSet resultSet;
+    private JDBCResultSet resultSet;
 
-    public DirectIterableImpl(Class<T> clazz, String toTable) {
-        this.clazz = clazz;
+    public DirectIterableImpl(Class<T> ifaceClass, String toTable, DirectObject parent) {
+        this.clazz = ifaceClass;
         this.table = toTable;
+        this.parent = parent;
     }
 
     @Override
@@ -104,7 +104,6 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
 
     private boolean nextRow() {
         try {
-            
             boolean result = resultSet.next();
             return result;
         } catch (SQLException e) {
@@ -152,7 +151,7 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
         predicates.add(predicate);
         return this;
     }
-    
+
     @Override
     public DirectIterableImpl<T> where(final String columnName, Object literal) {
         StringBuilder sb = new StringBuilder(columnName).append(" = ");
@@ -164,7 +163,6 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
         predicates.add(sb.toString());
         return this;
     }
-    
 
     @Override
     public DirectIterableImpl<T> sort(final String column) {
@@ -185,5 +183,17 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
             return this;
         }
         throw new IllegalStateException("Limit already specified");
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public T newInstance() throws DirectException {
+        try {
+            final AbstractDirectObject newInstance = Direct.newInstance(clazz);
+            newInstance.populateJoinFields(parent);
+            return (T)newInstance;
+        } catch (Exception e) {
+            throw new DirectException(e);
+        }
     }
 }

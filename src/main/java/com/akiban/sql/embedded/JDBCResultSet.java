@@ -57,7 +57,7 @@ public class JDBCResultSet implements DirectResultSet
         context = new EmbeddedQueryContext(this);
         values = new Values();
     }
-
+    
     protected class Values extends ServerJavaValues {
         @Override
         protected int size() {
@@ -1517,7 +1517,7 @@ public class JDBCResultSet implements DirectResultSet
 
         AbstractDirectObject o = Direct.objectForRow(c);
         if (o != null) {
-            o.setResults(values, this);
+            o.setResults(this);
             return o;
         }
         throw new JDBCException("No entity class for row");
@@ -1526,4 +1526,5 @@ public class JDBCResultSet implements DirectResultSet
     public boolean hasRow() {
         return row != null;
     }
+
 }

@@ -121,6 +121,8 @@ public abstract class TClassBase extends TClass
             PValueTargets.copyFrom(in, out);
             return true;
         }
+        
+        
         PUnderlying underlyingType = TInstance.pUnderlying(in.tInstance());
         if (underlyingType == PUnderlying.STRING || underlyingType == PUnderlying.BYTES)
             return false;

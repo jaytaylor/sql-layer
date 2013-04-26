@@ -61,7 +61,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 /**
  * Scripted tests for REST end-points. Code was largely copied from
  * RestServiceFilesIT. Difference is that this version finds files with the
- * suffix ".script" and executes the command stream located in them. Commands are:
+ * suffix ".script" and executes the command stream located in them. Commands
+ * are:
  * 
  * <pre>
  * GET address
@@ -77,6 +78,8 @@ import com.fasterxml.jackson.databind.JsonNode;
  * HEADERS expected
  * EMPTY
  * NOTEMPTY
+ * SHOW
+ * DEBUG
  * </pre>
  * 
  * where address is a path relative the resource end-point, content is a string
@@ -93,10 +96,21 @@ import com.fasterxml.jackson.databind.JsonNode;
  * POST    /builder/implode/test.customers @
  * </pre>
  * 
+ * The SHOW and DEBUG commands are useful for debugging. SHOW simply prints out
+ * the actual content of the last REST response. The DEBUG command calls the
+ * static method {@link #debug(int)}. You can set a debugger breakpoint inside
+ * that method.
+ * 
  * @author peter
  */
 @RunWith(NamedParameterizedRunner.class)
 public class RestServiceScriptsIT extends ITBase {
+
+    private static void debug(int lineNumber) {
+        // Set a breakpoint here to debug on DEBUG statements
+        System.out.println("DEBUG executed on line " + lineNumber);
+    }
+
     private static final Logger LOG = LoggerFactory.getLogger(RestServiceScriptsIT.class.getName());
 
     private static final File RESOURCE_DIR = new File("src/test/resources/"
@@ -241,7 +255,7 @@ public class RestServiceScriptsIT extends ITBase {
 
                 switch (command) {
                 case "DEBUG":
-                    System.out.println("DEBUG executed on line " + lineNumber);
+                    debug(lineNumber);
                     break;
                 case "GET":
                 case "DELETE": {
@@ -278,7 +292,7 @@ public class RestServiceScriptsIT extends ITBase {
                         error("Missing argument");
                         continue;
                     }
-                    String contents  = value(line, 2);
+                    String contents = value(line, 2);
                     executeRestCall(command, pieces[1], contents);
                     break;
                 }
@@ -295,6 +309,7 @@ public class RestServiceScriptsIT extends ITBase {
                         continue;
                     }
                     if (!result.output.contains(value(line, 1))) {
+                        LOG.error("Incorrect value - actual returned value is:\n{}", result.output);
                         error("Incorrect response");
                     }
                     break;
@@ -322,6 +337,11 @@ public class RestServiceScriptsIT extends ITBase {
                     if (!result.output.isEmpty()) {
                         error("Expected empty response");
                     }
+                    break;
+                case "SHOW":
+                    int status = result.conn == null ? -1 : ((ContentExchange)result.conn).getResponseStatus(); 
+                    System.out.printf("At line %d the most recent response status is %d. " + "The value is:\n%s\n",
+                            lineNumber, status, result.output);
                     break;
                 default:
                     result.conn = null;
@@ -356,10 +376,7 @@ public class RestServiceScriptsIT extends ITBase {
             result.output = getOutput(result.conn);
         } catch (Exception e) {
             result.output = e.toString();
-        } finally {
-            if (result.conn != null) {
-                fullyDisconnect(result.conn);
-            }
+            fullyDisconnect(result.conn);
         }
     }
 
@@ -399,6 +416,7 @@ public class RestServiceScriptsIT extends ITBase {
 
     private void compareStrings(String assertMsg, String expected, String actual) {
         if (!expected.equals(actual)) {
+            LOG.error("Incorrect value - actual returned value is:\n{}", actual);
             error(assertMsg, diff(expected, actual));
         }
     }

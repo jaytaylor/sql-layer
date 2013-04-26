@@ -123,42 +123,16 @@ public class ClassSourceWriter extends ClassSourceWriterBase {
         }
         newLine();
     }
-
+    
     @Override
-    public void addConstructor(final String[] argumentTypes,
-            final String[] argumentNames, final String[] body) {
-        newLine();
-        print("public ", localName(externalName(classNames.firstElement()), classNames.firstElement()),  "(");
-        boolean first = true;
-        int counter = 0;
-        for (final String s : argumentTypes) {
-            if (!first) {
-                append(", ");
-            }
-            String argName;
-            if (argumentTypes != null) {
-                argName = argumentNames[counter];
-                counter++;
-            } else {
-                argName = "z" + ++counter;
-            }
-            append(localName(externalName(s), classNames.firstElement()), " ", argName);
-        }
-        append(")");
-        if (body == null) {
-            append(";");
-        } else {
-            append(" {");
-            newLine();
-            indentation++;
-            for (String s : body) {
-                println(s, ";");
-            }
-            indentation--;
-            println("}");
-        }
+    public void addStaticInitializer(final String body) {
+        println("static {");
+        println(body + ";");
+        println("}");
         newLine();
     }
+
+
 
     /*
      * (non-Javadoc)
@@ -188,7 +162,7 @@ public class ClassSourceWriter extends ClassSourceWriterBase {
         }
         boolean shorten = "java.lang.".equals(fqn.substring(0, dotIndex + 1));
 
-        if (!shorten) {
+        if (!shorten && imports != null) {
             for (final String s : imports) {
                 if (s.equals(fqn)) {
                     shorten = true;

@@ -1,7 +1,7 @@
 # Normal registration
 #
 PUT     /direct/library?module=test.proc1&language=Javascript @direct-create.body
-EQUALS  {"functions":2}\n
+EQUALS  {"functions":1}\n
 
 # Attempt to register an invalid specification
 #
@@ -11,7 +11,7 @@ CONTAINS Invalid function specification
 # Register a script with no _register function
 #
 PUT     /direct/library?module=test.proc2&language=Javascript @missing-direct-create.body
-EQUALS  {"functions":2}\n
+EQUALS  {"functions":1}\n
 
 # Verify a valid script is still available
 #

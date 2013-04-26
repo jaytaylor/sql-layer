@@ -52,6 +52,8 @@ import com.akiban.direct.Direct;
 import com.akiban.rest.RestFunctionRegistrar;
 import com.akiban.rest.RestServiceImpl;
 import com.akiban.rest.resources.ResourceHelper;
+import com.akiban.server.error.DirectEndpointNotFoundException;
+import com.akiban.server.error.DirectTransactionFailedException;
 import com.akiban.server.error.ExternalRoutineInvocationException;
 import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.ScriptLibraryRegistrationException;
@@ -94,6 +96,7 @@ public class DirectServiceImpl implements Service, DirectService {
     private final static String IS_RESULT = "is_result";
 
     private final static int TRANSACTION_RETRY_COUNT = 3;
+
     private final static String DISTINGUISHED_REGISTRATION_METHOD_NAME = "_register";
 
     private final static String CREATE_PROCEDURE_FORMAT = "CREATE OR REPLACE PROCEDURE \"%s\".\"%s\" ()"
@@ -336,7 +339,7 @@ public class DirectServiceImpl implements Service, DirectService {
             final TableName procName, final String pathParams, final MultivaluedMap<String, String> queryParameters,
             final byte[] content, final MediaType[] responseType) throws Exception {
         try (JDBCConnection conn = jdbcConnection(request, procName.getSchemaName());) {
-            LOG.debug("Invoking {} {}", request.getMethod(), request.getRequestURI());
+            LOG.debug("Invoking {} {}", method, request.getRequestURI());
             conn.setAutoCommit(false);
 
             boolean completed = false;
@@ -348,7 +351,7 @@ public class DirectServiceImpl implements Service, DirectService {
                     Direct.getContext().setConnection(conn);
                     conn.beginTransaction();
                     invokeRestFunction(writer, conn, method, procName, pathParams, queryParameters, content,
-                            request.getContentType(), responseType);
+                            request, responseType);
                     conn.commitTransaction();
                     completed = true;
                     return;
@@ -356,7 +359,7 @@ public class DirectServiceImpl implements Service, DirectService {
                     if (repeat == 0) {
                         LOG.error("Transaction failed " + TRANSACTION_RETRY_COUNT + " times: "
                                 + request.getRequestURI());
-                        throw new WebApplicationException(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                        throw new DirectTransactionFailedException(method, request.getRequestURI());
                     }
                 } catch (RegistrationException e) {
                     throw new ScriptLibraryRegistrationException(e);
@@ -383,7 +386,7 @@ public class DirectServiceImpl implements Service, DirectService {
 
     private void invokeRestFunction(final PrintWriter writer, JDBCConnection conn, final String method,
             final TableName procName, final String pathParams, final MultivaluedMap<String, String> queryParameters,
-            final byte[] content, final String requestType, final MediaType[] responseType) throws Exception {
+            final byte[] content, final HttpServletRequest request, final MediaType[] responseType) throws Exception {
 
         ParamCache cache = new ParamCache();
         final EndpointMap endpointMap = getEndpointMap(conn.getSession());
@@ -392,9 +395,9 @@ public class DirectServiceImpl implements Service, DirectService {
             list = endpointMap.getMap().get(new EndpointAddress(method, procName));
         }
 
-        EndpointMetadata md = selectEndpoint(list, pathParams, requestType, responseType, cache);
+        EndpointMetadata md = selectEndpoint(list, pathParams, request.getContentType(), responseType, cache);
         if (md == null) {
-            throw new WebApplicationException(HttpServletResponse.SC_NOT_FOUND);
+            throw new DirectEndpointNotFoundException(method, request.getRequestURI());
         }
 
         final Object[] args = createArgsArray(pathParams, queryParameters, content, cache, md);
@@ -603,7 +606,7 @@ public class DirectServiceImpl implements Service, DirectService {
                     list.add(em);
                 }
             } catch (Exception e) {
-                String msg = e instanceof IllegalArgumentException ? e.getMessage() : "";
+                String msg = IllegalArgumentException.class.equals(e.getClass()) ? e.getMessage() : e.toString();
                 throw new RegistrationException("Invalid function specification: " + spec + " - " + msg, e);
             }
         }

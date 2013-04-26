@@ -19,8 +19,6 @@ package com.akiban.server.service.restdml;
 
 import org.junit.Test;
 
-import com.akiban.rest.resources.DirectResource;
-
 public class DirectServiceTest {
 
     @Test
