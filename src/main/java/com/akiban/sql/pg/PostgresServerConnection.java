@@ -522,6 +522,7 @@ public class PostgresServerConnection extends ServerSessionBase
         }
         logger.debug("Login {}", (principal != null) ? principal : user);
         authenticationOkay(user);
+        sessionMonitor.setUserMonitor(reqs.monitor().getUserMonitor(user));
     }
     
     protected void authenticationOkay(String user) throws IOException {

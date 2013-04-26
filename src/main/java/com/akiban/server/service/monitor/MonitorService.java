@@ -58,4 +58,22 @@ public interface MonitorService {
 
     /** Log last statement from given monitor. */
     void logQuery(SessionMonitor sessionMonitor);
+    
+    /** Register the given User monitor. */
+    void registerUserMonitor (UserMonitor userMonitor);
+    
+    /** Deregister the given user montitor. */
+    void deregisterUserMonitor (UserMonitor userMonitor);
+    
+    /** Deregister the montor for the given user */
+    void deregisterUserMonitor (String userName);
+    
+    /** Get the user monitor for the given user name. */
+    UserMonitor getUserMonitor(String userName);
+    
+    /** Get the user monitor for the session user */
+    UserMonitor getUserMonitor(Session session);
+    
+    /** Get all the user monitors. */
+    Collection<UserMonitor> getUserMonitors();
 }

@@ -44,6 +44,7 @@ import com.akiban.server.service.monitor.MonitorStage;
 import com.akiban.server.service.monitor.PreparedStatementMonitor;
 import com.akiban.server.service.monitor.ServerMonitor;
 import com.akiban.server.service.monitor.SessionMonitor;
+import com.akiban.server.service.monitor.UserMonitor;
 import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
@@ -67,6 +68,7 @@ public class ServerSchemaTablesServiceImpl
     static final TableName SERVER_TAPS = new TableName (SCHEMA_NAME, "server_taps");
     static final TableName SERVER_PREPARED_STATEMENTS = new TableName (SCHEMA_NAME, "server_prepared_statements");
     static final TableName SERVER_CURSORS = new TableName (SCHEMA_NAME, "server_cursors");
+    static final TableName SERVER_USERS = new TableName (SCHEMA_NAME, "server_users");
 
     private final MonitorService monitor;
     private final ConfigurationService configService;
@@ -109,6 +111,8 @@ public class ServerSchemaTablesServiceImpl
         attach (ais, true, SERVER_PREPARED_STATEMENTS, PreparedStatements.class);
         //SERVER_CURSORS
         attach (ais, true, SERVER_CURSORS, Cursors.class);
+        //SERVER_USERS
+        attach(ais, true, SERVER_USERS, Users.class);
     }
 
     @Override
@@ -136,6 +140,18 @@ public class ServerSchemaTablesServiceImpl
         }
     }
 
+    protected Collection<UserMonitor> getAccessibleUsers (Session session) {
+        if (securityService.hasRestrictedAccess(session)) {
+            return monitor.getUserMonitors();
+        } else {
+            UserMonitor um = monitor.getUserMonitor(session);
+            if (um == null) {
+                return Collections.emptyList();
+            } else {
+                return Collections.singletonList(um);
+            }
+        }
+    }
     private class InstanceSummary extends BasicFactoryBase {
 
         public InstanceSummary(TableName sourceTable) {
@@ -565,6 +581,46 @@ public class ServerSchemaTablesServiceImpl
         }
     }
 
+    private class Users extends BasicFactoryBase {
+
+        public Users(TableName sourceTable) {
+            super(sourceTable);
+        }
+
+        @Override
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan (adapter.getSession(), getRowType(adapter));
+        }
+
+        @Override
+        public long rowCount() {
+            return monitor.getUserMonitors().size();
+        }
+        
+        private class Scan extends BaseScan {
+            final Iterator<UserMonitor> users;
+
+            public Scan(Session session, RowType rowType) {
+                super(rowType);
+                users = getAccessibleUsers(session).iterator();
+            }
+
+            @Override
+            public Row next() {
+                if (!users.hasNext()) {
+                    return null;
+                }
+                UserMonitor user = users.next();
+                ValuesRow row = new ValuesRow (rowType,
+                                            user.getUserName(),
+                                            user.getStatementCount(),
+                                            ++rowCounter);
+                return row;
+            }
+        }
+    }
+
+    
     static AkibanInformationSchema createTablesToRegister() {
         NewAISBuilder builder = AISBBasedBuilder.create();
         
@@ -635,6 +691,10 @@ public class ServerSchemaTablesServiceImpl
             .colTimestamp("creation_time", true)
             .colBigInt("row_count", true);
 
+        builder.userTable(SERVER_USERS)
+            .colString("user_name", IDENT_MAX, false)
+            .colBigInt("statement_count", false);
+            
         return builder.ais(false);
     }
 }

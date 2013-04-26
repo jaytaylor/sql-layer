@@ -62,6 +62,8 @@ public class MonitorServiceImpl implements Service, MonitorService, MonitorMXBea
     private BufferedWriter queryOut;
 
     private long execTimeThreshold;
+    
+    private Map<String, UserMonitor> users;
 
     @Inject
     public MonitorServiceImpl(ConfigurationService config) {
@@ -76,6 +78,7 @@ public class MonitorServiceImpl implements Service, MonitorService, MonitorMXBea
 
         sessionAllocator = new AtomicInteger();
         sessions = new ConcurrentHashMap<>();
+        users = new ConcurrentHashMap<>();
 
         String enableLog = config.getProperty(QUERY_LOG_PROPERTY);
         this.queryLogEnabled = new AtomicBoolean(Boolean.parseBoolean(enableLog));
@@ -310,5 +313,42 @@ public class MonitorServiceImpl implements Service, MonitorService, MonitorMXBea
         logger.debug("Query log file ready for writing.");
         return true;
     }
+    
+    /** Register the given User monitor. */
+    @Override
+    public void registerUserMonitor (UserMonitor userMonitor) {
+        UserMonitor monitor = users.put(userMonitor.getUserName(), userMonitor);
+        assert (monitor == null || monitor == userMonitor);
+    }
 
+    /** Deregister the monitor for the given user */
+    @Override
+    public void deregisterUserMonitor (String userName) {
+        users.remove(userName);
+    }
+    
+    /** Deregister the given user monitor. */
+    @Override
+    public void deregisterUserMonitor (UserMonitor userMonitor) {
+        UserMonitor monitor = users.remove(userMonitor.getUserName());
+        assert (monitor== null || monitor == userMonitor);
+    }
+    
+    /** Get the user monitor for the given user name. */
+    @Override 
+    public UserMonitor getUserMonitor(String userName) {
+        return users.get(userName); 
+    }
+    
+    /** Get the user monitor for the session user */
+    @Override
+    public UserMonitor getUserMonitor(Session session) {
+       return session.get(SESSION_KEY).getUserMonitor();
+    }
+
+    /** Get all the user monitors. */
+    @Override
+    public Collection<UserMonitor> getUserMonitors() {
+        return users.values();
+    }
 }
