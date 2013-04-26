@@ -855,7 +855,7 @@ public class EndpointMetadata {
 
         case EndpointMetadata.X_TYPE_VOID:
             builder.type((MediaType)null);
-            builder.status(Response.Status.NO_CONTENT);
+            builder.status(Status.NO_CONTENT);
             break;
 
         case EndpointMetadata.X_TYPE_BYTEARRAY:
