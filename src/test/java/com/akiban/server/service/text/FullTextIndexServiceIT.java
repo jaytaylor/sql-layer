@@ -113,7 +113,7 @@ public class FullTextIndexServiceIT extends ITBase
     }
     
     @Test
-    public void testConcurrent_schedule_run_Populate()
+    public void testConcurrent_schedule_run_Populate() throws InterruptedException
     {
         // This test is specifically for FullTextIndexServiceImpl.java
         assertEquals(FullTextIndexServiceImpl.class, fullText.getClass());
@@ -148,6 +148,10 @@ public class FullTextIndexServiceIT extends ITBase
         createFullTextIndex(serviceManager(),
                             SCHEMA, "a", "ft_idx_a",
                             "a.state");
+        
+       // let the worker do its job.
+        fullTextImpl.enablePopulateWorker();
+        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
     }
         
     @Test

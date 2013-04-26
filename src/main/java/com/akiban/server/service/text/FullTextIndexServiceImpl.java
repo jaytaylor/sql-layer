@@ -92,7 +92,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     private volatile Timer populateTimer;
     private long populateDelayInterval;
 
-    private final Byte populateTreeLock = 1;
+    private final Object POPULATE_TREE_LOCK = 1;
 
     private static final Logger logger = LoggerFactory.getLogger(FullTextIndexServiceImpl.class);
 
@@ -133,9 +133,9 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                       .append(name.getName());
             
             if (ex.traverse(Key.Direction.EQ, true, 0))
-                synchronized(populateTreeLock)
+                synchronized(POPULATE_TREE_LOCK)
                 {
-                    ex.fetchAndRemove();
+                    ex.remove();
                 }
 
             FullTextIndexInfo index = getIndex(session, name);
@@ -472,7 +472,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                 else
                     logger.debug("FullTextIndex " + toPopulate + " deleted before population");
             }
-            synchronized(populateTreeLock)
+            synchronized(POPULATE_TREE_LOCK)
             {
                 ex.removeAll();
             }
@@ -642,7 +642,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
 
         // VALUE: <empty>
 
-        synchronized(populateTreeLock)
+        synchronized(POPULATE_TREE_LOCK)
         {
             ex.store();
         }
