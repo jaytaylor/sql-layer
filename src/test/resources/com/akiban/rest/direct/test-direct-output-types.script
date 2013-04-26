@@ -15,17 +15,12 @@ JSONEQ  {"status":"correct"}
 HEADERS Content-Type:application/json
 
 GET     /direct/call/test.out_void
-HEADERS responseCode:200
-EQUALS  \n
-HEADERS Content-Type:application/octet-stream
+HEADERS responseCode:204
 
-DEBUG
 GET     /direct/call/test.out_void_with_content
-HEADERS responseCode:200
-EQUALS  \n
+HEADERS responseCode:204
 
 PUT     /direct/library?module=test.output_types2&language=Javascript function _register(registrar) {registrar.register("method=GET path=x function=x in=() out=int");};
-SHOW
 CONTAINS Invalid function specification
 
 PUT     /direct/library?module=test.output_types2&language=Javascript function _register(registrar) {registrar.register("method=GET path=x function=x in=() out=date");};

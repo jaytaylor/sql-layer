@@ -222,134 +222,66 @@ public class DirectResource {
     @Path("/call/{proc}{params:(/.*)?}")
     public Response callGet(@Context final HttpServletRequest request, @PathParam("proc") final String proc,
             @PathParam("params") final String pathParams, @Context final UriInfo uri) {
-        final TableName procName = ResourceHelper.parseTableName(request, proc);
-        ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
-        
-        return RestResponseBuilder.forRequest(request).body(new DirectBodyGenerator() {
-            
-            @Override
-            public void prepare(Response.ResponseBuilder builder) {
-                try {
-                    invocation = reqs.directService.prepareRestInvocation("GET", procName, pathParams, uri.getQueryParameters(), null, request);
-                    setHeaders(builder);
-                } catch (Exception e) {
-                    latentException = e;
-                }
-            }
-            
-            @Override
-            public void write(PrintWriter writer) throws Exception {
-                reqs.directService.invokeRestEndpoint(
-                        writer, request, "GET", invocation);
-            }
-        }).build();
+        return doCall(request, "GET", proc, pathParams, uri, null);
     }
 
     @POST
     @Path("/call/{proc}{params:(/.*)?}")
     public Response callPost(@Context final HttpServletRequest request, @PathParam("proc") final String proc,
             @PathParam("params") final String pathParams, @Context final UriInfo uri, final byte[] content) {
-        final TableName procName = ResourceHelper.parseTableName(request, proc);
-        ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
-
-        
-        return RestResponseBuilder.forRequest(request).body(new DirectBodyGenerator() {
-            
-            @Override
-            public void prepare(Response.ResponseBuilder builder) {
-                try {
-                    invocation = reqs.directService.prepareRestInvocation("POST", procName, pathParams, uri.getQueryParameters(), content, request);
-                    setHeaders(builder);
-                } catch (Exception e) {
-                    latentException = e;
-                }
-            }
-            
-            @Override
-            public void write(PrintWriter writer) throws Exception {
-                reqs.directService.invokeRestEndpoint(
-                        writer, request, "POST", invocation);
-            }
-        }).build();
+        return doCall(request, "POST", proc, pathParams, uri, content);
     }
 
     @PUT
     @Path("/call/{proc}{params:(/.*)?}")
     public Response callPut(@Context final HttpServletRequest request, @PathParam("proc") final String proc,
             @PathParam("params") final String pathParams, @Context final UriInfo uri, final byte[] content) {
-        final TableName procName = ResourceHelper.parseTableName(request, proc);
-        ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
-
-        return RestResponseBuilder.forRequest(request).body(new DirectBodyGenerator() {
-
-            @Override
-            public void prepare(Response.ResponseBuilder builder) {
-                try {
-                    invocation = reqs.directService.prepareRestInvocation("PUT", procName, pathParams, uri.getQueryParameters(), content, request);
-                    setHeaders(builder);
-                } catch (Exception e) {
-                    latentException = e;
-                }
-            }
-            
-            @Override
-            public void write(PrintWriter writer) throws Exception {
-                reqs.directService.invokeRestEndpoint(
-                        writer, request, "PUT", invocation);
-            }
-        }).build();
+        return doCall(request, "PUT", proc, pathParams, uri, content);
     }
 
     @DELETE
     @Path("/call/{proc}{params:(/.*)?}")
     public Response callDelete(@Context final HttpServletRequest request, @PathParam("proc") final String proc,
             @PathParam("params") final String pathParams, @Context final UriInfo uri, final byte[] content) {
+        return doCall(request, "DELETE", proc, pathParams, uri, content);
+    }
+    
+    private Response doCall(final HttpServletRequest request, final String method, final String proc, final String pathParams,
+            final UriInfo uri, final byte[] content) {
         final TableName procName = ResourceHelper.parseTableName(request, proc);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
 
-        return RestResponseBuilder.forRequest(request).body(new DirectBodyGenerator() {
-
-            @Override
-            public void prepare(Response.ResponseBuilder builder) {
-                try {
-                    invocation = reqs.directService.prepareRestInvocation("POST", procName, pathParams, uri.getQueryParameters(), content, request);
-                    setHeaders(builder);
-                } catch (Exception e) {
-                    latentException = e;
-                }
-            }
-            
-            @Override
-            public void write(PrintWriter writer) throws Exception {
-                reqs.directService.invokeRestEndpoint(
-                        writer, request, "DELETE", invocation);
-            }
-        }).build();
-
-    }
-
-    private abstract class DirectBodyGenerator extends BodyGenerator {
-        
-        DirectInvocation invocation;
-        
-        Exception latentException;
-        
-        @Override
-        protected void throwPendingThrowable() throws Throwable {
-            if (latentException != null) {
-                throw latentException;
-            }
-        }
-        
-        @Override
-        protected void finish() throws Exception {
-            if (invocation != null) {
-                invocation.finish();
-            }
-        }
-        
-        void setHeaders(Response.ResponseBuilder builder) {
+        RestResponseBuilder builder = RestResponseBuilder.forRequest(request);
+        final DirectInvocation invocation;
+        try {
+            invocation = reqs.directService.prepareRestInvocation(method, procName, pathParams,
+                    uri.getQueryParameters(), content, request);
             invocation.getEndpointMetadata().setResponseHeaders(builder);
+        } catch (Exception e) {
+            throw builder.wrapException(e);
+        }
+
+        try {
+            if (invocation.getEndpointMetadata().isVoid()) {
+                try {
+                    reqs.directService.invokeRestEndpoint(null, request, method, invocation);
+                } catch (Throwable t) {
+                    throw builder.wrapException(t);
+                }
+                return builder.build();
+            } else {
+                return builder.body(new BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        reqs.directService.invokeRestEndpoint(writer, request, method, invocation);
+                    }
+                }).build();
+            }
+        } finally {
+            invocation.finish();
         }
     }
+
+
+
 }

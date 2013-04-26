@@ -37,6 +37,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import com.akiban.ais.model.TableName;
+import com.akiban.rest.RestResponseBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
@@ -842,7 +843,7 @@ public class EndpointMetadata {
                 && equals(em.pattern, pattern) && equals(em.outParam, outParam) && equals(em.inParams, inParams);
     }
 
-    public void setResponseHeaders(final Response.ResponseBuilder builder) {
+    public void setResponseHeaders(final RestResponseBuilder builder) {
         switch (outParam.type) {
 
         case EndpointMetadata.X_TYPE_STRING:
@@ -868,5 +869,8 @@ public class EndpointMetadata {
         }
     }
 
+    public boolean isVoid() {
+        return X_TYPE_VOID.equals(outParam.type);
+    }
 
 }
