@@ -26,6 +26,7 @@ import java.io.File;
 import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.Map;
 
 import org.junit.After;
 import org.junit.Before;
@@ -55,6 +56,11 @@ public final class DirectUpdateIT extends ITBase {
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         // JDBC service is not in test-services.
         return super.serviceBindingsProvider().bindAndRequire(EmbeddedJDBCService.class, EmbeddedJDBCServiceImpl.class);
+    }
+
+    @Override
+    protected Map<String, String> startupConfigProperties() {
+        return uniqueStartupConfigProperties(DirectUpdateIT.class);
     }
 
     @Before
