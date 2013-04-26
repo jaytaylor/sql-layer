@@ -94,7 +94,7 @@ public class EndpointMetadata {
         switch (pm.type) {
         case EndpointMetadata.X_TYPE_INT:
             if (v instanceof JsonNode) {
-                if (((JsonNode) v).isInt()) {
+                if (((JsonNode) v).isNumber()) {
                     return ((JsonNode) v).intValue();
                 } else {
                     break;
@@ -105,7 +105,7 @@ public class EndpointMetadata {
             }
         case EndpointMetadata.X_TYPE_LONG:
             if (v instanceof JsonNode) {
-                if (((JsonNode) v).isLong()) {
+                if (((JsonNode) v).isNumber()) {
                     return ((JsonNode) v).longValue();
                 } else {
                     break;
@@ -116,7 +116,7 @@ public class EndpointMetadata {
             }
         case EndpointMetadata.X_TYPE_FLOAT:
             if (v instanceof JsonNode) {
-                if (((JsonNode) v).isFloatingPointNumber()) {
+                if (((JsonNode) v).isNumber()) {
                     return ((JsonNode) v).numberValue().floatValue();
                 } else {
                     break;
