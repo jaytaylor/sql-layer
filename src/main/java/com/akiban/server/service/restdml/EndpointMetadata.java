@@ -774,7 +774,7 @@ public class EndpointMetadata {
         StringBuilder sb = new StringBuilder();
         append(sb, METHOD, "=", method, " ", PATH, "=", name);
         if (pattern != null) {
-            append(sb, pattern.toString());
+            append(sb, "/", pattern.toString());
         }
         append(sb, " ", FUNCTION, "=", function, " ", IN, "=(");
         if (inParams == null) {
