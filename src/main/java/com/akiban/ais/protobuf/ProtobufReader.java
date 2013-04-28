@@ -364,6 +364,9 @@ public class ProtobufReader {
             if (pbColumn.hasDefaultValue()) {
                 column.setDefaultValue(pbColumn.getDefaultValue());
             }
+            if (pbColumn.hasDefaultFunction()) {
+                column.setDefaultFunction(pbColumn.getDefaultFunction());
+            }
             // TODO: types3, pbColumn.getTypeBundleUUID()
             // TODO: types3, pbColumn.getTypeVersion()
         }
@@ -751,7 +754,8 @@ public class ProtobufReader {
                 AISProtobuf.Column.TYPEBUNDLEUUID_FIELD_NUMBER,
                 AISProtobuf.Column.TYPEVERSION_FIELD_NUMBER,
                 AISProtobuf.Column.DEFAULTVALUE_FIELD_NUMBER,
-                AISProtobuf.Column.UUID_FIELD_NUMBER
+                AISProtobuf.Column.UUID_FIELD_NUMBER,
+                AISProtobuf.Column.DEFAULTFUNCTION_FIELD_NUMBER
         );
     }
 

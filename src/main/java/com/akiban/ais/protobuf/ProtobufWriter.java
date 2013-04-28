@@ -471,6 +471,9 @@ public class ProtobufWriter {
         if(column.getDefaultValue() != null) {
             columnBuilder.setDefaultValue(column.getDefaultValue());
         }
+        if(column.getDefaultFunction() != null) {
+            columnBuilder.setDefaultFunction(column.getDefaultFunction());
+        }
         return columnBuilder.build();
     }
 
