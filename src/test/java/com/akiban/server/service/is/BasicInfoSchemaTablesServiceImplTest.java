@@ -224,6 +224,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         builder.column(schema, table, "col1", 0, "VARCHAR", 10L, null, false, false, null, null, "fred", null);
         builder.column(schema, table, "col2", 1, "VARCHAR", 10L, null, false, false, null, null, "", null);
         builder.column(schema, table, "col3", 2, "BIGINT", null, null, false, false, null, null, "0", null);
+        builder.column(schema, table, "col4", 3, "DATE", null, null, false, false, null, null, null, "current_date");
         builder.createGroup(table, schema);
         builder.addTableToGroup(table, schema, table);
         }
@@ -432,6 +433,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { "test", "defaults", "col1", 0L, "varchar", false, 10L, null, null, 1L,  I_S, VARCHAR, I_S, VARCHAR, null, null, null, null, null, null, null, null, "fred", LONG},
                 { "test", "defaults", "col2", 1L, "varchar", false, 10L, null, null, 1L,  I_S, VARCHAR, I_S, VARCHAR, null, null, null, null, null, null, null, null, "", LONG},
                 { "test", "defaults", "col3", 2L, "bigint", false, 8L, null, null, 0L,  null, null, null, null, null, null, null, null, null, null, null, null, "0", LONG},
+                { "test", "defaults", "col4", 3L, "date", false, 3L, null, null, 0L,  null, null, null, null, null, null, null, null, null, null, null, null, "current_date()", LONG},
                 { "test", "foo", "c1", 0L, "int", false, 4L, null, null, 0L,  null, null, null, null, null, null, null, null, null, null, null, null, null,LONG},
                 { "test", "foo", "c2", 1L, "double", true, 8L, null, null, 0L,  null, null, null, null, null, null, null, null, null, null, null, null, null,LONG},
                 { "test", "seq-table", "col", 0L, "bigint", false, 8L, null, null, 0L,  null, null, null, null, "test", "_col_sequence", "BY DEFAULT", 1L, 1L, 0L, 1000L, "NO", null, LONG}, 
