@@ -136,7 +136,10 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         CHARTIO_MAX_KEYS_SETTING("SELECT setting FROM pg_catalog.pg_settings WHERE name='max_index_keys'"),
         CLSQL_LIST_OBJECTS("SELECT relname FROM pg_class WHERE \\(relkind =\n'(\\w)'\\)" + // 1
                            "(?: AND \\(relowner=\\(SELECT usesysid FROM pg_user WHERE \\(usename='(.+)'\\)\\)\\))?" + // 2
-                           "( AND \\(relowner<>\\(SELECT usesysid FROM pg_user WHERE usename='postgres'\\)\\))?", true); // 3
+                           "( AND \\(relowner<>\\(SELECT usesysid FROM pg_user WHERE usename='postgres'\\)\\))?", true), // 3
+        CLSQL_LIST_ATTRIBUTES("SELECT attname FROM pg_class,pg_attribute WHERE pg_class.oid=attrelid AND attisdropped = FALSE AND relname='(.+)'" + // 1
+                              "(?: AND \\(relowner=\\(SELECT usesysid FROM pg_user WHERE usename='(.+)'\\)\\))?" + // 2
+                              "( AND \\(not \\(relowner=1\\)\\))?", true); // 3
 
         private String sql;
         private Pattern pattern;
@@ -365,6 +368,11 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             names = new String[] { "relname" };
             types = new PostgresType[] { IDENT_PG_TYPE };
             break;
+        case CLSQL_LIST_ATTRIBUTES:
+            ncols = 1;
+            names = new String[] { "attname" };
+            types = new PostgresType[] { IDENT_PG_TYPE };
+            break;
         default:
             return;
         }
@@ -472,6 +480,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             break;
         case CLSQL_LIST_OBJECTS:
             nrows = clsqlListObjectsQuery(server, messenger, encoder, maxrows, usePVals);
+            break;
+        case CLSQL_LIST_ATTRIBUTES:
+            nrows = clsqlListAttributesQuery(server, messenger, encoder, maxrows, usePVals);
             break;
         }
         {        
@@ -1403,6 +1414,51 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             nrows++;
             if ((maxrows > 0) && (nrows >= maxrows)) {
                 break;
+            }
+        }
+        return nrows;
+    }
+
+    private int clsqlListAttributesQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+        int nrows = 0;
+        String relname = groups.get(1);
+        String owner = groups.get(2);
+        boolean noIS = (groups.get(3) != null);
+        List<Columnar> tables = new ArrayList<>();
+        AkibanInformationSchema ais = server.getAIS();
+        if (owner != null) {
+            Columnar table = ais.getColumnar(owner, relname);
+            if (table != null) {
+                tables.add(table);
+            }
+        }
+        else {
+            tables.addAll(ais.getUserTables().values());
+            tables.addAll(ais.getViews().values());
+            Iterator<Columnar> iter = tables.iterator();
+            while (iter.hasNext()) {
+                TableName name = iter.next().getName();
+                if (!name.getTableName().equals(relname) ||
+                    (noIS &&
+                     (name.getSchemaName().equals(TableName.INFORMATION_SCHEMA) ||
+                      name.getSchemaName().equals(TableName.SECURITY_SCHEMA))) ||
+                    !server.isSchemaAccessible(name.getSchemaName()))
+                    iter.remove();
+            }
+            Collections.sort(tables, tablesByName);
+        }
+        rows:
+        for (Columnar table : tables) {
+            for (Column column : table.getColumns()) {
+                messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+                messenger.writeShort(1); // 1 column for this query
+                writeColumn(messenger, encoder, usePVals, 
+                            column.getName(), IDENT_PG_TYPE);
+                messenger.sendMessage();
+                nrows++;
+                if ((maxrows > 0) && (nrows >= maxrows)) {
+                    break rows;
+                }
             }
         }
         return nrows;
