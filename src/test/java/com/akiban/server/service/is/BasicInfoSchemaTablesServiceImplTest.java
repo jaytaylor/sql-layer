@@ -221,9 +221,9 @@ public class BasicInfoSchemaTablesServiceImplTest {
         String schema = "test";
         String table = "defaults";
         builder.userTable(schema, table);
-        builder.column(schema, table, "col1", 0, "VARCHAR", 10L, null, false, false, null, null, "fred");
-        builder.column(schema, table, "col2", 1, "VARCHAR", 10L, null, false, false, null, null, "");
-        builder.column(schema, table, "col3", 2, "BIGINT", null, null, false, false, null, null, "0");
+        builder.column(schema, table, "col1", 0, "VARCHAR", 10L, null, false, false, null, null, "fred", null);
+        builder.column(schema, table, "col2", 1, "VARCHAR", 10L, null, false, false, null, null, "", null);
+        builder.column(schema, table, "col3", 2, "BIGINT", null, null, false, false, null, null, "0", null);
         builder.createGroup(table, schema);
         builder.addTableToGroup(table, schema, table);
         }

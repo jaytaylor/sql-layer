@@ -285,7 +285,7 @@ public class TableDDL
                        nullable,
                        false,
                        charset, collation,
-                       defaultValue);
+                       defaultValue, defaultFunction);
     }
 
     static Type columnType(DataTypeDescriptor type, Long[] typeParameters,

@@ -306,6 +306,7 @@ public class AlterTableDDL {
                     }
                     String[] defaultValueFunction = TableDDL.getColumnDefault(modNode, tableCopy.getName().getSchemaName(), tableCopy.getName().getTableName());
                     column.setDefaultValue(defaultValueFunction[0]);
+                    column.setDefaultFunction(defaultValueFunction[1]);
                 }
             break;
             case NodeTypes.MODIFY_COLUMN_CONSTRAINT_NODE: // Type only comes from NULL

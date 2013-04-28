@@ -84,6 +84,7 @@ public class Column implements ColumnContainer
             }
         }
         out.setDefaultValue(column.getDefaultValue());
+        out.setDefaultFunction(column.getDefaultFunction());
         out.setUuid(column.getUuid());
         return out;
     }
@@ -444,6 +445,14 @@ public class Column implements ColumnContainer
         return defaultValue;
     }
 
+    public void setDefaultFunction(String defaultFunction) {
+        this.defaultFunction = defaultFunction;
+    }
+
+    public String getDefaultFunction() {
+        return defaultFunction;
+    }
+
     /**
      * Compute the maximum character width.  This is used to determine how many bytes
      * will be reserved to encode the length in bytes of a VARCHAR or other text field.
@@ -737,4 +746,5 @@ public class Column implements ColumnContainer
     private Boolean defaultIdentity;
     private Sequence identityGenerator;
     private String defaultValue;
+    private String defaultFunction;
 }
