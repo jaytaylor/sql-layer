@@ -319,7 +319,7 @@ public class AlterTableDDL {
                 tableCopy.dropColumn(modNode.getColumnName());
                 TableDDL.addColumn(builder, tableCopy.getName().getSchemaName(), tableCopy.getName().getTableName(),
                                    column.getName(), column.getPosition(), modNode.getType(), column.getNullable(),
-                                   column.getDefaultValue(), null);
+                                   column.getDefaultValue(), column.getDefaultFunction());
             break;
             default:
                 throw new IllegalStateException("Unexpected node type: " + modNode);
