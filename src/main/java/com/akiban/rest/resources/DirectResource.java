@@ -45,6 +45,7 @@ import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
 import com.akiban.rest.RestResponseBuilder.BodyGenerator;
 import com.akiban.server.error.NoSuchSchemaException;
+import com.akiban.server.service.restdml.DirectInvocation;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
 
@@ -221,68 +222,66 @@ public class DirectResource {
     @Path("/call/{proc}{params:(/.*)?}")
     public Response callGet(@Context final HttpServletRequest request, @PathParam("proc") final String proc,
             @PathParam("params") final String pathParams, @Context final UriInfo uri) {
-        final TableName procName = ResourceHelper.parseTableName(request, proc);
-        ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
-        final MediaType[] responseType = new MediaType[1];
-
-        return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
-            @Override
-            public void write(PrintWriter writer) throws Exception {
-                reqs.directService.invokeRestEndpoint(writer, request, "GET", procName, pathParams,
-                        uri.getQueryParameters(), null, responseType);
-            }
-        }).build(responseType[0]);
+        return doCall(request, "GET", proc, pathParams, uri, null);
     }
 
     @POST
     @Path("/call/{proc}{params:(/.*)?}")
     public Response callPost(@Context final HttpServletRequest request, @PathParam("proc") final String proc,
             @PathParam("params") final String pathParams, @Context final UriInfo uri, final byte[] content) {
-        final TableName procName = ResourceHelper.parseTableName(request, proc);
-        ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
-        final MediaType[] responseType = new MediaType[1];
-
-        return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
-            @Override
-            public void write(PrintWriter writer) throws Exception {
-                reqs.directService.invokeRestEndpoint(writer, request, "POST", procName, pathParams,
-                        uri.getQueryParameters(), content, responseType);
-            }
-        }).build(responseType[0]);
+        return doCall(request, "POST", proc, pathParams, uri, content);
     }
 
     @PUT
     @Path("/call/{proc}{params:(/.*)?}")
     public Response callPut(@Context final HttpServletRequest request, @PathParam("proc") final String proc,
             @PathParam("params") final String pathParams, @Context final UriInfo uri, final byte[] content) {
-        final TableName procName = ResourceHelper.parseTableName(request, proc);
-        ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
-        final MediaType[] responseType = new MediaType[1];
-
-        return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
-            @Override
-            public void write(PrintWriter writer) throws Exception {
-                reqs.directService.invokeRestEndpoint(writer, request, "PUT", procName, pathParams,
-                        uri.getQueryParameters(), content, responseType);
-            }
-        }).build(responseType[0]);
+        return doCall(request, "PUT", proc, pathParams, uri, content);
     }
 
     @DELETE
     @Path("/call/{proc}{params:(/.*)?}")
     public Response callDelete(@Context final HttpServletRequest request, @PathParam("proc") final String proc,
             @PathParam("params") final String pathParams, @Context final UriInfo uri, final byte[] content) {
+        return doCall(request, "DELETE", proc, pathParams, uri, content);
+    }
+    
+    private Response doCall(final HttpServletRequest request, final String method, final String proc, final String pathParams,
+            final UriInfo uri, final byte[] content) {
         final TableName procName = ResourceHelper.parseTableName(request, proc);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
-        final MediaType[] responseType = new MediaType[1];
 
-        return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
-            @Override
-            public void write(PrintWriter writer) throws Exception {
-                reqs.directService.invokeRestEndpoint(writer, request, "DELETE", procName, pathParams,
-                        uri.getQueryParameters(), content, responseType);
+        RestResponseBuilder builder = RestResponseBuilder.forRequest(request);
+        final DirectInvocation invocation;
+        try {
+            invocation = reqs.directService.prepareRestInvocation(method, procName, pathParams,
+                    uri.getQueryParameters(), content, request);
+            invocation.getEndpointMetadata().setResponseHeaders(builder);
+        } catch (Exception e) {
+            throw builder.wrapException(e);
+        }
+
+        try {
+            if (invocation.getEndpointMetadata().isVoid()) {
+                try {
+                    reqs.directService.invokeRestEndpoint(null, request, method, invocation);
+                } catch (Throwable t) {
+                    throw builder.wrapException(t);
+                }
+                return builder.build();
+            } else {
+                return builder.body(new BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        reqs.directService.invokeRestEndpoint(writer, request, method, invocation);
+                    }
+                }).build();
             }
-        }).build(responseType[0]);
+        } finally {
+            invocation.finish();
+        }
     }
+
+
 
 }

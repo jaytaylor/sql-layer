@@ -36,6 +36,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response.Status;
 
 import com.akiban.ais.model.TableName;
+import com.akiban.rest.RestResponseBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
@@ -71,6 +72,11 @@ public class EndpointMetadata {
     final static List<String> X_TYPES = Arrays.asList(new String[] { X_TYPE_INT, X_TYPE_LONG, X_TYPE_FLOAT,
             X_TYPE_DOUBLE, X_TYPE_STRING, X_TYPE_DATE, X_TYPE_TIMESTAMP, X_TYPE_BYTEARRAY, X_TYPE_JSON, X_TYPE_VOID });
 
+    /*
+     * TODO: support X_TYPE_BYTEARRAY type
+     */
+    final static List<String> OUT_TYPES = Arrays.asList(new String[] { X_TYPE_STRING, X_TYPE_JSON, X_TYPE_VOID });
+
     private final static Charset UTF8 = Charset.forName("UTF8");
 
     static Object convertType(ParamMetadata pm, Object v) throws Exception {
@@ -88,7 +94,7 @@ public class EndpointMetadata {
         switch (pm.type) {
         case EndpointMetadata.X_TYPE_INT:
             if (v instanceof JsonNode) {
-                if (((JsonNode) v).isInt()) {
+                if (((JsonNode) v).isNumber()) {
                     return ((JsonNode) v).intValue();
                 } else {
                     break;
@@ -99,7 +105,7 @@ public class EndpointMetadata {
             }
         case EndpointMetadata.X_TYPE_LONG:
             if (v instanceof JsonNode) {
-                if (((JsonNode) v).isLong()) {
+                if (((JsonNode) v).isNumber()) {
                     return ((JsonNode) v).longValue();
                 } else {
                     break;
@@ -110,7 +116,7 @@ public class EndpointMetadata {
             }
         case EndpointMetadata.X_TYPE_FLOAT:
             if (v instanceof JsonNode) {
-                if (((JsonNode) v).isFloatingPointNumber()) {
+                if (((JsonNode) v).isNumber()) {
                     return ((JsonNode) v).numberValue().floatValue();
                 } else {
                     break;
@@ -273,7 +279,7 @@ public class EndpointMetadata {
 
     static ParamMetadata createInParameter(final Tokenizer tokens) throws Exception {
         String v = tokens.next(true);
-        ParamMetadata pm = createOutParameter(tokens);
+        ParamMetadata pm = createParameter(tokens);
         if (pm.type == X_TYPE_VOID) {
             throw new IllegalArgumentException("Input parameter may not have type " + X_TYPE_VOID);
         }
@@ -295,6 +301,15 @@ public class EndpointMetadata {
     }
 
     static ParamMetadata createOutParameter(final Tokenizer tokens) throws Exception {
+        ParamMetadata pm = createParameter(tokens);
+        if (!EndpointMetadata.OUT_TYPES.contains(pm.type)) {
+            throw new IllegalArgumentException("Unsuported output parameter type " + pm.type);
+        }
+
+        return pm;
+    }
+
+    static ParamMetadata createParameter(final Tokenizer tokens) throws Exception {
         ParamMetadata pm = new ParamMetadata();
         String v = tokens.nextName(true);
         String type = v.toLowerCase();
@@ -825,6 +840,36 @@ public class EndpointMetadata {
         return equals(em.schemaName, schemaName) && equals(em.expectedContentType, expectedContentType)
                 && equals(em.function, function) && equals(em.method, method) && equals(em.name, name)
                 && equals(em.pattern, pattern) && equals(em.outParam, outParam) && equals(em.inParams, inParams);
+    }
+
+    public void setResponseHeaders(final RestResponseBuilder builder) {
+        switch (outParam.type) {
+
+        case EndpointMetadata.X_TYPE_STRING:
+            builder.type(MediaType.TEXT_PLAIN_TYPE);
+            break;
+
+        case EndpointMetadata.X_TYPE_JSON:
+            builder.type(MediaType.APPLICATION_JSON_TYPE);
+            break;
+
+        case EndpointMetadata.X_TYPE_VOID:
+            builder.type((MediaType)null);
+            builder.status(Status.NO_CONTENT);
+            break;
+
+        case EndpointMetadata.X_TYPE_BYTEARRAY:
+            /*
+             * intentionally falls through TODO: support X_TYPE_BYTEARRAY
+             */
+
+        default:
+            assert false : "Invalid output type";
+        }
+    }
+
+    public boolean isVoid() {
+        return X_TYPE_VOID.equals(outParam.type);
     }
 
 }

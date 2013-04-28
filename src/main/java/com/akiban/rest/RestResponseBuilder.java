@@ -58,6 +58,7 @@ public class RestResponseBuilder {
     private String outputBody;
     private String jsonp;
     private int status;
+    private MediaType type;
 
 
     public RestResponseBuilder(HttpServletRequest request, String jsonp) {
@@ -73,6 +74,11 @@ public class RestResponseBuilder {
 
     public RestResponseBuilder status(Response.Status status) {
         this.status = status.getStatusCode();
+        return this;
+    }
+    
+    public RestResponseBuilder type(MediaType type) {
+        this.type = type;
         return this;
     }
 
@@ -101,7 +107,6 @@ public class RestResponseBuilder {
             status(Response.Status.OK);
         }
         Response.ResponseBuilder builder;
-        
         if (this.status == Response.Status.NO_CONTENT.getStatusCode()) {
             builder = Response.status(status).type((MediaType)null);
         } else {
@@ -109,19 +114,12 @@ public class RestResponseBuilder {
         }
         if(isJsonp) {
             builder.type(ResourceHelper.APPLICATION_JAVASCRIPT_TYPE);
+        } else if (type != null) {
+            builder.type(type);
         }
         return builder.build();
     }
     
-    public Response build(MediaType type) {
-        if(outputBody == null && outputGenerator == null && jsonp == null) {
-            status(Response.Status.NO_CONTENT);
-        }
-        Response.ResponseBuilder builder = Response.status(status).entity(createStreamingOutput());
-        builder.type(type);
-        return builder.build();
-    }
-
     public static void formatJsonError(StringBuilder builder, String code, String message) {
         builder.append("{\"code\":\"");
         builder.append(code);

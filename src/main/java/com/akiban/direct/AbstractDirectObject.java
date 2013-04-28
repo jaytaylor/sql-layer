@@ -500,7 +500,7 @@ public abstract class AbstractDirectObject implements DirectObject {
                         updateColumns.append(',');
                         updateValues.append(',');
                     }
-                    updateColumns.append(columns[index].columnName);
+                    updateColumns.append('\"').append(columns[index].columnName).append('\"');
                     updateValues.append('?');
                 }
             }
