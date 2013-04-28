@@ -250,7 +250,9 @@ public class TableDDL
         String defaultValue = null, defaultFunction = null;
         if (cdn.getDefaultNode() != null) {
             ValueNode valueNode = cdn.getDefaultNode().getDefaultTree();
-            if (valueNode instanceof ConstantNode) {
+            if (valueNode == null) {
+            }
+            else if (valueNode instanceof ConstantNode) {
                 defaultValue = ((ConstantNode)valueNode).getValue().toString();
             }
             else if (valueNode instanceof SpecialFunctionNode) {
