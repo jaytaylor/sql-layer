@@ -139,7 +139,10 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                            "( AND \\(relowner<>\\(SELECT usesysid FROM pg_user WHERE usename='postgres'\\)\\))?", true), // 3
         CLSQL_LIST_ATTRIBUTES("SELECT attname FROM pg_class,pg_attribute WHERE pg_class.oid=attrelid AND attisdropped = FALSE AND relname='(.+)'" + // 1
                               "(?: AND \\(relowner=\\(SELECT usesysid FROM pg_user WHERE usename='(.+)'\\)\\))?" + // 2
-                              "( AND \\(not \\(relowner=1\\)\\))?", true); // 3
+                              "( AND \\(not \\(relowner=1\\)\\))?", true), // 3
+        CLSQL_ATTRIBUTE_TYPE("SELECT pg_type.typname,pg_attribute.attlen,pg_attribute.atttypmod,pg_attribute.attnotnull FROM pg_type,pg_class,pg_attribute WHERE pg_class.oid=pg_attribute.attrelid AND pg_class.relname='(.+)' AND pg_attribute.attname='(.+)' AND pg_attribute.atttypid=pg_type.oid" + // 1 2
+                           "(?: AND \\(relowner=\\(SELECT usesysid FROM pg_user WHERE \\(usename='(.+)'\\)\\)\\))?" + // 3
+                           "( AND \\(relowner<>\\(SELECT usesysid FROM pg_user WHERE usename='postgres'\\)\\))?", true); // 4
 
         private String sql;
         private Pattern pattern;
@@ -373,6 +376,11 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             names = new String[] { "attname" };
             types = new PostgresType[] { IDENT_PG_TYPE };
             break;
+        case CLSQL_ATTRIBUTE_TYPE:
+            ncols = 4;
+            names = new String[] { "typname", "attlen", "atttypmod", "attnotnull" };
+            types = new PostgresType[] { IDENT_PG_TYPE, INT2_PG_TYPE, INT4_PG_TYPE, CHAR1_PG_TYPE };
+            break;
         default:
             return;
         }
@@ -483,6 +491,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             break;
         case CLSQL_LIST_ATTRIBUTES:
             nrows = clsqlListAttributesQuery(server, messenger, encoder, maxrows, usePVals);
+            break;
+        case CLSQL_ATTRIBUTE_TYPE:
+            nrows = clsqlAttributeTypeQuery(server, messenger, encoder, maxrows, usePVals);
             break;
         }
         {        
@@ -1454,6 +1465,60 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 messenger.writeShort(1); // 1 column for this query
                 writeColumn(messenger, encoder, usePVals, 
                             column.getName(), IDENT_PG_TYPE);
+                messenger.sendMessage();
+                nrows++;
+                if ((maxrows > 0) && (nrows >= maxrows)) {
+                    break rows;
+                }
+            }
+        }
+        return nrows;
+    }
+
+    private int clsqlAttributeTypeQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+        int nrows = 0;
+        String relname = groups.get(1);
+        String attname = groups.get(2);
+        String owner = groups.get(3);
+        boolean noIS = (groups.get(4) != null);
+        List<Columnar> tables = new ArrayList<>();
+        AkibanInformationSchema ais = server.getAIS();
+        if (owner != null) {
+            Columnar table = ais.getColumnar(owner, relname);
+            if (table != null) {
+                tables.add(table);
+            }
+        }
+        else {
+            tables.addAll(ais.getUserTables().values());
+            tables.addAll(ais.getViews().values());
+            Iterator<Columnar> iter = tables.iterator();
+            while (iter.hasNext()) {
+                TableName name = iter.next().getName();
+                if (!name.getTableName().equals(relname) ||
+                    (noIS &&
+                     (name.getSchemaName().equals(TableName.INFORMATION_SCHEMA) ||
+                      name.getSchemaName().equals(TableName.SECURITY_SCHEMA))) ||
+                    !server.isSchemaAccessible(name.getSchemaName()))
+                    iter.remove();
+            }
+            Collections.sort(tables, tablesByName);
+        }
+        rows:
+        for (Columnar table : tables) {
+            Column column = table.getColumn(attname);
+            if (column != null) {
+                PostgresType type = PostgresType.fromAIS(column);
+                messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+                messenger.writeShort(4); // 4 columns for this query
+                writeColumn(messenger, encoder, usePVals, 
+                            type.getTypeName(), IDENT_PG_TYPE);
+                writeColumn(messenger, encoder, usePVals, 
+                            type.getLength(), INT2_PG_TYPE);
+                writeColumn(messenger, encoder, usePVals, 
+                            type.getModifier(), INT4_PG_TYPE);
+                writeColumn(messenger, encoder, usePVals, 
+                            column.getNullable() ? "t" : "f", CHAR1_PG_TYPE);
                 messenger.sendMessage();
                 nrows++;
                 if ((maxrows > 0) && (nrows >= maxrows)) {

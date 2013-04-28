@@ -227,6 +227,9 @@ public class PostgresType extends ServerType
     public int getOid() {
         return oid.getOid();
     }
+    public String getTypeName() {
+        return oid.getName();
+    }
     public short getLength() {
         return length;
     }
