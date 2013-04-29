@@ -19,7 +19,6 @@ package com.akiban.server.service.text;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.FullTextIndex;
-import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -35,7 +34,6 @@ import com.akiban.qp.row.HKeyRow;
 import com.akiban.qp.rowtype.HKeyRowType;
 import com.akiban.qp.util.HKeyCache;
 import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.service.BackgroundObserver;
 import com.akiban.server.service.BackgroundWork;
 import com.akiban.server.service.BackgroundWorkBase;
 import com.akiban.server.service.Service;
@@ -64,8 +62,6 @@ import java.io.*;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -115,7 +111,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     /* FullTextIndexService */
 
     private long createIndex(Session session, IndexName name) {
-        FullTextIndexInfo index = getIndex(session, name);
+        FullTextIndexInfo index = getIndex(session, name, null);
         try {
             return populateIndex(session, index);
         }
@@ -148,7 +144,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         deleteFromTree(session, idx.getIndexName());
         
         // delete documents
-        FullTextIndexInfo idxInfo = getIndexToDrop(idx);
+        FullTextIndexInfo idxInfo = getIndex(session, idx.getIndexName(), idx.getIndexedTable().getAIS());
         idxInfo.deletePath();
         synchronized (indexes) {    
             indexes.remove(idx.getIndexName());
@@ -157,7 +153,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
 
     @Override
     public Cursor searchIndex(QueryContext context, IndexName name, Query query, int limit) {
-        FullTextIndexInfo index = getIndex(context.getSession(), name);
+        FullTextIndexInfo index = getIndex(context.getSession(), name, null);
         try {
             return index.getSearcher().search(context, index.getHKeyRowType(), 
                                               query, limit);
@@ -262,7 +258,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     {
         try
         {
-            FullTextIndexInfo indexInfo = getIndex(session, name);
+            FullTextIndexInfo indexInfo = getIndex(session, name, null);
             StoreAdapter adapter = session.get(StoreAdapter.STORE_ADAPTER_KEY);
             if (adapter == null)
                 adapter = new PersistitAdapter(indexInfo.getSchema(),

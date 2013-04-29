@@ -27,7 +27,6 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
 import java.io.*;
-import java.util.List;
 import java.util.Set;
 
 public class FullTextIndexShared implements CacheValueGenerator<FullTextIndexInfo>, Closeable
@@ -41,13 +40,6 @@ public class FullTextIndexShared implements CacheValueGenerator<FullTextIndexInf
     private StandardQueryParser parser;
     private Indexer indexer;
     private Searcher searcher;
-
-    protected static FullTextIndexShared constructIndexToDrop(IndexName name, File basePath, String treeName)
-    {
-        FullTextIndexShared ret = new FullTextIndexShared(name);
-        ret.path = new File(basePath, treeName);
-        return ret;
-    }
 
     public FullTextIndexShared(IndexName name) {
         this.name = name;
@@ -108,11 +100,6 @@ public class FullTextIndexShared implements CacheValueGenerator<FullTextIndexInf
 
     public FullTextIndexInfo forAIS(AkibanInformationSchema ais) {
         return ais.getCachedValue(this, this);
-    }
-
-    public FullTextIndexInfo valueFor()
-    {
-        return new FullTextIndexInfo(this);
     }
 
     @Override
