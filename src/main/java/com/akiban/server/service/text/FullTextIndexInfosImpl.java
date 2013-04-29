@@ -18,13 +18,10 @@
 package com.akiban.server.service.text;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.IndexName;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.error.FullTextQueryParseException;
-import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.service.session.Session;
 
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
@@ -32,7 +29,6 @@ import org.apache.lucene.queryparser.flexible.standard.StandardQueryParser;
 import org.apache.lucene.search.Query;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
