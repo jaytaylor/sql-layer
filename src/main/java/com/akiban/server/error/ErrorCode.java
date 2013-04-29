@@ -351,7 +351,7 @@ public enum ErrorCode {
     TABLE_COL_IN_GROUP      ("50", "01F", Importance.DEBUG, TableColumnNotInGroupException.class),
     GROUP_MISSING_COL       ("50", "01G", Importance.DEBUG, GroupMissingTableColumnException.class),
     GROUP_MISSING_INDEX     ("50", "01H", Importance.DEBUG, GroupMissingIndexException.class),
-    // 50,01I available
+    BAD_COLUMN_DEFAULT      ("50", "01I", Importance.DEBUG, BadColumnDefaultException.class),
     NULL_REFERENCE          ("50", "01J", Importance.DEBUG, AISNullReferenceException.class),
     BAD_AIS_REFERENCE       ("50", "01L", Importance.DEBUG, BadAISReferenceException.class),
     BAD_INTERNAL_SETTING    ("50", "01M", Importance.DEBUG, BadAISInternalSettingException.class),

@@ -860,7 +860,11 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                         column.getName(), IDENT_PG_TYPE);
             writeColumn(messenger, encoder, usePVals, // format_type
                         column.getTypeDescription(), TYPNAME_PG_TYPE);
-            String defval = column.getDefaultValue();
+            String defval = null;
+            if (column.getDefaultValue() != null)
+                defval = column.getDefaultValue();
+            else if (column.getDefaultFunction() != null)
+                defval = column.getDefaultFunction() + "()";
             if ((defval != null) && (defval.length() > 128))
                 defval = defval.substring(0, 128);
             writeColumn(messenger, encoder, usePVals, 

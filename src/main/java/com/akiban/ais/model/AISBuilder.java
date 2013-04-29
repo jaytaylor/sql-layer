@@ -112,13 +112,13 @@ public class AISBuilder {
             Long typeParameter2, Boolean nullable, Boolean autoIncrement,
             String charset, String collation) {
         return column(schemaName, tableName, columnName, position, typeName, typeParameter1, typeParameter2, nullable,
-               autoIncrement, charset, collation, null);
+               autoIncrement, charset, collation, null, null);
     }
 
     public Column column(String schemaName, String tableName, String columnName,
                 Integer position, String typeName, Long typeParameter1,
                 Long typeParameter2, Boolean nullable, Boolean autoIncrement,
-                String charset, String collation, String defaultValue) {
+                String charset, String collation, String defaultValue, String defaultFunction) {
         LOG.trace("column: " + schemaName + "." + tableName + "." + columnName);
         Columnar table = ais.getColumnar(schemaName, tableName);
         checkFound(table, "creating column", "user table",
@@ -133,6 +133,7 @@ public class AISBuilder {
         column.setCharset(charset);
         column.setCollation(collation);
         column.setDefaultValue(defaultValue);
+        column.setDefaultFunction(defaultFunction);
         column.finishCreating();
         return column;
     }

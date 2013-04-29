@@ -304,7 +304,9 @@ public class AlterTableDDL {
                         column.setIdentityGenerator(null);
                         aisCopy.removeSequence(seq.getSequenceName());
                     }
-                    column.setDefaultValue(TableDDL.getColumnDefault(modNode));
+                    String[] defaultValueFunction = TableDDL.getColumnDefault(modNode, tableCopy.getName().getSchemaName(), tableCopy.getName().getTableName());
+                    column.setDefaultValue(defaultValueFunction[0]);
+                    column.setDefaultFunction(defaultValueFunction[1]);
                 }
             break;
             case NodeTypes.MODIFY_COLUMN_CONSTRAINT_NODE: // Type only comes from NULL
@@ -317,7 +319,7 @@ public class AlterTableDDL {
                 tableCopy.dropColumn(modNode.getColumnName());
                 TableDDL.addColumn(builder, tableCopy.getName().getSchemaName(), tableCopy.getName().getTableName(),
                                    column.getName(), column.getPosition(), modNode.getType(), column.getNullable(),
-                                   column.getDefaultValue());
+                                   column.getDefaultValue(), column.getDefaultFunction());
             break;
             default:
                 throw new IllegalStateException("Unexpected node type: " + modNode);

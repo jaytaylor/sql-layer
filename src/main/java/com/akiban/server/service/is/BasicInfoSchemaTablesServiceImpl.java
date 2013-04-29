@@ -355,6 +355,13 @@ public class BasicInfoSchemaTablesServiceImpl
                     identityMax = column.getIdentityGenerator().getMaxValue();
                     identityCycle = boolResult(column.getIdentityGenerator().isCycle()); 
                 }
+                String defaultString = null;
+                if (column.getDefaultValue() != null) {
+                    defaultString = column.getDefaultValue();
+                }
+                else if (column.getDefaultFunction() != null) {
+                    defaultString = column.getDefaultFunction() + "()";
+                }
                 
                 return new ValuesRow(rowType,
                                      column.getColumnar().getName().getSchemaName(),
@@ -379,7 +386,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                      identityGeneration != null ? identityMin : null,
                                      identityGeneration != null ? identityMax : null,
                                      identityCycle,
-                                     column.getDefaultValue(),
+                                     defaultString,
                                      ++rowCounter /*hidden pk*/);
             }
         }

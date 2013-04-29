@@ -550,7 +550,7 @@ public class AISMerge {
                     column.getInitialAutoIncrementValue() != null, 
                     column.getCharsetAndCollation().charset(), 
                     column.getCharsetAndCollation().collation(),
-                    column.getDefaultValue());
+                    column.getDefaultValue(), column.getDefaultFunction());
             Column newColumn = targetTable.getColumn(column.getPosition());
             newColumn.setUuid(column.getUuid());
             // if an auto-increment column, set the starting value. 
