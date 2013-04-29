@@ -18,6 +18,7 @@
 package com.akiban.server.store;
 
 import com.akiban.ais.model.*;
+import com.akiban.ais.model.Index.IndexType;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
@@ -41,6 +42,7 @@ import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.text.FullTextIndexService;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.service.tree.TreeService;
@@ -130,6 +132,8 @@ public class PersistitStore implements Store, Service {
 
     private int deferredIndexKeyLimit = MAX_INDEX_TRANCHE_SIZE;
 
+    private FullTextIndexService fullTextService;
+
     private RowDataValueCoder valueCoder;
 
     // Each row change has a 'uniqueChangeId', stored in the 'maintenance.full_text' table
@@ -155,6 +159,11 @@ public class PersistitStore implements Store, Service {
         this.schemaManager = schemaManager;
         this.lockService = lockService;
         this.transactionService = transactionService;
+    }
+
+    public void setFullTextService(FullTextIndexService service)
+    {
+        fullTextService = service;
     }
 
      // --- for tracking changes 
@@ -1890,6 +1899,14 @@ public class PersistitStore implements Store, Service {
     @Override
     public void removeTrees(Session session, Table table) {
         Collection<TreeLink> treeLinks = new ArrayList<>();
+
+        // delete all fulltext indexes
+        if (table.isUserTable())
+        {
+            for (FullTextIndex idx : ((UserTable)table).getOwnFullTextIndexes())
+                fullTextService.dropIndex(session, idx);
+        }
+
         // Add all index trees
         final Collection<TableIndex> tableIndexes = table.isUserTable() ? ((UserTable)table).getIndexesIncludingInternal() : table.getIndexes();
         final Collection<GroupIndex> groupIndexes = table.getGroupIndexes();
@@ -1931,6 +1948,13 @@ public class PersistitStore implements Store, Service {
     public void deleteIndexes(final Session session, final Collection<? extends Index> indexes) {
         List<TreeLink> links = new ArrayList<>(indexes.size());
         for(Index index : indexes) {
+            // no trees to drop
+            if (index.getIndexType() == IndexType.FULL_TEXT)
+            {
+                fullTextService.dropIndex(session, (FullTextIndex)index);
+                indexes.remove(index);
+                continue;
+            }
             final IndexDef indexDef = index.indexDef();
             if(indexDef == null) {
                 throw new IllegalStateException("indexDef is null for index: " + index);

@@ -27,7 +27,6 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
 import java.io.*;
-import java.util.List;
 import java.util.Set;
 
 public class FullTextIndexShared implements CacheValueGenerator<FullTextIndexInfo>, Closeable

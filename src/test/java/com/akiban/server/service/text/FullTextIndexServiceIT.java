@@ -45,8 +45,6 @@ import java.util.*;
 public class FullTextIndexServiceIT extends ITBase
 {
     public static final String SCHEMA = "test";
-    private static final long updateInterval = 1000L; // for testing
-    private static final long populateDelayInterval = 1000L;
     protected FullTextIndexService fullText;
     protected Schema schema;
     protected PersistitAdapter adapter;
@@ -61,15 +59,6 @@ public class FullTextIndexServiceIT extends ITBase
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
                 .bindAndRequire(FullTextIndexService.class, FullTextIndexServiceImpl.class);
-    }
-
-    @Override
-    protected Map<String, String> startupConfigProperties() {
-        Map<String, String> properties = new HashMap<>();
-        properties.put("akserver.text.indexpath", "/tmp/aktext");
-        properties.put(FullTextIndexServiceImpl.UPDATE_INTERVAL, Long.toString(updateInterval));
-        properties.put(FullTextIndexServiceImpl.POPULATE_DELAY_INTERVAL, Long.toString(populateDelayInterval));
-        return properties;
     }
 
     @Before
@@ -221,12 +210,6 @@ public class FullTextIndexServiceIT extends ITBase
                          assertEquals (0, n);
                      } 
                  });
-        
-        // drop all the indices
-        Session session = new SessionServiceImpl().createSession();
-        for (FullTextIndex idx : expecteds)
-            fullTextImpl.dropIndex(session, idx.getIndexName());
-        session.close();
     }
 
 
@@ -259,29 +242,9 @@ public class FullTextIndexServiceIT extends ITBase
 
         // <3> delete 2 of them
         Session session = new SessionServiceImpl().createSession();
-        boolean sawNPE = false;
-        try
-        {
-            fullTextImpl.dropIndex(session, expecteds[0].getIndexName());
-        }
-        catch (NullPointerException e) // NPE is expected because, the index hasn't been
-        {                              // populated yet. But we're not testing that!
-            sawNPE = true;
-        }
-        assertTrue("NPE should have happened", sawNPE);
-        
+        deleteFullTextIndex(serviceManager(), expecteds[0].getIndexName());
+        deleteFullTextIndex(serviceManager(), expecteds[1].getIndexName());
 
-        sawNPE = false;
-        try
-        {
-            fullTextImpl.dropIndex(session, expecteds[1].getIndexName());
-        }
-        catch (NullPointerException e) // NPE is expected because, the index hasn't been
-        {                              // populated yet. But we're not testing that!
-            sawNPE = true;
-        }
-        assertTrue("NPE should have happened", sawNPE);
-        
         // <4> check that the tree only has one entry now (ie., epxecteds2[2]
         traverse(fullTextImpl,
                  new Visitor()
@@ -301,13 +264,11 @@ public class FullTextIndexServiceIT extends ITBase
                          assertEquals (1, n);
                      } 
                  });
-
+        
         // wake the worker up to do its job
         fullTextImpl.enablePopulateWorker();
         WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
         
-        // drop the remaining index
-        fullTextImpl.dropIndex(session, expecteds[2].getIndexName());
         session.close();
     }
 

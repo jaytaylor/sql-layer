@@ -18,6 +18,7 @@
 package com.akiban.server.service.text;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -112,7 +113,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     /* FullTextIndexService */
 
     private long createIndex(Session session, IndexName name) {
-        FullTextIndexInfo index = getIndex(session, name);
+        FullTextIndexInfo index = getIndex(session, name, null);
         try {
             return populateIndex(session, index);
         }
@@ -121,12 +122,10 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         }
     }
 
-    @Override
-    public void dropIndex(Session session, IndexName name) {
-        
+    void deleteFromTree(Session session, IndexName name)
+    {
         try
         {
-            // see if there exists a promise for populating this index
             Exchange ex = getPopulateExchange(session);
             ex.clear().append(name.getSchemaName())
                       .append(name.getTableName())
@@ -137,22 +136,29 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                 {
                     ex.remove();
                 }
-
-            FullTextIndexInfo index = getIndex(session, name);
-            index.deletePath();
-            synchronized (indexes) {
-                indexes.remove(name);
-            }
         }
         catch (PersistitException e)
         {
             throw new AkibanInternalException("Error while removing index", e);
         }
     }
+    
+    @Override
+    public void dropIndex(Session session, FullTextIndex idx) {
+        // delete 'promise' for population, if any
+        deleteFromTree(session, idx.getIndexName());
+        
+        // delete documents
+        FullTextIndexInfo idxInfo = getIndex(session, idx.getIndexName(), idx.getIndexedTable().getAIS());
+        idxInfo.deletePath();
+        synchronized (indexes) {    
+            indexes.remove(idx.getIndexName());
+        }
+    }
 
     @Override
     public Cursor searchIndex(QueryContext context, IndexName name, Query query, int limit) {
-        FullTextIndexInfo index = getIndex(context.getSession(), name);
+        FullTextIndexInfo index = getIndex(context.getSession(), name, null);
         try {
             return index.getSearcher().search(context, index.getHKeyRowType(), 
                                               query, limit);
@@ -173,6 +179,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     @Override
     public void start() {
         persistitStore = store.getPersistitStore();
+        persistitStore.setFullTextService(this);
         enableUpdateWorker();
         enablePopulateWorker();
     }
@@ -256,7 +263,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     {
         try
         {
-            FullTextIndexInfo indexInfo = getIndex(session, name);
+            FullTextIndexInfo indexInfo = getIndex(session, name, null);
             StoreAdapter adapter = session.get(StoreAdapter.STORE_ADAPTER_KEY);
             if (adapter == null)
                 adapter = new PersistitAdapter(indexInfo.getSchema(),
