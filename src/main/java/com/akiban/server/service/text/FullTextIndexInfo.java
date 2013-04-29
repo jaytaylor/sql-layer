@@ -264,10 +264,11 @@ public class FullTextIndexInfo
         return indexer;
     }
 
-    // TODO: _Lookup plan to get rows just from a row being updated.
-
     public void deletePath() {
         File path = shared.getPath();
+        // no doc to delete
+        if (!path.exists() || path.listFiles() == null)
+            return;
         for (File f : path.listFiles()) {
             f.delete();
         }

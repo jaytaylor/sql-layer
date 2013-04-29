@@ -23,6 +23,8 @@ import com.akiban.junit.Parameterization;
 import com.akiban.server.service.is.BasicInfoSchemaTablesService;
 import com.akiban.server.service.is.BasicInfoSchemaTablesServiceImpl;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
+import com.akiban.server.service.text.FullTextIndexService;
+import com.akiban.server.service.text.FullTextIndexServiceImpl;
 import com.akiban.sql.NamedParamsTestBase;
 import com.akiban.sql.embedded.EmbeddedJDBCService;
 import com.akiban.sql.embedded.EmbeddedJDBCServiceImpl;
@@ -79,7 +81,8 @@ public class PostgresServerMiscYamlIT extends PostgresServerYamlITBase {
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
                 .bindAndRequire(BasicInfoSchemaTablesService.class, BasicInfoSchemaTablesServiceImpl.class)
-                .bindAndRequire(EmbeddedJDBCService.class, EmbeddedJDBCServiceImpl.class);
+                .bindAndRequire(EmbeddedJDBCService.class, EmbeddedJDBCServiceImpl.class)
+                .bindAndRequire(FullTextIndexService.class, FullTextIndexServiceImpl.class);
     }
 
     @Override

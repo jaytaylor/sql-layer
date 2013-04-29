@@ -89,7 +89,7 @@ public class IndexDDL
             }
             // if we can't find the index, set tableName to null
             // to flag not a user table index. 
-            if (table.getIndex(indexName) == null) {
+            if (table.getIndex(indexName) == null && table.getFullTextIndex(indexName) == null) {
                 tableName = null;
             }
             // Check the group associated to the table for the 

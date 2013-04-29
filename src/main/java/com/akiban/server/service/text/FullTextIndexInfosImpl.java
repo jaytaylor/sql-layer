@@ -21,7 +21,6 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.IndexName;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.error.FullTextQueryParseException;
 import com.akiban.server.service.session.Session;
 
@@ -30,7 +29,6 @@ import org.apache.lucene.queryparser.flexible.standard.StandardQueryParser;
 import org.apache.lucene.search.Query;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -41,7 +39,7 @@ public abstract class FullTextIndexInfosImpl implements FullTextIndexInfos
     @Override
     public Query parseQuery(QueryContext context, IndexName name, 
                             String defaultField, String query) {
-        FullTextIndexInfo index = getIndex(context.getSession(), name);
+        FullTextIndexInfo index = getIndex(context.getSession(), name, null);
         if (defaultField == null) {
             defaultField = index.getDefaultFieldName();
         }
@@ -58,15 +56,16 @@ public abstract class FullTextIndexInfosImpl implements FullTextIndexInfos
 
     @Override
     public RowType searchRowType(Session session, IndexName name) {
-        FullTextIndexInfo index = getIndex(session, name);
+        FullTextIndexInfo index = getIndex(session, name, null);
         return index.getHKeyRowType();
     }
 
     protected abstract AkibanInformationSchema getAIS(Session session);
     protected abstract File getIndexPath();
 
-    protected FullTextIndexInfo getIndex(Session session, IndexName name) {
-        AkibanInformationSchema ais = getAIS(session);
+    protected FullTextIndexInfo getIndex(Session session, IndexName name, AkibanInformationSchema ais) {
+        if (ais == null)
+            ais = getAIS(session);
         FullTextIndexInfo info;
         synchronized (indexes) {
             FullTextIndexShared shared = indexes.get(name);

@@ -117,7 +117,7 @@ public class OptimizerTestBase extends ASTTransformTestBase
     }
 
      
-    protected static ServiceManager createServiceManager(Map<String, String> startupConfigProperties)
+    protected static ServiceManager createServiceManager()
     {
         return new GuicedServiceManager(serviceBindingsProvider());
     }
@@ -130,19 +130,10 @@ public class OptimizerTestBase extends ASTTransformTestBase
                                         FullTextIndexServiceImpl.class);
     }
     
-
-    protected static Map<String, String> startupConfigProperties() {
-        Map<String, String> properties = new HashMap<>();
-        properties.put("akserver.text.indexpath", "/tmp/aktext");
-        properties.put(FullTextIndexServiceImpl.UPDATE_INTERVAL, Long.toString(updateInterval));
-        properties.put(FullTextIndexServiceImpl.POPULATE_DELAY_INTERVAL, Long.toString(populateDelayInterval));
-        return properties;
-    }
-    
     private static ServiceManager prepareServices()
     {
         System.setProperty("akiban.home", System.getProperty("user.home"));
-        ServiceManager ret = createServiceManager(startupConfigProperties());
+        ServiceManager ret = createServiceManager();
         ret.startServices();
         
         return ret;

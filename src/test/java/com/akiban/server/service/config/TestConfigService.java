@@ -22,6 +22,7 @@ import com.akiban.server.error.ConfigurationPropertiesLoadException;
 import com.akiban.server.service.plugins.Plugin;
 import com.akiban.server.service.plugins.PluginsFinder;
 
+import com.akiban.server.service.text.FullTextIndexServiceImpl;
 import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
@@ -60,6 +61,8 @@ public class TestConfigService extends ConfigurationServiceImpl {
     protected Map<String, String> loadProperties() {
         Map<String, String> ret = new HashMap<>(super.loadProperties());
         makeDataDirectory();
+        ret.put(FullTextIndexServiceImpl.UPDATE_INTERVAL, Long.toString(1000));
+        ret.put(FullTextIndexServiceImpl.POPULATE_DELAY_INTERVAL, Long.toString(1000));
         ret.put(DATA_PATH_KEY, dataDirectory.getAbsolutePath());
         ret.put(TEXT_INDEX_PATH_KEY, dataDirectory.getAbsolutePath());
         final int bufferSize = Integer.parseInt(ret.get(BUFFER_SIZE_KEY));
