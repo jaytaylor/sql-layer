@@ -22,8 +22,15 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.monitor.MonitorService;
 import com.akiban.server.service.monitor.ServerMonitor;
 import com.akiban.server.service.security.SecurityService;
-import com.akiban.sql.embedded.EmbeddedJDBCService;
+import com.akiban.server.service.session.Session;
+import com.akiban.server.service.session.SessionService;
+import com.akiban.sql.server.ServerSessionMonitor;
 import com.google.inject.Inject;
+
+import org.eclipse.jetty.io.AsyncEndPoint;
+import org.eclipse.jetty.io.Connection;
+import org.eclipse.jetty.io.nio.AsyncConnection;
+import org.eclipse.jetty.io.nio.SslConnection;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.security.Authenticator;
@@ -32,6 +39,7 @@ import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.LoginService;
 import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.security.authentication.DigestAuthenticator;
+import org.eclipse.jetty.server.AsyncHttpConnection;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandler;
@@ -44,6 +52,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.servlet.FilterRegistration;
 import javax.servlet.ServletException;
+
+import java.nio.channels.SocketChannel;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -66,10 +76,12 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     private static final String CONFIG_XORIGIN_CREDENTIALS = CONFIG_XORIGIN_PREFIX + "allow_credentials";
 
     private static final String REST_ROLE = "rest-user";
+    public  static final String SERVER_TYPE = "REST";
 
     private final ConfigurationService configurationService;
     private final SecurityService securityService;
     private final MonitorService monitorService;
+    private final SessionService sessionService;
 
     private final Object lock = new Object();
     private SimpleHandlerList handlerList;
@@ -84,10 +96,12 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     @Inject
     public HttpConductorImpl(ConfigurationService configurationService,
                              SecurityService securityService,
-                             MonitorService monitor) {
+                             MonitorService monitor,
+                             SessionService session) {
         this.configurationService = configurationService;
         this.securityService = securityService;
         this.monitorService = monitor;
+        this.sessionService = session;
 
         jerseyLogging = java.util.logging.Logger.getLogger("com.sun.jersey");
         jerseyLogging.setLevel(java.util.logging.Level.OFF);
@@ -182,14 +196,14 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         Server localServer = new Server();
         SelectChannelConnector connector;
         if (!ssl) {
-            connector = new SelectChannelConnector();
+            connector = new SelectChannelConnectorExtended();
         }
         else {
             // Share keystore configuration with PSQL.
             SslContextFactory sslFactory = new SslContextFactory();
             sslFactory.setKeyStorePath(System.getProperty("javax.net.ssl.keyStore"));
             sslFactory.setKeyStorePassword(System.getProperty("javax.net.ssl.keyStorePassword"));
-            connector = new SslSelectChannelConnector(sslFactory);
+            connector = new SslSelectChannelConnectorExtended(sslFactory);
         }
         connector.setPort(portLocal);
         connector.setThreadPool(new QueuedThreadPool(200));
@@ -262,7 +276,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     @Override
     public void stop() {
         Server localServer;
-        monitorService.deregisterServerMonitor(monitorService.getServerMonitors().get(ConnectionMonitor.SERVER_TYPE));
+        monitorService.deregisterServerMonitor(monitorService.getServerMonitors().get(SERVER_TYPE));
         synchronized (lock) {
             xOriginFilterEnabled = false;
             localServer = server;
@@ -313,7 +327,6 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     }
 
     private class ConnectionMonitor implements ServerMonitor {
-        public static final String SERVER_TYPE = "REST";
         private final SelectChannelConnector connector;
         private final AtomicLong _statsStartedAt = new AtomicLong(System.currentTimeMillis());
         
@@ -339,6 +352,68 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         @Override
         public int getSessionCount() {
             return connector.getConnections();
+        }
+    }
+    
+    private class SelectChannelConnectorExtended extends SelectChannelConnector {
+        private Session session;
+        @Override
+        protected AsyncConnection newConnection(SocketChannel channel,final AsyncEndPoint endpoint)
+        {
+            AsyncHttpConnection conn = (AsyncHttpConnection)super.newConnection(channel, endpoint);
+            ServerSessionMonitor sessionMonitor = new ServerSessionMonitor(SERVER_TYPE,
+                    monitorService.allocateSessionId());
+
+            conn.setAssociatedObject(sessionMonitor);
+            this.session = sessionService.createSession();
+            monitorService.registerSessionMonitor(sessionMonitor, session);
+            return conn;
+        }
+        
+        @Override  
+        protected void connectionClosed(Connection connection) {
+            if (connection instanceof AsyncHttpConnection) {
+                AsyncHttpConnection conn = (AsyncHttpConnection)connection;
+                ServerSessionMonitor monitor = (ServerSessionMonitor)conn.getAssociatedObject();
+                if (monitor != null) {
+                    monitorService.deregisterSessionMonitor(monitor, session);
+                    conn.setAssociatedObject(null);
+                }
+            }
+            super.connectionClosed(connection);
+        }
+    }
+    
+    private class SslSelectChannelConnectorExtended extends SslSelectChannelConnector {
+        private Session session;
+        public SslSelectChannelConnectorExtended(SslContextFactory sslFactory) {
+            super(sslFactory);
+        }
+
+        @Override
+        protected AsyncConnection newConnection(SocketChannel channel,final AsyncEndPoint endpoint)
+        {
+            AsyncHttpConnection conn = (AsyncHttpConnection)((SslConnection)super.newConnection(channel, endpoint)).getSslEndPoint().getConnection();
+            ServerSessionMonitor sessionMonitor = new ServerSessionMonitor(SERVER_TYPE,
+                    monitorService.allocateSessionId());
+
+            conn.setAssociatedObject(sessionMonitor);
+            this.session = sessionService.createSession();
+            monitorService.registerSessionMonitor(sessionMonitor, session);
+            return conn;
+        }
+        
+        @Override  
+        protected void connectionClosed (Connection connection) {
+            if (connection instanceof SslConnection) {
+                AsyncHttpConnection conn = (AsyncHttpConnection)((SslConnection) connection).getSslEndPoint().getConnection();
+                ServerSessionMonitor monitor = (ServerSessionMonitor)conn.getAssociatedObject();
+                if (monitor != null) {
+                    monitorService.deregisterSessionMonitor(monitor, session);
+                    conn.setAssociatedObject(null);
+                }
+            }
+            super.connectionClosed(connection);
         }
     }
 }

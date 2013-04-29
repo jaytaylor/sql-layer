@@ -21,8 +21,6 @@ import com.akiban.rest.RestService;
 import com.akiban.rest.RestServiceImpl;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.test.it.ITBase;
-import com.akiban.sql.embedded.EmbeddedJDBCService;
-import com.akiban.sql.embedded.EmbeddedJDBCServiceImpl;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
