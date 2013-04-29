@@ -132,10 +132,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                       .append(name.getName());
             
             if (ex.traverse(Key.Direction.EQ, true, 0))
-                synchronized(POPULATE_TREE_LOCK)
-                {
-                    ex.remove();
-                }
+                ex.remove();
         }
         catch (PersistitException e)
         {
@@ -145,14 +142,17 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     
     @Override
     public void dropIndex(Session session, FullTextIndex idx) {
-        // delete 'promise' for population, if any
-        deleteFromTree(session, idx.getIndexName());
-        
-        // delete documents
-        FullTextIndexInfo idxInfo = getIndex(session, idx.getIndexName(), idx.getIndexedTable().getAIS());
-        idxInfo.deletePath();
-        synchronized (indexes) {    
-            indexes.remove(idx.getIndexName());
+        synchronized (POPULATE_TREE_LOCK)
+        {
+            // delete 'promise' for population, if any
+            deleteFromTree(session, idx.getIndexName());
+
+            // delete documents
+            FullTextIndexInfo idxInfo = getIndex(session, idx.getIndexName(), idx.getIndexedTable().getAIS());
+            idxInfo.deletePath();
+            synchronized (indexes) {    
+                indexes.remove(idx.getIndexName());
+            }
         }
     }
 
@@ -333,7 +333,11 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         try
         {
             transactionService.beginTransaction(session);
-            if(addPopulate(session, schema, table, index) && !hasScheduled && populateEnabled)
+            addPopulate(session, schema, table, index);
+            
+            // If the job is already running, it won't be able to
+            // see this new entry => need another run
+            if((!hasScheduled || populateRunning) && populateEnabled)
             {
                 populateTimer.schedule(populateWorker(), populateDelayInterval);
                 hasScheduled = true;
@@ -483,7 +487,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             {
                 ex.removeAll();
             }
-            hasScheduled = false;
             transaction = false;
         }
         catch (PersistitException ex1)
@@ -497,6 +500,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             else
                 transactionService.commitTransaction(session);
             session.close();
+            hasScheduled = false;
             backgroundWorks.get(populateWork).notifyObservers();
             populateRunning = false;
         }
@@ -632,28 +636,27 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     private volatile boolean hasScheduled = false;
     private volatile boolean populateEnabled = false;
 
-    private synchronized boolean addPopulate(Session session,
+    private synchronized void addPopulate(Session session,
                            String schema,
                            String table,
                            String index) throws PersistitException
     {
         Exchange ex = getPopulateExchange(session);
 
-        // Assumption: There is not any existing entry about this index
-        // (Because they should have been removed in dropIndex())
-        // KEY: schema | table | indexName
-        ex.getKey().clear()
-                   .append(schema)
-                   .append(table)
-                   .append(index);
-
-        // VALUE: <empty>
-
         synchronized(POPULATE_TREE_LOCK)
         {
+            // Assumption: There is not any existing entry about this index
+            // (Because they should have been removed in dropIndex())
+            // KEY: schema | table | indexName
+            ex.getKey().clear()
+                       .append(schema)
+                       .append(table)
+                       .append(index);
+
+            // VALUE: <empty>
+
             ex.store();
         }
-        return true;
     }
 
     private HKeyRow toHKeyRow(byte rowBytes[], HKeyRowType hKeyRowType,

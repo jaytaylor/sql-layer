@@ -102,11 +102,11 @@ public class FullTextIndexServiceIT extends ITBase
     }
     
     @Test
-    public void testConcurrent_schedule_run_Populate() throws InterruptedException
+    public void testConcurrent_add_vs_populate() throws InterruptedException, PersistitException
     {
         // This test is specifically for FullTextIndexServiceImpl.java
         assertEquals(FullTextIndexServiceImpl.class, fullText.getClass());
-        FullTextIndexServiceImpl fullTextImpl = (FullTextIndexServiceImpl)fullText;
+        final FullTextIndexServiceImpl fullTextImpl = (FullTextIndexServiceImpl)fullText;
 
         // Two threads should run *at the same time* 
         // where
@@ -117,32 +117,79 @@ public class FullTextIndexServiceIT extends ITBase
         // disable the populate worker (quiet things down!)
         fullTextImpl.disablePopulateWorker();
         
-        // create 2 indcies (this should add 2 entries to the tree)
+        // create some indcies (this should add 4 entries to the tree)
         final FullTextIndex expecteds[] = new FullTextIndex[]
         {
             createFullTextIndex(serviceManager(),
-                                SCHEMA, "c", "ft_idx_c", 
+                                SCHEMA, "c", "ft_idx_c1", 
                                 "name"),
-            
             createFullTextIndex(serviceManager(),
-                                SCHEMA, "i", "ft_idx_i",
-                                "i.sku")
+                                SCHEMA, "c", "ft_idx_c2", 
+                                "name"),
+            createFullTextIndex(serviceManager(),
+                                SCHEMA, "i", "ft_idx_i1",
+                                "i.sku"),
+            createFullTextIndex(serviceManager(),
+                                SCHEMA, "i", "ft_idx_i2",
+                                "i.sku"),
+            null,   // place holder
+            null    // place holder
         };
         
-        // get a thread to run the populate
-        fullTextImpl.runPopulate();
+        // get 2 other threads to run the populate
+        Thread thread1 = new Thread() {public void run() {fullTextImpl.runPopulate();}};
+        Thread thread2 = new Thread() {public void run() {fullTextImpl.runPopulate();}};
         
-        // get this one to create another ft index 
-        // (hopefully the two would run at the same time???)
-        createFullTextIndex(serviceManager(),
-                            SCHEMA, "a", "ft_idx_a",
-                            "a.state");
-        
-       // let the worker do its job.
+        thread1.start();
+        thread2.start();
+
+        // create 2 new indicesin this thread
+        expecteds[4] = createFullTextIndex(serviceManager(),
+                                           SCHEMA, "a", "ft_idx_a1",
+                                           "a.state");
+
+        expecteds[5] = createFullTextIndex(serviceManager(),
+                                           SCHEMA, "a", "ft_idx_a2",
+                                           "a.state");
+
+        // (cleanup) let the worker(s) do its job so we have consistent states.
         fullTextImpl.enablePopulateWorker();
         WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
-    }
         
+        // If nothing went wrong (ie., no W-W conflicts), do some sanity check here
+        //  Make sure the indices are *useable*
+        // (But we first need to delete duplicate indices
+        //  because 'Ambiguous index' error will happen whenever two or more 
+        //  indices are created on the same set of columns.)
+        for (int n = 0; n < expecteds.length; n += 2)
+            deleteFullTextIndex(serviceManager(), expecteds[n].getIndexName());
+        
+        RowType rowType = rowType("a");
+        RowBase[] expected = new RowBase[]
+        {
+            row(rowType, 1, 101L, 1, "MA"),
+            row(rowType, 3, 301L, 3, "MA")
+        };
+        FullTextQueryBuilder builder = new FullTextQueryBuilder(expecteds[5], ais(), queryContext);
+        Operator plan = builder.scanOperator("state:MA", 10);
+        compareRows(expected, cursor(plan, queryContext));
+        
+        // delete the rest 
+        for (int n = 1; n < expecteds.length; n += 2)
+            deleteFullTextIndex(serviceManager(), expecteds[n].getIndexName());
+    }
+    
+    @Test
+    public void testConcurrent_add_vs_delete()
+    {
+        // This test is specifically for FullTextIndexServiceImpl.java
+        assertEquals(FullTextIndexServiceImpl.class, fullText.getClass());
+        final FullTextIndexServiceImpl fullTextImpl = (FullTextIndexServiceImpl)fullText;
+        
+        // Test plans:
+        //  +
+    }
+
     @Test
     public void testPopulateScheduling() throws InterruptedException, PersistitException
     {
