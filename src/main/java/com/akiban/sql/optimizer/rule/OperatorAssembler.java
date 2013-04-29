@@ -73,6 +73,7 @@ import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
 
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.std.IfNullExpression;
@@ -830,8 +831,20 @@ public class OperatorAssembler extends BaseRule
                         Sequence sequence = table.getColumn(i).getIdentityGenerator();
                         row[i] = oldPartialAssembler.sequenceGenerator(sequence, column, row[i]);
                     } else if (row[i] == null) {
-                        row[i] = new com.akiban.server.expression.std.CastExpression 
-                                (column.getType().akType(), new LiteralExpression(AkType.VARCHAR, column.getDefaultValue()));
+                        Expression defval;
+                        if (column.getDefaultValue() != null) {
+                            defval = new LiteralExpression(AkType.VARCHAR, column.getDefaultValue());
+                        }
+                        else if (column.getDefaultFunction() != null) {
+                            defval = rulesContext.getFunctionsRegistry().composer(column.getDefaultFunction()).compose(Collections.<Expression>emptyList(), Collections.<ExpressionType>emptyList());
+                        }
+                        else {
+                            defval = new LiteralExpression(AkType.NULL, null);
+                        }
+                        if (defval.valueType() != column.getType().akType()) {
+                            defval = new com.akiban.server.expression.std.CastExpression(column.getType().akType(), defval);
+                        }
+                        row[i] = defval;
                     }
                 }
                 inserts = Arrays.asList(row);
@@ -861,27 +874,41 @@ public class OperatorAssembler extends BaseRule
                     } 
                     else if (row[i] == null) {
                         TInstance tinst = targetRowType.typeInstanceAt(i);
-                        final String defaultValue = column.getDefaultValue();
-                        final PValue defaultValueSource;
-                        if(defaultValue == null) {
-                            defaultValueSource = new PValue(tinst);
-                            defaultValueSource.putNull();
-                        } else {
-                            TCast cast = tinst.typeClass().castFromVarchar();
-                            if (cast != null) {
-                                defaultValueSource = new PValue(tinst);
-                                TInstance valInst = MString.VARCHAR.instance(defaultValue.length(), false);
-                                TExecutionContext executionContext = new TExecutionContext(
-                                        Collections.singletonList(valInst),
-                                        tinst, planContext.getQueryContext());
-                                cast.evaluate(executionContext,
-                                              new PValue(MString.varcharFor(defaultValue), defaultValue),
-                                              defaultValueSource);
-                            } else {
-                                defaultValueSource = new PValue (tinst, defaultValue);
+                        if (column.getDefaultFunction() != null) {
+                            T3RegistryService registry = rulesContext.getT3Registry();
+                            OverloadResolver<TValidatedScalar> resolver = registry.getScalarsResolver();
+                            TValidatedScalar overload = resolver.get(column.getDefaultFunction(), Collections.<TPreptimeValue>emptyList()).getOverload();
+                            TInstance dinst = overload.resultStrategy().fixed(false);
+                            TPreparedExpression defval = new TPreparedFunction(overload, dinst, Collections.<TPreparedExpression>emptyList(), planContext.getQueryContext());
+                            if (!dinst.equals(tinst)) {
+                                TCast tcast = registry.getCastsResolver().cast(dinst.typeClass(), tinst.typeClass());
+                                defval = new TCastExpression(defval, tcast, tinst, planContext.getQueryContext());
                             }
+                            row[i] = defval;
                         }
-                        row[i] = new TPreparedLiteral(tinst, defaultValueSource);
+                        else {
+                            final String defaultValue = column.getDefaultValue();
+                            final PValue defaultValueSource;
+                            if(defaultValue == null) {
+                                defaultValueSource = new PValue(tinst);
+                                defaultValueSource.putNull();
+                            } else {
+                                TCast cast = tinst.typeClass().castFromVarchar();
+                                if (cast != null) {
+                                    defaultValueSource = new PValue(tinst);
+                                    TInstance valInst = MString.VARCHAR.instance(defaultValue.length(), false);
+                                    TExecutionContext executionContext = new TExecutionContext(
+                                            Collections.singletonList(valInst),
+                                            tinst, planContext.getQueryContext());
+                                    cast.evaluate(executionContext,
+                                                  new PValue(MString.varcharFor(defaultValue), defaultValue),
+                                                  defaultValueSource);
+                                } else {
+                                    defaultValueSource = new PValue (tinst, defaultValue);
+                                }
+                            }
+                            row[i] = new TPreparedLiteral(tinst, defaultValueSource);
+                        }
                     }
                 }
                 insertsP = Arrays.asList(row);

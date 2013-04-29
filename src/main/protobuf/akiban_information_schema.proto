@@ -116,6 +116,7 @@ message Column {
     optional int32  typeVersion    = 15; // serialization version of type. null if old style type
     optional string defaultValue   = 16; // default value for column (null if none specified)
     optional string uuid           = 17; // uuid unique to this group (including table uuids)
+    optional string defaultFunction = 18; // default function name for column (null if none specified)
 }
 
 // UserTable.  

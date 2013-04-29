@@ -24,20 +24,34 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.akiban.ais.model.AISBuilder;
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.DefaultIndexNameGenerator;
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexNameGenerator;
 import com.akiban.ais.model.PrimaryKey;
+import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.Type;
+import com.akiban.ais.model.Types;
+import com.akiban.ais.model.UserTable;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.*;
 import com.akiban.server.service.session.Session;
+import com.akiban.sql.optimizer.FunctionsTypeComputer;
 import com.akiban.sql.parser.ColumnDefinitionNode;
 import com.akiban.sql.parser.ConstantNode;
 import com.akiban.sql.parser.ConstraintDefinitionNode;
 import com.akiban.sql.parser.CreateTableNode;
+import com.akiban.sql.parser.CurrentDatetimeOperatorNode;
 import com.akiban.sql.parser.DefaultNode;
 import com.akiban.sql.parser.DropGroupNode;
 import com.akiban.sql.parser.DropTableNode;
+import com.akiban.sql.parser.ExistenceCheck;
 import com.akiban.sql.parser.FKConstraintDefinitionNode;
 import com.akiban.sql.parser.IndexColumnList;
 import com.akiban.sql.parser.IndexConstraintDefinitionNode;
@@ -45,25 +59,11 @@ import com.akiban.sql.parser.IndexDefinition;
 import com.akiban.sql.parser.RenameNode;
 import com.akiban.sql.parser.ResultColumn;
 import com.akiban.sql.parser.ResultColumnList;
+import com.akiban.sql.parser.SpecialFunctionNode;
 import com.akiban.sql.parser.TableElementNode;
-
 import com.akiban.sql.parser.ValueNode;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
-
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.Type;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.Types;
-import com.akiban.server.error.DuplicateTableNameException;
-import com.akiban.sql.parser.ExistenceCheck;
-import com.akiban.qp.operator.QueryContext;
 
 import static com.akiban.sql.aisddl.DDLHelper.convertName;
 
@@ -213,7 +213,7 @@ public class TableDDL
             // BIGINT NOT NULL 
             DataTypeDescriptor bigint = new DataTypeDescriptor (TypeId.BIGINT_ID, false);
             addColumn (builder, schemaName, tableName, cdn.getColumnName(), colpos,
-                    bigint, false, getColumnDefault(cdn));
+                       bigint, false, null, null);
             // GENERATED ALWAYS AS IDENTITY
             setAutoIncrement (builder, schemaName, tableName, cdn.getColumnName(), false, 1, 1);
             // UNIQUE (KEY)
@@ -221,9 +221,10 @@ public class TableDDL
             builder.index(schemaName, tableName, cdn.getColumnName(), true, constraint);
             builder.indexColumn(schemaName, tableName, cdn.getColumnName(), cdn.getColumnName(), 0, true, null);
         } else {
+            String[] defaultValueFunction = getColumnDefault(cdn, schemaName, tableName);
             addColumn(builder, schemaName, tableName, cdn.getColumnName(), colpos,
-                      cdn.getType(), cdn.getType().isNullable(), getColumnDefault(cdn));
-           
+                      cdn.getType(), cdn.getType().isNullable(), 
+                      defaultValueFunction[0], defaultValueFunction[1]);
             if (cdn.isAutoincrementColumn()) {
                 setAutoIncrement(builder, schemaName, tableName, cdn);
             }
@@ -244,25 +245,35 @@ public class TableDDL
         builder.columnAsIdentity(schemaName, tableName, columnName, start, increment, defaultIdentity);
     }
     
-    static String getColumnDefault(ColumnDefinitionNode cdn) {
-        String defaultStr = null;
-        DefaultNode defNode = (cdn != null) ? cdn.getDefaultNode() : null;
-        if(defNode != null) {
-            // TODO: This seems plausible, but also fragile. Better way to derive this?
-            ValueNode valueNode = defNode.getDefaultTree();
-            if(valueNode instanceof ConstantNode) {
-                defaultStr = ((ConstantNode)valueNode).getValue().toString();
-            } else {
-                defaultStr = defNode.getDefaultText();
+    static String[] getColumnDefault(ColumnDefinitionNode cdn, 
+                                     String schemaName, String tableName) {
+        String defaultValue = null, defaultFunction = null;
+        if (cdn.getDefaultNode() != null) {
+            ValueNode valueNode = cdn.getDefaultNode().getDefaultTree();
+            if (valueNode == null) {
+            }
+            else if (valueNode instanceof ConstantNode) {
+                defaultValue = ((ConstantNode)valueNode).getValue().toString();
+            }
+            else if (valueNode instanceof SpecialFunctionNode) {
+                defaultFunction = FunctionsTypeComputer.specialFunctionName((SpecialFunctionNode)valueNode);
+            }
+            else if (valueNode instanceof CurrentDatetimeOperatorNode) {
+                defaultFunction = FunctionsTypeComputer.currentDatetimeFunctionName((CurrentDatetimeOperatorNode)valueNode);
+            }
+            else {
+                throw new BadColumnDefaultException(schemaName, tableName, 
+                                                    cdn.getColumnName(), 
+                                                    cdn.getDefaultNode().getDefaultText());
             }
         }
-        return defaultStr;
+        return new String[] { defaultValue, defaultFunction };
     }
 
     static void addColumn(final AISBuilder builder,
                           final String schemaName, final String tableName, final String columnName,
                           int colpos, DataTypeDescriptor type, boolean nullable,
-                          final String defaultValue) {
+                          final String defaultValue, final String defaultFunction) {
         Long[] typeParameters = new Long[2];
         Type builderType = columnType(type, typeParameters, schemaName, tableName, columnName);
         String charset = null, collation = null;
@@ -276,7 +287,7 @@ public class TableDDL
                        nullable,
                        false,
                        charset, collation,
-                       defaultValue);
+                       defaultValue, defaultFunction);
     }
 
     static Type columnType(DataTypeDescriptor type, Long[] typeParameters,

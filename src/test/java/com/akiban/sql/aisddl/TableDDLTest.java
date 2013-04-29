@@ -208,8 +208,8 @@ public class TableDDLTest {
         makeSeparateAIS();
         dropTable = TableName.create(DEFAULT_SCHEMA, DEFAULT_TABLE);
         builder.userTable(DEFAULT_SCHEMA, DEFAULT_TABLE);
-        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "int", 0L, 0L, true, false, null, null, DEFAULT_C1);
-        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c2", 1, "varchar", 32L, 0L, true, false, null, null, DEFAULT_C2);
+        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "int", 0L, 0L, true, false, null, null, DEFAULT_C1, null);
+        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c2", 1, "varchar", 32L, 0L, true, false, null, null, DEFAULT_C2, null);
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
 
