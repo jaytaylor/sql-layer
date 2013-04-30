@@ -28,8 +28,6 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.expression.std.FieldExpression;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -39,7 +37,7 @@ import java.util.Map;
 
 import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
-import static com.akiban.server.expression.std.Expressions.field;
+import static com.akiban.server.test.ExpressionGenerators.field;
 import static org.junit.Assert.assertEquals;
 
 public class IndexScanJumpUnboundedIT extends OperatorITBase

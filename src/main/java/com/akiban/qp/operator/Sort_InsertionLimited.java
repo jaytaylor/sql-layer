@@ -185,14 +185,8 @@ class Sort_InsertionLimited extends Operator
                 CursorLifecycle.checkIdle(this);
                 input.open();
                 state = State.FILLING;
-                if (usingPValues()) {
-                    for (TEvaluatableExpression eval : tEvaluations)
-                        eval.with(context);
-                }
-                else {
-                    for (ExpressionEvaluation eval : oEvaluations)
-                        eval.of(context);
-                }
+                for (TEvaluatableExpression eval : tEvaluations)
+                    eval.with(context);
                 sorted = new TreeSet<>();
             } finally {
                 TAP_OPEN.out();
@@ -219,10 +213,7 @@ class Sort_InsertionLimited extends Operator
                         while ((row = input.next()) != null) {
                             assert row.rowType() == sortType : row;
                             Holder holder;
-                            if (usingPValues())
-                                holder = new Holder(label, row, tEvaluations, null);
-                            else
-                                holder = new Holder(label, row, oEvaluations);
+                            holder = new Holder(label, row, tEvaluations, null);
                             if (preserveDuplicates) {
                                 label++;
                             }
@@ -312,14 +303,7 @@ class Sort_InsertionLimited extends Operator
         {
             close();
             input.destroy();
-            if (usingPValues()) {
-                // TODO nothing to destroy yet...
-            }
-            else {
-                for (ExpressionEvaluation evaluation : oEvaluations) {
-                    evaluation.destroy();
-                }
-            }
+            // TODO nothing to destroy for expressions yet
             state = State.DESTROYED;
         }
 
@@ -354,21 +338,10 @@ class Sort_InsertionLimited extends Operator
             super(context);
             this.input = input;
             int nsort = ordering.sortColumns();
-            if (ordering.usingPVals()) {
-                tEvaluations = new ArrayList<>(nsort);
-                for (int i = 0; i < nsort; ++i) {
-                    TEvaluatableExpression evaluation = ordering.tExpression(i).build();
-                    tEvaluations.add(evaluation);
-                }
-                oEvaluations = null;
-            }
-            else {
-                tEvaluations = null;
-                oEvaluations = new ArrayList<>(nsort);
-                for (int i = 0; i < nsort; i++) {
-                    ExpressionEvaluation evaluation = ordering.expression(i).evaluation();
-                    oEvaluations.add(evaluation);
-                }
+            tEvaluations = new ArrayList<>(nsort);
+            for (int i = 0; i < nsort; ++i) {
+                TEvaluatableExpression evaluation = ordering.tExpression(i).build();
+                tEvaluations.add(evaluation);
             }
         }
 
@@ -376,7 +349,6 @@ class Sort_InsertionLimited extends Operator
 
         private final Cursor input;
         private final List<TEvaluatableExpression> tEvaluations;
-        private final List<ExpressionEvaluation> oEvaluations;
         private State state = State.CLOSED;
         private SortedSet<Holder> sorted;
         private Iterator<Holder> iterator;
@@ -405,25 +377,6 @@ class Sort_InsertionLimited extends Operator
                 evaluation.with(arow);
                 evaluation.evaluate();
                 values[i] = toObject(evaluation.resultValue());
-            }
-        }
-
-        public Holder(int index, Row arow, List<ExpressionEvaluation> evaluations) {
-            this.index = index;
-
-            row = new ShareHolder<>();
-            row.hold(arow);
-
-            ToObjectValueTarget target = new ToObjectValueTarget();
-
-            values = new Comparable[ordering.sortColumns()];
-            for (int i = 0; i < values.length; i++) {
-                ExpressionEvaluation evaluation = evaluations.get(i);
-                evaluation.of(arow);
-                ValueSource valueSource = evaluation.eval();
-                target.expectType(ordering.type(i));
-                Converters.convert(valueSource, target);
-                values[i] = (Comparable) target.lastConvertedValue();
             }
         }
 

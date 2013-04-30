@@ -181,8 +181,8 @@ public class Distinct_PartialTest {
         );
         Ordering ordering = ordering();
         if (Types3Switch.ON) {
-            ordering.append(null, new TPreparedField(input.rowType().typeInstanceAt(0), 0), true);
-            ordering.append(null, new TPreparedField(input.rowType().typeInstanceAt(1), 1), true);
+            ordering.append(new TPreparedField(input.rowType().typeInstanceAt(0), 0), true);
+            ordering.append(new TPreparedField(input.rowType().typeInstanceAt(1), 1), true);
         }
         else {
             ordering.append(field(input.rowType(), 0), true);

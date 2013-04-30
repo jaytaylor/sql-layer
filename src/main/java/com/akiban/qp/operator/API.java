@@ -334,7 +334,7 @@ public class API
         Ordering ordering = new Ordering();
         int fields = indexType.nFields();
         for (int f = 0; f < fields; f++) {
-            ordering.append(null, new TPreparedField(indexType.typeInstanceAt(f), f), !reverse);
+            ordering.append(new TPreparedField(indexType.typeInstanceAt(f), f), !reverse);
         }
         return indexScan_Default(indexType, indexKeyRange, ordering, innerJoinUntilRowType);
     }
@@ -364,7 +364,7 @@ public class API
         Ordering ordering = new Ordering();
         int fields = indexType.nFields();
         for (int f = 0; f < fields; f++) {
-            ordering.append(null, new TPreparedField(indexType.typeInstanceAt(f), f), !reverse);
+            ordering.append(new TPreparedField(indexType.typeInstanceAt(f), f), !reverse);
         }
         return indexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector);
     }
@@ -795,7 +795,7 @@ public class API
         {
             StringBuilder buffer = new StringBuilder();
             buffer.append('(');
-            List<?> exprs = usingPVals() ? tExpressions : oExpressions;
+            List<?> exprs = tExpressions;
             for (int i = 0, size = sortColumns(); i < size; i++) {
                 if (i > 0) {
                     buffer.append(", ");
@@ -810,22 +810,13 @@ public class API
 
         public int sortColumns()
         {
-            return usingPVals() ? tExpressions.size() : oExpressions.size();
-        }
-
-        public Expression expression(int i) {
-            return oExpressions.get(i);
+            return tExpressions.size();
         }
 
         public TPreparedExpression tExpression(int i) {
             return tExpressions.get(i);
         }
 
-        public AkType type(int i)
-        {
-            return oExpressions.get(i).valueType();
-        }
-        
         public TInstance tInstance(int i) {
             return tExpressions.get(i).resultType();
         }
@@ -865,50 +856,26 @@ public class API
         public void append(ExpressionGenerator expressionGenerator, boolean ascending)
         {
             TPreparedExpression newExpr;
-            Expression oldExpr;
-            if (Types3Switch.ON) {
-                newExpr = expressionGenerator.getTPreparedExpression();
-                oldExpr = null;
-            }
-            else {
-                newExpr = null;
-                oldExpr = expressionGenerator.getExpression();
-            }
-            append(oldExpr, newExpr, ascending);
+            newExpr = expressionGenerator.getTPreparedExpression();
+            append(newExpr, ascending);
         }
 
-        public void append(Expression expression, boolean ascending)
+        public void append(TPreparedExpression tExpression, boolean ascending)
         {
-            append(expression, null, ascending);
-        }
-
-        public void append(Expression expression, TPreparedExpression tExpression, boolean ascending)
-        {
-            append(expression, tExpression, ascending, null);
+            append(tExpression, ascending, null);
         }
         
         public void append(ExpressionGenerator expression, boolean ascending, AkCollator collator)
         {
-            Expression oldStyle;
             TPreparedExpression newStyle;
-            if (Types3Switch.ON) {
-                newStyle = expression.getTPreparedExpression();
-                oldStyle = null;
-            }
-            else {
-                newStyle = null;
-                oldStyle = expression.getExpression();
-            }
-            append(oldStyle, newStyle, ascending, collator);
+            newStyle = expression.getTPreparedExpression();
+            append(newStyle, ascending, collator);
         }
 
-        public void append(Expression expression, TPreparedExpression tExpression,  boolean ascending,
+        public void append(TPreparedExpression tExpression,  boolean ascending,
                            AkCollator collator)
         {
-            if (oExpressions != null)
-                oExpressions.add(expression);
-            else
-                tExpressions.add(tExpression);
+            tExpressions.add(tExpression);
             directions.add(ascending);
             collators.add(collator);
         }
@@ -921,17 +888,11 @@ public class API
             copy.collators.addAll(collators);
             return copy;
         }
-        
-        public boolean usingPVals() {
-            return tExpressions != null;
-        }
 
         public Ordering() {
             tExpressions = new ArrayList<>();
-            oExpressions = null;
         }
 
-        private final List<com.akiban.server.expression.Expression> oExpressions;
         private final List<TPreparedExpression> tExpressions;
         private final List<Boolean> directions = new ArrayList<>(); // true: ascending, false: descending
         private final List<AkCollator> collators = new ArrayList<>();

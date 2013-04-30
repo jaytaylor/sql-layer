@@ -1710,11 +1710,9 @@ public class OperatorAssembler extends BaseRule
             RowStream stream = assembleStream(sort.getInput());
             API.Ordering ordering = partialAssembler.createOrdering();
             for (OrderByExpression orderBy : sort.getOrderBy()) {
-                Expression expr = oldPartialAssembler.assembleExpression(orderBy.getExpression(),
-                        stream.fieldOffsets);
                 TPreparedExpression tExpr = newPartialAssembler.assembleExpression(orderBy.getExpression(),
                         stream.fieldOffsets);
-                ordering.append(expr, tExpr, orderBy.isAscending(), orderBy.getCollator());
+                ordering.append(tExpr, orderBy.isAscending(), orderBy.getCollator());
             }
             assembleSort(stream, ordering, sort.getInput(), output, sortOption);
             return stream;
@@ -1749,9 +1747,8 @@ public class OperatorAssembler extends BaseRule
             List<AkCollator> collators = findCollators(input);
             API.Ordering ordering = partialAssembler.createOrdering();
             for (int i = 0; i < nkeys; i++) {
-                Expression expr = oldPartialAssembler.field(stream.rowType, i);
                 TPreparedExpression tExpr = newPartialAssembler.field(stream.rowType, i);
-                ordering.append(expr, tExpr, true,
+                ordering.append(tExpr, true,
                                 (collators == null) ? null : collators.get(i));
             }
             assembleSort(stream, ordering, input, null, sortOption);
@@ -1996,8 +1993,7 @@ public class OperatorAssembler extends BaseRule
             for (int i = 0; i < indexOrdering.size(); i++) {
                 Expression expr = oldPartialAssembler.field(indexRowType, i);
                 TPreparedExpression tExpr = newPartialAssembler.field(indexRowType, i);
-                ordering.append(expr,
-                                tExpr,
+                ordering.append(tExpr,
                                 indexOrdering.get(i).isAscending(),
                                 index.getIndexColumns().get(i).getColumn().getCollator());
             }

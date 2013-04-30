@@ -21,6 +21,7 @@ import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -427,18 +428,6 @@ public class SkipScanPerformanceIT extends OperatorITBase
     {
         IndexBound bound = new IndexBound(row(tZIndexRowType, z), new SetColumnSelector(0));
         return IndexKeyRange.bounded(tZIndexRowType, bound, true, bound, true);
-    }
-
-    private Ordering ordering(Object... objects)
-    {
-        Ordering ordering = API.ordering();
-        int i = 0;
-        while (i < objects.length) {
-            Expression expression = (Expression) objects[i++];
-            Boolean ascending = (Boolean) objects[i++];
-            ordering.append(expression, ascending);
-        }
-        return ordering;
     }
 
     private boolean[] ascending(boolean... ascending)

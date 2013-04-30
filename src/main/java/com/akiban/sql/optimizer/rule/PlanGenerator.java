@@ -182,8 +182,7 @@ public class PlanGenerator {
 
         Ordering ordering = API.ordering();
         for (int i = 0; i < nkeys; i++) {
-            ordering.append(null, 
-                            new TPreparedField(indexType.typeInstanceAt(i), i), 
+            ordering.append(new TPreparedField(indexType.typeInstanceAt(i), i),
                             false);
         }
 

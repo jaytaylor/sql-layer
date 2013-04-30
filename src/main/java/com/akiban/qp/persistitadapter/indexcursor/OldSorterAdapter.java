@@ -36,7 +36,7 @@ import com.persistit.Value;
 final class OldSorterAdapter extends SorterAdapter<ValueSource, Expression, ExpressionEvaluation> {
     @Override
     protected void appendDummy(API.Ordering ordering) {
-        ordering.append(DUMMY_EXPRESSION, null, ordering.ascending(0));
+        throw new IllegalStateException("types3 off");
     }
 
     @Override
@@ -56,14 +56,12 @@ final class OldSorterAdapter extends SorterAdapter<ValueSource, Expression, Expr
 
     @Override
     protected void initTypes(API.Ordering ordering, int i, AkType[] akTypes, TInstance[] tInstances) {
-        akTypes[i] = ordering.type(i);
+        throw new IllegalStateException("types3 off");
     }
 
     @Override
     protected ExpressionEvaluation evaluation(API.Ordering ordering, QueryContext context, int i) {
-        ExpressionEvaluation evaluation = ordering.expression(i).evaluation();
-        evaluation.of(context);
-        return evaluation;
+        throw new IllegalStateException("types3 off");
     }
 
     @Override
