@@ -26,11 +26,15 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.sql.server.ServerSessionMonitor;
 import com.google.inject.Inject;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 
 import org.eclipse.jetty.io.AsyncEndPoint;
 import org.eclipse.jetty.io.Connection;
 import org.eclipse.jetty.io.nio.AsyncConnection;
 import org.eclipse.jetty.io.nio.SslConnection;
+import org.eclipse.jetty.servlet.ServletMapping;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.security.Authenticator;
@@ -54,10 +58,16 @@ import javax.servlet.FilterRegistration;
 import javax.servlet.ServletException;
 
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static com.akiban.http.SecurityServiceLoginService.CredentialType;
 
 public final class HttpConductorImpl implements HttpConductor, Service {
     private static final Logger logger = LoggerFactory.getLogger(HttpConductorImpl.class);
@@ -84,10 +94,9 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     private final SessionService sessionService;
 
     private final Object lock = new Object();
-    private SimpleHandlerList handlerList;
+    private ServletContextHandler rootContextHandler;
     private Server server;
     private Set<String> registeredPaths;
-    private boolean xOriginFilterEnabled;
     private volatile int port = -1;
 
     // Need reference to prevent GC and setting loss
@@ -108,23 +117,58 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     }
 
     @Override
-    public void registerHandler(ContextHandler handler) {
-        String contextBase = getContextPathPrefix(handler.getContextPath());
-        synchronized (lock) {
-            if (registeredPaths == null)
-                registeredPaths = new HashSet<>();
-            if (!registeredPaths.add(contextBase))
+    public void registerHandler(ServletHolder servlet, String path) {
+        String contextBase = getContextPathPrefix(path);
+        synchronized(lock) {
+            if(!registeredPaths.add(contextBase)) {
                 throw new IllegalPathRequest("context already reserved: " + contextBase);
+            }
             try {
-                if(xOriginFilterEnabled) {
-                    addCrossOriginFilter(handler);
-                }
-                handlerList.addHandler(handler);
-                if (!handler.isStarted()) {
-                        handler.start();
+                rootContextHandler.addServlet(servlet, path);
+                if(!servlet.isStarted()) {
+                    servlet.start();
                 }
             } catch (Exception e) {
                 throw new HttpConductorException(e);
+            }
+        }
+    }
+
+    @Override
+    public void unregisterHandler(ServletHolder servlet) {
+        synchronized(lock) {
+            ServletHandler servletHandler = rootContextHandler.getServletHandler();
+
+            ServletHolder[] curServlets = servletHandler.getServlets();
+            List<ServletHolder> newServlets = new ArrayList<>();
+            newServlets.addAll(Arrays.asList(curServlets));
+            if(!newServlets.remove(servlet)) {
+                throw new IllegalArgumentException("Servlet not registered");
+            }
+
+            List<ServletMapping> newMappings = new ArrayList<>();
+            newMappings.addAll(Arrays.asList(servletHandler.getServletMappings()));
+            for(Iterator<ServletMapping> it = newMappings.iterator(); it.hasNext(); ) {
+                ServletMapping m = it.next();
+                if(servlet.getName().equals(m.getServletName())) {
+                    for(String path : m.getPathSpecs()) {
+                        registeredPaths.remove(path);
+                    }
+                    it.remove();
+                    break;
+                }
+            }
+
+            servletHandler.setServlets(newServlets.toArray(new ServletHolder[newServlets.size()]));
+            servletHandler.setServletMappings(newMappings.toArray(new ServletMapping[newMappings.size()]));
+
+            if(!servlet.isStopped()) {
+                try {
+                    servlet.stop();
+                }
+                catch(Exception e) {
+                    throw new HttpConductorException(e);
+                }
             }
         }
     }
@@ -134,71 +178,66 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         return port;
     }
 
-    @Override
-    public void unregisterHandler(ContextHandler handler) {
-        String contextBase = getContextPathPrefix(handler.getContextPath());
-        synchronized (lock) {
-            if (registeredPaths == null || (!registeredPaths.remove(contextBase))) {
-                logger.warn("Path not registered (for " + handler + "): " + contextBase);
-            }
-            else {
-                handlerList.removeHandler(handler);
-                if (!handler.isStopped()) {
-                    try {
-                        handler.stop();
-                    }
-                    catch (Exception e) {
-                        throw new HttpConductorException(e);
-                    }
-                }
-            }
+
+    private static enum AuthenticationType {
+        NONE(null, null),
+        BASIC(CredentialType.BASIC, BasicAuthenticator.class),
+        DIGEST(CredentialType.DIGEST, DigestAuthenticator.class);
+
+        public CredentialType getCredentialType() {
+            return credentialType;
+        }
+
+        public Authenticator createAuthenticator() throws IllegalAccessException, InstantiationException {
+            return authenticatorClass.newInstance();
+        }
+
+        private AuthenticationType(CredentialType credentialType, Class<? extends Authenticator> authenticatorClass) {
+            this.credentialType = credentialType;
+            this.authenticatorClass = authenticatorClass;
+        }
+
+        private final CredentialType credentialType;
+        private final Class<? extends Authenticator> authenticatorClass;
+    }
+
+    private AuthenticationType safeParseAuthentication(String propName) {
+        String propValue = configurationService.getProperty(propName);
+        try {
+            return AuthenticationType.valueOf(propValue.toUpperCase());
+        } catch(IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid " + CONFIG_LOGIN_PROPERTY + " property: " + propValue);
         }
     }
 
-    static enum AuthenticationType {
-        NONE, BASIC, DIGEST
+    private int safeParseInt(String propName) {
+        String propValue = configurationService.getProperty(propName);
+        try {
+            return Integer.parseInt(propValue);
+        }
+        catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid " + propName + " property: " + propValue);
+        }
     }
 
     @Override
     public void start() {
-        String portProperty = configurationService.getProperty(CONFIG_PORT_PROPERTY);
         String sslProperty = configurationService.getProperty(CONFIG_SSL_PROPERTY);
-        String loginProperty = configurationService.getProperty(CONFIG_LOGIN_PROPERTY);
-        int loginCacheSeconds = Integer.parseInt(configurationService.getProperty(CONFIG_LOGIN_CACHE_SECONDS));
-        int portLocal;
-        boolean ssl;
-        AuthenticationType login;
-        try {
-            portLocal = Integer.parseInt(portProperty);
-        }
-        catch (NumberFormatException e) {
-            logger.error("bad port descriptor: " + portProperty);
-            throw e;
-        }
-        ssl = Boolean.parseBoolean(sslProperty);
-        if ("none".equals(loginProperty)) {
-            login = AuthenticationType.NONE;
-        }
-        else if ("basic".equals(loginProperty)) {
-            login = AuthenticationType.BASIC;
-        }
-        else if ("digest".equals(loginProperty)) {
-            login = AuthenticationType.DIGEST;
-        }
-        else {
-            throw new IllegalArgumentException("Invalid " + CONFIG_LOGIN_PROPERTY +
-                                               " property: " + loginProperty);
-        }
-        xOriginFilterEnabled = Boolean.parseBoolean(configurationService.getProperty(CONFIG_XORIGIN_ENABLED));
+
+        int portLocal = safeParseInt(CONFIG_PORT_PROPERTY);
+        int loginCacheSeconds = safeParseInt(CONFIG_LOGIN_CACHE_SECONDS);
+        AuthenticationType login = safeParseAuthentication(CONFIG_LOGIN_PROPERTY);
+        boolean sslOn = Boolean.parseBoolean(sslProperty);
+
+        boolean crossOriginOn = Boolean.parseBoolean(configurationService.getProperty(CONFIG_XORIGIN_ENABLED));
         logger.info("Starting {} service on port {} with authentication {} and CORS {}",
-                    new Object[] { ssl ? "HTTPS" : "HTTP", portProperty, login, xOriginFilterEnabled ? "on" : "off"});
+                    new Object[] { sslOn ? "HTTPS" : "HTTP", portLocal, login, crossOriginOn ? "on" : "off"});
                     
         Server localServer = new Server();
         SelectChannelConnector connector;
-        if (!ssl) {
+        if(!sslOn) {
             connector = new SelectChannelConnectorExtended();
-        }
-        else {
+        } else {
             // Share keystore configuration with PSQL.
             SslContextFactory sslFactory = new SslContextFactory();
             sslFactory.setKeyStorePath(System.getProperty("javax.net.ssl.keyStore"));
@@ -216,48 +255,33 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         localServer.setConnectors(new Connector[]{connector});
         monitorService.registerServerMonitor(new ConnectionMonitor(connector));
 
-        SimpleHandlerList localHandlerList = new SimpleHandlerList();
+        ServletContextHandler localRootContextHandler = new ServletContextHandler();
+        localRootContextHandler.setContextPath("/");
 
         try {
-            if (login == AuthenticationType.NONE) {
-                localServer.setHandler(localHandlerList);
-            }
-            else {
-                SecurityServiceLoginService.CredentialType credentialType;
-                Authenticator authenticator;
-                switch (login) {
-                case BASIC:
-                    credentialType = SecurityServiceLoginService.CredentialType.BASIC;
-                    authenticator = new BasicAuthenticator();
-                    break;
-                case DIGEST:
-                    credentialType = SecurityServiceLoginService.CredentialType.DIGEST;
-                    authenticator = new DigestAuthenticator();
-                    break;
-                default:
-                    assert false : "Unexpected authentication type " + login;
-                    credentialType = null;
-                    authenticator = null;
-                }
-                Constraint constraint = new Constraint(authenticator.getAuthMethod(),
-                                                       REST_ROLE);
+            if(login != AuthenticationType.NONE) {
+                Authenticator authenticator = login.createAuthenticator();
+                Constraint constraint = new Constraint(authenticator.getAuthMethod(), REST_ROLE);
                 constraint.setAuthenticate(true);
 
                 ConstraintMapping cm = new ConstraintMapping();
                 cm.setPathSpec("/*");
                 cm.setConstraint(constraint);
 
-                ConstraintSecurityHandler sh = new ConstraintSecurityHandler();
+                ConstraintSecurityHandler sh =
+                        crossOriginOn ? new CrossOriginConstraintSecurityHandler() : new ConstraintSecurityHandler();
                 sh.setAuthenticator(authenticator);
                 sh.setConstraintMappings(Collections.singletonList(cm));
 
-                LoginService loginService = new SecurityServiceLoginService(securityService, credentialType, loginCacheSeconds);
+                LoginService loginService =
+                        new SecurityServiceLoginService(securityService, login.getCredentialType(), loginCacheSeconds);
                 sh.setLoginService(loginService);
 
-                sh.setHandler(localHandlerList);
-                localServer.setHandler(sh);
+                localRootContextHandler.setSecurityHandler(sh);
             }
-            localHandlerList.addDefaultHandler(new NoResourceHandler());
+
+            addCrossOriginFilter(localRootContextHandler);
+            localServer.setHandler(localRootContextHandler);
             localServer.start();
         }
         catch (Exception e) {
@@ -267,8 +291,8 @@ public final class HttpConductorImpl implements HttpConductor, Service {
 
         synchronized (lock) {
             this.server = localServer;
-            this.handlerList = localHandlerList;
-            this.registeredPaths = null;
+            this.rootContextHandler = localRootContextHandler;
+            this.registeredPaths = new HashSet<>();
             this.port = portLocal;
         }
     }
@@ -278,10 +302,8 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         Server localServer;
         monitorService.deregisterServerMonitor(monitorService.getServerMonitors().get(SERVER_TYPE));
         synchronized (lock) {
-            xOriginFilterEnabled = false;
             localServer = server;
             server = null;
-            handlerList = null;
             registeredPaths = null;
             port = -1;
         }
@@ -301,7 +323,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
 
     private void addCrossOriginFilter(ContextHandler handler) throws ServletException {
         FilterRegistration reg = handler.getServletContext().addFilter("CrossOriginFilter", CrossOriginFilter.class);
-        reg.addMappingForServletNames(null /*default = REQUEST*/, false, "*");
+        reg.addMappingForServletNames(null, false, "*");
         reg.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM,
                              configurationService.getProperty(CONFIG_XORIGIN_ORIGINS));
         reg.setInitParameter(CrossOriginFilter.ALLOWED_METHODS_PARAM,

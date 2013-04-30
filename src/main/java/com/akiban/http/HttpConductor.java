@@ -17,10 +17,10 @@
 
 package com.akiban.http;
 
-import org.eclipse.jetty.server.handler.ContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 
 public interface HttpConductor {
-    void registerHandler(ContextHandler handler);
-    void unregisterHandler(ContextHandler handler);
+    void registerHandler(ServletHolder servlet, String path);
+    void unregisterHandler(ServletHolder servlet);
     int getPort();
 }
