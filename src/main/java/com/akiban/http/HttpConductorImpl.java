@@ -257,6 +257,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
 
         ServletContextHandler localRootContextHandler = new ServletContextHandler();
         localRootContextHandler.setContextPath("/");
+        localServer.addBean(new JsonErrorHandler());
 
         try {
             if(login != AuthenticationType.NONE) {
