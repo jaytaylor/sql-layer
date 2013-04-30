@@ -180,14 +180,14 @@ public class PlanGenerator {
                                                          bound, true,
                                                          bound, true);
 
-        Ordering ordering = API.ordering(true);
+        Ordering ordering = API.ordering();
         for (int i = 0; i < nkeys; i++) {
             ordering.append(null, 
                             new TPreparedField(indexType.typeInstanceAt(i), i), 
                             false);
         }
 
-        return API.indexScan_Default(indexType, indexRange, ordering, true);
+        return API.indexScan_Default(indexType, indexRange, ordering);
         
     }
 }

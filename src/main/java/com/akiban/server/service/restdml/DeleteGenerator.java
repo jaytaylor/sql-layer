@@ -31,6 +31,6 @@ public class DeleteGenerator extends OperatorGenerator {
     protected Operator create(TableName tableName) {
         Operator lookup = indexAncestorLookup(tableName); 
         // build delete operator.
-        return API.delete_Returning(lookup, true, true);
+        return API.delete_Returning(lookup, true);
     }       
 }

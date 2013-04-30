@@ -93,7 +93,7 @@ public class UpdateGenerator extends OperatorGenerator {
         }
         UpdateFunction updateFunction = 
                 new UpsertRowUpdateFunction(Arrays.asList(updates), stream.rowType);
-        stream.operator = API.update_Returning(stream.operator, updateFunction, true);
+        stream.operator = API.update_Returning(stream.operator, updateFunction);
         
         if (logger.isDebugEnabled()) {
             ExplainContext explain = explainUpdateStatement(stream.operator, table, Arrays.asList(updates));

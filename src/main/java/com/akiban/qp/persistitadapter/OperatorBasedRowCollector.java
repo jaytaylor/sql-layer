@@ -282,9 +282,9 @@ public abstract class OperatorBasedRowCollector implements RowCollector
             plan = groupScan_Default(group);
             if (scanLimit != ScanLimit.NONE) {
                 if (scanLimit instanceof FixedCountLimit) {
-                    plan = limit_Default(plan, ((FixedCountLimit) scanLimit).getLimit(), usePVals);
+                    plan = limit_Default(plan, ((FixedCountLimit) scanLimit).getLimit());
                 } else if (scanLimit instanceof PredicateLimit) {
-                    plan = limit_Default(plan, ((PredicateLimit) scanLimit).getLimit(), usePVals);
+                    plan = limit_Default(plan, ((PredicateLimit) scanLimit).getLimit());
                 }
             }
         }

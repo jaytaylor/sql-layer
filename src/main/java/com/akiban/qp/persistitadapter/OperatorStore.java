@@ -136,7 +136,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
             // MVCC will render this useless, but for now, a limit of 1 ensures we won't see the row we just updated,
             // and therefore scan through two rows -- once to update old -> new, then to update new -> copy of new
-            scanOp = limit_Default(scanOp, 1, Types3Switch.ON);
+            scanOp = limit_Default(scanOp, 1);
 
             UpdatePlannable updateOp = update_Default(scanOp, updateFunction);
 
