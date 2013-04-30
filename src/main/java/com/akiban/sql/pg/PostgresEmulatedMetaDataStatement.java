@@ -392,12 +392,12 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         case POSTMODERN_EXISTS:
             ncols = 1;
             names = new String[] { "?column?" };
-            types = new PostgresType[] { CHAR1_PG_TYPE };
+            types = new PostgresType[] { BOOL_PG_TYPE };
             break;
         case POSTMODERN_TABLE_DESCRIPTION:
             ncols = 4;
             names = new String[] { "attname", "typname", "?column?", "attnum" };
-            types = new PostgresType[] { IDENT_PG_TYPE, IDENT_PG_TYPE, CHAR1_PG_TYPE, INT2_PG_TYPE };
+            types = new PostgresType[] { IDENT_PG_TYPE, IDENT_PG_TYPE, BOOL_PG_TYPE, INT2_PG_TYPE };
             break;
         default:
             return;
@@ -1621,7 +1621,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
         messenger.writeShort(1); // 1 column for this query
         writeColumn(messenger, encoder, usePVals, 
-                    exists ? "t" : "f", CHAR1_PG_TYPE);
+                    exists, BOOL_PG_TYPE);
         messenger.sendMessage();
         return 1;
     }
@@ -1663,7 +1663,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 writeColumn(messenger, encoder, usePVals, 
                             type.getTypeName(), IDENT_PG_TYPE);
                 writeColumn(messenger, encoder, usePVals, 
-                            column.getNullable() ? "t" : "f", CHAR1_PG_TYPE);
+                            column.getNullable(), BOOL_PG_TYPE);
                 writeColumn(messenger, encoder, usePVals, 
                             (short)(column.getPosition() + 1), INT2_PG_TYPE);
                 messenger.sendMessage();
