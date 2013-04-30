@@ -448,84 +448,84 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         int nrows = 0;
         switch (query) {
         case ODBC_LO_TYPE_QUERY:
-            nrows = odbcLoTypeQuery(messenger, encoder, maxrows);
+            nrows = odbcLoTypeQuery(context, server, messenger, maxrows, usePVals);
             break;
         case SEQUEL_B_TYPE_QUERY:
-            nrows = sequelBTypeQuery(messenger, encoder, maxrows, usePVals);
+            nrows = sequelBTypeQuery(context, server, messenger, maxrows, usePVals);
             break;
         case NPGSQL_TYPE_QUERY:
-            nrows = npgsqlTypeQuery(messenger, encoder, maxrows, usePVals);
+            nrows = npgsqlTypeQuery(context, server, messenger, maxrows, usePVals);
             break;
         case PSQL_LIST_SCHEMAS:
-            nrows = psqlListSchemasQuery(server, messenger, encoder, maxrows, usePVals);
+            nrows = psqlListSchemasQuery(context, server, messenger, maxrows, usePVals);
             break;
         case PSQL_LIST_TABLES:
-            nrows = psqlListTablesQuery(server, messenger, encoder, maxrows, usePVals);
+            nrows = psqlListTablesQuery(context, server, messenger, maxrows, usePVals);
             break;
         case PSQL_DESCRIBE_TABLES_1:
-            nrows = psqlDescribeTables1Query(server, messenger, encoder, maxrows, usePVals);
+            nrows = psqlDescribeTables1Query(context, server, messenger, maxrows, usePVals);
             break;
         case PSQL_DESCRIBE_TABLES_2:
-            nrows = psqlDescribeTables2Query(server, messenger, encoder, maxrows, usePVals);
+            nrows = psqlDescribeTables2Query(context, server, messenger, maxrows, usePVals);
             break;
         case PSQL_DESCRIBE_TABLES_2X:
-            nrows = psqlDescribeTables2XQuery(server, messenger, encoder, maxrows, usePVals);
+            nrows = psqlDescribeTables2XQuery(context, server, messenger, maxrows, usePVals);
             break;
         case PSQL_DESCRIBE_TABLES_3:
-            nrows = psqlDescribeTables3Query(server, messenger, encoder, maxrows, usePVals);
+            nrows = psqlDescribeTables3Query(context, server, messenger, maxrows, usePVals);
             break;
         case PSQL_DESCRIBE_TABLES_4A:
         case PSQL_DESCRIBE_TABLES_4B:
         case PSQL_DESCRIBE_TABLES_5:
-            nrows = psqlDescribeTables4Query(server, messenger, encoder, maxrows, usePVals);
+            nrows = psqlDescribeTables4Query(context, server, messenger, maxrows, usePVals);
             break;
         case PSQL_DESCRIBE_INDEXES:
-            nrows = psqlDescribeIndexesQuery(server, messenger, encoder, maxrows, usePVals);
+            nrows = psqlDescribeIndexesQuery(context, server, messenger, maxrows, usePVals);
             break;
         case PSQL_DESCRIBE_FOREIGN_KEYS_1:
-            nrows = psqlDescribeForeignKeys1Query(server, messenger, encoder, maxrows, usePVals);
+            nrows = psqlDescribeForeignKeys1Query(context, server, messenger, maxrows, usePVals);
             break;
         case PSQL_DESCRIBE_FOREIGN_KEYS_2:
-            nrows = psqlDescribeForeignKeys2Query(server, messenger, encoder, maxrows, usePVals);
+            nrows = psqlDescribeForeignKeys2Query(context, server, messenger, maxrows, usePVals);
             break;
         case PSQL_DESCRIBE_TRIGGERS:
-            nrows = psqlDescribeTriggersQuery(server, messenger, encoder, maxrows, usePVals);
+            nrows = psqlDescribeTriggersQuery(context, server, messenger, maxrows, usePVals);
             break;
         case PSQL_DESCRIBE_VIEW:
-            nrows = psqlDescribeViewQuery(server, messenger, encoder, maxrows, usePVals);
+            nrows = psqlDescribeViewQuery(context, server, messenger, maxrows, usePVals);
             break;
         case CHARTIO_TABLES:
-            nrows = chartioTablesQuery(server, messenger, encoder, maxrows, usePVals);
+            nrows = chartioTablesQuery(context, server, messenger, maxrows, usePVals);
             break;
         case CHARTIO_PRIMARY_KEYS:
-            nrows = chartioPrimaryKeysQuery(server, messenger, encoder, maxrows, usePVals);
+            nrows = chartioPrimaryKeysQuery(context, server, messenger, maxrows, usePVals);
             break;
         case CHARTIO_FOREIGN_KEYS:
-            nrows = chartioForeignKeysQuery(server, messenger, encoder, maxrows, usePVals);
+            nrows = chartioForeignKeysQuery(context, server, messenger, maxrows, usePVals);
             break;
         case CHARTIO_COLUMNS:
-            nrows = chartioColumnsQuery(server, messenger, encoder, maxrows, usePVals);
+            nrows = chartioColumnsQuery(context, server, messenger, maxrows, usePVals);
             break;
         case CHARTIO_MAX_KEYS_SETTING:
-            nrows = chartioMaxKeysSettingQuery(server, messenger, encoder, maxrows, usePVals);
+            nrows = chartioMaxKeysSettingQuery(context, server, messenger, maxrows, usePVals);
             break;
         case CLSQL_LIST_OBJECTS:
-            nrows = clsqlListObjectsQuery(server, messenger, encoder, maxrows, usePVals);
+            nrows = clsqlListObjectsQuery(context, server, messenger, maxrows, usePVals);
             break;
         case CLSQL_LIST_ATTRIBUTES:
-            nrows = clsqlListAttributesQuery(server, messenger, encoder, maxrows, usePVals);
+            nrows = clsqlListAttributesQuery(context, server, messenger, maxrows, usePVals);
             break;
         case CLSQL_ATTRIBUTE_TYPE:
-            nrows = clsqlAttributeTypeQuery(server, messenger, encoder, maxrows, usePVals);
+            nrows = clsqlAttributeTypeQuery(context, server, messenger, maxrows, usePVals);
             break;
         case POSTMODERN_LIST:
-            nrows = postmodernListQuery(server, messenger, encoder, maxrows, usePVals);
+            nrows = postmodernListQuery(context, server, messenger, maxrows, usePVals);
             break;
         case POSTMODERN_EXISTS:
-            nrows = postmodernExistsQuery(server, messenger, encoder, maxrows, usePVals);
+            nrows = postmodernExistsQuery(context, server, messenger, maxrows, usePVals);
             break;
         case POSTMODERN_TABLE_DESCRIPTION:
-            nrows = postmodernTableDescriptionQuery(server, messenger, encoder, maxrows, usePVals);
+            nrows = postmodernTableDescriptionQuery(context, server, messenger, maxrows, usePVals);
             break;
         }
         {        
@@ -568,18 +568,16 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return null;
     }
 
-    private int odbcLoTypeQuery(PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows) {
-        return 0;
-    }
-
-    protected void writeColumn(PostgresMessenger messenger, ServerValueEncoder encoder, boolean usePVals,
-                               Object value, PostgresType type) throws IOException {
+    protected void writeColumn(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, boolean usePVals,
+                               int col, Object value, PostgresType type) throws IOException {
+        ServerValueEncoder encoder = server.getValueEncoder();        
+        boolean binary = context.isColumnBinary(col);
         ByteArrayOutputStream bytes;
         if (usePVals) {
-            bytes = encoder.encodePObject(value, type, false);
+            bytes = encoder.encodePObject(value, type, binary);
         }
         else {
-            bytes = encoder.encodeObject(value, type, false);
+            bytes = encoder.encodeObject(value, type, binary);
         }
         if (bytes == null) {
             messenger.writeInt(-1);
@@ -590,16 +588,20 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         }
     }
 
-    private int sequelBTypeQuery(PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+    private int odbcLoTypeQuery(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) {
+        return 0;
+    }
+
+    private int sequelBTypeQuery(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         for (PostgresType.TypeOid pgtype : PostgresType.TypeOid.values()) {
             if (pgtype.getType() == PostgresType.TypeOid.TypType.BASE) {
                 messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
                 messenger.writeShort(2); // 2 columns for this query
-                writeColumn(messenger, encoder, usePVals, 
-                            pgtype.getOid(), OID_PG_TYPE);
-                writeColumn(messenger, encoder, usePVals, 
-                            pgtype.getName(), TYPNAME_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, 
+                            0, pgtype.getOid(), OID_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, 
+                            1, pgtype.getName(), TYPNAME_PG_TYPE);
                 messenger.sendMessage();
                 nrows++;
                 if ((maxrows > 0) && (nrows >= maxrows)) {
@@ -610,7 +612,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return nrows;
     }
 
-    private int npgsqlTypeQuery(PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+    private int npgsqlTypeQuery(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         List<String> types = new ArrayList<>();
         for (String type : groups.get(1).split(",")) {
@@ -622,10 +624,10 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             if (types.contains(pgtype.getName())) {
                 messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
                 messenger.writeShort(2); // 2 columns for this query
-                writeColumn(messenger, encoder, usePVals, 
-                            pgtype.getName(), TYPNAME_PG_TYPE);
-                writeColumn(messenger, encoder, usePVals, 
-                            pgtype.getOid(), OID_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, 
+                            0, pgtype.getName(), TYPNAME_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, 
+                            1, pgtype.getOid(), OID_PG_TYPE);
                 messenger.sendMessage();
                 nrows++;
                 if ((maxrows > 0) && (nrows >= maxrows)) {
@@ -636,7 +638,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return nrows;
     }
 
-    private int psqlListSchemasQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+    private int psqlListSchemasQuery(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         AkibanInformationSchema ais = server.getAIS();
         List<String> names = new ArrayList<>(ais.getSchemas().keySet());
@@ -659,10 +661,10 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         for (String name : names) {
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
             messenger.writeShort(2); // 2 columns for this query
-            writeColumn(messenger, encoder, usePVals, 
-                        name, IDENT_PG_TYPE);
-            writeColumn(messenger, encoder, usePVals, 
-                        null, IDENT_PG_TYPE);
+            writeColumn(context, server, messenger, usePVals, 
+                        0, name, IDENT_PG_TYPE);
+            writeColumn(context, server, messenger, usePVals, 
+                        1, null, IDENT_PG_TYPE);
             messenger.sendMessage();
             nrows++;
             if ((maxrows > 0) && (nrows >= maxrows)) {
@@ -672,7 +674,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return nrows;
     }
 
-    private int psqlListTablesQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+    private int psqlListTablesQuery(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         List<String> types = Arrays.asList(groups.get(1).split(","));
         List<Columnar> tables = new ArrayList<>();
@@ -709,25 +711,25 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             TableName name = table.getName();
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
             messenger.writeShort(4); // 4 columns for this query
-            writeColumn(messenger, encoder, usePVals, 
-                        name.getSchemaName(), IDENT_PG_TYPE);
-            writeColumn(messenger, encoder, usePVals, 
-                        name.getTableName(), IDENT_PG_TYPE);
+            writeColumn(context, server, messenger, usePVals, 
+                        0, name.getSchemaName(), IDENT_PG_TYPE);
+            writeColumn(context, server, messenger, usePVals, 
+                        1, name.getTableName(), IDENT_PG_TYPE);
             String type = table.isView() ? "view" : "table";
-            writeColumn(messenger, encoder, usePVals, 
-                        type, LIST_TYPE_PG_TYPE);
+            writeColumn(context, server, messenger, usePVals, 
+                        2, type, LIST_TYPE_PG_TYPE);
             if (LIST_TABLES_BY_GROUP) {
                 String path = null;
                 if (table.isTable()) {
                     path = tableGroupPath((UserTable)table, name.getSchemaName());
                 }
-                writeColumn(messenger, encoder, usePVals, 
-                            path, PATH_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, 
+                            3, path, PATH_PG_TYPE);
             }
             else {
                 String owner = null;
-                writeColumn(messenger, encoder, usePVals, 
-                            owner, IDENT_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, 
+                            3, owner, IDENT_PG_TYPE);
             }
             messenger.sendMessage();
             nrows++;
@@ -786,7 +788,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return str.toString();
     }
 
-    private int psqlDescribeTables1Query(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+    private int psqlDescribeTables1Query(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         Map<Integer,TableName> nonTableNames = null;
         List<TableName> names = new ArrayList<>();
@@ -824,12 +826,12 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             }
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
             messenger.writeShort(3); // 3 columns for this query
-            writeColumn(messenger, encoder, usePVals, 
-                        id, OID_PG_TYPE);
-            writeColumn(messenger, encoder, usePVals, 
-                        name.getSchemaName(), IDENT_PG_TYPE);
-            writeColumn(messenger, encoder, usePVals, 
-                        name.getTableName(), IDENT_PG_TYPE);
+            writeColumn(context, server, messenger, usePVals, 
+                        0, id, OID_PG_TYPE);
+            writeColumn(context, server, messenger, usePVals, 
+                        1, name.getSchemaName(), IDENT_PG_TYPE);
+            writeColumn(context, server, messenger, usePVals, 
+                        2, name.getTableName(), IDENT_PG_TYPE);
             messenger.sendMessage();
             nrows++;
             if ((maxrows > 0) && (nrows >= maxrows)) {
@@ -862,58 +864,58 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return null;
     }
 
-    private int psqlDescribeTables2Query(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+    private int psqlDescribeTables2Query(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         Columnar table = getTableById(server, groups.get(1));
         if (table == null) return 0;
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
         messenger.writeShort(8); // 8 columns for this query
-        writeColumn(messenger, encoder, usePVals, // relchecks
-                    (short)0, INT2_PG_TYPE);
-        writeColumn(messenger, encoder, usePVals, // relkind
-                    table.isView() ? "v" : "r", CHAR1_PG_TYPE);
-        writeColumn(messenger, encoder, usePVals, // relhasindex
-                    hasIndexes(table) ? "t" : "f", CHAR1_PG_TYPE);
-        writeColumn(messenger, encoder, usePVals, // relhasrules
-                    false, BOOL_PG_TYPE);
-        writeColumn(messenger, encoder, usePVals, // relhastriggers
-                    hasTriggers(table) ? "t" : "f", CHAR1_PG_TYPE);
-        writeColumn(messenger, encoder, usePVals, // relhasoids
-                    false, BOOL_PG_TYPE);
-        writeColumn(messenger, encoder, usePVals,
-                    "", CHAR0_PG_TYPE);
-        writeColumn(messenger, encoder, usePVals, // reltablespace
-                    0, OID_PG_TYPE);
+        writeColumn(context, server, messenger, usePVals, // relchecks
+                    0, (short)0, INT2_PG_TYPE);
+        writeColumn(context, server, messenger, usePVals, // relkind
+                    1, table.isView() ? "v" : "r", CHAR1_PG_TYPE);
+        writeColumn(context, server, messenger, usePVals, // relhasindex
+                    2, hasIndexes(table) ? "t" : "f", CHAR1_PG_TYPE);
+        writeColumn(context, server, messenger, usePVals, // relhasrules
+                    3, false, BOOL_PG_TYPE);
+        writeColumn(context, server, messenger, usePVals, // relhastriggers
+                    4, hasTriggers(table) ? "t" : "f", CHAR1_PG_TYPE);
+        writeColumn(context, server, messenger, usePVals, // relhasoids
+                    5, false, BOOL_PG_TYPE);
+        writeColumn(context, server, messenger, usePVals,
+                    6, "", CHAR0_PG_TYPE);
+        writeColumn(context, server, messenger, usePVals, // reltablespace
+                    7, 0, OID_PG_TYPE);
         messenger.sendMessage();
         return 1;
     }
 
-    private int psqlDescribeTables2XQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+    private int psqlDescribeTables2XQuery(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         Columnar table = getTableById(server, groups.get(2));
         if (table == null) return 0;
         boolean hasTablespace = (groups.get(1) != null);
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
         messenger.writeShort(hasTablespace ? 7 : 5); // 5-7 columns for this query
-        writeColumn(messenger, encoder, usePVals, // relhasindex
-                    hasIndexes(table) ? "t" : "f", CHAR1_PG_TYPE);
-        writeColumn(messenger, encoder, usePVals, // relkind
-                    table.isView() ? "v" : "r", CHAR1_PG_TYPE);
-        writeColumn(messenger, encoder, usePVals, // relchecks
-                    (short)0, INT2_PG_TYPE);
-        writeColumn(messenger, encoder, usePVals, // reltriggers
-                    hasTriggers(table) ? (short)1 : (short)0, INT2_PG_TYPE);
-        writeColumn(messenger, encoder, usePVals, // relhasrules
-                    false, BOOL_PG_TYPE);
+        writeColumn(context, server, messenger, usePVals, // relhasindex
+                    0, hasIndexes(table) ? "t" : "f", CHAR1_PG_TYPE);
+        writeColumn(context, server, messenger, usePVals, // relkind
+                    1, table.isView() ? "v" : "r", CHAR1_PG_TYPE);
+        writeColumn(context, server, messenger, usePVals, // relchecks
+                    2, (short)0, INT2_PG_TYPE);
+        writeColumn(context, server, messenger, usePVals, // reltriggers
+                    3, hasTriggers(table) ? (short)1 : (short)0, INT2_PG_TYPE);
+        writeColumn(context, server, messenger, usePVals, // relhasrules
+                    4, false, BOOL_PG_TYPE);
         if (hasTablespace) {
-            writeColumn(messenger, encoder, usePVals, // relhasoids
-                        false, BOOL_PG_TYPE);
-            writeColumn(messenger, encoder, usePVals, // reltablespace
-                        0, OID_PG_TYPE);
+            writeColumn(context, server, messenger, usePVals, // relhasoids
+                        5, false, BOOL_PG_TYPE);
+            writeColumn(context, server, messenger, usePVals, // reltablespace
+                        6, 0, OID_PG_TYPE);
         }
         messenger.sendMessage();
         return 1;
     }
 
-    private int psqlDescribeTables3Query(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+    private int psqlDescribeTables3Query(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         Columnar table = getTableById(server, groups.get(2));
         if (table == null) return 0;
@@ -921,10 +923,10 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         for (Column column : table.getColumns()) {
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
             messenger.writeShort(hasCollation ? 6 : 5); // 5-6 columns for this query
-            writeColumn(messenger, encoder, usePVals, // attname
-                        column.getName(), IDENT_PG_TYPE);
-            writeColumn(messenger, encoder, usePVals, // format_type
-                        column.getTypeDescription(), TYPNAME_PG_TYPE);
+            writeColumn(context, server, messenger, usePVals, // attname
+                        0, column.getName(), IDENT_PG_TYPE);
+            writeColumn(context, server, messenger, usePVals, // format_type
+                        1, column.getTypeDescription(), TYPNAME_PG_TYPE);
             String defval = null;
             if (column.getDefaultValue() != null)
                 defval = column.getDefaultValue();
@@ -932,13 +934,13 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 defval = column.getDefaultFunction() + "()";
             if ((defval != null) && (defval.length() > 128))
                 defval = defval.substring(0, 128);
-            writeColumn(messenger, encoder, usePVals, 
-                        defval, DEFVAL_PG_TYPE);
+            writeColumn(context, server, messenger, usePVals, 
+                        2, defval, DEFVAL_PG_TYPE);
             // This should use BOOL_PG_TYPE, except that does true/false, not t/f.
-            writeColumn(messenger, encoder, usePVals, // attnotnull
-                        column.getNullable() ? "f" : "t", CHAR1_PG_TYPE);
-            writeColumn(messenger, encoder, usePVals, // attnum
-                        column.getPosition().shortValue(), INT2_PG_TYPE);
+            writeColumn(context, server, messenger, usePVals, // attnotnull
+                        3, column.getNullable() ? "f" : "t", CHAR1_PG_TYPE);
+            writeColumn(context, server, messenger, usePVals, // attnum
+                        4, column.getPosition().shortValue(), INT2_PG_TYPE);
             if (hasCollation) {
                 CharsetAndCollation charAndColl = null;
                 switch (column.getType().akType()) {
@@ -947,8 +949,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                     charAndColl = column.getCharsetAndCollation();
                     break;
                 }
-                writeColumn(messenger, encoder, usePVals, // attcollation
-                            (charAndColl == null) ? null : charAndColl.collation(), 
+                writeColumn(context, server, messenger, usePVals, // attcollation
+                            5, (charAndColl == null) ? null : charAndColl.collation(), 
                             IDENT_PG_TYPE);
             }
             messenger.sendMessage();
@@ -960,13 +962,13 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return nrows;
     }
 
-    private int psqlDescribeTables4Query(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+    private int psqlDescribeTables4Query(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         Columnar table = getTableById(server, groups.get(1));
         if (table == null) return 0;
         return 0;
     }
 
-    private int psqlDescribeIndexesQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+    private int psqlDescribeIndexesQuery(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         Columnar columnar = getTableById(server, groups.get(4));
         if ((columnar == null) || !columnar.isTable()) return 0;
@@ -1000,36 +1002,38 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         for (Index index : indexes.values()) {
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
             messenger.writeShort(ncols); // 4-5-7-11 columns for this query
-            writeColumn(messenger, encoder, usePVals, // relname
-                        index.getIndexName().getName(), IDENT_PG_TYPE);
-            writeColumn(messenger, encoder, usePVals, // indisprimary
-                        (index.getIndexName().getName().equals(Index.PRIMARY_KEY_CONSTRAINT)) ? "t" : "f", CHAR1_PG_TYPE);
-            writeColumn(messenger, encoder, usePVals, // indisunique
-                        (index.isUnique()) ? "t" : "f", CHAR1_PG_TYPE);
+            int col = 0;
+            writeColumn(context, server, messenger, usePVals, // relname
+                        col++, index.getIndexName().getName(), IDENT_PG_TYPE);
+            writeColumn(context, server, messenger, usePVals, // indisprimary
+                        col++, (index.getIndexName().getName().equals(Index.PRIMARY_KEY_CONSTRAINT)) ? "t" : "f", CHAR1_PG_TYPE);
+            writeColumn(context, server, messenger, usePVals, // indisunique
+                        col++, (index.isUnique()) ? "t" : "f", CHAR1_PG_TYPE);
             if (ncols > 4) {
-                writeColumn(messenger, encoder, usePVals, // indisclustered
-                            false, BOOL_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, // indisclustered
+                            col++, false, BOOL_PG_TYPE);
                 if (ncols > 6) {
-                    writeColumn(messenger, encoder, usePVals, // indisvalid
-                                "t", CHAR1_PG_TYPE);
+                    writeColumn(context, server, messenger, usePVals, // indisvalid
+                                col++, "t", CHAR1_PG_TYPE);
                 }
             }
-            writeColumn(messenger, encoder, usePVals, // pg_get_indexdef
-                        formatIndexdef(index, table), INDEXDEF_PG_TYPE);
+            writeColumn(context, server, messenger, usePVals, // pg_get_indexdef
+                        col++, formatIndexdef(index, table), INDEXDEF_PG_TYPE);
             if (ncols > 7) {
-                writeColumn(messenger, encoder, usePVals, // constraintdef
-                            null, CHAR0_PG_TYPE);
-                writeColumn(messenger, encoder, usePVals, // contype
-                            null, CHAR0_PG_TYPE);
-                writeColumn(messenger, encoder, usePVals, // condeferragble
-                            false, BOOL_PG_TYPE);
-                writeColumn(messenger, encoder, usePVals, // condeferred
-                            false, BOOL_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, // constraintdef
+                            col++, null, CHAR0_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, // contype
+                            col++, null, CHAR0_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, // condeferragble
+                            col++, false, BOOL_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, // condeferred
+                            col++, false, BOOL_PG_TYPE);
             }
             if (ncols > 5) {
-                writeColumn(messenger, encoder, usePVals, // reltablespace
-                            0, OID_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, // reltablespace
+                            col++, 0, OID_PG_TYPE);
             }
+            assert (col == ncols);
             messenger.sendMessage();
             nrows++;
             if ((maxrows > 0) && (nrows >= maxrows)) {
@@ -1039,7 +1043,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return nrows;
     }
 
-    private int psqlDescribeForeignKeys1Query(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+    private int psqlDescribeForeignKeys1Query(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         Columnar columnar = getTableById(server, groups.get(1));
         if ((columnar == null) || !columnar.isTable()) return 0;
@@ -1047,28 +1051,28 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         if (join == null) return 0;
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
         messenger.writeShort(2); // 2 columns for this query
-        writeColumn(messenger, encoder, usePVals, // conname
-                    join.getName(), IDENT_PG_TYPE);
-        writeColumn(messenger, encoder, usePVals, // condef
-                    formatCondef(join, false), CONDEF_PG_TYPE);
+        writeColumn(context, server, messenger, usePVals, // conname
+                    0, join.getName(), IDENT_PG_TYPE);
+        writeColumn(context, server, messenger, usePVals, // condef
+                    1, formatCondef(join, false), CONDEF_PG_TYPE);
         messenger.sendMessage();
         nrows++;
         return nrows;
     }
 
-    private int psqlDescribeForeignKeys2Query(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+    private int psqlDescribeForeignKeys2Query(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         Columnar columnar = getTableById(server, groups.get(1));
         if ((columnar == null) || !columnar.isTable()) return 0;
         for (Join join : ((UserTable)columnar).getChildJoins()) {
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
             messenger.writeShort(3); // 3 columns for this query
-            writeColumn(messenger, encoder, usePVals, // conname
-                        join.getName(), IDENT_PG_TYPE);
-            writeColumn(messenger, encoder, usePVals, // conrelid
-                        join.getChild().getName().getTableName(), IDENT_PG_TYPE);
-            writeColumn(messenger, encoder, usePVals, // condef
-                        formatCondef(join, true), CONDEF_PG_TYPE);
+            writeColumn(context, server, messenger, usePVals, // conname
+                        0, join.getName(), IDENT_PG_TYPE);
+            writeColumn(context, server, messenger, usePVals, // conrelid
+                        1, join.getChild().getName().getTableName(), IDENT_PG_TYPE);
+            writeColumn(context, server, messenger, usePVals, // condef
+                        2, formatCondef(join, true), CONDEF_PG_TYPE);
             messenger.sendMessage();
             nrows++;
             if ((maxrows > 0) && (nrows >= maxrows)) {
@@ -1078,7 +1082,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return nrows;
     }
 
-    private int psqlDescribeTriggersQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+    private int psqlDescribeTriggersQuery(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         Columnar columnar = getTableById(server, groups.get(2));
         return 0;
     }
@@ -1210,19 +1214,19 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return str.toString();
     }
 
-    private int psqlDescribeViewQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+    private int psqlDescribeViewQuery(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         Columnar table = getTableById(server, groups.get(1));
         if ((table == null) || !table.isView()) return 0;
         View view = (View)table;
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
         messenger.writeShort(1); // 1 column for this query
-        writeColumn(messenger, encoder, usePVals, // pg_get_viewdef
-                    view.getDefinition(), VIEWDEF_PG_TYPE);
+        writeColumn(context, server, messenger, usePVals, // pg_get_viewdef
+                    0, view.getDefinition(), VIEWDEF_PG_TYPE);
         messenger.sendMessage();
         return 1;
     }
 
-    private int chartioTablesQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+    private int chartioTablesQuery(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         List<Columnar> tables = new ArrayList<>();
         AkibanInformationSchema ais = server.getAIS();
@@ -1241,17 +1245,17 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             TableName name = table.getName();
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
             messenger.writeShort(5); // 5 columns for this query
-            writeColumn(messenger, encoder, usePVals, 
-                        null, IDENT_PG_TYPE);
-            writeColumn(messenger, encoder, usePVals, 
-                        name.getSchemaName(), IDENT_PG_TYPE);
-            writeColumn(messenger, encoder, usePVals, 
-                        name.getTableName(), IDENT_PG_TYPE);
+            writeColumn(context, server, messenger, usePVals, 
+                        0, null, IDENT_PG_TYPE);
+            writeColumn(context, server, messenger, usePVals, 
+                        1, name.getSchemaName(), IDENT_PG_TYPE);
+            writeColumn(context, server, messenger, usePVals, 
+                        2, name.getTableName(), IDENT_PG_TYPE);
             String type = table.isView() ? "VIEW" : "TABLE";
-            writeColumn(messenger, encoder, usePVals, 
-                        type, LIST_TYPE_PG_TYPE);
-            writeColumn(messenger, encoder, usePVals, 
-                        null, CHAR0_PG_TYPE);
+            writeColumn(context, server, messenger, usePVals, 
+                        3, type, LIST_TYPE_PG_TYPE);
+            writeColumn(context, server, messenger, usePVals, 
+                        4, null, CHAR0_PG_TYPE);
             messenger.sendMessage();
             nrows++;
             if ((maxrows > 0) && (nrows >= maxrows)) {
@@ -1261,7 +1265,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return nrows;
     }
 
-    private int chartioPrimaryKeysQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+    private int chartioPrimaryKeysQuery(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         String name = groups.get(1);
         AkibanInformationSchema ais = server.getAIS();
@@ -1282,18 +1286,18 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 for (IndexColumn column : index.getKeyColumns()) {
                     messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
                     messenger.writeShort(6); // 6 columns for this query
-                    writeColumn(messenger, encoder, usePVals, 
-                                null, IDENT_PG_TYPE);
-                    writeColumn(messenger, encoder, usePVals, 
-                                tableName.getSchemaName(), IDENT_PG_TYPE);
-                    writeColumn(messenger, encoder, usePVals, 
-                                tableName.getTableName(), IDENT_PG_TYPE);
-                    writeColumn(messenger, encoder, usePVals, 
-                                column.getColumn().getName(), IDENT_PG_TYPE);
-                    writeColumn(messenger, encoder, usePVals, 
-                                (short)(column.getPosition() + 1), INT2_PG_TYPE);
-                    writeColumn(messenger, encoder, usePVals, 
-                                index.getIndexName().getName(), IDENT_PG_TYPE);
+                    writeColumn(context, server, messenger, usePVals, 
+                                0, null, IDENT_PG_TYPE);
+                    writeColumn(context, server, messenger, usePVals, 
+                                1, tableName.getSchemaName(), IDENT_PG_TYPE);
+                    writeColumn(context, server, messenger, usePVals, 
+                                2, tableName.getTableName(), IDENT_PG_TYPE);
+                    writeColumn(context, server, messenger, usePVals, 
+                                3, column.getColumn().getName(), IDENT_PG_TYPE);
+                    writeColumn(context, server, messenger, usePVals, 
+                                4, (short)(column.getPosition() + 1), INT2_PG_TYPE);
+                    writeColumn(context, server, messenger, usePVals, 
+                                5, index.getIndexName().getName(), IDENT_PG_TYPE);
                     messenger.sendMessage();
                     nrows++;
                     if ((maxrows > 0) && (nrows >= maxrows)) {
@@ -1305,7 +1309,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return nrows;
     }
 
-    private int chartioForeignKeysQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+    private int chartioForeignKeysQuery(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         String name = groups.get(1);
         AkibanInformationSchema ais = server.getAIS();
@@ -1327,34 +1331,34 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 for (JoinColumn column : join.getJoinColumns()) {
                     messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
                     messenger.writeShort(14); // 14 columns for this query
-                    writeColumn(messenger, encoder, usePVals, 
-                                null, IDENT_PG_TYPE);
-                    writeColumn(messenger, encoder, usePVals, 
-                                parentName.getSchemaName(), IDENT_PG_TYPE);
-                    writeColumn(messenger, encoder, usePVals, 
-                                parentName.getTableName(), IDENT_PG_TYPE);
-                    writeColumn(messenger, encoder, usePVals, 
-                                column.getParent().getName(), IDENT_PG_TYPE);
-                    writeColumn(messenger, encoder, usePVals, 
-                                null, IDENT_PG_TYPE);
-                    writeColumn(messenger, encoder, usePVals, 
-                                childName.getSchemaName(), IDENT_PG_TYPE);
-                    writeColumn(messenger, encoder, usePVals, 
-                                childName.getTableName(), IDENT_PG_TYPE);
-                    writeColumn(messenger, encoder, usePVals, 
-                                column.getChild().getName(), IDENT_PG_TYPE);
-                    writeColumn(messenger, encoder, usePVals, 
-                                (short)(column.getParent().getPosition() + 1), INT2_PG_TYPE);
-                    writeColumn(messenger, encoder, usePVals, 
-                                (short)3, INT2_PG_TYPE); // no action
-                    writeColumn(messenger, encoder, usePVals, 
-                                (short)3, INT2_PG_TYPE); // no action
-                    writeColumn(messenger, encoder, usePVals, 
-                                join.getName(), IDENT_PG_TYPE);
-                    writeColumn(messenger, encoder, usePVals, 
-                                Index.PRIMARY_KEY_CONSTRAINT, IDENT_PG_TYPE);
-                    writeColumn(messenger, encoder, usePVals, 
-                                (short)7, INT2_PG_TYPE); // not deferrable
+                    writeColumn(context, server, messenger, usePVals, 
+                                0, null, IDENT_PG_TYPE);
+                    writeColumn(context, server, messenger, usePVals, 
+                                1, parentName.getSchemaName(), IDENT_PG_TYPE);
+                    writeColumn(context, server, messenger, usePVals, 
+                                2, parentName.getTableName(), IDENT_PG_TYPE);
+                    writeColumn(context, server, messenger, usePVals, 
+                                2, column.getParent().getName(), IDENT_PG_TYPE);
+                    writeColumn(context, server, messenger, usePVals, 
+                                4, null, IDENT_PG_TYPE);
+                    writeColumn(context, server, messenger, usePVals, 
+                                5, childName.getSchemaName(), IDENT_PG_TYPE);
+                    writeColumn(context, server, messenger, usePVals, 
+                                6, childName.getTableName(), IDENT_PG_TYPE);
+                    writeColumn(context, server, messenger, usePVals, 
+                                7, column.getChild().getName(), IDENT_PG_TYPE);
+                    writeColumn(context, server, messenger, usePVals, 
+                                8, (short)(column.getParent().getPosition() + 1), INT2_PG_TYPE);
+                    writeColumn(context, server, messenger, usePVals, 
+                                9, (short)3, INT2_PG_TYPE); // no action
+                    writeColumn(context, server, messenger, usePVals, 
+                                10, (short)3, INT2_PG_TYPE); // no action
+                    writeColumn(context, server, messenger, usePVals, 
+                                11, join.getName(), IDENT_PG_TYPE);
+                    writeColumn(context, server, messenger, usePVals, 
+                                12, Index.PRIMARY_KEY_CONSTRAINT, IDENT_PG_TYPE);
+                    writeColumn(context, server, messenger, usePVals, 
+                                13, (short)7, INT2_PG_TYPE); // not deferrable
                     messenger.sendMessage();
                     nrows++;
                     if ((maxrows > 0) && (nrows >= maxrows)) {
@@ -1366,7 +1370,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return nrows;
     }
 
-    private int chartioColumnsQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+    private int chartioColumnsQuery(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         String name = groups.get(1);
         AkibanInformationSchema ais = server.getAIS();
@@ -1386,30 +1390,30 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 PostgresType type = PostgresType.fromAIS(column);
                 messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
                 messenger.writeShort(12); // 12 columns for this query
-                writeColumn(messenger, encoder, usePVals, 
-                            tableName.getSchemaName(), IDENT_PG_TYPE);
-                writeColumn(messenger, encoder, usePVals, 
-                            tableName.getTableName(), IDENT_PG_TYPE);
-                writeColumn(messenger, encoder, usePVals, 
-                            column.getName(), IDENT_PG_TYPE);
-                writeColumn(messenger, encoder, usePVals, 
-                            type.getOid(), OID_PG_TYPE);
-                writeColumn(messenger, encoder, usePVals, 
-                            column.getNullable() ? "t" : "f", CHAR1_PG_TYPE);
-                writeColumn(messenger, encoder, usePVals, 
-                            type.getModifier(), INT4_PG_TYPE);
-                writeColumn(messenger, encoder, usePVals, 
-                            type.getLength(), INT2_PG_TYPE);
-                writeColumn(messenger, encoder, usePVals, 
-                            (short)(column.getPosition() + 1), INT2_PG_TYPE);
-                writeColumn(messenger, encoder, usePVals, 
-                            null, CHAR0_PG_TYPE);
-                writeColumn(messenger, encoder, usePVals, 
-                            null, CHAR0_PG_TYPE);
-                writeColumn(messenger, encoder, usePVals, 
-                            0, OID_PG_TYPE);
-                writeColumn(messenger, encoder, usePVals, 
-                            "b", CHAR1_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, 
+                            0, tableName.getSchemaName(), IDENT_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, 
+                            1, tableName.getTableName(), IDENT_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, 
+                            2, column.getName(), IDENT_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, 
+                            3, type.getOid(), OID_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, 
+                            4, column.getNullable() ? "t" : "f", CHAR1_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, 
+                            5, type.getModifier(), INT4_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, 
+                            6, type.getLength(), INT2_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, 
+                            7, (short)(column.getPosition() + 1), INT2_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, 
+                            8, null, CHAR0_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, 
+                            9, null, CHAR0_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, 
+                            10, 0, OID_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, 
+                            11, "b", CHAR1_PG_TYPE);
                 messenger.sendMessage();
                 nrows++;
                 if ((maxrows > 0) && (nrows >= maxrows)) {
@@ -1420,15 +1424,16 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return nrows;
     }
 
-    private int chartioMaxKeysSettingQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+    private int chartioMaxKeysSettingQuery(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
         messenger.writeShort(1); // 1 column for this query
-        writeColumn(messenger, encoder, usePVals, "8", DEFVAL_PG_TYPE); // Postgres has 32 by default
+        writeColumn(context, server, messenger, usePVals, 
+                    0, "8", DEFVAL_PG_TYPE); // Postgres has 32 by default
         messenger.sendMessage();
         return 1;
     }
 
-    private int clsqlListObjectsQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+    private int clsqlListObjectsQuery(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         String type = groups.get(1);
         String owner = groups.get(2);
@@ -1455,8 +1460,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             TableName name = table.getName();
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
             messenger.writeShort(1); // 1 column for this query
-            writeColumn(messenger, encoder, usePVals, 
-                        name.getTableName(), IDENT_PG_TYPE);
+            writeColumn(context, server, messenger, usePVals, 
+                        0, name.getTableName(), IDENT_PG_TYPE);
             messenger.sendMessage();
             nrows++;
             if ((maxrows > 0) && (nrows >= maxrows)) {
@@ -1466,7 +1471,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return nrows;
     }
 
-    private int clsqlListAttributesQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+    private int clsqlListAttributesQuery(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         String relname = groups.get(1);
         String owner = groups.get(2);
@@ -1501,8 +1506,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             for (Column column : table.getColumns()) {
                 messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
                 messenger.writeShort(1); // 1 column for this query
-                writeColumn(messenger, encoder, usePVals, 
-                            column.getName(), IDENT_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, 
+                            0, column.getName(), IDENT_PG_TYPE);
                 messenger.sendMessage();
                 nrows++;
                 if ((maxrows > 0) && (nrows >= maxrows)) {
@@ -1513,7 +1518,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return nrows;
     }
 
-    private int clsqlAttributeTypeQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+    private int clsqlAttributeTypeQuery(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         String relname = groups.get(1);
         String attname = groups.get(2);
@@ -1549,14 +1554,14 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 PostgresType type = PostgresType.fromAIS(column);
                 messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
                 messenger.writeShort(4); // 4 columns for this query
-                writeColumn(messenger, encoder, usePVals, 
-                            type.getTypeName(), IDENT_PG_TYPE);
-                writeColumn(messenger, encoder, usePVals, 
-                            type.getLength(), INT2_PG_TYPE);
-                writeColumn(messenger, encoder, usePVals, 
-                            type.getModifier(), INT4_PG_TYPE);
-                writeColumn(messenger, encoder, usePVals, 
-                            column.getNullable() ? "t" : "f", CHAR1_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, 
+                            0, type.getTypeName(), IDENT_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, 
+                            1, type.getLength(), INT2_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, 
+                            2, type.getModifier(), INT4_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, 
+                            3, column.getNullable() ? "t" : "f", CHAR1_PG_TYPE);
                 messenger.sendMessage();
                 nrows++;
                 if ((maxrows > 0) && (nrows >= maxrows)) {
@@ -1567,7 +1572,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return nrows;
     }
 
-    private int postmodernListQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+    private int postmodernListQuery(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         String type = groups.get(1);
         List<Columnar> tables = new ArrayList<>();
@@ -1589,8 +1594,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             TableName name = table.getName();
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
             messenger.writeShort(1); // 1 column for this query
-            writeColumn(messenger, encoder, usePVals, 
-                        name.getTableName(), IDENT_PG_TYPE);
+            writeColumn(context, server, messenger, usePVals, 
+                        0, name.getTableName(), IDENT_PG_TYPE);
             messenger.sendMessage();
             nrows++;
             if ((maxrows > 0) && (nrows >= maxrows)) {
@@ -1600,7 +1605,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return nrows;
     }
 
-    private int postmodernExistsQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+    private int postmodernExistsQuery(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         String type = groups.get(1);
         String relname = groups.get(2);
         List<Columnar> tables = new ArrayList<>();
@@ -1620,13 +1625,13 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         }
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
         messenger.writeShort(1); // 1 column for this query
-        writeColumn(messenger, encoder, usePVals, 
-                    exists, BOOL_PG_TYPE);
+        writeColumn(context, server, messenger, usePVals, 
+                    0, exists, BOOL_PG_TYPE);
         messenger.sendMessage();
         return 1;
     }
 
-    private int postmodernTableDescriptionQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
+    private int postmodernTableDescriptionQuery(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         String relname = groups.get(1);
         String namespace = groups.get(2);
@@ -1658,14 +1663,14 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 PostgresType type = PostgresType.fromAIS(column);
                 messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
                 messenger.writeShort(4); // 4 columns for this query
-                writeColumn(messenger, encoder, usePVals, 
-                            column.getName(), IDENT_PG_TYPE);
-                writeColumn(messenger, encoder, usePVals, 
-                            type.getTypeName(), IDENT_PG_TYPE);
-                writeColumn(messenger, encoder, usePVals, 
-                            column.getNullable(), BOOL_PG_TYPE);
-                writeColumn(messenger, encoder, usePVals, 
-                            (short)(column.getPosition() + 1), INT2_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, 
+                            0, column.getName(), IDENT_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, 
+                            1, type.getTypeName(), IDENT_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, 
+                            2, column.getNullable(), BOOL_PG_TYPE);
+                writeColumn(context, server, messenger, usePVals, 
+                            3, (short)(column.getPosition() + 1), INT2_PG_TYPE);
                 messenger.sendMessage();
                 nrows++;
                 if ((maxrows > 0) && (nrows >= maxrows)) {
