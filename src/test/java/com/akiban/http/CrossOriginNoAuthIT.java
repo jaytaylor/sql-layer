@@ -17,10 +17,10 @@
 
 package com.akiban.http;
 
-import org.eclipse.jetty.servlet.ServletHolder;
-
-public interface HttpConductor {
-    void registerHandler(ServletHolder servlet, String path);
-    void unregisterHandler(ServletHolder servlet);
-    int getPort();
+public class CrossOriginNoAuthIT extends CrossOriginITBase
+{
+    @Override
+    protected String getUserInfo() {
+        return null;
+    }
 }

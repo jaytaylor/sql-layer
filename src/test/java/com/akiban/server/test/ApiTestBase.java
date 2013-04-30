@@ -61,6 +61,7 @@ import com.akiban.server.service.dxl.DXLTestHookRegistry;
 import com.akiban.server.service.dxl.DXLTestHooks;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.routines.RoutineLoader;
+import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
@@ -305,10 +306,10 @@ public class ApiTestBase {
             return; // services never started up
         Set<RowUpdater> localUnfinishedUpdaters = new HashSet<>(unfinishedRowUpdaters);
         unfinishedRowUpdaters.clear();
-        dropAllTables();
         assertTrue("not all updaters were used: " + localUnfinishedUpdaters, localUnfinishedUpdaters.isEmpty());
         String openCursorsMessage = null;
         if (sm.serviceIsStarted(DXLService.class)) {
+            dropAllTables();
             DXLTestHooks dxlTestHooks = DXLTestHookRegistry.get();
             // Check for any residual open cursors
             if (dxlTestHooks.openCursorsExist()) {
@@ -492,6 +493,10 @@ public class ApiTestBase {
 
     protected final RoutineLoader routineLoader() {
         return sm.getServiceByClass(RoutineLoader.class);
+    }
+
+    protected SecurityService securityService() {
+        return sm.getServiceByClass(SecurityService.class);
     }
 
     protected final int aisGeneration() {

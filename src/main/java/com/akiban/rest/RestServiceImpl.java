@@ -45,7 +45,7 @@ public class RestServiceImpl implements RestService, Service {
     // Used by various resources
     private final ResourceRequirements reqs;
 
-	private volatile ServletContextHandler handler;
+	private volatile ServletHolder servletHolder;
 	
 
 	@Inject
@@ -86,8 +86,8 @@ public class RestServiceImpl implements RestService, Service {
 
 	@Override
 	public void stop() {
-        http.unregisterHandler(handler);
-        this.handler = null;
+        http.unregisterHandler(servletHolder);
+        this.servletHolder = null;
 	}
 
 	@Override
@@ -96,10 +96,9 @@ public class RestServiceImpl implements RestService, Service {
 	}
 
 	private void registerConnector(HttpConductor http) {
-        handler = new ServletContextHandler();
-        handler.setContextPath(getContextPath());
-        handler.addServlet(new ServletHolder(new ServletContainer(createResourceConfigV1())), "/*");
-        http.registerHandler(handler);
+        String path = getContextPath() + "/*";
+        servletHolder = new ServletHolder(new ServletContainer(createResourceConfigV1()));
+        http.registerHandler(servletHolder, path);
 	}
 
     private ResourceConfig createResourceConfigV1() {

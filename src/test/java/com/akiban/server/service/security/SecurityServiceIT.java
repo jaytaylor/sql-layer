@@ -71,10 +71,6 @@ public class SecurityServiceIT extends ITBase
         return properties;
     }
 
-    protected SecurityService securityService() {
-        return serviceManager().getServiceByClass(SecurityService.class);
-    }
-
     @Before
     public void setUp() {
         int t1 = createTable("user1", "utable", "id int primary key not null");

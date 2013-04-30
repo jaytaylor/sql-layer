@@ -19,47 +19,48 @@ package com.akiban.http;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
 
+import org.eclipse.jetty.http.HttpHeaders;
+import org.eclipse.jetty.http.HttpMethods;
+import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.DefaultHandler;
 
 import com.akiban.rest.RestResponseBuilder;
 import com.akiban.server.error.ErrorCode;
+import org.eclipse.jetty.server.handler.ErrorHandler;
 
-public class NoResourceHandler extends DefaultHandler {
-    
-    public NoResourceHandler() {
-        
-    }
-    
+public class JsonErrorHandler extends ErrorHandler {
     @Override
-    public void handle(String target,
-            Request baseRequest,
-            HttpServletRequest request,
-            HttpServletResponse response)
-              throws IOException,
-                     ServletException {
-        if (response.isCommitted() || baseRequest.isHandled())
-            return;
+    public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
         baseRequest.setHandled(true);
+        String method = request.getMethod();
+        if(!method.equals(HttpMethods.GET) && !method.equals(HttpMethods.POST) && !method.equals(HttpMethods.HEAD)) {
+            return;
+        }
 
-        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        final String message;
+        final ErrorCode error;
+        if(response.getStatus() == HttpServletResponse.SC_NOT_FOUND) {
+            message = "Path not supported; try /v1";
+            error = ErrorCode.MALFORMED_REQUEST;
+        } else {
+            message = HttpStatus.getMessage(response.getStatus());
+            error = ErrorCode.INTERNAL_ERROR;
+        }
+
         response.setContentType(MediaType.APPLICATION_JSON);
-        
+        response.setHeader(HttpHeaders.CACHE_CONTROL, getCacheControl());
+
         StringBuilder builder = new StringBuilder();
-        
-        RestResponseBuilder.formatJsonError(builder, ErrorCode.MALFORMED_REQUEST.getFormattedValue(), "Path not supported; use /v1/");
+        RestResponseBuilder.formatJsonError(builder, error.getFormattedValue(), message);
         builder.append('\n');
-        
+
         response.setContentLength(builder.length());
-        OutputStream out=response.getOutputStream();
+        OutputStream out = response.getOutputStream();
         out.write(builder.toString().getBytes());
         out.close();
-        
-       
     }
 }
