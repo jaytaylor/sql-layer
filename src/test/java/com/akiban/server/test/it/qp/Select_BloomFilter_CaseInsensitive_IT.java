@@ -323,9 +323,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
                         0,
                         ExpressionGenerator.ErasureMaker.MARK),
                     // collators
-                    collators,
-                    // usePValues
-                    Types3Switch.ON
+                    collators
                     ),
                 dIndexRowType,
                 Arrays.asList(

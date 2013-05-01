@@ -4,7 +4,7 @@
 - suppressed: true
 ---
 # A setting that affects cache selection.
-- Statement: SET newtypes TO 'false'
+- Statement: SET newtypes TO 'true'
 ---
 - JMX: com.akiban:type=PostgresServer
 - set: StatementCacheCapacity
@@ -110,7 +110,7 @@
            ['    Select_HKeyOrdered(t.s == $1)'],
            ['      GroupScan_Default(t)']]
 ---
-- Statement: SET newtypes TO 'false'
+- Statement: SET newtypes TO 'true'
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
 - output: [['Project_Default(t.id)'],

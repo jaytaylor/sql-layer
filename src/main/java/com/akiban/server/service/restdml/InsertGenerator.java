@@ -62,7 +62,7 @@ public class InsertGenerator extends OperatorGenerator{
 
         RowStream stream = assembleValueScan (table);
         stream = assembleProjectTable (stream, table);
-        stream.operator = API.insert_Returning(stream.operator, true);
+        stream.operator = API.insert_Returning(stream.operator);
         stream = projectTable(stream, table);
         return stream.operator; 
     }

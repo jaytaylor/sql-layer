@@ -420,18 +420,6 @@ public class NWaySkipScanIT extends OperatorITBase
         return IndexKeyRange.bounded(tZIndexRowType, bound, true, bound, true);
     }
 
-    private Ordering ordering(Object... objects)
-    {
-        Ordering ordering = API.ordering();
-        int i = 0;
-        while (i < objects.length) {
-            Expression expression = (Expression) objects[i++];
-            Boolean ascending = (Boolean) objects[i++];
-            ordering.append(expression, ascending);
-        }
-        return ordering;
-    }
-
     private boolean[] ascending(boolean... ascending)
     {
         return ascending;

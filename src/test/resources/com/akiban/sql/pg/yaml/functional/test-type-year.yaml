@@ -2,8 +2,6 @@
 # Also compare  types2's behaviour with that of types3
 # Note:, types3 is doing the correct thing!
 ---
-- Newtypes: true
----
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types(year_field)
@@ -20,21 +18,4 @@
 - output: [[0], [2001], [2069], [1970], [1999], [0], [0], [0]]
 ---
 - Statement: DELETE FROM all_types;
----
-- Newtypes: false
----
-- Statement: INSERT INTO all_types(year_field)
-             VALUES (0),
-                    (1),
-                    (69),
-                    (70),
-                    (99),
-                    (100);
----
-- Statement: SELECT year_field from all_types;
-- output: [[0], [1901], [1969], [1970], [1999], [2000]]
----
-- Statement: DELETE FROM all_types;
----
-- Newtypes: null
 ...

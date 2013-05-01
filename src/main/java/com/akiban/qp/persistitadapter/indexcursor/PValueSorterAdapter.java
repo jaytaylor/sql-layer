@@ -36,7 +36,7 @@ import com.persistit.Value;
 final class PValueSorterAdapter extends SorterAdapter<PValueSource, TPreparedExpression, TEvaluatableExpression> {
     @Override
     protected void appendDummy(API.Ordering ordering) {
-        ordering.append(null, DUMMY_EXPRESSION, ordering.ascending(0));
+        ordering.append(DUMMY_EXPRESSION, ordering.ascending(0));
     }
 
     @Override

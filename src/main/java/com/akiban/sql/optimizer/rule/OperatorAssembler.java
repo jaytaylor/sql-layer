@@ -528,7 +528,7 @@ public class OperatorAssembler extends BaseRule
 
             @Override
             public API.Ordering createOrdering() {
-                return API.ordering(false);
+                throw new IllegalStateException("types3 off");
             }
         }
 
@@ -602,7 +602,7 @@ public class OperatorAssembler extends BaseRule
 
             @Override
             public API.Ordering createOrdering() {
-                return API.ordering(true);
+                return API.ordering();
             }
 
             @Override
@@ -769,7 +769,7 @@ public class OperatorAssembler extends BaseRule
             
             stream = assembleInsertProjectTable (stream, projectFields, insert);
             
-            stream.operator = API.insert_Returning(stream.operator, usePValues);
+            stream.operator = API.insert_Returning(stream.operator);
             
             if (explainContext != null)
                 explainInsertStatement(stream.operator, insert);
@@ -963,7 +963,7 @@ public class OperatorAssembler extends BaseRule
             UpdateFunction updateFunction = 
                 new ExpressionRowUpdateFunction(updates, updatesP, targetRowType);
 
-            stream.operator = API.update_Returning(stream.operator, updateFunction, usePValues);
+            stream.operator = API.update_Returning(stream.operator, updateFunction);
             stream.fieldOffsets = new ColumnSourceFieldOffsets (updateStatement.getTable(), targetRowType);
             if (explainContext != null)
                 explainUpdateStatement(stream.operator, updateStatement, updateColumns, updates, updatesP);            
@@ -992,7 +992,7 @@ public class OperatorAssembler extends BaseRule
             //stream = assembleDeleteProjectTable (stream, projectFields, delete);
             UserTableRowType targetRowType = tableRowType(delete.getTargetTable());
             
-            stream.operator = API.delete_Returning(stream.operator, usePValues, false);
+            stream.operator = API.delete_Returning(stream.operator, false);
             stream.fieldOffsets = new ColumnSourceFieldOffsets(delete.getTable(), targetRowType);
             
             if (explainContext != null)
@@ -1147,7 +1147,6 @@ public class OperatorAssembler extends BaseRule
                                API.IntersectOption.SKIP_SCAN) :
                     EnumSet.of(API.IntersectOption.OUTPUT_LEFT, 
                                API.IntersectOption.SEQUENTIAL_SCAN),
-                    usePValues,
                     comparisons);
             stream.rowType = outputScan.rowType;
             stream.fieldOffsets = new IndexFieldOffsets(index, stream.rowType);
@@ -1184,8 +1183,7 @@ public class OperatorAssembler extends BaseRule
                 stream.operator = API.indexScan_Default(indexRowType,
                                                         assembleSpatialIndexKeyRange(indexScan, null),
                                                         API.ordering(), // TODO: what ordering?
-                                                        selector,
-                                                        usePValues);
+                                                        selector);
                 indexRowType = indexRowType.physicalRowType();
                 stream.rowType = indexRowType;
             }
@@ -1193,8 +1191,7 @@ public class OperatorAssembler extends BaseRule
                 stream.operator = API.indexScan_Default(indexRowType,
                                                         assembleIndexKeyRange(indexScan, null),
                                                         assembleIndexOrdering(indexScan, indexRowType),
-                                                        selector,
-                                                        usePValues);
+                                                        selector);
                 stream.rowType = indexRowType;
             }
             else {
@@ -1225,8 +1222,7 @@ public class OperatorAssembler extends BaseRule
                     Operator scan = API.indexScan_Default(indexRowType,
                                                           assembleIndexKeyRange(indexScan, null, rangeSegment),
                                                           assembleIndexOrdering(indexScan, indexRowType),
-                                                          selector,
-                                                          usePValues);
+                                                          selector);
                     if (stream.operator == null) {
                         stream.operator = scan;
                         stream.rowType = indexRowType;
@@ -1242,11 +1238,10 @@ public class OperatorAssembler extends BaseRule
                         stream.operator = API.union_Ordered(stream.operator, scan,
                                                             (IndexRowType)stream.rowType, indexRowType,
                                                             nordering, nordering, 
-                                                            ascending, unionOrderedAll,
-                                                            usePValues);
+                                                            ascending, unionOrderedAll);
                     }
                     else {
-                        stream.operator = API.unionAll(stream.operator, stream.rowType, scan, indexRowType, usePValues);
+                        stream.operator = API.unionAll(stream.operator, stream.rowType, scan, indexRowType);
                         stream.rowType = stream.operator.rowType();
                     }
                 }
@@ -1603,12 +1598,11 @@ public class OperatorAssembler extends BaseRule
                         stream = assembleStream(aggregateSource.getInput());
                         // TODO: Could be removed, since aggregate_Partial works as well.
                         stream.operator = API.count_Default(stream.operator, 
-                                                            stream.rowType,
-                                                            usePValues);
+                                                            stream.rowType);
                     }
                     else {
                         stream = new RowStream();
-                        stream.operator = API.count_TableStatus(tableRowType(aggregateSource.getTable()), usePValues);
+                        stream.operator = API.count_TableStatus(tableRowType(aggregateSource.getTable()));
                     }
                     stream.rowType = stream.operator.rowType();
                     stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource, 
@@ -1666,7 +1660,7 @@ public class OperatorAssembler extends BaseRule
             case PRESORTED:
                 List<AkCollator> collators = findCollators(distinct.getInput());
                 if (collators != null) {
-                    stream.operator = API.distinct_Partial(stream.operator, stream.rowType, collators, usePValues);
+                    stream.operator = API.distinct_Partial(stream.operator, stream.rowType, collators);
                 } else {
                     throw new UnsupportedOperationException(String.format(
                         "Can't use Distinct_Partial except following a projection. Try again when types3 is in place"));
@@ -1716,11 +1710,9 @@ public class OperatorAssembler extends BaseRule
             RowStream stream = assembleStream(sort.getInput());
             API.Ordering ordering = partialAssembler.createOrdering();
             for (OrderByExpression orderBy : sort.getOrderBy()) {
-                Expression expr = oldPartialAssembler.assembleExpression(orderBy.getExpression(),
-                        stream.fieldOffsets);
                 TPreparedExpression tExpr = newPartialAssembler.assembleExpression(orderBy.getExpression(),
                         stream.fieldOffsets);
-                ordering.append(expr, tExpr, orderBy.isAscending(), orderBy.getCollator());
+                ordering.append(tExpr, orderBy.isAscending(), orderBy.getCollator());
             }
             assembleSort(stream, ordering, sort.getInput(), output, sortOption);
             return stream;
@@ -1747,7 +1739,7 @@ public class OperatorAssembler extends BaseRule
                 stream.operator = API.sort_InsertionLimited(stream.operator, stream.rowType,
                                                             ordering, sortOption, maxrows);
             else
-                stream.operator = API.sort_Tree(stream.operator, stream.rowType, ordering, sortOption, usePValues);
+                stream.operator = API.sort_Tree(stream.operator, stream.rowType, ordering, sortOption);
         }
 
         protected void assembleSort(RowStream stream, int nkeys, PlanNode input,
@@ -1755,9 +1747,8 @@ public class OperatorAssembler extends BaseRule
             List<AkCollator> collators = findCollators(input);
             API.Ordering ordering = partialAssembler.createOrdering();
             for (int i = 0; i < nkeys; i++) {
-                Expression expr = oldPartialAssembler.field(stream.rowType, i);
                 TPreparedExpression tExpr = newPartialAssembler.field(stream.rowType, i);
-                ordering.append(expr, tExpr, true,
+                ordering.append(tExpr, true,
                                 (collators == null) ? null : collators.get(i));
             }
             assembleSort(stream, ordering, input, null, sortOption);
@@ -1770,7 +1761,7 @@ public class OperatorAssembler extends BaseRule
                 nlimit = Integer.MAX_VALUE; // Slight disagreement in saying unlimited.
             stream.operator = API.limit_Default(stream.operator, 
                                                 limit.getOffset(), limit.isOffsetParameter(),
-                                                nlimit, limit.isLimitParameter(), usePValues);
+                                                nlimit, limit.isLimitParameter());
             return stream;
         }
 
@@ -1786,7 +1777,7 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleOnlyIfEmpty(OnlyIfEmpty onlyIfEmpty) {
             RowStream stream = assembleStream(onlyIfEmpty.getInput());
-            stream.operator = API.limit_Default(stream.operator, 0, false, 1, false, usePValues);
+            stream.operator = API.limit_Default(stream.operator, 0, false, 1, false);
             // Nulls here have no semantic meaning, but they're easier than trying to
             // figure out an interesting non-null value for each
             // AkType in the row. All that really matters is that the
@@ -1813,8 +1804,7 @@ public class OperatorAssembler extends BaseRule
                                                     bloomFilter.getEstimatedSize(),
                                                     pos + loopBindingsOffset,
                                                     stream.operator,
-                                                    collators,
-                                                    usePValues);
+                                                    collators);
             popHashTable(bloomFilter);
             return stream;
         }
@@ -2003,8 +1993,7 @@ public class OperatorAssembler extends BaseRule
             for (int i = 0; i < indexOrdering.size(); i++) {
                 Expression expr = oldPartialAssembler.field(indexRowType, i);
                 TPreparedExpression tExpr = newPartialAssembler.field(indexRowType, i);
-                ordering.append(expr,
-                                tExpr,
+                ordering.append(tExpr,
                                 indexOrdering.get(i).isAscending(),
                                 index.getIndexColumns().get(i).getColumn().getCollator());
             }

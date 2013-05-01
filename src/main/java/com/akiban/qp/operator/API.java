@@ -30,8 +30,6 @@ import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.aggregation.Aggregators;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.std.FieldExpression;
-import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TComparison;
@@ -44,6 +42,8 @@ import java.util.*;
 
 public class API
 {
+    private static final boolean USE_PVALUES = Types3Switch.ON;
+
     // Aggregate
 
     public static Operator aggregate_Partial(Operator inputOperator,
@@ -237,30 +237,16 @@ public class API
 
     public static Operator limit_Default(Operator inputOperator, int limitRows)
     {
-        return limit_Default(inputOperator, limitRows, Types3Switch.ON);
+        return new Limit_Default(inputOperator, limitRows, Types3Switch.ON);
     }
 
-    public static Operator limit_Default(Operator inputOperator, int limitRows, boolean usePVals)
-    {
-        return new Limit_Default(inputOperator, limitRows, usePVals);
-    }
-
-    public static Operator limit_Default(Operator inputOperator,
-                                         int skipRows,
-                                         boolean skipIsBinding,
-                                         int limitRows,
-                                         boolean limitIsBinding)
-    {
-        return limit_Default(inputOperator, skipRows, skipIsBinding, limitRows, limitIsBinding, Types3Switch.ON);
-    }
     public static Operator limit_Default(Operator inputOperator,
                                                  int skipRows,
                                                  boolean skipIsBinding,
                                                  int limitRows,
-                                                 boolean limitIsBinding,
-                                                 boolean usePVals)
+                                                 boolean limitIsBinding)
     {
-        return new Limit_Default(inputOperator, skipRows, skipIsBinding, limitRows, limitIsBinding, usePVals);
+        return new Limit_Default(inputOperator, skipRows, skipIsBinding, limitRows, limitIsBinding, Types3Switch.ON);
     }
 
     // AncestorLookup
@@ -289,14 +275,13 @@ public class API
      * tableType
      * @param indexType the index to scan
      * @return the scan operator
-     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector, boolean)}
+     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
      */
     @Deprecated
     @SuppressWarnings("deprecation")
     public static Operator indexScan_Default(IndexRowType indexType)
     {
-        boolean usePValues = Types3Switch.ON;
-        return indexScan_Default(indexType, false, IndexKeyRange.unbounded(indexType, usePValues), usePValues);
+        return indexScan_Default(indexType, false, IndexKeyRange.unbounded(indexType, USE_PVALUES));
     }
 
     /**
@@ -305,43 +290,30 @@ public class API
      * @param indexType the index to scan
      * @param reverse whether to scan in reverse order
      * @return the scan operator
-     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector, boolean)}
+     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
      */
     @Deprecated
     @SuppressWarnings("deprecation")
     public static Operator indexScan_Default(IndexRowType indexType, boolean reverse)
     {
-        boolean usePValues = Types3Switch.ON;
-        return indexScan_Default(indexType, reverse, IndexKeyRange.unbounded(indexType, usePValues), usePValues);
+        return indexScan_Default(indexType, reverse, IndexKeyRange.unbounded(indexType, USE_PVALUES));
     }
 
-    public static Operator indexScan_Default(IndexRowType indexType, boolean reverse, IndexKeyRange indexKeyRange)
-    {
-        return indexScan_Default(indexType, reverse, indexKeyRange, Types3Switch.ON);
-    }
     /**
      * Creates a scan operator for the given index, using LEFT JOIN semantics after the indexType's tableType.
      * @param indexType the index to scan
      * @param reverse whether to scan in reverse order
      * @param indexKeyRange the scan range
      * @return the scan operator
-     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector, boolean)}
+     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
      */
     @Deprecated
-    @SuppressWarnings("deprecation")
-    public static Operator indexScan_Default(IndexRowType indexType, boolean reverse, IndexKeyRange indexKeyRange, boolean usePValues)
+    public static Operator indexScan_Default(IndexRowType indexType, boolean reverse, IndexKeyRange indexKeyRange)
     {
         if (indexKeyRange == null) {
-            indexKeyRange = IndexKeyRange.unbounded(indexType, usePValues);
+            indexKeyRange = IndexKeyRange.unbounded(indexType, USE_PVALUES);
         }
-        return indexScan_Default(indexType, reverse, indexKeyRange, indexType.tableType(), usePValues);
-    }
-    public static Operator indexScan_Default(IndexRowType indexType,
-                                             boolean reverse,
-                                             IndexKeyRange indexKeyRange,
-                                             UserTableRowType innerJoinUntilRowType)
-    {
-        return indexScan_Default(indexType, reverse, indexKeyRange, innerJoinUntilRowType, Types3Switch.ON);
+        return indexScan_Default(indexType, reverse, indexKeyRange, indexType.tableType());
     }
 
     /**
@@ -351,28 +323,27 @@ public class API
      * @param indexKeyRange the scan range
      * @param innerJoinUntilRowType the table after which the scan should start using LEFT JOIN GI semantics.
      * @return the scan operator
-     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector, boolean)}
+     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
      */
     @Deprecated
     public static Operator indexScan_Default(IndexRowType indexType,
                                              boolean reverse,
                                              IndexKeyRange indexKeyRange,
-                                             UserTableRowType innerJoinUntilRowType,
-                                             boolean usePVals)
+                                             UserTableRowType innerJoinUntilRowType)
     {
-        Ordering ordering = new Ordering(usePVals);
+        Ordering ordering = new Ordering();
         int fields = indexType.nFields();
-        if (usePVals) {
-            for (int f = 0; f < fields; f++) {
-                ordering.append(null, new TPreparedField(indexType.typeInstanceAt(f), f), !reverse);
-            }
+        for (int f = 0; f < fields; f++) {
+            ordering.append(new TPreparedField(indexType.typeInstanceAt(f), f), !reverse);
         }
-        else {
-            for (int f = 0; f < fields; f++) {
-                ordering.append(new FieldExpression(indexType, f), null, !reverse);
-            }
-        }
-        return indexScan_Default(indexType, indexKeyRange, ordering, innerJoinUntilRowType, usePVals);
+        return indexScan_Default(indexType, indexKeyRange, ordering, innerJoinUntilRowType);
+    }
+
+    public static Operator indexScan_Default(IndexRowType indexType,
+                                             IndexKeyRange indexKeyRange,
+                                             Ordering ordering)
+    {
+        return indexScan_Default(indexType, indexKeyRange, ordering, indexType.tableType());
     }
 
     /**
@@ -382,43 +353,20 @@ public class API
      * @param indexKeyRange the scan range
      * @param indexScanSelector
      * @return the scan operator
-     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector, boolean)}
+     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
      */
     @Deprecated
     public static Operator indexScan_Default(IndexRowType indexType,
                                              boolean reverse,
                                              IndexKeyRange indexKeyRange,
-                                             IndexScanSelector indexScanSelector,
-                                             boolean usePVals)
+                                             IndexScanSelector indexScanSelector)
     {
-        Ordering ordering = new Ordering(usePVals);
+        Ordering ordering = new Ordering();
         int fields = indexType.nFields();
-        if (usePVals) {
-            for (int f = 0; f < fields; f++) {
-                ordering.append(null, new TPreparedField(indexType.typeInstanceAt(f), f), !reverse);
-            }
+        for (int f = 0; f < fields; f++) {
+            ordering.append(new TPreparedField(indexType.typeInstanceAt(f), f), !reverse);
         }
-        else {
-            for (int f = 0; f < fields; f++) {
-                ordering.append(new FieldExpression(indexType, f), null, !reverse);
-            }
-        }
-        return indexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector, usePVals);
-    }
-
-    public static Operator indexScan_Default(IndexRowType indexType,
-                                             IndexKeyRange indexKeyRange,
-                                             Ordering ordering)
-    {
-        return indexScan_Default(indexType, indexKeyRange, ordering, Types3Switch.ON);
-    }
-
-    public static Operator indexScan_Default(IndexRowType indexType,
-                                             IndexKeyRange indexKeyRange,
-                                             Ordering ordering,
-                                             boolean usePVals)
-    {
-        return indexScan_Default(indexType, indexKeyRange, ordering, indexType.tableType(), usePVals);
+        return indexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector);
     }
 
     public static Operator indexScan_Default(IndexRowType indexType,
@@ -426,20 +374,11 @@ public class API
                                              Ordering ordering,
                                              UserTableRowType innerJoinUntilRowType)
     {
-        return indexScan_Default(indexType, indexKeyRange, ordering, innerJoinUntilRowType, Types3Switch.ON);
-    }
-
-    public static Operator indexScan_Default(IndexRowType indexType,
-                                             IndexKeyRange indexKeyRange,
-                                             Ordering ordering,
-                                             UserTableRowType innerJoinUntilRowType,
-                                             boolean usePVals)
-    {
         return indexScan_Default(indexType,
                                  indexKeyRange,
                                  ordering,
                                  IndexScanSelector.leftJoinAfter(indexType.index(),
-                                                                 innerJoinUntilRowType.userTable()), usePVals);
+                                                                 innerJoinUntilRowType.userTable()));
     }
 
     public static Operator indexScan_Default(IndexRowType indexType,
@@ -447,17 +386,7 @@ public class API
                                              Ordering ordering,
                                              IndexScanSelector indexScanSelector)
     {
-        return new IndexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector, Types3Switch.ON);
-    }
-
-
-    public static Operator indexScan_Default(IndexRowType indexType,
-                                             IndexKeyRange indexKeyRange,
-                                             Ordering ordering,
-                                             IndexScanSelector indexScanSelector,
-                                             boolean usePVals)
-    {
-        return new IndexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector, usePVals);
+        return new IndexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector, USE_PVALUES);
     }
 
     // Select
@@ -519,25 +448,12 @@ public class API
     public static Operator count_Default(Operator input,
                                          RowType countType)
     {
-        return new Count_Default(input, countType, Types3Switch.ON);
-    }
-
-    public static Operator count_Default(Operator input,
-                                         RowType countType,
-                                         boolean usePValues)
-    {
-        return new Count_Default(input, countType, usePValues);
+        return new Count_Default(input, countType, USE_PVALUES);
     }
 
     public static Operator count_TableStatus(RowType tableType)
     {
-        return count_TableStatus(tableType, Types3Switch.ON);
-    }
-
-
-    public static Operator count_TableStatus(RowType tableType, boolean usePValues)
-    {
-        return new Count_TableStatus(tableType, usePValues);
+        return new Count_TableStatus(tableType, USE_PVALUES);
     }
 
     // Sort
@@ -556,40 +472,25 @@ public class API
                                      Ordering ordering,
                                      SortOption sortOption)
     {
-        return new Sort_Tree(inputOperator, sortType, ordering, sortOption, Types3Switch.ON);
-    }
-
-    public static Operator sort_Tree(Operator inputOperator, 
-                                     RowType sortType, 
-                                     Ordering ordering, 
-                                     SortOption sortOption,
-                                     boolean usePVals)
-    {
-        return new Sort_Tree(inputOperator, sortType, ordering, sortOption, usePVals);
+        return new Sort_Tree(inputOperator, sortType, ordering, sortOption, USE_PVALUES);
     }
 
     public static Ordering ordering()
     {
-        return ordering(Types3Switch.ON);
-    }
-    
-    public static Ordering ordering(boolean usePVals)
-    {
-        return new Ordering(usePVals);
+        return new Ordering();
     }
 
     // Distinct
     public static Operator distinct_Partial(Operator input, RowType distinctType)
     {
-        return new Distinct_Partial(input, distinctType, null, Types3Switch.ON);
+        return new Distinct_Partial(input, distinctType, null, USE_PVALUES);
     }
 
     public static Operator distinct_Partial(Operator input,
                                             RowType distinctType,
-                                            List<AkCollator> collators,
-                                            boolean usePValues)
+                                            List<AkCollator> collators)
     {
-        return new Distinct_Partial(input, distinctType, collators, usePValues);
+        return new Distinct_Partial(input, distinctType, collators, USE_PVALUES);
     }
 
     // Map
@@ -622,33 +523,11 @@ public class API
 
     public static Operator unionAll(Operator input1, RowType input1RowType, Operator input2, RowType input2RowType)
     {
-        return unionAll(input1, input1RowType, input2, input2RowType, Types3Switch.ON);
-    }
-
-    public static Operator unionAll(Operator input1, RowType input1RowType, Operator input2, RowType input2RowType,
-                                    boolean usePvalues)
-    {
-        return new UnionAll_Default(input1, input1RowType, input2, input2RowType, usePvalues);
+        return new UnionAll_Default(input1, input1RowType, input2, input2RowType, USE_PVALUES);
     }
     
     // Intersect
     
-    /** deprecated */
-
-    public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
-                                             IndexRowType leftRowType, IndexRowType rightRowType,
-                                             int leftOrderingFields,
-                                             int rightOrderingFields,
-                                             int comparisonFields,
-                                             JoinType joinType,
-                                             IntersectOption intersectOutput,
-                                             List<TComparison> comparisons)
-    {
-        return intersect_Ordered(leftInput, rightInput,  leftRowType, rightRowType,
-                leftOrderingFields, rightOrderingFields, comparisonFields, joinType, intersectOutput,
-                Types3Switch.ON, comparisons);
-    }
-
     public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
                                             IndexRowType leftRowType, IndexRowType rightRowType,
                                             int leftOrderingFields,
@@ -656,7 +535,6 @@ public class API
                                             int comparisonFields,
                                             JoinType joinType,
                                             IntersectOption intersectOutput,
-                                            boolean usePValues,
                                             List<TComparison> comparisons)
     {
         if (comparisonFields < 0) {
@@ -671,28 +549,8 @@ public class API
                                      ascending,
                                      joinType,
                                      EnumSet.of(intersectOutput),
-                                     usePValues,
+                                     USE_PVALUES,
                                      comparisons);
-    }
-
-    public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
-                                             IndexRowType leftRowType, IndexRowType rightRowType,
-                                             int leftOrderingFields,
-                                             int rightOrderingFields,
-                                             boolean[] ascending,
-                                             JoinType joinType,
-                                             EnumSet<IntersectOption> intersectOptions,
-                                             List<TComparison> comparisons)
-    {
-        return new Intersect_Ordered(leftInput, rightInput,
-                leftRowType, rightRowType,
-                leftOrderingFields,
-                rightOrderingFields,
-                ascending,
-                joinType,
-                intersectOptions,
-                Types3Switch.ON,
-                comparisons);
     }
 
     public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
@@ -702,7 +560,6 @@ public class API
                                             boolean[] ascending,
                                             JoinType joinType,
                                             EnumSet<IntersectOption> intersectOptions,
-                                            boolean usePValues,
                                             List<TComparison> comparisons)
     {
         return new Intersect_Ordered(leftInput, rightInput,
@@ -712,7 +569,7 @@ public class API
                                      ascending,
                                      joinType,
                                      intersectOptions,
-                                     usePValues,
+                                     USE_PVALUES,
                                      comparisons);
     }
     
@@ -726,27 +583,11 @@ public class API
                                          boolean outputEqual)
     {
         return new Union_Ordered(leftInput, rightInput,
-                leftRowType, rightRowType,
-                leftOrderingFields,
-                rightOrderingFields,
-                ascending, outputEqual,
-                Types3Switch.ON);
-    }
-
-    public static Operator union_Ordered(Operator leftInput, Operator rightInput,
-                                         IndexRowType leftRowType, IndexRowType rightRowType,
-                                         int leftOrderingFields,
-                                         int rightOrderingFields,
-                                         boolean[] ascending,
-                                         boolean outputEqual,
-                                         boolean usePValues)
-    {
-        return new Union_Ordered(leftInput, rightInput,
                                  leftRowType, rightRowType,
                                  leftOrderingFields,
                                  rightOrderingFields,
                                  ascending, outputEqual,
-                                 usePValues);
+                                 USE_PVALUES);
     }
 
     // HKeyUnion
@@ -778,7 +619,7 @@ public class API
                                      filterBindingPosition,
                                      streamInput,
                                      null,
-                                     Types3Switch.ON);
+                                     USE_PVALUES);
     }
 
     public static Operator using_BloomFilter(Operator filterInput,
@@ -786,8 +627,7 @@ public class API
                                              long estimatedRowCount,
                                              int filterBindingPosition,
                                              Operator streamInput,
-                                             List<AkCollator> collators,
-                                             boolean usePValues)
+                                             List<AkCollator> collators)
     {
         return new Using_BloomFilter(filterInput,
                                      filterRowType,
@@ -795,7 +635,7 @@ public class API
                                      filterBindingPosition,
                                      streamInput,
                                      collators,
-                                     usePValues);
+                                     USE_PVALUES);
     }
 
     // Select_BloomFilter
@@ -863,17 +703,12 @@ public class API
     // Insert
     public static UpdatePlannable insert_Default(Operator inputOperator)
     {
-        return insert_Default(inputOperator, Types3Switch.ON);
+        return new Insert_Default(inputOperator, USE_PVALUES);
     }
 
-    public static UpdatePlannable insert_Default(Operator inputOperator, boolean usePVals)
+    public static Operator insert_Returning (Operator inputOperator)
     {
-        return new Insert_Default(inputOperator, usePVals);
-    }
-
-    public static Operator insert_Returning (Operator inputOperator, boolean usePVals) 
-    {
-        return new Insert_Returning (inputOperator, usePVals);
+        return new Insert_Returning(inputOperator, USE_PVALUES);
     }
 
     // Update
@@ -885,22 +720,21 @@ public class API
     }
     
     public static Operator update_Returning (Operator inputOperator,
-                                            UpdateFunction updateFunction, 
-                                            boolean usePValues)
+                                            UpdateFunction updateFunction)
     {
-        return new Update_Returning (inputOperator, updateFunction, usePValues);
+        return new Update_Returning (inputOperator, updateFunction, USE_PVALUES);
     }
     
     // Delete
 
-    public static UpdatePlannable delete_Default(Operator inputOperator, boolean usePValues)
+    public static UpdatePlannable delete_Default(Operator inputOperator)
     {
-        return new Delete_Default(inputOperator, usePValues);
+        return new Delete_Default(inputOperator, USE_PVALUES);
     }
 
-    public static Operator delete_Returning (Operator inputOperator, boolean usePValues, boolean cascadeDelete)
+    public static Operator delete_Returning (Operator inputOperator, boolean cascadeDelete)
     {
-        return new Delete_Returning(inputOperator, usePValues, cascadeDelete);
+        return new Delete_Returning(inputOperator, USE_PVALUES, cascadeDelete);
     }
 
     // Execution interface
@@ -961,7 +795,7 @@ public class API
         {
             StringBuilder buffer = new StringBuilder();
             buffer.append('(');
-            List<?> exprs = usingPVals() ? tExpressions : oExpressions;
+            List<?> exprs = tExpressions;
             for (int i = 0, size = sortColumns(); i < size; i++) {
                 if (i > 0) {
                     buffer.append(", ");
@@ -976,22 +810,13 @@ public class API
 
         public int sortColumns()
         {
-            return usingPVals() ? tExpressions.size() : oExpressions.size();
+            return tExpressions.size();
         }
 
-        public Expression expression(int i) {
-            return oExpressions.get(i);
-        }
-        
         public TPreparedExpression tExpression(int i) {
             return tExpressions.get(i);
         }
 
-        public AkType type(int i)
-        {
-            return oExpressions.get(i).valueType();
-        }
-        
         public TInstance tInstance(int i) {
             return tExpressions.get(i).resultType();
         }
@@ -1031,87 +856,43 @@ public class API
         public void append(ExpressionGenerator expressionGenerator, boolean ascending)
         {
             TPreparedExpression newExpr;
-            Expression oldExpr;
-            if (Types3Switch.ON) {
-                newExpr = expressionGenerator.getTPreparedExpression();
-                oldExpr = null;
-            }
-            else {
-                newExpr = null;
-                oldExpr = expressionGenerator.getExpression();
-            }
-            append(oldExpr, newExpr, ascending);
+            newExpr = expressionGenerator.getTPreparedExpression();
+            append(newExpr, ascending);
         }
 
-        public void append(Expression expression, boolean ascending)
+        public void append(TPreparedExpression tExpression, boolean ascending)
         {
-            append(expression, null, ascending);
-        }
-
-        public void append(Expression expression, TPreparedExpression tExpression, boolean ascending)
-        {
-            append(expression, tExpression, ascending, null);
+            append(tExpression, ascending, null);
         }
         
         public void append(ExpressionGenerator expression, boolean ascending, AkCollator collator)
         {
-            Expression oldStyle;
             TPreparedExpression newStyle;
-            if (Types3Switch.ON) {
-                newStyle = expression.getTPreparedExpression();
-                oldStyle = null;
-            }
-            else {
-                newStyle = null;
-                oldStyle = expression.getExpression();
-            }
-            append(oldStyle, newStyle, ascending, collator);
+            newStyle = expression.getTPreparedExpression();
+            append(newStyle, ascending, collator);
         }
 
-        public void append(Expression expression, TPreparedExpression tExpression,  boolean ascending,
+        public void append(TPreparedExpression tExpression,  boolean ascending,
                            AkCollator collator)
         {
-            if (oExpressions != null)
-                oExpressions.add(expression);
-            else
-                tExpressions.add(tExpression);
+            tExpressions.add(tExpression);
             directions.add(ascending);
             collators.add(collator);
         }
 
         public Ordering copy()
         {
-            boolean pvals = usingPVals();
-            Ordering copy = new Ordering(pvals);
-            if (pvals)
-                copy.tExpressions.addAll(tExpressions);
-            else
-                copy.oExpressions.addAll(oExpressions);
+            Ordering copy = new Ordering();
+            copy.tExpressions.addAll(tExpressions);
             copy.directions.addAll(directions);
             copy.collators.addAll(collators);
             return copy;
         }
-        
-        public boolean usingPVals() {
-            return tExpressions != null;
-        }
-        
+
         public Ordering() {
-            this(Types3Switch.ON);
-        }
-        
-        private Ordering(boolean usePVals) {
-            if (usePVals) {
-                tExpressions = new ArrayList<>();
-                oExpressions = null; 
-            }
-            else {
-                tExpressions = null;
-                oExpressions = new ArrayList<>();
-            }
+            tExpressions = new ArrayList<>();
         }
 
-        private final List<com.akiban.server.expression.Expression> oExpressions;
         private final List<TPreparedExpression> tExpressions;
         private final List<Boolean> directions = new ArrayList<>(); // true: ascending, false: descending
         private final List<AkCollator> collators = new ArrayList<>();

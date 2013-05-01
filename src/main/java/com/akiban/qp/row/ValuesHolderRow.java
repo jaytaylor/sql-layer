@@ -43,7 +43,7 @@ public class ValuesHolderRow extends AbstractValuesHolderRow {
 
     @Deprecated
     public ValuesHolderRow(RowType rowType) {
-        this(rowType, false);
+        this(rowType, true);
     }
 
     public ValuesHolderRow(RowType rowType, boolean usePValues) {
