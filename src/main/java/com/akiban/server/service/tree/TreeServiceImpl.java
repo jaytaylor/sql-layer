@@ -368,42 +368,6 @@ public class TreeServiceImpl
     }
 
     @Override
-    public int aisToStore(final TreeLink link, final int tableId) {
-        try {
-            final TreeCache cache = populateTreeCache(link);
-            int offset = cache.getTableIdOffset();
-            if (offset < 0) {
-                offset = tableIdOffset(link);
-                cache.setTableIdOffset(offset);
-            }
-            return tableId - offset;
-        } catch (PersistitException e) {
-            throw new PersistitAdapterException(e);
-        }
-    }
-
-    @Override
-    public int storeToAis(final TreeLink link, final int tableId) {
-        try {
-            final TreeCache cache = populateTreeCache(link);
-            int offset = cache.getTableIdOffset();
-            if (offset < 0) {
-                offset = tableIdOffset(link);
-                cache.setTableIdOffset(offset);
-            }
-            return tableId + offset;
-        } catch (PersistitException e) {
-            throw new PersistitAdapterException(e);
-        }
-    }
-
-    @Override
-    public int storeToAis(final Volume volume, final int tableId) {
-        final int offset = tableIdOffset(volume);
-        return tableId + offset;
-    }
-
-    @Override
     public TreeCache populateTreeCache(final TreeLink link) throws PersistitException {
         TreeCache cache = (TreeCache) link.getTreeCache();
         if (cache == null || !cache.getTree().isValid()) {
@@ -415,33 +379,11 @@ public class TreeServiceImpl
         return cache;
     }
 
-    private int tableIdOffset(final TreeLink link) throws PersistitException {
-        final Volume volume = mappedVolume(link.getSchemaName(),
-                SCHEMA_TREE_NAME);
-        return tableIdOffset(volume);
-    }
-
-    private int tableIdOffset(final Volume volume) {
-        while (volume.getAppCache() == null) {
-            synchronized (this) {
-                if (volume.getAppCache() == null) {
-                    volume.setAppCache(Integer.valueOf(volumeOffsetCounter));
-                    volumeOffsetCounter += MAX_TABLES_PER_VOLUME;
-                }
-            }
-        }
-        return ((Integer) volume.getAppCache()).intValue();
-    }
-
     public synchronized Volume mappedVolume(final String schemaName,
             final String treeName) throws PersistitException {
         try {
             final String vstring = volumeForTree(schemaName, treeName);
             final Volume volume = getDb().loadVolume(vstring);
-            if (volume.getAppCache() == null) {
-                volume.setAppCache(Integer.valueOf(volumeOffsetCounter));
-                volumeOffsetCounter += MAX_TABLES_PER_VOLUME;
-            }
             return volume;
         } catch (InvalidVolumeSpecificationException e) {
             throw new InvalidVolumeException (e);

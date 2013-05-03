@@ -40,8 +40,6 @@ public interface TreeService extends KeyCreator {
 
     final static Logger logger = LoggerFactory.getLogger(TreeService.class.getName());
 
-    final static int MAX_TABLES_PER_VOLUME = 100000;
-
     final static String SCHEMA_TREE_NAME = "_schema_";
 
     final static String TREESPACE = "treespace";
@@ -66,12 +64,6 @@ public interface TreeService extends KeyCreator {
     void visitStorage(Session session, TreeVisitor visitor, String treeName) throws PersistitException;
 
     boolean isContainer(Exchange exchange, TreeLink storageLink);
-
-    int aisToStore(final TreeLink link, final int logicalTableId);
-
-    int storeToAis(final TreeLink link, final int storedTableId);
-
-    int storeToAis(final Volume volume, final int storedTableId);
 
     void checkpoint() throws PersistitException;
 
