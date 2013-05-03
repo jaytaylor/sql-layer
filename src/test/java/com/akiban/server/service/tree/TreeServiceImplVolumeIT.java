@@ -62,12 +62,6 @@ public class TreeServiceImplVolumeIT extends ITBase {
             }
         }, "_schema_");
         assertEquals(3, trees.size());
-        final int d0 = verifyTableId(treeService, 1, link0);
-        final int d1 = verifyTableId(treeService, 100002, link1);
-        final int d2 = verifyTableId(treeService, 200003, link2);
-        assertEquals(0, d0);
-        assertTrue(d1 > d0);
-        assertTrue(d2 > d1);
     }
 
     private void checkExchangeName(TreeService treeService, TestLink link, String expectedName) throws
@@ -78,13 +72,5 @@ public class TreeServiceImplVolumeIT extends ITBase {
         } finally {
             treeService.releaseExchange(session(), exchange);
         }
-    }
-
-    private int verifyTableId(final TreeService treeService, final int aisId, TreeLink link)
-            throws PersistitException {
-        final int stored = treeService.aisToStore(link, aisId);
-        final int recovered = treeService.storeToAis(link, stored);
-        assertEquals(recovered, aisId);
-        return aisId - stored;
     }
 }

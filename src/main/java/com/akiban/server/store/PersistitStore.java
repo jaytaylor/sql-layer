@@ -912,7 +912,7 @@ public class PersistitStore implements Store, Service {
         groupTableValue.clear();
         packRowData(groupTableValue, rowDef, rowData);
         try {
-            Tree tree = rowDef.getGroup().getTreeCache().getTree();
+            Tree tree = treeService.populateTreeCache(rowDef.getGroup()).getTree();
             bulkload.groupBuilder.treeBuilder.store(tree, groupTableKey, groupTableValue);
         } catch (InvalidOperationException e) {
             throw e;
@@ -1803,14 +1803,6 @@ public class PersistitStore implements Store, Service {
     public void packRowData(final Value value, final RowDef rowDef,
                             final RowData rowData) {
         value.directPut(valueCoder, rowData, null);
-        final int at = value.getEncodedSize() - rowData.getInnerSize();
-        int storedTableId = treeService.aisToStore(rowDef.getGroup(), rowData.getRowDefId());
-        /*
-         * Overwrite rowDefId field within the Value instance with the absolute
-         * rowDefId.
-         */
-        AkServerUtil.putInt(value.getEncodedBytes(), at + RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE,
-                storedTableId);
     }
 
     public void expandRowData(final Exchange exchange, final RowData rowData) {
@@ -1824,12 +1816,6 @@ public class PersistitStore implements Store, Service {
         }
         // UNNECESSARY: Already done by value.directGet(...)
         // rowData.prepareRow(0);
-        int rowDefId = treeService.storeToAis(exchange.getVolume(), rowData.getRowDefId());
-        /*
-         * Overwrite the rowDefId field within the RowData instance with the
-         * relative rowDefId.
-         */
-        AkServerUtil.putInt(rowData.getBytes(), RowData.O_ROW_DEF_ID, rowDefId);
     }
 
     public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean defer) {
