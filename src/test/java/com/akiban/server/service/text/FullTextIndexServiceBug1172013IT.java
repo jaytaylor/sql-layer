@@ -112,7 +112,7 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
 
     @Test
     public void testDelete1 () throws InterruptedException, PersistitException {
-        logger.error("Running test delete 1");
+        logger.debug("Running test delete 1");
         // This test is specifically for FullTextIndexServiceImpl.java
         assertEquals(FullTextIndexServiceImpl.class, fullText.getClass());
         FullTextIndexServiceImpl fullTextImpl = (FullTextIndexServiceImpl)fullText;
@@ -132,10 +132,10 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
                     SCHEMA, "o", "idx3_o",
                     "oid", "c1", "c2", "c3", "c4");
         } catch (DuplicateIndexException ex) {
-            logger.error("Got Duplicate Index");
+            logger.debug("Got Duplicate Index");
             ; // an expected possible outcome. 
         } catch (DuplicateIndexColumnException ex) {
-            logger.error("Got Duplicate Column");
+            logger.debug("Got Duplicate Column");
             ; // an expected possible outcome
         }
 
@@ -163,7 +163,7 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
     
     @Test
     public void testDelete2() throws InterruptedException, PersistitException {
-        logger.error("Running test delete 2");
+        logger.debug("Running test delete 2");
         // This test is specifically for FullTextIndexServiceImpl.java
         assertEquals(FullTextIndexServiceImpl.class, fullText.getClass());
         FullTextIndexServiceImpl fullTextImpl = (FullTextIndexServiceImpl)fullText;
@@ -217,7 +217,7 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
     
     @Test
     public void testDelete3() throws InterruptedException, PersistitException {
-        logger.error("Running test delete 3");
+        logger.debug("Running test delete 3");
         // This test is specifically for FullTextIndexServiceImpl.java
         assertEquals(FullTextIndexServiceImpl.class, fullText.getClass());
         FullTextIndexServiceImpl fullTextImpl = (FullTextIndexServiceImpl)fullText;
@@ -256,7 +256,7 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
 
     @Test
     public void testDropUpdate1 () throws InterruptedException {
-        logger.error("Running test drop update 1");
+        logger.debug("Running test drop update 1");
         // This test is specifically for FullTextIndexServiceImpl.java
         assertEquals(FullTextIndexServiceImpl.class, fullText.getClass());
         FullTextIndexServiceImpl fullTextImpl = (FullTextIndexServiceImpl)fullText;

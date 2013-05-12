@@ -142,7 +142,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     @Override
     public void dropIndex(Session session, FullTextIndex idx) {
 
-        logger.error("Delete {}", idx.getIndexName());
+        logger.trace("Delete {}", idx.getIndexName());
         
         // This makes sure if we're dropping a newly created index 
         // the populate thread is stopped, and won't be restarting 
