@@ -18,12 +18,11 @@
 package com.akiban.server.service;
 
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class BackgroundWorkBase implements BackgroundWork<BackgroundObserver, BackgroundWork>
 {
-    private final Set<BackgroundObserver> observers = new HashSet<>();
+    private final ConcurrentHashMap<BackgroundObserver,Boolean> observers = new ConcurrentHashMap<>();
     
     public BackgroundWorkBase()
     {
@@ -34,7 +33,7 @@ public abstract class BackgroundWorkBase implements BackgroundWork<BackgroundObs
     public void addObserver(BackgroundObserver observer)
     {
         // two observers are equal IFF they are the same object.
-        observers.add(observer);
+        observers.put(observer, true);
     }
 
     @Override
@@ -45,19 +44,21 @@ public abstract class BackgroundWorkBase implements BackgroundWork<BackgroundObs
 
     public void removeObsevers(Collection<BackgroundObserver> os)
     {
-        observers.removeAll(os);
+        for (BackgroundObserver key : os) {
+            observers.remove(key);
+        }
     }
 
     @Override
     public void removeAllObservers()
     {
-        observers.removeAll(observers);
+        observers.clear();
     }
 
     @Override
     public void notifyObservers()
     {
-        for (BackgroundObserver o : observers)
+        for (BackgroundObserver o : observers.keySet())
             o.update(this);
     }
 }

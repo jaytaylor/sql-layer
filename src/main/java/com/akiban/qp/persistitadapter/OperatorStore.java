@@ -18,6 +18,7 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.*;
+import com.akiban.ais.model.Index.IndexType;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.expression.IndexBound;
@@ -222,20 +223,23 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     @Override
     public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean defer) {
-        List<TableIndex> tableIndexes = new ArrayList<>();
+        List<Index> tableIndexes = new ArrayList<>();
         List<GroupIndex> groupIndexes = new ArrayList<>();
+        
         for(Index index : indexes) {
-            if(index.isTableIndex()) {
-                tableIndexes.add((TableIndex)index);
-            }
-            else if(index.isGroupIndex()) {
+            switch(index.getIndexType()) {
+            case FULL_TEXT: 
+            case TABLE:
+                tableIndexes.add(index);
+            break;
+            case GROUP:
                 groupIndexes.add((GroupIndex)index);
-            }
-            else {
-                throw new IllegalArgumentException("Unknown index type: " + index);
+            break;
+            default:
+                throw new IllegalStateException("Unknown index type: " + index.getIndexType());
             }
         }
-
+            
         AkibanInformationSchema ais = schemaManager.getAis(session);
         PersistitAdapter adapter = createAdapter(ais, session);
 

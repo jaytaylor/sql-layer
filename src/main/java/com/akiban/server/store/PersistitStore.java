@@ -1824,14 +1824,20 @@ public class PersistitStore implements Store, Service {
         Map<Integer,RowDef> userRowDefs = new HashMap<>();
         Set<Index> indexesToBuild = new HashSet<>();
         for(Index index : indexes) {
-            IndexDef indexDef = index.indexDef();
-            if(indexDef == null) {
-                throw new IllegalArgumentException("indexDef was null for index: " + index);
+            if (index.getIndexType() == IndexType.FULL_TEXT) {
+                // This schedules a deferred process to populate the
+                // full text index at a later date (starting in a few seconds).
+                fullTextService.schedulePopulate(session, index.getIndexName());
+            } else {
+                IndexDef indexDef = index.indexDef();
+                if(indexDef == null) {
+                    throw new IllegalArgumentException("indexDef was null for index: " + index);
+                }
+                indexesToBuild.add(index);
+                RowDef rowDef = indexDef.getRowDef();
+                userRowDefs.put(rowDef.getRowDefId(), rowDef);
+                groups.add(rowDef.table().getGroup());
             }
-            indexesToBuild.add(index);
-            RowDef rowDef = indexDef.getRowDef();
-            userRowDefs.put(rowDef.getRowDefId(), rowDef);
-            groups.add(rowDef.table().getGroup());
         }
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
         for (Group group : groups) {

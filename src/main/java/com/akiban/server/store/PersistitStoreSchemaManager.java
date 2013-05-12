@@ -389,10 +389,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             if(keepTree) {
                 newIndex.setTreeName(proposed.getTreeName());
             }
-            if (newIndex.getIndexType() != Index.IndexType.FULL_TEXT) {
-                // TODO: For now, do not build.
-                newIndexes.add(newIndex);
-            }
+            newIndexes.add(newIndex);
             tableIDs.addAll(newIndex.getAllTableIDs());
             schemas.add(DefaultNameGenerator.schemaNameForIndex(newIndex));
         }

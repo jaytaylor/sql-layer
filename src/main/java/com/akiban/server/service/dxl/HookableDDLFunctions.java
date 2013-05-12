@@ -39,7 +39,6 @@ import java.util.List;
 
 import static com.akiban.ais.util.TableChangeValidator.ChangeLevel;
 import static com.akiban.util.Exceptions.throwAlways;
-import static com.akiban.util.Exceptions.throwIfInstanceOf;
 
 public final class HookableDDLFunctions implements DDLFunctions {
 

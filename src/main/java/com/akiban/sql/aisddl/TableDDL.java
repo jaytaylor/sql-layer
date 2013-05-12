@@ -48,7 +48,6 @@ import com.akiban.sql.parser.ConstantNode;
 import com.akiban.sql.parser.ConstraintDefinitionNode;
 import com.akiban.sql.parser.CreateTableNode;
 import com.akiban.sql.parser.CurrentDatetimeOperatorNode;
-import com.akiban.sql.parser.DefaultNode;
 import com.akiban.sql.parser.DropGroupNode;
 import com.akiban.sql.parser.DropTableNode;
 import com.akiban.sql.parser.ExistenceCheck;
@@ -487,7 +486,7 @@ public class TableDDL
 
         if (columnList.functionType() == IndexColumnList.FunctionType.FULL_TEXT) {
             logger.debug ("Building Full text index on table {}", table.getName()) ;
-            tableIndex = IndexDDL.buildFullTextIndex (builder, table.getName(), indexName, id, context.getServiceManager());
+            tableIndex = IndexDDL.buildFullTextIndex (builder, table.getName(), indexName, id);
         } else if (IndexDDL.checkIndexType (id, table.getName()) == Index.IndexType.TABLE) {
             logger.debug ("Building Table index on table {}", table.getName()) ;
             tableIndex = IndexDDL.buildTableIndex (builder, table.getName(), indexName, id);
