@@ -17,21 +17,19 @@
 
 package com.akiban.server.store.statistics;
 
-import com.akiban.ais.model.Index;
 import com.akiban.server.service.tree.KeyCreator;
+import com.akiban.util.Flywheel;
 import com.persistit.Key;
-import com.persistit.Value;
 
-class MultiColumnIndexStatisticsVisitor extends IndexStatisticsGenerator
-{
-    @Override
-    public void visit(Key key, Value value)
-    {
-        loadKey(key);
+public class PersistitKeyFlywheel extends Flywheel<Key> {
+    private final KeyCreator keyCreator;
+
+    public PersistitKeyFlywheel(KeyCreator keyCreator) {
+        this.keyCreator = keyCreator;
     }
 
-    public MultiColumnIndexStatisticsVisitor(Index index, KeyCreator keyCreator)
-    {
-        super(index, index.getKeyColumns().size(), -1, keyCreator);
+    @Override
+    protected Key createNew() {
+        return keyCreator.createKey();
     }
 }
