@@ -95,7 +95,7 @@ public final class FixCountStarIT extends ITBase {
             public void run() {
                 if (index.isTableIndex()) {
                     TableIndex tIndex = (TableIndex) index;
-                    store().getPersistitStore().getTableStatus(tIndex.getTable()).setRowCount(newVal);
+                    tIndex.leafMostTable().rowDef().getTableStatus().setRowCount(newVal);
                 }
                 else {
                     PersistitStore store = store().getPersistitStore();

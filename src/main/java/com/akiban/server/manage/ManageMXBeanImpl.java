@@ -52,16 +52,6 @@ public class ManageMXBeanImpl implements ManageMXBean {
     }
 
     @Override
-    public boolean isDeferIndexesEnabled() {
-        return getStore().isDeferIndexes();
-    }
-
-    @Override
-    public void setDeferIndexes(final boolean defer) {
-        getStore().setDeferIndexes(defer);
-    }
-
-    @Override
     public void buildIndexes(final String arg, final boolean deferIndexes) {
         Session session = createSession();
         try {
@@ -80,18 +70,6 @@ public class ManageMXBeanImpl implements ManageMXBean {
         try {
             Collection<Index> indexes = gatherIndexes(session, arg);
             getStore().deleteIndexes(session, indexes);
-        } catch(Exception t) {
-            throw new RuntimeException(t);
-        } finally {
-            session.close();
-        }
-    }
-
-    @Override
-    public void flushIndexes() {
-        Session session = createSession();
-        try {
-            getStore().flushIndexes(session);
         } catch(Exception t) {
             throw new RuntimeException(t);
         } finally {

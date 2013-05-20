@@ -474,11 +474,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         for(ChangedTableDescription desc : alteredTables) {
             if(desc.isNewGroup()) {
                 UserTable oldTable = oldAIS.getUserTable(desc.getOldName());
-                try {
-                    oldTable.rowDef().getTableStatus().setOrdinal(0);
-                } catch(PersistitException e) {
-                    throw wrapPersistitException(session, e);
-                }
+                oldTable.rowDef().getTableStatus().setOrdinal(0);
             }
         }
 

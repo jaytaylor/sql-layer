@@ -168,6 +168,10 @@ public class UserTable extends Table
         return Collections.unmodifiableList(candidateChildJoins);
     }
 
+    public boolean hasChildren() {
+        return !getCandidateChildJoins().isEmpty();
+    }
+
     public Join getParentJoin()
     {
         Join parentJoin = null;

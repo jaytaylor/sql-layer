@@ -23,6 +23,8 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Limit;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.SimpleQueryContext;
+import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.*;
 import com.akiban.qp.rowtype.Schema;
@@ -38,6 +40,7 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.RowCollector;
+import com.akiban.server.store.Store;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.util.GrowableByteBuffer;
 import com.akiban.util.ShareHolder;
@@ -78,12 +81,12 @@ public abstract class OperatorBasedRowCollector implements RowCollector
          // the current row across these two invocations.
         boolean wasHeld = false;
         boolean wroteToPayload = false;
-        PersistitGroupRow row;
+        AbstractRow row;
         if (currentRow.isEmpty()) {
-            row = (PersistitGroupRow) cursor.next();
+            row = (AbstractRow) cursor.next();
         } else {
             wasHeld = true;
-            row = (PersistitGroupRow) currentRow.get();
+            row = (AbstractRow) currentRow.get();
             currentRow.release();
         }
         if (row == null) {
@@ -117,7 +120,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     public RowData collectNextRow()
     {
         RowData rowData = null;
-        PersistitGroupRow row = (PersistitGroupRow) cursor.next();
+        AbstractRow row = (AbstractRow) cursor.next();
         if (row == null) {
             close();
         } else {
@@ -196,9 +199,8 @@ public abstract class OperatorBasedRowCollector implements RowCollector
 
     // OperatorBasedRowCollector interface
 
-    public static OperatorBasedRowCollector newCollector(ConfigurationService config,
-                                                         Session session,
-                                                         PersistitStore store,
+    public static OperatorBasedRowCollector newCollector(Session session,
+                                                         Store store,
                                                          int scanFlags,
                                                          RowDef rowDef,
                                                          int indexId,
@@ -217,8 +219,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
             throw new IllegalArgumentException("Must scan a UserTable: " + rowDef);
         }
         OperatorBasedRowCollector rowCollector =
-              new OneTableRowCollector(config,
-                                       session,
+              new OneTableRowCollector(session,
                                        store,
                                        rowDef,
                                        indexId,
@@ -234,12 +235,10 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         return rowCollector;
     }
     
-    protected OperatorBasedRowCollector(PersistitStore store, Session session, ConfigurationService config)
+    protected OperatorBasedRowCollector(Store store, Session session)
     {
         this.schema = SchemaCache.globalSchema(store.getAIS(session));
-        // Passing null to PersistitAdapter's TreeService argument. TreeService is only needed for sorting,
-        // which OBRC doesn't use.
-        this.adapter = new PersistitAdapter(schema, store, null, session, config);
+        this.adapter = store.createAdapter(session, schema);
         this.rowCollectorId = idCounter.getAndIncrement();
     }
 
@@ -397,7 +396,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
 
     private long rowCollectorId;
     protected final Schema schema;
-    protected PersistitAdapter adapter;
+    protected StoreAdapter adapter;
     protected UserTable queryRootTable;
     protected UserTableRowType queryRootType;
     protected TableIndex predicateIndex;

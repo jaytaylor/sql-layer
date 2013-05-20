@@ -18,6 +18,7 @@
 package com.akiban.server;
 
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowDef;
@@ -97,18 +98,30 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public long getAutoIncrement() throws PersistitInterruptedException {
-            return autoIncrement.getSnapshot();
+        public long getAutoIncrement() {
+            try {
+                return autoIncrement.getSnapshot();
+            } catch(PersistitInterruptedException e) {
+                throw PersistitAdapter.wrapPersistitException(null, e);
+            }
         }
 
         @Override
-        public int getOrdinal() throws PersistitInterruptedException {
-            return (int) ordinal.getSnapshot();
+        public int getOrdinal() {
+            try {
+                return (int) ordinal.getSnapshot();
+            } catch(PersistitInterruptedException e) {
+                throw PersistitAdapter.wrapPersistitException(null, e);
+            }
         }
 
         @Override
-        public long getRowCount() throws PersistitInterruptedException {
-            return rowCount.getSnapshot();
+        public long getRowCount() {
+            try {
+                return rowCount.getSnapshot();
+            } catch(PersistitInterruptedException e) {
+                throw PersistitAdapter.wrapPersistitException(null, e);
+            }
         }
 
         @Override
@@ -127,8 +140,12 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public long getUniqueID() throws PersistitInterruptedException {
-            return uniqueID.getSnapshot();
+        public long getUniqueID() {
+            try {
+                return uniqueID.getSnapshot();
+            } catch(PersistitInterruptedException e) {
+                throw PersistitAdapter.wrapPersistitException(null, e);
+            }
         }
 
         @Override
@@ -151,23 +168,31 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             rowCount.sumAdd(count);
         }
 
-        public void setOrdinal(int ordinal) throws PersistitInterruptedException {
-            this.ordinal.set(ordinal);
+        public void setOrdinal(int ordinal) {
+            try {
+                this.ordinal.set(ordinal);
+            } catch(PersistitInterruptedException e) {
+                throw PersistitAdapter.wrapPersistitException(null, e);
+            }
         }
 
         @Override
-        public long createNewUniqueID() throws PersistitInterruptedException {
+        public long createNewUniqueID() {
             return uniqueID.seqAllocate();
         }
 
         @Override
-        public void truncate() throws PersistitInterruptedException {
-            internalSetRowCount(0);
-            internalSetAutoIncrement(0, true);
+        public void truncate() {
+            try {
+                internalSetRowCount(0);
+                internalSetAutoIncrement(0, true);
+            } catch(PersistitInterruptedException e) {
+                throw PersistitAdapter.wrapPersistitException(null, e);
+            }
         }
 
         @Override
-        public void setAutoIncrement(long value) throws PersistitInterruptedException {
+        public void setAutoIncrement(long value) {
             internalSetAutoIncrement(value, false);
         }
 
@@ -189,8 +214,12 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             rowCount.set(rowCountValue);
         }
 
-        private void internalSetAutoIncrement(long autoIncrementValue, boolean evenIfLess) throws PersistitInterruptedException {
-            autoIncrement.set(autoIncrementValue, evenIfLess);
+        private void internalSetAutoIncrement(long autoIncrementValue, boolean evenIfLess) {
+            try {
+                autoIncrement.set(autoIncrementValue, evenIfLess);
+            } catch(PersistitInterruptedException e) {
+                throw PersistitAdapter.wrapPersistitException(null, e);
+            }
         }
     }
 
