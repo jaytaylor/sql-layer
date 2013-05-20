@@ -729,6 +729,14 @@ public class PersistitStore extends AbstractStore implements Service
     // --------------------- Implement Store interface --------------------
 
     @Override
+    public AkibanInformationSchema getAIS(Session session) {
+        Bulkload bulkload = activeBulkload.get();
+        if (bulkload != null)
+            return bulkload.ais;
+        return schemaManager.getAis(session);
+    }
+
+    @Override
     public void writeRow(Session session, RowData rowData)
     {
         Bulkload bulkload = activeBulkload.get();
@@ -1619,14 +1627,6 @@ public class PersistitStore extends AbstractStore implements Service
         }
         exchange.lock(lockKeyAppender.key());
         lockKeyAppender.clear();
-    }
-
-    @Override
-    public AkibanInformationSchema getAIS(Session session) {
-        Bulkload bulkload = activeBulkload.get();
-        if (bulkload != null)
-            return bulkload.ais;
-        return schemaManager.getAis(session);
     }
 
     @Override
