@@ -284,6 +284,9 @@ public class PersistitStoreIndexStatistics
         RowData rowData = new RowData(new byte[INITIAL_ROW_SIZE]);
         RowDef indexStatisticsRowDef = getIndexStatsRowDef(session);
         RowDef indexStatisticsEntryRowDef = getIndexStatsEntryRowDef(session);
+        if(index.indexDef() == null) {
+            return;
+        }
         int tableId = index.indexDef().getRowDef().getRowDefId();
         int indexId = index.getIndexId();
         // Delete index_statistics_entry rows.

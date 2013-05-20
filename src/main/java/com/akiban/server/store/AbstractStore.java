@@ -334,7 +334,7 @@ public abstract class AbstractStore implements Store {
         ts.setMeanRecordLength(100);
         ts.setBlockSize(8192);
         for(Index index : rowDef.getIndexes()) {
-            if(!index.isTableIndex()) {
+            if(index.isSpatial()) {
                 continue;
             }
             TableStatistics.Histogram histogram = indexStatisticsToHistogram(session, index, createKey());
