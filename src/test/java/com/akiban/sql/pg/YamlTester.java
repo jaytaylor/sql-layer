@@ -61,6 +61,9 @@ import java.util.Stack;
 import java.util.regex.Pattern;
 
 import com.akiban.server.types3.Types3Switch;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.AbstractConstruct;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -167,6 +170,7 @@ import org.yaml.snakeyaml.nodes.Tag;
 
 */
 class YamlTester {
+    private static final Logger LOG = LoggerFactory.getLogger(YamlTester.class);
 
     private static final boolean DEBUG = Boolean.getBoolean("test.DEBUG");
     private static final Map<String, Integer> typeNameToNumber = new HashMap<>();
@@ -302,6 +306,7 @@ class YamlTester {
             }
         }
         catch (SQLException e) {
+            LOG.error("SQL Failed on connection {} with message {}", connection, e.getMessage());
             throw new ContextAssertionError(sql, e.toString(), e);
         }
     }
