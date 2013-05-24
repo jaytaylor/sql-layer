@@ -146,7 +146,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
             if (table.hasMemoryTableFactory()) {
                 return table.getMemoryTableFactory().rowCount();
             } else {
-                return store.getTableStatus(table).getRowCount();
+                return table.rowDef().getTableStatus().getRowCount();
             }
         }
         final Exchange ex = store.getExchange(session, index);
@@ -161,7 +161,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     @Override
     public long countEntriesApproximate(Session session, Index index) {
         if (index.isTableIndex()) {
-            return store.getTableStatus(((TableIndex)index).getTable()).getApproximateRowCount();
+            return index.leafMostTable().rowDef().getTableStatus().getApproximateRowCount();
         }
         final Exchange ex = store.getExchange(session, index);
         try {

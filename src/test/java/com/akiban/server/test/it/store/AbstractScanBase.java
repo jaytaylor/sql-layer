@@ -139,8 +139,8 @@ public abstract class AbstractScanBase extends ITBase {
             final byte[] columnBitMap, final int indexId) throws Exception {
         int scanCount = 0;
         result.clear();
-        final RowCollector rc = store().newRowCollector(session(), rowDefId, indexId,
-                scanFlags, start, end, columnBitMap, null);
+        final RowCollector rc = store().newRowCollector(session(), scanFlags, rowDefId, indexId, columnBitMap,
+                                                        start, null, end, null, null);
         if (VERBOSE) {
             System.out.println("Test " + test);
         }

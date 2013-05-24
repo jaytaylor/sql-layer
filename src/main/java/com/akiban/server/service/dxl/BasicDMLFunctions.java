@@ -581,22 +581,14 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     {
         logger.trace("writing a row");
         final RowData rowData = niceRowToRowData(row);
-        try {
-            store().writeRow(session, rowData);
-        } catch (PersistitException ex) {
-            throw new PersistitAdapterException(ex);
-        }
+        store().writeRow(session, rowData);
     }
 
     @Override
     public void writeRows(Session session, List<RowData> rows) {
         logger.trace("writing {} rows", rows.size());
-        try {
-            for(RowData rowData : rows) {
-                store().writeRow(session, rowData);
-            }
-        } catch (PersistitException ex) {
-            throw new PersistitAdapterException(ex);
+        for(RowData rowData : rows) {
+            store().writeRow(session, rowData);
         }
     }
 
@@ -605,11 +597,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     {
         logger.trace("deleting a row (cascade: {})", cascadeDelete);
         final RowData rowData = niceRowToRowData(row);
-        try {
-            store().deleteRow(session, rowData, true, cascadeDelete);
-        } catch (PersistitException ex) {
-            throw new PersistitAdapterException(ex);
-        }
+        store().deleteRow(session, rowData, true, cascadeDelete);
     }
 
     private RowData niceRowToRowData(NewRow row) 
@@ -636,12 +624,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                 tableId
         );
 
-        try {
-            store().updateRow(session, oldData, newData, columnSelector, null);
-        } catch (PersistitException ex) {
-            throw new PersistitAdapterException(ex);
-        }
-            
+        store().updateRow(session, oldData, newData, columnSelector, null);
     }
 
     private void checkForModifiedCursors(
@@ -749,12 +732,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         final UserTable utable = table.isUserTable() ? (UserTable)table : null;
 
         if(utable == null || canFastTruncate(session, utable)) {
-            try {
-                store().truncateGroup(session, table.getGroup());
-            } catch (PersistitException ex) {
-                throw new PersistitAdapterException(ex);
-            }
-                
+            store().truncateGroup(session, table.getGroup());
             return;
         }
 
@@ -810,11 +788,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                 thrown = e;
             }
         }
-        try {
-            store().truncateTableStatus(session, tableId);
-        } catch (PersistitException ex) {
-            throw new PersistitAdapterException(ex);
-        }
+        store().truncateTableStatus(session, tableId);
         if (thrown != null) {
             throw thrown;
         }

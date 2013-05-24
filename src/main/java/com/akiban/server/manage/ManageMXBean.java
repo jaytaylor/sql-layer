@@ -25,15 +25,9 @@ public interface ManageMXBean {
 
     int getJmxPort();
 
-    boolean isDeferIndexesEnabled();
-
-    void setDeferIndexes(final boolean defer);
-
     void buildIndexes(final String arg, final boolean deferIndexes);
 
     void deleteIndexes(final String arg);
-
-    void flushIndexes();
 
     String getVersionString();
 }
