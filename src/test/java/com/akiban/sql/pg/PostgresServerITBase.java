@@ -21,6 +21,8 @@ import com.akiban.server.test.it.ITBase;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 
 import static org.junit.Assert.fail;
+
+import org.junit.AfterClass;
 import org.junit.Ignore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +32,6 @@ import java.sql.DriverManager;
 
 import java.io.File;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
@@ -111,7 +112,7 @@ public class PostgresServerITBase extends ITBase
                     Thread.sleep(200);
                 }
                 catch (InterruptedException ex) {
-                    LOG.warn("caught an interrupted exception; re-interrupting", ex);
+                    LOG.error("caught an interrupted exception; re-interrupting", ex);
                     Thread.currentThread().interrupt();
                 }
             }
@@ -128,6 +129,11 @@ public class PostgresServerITBase extends ITBase
             connectionRef.remove();
             beforeStopServices.remove(forgetOnStopServices);
         }
+    }
+
+    @AfterClass
+    public static void closeConnection() throws Exception {
+        forgetConnection();
     }
 
     protected PostgresServerITBase() {
