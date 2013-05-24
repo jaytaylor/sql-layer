@@ -30,7 +30,7 @@ public class HKeyCache<HKEY extends HKey>
     public HKEY hKey(UserTable table)
     {
         HKEY hKey;
-        int ordinal = table.rowDef().getOrdinal();
+        int ordinal = table.getOrdinal();
         if (ordinalToHKey.isDefined(ordinal)) {
             hKey = ordinalToHKey.get(ordinal);
         } else {

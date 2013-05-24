@@ -101,12 +101,12 @@ public class RowDefCache {
     }
 
     /**
-     * Assign "ordinal" values to user table RowDef instances. An ordinal the
-     * integer used to identify a user table subtree within an hkey. This method
-     * Assigned unique integers where needed to any tables that have not already
-     * received non-zero ordinal values. Once a table is populated, its ordinal
-     * is written as part of the TableStatus record, and on subsequent server
-     * start-ups, that value is loaded and reused from the status tree.
+     * Assign "ordinal" values to tables. An ordinal is an the integer
+     * used to identify a user table subtree within an hkey. This method
+     * assigns unique integers where needed to any tables that have not already
+     * received non-null ordinal values. Once a table is populated, its ordinal
+     * is written as part of the AIS.
+     *
      * @return Map of Table->Ordinal for all Tables/RowDefs in the RowDefCache
      */
     protected Map<Table,Integer> fixUpOrdinals() throws PersistitInterruptedException {
@@ -116,8 +116,8 @@ public class RowDefCache {
             // First pass: merge already assigned values
             HashSet<Integer> assigned = new HashSet<>();
             for(RowDef rowDef : rowDefs) {
-                int ordinal = rowDef.getTableStatus().getOrdinal();
-                if(ordinal != 0 && !assigned.add(ordinal)) {
+                Integer ordinal = rowDef.userTable().getOrdinal();
+                if(ordinal != null && !assigned.add(ordinal)) {
                     throw new IllegalStateException("Non-unique ordinal value " + ordinal + " added to " + assigned);
                 }
             }
@@ -125,17 +125,16 @@ public class RowDefCache {
             // Second pass: assign new ordinals
             int nextOrdinal = 1;
             for(RowDef rowDef : rowDefs) {
-                int ordinal = rowDef.getTableStatus().getOrdinal();
-                if (ordinal == 0) {
+                Integer ordinal = rowDef.userTable().getOrdinal();
+                if (ordinal == null) {
                     while(assigned.contains(nextOrdinal)) {
                         ++nextOrdinal;
                     }
                     ordinal = nextOrdinal++;
-                    rowDef.getTableStatus().setOrdinal(ordinal);
+                    rowDef.userTable().setOrdinal(ordinal);
                 }
                 assigned.add(ordinal);
                 ordinalMap.put(rowDef.table(), ordinal);
-                rowDef.setOrdinalCache(ordinal);
             }
 
             if(assigned.size() != rowDefs.size()) {

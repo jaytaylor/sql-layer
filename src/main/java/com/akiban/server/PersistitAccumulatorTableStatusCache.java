@@ -62,7 +62,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             ts.setRowDef(null);
         }
     }
-    
+
     //
     // Internal
     //
@@ -106,7 +106,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             }
         }
 
-        @Override
         public int getOrdinal() {
             try {
                 return (int) ordinal.getSnapshot();
@@ -226,7 +225,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     private class MemoryStatus implements TableStatus {
         private final int expectedID;
         private final MemoryTableFactory factory;
-        private volatile int ordinal;
 
         private MemoryStatus(int expectedID, MemoryTableFactory factory) {
             this.expectedID = expectedID;
@@ -236,11 +234,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         @Override
         public long getAutoIncrement() {
             throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int getOrdinal() {
-            return ordinal;
         }
 
         @Override
@@ -296,11 +289,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         @Override
         public long createNewUniqueID() {
             throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void setOrdinal(int ordinal) {
-            this.ordinal = ordinal;
         }
 
         @Override

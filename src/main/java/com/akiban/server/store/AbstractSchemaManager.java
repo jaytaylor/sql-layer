@@ -347,8 +347,8 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         // Although ugly, it is safe because accumulators are transactional.
         for(ChangedTableDescription desc : alteredTables) {
             if(desc.isNewGroup()) {
-                UserTable oldTable = oldAIS.getUserTable(desc.getOldName());
-                oldTable.rowDef().getTableStatus().setOrdinal(0);
+                UserTable newTable = newAIS.getUserTable(desc.getOldName());
+                newTable.setOrdinal(null);
             }
         }
 

@@ -87,7 +87,7 @@ public class PersistitStoreIndexStatistics
 
         Exchange exchange = store.getExchange(session, indexStatisticsRowDef);
         exchange.clear()
-            .append(indexStatisticsRowDef.getOrdinal())
+            .append(indexStatisticsRowDef.userTable().getOrdinal())
             .append((long)indexDef.getRowDef().getRowDefId())
             .append((long)index.getIndexId());
         if (!exchange.fetch().getValue().isDefined()) {

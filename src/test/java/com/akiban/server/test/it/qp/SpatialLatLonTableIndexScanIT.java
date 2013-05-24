@@ -70,7 +70,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
     {
         schema = new Schema(ais());
         pointRowType = schema.userTableRowType(userTable(point));
-        pointOrdinal = pointRowType.userTable().rowDef().getOrdinal();
+        pointOrdinal = pointRowType.userTable().getOrdinal();
         latLonIndexRowType = indexType(point, "lat", "lon");
         beforeLatLonIndexRowType = indexType(point, "before", "lat", "lon");
         latLonAfterIndexRowType = indexType(point, "lat", "lon", "after");

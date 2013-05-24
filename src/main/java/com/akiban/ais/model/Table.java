@@ -63,6 +63,16 @@ public abstract class Table extends Columnar implements Traversable, HasGroup
         this.tableId = tableId;
     }
 
+    public Integer getOrdinal()
+    {
+        return ordinal;
+    }
+
+    public void setOrdinal(Integer ordinal)
+    {
+        this.ordinal = ordinal;
+    }
+
     public Group getGroup()
     {
         return group;
@@ -253,4 +263,5 @@ public abstract class Table extends Columnar implements Traversable, HasGroup
     protected MigrationUsage migrationUsage = MigrationUsage.AKIBAN_STANDARD;
     protected String engine;
     private RowDef rowDef;
+    private Integer ordinal;
 }

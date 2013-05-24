@@ -56,7 +56,6 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
         private final int expectedID;
         private final MemoryTableFactory factory;
         private long autoIncrement = 0;
-        private int ordinal = 0;
         private long rowCount = 0;
         private long uniqueID = 0;
 
@@ -68,11 +67,6 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
         @Override
         public synchronized long getAutoIncrement() {
             return autoIncrement;
-        }
-
-        @Override
-        public synchronized int getOrdinal() {
-            return ordinal;
         }
 
         @Override
@@ -132,11 +126,6 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
         @Override
         public synchronized void setAutoIncrement(long autoIncrement) {
             this.autoIncrement = Math.max(this.autoIncrement, autoIncrement);
-        }
-
-        @Override
-        public synchronized void setOrdinal(int ordinal) {
-            this.ordinal = ordinal;
         }
 
         @Override

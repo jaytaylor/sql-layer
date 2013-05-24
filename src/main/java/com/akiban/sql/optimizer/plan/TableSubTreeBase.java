@@ -50,7 +50,7 @@ public class TableSubTreeBase<T extends TableSubTreeBase.TableNodeBase<T>>
         }
 
         public int getOrdinal() {
-            return table.rowDef().getOrdinal();
+            return table.getOrdinal();
         }
 
         /** Is <code>this</code> an ancestor of <code>other</code>? */

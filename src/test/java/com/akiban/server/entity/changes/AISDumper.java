@@ -42,6 +42,7 @@ public class AISDumper {
         Map<Sequence,Column> identityColumns = new HashMap<>();
         for(UserTable table : clone.getUserTables().values()) {
             table.setTableId(-1);
+            table.setOrdinal(null);
             table.setVersion(null);
             for(Column column : table.getColumnsIncludingInternal()) {
                 column.clearMaxAndPrefixSize();

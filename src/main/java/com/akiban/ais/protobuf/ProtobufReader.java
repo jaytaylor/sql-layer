@@ -199,6 +199,9 @@ public class ProtobufReader {
                     pbTable.getTableName(),
                     pbTable.hasTableId() ? pbTable.getTableId() : generatedId++
             );
+            if(pbTable.hasOrdinal()) {
+                userTable.setOrdinal(pbTable.getOrdinal());
+            }
             UUID uuid;
             if (pbTable.hasUuid()) {
                 try {
@@ -724,7 +727,8 @@ public class ProtobufReader {
                 AISProtobuf.Table.VERSION_FIELD_NUMBER,
                 AISProtobuf.Table.PENDINGOSC_FIELD_NUMBER,
                 AISProtobuf.Table.UUID_FIELD_NUMBER,
-                AISProtobuf.Table.FULLTEXTINDEXES_FIELD_NUMBER
+                AISProtobuf.Table.FULLTEXTINDEXES_FIELD_NUMBER,
+                AISProtobuf.Table.ORDINAL_FIELD_NUMBER
         );
     }
 

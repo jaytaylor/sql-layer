@@ -85,8 +85,8 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
         schema = new Schema(ais());
         parentRowType = schema.userTableRowType(userTable(parent));
         childRowType = schema.userTableRowType(userTable(child));
-        parentOrdinal = parentRowType.userTable().rowDef().getOrdinal();
-        childOrdinal = childRowType.userTable().rowDef().getOrdinal();
+        parentOrdinal = parentRowType.userTable().getOrdinal();
+        childOrdinal = childRowType.userTable().getOrdinal();
         cSpatialIndexRowType = groupIndexType(groupName, "parent.pbefore", "child.clat", "child.clon", "child.cafter");
         pSpatialIndexRowType = groupIndexType(groupName, "parent.pbefore", "parent.plat", "parent.plon", "child.cafter");
         space = SpaceLatLon.create();

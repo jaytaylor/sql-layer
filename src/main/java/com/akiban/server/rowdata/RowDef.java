@@ -41,8 +41,6 @@ public class RowDef {
 
     private final TableStatus tableStatus;
     
-    private volatile int ordinalCache;
-
     /**
      * Array of FieldDef, one per column
      */
@@ -113,16 +111,6 @@ public class RowDef {
         }
     }
 
-    /**
-     * Should be used for tests only. Will contain no TableStatus.
-     * @param table Associated table
-     * @param ordinal Ordinal value
-     */
-    public RowDef(Table table, int ordinal) {
-        this(table, null);
-        ordinalCache = ordinal;
-    }
-    
     public Table table() {
         return table;
     }
@@ -432,14 +420,6 @@ public class RowDef {
         return table.getName().getSchemaName();
     }
 
-    public int getOrdinal() {
-        return ordinalCache;
-    }
-
-    void setOrdinalCache(int ordinal) {
-        ordinalCache = ordinal;
-    }
-
     public boolean isUserTable() {
         return table.isUserTable();
     }
@@ -558,7 +538,6 @@ public class RowDef {
                 && AkServerUtil.equals(table.getName(), def.table.getName())
                 && Arrays.deepEquals(fieldDefs, def.fieldDefs)
                 && Arrays.deepEquals(indexes, def.indexes)
-                && getOrdinal() == def.getOrdinal()
                 && Arrays.equals(parentJoinFields, def.parentJoinFields);
 
     }
