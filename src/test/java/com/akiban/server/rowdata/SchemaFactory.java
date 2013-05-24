@@ -142,11 +142,7 @@ public class SchemaFactory {
 
     public void buildRowDefs(AkibanInformationSchema ais) {
         RowDefCache rowDefCache = new FakeRowDefCache();
-        try {
-            rowDefCache.setAIS(ais);
-        } catch(PersistitInterruptedException e) {
-            throw new PersistitAdapterException(e);
-        }
+        rowDefCache.setAIS(ais);
     }
 
     private static class FakeRowDefCache extends RowDefCache {
@@ -155,7 +151,7 @@ public class SchemaFactory {
         }
 
         @Override
-        protected Map<Table,Integer> fixUpOrdinals() throws PersistitInterruptedException {
+        protected Map<Table,Integer> fixUpOrdinals() {
             Map<Group,List<RowDef>> groupToRowDefs = getRowDefsByGroup();
             Map<Table,Integer> ordinalMap = new HashMap<>();
             for(List<RowDef> allRowDefs  : groupToRowDefs.values()) {

@@ -216,12 +216,14 @@ public class BasicInfoSchemaTablesServiceImpl
                     while(tableIt.hasNext()) {
                         UserTable table = tableIt.next();
                         final String tableType = table.hasMemoryTableFactory() ? "DICTIONARY VIEW" : "TABLE";
+                        final Integer ordinal = table.hasMemoryTableFactory() ? null : table.getOrdinal();
                         if(isAccessible(session, table.getName())) {
                             return new ValuesRow(rowType,
                                                  table.getName().getSchemaName(),
                                                  table.getName().getTableName(),
                                                  tableType,
                                                  table.getTableId(),
+                                                 ordinal,
                                                  table.hasMemoryTableFactory() ? null : table.getGroup().getTreeName(),
                                                  CHARSET_SCHEMA,
                                                  table.getCharsetAndCollation().charset(),
@@ -1474,6 +1476,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("table_name", IDENT_MAX, false)
                 .colString("table_type", IDENT_MAX, false)
                 .colBigInt("table_id", true)
+                .colBigInt("ordinal", true)
                 .colString("tree_name", PATH_MAX, true)
                 .colString("character_set_schema", IDENT_MAX, true)
                 .colString("character_set_name", IDENT_MAX, true)

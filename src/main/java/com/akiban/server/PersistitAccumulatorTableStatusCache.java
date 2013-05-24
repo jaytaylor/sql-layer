@@ -63,6 +63,13 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
     }
 
+    public int recoverAccumulatorOrdinal(TableStatus tableStatus) {
+        if(!(tableStatus instanceof AccumulatorStatus)) {
+            throw new IllegalArgumentException("Expected AccumulatorStatus: " + tableStatus);
+        }
+        return ((AccumulatorStatus)tableStatus).getOrdinal();
+    }
+
     //
     // Internal
     //
@@ -106,6 +113,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             }
         }
 
+        /** @deprecated Only used for 'upgrading' previous volumes as ordinal now lives in AIS */
         public int getOrdinal() {
             try {
                 return (int) ordinal.getSnapshot();
@@ -165,14 +173,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         @Override
         public void rowsWritten(long count) {
             rowCount.sumAdd(count);
-        }
-
-        public void setOrdinal(int ordinal) {
-            try {
-                this.ordinal.set(ordinal);
-            } catch(PersistitInterruptedException e) {
-                throw PersistitAdapter.wrapPersistitException(null, e);
-            }
         }
 
         @Override

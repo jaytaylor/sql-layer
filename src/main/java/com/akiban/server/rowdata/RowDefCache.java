@@ -70,10 +70,18 @@ public class RowDefCache {
     }
 
     /**
-     * Receive an instance of the AkibanInformationSchema, crack it and produce
-     * the RowDef instances it defines.
-     */
-    public synchronized void setAIS(final AkibanInformationSchema newAIS) throws PersistitInterruptedException {
+     * Create RowDefs for every table in the given AIS, along with generating ordinals if needed and computing
+     * derived information for indexes. */
+    public void setAIS(AkibanInformationSchema newAIS) {
+        setAIS(newAIS, false);
+    }
+
+    /** Like {@link #setAIS(AkibanInformationSchema)}, but without ordinal or derived information changes */
+    public void setAISWithoutOrdinals(AkibanInformationSchema newAIS) {
+        setAIS(newAIS, true);
+    }
+
+    private synchronized void setAIS(AkibanInformationSchema newAIS, boolean skipOrdinals) {
         ais = newAIS;
 
         Map<Integer, RowDef> newRowDefs = new TreeMap<>();
@@ -86,9 +94,11 @@ public class RowDefCache {
             }
         }
 
-        Map<Table,Integer> ordinalMap = fixUpOrdinals();
-        for (RowDef rowDef : newRowDefs.values()) {
-            rowDef.computeFieldAssociations(ordinalMap);
+        if(!skipOrdinals) {
+            Map<Table,Integer> ordinalMap = fixUpOrdinals();
+            for (RowDef rowDef : newRowDefs.values()) {
+                rowDef.computeFieldAssociations(ordinalMap);
+            }
         }
 
         if (LOG.isDebugEnabled()) {
@@ -100,6 +110,16 @@ public class RowDefCache {
         return ais;
     }
 
+    private RowDef createRowDefCommon(Table table, MemoryTableFactory factory) {
+        final TableStatus status;
+        if(factory == null) {
+            status = tableStatusCache.createTableStatus(table.getTableId());
+        } else {
+            status = tableStatusCache.getOrCreateMemoryTableStatus(table.getTableId(), factory);
+        }
+        return new RowDef(table, status); // Hooks up table's rowDef too
+    }
+
     /**
      * Assign "ordinal" values to tables. An ordinal is an the integer
      * used to identify a user table subtree within an hkey. This method
@@ -109,7 +129,7 @@ public class RowDefCache {
      *
      * @return Map of Table->Ordinal for all Tables/RowDefs in the RowDefCache
      */
-    protected Map<Table,Integer> fixUpOrdinals() throws PersistitInterruptedException {
+    protected Map<Table,Integer> fixUpOrdinals() {
         Map<Group,List<RowDef>> groupToRowDefs = getRowDefsByGroup();
         Map<Table,Integer> ordinalMap = new HashMap<>();
         for(List<RowDef> rowDefs  : groupToRowDefs.values()) {
@@ -144,17 +164,7 @@ public class RowDefCache {
         return ordinalMap;
     }
 
-    private RowDef createRowDefCommon(Table table, MemoryTableFactory factory) {
-        final TableStatus status;
-        if(factory == null) {
-            status = tableStatusCache.createTableStatus(table.getTableId());
-        } else {
-            status = tableStatusCache.getOrCreateMemoryTableStatus(table.getTableId(), factory);
-        }
-        return new RowDef(table, status); // Hooks up table's rowDef too
-    }
-
-    private RowDef createUserTableRowDef(UserTable table) throws PersistitInterruptedException {
+    private RowDef createUserTableRowDef(UserTable table) {
         RowDef rowDef = createRowDefCommon(table, table.getMemoryTableFactory());
         // parentRowDef
         int[] parentJoinFields;

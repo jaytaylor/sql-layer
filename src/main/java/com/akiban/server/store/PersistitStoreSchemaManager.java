@@ -42,6 +42,7 @@ import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.PersistitAccumulatorTableStatusCache;
 import com.akiban.server.error.AISTooLargeException;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedMetadataTypeException;
@@ -330,6 +331,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
 
         this.aisMap = ReadWriteMap.wrapNonFair(new HashMap<Long,SharedAIS>());
 
+        final int[] ordinalChangeCount = { 0 };
         AkibanInformationSchema newAIS = transactionally(
                 sessionService.createSession(),
                 new ThrowingCallable<AkibanInformationSchema>() {
@@ -339,7 +341,13 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
                         cleanupDelayedTrees(session);
 
                         SharedAIS sAIS = loadAISFromStorage(session, GenValue.SNAPSHOT, GenMap.PUT_NEW);
-                        buildRowDefCache(sAIS.ais);
+
+                        // Migrate requires RowDefs, but shouldn't generate ordinals (otherwise nulls will be lost)
+                        buildRowDefCache(sAIS.ais, true);
+                        ordinalChangeCount[0] = migrateAccumulatorOrdinals(sAIS.ais);
+                        // And generate it fully now that ordinals are definitely set
+                        buildRowDefCache(sAIS.ais, false);
+
                         long startTimestamp = txnService.getTransactionStartTimestamp(session);
                         sAIS.acquire(); // So count while in cache is 1
                         latestAISCache = new AISAndTimestamp(sAIS, startTimestamp);
@@ -382,7 +390,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
             final AkibanInformationSchema upgradeAIS = AISCloner.clone(newAIS);
             UuidAssigner uuidAssigner = new UuidAssigner();
             upgradeAIS.traversePostOrder(uuidAssigner);
-            if (uuidAssigner.assignedAny()) {
+            if(uuidAssigner.assignedAny() || ordinalChangeCount[0] > 0) {
                 transactionally(sessionService.createSession(), new ThrowingCallable<Void>() {
                     @Override
                     public Void runAndReturn(Session session) throws PersistitException {
@@ -509,10 +517,18 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
         builder.groupingIsComplete();
     }
 
-    private void buildRowDefCache(AkibanInformationSchema newAis) throws PersistitException {
+    private void buildRowDefCache(AkibanInformationSchema newAis ) throws PersistitException {
+        buildRowDefCache(newAis, false);
+    }
+
+    private void buildRowDefCache(AkibanInformationSchema newAis, boolean skipOrdinals) throws PersistitException {
         treeService.getTableStatusCache().detachAIS();
         // This create|verifies the trees exist for indexes & tables
-        rowDefCache.setAIS(newAis);
+        if(skipOrdinals) {
+            rowDefCache.setAISWithoutOrdinals(newAis);
+        } else {
+            rowDefCache.setAIS(newAis);
+        }
         // This creates|verifies the trees exist for sequences.
         // TODO: Why are sequences special here?
         sequenceTrees(newAis);
@@ -1065,6 +1081,29 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
             txnService.rollbackTransactionIfOpen(session);
             session.close();
         }
+    }
+
+    /**
+     * Find UserTables without ordinals and look them up in the old Accumulator based location.
+     * @return count of tables whose ordinal was updated
+     */
+    private int migrateAccumulatorOrdinals(AkibanInformationSchema newAIS) {
+        if(!(treeService.getTableStatusCache() instanceof PersistitAccumulatorTableStatusCache)) {
+            return 0;
+        }
+        PersistitAccumulatorTableStatusCache tsc = (PersistitAccumulatorTableStatusCache)treeService.getTableStatusCache();
+        int recoveredCount = 0;
+        for(UserTable table : newAIS.getUserTables().values()) {
+            if(!table.hasMemoryTableFactory() && (table.getOrdinal() == null)) {
+                int ordinal = tsc.recoverAccumulatorOrdinal(table.rowDef().getTableStatus());
+                table.setOrdinal(ordinal);
+                ++recoveredCount;
+            }
+        }
+        if(recoveredCount > 0) {
+            LOG.info("Migrated {} ordinal values", recoveredCount);
+        }
+        return recoveredCount;
     }
 
     private static final Callback CLEAR_SESSION_KEY_CALLBACK = new TransactionService.Callback() {
