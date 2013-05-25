@@ -1546,12 +1546,11 @@ public class PersistitStore extends AbstractStore implements Service
         }
     }
 
-    public <V extends IndexVisitor> V traverse(Session session, Index index, V visitor) throws PersistitException {
+    public <V extends IndexVisitor<Key,Value>> V traverse(Session session, Index index, V visitor) throws PersistitException {
         Exchange exchange = getExchange(session, index).append(Key.BEFORE);
         try {
-            visitor.initialize(exchange);
             while (exchange.next(true)) {
-                visitor.visit();
+                visitor.visit(exchange.getKey(), exchange.getValue());
             }
         } finally {
             releaseExchange(session, exchange);
