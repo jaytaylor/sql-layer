@@ -91,7 +91,7 @@ public abstract class Operator implements Plannable
 
     protected int ordinal(UserTable table)
     {
-        return (table.rowDef()).getOrdinal();
+        return table.getOrdinal();
     }
 
     // Class state

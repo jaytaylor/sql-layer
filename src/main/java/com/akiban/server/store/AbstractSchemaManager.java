@@ -347,8 +347,15 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         // Although ugly, it is safe because accumulators are transactional.
         for(ChangedTableDescription desc : alteredTables) {
             if(desc.isNewGroup()) {
-                UserTable oldTable = oldAIS.getUserTable(desc.getOldName());
-                oldTable.rowDef().getTableStatus().setOrdinal(0);
+                UserTable newTable = newAIS.getUserTable(desc.getOldName());
+                newTable.setOrdinal(null);
+            }
+        }
+        // Two passes to ensure all tables in a group are reset before beginning assignment
+        for(ChangedTableDescription desc : alteredTables) {
+            if(desc.isNewGroup()) {
+                UserTable newTable = newAIS.getUserTable(desc.getOldName());
+                assignNewOrdinal(newTable);
             }
         }
 
@@ -568,6 +575,8 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         mergedTable.setVersion(version);
         tableVersionMap.putNewKey(mergedTable.getTableId(), version);
 
+        assignNewOrdinal(mergedTable);
+
         if(factory == null) {
             saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(newName.getSchemaName()));
         } else {
@@ -709,6 +718,13 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         }
     }
 
+    private static void assignNewOrdinal(final UserTable newTable) {
+        assert newTable.getOrdinal() == null : newTable + ": " + newTable.getOrdinal();
+        MaxOrdinalVisitor visitor = new MaxOrdinalVisitor();
+        newTable.getGroup().getRoot().traverseTableAndDescendants(visitor);
+        newTable.setOrdinal(visitor.maxOrdinal + 1);
+    }
+
     private static void checkSystemSchema(TableName tableName, boolean shouldBeSystem) {
         String schemaName = tableName.getSchemaName();
         final boolean inSystem = TableName.INFORMATION_SCHEMA.equals(schemaName) ||
@@ -760,6 +776,18 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         }
         if (!shouldExist && exists) {
             throw new DuplicateSequenceNameException(sequenceName);
+        }
+    }
+
+    private static class MaxOrdinalVisitor extends NopVisitor {
+        public int maxOrdinal = 0;
+
+        @Override
+        public void visitUserTable(UserTable table) {
+            Integer ordinal = table.getOrdinal();
+            if((ordinal != null) && (ordinal > maxOrdinal)) {
+                maxOrdinal = ordinal;
+            }
         }
     }
 }

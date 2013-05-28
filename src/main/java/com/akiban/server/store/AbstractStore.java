@@ -202,7 +202,7 @@ public abstract class AbstractStore implements Store {
         UserTable table = rowDef.userTable();
         BitSet ordinals = new BitSet();
         for (UserTable hKeyDependentTable : table.hKeyDependentTables()) {
-            int ordinal = hKeyDependentTable.rowDef().getOrdinal();
+            int ordinal = hKeyDependentTable.getOrdinal();
             ordinals.set(ordinal, true);
         }
         return ordinals;

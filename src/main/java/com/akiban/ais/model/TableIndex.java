@@ -98,7 +98,7 @@ public class TableIndex extends Index
             // the ordinal from the rowdef.
             Integer ordinal =
                 ordinalMap == null
-                ? hKeySegment.table().rowDef().getOrdinal()
+                ? hKeySegment.table().getOrdinal()
                 : ordinalMap.get(hKeySegment.table());
             assert ordinal != null : hKeySegment.table();
             toHKeyBuilder.toHKeyEntry(ordinal, -1);

@@ -56,7 +56,7 @@ public class PKLessTableRowDefCacheTest
         Assert.assertEquals(3, rowComp.getFieldPosition(1)); // test.d
         Assert.assertEquals(5, rowComp.getFieldPosition(2)); // Akiban PK
         indexToHKey = index.indexToHKey();
-        Assert.assertEquals(test.getOrdinal(), indexToHKey.getOrdinal(0)); // test ordinal
+        Assert.assertEquals(t.getOrdinal().intValue(), indexToHKey.getOrdinal(0)); // test ordinal
         Assert.assertEquals(2, indexToHKey.getIndexRowPosition(1)); // test row counter
         // d, b index
         index = t.getIndex("d_b");
@@ -67,7 +67,7 @@ public class PKLessTableRowDefCacheTest
         Assert.assertEquals(1, rowComp.getFieldPosition(1)); // test.b
         Assert.assertEquals(5, rowComp.getFieldPosition(2)); // Akiban PK
         indexToHKey = index.indexToHKey();
-        Assert.assertEquals(test.getOrdinal(), indexToHKey.getOrdinal(0)); // test ordinal
+        Assert.assertEquals(t.getOrdinal().intValue(), indexToHKey.getOrdinal(0)); // test ordinal
         Assert.assertEquals(2, indexToHKey.getIndexRowPosition(1)); // Akiban PK
     }
 
@@ -105,7 +105,7 @@ public class PKLessTableRowDefCacheTest
         rowComp = index.indexRowComposition();
         Assert.assertEquals(0, rowComp.getFieldPosition(0)); // parent.p1
         indexToHKey = index.indexToHKey();
-        Assert.assertEquals(parent.getOrdinal(), indexToHKey.getOrdinal(0)); // parent ordinal
+        Assert.assertEquals(p.getOrdinal().intValue(), indexToHKey.getOrdinal(0)); // parent ordinal
         Assert.assertEquals(0, indexToHKey.getIndexRowPosition(1)); // parent p1
         // ------------------------- child -----------------------------------------------------------------------------
         RowDef child = ais.getTable(tableName("child")).rowDef();
@@ -122,9 +122,9 @@ public class PKLessTableRowDefCacheTest
         Assert.assertEquals(1, rowComp.getFieldPosition(0)); // child.c2
         Assert.assertEquals(0, rowComp.getFieldPosition(1)); // child.c1
         indexToHKey = index.indexToHKey();
-        Assert.assertEquals(parent.getOrdinal(), indexToHKey.getOrdinal(0)); // parent ordinal
+        Assert.assertEquals(p.getOrdinal().intValue(), indexToHKey.getOrdinal(0)); // parent ordinal
         Assert.assertEquals(2, indexToHKey.getIndexRowPosition(1)); // child p1
-        Assert.assertEquals(child.getOrdinal(), indexToHKey.getOrdinal(2)); // child ordinal
+        Assert.assertEquals(c.getOrdinal().intValue(), indexToHKey.getOrdinal(2)); // child ordinal
         Assert.assertEquals(3, indexToHKey.getIndexRowPosition(3)); // child row counter
     }
 

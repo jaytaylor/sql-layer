@@ -472,7 +472,7 @@ public class TableChangeValidator {
                 change = ParentChange.UPDATE;
             } else if(renamed) {
                 updateFinalChangeLevel(ChangeLevel.METADATA);
-                change = ParentChange.UPDATE;
+                change = ParentChange.META;
                 preserve = true;
             }
 
@@ -658,7 +658,7 @@ public class TableChangeValidator {
                 }
             }
         }
-        return sawRename ? ParentChange.UPDATE : ParentChange.NONE;
+        return sawRename ? ParentChange.META : ParentChange.NONE;
     }
 
     private void addNotPresent(boolean isIndex, TableChange change) {

@@ -327,7 +327,10 @@ public class ProtobufWriter {
                 setTableName(table.getName().getTableName()).
                 setTableId(table.getTableId()).
                 setCharColl(convertCharAndCol(table.getCharsetAndCollation()));
-                // Not yet in AIS: ordinal, description, protected
+
+        if(table.getOrdinal() != null) {
+            tableBuilder.setOrdinal(table.getOrdinal());
+        }
 
         UUID tableUuid = table.getUuid();
         if (tableUuid != null) {

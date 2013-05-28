@@ -641,7 +641,7 @@ public class PersistitStore extends AbstractStore implements Service
             HKeySegment hKeySegment = hKeySegments.get(s++);
             // Write the ordinal for this segment
             RowDef segmentRowDef = hKeySegment.table().rowDef();
-            hKeyAppender.append(segmentRowDef.getOrdinal());
+            hKeyAppender.append(segmentRowDef.userTable().getOrdinal());
             // Iterate over the segment's columns
             List<HKeyColumn> hKeyColumns = hKeySegment.columns();
             int c = 0;
@@ -659,7 +659,7 @@ public class PersistitStore extends AbstractStore implements Service
                         parentPKIndexRow = readPKIndexRow(adapter, parentPK, parentPKExchange, rowDef, rowData);
                     }
                     if(indexToHKey.isOrdinal(i2hPosition)) {
-                        assert indexToHKey.getOrdinal(i2hPosition) == segmentRowDef.getOrdinal() : hKeyColumn;
+                        assert indexToHKey.getOrdinal(i2hPosition) == segmentRowDef.userTable().getOrdinal() : hKeyColumn;
                         ++i2hPosition;
                     }
                     if (parentPKIndexRow != null) {
@@ -815,7 +815,7 @@ public class PersistitStore extends AbstractStore implements Service
                 while (s < hKeySegments.size()) {
                     HKeySegment segment = hKeySegments.get(s++);
                     RowDef segmentRowDef = segment.table().rowDef();
-                    hKey.append(segmentRowDef.getOrdinal());
+                    hKey.append(segmentRowDef.userTable().getOrdinal());
                     List<HKeyColumn> hKeyColumns = segment.columns();
                     int c = 0;
                     while (c < hKeyColumns.size()) {
@@ -1177,7 +1177,7 @@ public class PersistitStore extends AbstractStore implements Service
             expandRowData(exchange, descendentRowData);
             int descendentRowDefId = descendentRowData.getRowDefId();
             RowDef descendentRowDef = getRowDef(session, descendentRowDefId);
-            int descendentOrdinal = descendentRowDef.getOrdinal();
+            int descendentOrdinal = descendentRowDef.userTable().getOrdinal();
             if ((tablesRequiringHKeyMaintenance == null || tablesRequiringHKeyMaintenance.get(descendentOrdinal))) {
                 PROPAGATE_HKEY_CHANGE_ROW_REPLACE_TAP.hit();
                 
@@ -1619,7 +1619,7 @@ public class PersistitStore extends AbstractStore implements Service
         throws PersistitException
     {
         // Write ordinal id to the lock key
-        lockKeyAppender.key().append(lockTable.rowDef().getOrdinal());
+        lockKeyAppender.key().append(lockTable.getOrdinal());
         // Write column values to the lock key
         for (int f = 0; f < nFields; f++) {
             lockKeyAppender.append(fieldDefs[f], rowData);

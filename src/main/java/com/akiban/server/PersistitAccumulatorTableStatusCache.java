@@ -62,7 +62,14 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             ts.setRowDef(null);
         }
     }
-    
+
+    public int recoverAccumulatorOrdinal(TableStatus tableStatus) {
+        if(!(tableStatus instanceof AccumulatorStatus)) {
+            throw new IllegalArgumentException("Expected AccumulatorStatus: " + tableStatus);
+        }
+        return ((AccumulatorStatus)tableStatus).getOrdinal();
+    }
+
     //
     // Internal
     //
@@ -106,7 +113,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             }
         }
 
-        @Override
+        /** @deprecated Only used for 'upgrading' previous volumes as ordinal now lives in AIS */
         public int getOrdinal() {
             try {
                 return (int) ordinal.getSnapshot();
@@ -168,14 +175,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             rowCount.sumAdd(count);
         }
 
-        public void setOrdinal(int ordinal) {
-            try {
-                this.ordinal.set(ordinal);
-            } catch(PersistitInterruptedException e) {
-                throw PersistitAdapter.wrapPersistitException(null, e);
-            }
-        }
-
         @Override
         public long createNewUniqueID() {
             return uniqueID.seqAllocate();
@@ -226,7 +225,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     private class MemoryStatus implements TableStatus {
         private final int expectedID;
         private final MemoryTableFactory factory;
-        private volatile int ordinal;
 
         private MemoryStatus(int expectedID, MemoryTableFactory factory) {
             this.expectedID = expectedID;
@@ -236,11 +234,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         @Override
         public long getAutoIncrement() {
             throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int getOrdinal() {
-            return ordinal;
         }
 
         @Override
@@ -296,11 +289,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         @Override
         public long createNewUniqueID() {
             throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void setOrdinal(int ordinal) {
-            this.ordinal = ordinal;
         }
 
         @Override

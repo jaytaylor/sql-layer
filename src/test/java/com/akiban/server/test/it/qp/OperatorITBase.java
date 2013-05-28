@@ -135,10 +135,10 @@ public class OperatorITBase extends ITBase
         addressAddressIndexRowType = indexType(address, "address");
         customerNameItemOidIndexRowType = groupIndexType(Index.JoinType.LEFT, "customer.name", "item.oid");
         coi = group(customer);
-        customerOrdinal =  ddl().getTable(session(),  customer).rowDef().getOrdinal();
-        orderOrdinal =  ddl().getTable(session(),  order).rowDef().getOrdinal();
-        itemOrdinal = ddl().getTable(session(),  item).rowDef().getOrdinal();
-        addressOrdinal =  ddl().getTable(session(),  address).rowDef().getOrdinal();
+        customerOrdinal =  ddl().getTable(session(),  customer).getOrdinal();
+        orderOrdinal =  ddl().getTable(session(),  order).getOrdinal();
+        itemOrdinal = ddl().getTable(session(),  item).getOrdinal();
+        addressOrdinal =  ddl().getTable(session(),  address).getOrdinal();
         db = new NewRow[]{createNewRow(customer, 1L, "xyz"),
                           createNewRow(customer, 2L, "abc"),
                           createNewRow(order, 11L, 1L, "ori"),
@@ -481,7 +481,7 @@ public class OperatorITBase extends ITBase
 
     protected int ordinal(RowType rowType)
     {
-        return rowType.userTable().rowDef().getOrdinal();
+        return rowType.userTable().getOrdinal();
     }
 
 

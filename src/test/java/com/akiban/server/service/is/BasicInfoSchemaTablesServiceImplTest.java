@@ -391,21 +391,21 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void tablesScan() {
         final Object[][] expected = {
-                { "gco", "a", "TABLE", LONG, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "gco", "b", "TABLE", LONG, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "gco", "m", "TABLE", LONG, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "gco", "r", "TABLE", LONG, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "gco", "w", "TABLE", LONG, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "gco", "x", "TABLE", LONG, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "test", "bar", "TABLE", LONG, "bar_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "test", "bar2", "TABLE", LONG, "bar_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "test", "defaults", "TABLE", LONG, "defaults_tree", I_S, VARCHAR, I_S, VARCHAR, LONG},
-                { "test", "foo", "TABLE", LONG, "foo_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "test", "seq-table", "TABLE", LONG, "seq-table_tree", I_S, VARCHAR, I_S, VARCHAR, LONG}, 
-                { "zap", "pow", "TABLE", LONG, "pow_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "zzz", "zzz1", "TABLE", LONG, "zzz1_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "zzz", "zzz2", "TABLE", LONG, "zzz1_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "test", "voo", "VIEW", null, null, null, null, null, null, LONG },
+                { "gco", "a", "TABLE", LONG, null, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "b", "TABLE", LONG, null, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "m", "TABLE", LONG, null, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "r", "TABLE", LONG, null, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "w", "TABLE", LONG, null, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "x", "TABLE", LONG, null, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "test", "bar", "TABLE", LONG, null, "bar_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "test", "bar2", "TABLE", LONG, null, "bar_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "test", "defaults", "TABLE", LONG, null, "defaults_tree", I_S, VARCHAR, I_S, VARCHAR, LONG},
+                { "test", "foo", "TABLE", LONG, null, "foo_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "test", "seq-table", "TABLE", LONG, null, "seq-table_tree", I_S, VARCHAR, I_S, VARCHAR, LONG},
+                { "zap", "pow", "TABLE", LONG, null, "pow_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "zzz", "zzz1", "TABLE", LONG, null, "zzz1_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "zzz", "zzz2", "TABLE", LONG, null, "zzz1_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "test", "voo", "VIEW", null, null, null, null, null, null, null, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
@@ -447,7 +447,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.COLUMNS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S columns", 139, skipped);
+        assertEquals("Skipped I_S columns", 140, skipped);
     }
 
     @Test

@@ -508,7 +508,7 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
 
     private String pKey(Long pid)
     {
-        return String.format("{%d,%s}", parentRowType.userTable().rowDef().getOrdinal(), hKeyValue(pid));
+        return String.format("{%d,%s}", parentRowType.userTable().getOrdinal(), hKeyValue(pid));
     }
 
     private int parent;

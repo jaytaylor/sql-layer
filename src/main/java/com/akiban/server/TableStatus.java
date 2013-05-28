@@ -29,8 +29,7 @@ public interface TableStatus {
     /** Record that a row has been deleted. */
     void rowDeleted();
 
-    /** Record that a row has been written.
-     * @param count*/
+    /** Record that a row has been written. */
     void rowsWritten(long count);
 
     /** Reset, but do not remove, the state of a table. */
@@ -45,18 +44,10 @@ public interface TableStatus {
     /** Create a brand new, unique ID for the given table. */
     long createNewUniqueID();
 
-    /** Set the ordinal value of a given table. */
-    void setOrdinal(int value);
-
     /**
-     * @return Current auto-increment value of the assocated table.
+     * @return Current auto-increment value of the associated table.
      */
     long getAutoIncrement();
-
-    /**
-     * @return Ordinal of the associated table.
-     */
-    int getOrdinal();
 
     /**
      * @return Current number of rows in the associated table.
