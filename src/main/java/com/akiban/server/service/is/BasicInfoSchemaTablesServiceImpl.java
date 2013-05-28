@@ -247,6 +247,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                              null,
                                              null,
                                              null,
+                                             null,
                                              ++rowCounter /*hidden pk*/);
                     }
                 }

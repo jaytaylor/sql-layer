@@ -130,36 +130,11 @@ public class RowDefCache {
      * @return Map of Table->Ordinal for all Tables/RowDefs in the RowDefCache
      */
     protected Map<Table,Integer> fixUpOrdinals() {
-        Map<Group,List<RowDef>> groupToRowDefs = getRowDefsByGroup();
         Map<Table,Integer> ordinalMap = new HashMap<>();
-        for(List<RowDef> rowDefs  : groupToRowDefs.values()) {
-            // First pass: merge already assigned values
-            HashSet<Integer> assigned = new HashSet<>();
-            for(RowDef rowDef : rowDefs) {
-                Integer ordinal = rowDef.userTable().getOrdinal();
-                if(ordinal != null && !assigned.add(ordinal)) {
-                    throw new IllegalStateException("Non-unique ordinal value " + ordinal + " added to " + assigned);
-                }
-            }
-
-            // Second pass: assign new ordinals
-            int nextOrdinal = 1;
-            for(RowDef rowDef : rowDefs) {
-                Integer ordinal = rowDef.userTable().getOrdinal();
-                if (ordinal == null) {
-                    while(assigned.contains(nextOrdinal)) {
-                        ++nextOrdinal;
-                    }
-                    ordinal = nextOrdinal++;
-                    rowDef.userTable().setOrdinal(ordinal);
-                }
-                assigned.add(ordinal);
-                ordinalMap.put(rowDef.table(), ordinal);
-            }
-
-            if(assigned.size() != rowDefs.size()) {
-                throw new IllegalStateException("Inconsistent ordinal number assignments: " + assigned);
-            }
+        for(UserTable table : ais.getUserTables().values()) {
+            Integer ordinal = table.getOrdinal();
+            assert ordinal != null : "Null ordinal: " + table;
+            ordinalMap.put(table, ordinal);
         }
         return ordinalMap;
     }
