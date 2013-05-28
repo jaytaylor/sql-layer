@@ -71,7 +71,7 @@ public class KeyToObjectIT extends ITBase {
 
         final Iterator<NewRow> rowIt = allRows.iterator();
 
-        persistitStore().traverse(session(), index, new IndexVisitor() {
+        persistitStore().traverse(session(), index, new IndexVisitor<Key,Value>() {
             private int rowCounter = 0;
 
             @Override

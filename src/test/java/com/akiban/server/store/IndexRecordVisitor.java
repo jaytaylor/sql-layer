@@ -17,21 +17,19 @@
 
 package com.akiban.server.store;
 
-import com.akiban.server.error.InvalidOperationException;
 import com.akiban.util.Undef;
 import com.persistit.Key;
 import com.persistit.Value;
-import com.persistit.exception.PersistitException;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class IndexRecordVisitor extends IndexVisitor {
+public abstract class IndexRecordVisitor extends IndexVisitor<Key,Value> {
 
     protected abstract void visit(List<?> key, Object value);
 
     @Override
-    protected final void visit(Key key, Value value) throws PersistitException, InvalidOperationException {
+    protected final void visit(Key key, Value value) {
         List<?> keyList = key(key, value);
         Object valueObj = value.isDefined() ? value.get() : Undef.only();
         visit(keyList, valueObj);

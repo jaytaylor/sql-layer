@@ -467,7 +467,7 @@ public final class IndexHistogramsIT extends ITBase {
     }
 
     private int bucketCount() {
-        return PersistitStoreIndexStatistics.bucketCount(configService());
+        return serviceManager().getServiceByClass(IndexStatisticsService.class).bucketCount();
     }
 
     private GroupIndex namePlacedGi;

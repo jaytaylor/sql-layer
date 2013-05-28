@@ -23,6 +23,8 @@ import com.akiban.qp.persistitadapter.TempVolume;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.store.PersistitStore;
+import com.akiban.server.store.statistics.histograms.Sampler;
+import com.akiban.util.Flywheel;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Value;
@@ -30,7 +32,7 @@ import com.persistit.exception.PersistitException;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class SingleColumnIndexStatisticsVisitor extends IndexStatisticsGenerator
+public class PersistitSingleColumnIndexStatisticsVisitor extends IndexStatisticsGenerator<Key,Value>
 {
     @Override
     public void init(int bucketCount, long distinctCount)
@@ -75,12 +77,28 @@ public class SingleColumnIndexStatisticsVisitor extends IndexStatisticsGenerator
         }
     }
 
-    public SingleColumnIndexStatisticsVisitor(PersistitStore store,
-                                              Session session,
-                                              IndexColumn indexColumn,
-                                              KeyCreator keyCreator)
+    @Override
+    public Sampler<Key> createKeySampler(int bucketCount, long distinctCount) {
+        return new Sampler<>(
+                new PersistitKeySplitter(columnCount(), getKeysFlywheel()),
+                bucketCount,
+                distinctCount,
+                getKeysFlywheel()
+        );
+    }
+
+    @Override
+    protected byte[] copyOfKeyBytes(Key key) {
+        byte[] copy = new byte[key.getEncodedSize()];
+        System.arraycopy(key.getEncodedBytes(), 0, copy, 0, copy.length);
+        return copy;
+    }
+
+    public PersistitSingleColumnIndexStatisticsVisitor(PersistitStore store,
+                                                       Session session,
+                                                       IndexColumn indexColumn)
     {
-        super(indexColumn.getIndex(), 1, indexColumn.getPosition(), keyCreator);
+        super(new PersistitKeyFlywheel(store), indexColumn.getIndex(), 1, indexColumn.getPosition());
         this.store = store;
         this.session = session;
         this.field = indexColumn.getPosition();
