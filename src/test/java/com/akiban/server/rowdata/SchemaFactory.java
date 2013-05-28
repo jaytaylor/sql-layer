@@ -151,7 +151,7 @@ public class SchemaFactory {
         }
 
         @Override
-        protected Map<Table,Integer> fixUpOrdinals() {
+        protected Map<Table,Integer> createOrdinalMap() {
             Map<Group,List<RowDef>> groupToRowDefs = getRowDefsByGroup();
             Map<Table,Integer> ordinalMap = new HashMap<>();
             for(List<RowDef> allRowDefs  : groupToRowDefs.values()) {

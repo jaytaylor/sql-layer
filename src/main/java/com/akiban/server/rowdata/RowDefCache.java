@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -32,7 +31,6 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.TableStatus;
 import com.akiban.server.TableStatusCache;
-import com.persistit.exception.PersistitInterruptedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,13 +68,12 @@ public class RowDefCache {
     }
 
     /**
-     * Create RowDefs for every table in the given AIS, along with generating ordinals if needed and computing
-     * derived information for indexes. */
+     * Create RowDefs for every table in the given AIS and compute derived information for indexes. */
     public void setAIS(AkibanInformationSchema newAIS) {
         setAIS(newAIS, false);
     }
 
-    /** Like {@link #setAIS(AkibanInformationSchema)}, but without ordinal or derived information changes */
+    /** Like {@link #setAIS(AkibanInformationSchema)} but without derived information changes */
     public void setAISWithoutOrdinals(AkibanInformationSchema newAIS) {
         setAIS(newAIS, true);
     }
@@ -95,7 +92,7 @@ public class RowDefCache {
         }
 
         if(!skipOrdinals) {
-            Map<Table,Integer> ordinalMap = fixUpOrdinals();
+            Map<Table,Integer> ordinalMap = createOrdinalMap();
             for (RowDef rowDef : newRowDefs.values()) {
                 rowDef.computeFieldAssociations(ordinalMap);
             }
@@ -120,16 +117,8 @@ public class RowDefCache {
         return new RowDef(table, status); // Hooks up table's rowDef too
     }
 
-    /**
-     * Assign "ordinal" values to tables. An ordinal is an the integer
-     * used to identify a user table subtree within an hkey. This method
-     * assigns unique integers where needed to any tables that have not already
-     * received non-null ordinal values. Once a table is populated, its ordinal
-     * is written as part of the AIS.
-     *
-     * @return Map of Table->Ordinal for all Tables/RowDefs in the RowDefCache
-     */
-    protected Map<Table,Integer> fixUpOrdinals() {
+    /**  @return Map of Table->Ordinal for all Tables/RowDefs in the RowDefCache */
+    protected Map<Table,Integer> createOrdinalMap() {
         Map<Table,Integer> ordinalMap = new HashMap<>();
         for(UserTable table : ais.getUserTables().values()) {
             Integer ordinal = table.getOrdinal();
