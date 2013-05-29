@@ -29,6 +29,8 @@ public interface TransactionService extends Service {
         void commit();
         void rollback();
 
+        boolean commitOrRetry();
+
         @Override
         void close();
     }

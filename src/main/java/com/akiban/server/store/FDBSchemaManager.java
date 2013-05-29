@@ -182,8 +182,11 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     @Override
     protected <V> V transactionally(Session session, ThrowingCallable<V> callable) {
         try(TransactionService.CloseableTransaction txn = txnService.beginCloseableTransaction(session)) {
-            V value = callable.runAndReturn(session);
-            txn.commit();
+            V value;
+            while (true) {
+                value = callable.runAndReturn(session);
+                if (!txn.commitOrRetry()) break;
+            }
             return value;
         } catch(Exception e) {
             throw new AkibanInternalException("unexpected", e);

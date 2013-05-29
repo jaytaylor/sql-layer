@@ -108,6 +108,11 @@ public class FDBTransactionService implements TransactionService {
             }
 
             @Override
+            public boolean commitOrRetry() {
+                return commitTransactionInternal(session, true);
+            }
+
+            @Override
             public void rollback() {
                 rollbackTransaction(session);
             }
@@ -121,6 +126,10 @@ public class FDBTransactionService implements TransactionService {
 
     @Override
     public void commitTransaction(Session session) {
+        commitTransactionInternal(session, false);
+    }
+
+    protected boolean commitTransactionInternal(Session session, boolean retry) {
         Transaction txn = getTransactionInternal(session);
         requireActive(txn);
         RuntimeException re = null;
@@ -131,11 +140,27 @@ public class FDBTransactionService implements TransactionService {
             txn.commit().get();
             long commitTime = txn.getCommittedVersion();
             runCallbacks(session, AFTER_COMMIT_KEY, commitTime, null);
-        } catch(RuntimeException e) {
-            re = e;
+        } catch(RuntimeException e1) {
+            if (retry) {
+                try {
+                    txn.onError(e1).get();
+                    // Getting here means retry.
+                    clearStack(session, AFTER_COMMIT_KEY);
+                    clearStack(session, AFTER_ROLLBACK_KEY);
+                    clearStack(session, AFTER_END_KEY);
+                    return true;
+                }
+                catch (RuntimeException e2) {
+                    re = e2;
+                }
+            }
+            else {
+                re = e1;
+            }
         } finally {
             end(session, txn, re);
         }
+        return false;
     }
 
     @Override
