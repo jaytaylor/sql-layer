@@ -6,13 +6,9 @@
     com.akiban.server.service.log4jconfig.Log4JConfigurationService : com.akiban.server.service.log4jconfig.Log4JConfigurationServiceImpl
     com.akiban.server.service.session.SessionService : com.akiban.server.service.session.SessionServiceImpl
     com.akiban.server.service.stats.StatisticsService : com.akiban.server.service.stats.StatisticsServiceImpl
-    com.akiban.server.service.tree.TreeService : com.akiban.server.service.tree.TreeServiceImpl
-    com.akiban.server.store.SchemaManager : com.akiban.server.store.PersistitStoreSchemaManager
-    com.akiban.server.store.Store : com.akiban.qp.persistitadapter.OperatorStore
     com.akiban.sql.pg.PostgresService : com.akiban.sql.pg.PostgresServerManager
     com.akiban.server.service.monitor.MonitorService : com.akiban.server.service.monitor.MonitorServiceImpl
     com.akiban.server.service.functions.FunctionsRegistry     : com.akiban.server.service.functions.FunctionsRegistryImpl
-    com.akiban.server.store.statistics.IndexStatisticsService : com.akiban.server.store.statistics.PersistitIndexStatisticsService
     com.akiban.server.service.is.BasicInfoSchemaTablesService : com.akiban.server.service.is.BasicInfoSchemaTablesServiceImpl
     com.akiban.server.service.is.StorageSchemaTablesService   : com.akiban.server.service.is.StorageSchemaTablesServiceImpl
     com.akiban.server.service.ui.SwingConsoleService : com.akiban.server.service.ui.SwingConsoleServiceImpl
@@ -21,7 +17,6 @@
     com.akiban.server.service.routines.RoutineLoader : com.akiban.server.service.routines.RoutineLoaderImpl
     com.akiban.server.service.routines.ScriptEngineManagerProvider : com.akiban.server.service.routines.ScriptEngineManagerProviderImpl
     com.akiban.sql.embedded.EmbeddedJDBCService : com.akiban.sql.embedded.EmbeddedJDBCServiceImpl
-    com.akiban.server.service.transaction.TransactionService : com.akiban.server.store.PersistitTransactionService
     com.akiban.server.service.lock.LockService : com.akiban.server.service.lock.LockServiceImpl
     com.akiban.server.service.plugins.PluginsFinder : com.akiban.server.service.plugins.HomeDirPluginsFinder
     com.akiban.server.service.externaldata.ExternalDataService : com.akiban.server.service.externaldata.ExternalDataServiceImpl
@@ -31,3 +26,22 @@
     com.akiban.server.service.restdml.RestDMLService: com.akiban.server.service.restdml.RestDMLServiceImpl
     com.akiban.server.service.restdml.DirectService: com.akiban.server.service.restdml.DirectServiceImpl
     com.akiban.server.service.text.FullTextIndexService: com.akiban.server.service.text.FullTextIndexServiceImpl
+    ##
+    ##
+    ## Persistit
+    ##
+    #com.akiban.server.service.tree.TreeService : com.akiban.server.service.tree.TreeServiceImpl
+    #com.akiban.server.store.SchemaManager : com.akiban.server.store.PersistitStoreSchemaManager
+    #com.akiban.server.store.Store : com.akiban.qp.persistitadapter.OperatorStore
+    #com.akiban.server.store.statistics.IndexStatisticsService : com.akiban.server.store.statistics.PersistitIndexStatisticsService
+    #com.akiban.server.service.transaction.TransactionService : com.akiban.server.store.PersistitTransactionService
+    #
+    #
+    # FoundationDB
+    #
+    com.akiban.server.store.FDBHolder : com.akiban.server.store.FDBHolderImpl
+    com.akiban.server.service.tree.TreeService : com.akiban.server.service.tree.NopTreeService
+    com.akiban.server.store.SchemaManager : com.akiban.server.store.FDBSchemaManager
+    com.akiban.server.store.Store : com.akiban.server.store.FDBStore
+    com.akiban.server.store.statistics.IndexStatisticsService : com.akiban.server.store.statistics.FDBIndexStatisticsService
+    com.akiban.server.service.transaction.TransactionService : com.akiban.server.store.FDBTransactionService

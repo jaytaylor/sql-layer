@@ -217,6 +217,13 @@
             <artifactId>javassist</artifactId>
             <version>3.16.1-GA</version>
         </dependency>
+
+        <!-- actual artifact name? -->
+        <dependency>
+            <groupId>com.foundationdb</groupId>
+            <artifactId>foundationdb</artifactId>
+            <version>0.2.1</version>
+        </dependency>
     </dependencies>
 
     <build>
