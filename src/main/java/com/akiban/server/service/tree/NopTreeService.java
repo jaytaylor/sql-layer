@@ -123,6 +123,6 @@ public class NopTreeService implements TreeService, Service
 
     @Override
     public Key createKey() {
-        throw new UnsupportedOperationException();
+        return new Key((Persistit)null);
     }
 }
