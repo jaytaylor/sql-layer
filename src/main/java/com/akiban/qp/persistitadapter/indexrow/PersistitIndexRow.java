@@ -21,6 +21,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexToHKey;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitHKey;
 import com.akiban.qp.row.HKey;
@@ -30,6 +31,7 @@ import com.akiban.qp.util.HKeyCache;
 import com.akiban.server.PersistitKeyPValueSource;
 import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.collation.AkCollator;
+import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
@@ -42,6 +44,7 @@ import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.util.AkibanAppender;
 import com.persistit.Exchange;
 import com.persistit.Key;
+import com.persistit.Value;
 import com.persistit.exception.PersistitException;
 
 public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
@@ -111,9 +114,14 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
         throw new UnsupportedOperationException(getClass().toString());
     }
 
-    public void copyFromExchange(Exchange exchange) throws PersistitException
+    public void copyFromExchange(Exchange ex)
     {
-        copyFrom(exchange);
+        copyFromKeyValue(ex.getKey(), ex.getValue());
+    }
+
+    public void copyFromKeyValue(Key key, Value value)
+    {
+        copyFrom(key, value);
         constructHKeyFromIndexKey(hKeyCache.hKey(leafmostTable).key(), indexToHKey());
     }
 
@@ -125,24 +133,18 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
 
     // For use by subclasses
 
-    protected PersistitIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
+    protected PersistitIndexRow(KeyCreator keyCreator, StoreAdapter storeAdapter, IndexRowType indexRowType)
     {
-        super(adapter);
-        this.keyState = adapter.persistit().createKey();
+        super(keyCreator);
+        this.keyState = keyCreator.createKey();
         resetForWrite(indexRowType.index(), keyState);
         this.indexRowType = indexRowType;
         this.leafmostTable = (UserTable) index.leafMostTable();
-        this.hKeyCache = new HKeyCache<>(adapter);
-        if (Types3Switch.ON) {
-            this.tInstances = index.tInstances();
-            this.akTypes = null;
-            this.akCollators = null;
-        }
-        else {
-            this.akTypes = index.akTypes();
-            this.akCollators = index.akCollators();
-            this.tInstances = null;
-        }
+        this.hKeyCache = new HKeyCache<>(storeAdapter);
+
+        this.tInstances = index.tInstances();
+        this.akTypes = null;
+        this.akCollators = null;
     }
 
     // For use by this class

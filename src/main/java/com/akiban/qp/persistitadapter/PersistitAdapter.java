@@ -37,6 +37,7 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
@@ -53,7 +54,7 @@ import org.slf4j.LoggerFactory;
 import java.io.InterruptedIOException;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class PersistitAdapter extends StoreAdapter
+public class PersistitAdapter extends StoreAdapter implements KeyCreator
 {
     private static final Logger logger = LoggerFactory.getLogger(PersistitAdapter.class);
     // StoreAdapter interface
@@ -105,7 +106,7 @@ public class PersistitAdapter extends StoreAdapter
     @Override
     public HKey newHKey(com.akiban.ais.model.HKey hKeyMetadata)
     {
-        return new PersistitHKey(this, hKeyMetadata);
+        return new PersistitHKey(store.createKey(), hKeyMetadata);
     }
 
     @Override
@@ -195,12 +196,6 @@ public class PersistitAdapter extends StoreAdapter
         finally {
             leaveUpdateStep(oldStep);
         }
-    }
-
-    @Override
-    public long rowCount(RowType tableType) {
-        RowDef rowDef = tableType.userTable().rowDef();
-        return rowDef.getTableStatus().getRowCount();
     }
 
     @Override
@@ -429,7 +424,12 @@ public class PersistitAdapter extends StoreAdapter
         }
         return sequenceValue (sequence, true);
     }
-    
+
+    @Override
+    public Key createKey() {
+        return store.createKey();
+    }
+
     private long sequenceValue (Sequence sequence, boolean getCurrentValue) {
         try {
             if (getCurrentValue) {

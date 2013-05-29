@@ -298,7 +298,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             // the hidden PK field, if there is one. For PK-less rows, this field have already been incremented by now,
             // so we don't want to increment it again
             getPersistitStore().constructHKey(session, hEx, userTable.rowDef(), rowData, false);
-            PersistitHKey persistitHKey = new PersistitHKey(adapter, userTable.hKey());
+            PersistitHKey persistitHKey = new PersistitHKey(adapter.createKey(), userTable.hKey());
             persistitHKey.copyFrom(hEx.getKey());
 
             Collection<GroupIndex> branchIndexes = userTable.getGroupIndexes();

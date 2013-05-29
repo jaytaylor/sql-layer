@@ -32,6 +32,7 @@ import com.akiban.server.collation.AkCollator;
 import com.akiban.server.geophile.Space;
 import com.akiban.server.geophile.SpaceLatLon;
 import com.akiban.server.rowdata.*;
+import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
@@ -264,10 +265,10 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         reset(index, key, value, false);
     }
 
-    public PersistitIndexRowBuffer(PersistitAdapter adapter)
+    public PersistitIndexRowBuffer(KeyCreator keyCreator)
     {
-        ArgumentValidation.notNull("adapter", adapter);
-        this.adapter = adapter;
+        ArgumentValidation.notNull("keyCreator", keyCreator);
+        this.keyCreator = keyCreator;
     }
 
     public boolean keyEmpty()
@@ -352,11 +353,15 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         }
     }
 
-    protected void copyFrom(Exchange exchange) throws PersistitException
+    protected void copyFrom(Exchange ex) {
+        copyFrom(ex.getKey(), ex.getValue());
+    }
+
+    protected void copyFrom(Key key, Value value)
     {
-        exchange.getKey().copyTo(pKey);
+        key.copyTo(pKey);
         if (index.isUnique()) {
-            byte[] source = exchange.getValue().getByteArray();
+            byte[] source = value.getByteArray();
             pValue.setEncodedSize(source.length);
             byte[] target = pValue.getEncodedBytes();
             System.arraycopy(source, 0, target, 0, source.length);
@@ -420,7 +425,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         this.index = index;
         this.pKey = key;
         if (this.pValue == null) {
-            this.pValue = adapter.newKey();
+            this.pValue = keyCreator.createKey();
         } else {
             this.pValue.clear();
         }
@@ -461,6 +466,14 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         }
     }
 
+    public Key getPKey() {
+        return pKey;
+    }
+
+    public Key getPValue() {
+        return pValue;
+    }
+
     // Object state
 
     // The notation involving "keys" and "values" is tricky because this code deals with both the index view and
@@ -488,7 +501,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     // So as an index row is being created, we deal entirely with Persisitit Keys, via pKeyAppender or pValueAppender.
     // Only when it is time to write the row are the bytes managed by the pValueAppender written as a single
     // Persistit Value.
-    protected final PersistitAdapter adapter;
+    protected final KeyCreator keyCreator;
     protected Index index;
     protected int nIndexFields;
     private Key pKey;

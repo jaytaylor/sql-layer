@@ -141,10 +141,10 @@ public class PersistitHKey implements HKey
         hKey.copyTo(target);
     }
 
-    public PersistitHKey(PersistitAdapter adapter, com.akiban.ais.model.HKey hKeyMetadata)
+    public PersistitHKey(Key key, com.akiban.ais.model.HKey hKeyMetadata)
     {
         this.hKeyMetadata = hKeyMetadata;
-        this.hKey = adapter.newKey();
+        this.hKey = key;
         this.hKeySegments = hKeyMetadata.segments().size();
         this.keyDepth = hKeyMetadata.keyDepth();
     }

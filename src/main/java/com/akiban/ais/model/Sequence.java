@@ -139,7 +139,10 @@ public class Sequence implements TreeLink {
         // Note: Ever increasing, always incremented by 1, rollbacks will leave gaps. See bug1167045 for discussion.
         AccumulatorAdapter accum = getAdapter();
         long rawSequence = accum.seqAllocate();
+        return nextValueRaw(rawSequence);
+    }
 
+    public long nextValueRaw(long rawSequence) {
         long nextValue = notCycled(rawSequence);
         if (nextValue > maxValue || nextValue < minValue) {
             if(!cycle) {
@@ -152,7 +155,11 @@ public class Sequence implements TreeLink {
 
     public long currentValue() throws PersistitException {
         AccumulatorAdapter accum = getAdapter();
-        return cycled(notCycled(accum.getSnapshot()));
+        return currentValueRaw(accum.getSnapshot());
+    }
+
+    public long currentValueRaw(long rawSequence) {
+        return cycled(notCycled(rawSequence));
     }
 
     private AccumulatorAdapter getAdapter() throws PersistitException {

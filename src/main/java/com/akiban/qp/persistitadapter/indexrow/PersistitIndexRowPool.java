@@ -62,7 +62,7 @@ public class PersistitIndexRowPool
     {
         return
             indexRowType.index().isTableIndex()
-            ? new PersistitTableIndexRow(adapter, indexRowType)
+            ? new PersistitTableIndexRow(adapter, adapter, indexRowType)
             : new PersistitGroupIndexRow(adapter, indexRowType);
     }
 

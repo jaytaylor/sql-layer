@@ -70,13 +70,23 @@ public abstract class StoreAdapter
         return config.queryTimeoutMilli();
     }
 
-    public abstract long rowCount(RowType tableType);
+    public long rowCount(RowType tableType) {
+        assert tableType.hasUserTable() : tableType;
+        return tableType.userTable().rowDef().getTableStatus().getRowCount();
+    }
     
     public abstract long sequenceNextValue(TableName sequenceName);
 
     public abstract long sequenceCurrentValue(TableName sequenceName);
 
     public abstract long hash(ValueSource valueSource, AkCollator collator);
+
+    // Persistit Transaction step related. Way to generalize?
+    public abstract int enterUpdateStep();
+    public abstract int enterUpdateStep(boolean evenIfZero);
+    public abstract void leaveUpdateStep(int step);
+    public abstract boolean withStepChanging();
+    public abstract void withStepChanging(boolean withStepChanging);
 
     public final Session getSession() {
         return session;

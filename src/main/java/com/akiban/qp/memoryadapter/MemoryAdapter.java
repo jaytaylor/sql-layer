@@ -130,4 +130,29 @@ public class MemoryAdapter extends StoreAdapter {
             ? valueSource.getString().hashCode()
             : collator.hashCode(valueSource.getString());
     }
+
+    @Override
+    public int enterUpdateStep() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int enterUpdateStep(boolean evenIfZero) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void leaveUpdateStep(int step) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean withStepChanging() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void withStepChanging(boolean withStepChanging) {
+        throw new UnsupportedOperationException();
+    }
 }

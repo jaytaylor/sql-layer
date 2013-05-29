@@ -50,7 +50,7 @@ public class PersistitGroupIndexRow extends PersistitIndexRow
         return tableBitmap;
     }
 
-    public void copyFromExchange(Exchange exchange) throws PersistitException
+    public void copyFromExchange(Exchange exchange)
     {
         super.copyFromExchange(exchange);
         tableBitmap = exchange.getValue().getLong();
@@ -60,7 +60,7 @@ public class PersistitGroupIndexRow extends PersistitIndexRow
 
     public PersistitGroupIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
     {
-        super(adapter, indexRowType);
+        super(adapter, adapter, indexRowType);
         this.index = (GroupIndex) indexRowType.index();
     }
 
