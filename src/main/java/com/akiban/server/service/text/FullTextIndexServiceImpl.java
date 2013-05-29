@@ -173,10 +173,15 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     
     @Override
     public void start() {
-        persistitStore = store.getPersistitStore();
-        persistitStore.setFullTextService(this);
-        enableUpdateWorker();
-        enablePopulateWorker();
+        try {
+            persistitStore = store.getPersistitStore();
+            persistitStore.setFullTextService(this);
+            enableUpdateWorker();
+            enablePopulateWorker();
+        }
+        catch (UnsupportedOperationException ex) {
+            logger.warn("Full text will be disabled", ex);
+        }
     }
 
     @Override
