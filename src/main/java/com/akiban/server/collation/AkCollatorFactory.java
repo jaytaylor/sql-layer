@@ -67,6 +67,8 @@ public class AkCollatorFactory {
      */
     private static int cacheHits;
 
+    private volatile static boolean useKeyCoder = true;
+
     public enum Mode {
         STRICT, LOOSE, DISABLED
     }
@@ -165,9 +167,9 @@ public class AkCollatorFactory {
 
             final AkCollator akCollator;
             if (scheme.startsWith(MYSQL)) {
-                akCollator = new AkCollatorMySQL(name, scheme, collationId, collationNameProperties.getProperty(scheme));
+                akCollator = new AkCollatorMySQL(name, scheme, collationId, collationNameProperties.getProperty(scheme), useKeyCoder);
             } else {
-                akCollator = new AkCollatorICU(name, scheme, collationId);
+                akCollator = new AkCollatorICU(name, scheme, collationId, useKeyCoder);
             }
 
             ref = new SoftReference<>(akCollator);
@@ -261,5 +263,13 @@ public class AkCollatorFactory {
      */
     static int getCacheHits() {
         return cacheHits;
+    }
+
+    public static boolean isUseKeyCoder() {
+        return useKeyCoder;
+    }
+
+    public static void setUseKeyCoder(boolean x) {
+        useKeyCoder = x;
     }
 }

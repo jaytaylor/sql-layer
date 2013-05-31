@@ -27,6 +27,8 @@ public class AkCollatorMySQL extends AkCollator {
     private final int[] weightTable = new int[256];
     private final int[] decodeTable = new int[256];
 
+    private final boolean useKeyCoder;
+
     /**
      * Create an AkCollator which mimics single-byte case-insensitive MySQL
      * collations such as latin1_swedish_ci. This class derives the sort key for
@@ -52,9 +54,10 @@ public class AkCollatorMySQL extends AkCollator {
      *            A table of byte values, formatted as a string consisting of
      *            space-delimited hex values.
      */
-    AkCollatorMySQL(final String name, final String scheme, final int collationId, final String table) {
+    AkCollatorMySQL(final String name, final String scheme, final int collationId, final String table, final boolean useKeyCoder) {
         super(name, scheme, collationId);
         constructWeightTable(table);
+        this.useKeyCoder = useKeyCoder;
     }
 
     @Override
@@ -66,8 +69,10 @@ public class AkCollatorMySQL extends AkCollator {
     public void append(Key key, String value) {
         if (value == null) {
             key.append(null);
-        } else {
+        } else if (useKeyCoder) {
             key.append(new CString(value, getCollationId()));
+        } else {
+            key.append(encodeSortKeyBytes(value));
         }
     }
 

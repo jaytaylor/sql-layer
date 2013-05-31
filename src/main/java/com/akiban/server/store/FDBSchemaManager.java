@@ -32,6 +32,7 @@ import com.akiban.ais.protobuf.ProtobufReader;
 import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.MemoryOnlyTableStatusCache;
+import com.akiban.server.collation.AkCollatorFactory;
 import com.akiban.server.error.AISTooLargeException;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.rowdata.RowDefCache;
@@ -98,6 +99,8 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
         this.generationCounter = new AtomicInteger();
         this.tableStatusCache = new MemoryOnlyTableStatusCache();
         this.rowDefCache = new RowDefCache(tableStatusCache);
+
+        AkCollatorFactory.setUseKeyCoder(false);
 
         try(Session session = sessionService.createSession()) {
             transactionally(
