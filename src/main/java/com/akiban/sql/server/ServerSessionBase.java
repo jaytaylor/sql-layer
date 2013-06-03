@@ -308,13 +308,9 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
 
     protected void initAdapters(ServerOperatorCompiler compiler) {
-        // Add the Persisitit Adapter - default for most tables
-        adapters.put(StoreAdapter.AdapterType.PERSISTIT_ADAPTER, 
-                     new PersistitAdapter(compiler.getSchema(),
-                                          reqs.store(),
-                                          reqs.treeService(),
-                                          session,
-                                          reqs.config()));
+        // Add the Store Adapter - default for most tables
+        adapters.put(StoreAdapter.AdapterType.PERSISTIT_ADAPTER,
+                     reqs.store().createAdapter(session, compiler.getSchema()));
         // Add the Memory Adapter - for the in memory tables
         adapters.put(StoreAdapter.AdapterType.MEMORY_ADAPTER, 
                      new MemoryAdapter(compiler.getSchema(),

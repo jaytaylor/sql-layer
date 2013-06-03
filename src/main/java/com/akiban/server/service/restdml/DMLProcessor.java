@@ -124,7 +124,7 @@ public abstract class DMLProcessor {
                 throw new ProtectedTableDDLException (table.getName());
             StoreAdapter adapter = session.get(StoreAdapter.STORE_ADAPTER_KEY);
             if (adapter == null)
-                adapter = new PersistitAdapter(schema, store, treeService, session, configService);
+                adapter = store.createAdapter(session, schema);
             return adapter;
         }
 

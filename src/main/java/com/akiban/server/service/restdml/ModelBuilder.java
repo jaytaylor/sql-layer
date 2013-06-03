@@ -314,7 +314,7 @@ public class ModelBuilder {
                 Collections.singleton(schema.userTableRowType(table)),
                 API.InputPreservationOption.DISCARD_INPUT
         );
-        StoreAdapter adapter = new PersistitAdapter(schema, store, treeService, session, configService);
+        StoreAdapter adapter = store.createAdapter(session, schema);
         QueryContext queryContext = new SimpleQueryContext(adapter);
         Cursor cursor = API.cursor(plan, queryContext);
         cursor.open();
@@ -326,7 +326,7 @@ public class ModelBuilder {
     }
 
     private QueryContext queryContext(Session session, AkibanInformationSchema ais) {
-        PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), store, treeService, session, configService);
+        StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(ais));
         return new SimpleQueryContext(adapter);
     }
 
