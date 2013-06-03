@@ -132,7 +132,7 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
     }
 
     private Cursor cursor(Operator plan) {
-        StoreAdapter adapter = new PersistitAdapter(schema, store(), treeService(), session(), configService());
+        StoreAdapter adapter = newStoreAdapter(schema);
         QueryContext context = new SimpleQueryContext(adapter);
         return API.cursor(plan, context);
     }

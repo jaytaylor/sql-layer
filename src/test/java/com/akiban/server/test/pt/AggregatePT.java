@@ -18,6 +18,7 @@
 package com.akiban.server.test.pt;
 
 import com.akiban.qp.operator.ExpressionGenerator;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.test.ApiTestBase;
 
 import com.akiban.ais.model.TableIndex;
@@ -793,7 +794,7 @@ public class AggregatePT extends ApiTestBase {
 
     class WorkerThread implements Runnable {
         private Session session;
-        private PersistitAdapter adapter;
+        private StoreAdapter adapter;
         private QueryContext context;
         private Cursor inputCursor;        
         private RowQueue queue;
@@ -802,7 +803,7 @@ public class AggregatePT extends ApiTestBase {
         
         public WorkerThread(QueryContext context, Operator inputOperator, ValuesRowType valuesType, ValuesRow valuesRow, int bindingPosition, RowQueue queue) {
             session = createNewSession();
-            adapter = new PersistitAdapter((Schema)valuesType.schema(), store(), treeService(), session, configService());
+            adapter = newStoreAdapter(session, (Schema)valuesType.schema());
             context = queryContext(adapter);
             context.setRow(bindingPosition, valuesRow);
             inputCursor = API.cursor(inputOperator, context);

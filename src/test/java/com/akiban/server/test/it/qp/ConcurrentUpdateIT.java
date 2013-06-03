@@ -20,6 +20,7 @@ package com.akiban.server.test.it.qp;
 import com.akiban.ais.model.Group;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.OverlayingRow;
@@ -177,7 +178,7 @@ public class ConcurrentUpdateIT extends OperatorITBase
         @Override
         public void run()
         {
-            PersistitAdapter adapter = new PersistitAdapter(schema, store(), treeService(), createNewSession(), configService());
+            StoreAdapter adapter = newStoreAdapter(schema);
             QueryContext queryContext = queryContext(adapter);
             Session session = createNewSession();
             try {
