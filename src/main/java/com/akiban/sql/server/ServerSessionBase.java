@@ -17,12 +17,10 @@
 
 package com.akiban.sql.server;
 
-import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.memoryadapter.MemoryAdapter;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.InvalidParameterValueException;
@@ -180,7 +178,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
 
     @Override
     public StoreAdapter getStore() {
-        return adapters.get(StoreAdapter.AdapterType.PERSISTIT_ADAPTER);
+        return adapters.get(StoreAdapter.AdapterType.STORE_ADAPTER);
     }
     
     @Override
@@ -188,7 +186,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
         if (table.hasMemoryTableFactory()) {
             return adapters.get(StoreAdapter.AdapterType.MEMORY_ADAPTER);
         }
-        return adapters.get(StoreAdapter.AdapterType.PERSISTIT_ADAPTER);
+        return adapters.get(StoreAdapter.AdapterType.STORE_ADAPTER);
     }
 
     @Override
@@ -309,7 +307,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
 
     protected void initAdapters(ServerOperatorCompiler compiler) {
         // Add the Store Adapter - default for most tables
-        adapters.put(StoreAdapter.AdapterType.PERSISTIT_ADAPTER,
+        adapters.put(StoreAdapter.AdapterType.STORE_ADAPTER,
                      reqs.store().createAdapter(session, compiler.getSchema()));
         // Add the Memory Adapter - for the in memory tables
         adapters.put(StoreAdapter.AdapterType.MEMORY_ADAPTER, 

@@ -104,8 +104,8 @@ public abstract class StoreAdapter
     }
 
     public enum AdapterType {
-        PERSISTIT_ADAPTER,
-        MEMORY_ADAPTER;
+        STORE_ADAPTER,
+        MEMORY_ADAPTER
     }
     
     public final ConfigurationService getConfig() {
