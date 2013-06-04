@@ -17,8 +17,6 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
@@ -39,9 +37,7 @@ import com.akiban.server.collation.AkCollatorMySQL;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.test.ExpressionGenerators;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types3.Types3Switch;
 import com.persistit.Key;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -83,7 +79,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         fRowType = schema.userTableRowType(userTable(f));
         dIndexRowType = indexType(d, "test_id", "a", "b");
         fabIndexRowType = indexType(f, "a", "b");
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         ciCollator = dRowType.userTable().getColumn("a").getCollator();
         db = new NewRow[]{
@@ -133,7 +129,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         PersistitKeyValueSource source = new PersistitKeyValueSource();
         long hash_AB;
         long hash_ab;
-        Key key = adapter.newKey();
+        Key key = store().createKey();
         {
             binaryCollator.append(key.clear(), "AB");
             source.attach(key, 0, AkType.VARCHAR, binaryCollator);

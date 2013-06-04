@@ -20,7 +20,6 @@ package com.akiban.server.test.it.qp;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -28,8 +27,6 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.expression.Expression;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.EnumSet;
@@ -71,7 +68,7 @@ public class GroupSkipScanIT extends OperatorITBase
         c1NIndexRowType = indexType(c1, "cn");
         c2RowType = schema.userTableRowType(userTable(c2));
         c2NIndexRowType = indexType(c2, "cn");
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         db = new NewRow[] {
             createNewRow(p, 1L, 1L),

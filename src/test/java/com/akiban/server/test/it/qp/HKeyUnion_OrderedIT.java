@@ -25,8 +25,6 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.*;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.expression.Expression;
-import org.junit.Before;
 import org.junit.Test;
 
 import static com.akiban.qp.operator.API.*;
@@ -67,7 +65,7 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
         parentYIndexRowType = indexType(parent, "y");
         childZIndexRowType = indexType(child, "z");
         coi = group(parent);
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         db = new NewRow[]{
             // 0x: Both index scans empty

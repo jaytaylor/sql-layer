@@ -34,7 +34,6 @@ import com.akiban.server.error.OutOfRangeException;
 import com.akiban.server.geophile.BoxLatLon;
 import com.akiban.server.geophile.Space;
 import com.akiban.server.geophile.SpaceLatLon;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigDecimal;
@@ -76,7 +75,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
         latLonAfterIndexRowType = indexType(point, "lat", "lon", "after");
         beforeLatLonAfterIndexRowType = indexType(point, "before", "lat", "lon", "after");
         space = SpaceLatLon.create();
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
     }
 

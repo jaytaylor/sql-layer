@@ -22,7 +22,6 @@ import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.test.ApiTestBase;
 
 import com.akiban.ais.model.TableIndex;
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
@@ -31,7 +30,6 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.OperatorExecutionBase;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.row.ValuesRow;
@@ -46,10 +44,8 @@ import com.akiban.server.explain.CompoundExplainer;
 import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.expression.std.BoundFieldExpression;
 import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.expression.std.ExpressionTypes;
-import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
 import com.akiban.server.service.session.Session;
@@ -61,7 +57,6 @@ import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 
 import com.persistit.Exchange;
 import com.persistit.Key;
-import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 
 import org.junit.Before;
@@ -136,7 +131,7 @@ public class AggregatePT extends ApiTestBase {
 
         plan = spa(plan, rowType);
 
-        PersistitAdapter adapter = persistitAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter(schema);
         QueryContext queryContext = queryContext(adapter);
         
         System.out.println("NORMAL OPERATORS");
@@ -211,7 +206,7 @@ public class AggregatePT extends ApiTestBase {
 
         plan = new BespokeOperator(plan);
 
-        PersistitAdapter adapter = persistitAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter(schema);
         QueryContext queryContext = queryContext(adapter);
         
         System.out.println("BESPOKE OPERATOR");
@@ -555,7 +550,7 @@ public class AggregatePT extends ApiTestBase {
         plan = API.sort_InsertionLimited(plan, rowType, ordering, 
                                          API.SortOption.PRESERVE_DUPLICATES, 100);
         
-        PersistitAdapter adapter = persistitAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter(schema);
         QueryContext queryContext = queryContext(adapter);
         
         System.out.println("SORTED");
@@ -610,7 +605,7 @@ public class AggregatePT extends ApiTestBase {
         plan = API.sort_InsertionLimited(plan, rowType, ordering, 
                                          API.SortOption.PRESERVE_DUPLICATES, 100);
         
-        PersistitAdapter adapter = persistitAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter(schema);
         QueryContext queryContext = queryContext(adapter);
         
         System.out.println("PARALLEL " + nthreads);

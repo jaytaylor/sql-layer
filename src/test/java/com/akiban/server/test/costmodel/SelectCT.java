@@ -50,7 +50,7 @@ public class SelectCT extends CostModelBase
         schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         group = group(t);
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
     }
 

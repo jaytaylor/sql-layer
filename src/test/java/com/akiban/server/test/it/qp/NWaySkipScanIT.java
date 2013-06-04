@@ -19,7 +19,6 @@ package com.akiban.server.test.it.qp;
 
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
@@ -28,8 +27,6 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.expression.Expression;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.EnumSet;
@@ -65,7 +62,7 @@ public class NWaySkipScanIT extends OperatorITBase
         tXIndexRowType = indexType(t, "x");
         tYIndexRowType = indexType(t, "y");
         tZIndexRowType = indexType(t, "z");
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         db = new NewRow[] {
             createNewRow(t, 1000L, 71L, 81L, 91L),

@@ -28,8 +28,6 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.expression.Expression;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -71,7 +69,7 @@ public class Intersect_OrderedByteArrayComparisonIT extends OperatorITBase
         leftIndexRowType = indexType(t, "test", "l1", "l2", "l3");
         rightIndexRowType = indexType(t, "test", "r1", "r2", "r3");
         coi = group(t);
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         db = new NewRow[]{
             // 1: Comparisons need only examine k1 on a mismatch.

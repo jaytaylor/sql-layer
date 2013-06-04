@@ -65,7 +65,7 @@ public class MapCT extends CostModelBase
         cRowType = schema.userTableRowType(userTable(c));
         dRowType = schema.userTableRowType(userTable(d));
         group = group(p);
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
     }
 

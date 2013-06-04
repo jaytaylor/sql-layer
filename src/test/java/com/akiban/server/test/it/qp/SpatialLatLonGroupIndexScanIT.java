@@ -34,8 +34,6 @@ import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.geophile.Space;
 import com.akiban.server.geophile.SpaceLatLon;
-import com.akiban.server.test.it.bugs.bug720768.GroupNameCollisionIT;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigDecimal;
@@ -90,7 +88,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
         cSpatialIndexRowType = groupIndexType(groupName, "parent.pbefore", "child.clat", "child.clon", "child.cafter");
         pSpatialIndexRowType = groupIndexType(groupName, "parent.pbefore", "parent.plat", "parent.plon", "child.cafter");
         space = SpaceLatLon.create();
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
     }
 

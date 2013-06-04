@@ -39,7 +39,6 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.std.Comparison;
-import org.junit.Before;
 import org.junit.Test;
 
 import static com.akiban.qp.operator.API.FlattenOption.KEEP_PARENT;
@@ -116,7 +115,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
             createNewRow(parent, 41L, 4L, "p41"),
             createNewRow(parent, 42L, 4L, "p42"),
         };
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         use(db);
     }

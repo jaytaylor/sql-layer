@@ -24,7 +24,6 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.operator.TimeOperator;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
@@ -67,8 +66,8 @@ public class HKeyUnionCT extends CostModelBase
         schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         indexRowType = schema.indexRowType(index);
-        adapter = persistitAdapter(schema);
-        queryContext = queryContext((PersistitAdapter) adapter);
+        adapter = newStoreAdapter(schema);
+        queryContext = queryContext(adapter);
     }
 
     private void populateDB()

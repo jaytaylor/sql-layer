@@ -28,8 +28,6 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.expression.Expression;
-import org.junit.Before;
 import org.junit.Test;
 
 import static com.akiban.qp.operator.API.*;
@@ -56,7 +54,7 @@ public class Union_OrderedIT extends OperatorITBase
         tPidIndexRowType = indexType(t, "pid");
         tXIndexRowType = indexType(t, "x");
         coi = group(t);
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         db = new NewRow[] {
             createNewRow(t, 1000L, 1L),

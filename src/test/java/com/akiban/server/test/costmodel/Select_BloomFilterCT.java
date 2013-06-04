@@ -76,10 +76,7 @@ public class Select_BloomFilterCT extends CostModelBase
         fRowType = schema.userTableRowType(userTable(f));
         dIndexRowType = dRowType.indexRowType(dx);
         fIndexRowType = fRowType.indexRowType(fx);
-        adapter = persistitAdapter(schema);
-        queryContext = queryContext(adapter);
-        schema = new Schema(ais());
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
     }
 

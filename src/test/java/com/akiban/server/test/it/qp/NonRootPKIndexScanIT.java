@@ -29,7 +29,6 @@ import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.test.ExpressionGenerators;
-import org.junit.Before;
 import org.junit.Test;
 
 import static com.akiban.qp.operator.API.cursor;
@@ -71,7 +70,7 @@ public class NonRootPKIndexScanIT extends OperatorITBase
             createNewRow(child, 21L, 2L, 2L),
             createNewRow(child, 22L, 2L, 2L),
         };
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         use(db);
     }

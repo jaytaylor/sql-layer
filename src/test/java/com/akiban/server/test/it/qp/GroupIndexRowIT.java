@@ -28,7 +28,6 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.scan.NewRow;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -73,7 +72,7 @@ public class GroupIndexRowIT extends OperatorITBase
         entitlementUserGroupRowType = schema.userTableRowType(userTable(entitlementUserGroup));
         groupIndexRowType = groupIndexType(Index.JoinType.LEFT, "entitlement_user_group.uid", "member_info.lastLogin");
         group = group(user);
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         db = new NewRow[] {
             createNewRow(user, 1L),

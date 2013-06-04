@@ -21,7 +21,6 @@ import com.akiban.ais.model.Group;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -98,8 +97,8 @@ public class SortCT extends CostModelBase
         group = group(t);
         schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
-        adapter = persistitAdapter(schema);
-        queryContext = queryContext((PersistitAdapter) adapter);
+        adapter = newStoreAdapter(schema);
+        queryContext = queryContext(adapter);
     }
 
     private void populateDB(int rows)

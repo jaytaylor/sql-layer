@@ -28,8 +28,6 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.expression.Expression;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.EnumSet;
@@ -70,7 +68,7 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
         parentYIndexRowType = indexType(parent, "y");
         childZIndexRowType = indexType(child, "z");
         coi = group(parent);
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         db = new NewRow[]{
             // 0x: Both index scans empty

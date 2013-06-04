@@ -27,15 +27,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.NiceRow;
-import com.akiban.server.api.dml.scan.ScanFlag;
-import com.akiban.server.expression.std.FieldExpression;
-import com.akiban.server.rowdata.RowData;
-import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
-
-import java.util.EnumSet;
 
 import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
@@ -80,7 +72,7 @@ public class IndexScanLexicographicIT extends OperatorITBase
             createNewRow(t, 1006L, 5L, 55L, 551L),
             createNewRow(t, 1007L, 5L, 55L, 555L),
         };
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         use(db);
     }
