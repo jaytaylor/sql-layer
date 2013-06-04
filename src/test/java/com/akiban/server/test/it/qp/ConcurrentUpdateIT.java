@@ -22,31 +22,34 @@ import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.operator.UpdateFunction;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.util.SequencerConstants;
 import com.akiban.server.util.ThreadSequencer;
-import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import static com.akiban.qp.operator.API.*;
+import static org.junit.Assert.assertEquals;
 
 @Ignore
 public class ConcurrentUpdateIT extends OperatorITBase
 {
+    private final AtomicBoolean hadAnyFailure = new AtomicBoolean();
+
     @Override
     protected void setupCreateSchema()
     {
@@ -76,7 +79,7 @@ public class ConcurrentUpdateIT extends OperatorITBase
             createNewRow(b, 5L, 205L),
             createNewRow(b, 6L, 206L),
         };
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
     }
 
@@ -90,16 +93,22 @@ public class ConcurrentUpdateIT extends OperatorITBase
         // This test manages its own transactions
     }
 
+    @Before
+    public void resetFailure() {
+        hadAnyFailure.set(false);
+    }
+
     @Test
     public void concurrentUpdate() throws Exception
     {
         ThreadSequencer.enableSequencer(true);
         ThreadSequencer.addSchedules(SequencerConstants.UPDATE_GET_CONTEXT_SCHEDULE);
-        Transaction txn = adapter.transaction();
-        txn.begin();
-        use(db);
-        txn.commit();
-        txn.end();
+        txnService().beginTransaction(session());
+        try {
+            use(db);
+        } finally {
+            txnService().commitTransaction(session());
+        }
         UpdateFunction updateAFunction = new UpdateFunction()
         {
             @Override
@@ -171,6 +180,8 @@ public class ConcurrentUpdateIT extends OperatorITBase
         threadB.start();
         threadA.join();
         threadB.join();
+
+        assertEquals("Had any failure", false, hadAnyFailure.get());
     }
 
     private class TestThread extends Thread
@@ -178,16 +189,17 @@ public class ConcurrentUpdateIT extends OperatorITBase
         @Override
         public void run()
         {
-            StoreAdapter adapter = newStoreAdapter(schema);
-            QueryContext queryContext = queryContext(adapter);
-            Session session = createNewSession();
-            try {
-                txnService().beginTransaction(session);
-                plan.run(queryContext);
-                dump(cursor(groupScan_Default(group), queryContext));
-                txnService().commitTransaction(session);
-            } catch (Exception e) {
-                e.printStackTrace();
+            try(Session session = createNewSession()) {
+                StoreAdapter adapter = newStoreAdapter(session, schema);
+                QueryContext queryContext = queryContext(adapter);
+                try(TransactionService.CloseableTransaction txn = txnService().beginCloseableTransaction(session)) {
+                    plan.run(queryContext);
+                    dump(cursor(groupScan_Default(group), queryContext));
+                    txn.commit();
+                } catch (Throwable e) {
+                    hadAnyFailure.set(true);
+                    e.printStackTrace();
+                }
             }
         }
 
