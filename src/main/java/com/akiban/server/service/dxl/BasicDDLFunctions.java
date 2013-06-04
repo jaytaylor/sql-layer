@@ -297,7 +297,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             final AkibanInformationSchema origAIS = getAIS(session);
             final Schema oldSchema = SchemaCache.globalSchema(origAIS);
             final RowType oldSourceType = oldSchema.userTableRowType(origTable);
-            final StoreAdapter adapter = store().createAdapter(session, oldSchema);
+            // Explicitly skip OperatorStore for now
+            final StoreAdapter adapter = store().getPersistitStore().createAdapter(session, oldSchema);
             final QueryContext queryContext = new ShimContext(adapter, context);
 
             Operator plan = filter_Default(
@@ -351,7 +352,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         schemaManager().alterTableDefinitions(session, changedTables);
 
         // Build transformation
-        final StoreAdapter adapter = store().createAdapter(session, origSchema);
+        // Explicitly skip OperatorStore for now
+        final StoreAdapter adapter = store().getPersistitStore().createAdapter(session, origSchema);
         final QueryContext queryContext = new ShimContext(adapter, context);
 
         final AkibanInformationSchema newAIS = getAIS(session);
