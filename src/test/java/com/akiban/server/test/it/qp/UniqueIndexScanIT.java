@@ -26,7 +26,6 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
-import org.junit.Before;
 import org.junit.Test;
 
 import static com.akiban.qp.operator.API.cursor;
@@ -72,7 +71,7 @@ public class UniqueIndexScanIT extends OperatorITBase
             createNewRow(item, 11L, null, null),
             createNewRow(item, 12L, null, null),
         };
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         use(db);
     }

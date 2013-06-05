@@ -24,7 +24,6 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.scan.NewRow;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.EnumSet;
@@ -102,7 +101,7 @@ public class Intersect_OrderedVsHKeyColumnEquivalenceIT extends OperatorITBase
                            "item_value_state.revision_to",
                            "item.created_on",
                            "item.item_id");
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         db = new NewRow[] {
             createNewRow(item, 1L, 1L, 100L, 100L, 100L, 100L, 100L, 100L, 100L, 100L, 100L),

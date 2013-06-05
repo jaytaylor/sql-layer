@@ -90,7 +90,7 @@ public class GIUpdateProfilePT extends PTBase
         itemIidIndexRowType = indexType(item, "iid");
         customerCidIndexRowType = indexType(customer, "cid");
         addressAddressIndexRowType = indexType(address, "address");
-        queryContext = queryContext(persistitAdapter(schema));
+        queryContext = queryContext(newStoreAdapter(schema));
     }
 
     @Test

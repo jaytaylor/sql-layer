@@ -28,7 +28,6 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitHKey;
 import com.akiban.qp.row.HKeyRow;
 import com.akiban.qp.rowtype.HKeyRowType;
@@ -225,9 +224,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         Operator plan = index.fullScan();
         StoreAdapter adapter = session.get(StoreAdapter.STORE_ADAPTER_KEY);
         if (adapter == null)
-            adapter = new PersistitAdapter(index.getSchema(),
-                                           store, treeService, 
-                                           session, configService);
+            adapter = store.createAdapter(session, index.getSchema());
         QueryContext queryContext = new SimpleQueryContext(adapter);
         IndexWriter writer = indexer.getWriter();
         RowIndexer rowIndexer = new RowIndexer(index, writer, false);
@@ -266,9 +263,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             FullTextIndexInfo indexInfo = getIndex(session, name, null);
             StoreAdapter adapter = session.get(StoreAdapter.STORE_ADAPTER_KEY);
             if (adapter == null)
-                adapter = new PersistitAdapter(indexInfo.getSchema(),
-                                               store, treeService, 
-                                               session, configService);
+                adapter = store.createAdapter(session, indexInfo.getSchema());
             QueryContext queryContext = new SimpleQueryContext(adapter);
             HKeyCache<com.akiban.qp.row.HKey> cache = new HKeyCache<>(adapter);
             IndexWriter writer = indexInfo.getIndexer().getWriter();

@@ -17,7 +17,6 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.ais.model.Index;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
@@ -31,7 +30,6 @@ import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.test.ExpressionGenerators;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -69,7 +67,7 @@ public class Select_BloomFilterIT extends OperatorITBase
         fRowType = schema.userTableRowType(userTable(f));
         dIndexRowType = indexType(d, "test_id", "a", "b");
         fabIndexRowType = indexType(f, "a", "b");
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         db = new NewRow[]{
             // Test 0: No d or f rows

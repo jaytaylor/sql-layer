@@ -29,7 +29,6 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.DMLFunctions;
@@ -104,7 +103,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
             return new MemoryAdapter(schema, session, configService);
         StoreAdapter adapter = session.get(StoreAdapter.STORE_ADAPTER_KEY);
         if (adapter == null)
-            adapter = new PersistitAdapter(schema, store, treeService, session, configService);
+            adapter = store.createAdapter(session, schema);
         return adapter;
     }
 

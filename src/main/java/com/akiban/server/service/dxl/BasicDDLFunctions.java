@@ -56,7 +56,6 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.QueryContextBase;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.ProjectedRow;
 import com.akiban.qp.row.Row;
@@ -298,7 +297,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             final AkibanInformationSchema origAIS = getAIS(session);
             final Schema oldSchema = SchemaCache.globalSchema(origAIS);
             final RowType oldSourceType = oldSchema.userTableRowType(origTable);
-            final PersistitAdapter adapter = new PersistitAdapter(oldSchema, store().getPersistitStore(), treeService(), session, configService);
+            // Explicitly skip OperatorStore for now
+            final StoreAdapter adapter = store().getPersistitStore().createAdapter(session, oldSchema);
             final QueryContext queryContext = new ShimContext(adapter, context);
 
             Operator plan = filter_Default(
@@ -352,7 +352,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         schemaManager().alterTableDefinitions(session, changedTables);
 
         // Build transformation
-        final PersistitAdapter adapter = new PersistitAdapter(origSchema, store().getPersistitStore(), treeService(), session, configService);
+        // Explicitly skip OperatorStore for now
+        final StoreAdapter adapter = store().getPersistitStore().createAdapter(session, origSchema);
         final QueryContext queryContext = new ShimContext(adapter, context);
 
         final AkibanInformationSchema newAIS = getAIS(session);

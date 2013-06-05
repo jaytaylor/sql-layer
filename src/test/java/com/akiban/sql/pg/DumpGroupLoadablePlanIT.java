@@ -22,7 +22,7 @@ import com.akiban.qp.loadableplan.DirectObjectPlan;
 import com.akiban.qp.loadableplan.std.DumpGroupLoadablePlan;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
@@ -89,7 +89,7 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
         DirectObjectPlan plan = loadablePlan.plan();
 
         Schema schema = new Schema(ais());
-        PersistitAdapter adapter = persistitAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter(schema);
         QueryContext queryContext = new SimpleQueryContext(adapter) {
                 @Override
                 public String getCurrentSchema() {

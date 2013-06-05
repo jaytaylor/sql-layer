@@ -28,7 +28,6 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -96,7 +95,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
                           createNewRow(c, 27L, 2L, "c27"),
                           createNewRow(c, 28L, 2L, "c28"),
         };
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         use(db);
     }

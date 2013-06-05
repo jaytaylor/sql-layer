@@ -79,7 +79,7 @@ public class ProductCT extends CostModelBase
         manyRowType = schema.userTableRowType(userTable(many));
         rootPKIndexType = indexType(root, "rid", "root_instance");
         group = group(root);
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
     }
 

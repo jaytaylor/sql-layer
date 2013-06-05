@@ -35,12 +35,8 @@ import com.akiban.sql.parser.SQLParserException;
 import com.akiban.sql.parser.StatementNode;
 
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.loadableplan.LoadablePlan;
-import com.akiban.qp.memoryadapter.MemoryAdapter;
-import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.SQLParseException;
@@ -107,7 +103,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         if (table.hasMemoryTableFactory()) {
             return adapters.get(StoreAdapter.AdapterType.MEMORY_ADAPTER);
         }
-        return adapters.get(StoreAdapter.AdapterType.PERSISTIT_ADAPTER);
+        return adapters.get(StoreAdapter.AdapterType.STORE_ADAPTER);
     }
 
     protected ExecutableStatement compileExecutableStatement(String sql) {

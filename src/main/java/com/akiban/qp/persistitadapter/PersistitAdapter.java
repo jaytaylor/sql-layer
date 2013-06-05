@@ -330,18 +330,17 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
         return treeService.getTransaction(getSession());
     }
 
-    public boolean withStepChanging() {
-        return withStepChanging;
-    }
     public void withStepChanging(boolean withStepChanging) {
         this.withStepChanging = withStepChanging;
     }
 
+    @Override
     public int enterUpdateStep()
     {
         return enterUpdateStep(false);
     }
 
+    @Override
     public int enterUpdateStep(boolean evenIfZero)
     {
         Transaction transaction = transaction();
@@ -351,6 +350,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
         return step;
     }
 
+    @Override
     public void leaveUpdateStep(int step) {
         Transaction txn = transaction();
         if(txn.isActive() && !txn.isRollbackPending()) {
