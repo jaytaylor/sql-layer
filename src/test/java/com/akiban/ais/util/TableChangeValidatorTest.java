@@ -194,6 +194,18 @@ public class TableChangeValidatorTest {
     }
 
     @Test
+    public void addIdentityColumn() {
+        final TableName SEQ_NAME = new TableName(SCHEMA, "seq-1");
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("x"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("x").colBigInt("id").pk("id").sequence(SEQ_NAME.getTableName()));
+        t2.getColumn("id").setIdentityGenerator(t2.getAIS().getSequence(SEQ_NAME));
+        t2.getColumn("id").setDefaultIdentity(true);
+        validate(t1, t2, asList(TableChange.createAdd("id")), asList(TableChange.createAdd("PRIMARY")), ChangeLevel.GROUP,
+                 asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE)),
+                 false, true, NO_INDEX_CHANGE, false, "+[id]");
+    }
+
+    @Test
     public void dropColumn() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
