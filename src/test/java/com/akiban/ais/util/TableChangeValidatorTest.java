@@ -49,6 +49,7 @@ public class TableChangeValidatorTest {
     private static final String TABLE = "t";
     private static final TableName TABLE_NAME = new TableName(SCHEMA, TABLE);
     private static final String NO_INDEX_CHANGE = "{}";
+    private static final String NO_IDENTITY_CHANGE = "";
 
     private List<TableChange> NO_CHANGES = new ArrayList<>();
 
@@ -78,7 +79,7 @@ public class TableChangeValidatorTest {
                                                  ChangeLevel expectedChangeLevel) {
         return validate(t1, t2, columnChanges, indexChanges, expectedChangeLevel,
                         asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE, "PRIMARY", "PRIMARY")),
-                        false, false, NO_INDEX_CHANGE, false);
+                        false, false, NO_INDEX_CHANGE, false, NO_IDENTITY_CHANGE);
     }
 
     private static TableChangeValidator validate(UserTable t1, UserTable t2,
@@ -87,7 +88,7 @@ public class TableChangeValidatorTest {
                                                  List<String> expectedChangedTables) {
         return validate(t1, t2, columnChanges, indexChanges, expectedChangeLevel,
                         expectedChangedTables,
-                        false, false, NO_INDEX_CHANGE, false);
+                        false, false, NO_INDEX_CHANGE, false, NO_IDENTITY_CHANGE);
     }
 
     private static TableChangeValidator validate(UserTable t1, UserTable t2,
@@ -97,7 +98,8 @@ public class TableChangeValidatorTest {
                                                  boolean expectedParentChange,
                                                  boolean expectedPrimaryKeyChange,
                                                  String expectedAutoGroupIndexChange,
-                                                 boolean autoIndexChanges) {
+                                                 boolean autoIndexChanges,
+                                                 String expectedIdentityChange) {
         TableChangeValidator validator = new TableChangeValidator(t1, t2, columnChanges, indexChanges, autoIndexChanges);
         validator.compareAndThrowIfNecessary();
         assertEquals("Final change level", expectedChangeLevel, validator.getFinalChangeLevel());
@@ -106,6 +108,7 @@ public class TableChangeValidatorTest {
         assertEquals("Changed tables", expectedChangedTables.toString(), validator.getAllChangedTables().toString());
         assertEquals("Affected group index", expectedAutoGroupIndexChange, validator.getAffectedGroupIndexes().toString());
         assertEquals("Unmodified changes", "[]", validator.getUnmodifiedChanges().toString());
+        assertEquals("Changed identity", expectedIdentityChange, identityChangeDesc(validator.getAllChangedTables()));
         return validator;
     }
 
@@ -122,7 +125,19 @@ public class TableChangeValidatorTest {
         return ChangedTableDescription.toString(oldName, newName, newGroup, parentChange, map(indexPairs));
     }
 
-
+    private static String identityChangeDesc(Collection<ChangedTableDescription> tableChanges) {
+        StringBuilder str = new StringBuilder();
+        for (ChangedTableDescription change : tableChanges) {
+            if (!change.getDroppedSequences().isEmpty()) {
+                str.append("-").append(change.getDroppedSequences());
+            }
+            if (!change.getIdentityAdded().isEmpty()) {
+                str.append("+").append(change.getIdentityAdded());
+            }
+        }
+        return str.toString();
+    }
+    
     //
     // Table
     //
@@ -220,7 +235,10 @@ public class TableChangeValidatorTest {
         UserTable t2 = table(builder(TABLE_NAME).colLong("id", false).pk("id").sequence(SEQ_NAME.getTableName()));
         t2.getColumn("id").setIdentityGenerator(t2.getAIS().getSequence(SEQ_NAME));
         t2.getColumn("id").setDefaultIdentity(true);
-        validate(t1, t2, asList(TableChange.createModify("id", "id")), NO_CHANGES, ChangeLevel.METADATA);
+        validate(t1, t2, asList(TableChange.createModify("id", "id")), NO_CHANGES, ChangeLevel.METADATA,
+                 asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE, "PRIMARY", "PRIMARY")),
+                 false, false, NO_INDEX_CHANGE, false,
+                 "+[id]");
     }
 
     @Test
@@ -230,7 +248,10 @@ public class TableChangeValidatorTest {
         t1.getColumn("id").setIdentityGenerator(t1.getAIS().getSequence(SEQ_NAME));
         t1.getColumn("id").setDefaultIdentity(true);
         UserTable t2 = table(builder(TABLE_NAME).colLong("id", false).pk("id"));
-        validate(t1, t2, asList(TableChange.createModify("id", "id")), NO_CHANGES, ChangeLevel.METADATA);
+        validate(t1, t2, asList(TableChange.createModify("id", "id")), NO_CHANGES, ChangeLevel.METADATA,
+                 asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE, "PRIMARY", "PRIMARY")),
+                 false, false, NO_INDEX_CHANGE, false,
+                 "-[test.seq-1]");
     }
 
     @Test
@@ -408,7 +429,7 @@ public class TableChangeValidatorTest {
                  asList(TableChange.createModify(Index.PRIMARY_KEY_CONSTRAINT, Index.PRIMARY_KEY_CONSTRAINT)),
                  ChangeLevel.GROUP,
                  asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE)),
-                 false, true, NO_INDEX_CHANGE, false);
+                 false, true, NO_INDEX_CHANGE, false, NO_IDENTITY_CHANGE);
     }
 
     @Test
@@ -420,7 +441,7 @@ public class TableChangeValidatorTest {
                  asList(TableChange.createDrop(Index.PRIMARY_KEY_CONSTRAINT)),
                  ChangeLevel.GROUP,
                  asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE)),
-                 false, true, NO_INDEX_CHANGE, false);
+                 false, true, NO_INDEX_CHANGE, false, NO_IDENTITY_CHANGE);
     }
 
     @Test
@@ -437,7 +458,7 @@ public class TableChangeValidatorTest {
                  asList(TableChange.createDrop("__akiban_fk")),
                  ChangeLevel.GROUP,
                  asList(changeDesc(TABLE_NAME, TABLE_NAME, true, ParentChange.DROP)),
-                 true, false, NO_INDEX_CHANGE, false);
+                 true, false, NO_INDEX_CHANGE, false, NO_IDENTITY_CHANGE);
     }
 
     @Test
@@ -467,7 +488,8 @@ public class TableChangeValidatorTest {
                 false,
                 true,
                 NO_INDEX_CHANGE,
-                false
+                false,
+                NO_IDENTITY_CHANGE
         );
     }
 
@@ -514,7 +536,8 @@ public class TableChangeValidatorTest {
                 false,
                 false,
                 NO_INDEX_CHANGE,
-                true
+                true, 
+                NO_IDENTITY_CHANGE
         );
     }
 
@@ -544,7 +567,8 @@ public class TableChangeValidatorTest {
                 false,
                 false,
                 "{test.p.x_y=[]}",
-                false
+                false, 
+                NO_IDENTITY_CHANGE
         );
     }
 
@@ -572,7 +596,8 @@ public class TableChangeValidatorTest {
                 true,
                 false,
                 "{test.p.x_y=[], test.p.x_y_z=[]}",
-                false
+                false, 
+                NO_IDENTITY_CHANGE
         );
     }
 }
