@@ -1,0 +1,1 @@
+SELECT CASE WHEN cid BETWEEN 1 AND 10 THEN name ELSE 'n/a' END FROM customers
