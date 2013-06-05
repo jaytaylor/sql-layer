@@ -25,7 +25,6 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.scan.NewRow;
-import org.junit.Before;
 import org.junit.Test;
 
 import static com.akiban.qp.operator.API.cursor;
@@ -52,7 +51,7 @@ public class UniqueIndexUpdateIT extends OperatorITBase
         schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         xyIndexRowType = indexType(t, "x", "y");
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
     }
 

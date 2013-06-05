@@ -34,7 +34,6 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -104,7 +103,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
     private void scanAndCheckIndex(IndexRowType type, RowBase... expectedRows) {
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
-        StoreAdapter adapter = new PersistitAdapter(schema, store(), treeService(), session(), configService());
+        StoreAdapter adapter = newStoreAdapter(schema);
         compareRows(
                 expectedRows,
                 API.cursor(
@@ -168,7 +167,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         RowType cType = schema.userTableRowType(getUserTable(SCHEMA, "c"));
         RowType oType = schema.userTableRowType(getUserTable(SCHEMA, "o"));
         RowType iType = schema.userTableRowType(getUserTable(SCHEMA, "i"));
-        StoreAdapter adapter = new PersistitAdapter(schema, store(), treeService(), session(), configService());
+        StoreAdapter adapter = newStoreAdapter(schema);
         long pk = 1;
         compareRows(
                 new RowBase[]{
@@ -415,7 +414,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         IndexRowType indexRowType = schema.indexRowType(index);
 
-        StoreAdapter adapter = new PersistitAdapter(schema, store(), treeService(), session(), configService());
+        StoreAdapter adapter = newStoreAdapter(schema);
         compareRows(
                 new RowBase[] {
                         testRow(indexRowType, "a", 110L, 1L, 10L, 100L),
@@ -704,7 +703,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         RowType oType = schema.userTableRowType(getUserTable(SCHEMA, "o"));
         RowType iType = schema.userTableRowType(getUserTable(SCHEMA, "i"));
 
-        StoreAdapter adapter = new PersistitAdapter(schema, store(), treeService(), session(), configService());
+        StoreAdapter adapter = newStoreAdapter(schema);
         compareRows(
                 new RowBase[] {
                         // null c
@@ -748,7 +747,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         RowType cType = schema.userTableRowType(getUserTable(SCHEMA, "c"));
         RowType oType = schema.userTableRowType(getUserTable(SCHEMA, "o"));
 
-        StoreAdapter adapter = new PersistitAdapter(schema, store(), treeService(), session(), configService());
+        StoreAdapter adapter = newStoreAdapter(schema);
         compareRows(
                 new RowBase[] {
                         testRow(cType, 1L, "asdf"),
@@ -797,7 +796,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         RowType oType = schema.userTableRowType(getUserTable(SCHEMA, "o"));
         RowType iType = schema.userTableRowType(getUserTable(SCHEMA, "i"));
 
-        StoreAdapter adapter = new PersistitAdapter(schema, store(), treeService(), session(), configService());
+        StoreAdapter adapter = newStoreAdapter(schema);
         compareRows(
                 new RowBase[] {
                         // ?
@@ -848,7 +847,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         RowType oType = schema.userTableRowType(getUserTable(SCHEMA, "o"));
         RowType iType = schema.userTableRowType(getUserTable(SCHEMA, "i"));
 
-        StoreAdapter adapter = new PersistitAdapter(schema, store(), treeService(), session(), configService());
+        StoreAdapter adapter = newStoreAdapter(schema);
         compareRows(
                 new RowBase[] {
                         testRow(cType, 1, "asdf"),

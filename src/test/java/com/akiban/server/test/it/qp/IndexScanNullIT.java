@@ -27,8 +27,6 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.expression.std.FieldExpression;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -73,7 +71,7 @@ public class IndexScanNullIT extends OperatorITBase
             createNewRow(t, 1002L, 5L, null),
             createNewRow(t, 1003L, 5L, 8L),
         };
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         use(db);
     }

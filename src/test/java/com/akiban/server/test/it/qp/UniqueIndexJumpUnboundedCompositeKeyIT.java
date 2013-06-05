@@ -17,8 +17,6 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.pvalue.PValueSource;
 import org.junit.Ignore;
 import java.util.Arrays;
 import java.lang.Long;
@@ -26,7 +24,6 @@ import com.akiban.util.ShareHolder;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.operator.Operator;
 import org.junit.Test;
-import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Cursor;
@@ -39,7 +36,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.junit.Before;
+
 import com.akiban.qp.rowtype.Schema;
 
 import static com.akiban.qp.operator.API.cursor;
@@ -114,7 +111,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 //            createNewRow(t, 1022L, 1L, 30L, 300L),
 //            createNewRow(t, 1023L, 1L, 40L, 401L)
         };
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         use(db);
         for (NewRow row : db)

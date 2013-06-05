@@ -28,7 +28,6 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.types.util.ValueHolder;
 import org.junit.Test;
 
@@ -104,7 +103,7 @@ public class TreeScanCT extends CostModelBase
         schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, indexedColumn.name());
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
     }
 

@@ -69,7 +69,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     private static final boolean WITH_STEPS = false;
 
 
-    private PersistitAdapter createAdapter(AkibanInformationSchema ais, Session session) {
+    private PersistitAdapter createAdapterNoSteps(AkibanInformationSchema ais, Session session) {
         PersistitAdapter adapter =
             new PersistitAdapter(SchemaCache.globalSchema(ais),
                                  getPersistitStore(),
@@ -94,7 +94,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             AkibanInformationSchema ais = schemaManager.getAis(session);
             RowDef rowDef = ais.getUserTable(oldRowData.getRowDefId()).rowDef();
             UserTable userTable = rowDef.userTable();
-            PersistitAdapter adapter = createAdapter(ais, session);
+            PersistitAdapter adapter = createAdapterNoSteps(ais, session);
 
             if(canSkipMaintenance(userTable)) {
                 // PersistitStore needs full rows and OperatorStore will look them up (unspecified behavior),
@@ -173,7 +173,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         try {
             if (!isBulkloading()) {
                 AkibanInformationSchema ais = schemaManager.getAis(session);
-                PersistitAdapter adapter = createAdapter(ais, session);
+                PersistitAdapter adapter = createAdapterNoSteps(ais, session);
                 UserTable uTable = ais.getUserTable(rowData.getRowDefId());
                 super.writeRow(session, rowData);
                 maintainGroupIndexes(session,
@@ -197,7 +197,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         DELETE_MAINTENANCE.in();
         try {
             AkibanInformationSchema ais = schemaManager.getAis(session);
-            PersistitAdapter adapter = createAdapter(ais, session);
+            PersistitAdapter adapter = createAdapterNoSteps(ais, session);
             UserTable uTable = ais.getUserTable(rowData.getRowDefId());
 
             if (cascadeDelete) {
@@ -235,7 +235,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
 
         AkibanInformationSchema ais = schemaManager.getAis(session);
-        PersistitAdapter adapter = createAdapter(ais, session);
+        PersistitAdapter adapter = createAdapterNoSteps(ais, session);
 
         if(!tableIndexes.isEmpty()) {
             super.buildIndexes(session, tableIndexes, defer);
@@ -252,6 +252,11 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                     OperatorStoreGIHandler.Action.STORE
             );
         }
+    }
+
+    @Override
+    public StoreAdapter createAdapter(Session session, com.akiban.qp.rowtype.Schema schema) {
+        return new PersistitAdapter(schema, this, treeService, session, config);
     }
 
     // OperatorStore interface

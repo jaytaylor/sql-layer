@@ -23,11 +23,9 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CacheValueGenerator;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.error.NoSuchColumnException;
@@ -124,7 +122,7 @@ public abstract class DMLProcessor {
                 throw new ProtectedTableDDLException (table.getName());
             StoreAdapter adapter = session.get(StoreAdapter.STORE_ADAPTER_KEY);
             if (adapter == null)
-                adapter = new PersistitAdapter(schema, store, treeService, session, configService);
+                adapter = store.createAdapter(session, schema);
             return adapter;
         }
 

@@ -74,7 +74,7 @@ public class Sort_Tree_LargeKeyIT extends OperatorITBase {
         }
         db = new NewRow[rows.size()];
         rows.toArray(db);
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         use(db);
     }

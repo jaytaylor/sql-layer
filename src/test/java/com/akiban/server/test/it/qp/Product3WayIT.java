@@ -23,7 +23,6 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.*;
 import com.akiban.server.api.dml.scan.NewRow;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -100,7 +99,7 @@ public class Product3WayIT extends OperatorITBase
                           createNewRow(c, 27L, 2L, "c27"),
                           createNewRow(c, 28L, 2L, "c28"),
         };
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         use(db);
     }

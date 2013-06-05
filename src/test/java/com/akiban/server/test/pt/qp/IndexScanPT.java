@@ -27,7 +27,6 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.util.tap.Tap;
 import org.junit.Before;
 import org.junit.Test;

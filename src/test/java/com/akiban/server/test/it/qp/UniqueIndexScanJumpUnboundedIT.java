@@ -28,8 +28,6 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.expression.std.FieldExpression;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -88,7 +86,7 @@ public class UniqueIndexScanJumpUnboundedIT extends OperatorITBase
             createNewRow(t, 2031L, 3L, null, 5L),
             createNewRow(t, 2032L, 3L, 4L, null),
         };
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         use(db);
         for (NewRow row : db) {

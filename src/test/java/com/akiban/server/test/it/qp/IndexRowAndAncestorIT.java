@@ -26,7 +26,6 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.scan.NewRow;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -99,7 +98,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
         iOrdinal = ddl().getTable(session(), i).getOrdinal();
         hOrdinal = ddl().getTable(session(), h).getOrdinal();
         group = group(c);
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         loadDatabase();
     }

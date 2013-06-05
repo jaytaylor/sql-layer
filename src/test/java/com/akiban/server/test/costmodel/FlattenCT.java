@@ -68,7 +68,7 @@ public class FlattenCT extends CostModelBase
         childRowType = schema.userTableRowType(userTable(child));
         parentPKIndexType = indexType(parent, "pid", "parent_instance");
         group = group(parent);
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
     }
 

@@ -29,7 +29,6 @@ import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.test.ExpressionGenerators;
-import org.junit.Before;
 import org.junit.Test;
 
 import static com.akiban.qp.operator.API.*;
@@ -55,7 +54,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
         txIndexRowType = indexType(t, "x");
         tRowType = schema.userTableRowType(userTable(t));
         groupTable = group(t);
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         db = new NewRow[]{
             createNewRow(t, 1000L, 8L),
