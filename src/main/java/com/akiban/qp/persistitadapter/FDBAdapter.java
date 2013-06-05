@@ -152,12 +152,6 @@ public class FDBAdapter extends StoreAdapter {
     }
 
     @Override
-    public boolean withStepChanging() {
-        // TODO
-        return false;
-    }
-
-    @Override
     public void withStepChanging(boolean withStepChanging) {
         // TODO
     }

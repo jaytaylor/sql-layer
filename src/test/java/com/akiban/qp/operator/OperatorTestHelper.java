@@ -269,11 +269,6 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public boolean withStepChanging() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public void withStepChanging(boolean withStepChanging) {
             throw new UnsupportedOperationException();
         }
