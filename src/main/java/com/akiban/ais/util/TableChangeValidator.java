@@ -420,6 +420,13 @@ public class TableChangeValidator {
                         droppedSequences.add(oldColumn.getIdentityGenerator().getSequenceName());
                     }
                 } break;
+                case ADD: {
+                    Column newColumn = newTable.getColumn(change.getNewName());
+                    Sequence newSeq = newColumn.getIdentityGenerator();
+                    if(newSeq != null) {
+                        addedIdentity.add(newColumn.getName());
+                    }
+                } break;
             }
         }
 
