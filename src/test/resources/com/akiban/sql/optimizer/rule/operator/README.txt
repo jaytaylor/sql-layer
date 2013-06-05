@@ -26,6 +26,8 @@ select-3: index one branch, LEFT JOIN to another
 
 select-5: index one branch, join in another
 
+select-6: index intersection with different column counts
+
 update-1: set to literal
 
 geospatial-1: compute max radius for N neighbors
