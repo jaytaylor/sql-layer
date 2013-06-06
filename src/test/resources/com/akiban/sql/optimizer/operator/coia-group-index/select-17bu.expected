@@ -1,6 +1,6 @@
 PhysicalSelect[name:varchar(32)[VARCHAR], quan:int[INT]]
   Project_Default(customers.name, items.quan)
-    Sort_Tree(items.quan DESC)
+    Sort_General(items.quan DESC)
       Product_NestedLoops(customers - addresses x customers - orders - items)
         Flatten_HKeyOrdered(customers INNER addresses)
           AncestorLookup_Default(Index(addresses.state) -> customers, addresses)

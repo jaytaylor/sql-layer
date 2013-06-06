@@ -143,7 +143,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                                                   SortKeyAdapter<S, ?> sortKeyAdapter)
     {
         return
-            keyRange == null // occurs if we're doing a Sort_Tree
+            keyRange == null // occurs if we're doing a sort (PersistitSorter)
             ? new IndexCursorUnidirectional<>(context, iterationHelper, ordering, sortKeyAdapter)
             : new IndexCursorUnidirectional<>(context, iterationHelper, keyRange, ordering, sortKeyAdapter);
     }
