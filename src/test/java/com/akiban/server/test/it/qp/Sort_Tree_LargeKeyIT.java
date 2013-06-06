@@ -94,7 +94,7 @@ public class Sort_Tree_LargeKeyIT extends OperatorITBase {
             boolean bAsc = (x & 4) != 0;
             boolean cAsc = (x & 2) != 0;
             boolean dAsc = (x & 1) != 0;
-            Operator plan = sort_Tree(
+            Operator plan = sort_General(
                     groupScan_Default(group),
                     tRowType,
                     ordering(field(tRowType, 0), aAsc, field(tRowType, 1), bAsc, field(tRowType, 2), cAsc,

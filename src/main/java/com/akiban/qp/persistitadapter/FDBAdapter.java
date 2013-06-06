@@ -28,6 +28,7 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.IndexScanSelector;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.persistitadapter.indexcursor.MemorySorter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
@@ -109,14 +110,14 @@ public class FDBAdapter extends StoreAdapter {
     }
 
     @Override
-    public Cursor sort(QueryContext context,
-                       Cursor input,
-                       RowType rowType,
-                       API.Ordering ordering,
-                       API.SortOption sortOption,
-                       InOutTap loadTap,
-                       boolean usePValues) {
-        throw new UnsupportedOperationException();
+    public Sorter createSorter(QueryContext context,
+                               Cursor input,
+                               RowType rowType,
+                               API.Ordering ordering,
+                               API.SortOption sortOption,
+                               InOutTap loadTap) {
+        return new MemorySorter(context, input, rowType, ordering, sortOption, loadTap,
+                                store.createKey());
     }
 
     @Override

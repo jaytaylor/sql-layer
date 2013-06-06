@@ -21,6 +21,7 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.persistitadapter.Sorter;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
@@ -224,13 +225,12 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public Cursor sort(QueryContext context,
+        public Sorter createSorter(QueryContext context,
                            Cursor input,
                            RowType rowType,
                            API.Ordering ordering,
                            API.SortOption sortOption,
-                           InOutTap loadTap,
-                           boolean usePValues)
+                           InOutTap loadTap)
         {
             throw new UnsupportedOperationException();
         }
