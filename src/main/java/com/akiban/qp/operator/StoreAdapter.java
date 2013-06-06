@@ -22,6 +22,7 @@ import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.persistitadapter.Sorter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -58,13 +59,12 @@ public abstract class StoreAdapter
 
     public abstract void alterRow(Row oldRow, Row newRow, Index[] indexesToMaintain, boolean hKeyChanged, boolean usePValues);
 
-    public abstract Cursor sort(QueryContext context,
-                                Cursor input,
-                                RowType rowType,
-                                API.Ordering ordering,
-                                API.SortOption sortOption,
-                                InOutTap loadTap,
-                                boolean usePValues);
+    public abstract Sorter createSorter(QueryContext context,
+                                        Cursor input,
+                                        RowType rowType,
+                                        API.Ordering ordering,
+                                        API.SortOption sortOption,
+                                        InOutTap loadTap);
 
     public long getQueryTimeoutMilli() {
         return config.queryTimeoutMilli();

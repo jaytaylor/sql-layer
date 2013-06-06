@@ -21,11 +21,13 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.persistitadapter.Sorter;
 import com.akiban.qp.persistitadapter.TempVolume;
 import com.akiban.qp.persistitadapter.indexcursor.SorterAdapter.PersistitValueSourceAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.util.tap.InOutTap;
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -37,16 +39,16 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-public class Sorter
+public class PersistitSorter implements Sorter
 {
-    public Sorter(QueryContext context,
-                  Cursor input, 
-                  RowType rowType, 
-                  API.Ordering ordering,
-                  API.SortOption sortOption,
-                  InOutTap loadTap,
-                  boolean usePValues)
+    public PersistitSorter(QueryContext context,
+                           Cursor input,
+                           RowType rowType,
+                           API.Ordering ordering,
+                           API.SortOption sortOption,
+                           InOutTap loadTap)
     {
+        this.usePValues = Types3Switch.ON;
         this.context = context;
         this.adapter = (PersistitAdapter)context.getStore();
         this.input = input;
@@ -57,21 +59,23 @@ public class Sorter
         this.key = exchange.getKey();
         this.value = exchange.getValue();
         this.rowFields = rowType.nFields();
-        sorterAdapter = usePValues 
-                ? new PValueSorterAdapter() 
+        sorterAdapter = usePValues
+                ? new PValueSorterAdapter()
                 : new OldSorterAdapter();
         sorterAdapter.init(this.rowType, this.ordering, key, value, this.context, sortOption);
         iterationHelper = new SorterIterationHelper(sorterAdapter.createValueAdapter());
         this.loadTap = loadTap;
-        this.usePValues = usePValues;
+
     }
 
-    public Cursor sort() throws PersistitException
+    @Override
+    public Cursor sort()
     {
         loadTree();
         return cursor();
     }
 
+    @Override
     public void close()
     {
         if (exchange != null) {
@@ -83,7 +87,7 @@ public class Sorter
         }
     }
 
-    private void loadTree() throws PersistitException
+    private void loadTree()
     {
         boolean loaded = false;
         try {
@@ -151,7 +155,7 @@ public class Sorter
 
     // Class state
 
-    private static final Logger LOG = LoggerFactory.getLogger(Sorter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PersistitSorter.class);
     private static final String SORT_TREE_NAME_PREFIX = "sort.";
     private static final AtomicLong SORTER_ID_GENERATOR = new AtomicLong(0);
 
@@ -190,7 +194,7 @@ public class Sorter
         @Override
         public void closeIteration()
         {
-            Sorter.this.close();
+            PersistitSorter.this.close();
         }
 
         @Override

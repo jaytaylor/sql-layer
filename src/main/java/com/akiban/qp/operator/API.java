@@ -472,7 +472,7 @@ public class API
                                      Ordering ordering,
                                      SortOption sortOption)
     {
-        return new Sort_Tree(inputOperator, sortType, ordering, sortOption, USE_PVALUES);
+        return new Sort_Tree(inputOperator, sortType, ordering, sortOption);
     }
 
     public static Ordering ordering()

@@ -22,12 +22,10 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.persistitadapter.TempVolume;
-import com.akiban.qp.persistitadapter.indexcursor.Sorter;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.service.session.Session;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;

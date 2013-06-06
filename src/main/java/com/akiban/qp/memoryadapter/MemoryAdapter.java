@@ -30,6 +30,7 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.operator.API.Ordering;
 import com.akiban.qp.operator.API.SortOption;
+import com.akiban.qp.persistitadapter.Sorter;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
@@ -87,8 +88,8 @@ public class MemoryAdapter extends StoreAdapter {
     }
 
     @Override
-    public Cursor sort(QueryContext context, Cursor input, RowType rowType,
-            Ordering ordering, SortOption sortOption, InOutTap loadTap, boolean usePValues) {
+    public Sorter createSorter(QueryContext context, Cursor input, RowType rowType,
+                               Ordering ordering, SortOption sortOption, InOutTap loadTap) {
         throw new UnsupportedOperationException();
     }
 
