@@ -88,7 +88,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
         Ordering ordering = new Ordering();
         ordering.append(field(projectRowType, 0), true, caseSensitiveCollator);
         Operator plan =
-            sort_Tree(
+            sort_General(
                 project,
                 projectRowType,
                 ordering,
@@ -120,7 +120,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
         List<ExpressionGenerator> convertToUpper = Arrays.asList(toUpper(field(projectRowType, 0)));
         Operator plan =
             project_Default(
-                sort_Tree(
+                sort_General(
                     project,
                     projectRowType,
                     ordering,
@@ -146,7 +146,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
         Ordering ordering = new Ordering();
         ordering.append(field(project.rowType(), 0), true);
         Operator plan =
-            sort_Tree(
+            sort_General(
                 project,
                 projectRowType,
                 ordering,
@@ -177,7 +177,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
                           field(projectRowType, 2));
         Operator plan =
             project_Default(
-                sort_Tree(
+                sort_General(
                     project,
                     projectRowType,
                     ordering,

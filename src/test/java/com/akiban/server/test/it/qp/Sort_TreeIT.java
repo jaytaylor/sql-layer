@@ -67,7 +67,7 @@ public class Sort_TreeIT extends OperatorITBase
     public void testCustomerName()
     {
         Operator plan =
-            sort_Tree(
+            sort_General(
                 filter_Default(
                     groupScan_Default(coi),
                     Collections.singleton(customerRowType)),
@@ -88,7 +88,7 @@ public class Sort_TreeIT extends OperatorITBase
     public void testOrderSalesmanCid()
     {
         Operator plan =
-            sort_Tree(
+            sort_General(
                 filter_Default(
                     groupScan_Default(coi),
                     Collections.singleton(orderRowType)),
@@ -111,7 +111,7 @@ public class Sort_TreeIT extends OperatorITBase
     public void testOrderSalesman()
     {
         Operator plan =
-            sort_Tree(
+            sort_General(
                 filter_Default(
                     groupScan_Default(coi),
                     Collections.singleton(orderRowType)),
@@ -145,7 +145,7 @@ public class Sort_TreeIT extends OperatorITBase
         ExpressionGenerator oidField = field(oiType, 0);
         ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
-            sort_Tree(
+            sort_General(
                 filter_Default(
                     flattenOI,
                     Collections.singleton(oiType)),
@@ -180,7 +180,7 @@ public class Sort_TreeIT extends OperatorITBase
         ExpressionGenerator oidField = field(oiType, 0);
         ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
-            sort_Tree(
+            sort_General(
                 filter_Default(
                     flattenOI,
                     Collections.singleton(oiType)),
@@ -215,7 +215,7 @@ public class Sort_TreeIT extends OperatorITBase
         ExpressionGenerator oidField = field(oiType, 0);
         ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
-            sort_Tree(
+            sort_General(
                 filter_Default(
                     flattenOI,
                     Collections.singleton(oiType)),
@@ -250,7 +250,7 @@ public class Sort_TreeIT extends OperatorITBase
         ExpressionGenerator oidField = field(oiType, 0);
         ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
-            sort_Tree(
+            sort_General(
                 filter_Default(
                     flattenOI,
                     Collections.singleton(oiType)),
@@ -285,7 +285,7 @@ public class Sort_TreeIT extends OperatorITBase
         ExpressionGenerator oidField = field(oiType, 0);
         ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
-            sort_Tree(
+            sort_General(
                 filter_Default(
                     flattenOI,
                     Collections.singleton(oiType)),
@@ -320,7 +320,7 @@ public class Sort_TreeIT extends OperatorITBase
         ExpressionGenerator oidField = field(oiType, 0);
         ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
-            sort_Tree(
+            sort_General(
                 filter_Default(
                     flattenOI,
                     Collections.singleton(oiType)),
@@ -355,7 +355,7 @@ public class Sort_TreeIT extends OperatorITBase
         ExpressionGenerator oidField = field(oiType, 0);
         ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
-            sort_Tree(
+            sort_General(
                 filter_Default(
                     flattenOI,
                     Collections.singleton(oiType)),
@@ -390,7 +390,7 @@ public class Sort_TreeIT extends OperatorITBase
         ExpressionGenerator oidField = field(oiType, 0);
         ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
-            sort_Tree(
+            sort_General(
                 filter_Default(
                     flattenOI,
                     Collections.singleton(oiType)),
@@ -418,8 +418,8 @@ public class Sort_TreeIT extends OperatorITBase
         ExpressionGenerator iidField = field(itemRowType, 0);
         ExpressionGenerator oidField = field(itemRowType, 1);
         Operator plan =
-            sort_Tree(
-                sort_Tree(
+            sort_General(
+                sort_General(
                     filter_Default(
                         groupScan_Default(coi),
                         Collections.singleton(itemRowType)),
@@ -461,7 +461,7 @@ public class Sort_TreeIT extends OperatorITBase
                 Arrays.asList(field(orderRowType, 1)));
         RowType projectType = project.rowType();
         Operator plan =
-            sort_Tree(
+            sort_General(
                 project,
                 projectType,
                 ordering(field(projectType, 0), true),
@@ -490,7 +490,7 @@ public class Sort_TreeIT extends OperatorITBase
                 Arrays.asList(field(orderRowType, 1)));
         RowType projectType = project.rowType();
         Operator plan =
-            sort_Tree(
+            sort_General(
                 project,
                 projectType,
                 ordering(field(projectType, 0), true),
@@ -509,7 +509,7 @@ public class Sort_TreeIT extends OperatorITBase
     public void testCursor()
     {
         Operator plan =
-            sort_Tree(
+            sort_General(
                 filter_Default(
                     groupScan_Default(coi),
                     Collections.singleton(customerRowType)),

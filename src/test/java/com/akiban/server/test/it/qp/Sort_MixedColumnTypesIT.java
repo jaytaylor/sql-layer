@@ -84,7 +84,7 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
         orderBy(ordering, 1, true);
         orderBy(ordering, 2, true);
 
-        Operator plan = sort_Tree(
+        Operator plan = sort_General(
                 groupScan_Default(customerGroup),
                 customerRowType,
                 ordering,
@@ -110,7 +110,7 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
         orderBy(ordering, 1, true);
         orderBy(ordering, 2, false);
 
-        Operator plan = sort_Tree(
+        Operator plan = sort_General(
                 groupScan_Default(customerGroup),
                 customerRowType,
                 ordering,

@@ -37,6 +37,28 @@ import java.util.Iterator;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
+/**
+ * <h1>Overview</h1>
+ *
+ * Sort rows by inserting them into a {@link TreeMap} and then reading them out in order.
+ *
+ * <h1>Behavior</h1>
+ *
+ * The rows of the input stream are written into a map that orders rows according to the ordering specification.
+ * Once the input stream has been consumed, the map is iterated from beginning to end to provide rows of the output
+ * stream.
+ *
+ * <h1>Performance</h1>
+ *
+ * MemorySorter generates no IO angenerates IO dependent on the size of the input stream. This occurs mostly during the loading phase,
+ * (when the input stream is being read). There will be some IO when the loaded B-Tree is scanned, but this is
+ * expected to be more efficient, as each page will be read completely before moving on to the next one.
+ *
+ * <h1>Memory Requirements</h1>
+ *
+ * Memory requirements are dependent on the size of the input stream. One Key is generated for each Row and each Row
+ * is copied to be held in memory. All rows from the input stream are held until close.
+ */
 public class MemorySorter implements Sorter
 {
     private final NavigableMap<KeyState, Row> navigableMap;

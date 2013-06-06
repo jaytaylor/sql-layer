@@ -30,7 +30,6 @@ import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.aggregation.Aggregators;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TComparison;
 import com.akiban.server.types3.TInstance;
@@ -467,12 +466,12 @@ public class API
         return new Sort_InsertionLimited(inputOperator, sortType, ordering, sortOption, limit);
     }
 
-    public static Operator sort_Tree(Operator inputOperator,
-                                     RowType sortType,
-                                     Ordering ordering,
-                                     SortOption sortOption)
+    public static Operator sort_General(Operator inputOperator,
+                                        RowType sortType,
+                                        Ordering ordering,
+                                        SortOption sortOption)
     {
-        return new Sort_Tree(inputOperator, sortType, ordering, sortOption);
+        return new Sort_General(inputOperator, sortType, ordering, sortOption);
     }
 
     public static Ordering ordering()

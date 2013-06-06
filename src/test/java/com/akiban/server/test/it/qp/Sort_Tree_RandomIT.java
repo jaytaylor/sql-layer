@@ -33,7 +33,7 @@ import java.util.*;
 import static com.akiban.server.test.ExpressionGenerators.field;
 import static com.akiban.qp.operator.API.*;
 
-// More Sort_Tree testing, with randomly generated data
+// More sort_General testing, with randomly generated data
 
 public class Sort_Tree_RandomIT extends OperatorITBase
 {
@@ -88,7 +88,7 @@ public class Sort_Tree_RandomIT extends OperatorITBase
             boolean cAsc = (x & 2) != 0;
             boolean dAsc = (x & 1) != 0;
             Operator plan =
-                sort_Tree(
+                sort_General(
                     groupScan_Default(group),
                     tRowType,
                     ordering(field(tRowType, 0), aAsc, field(tRowType, 1), bAsc, field(tRowType, 2), cAsc, field(tRowType, 3), dAsc),

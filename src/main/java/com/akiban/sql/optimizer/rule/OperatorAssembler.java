@@ -43,7 +43,6 @@ import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ParameterNode;
 
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
@@ -1739,7 +1738,7 @@ public class OperatorAssembler extends BaseRule
                 stream.operator = API.sort_InsertionLimited(stream.operator, stream.rowType,
                                                             ordering, sortOption, maxrows);
             else
-                stream.operator = API.sort_Tree(stream.operator, stream.rowType, ordering, sortOption);
+                stream.operator = API.sort_General(stream.operator, stream.rowType, ordering, sortOption);
         }
 
         protected void assembleSort(RowStream stream, int nkeys, PlanNode input,

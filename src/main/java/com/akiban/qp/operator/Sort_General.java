@@ -24,6 +24,7 @@ import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.explain.std.SortOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
+import com.akiban.qp.persistitadapter.Sorter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,8 +36,8 @@ import java.util.Set;
  <h1>Overview</h1>
 
  Sort_Tree generates an output stream containing all the rows of the input stream, sorted according to an
- ordering specification. The "Tree" in the name refers to the implementation, in which the rows are inserted
- into a B-tree (presumably on-disk) and then read out in order.
+ ordering specification. The "General" in the name refers to the flexible implementation which is provided by
+ the underlying {@link StoreAdapter}.
 
  <h1>Arguments</h1>
 
@@ -49,9 +50,7 @@ import java.util.Set;
 
  <h1>Behavior</h1>
 
- The rows of the input stream are written into a B-tree that orders rows according to the ordering specification.
- Once the input stream has been consumed, the B-tree is traversed from beginning to end to provide rows of the output
- stream.
+ Refer to specific implementations of {@link Sorter} for details.
 
  <h1>Output</h1>
 
@@ -64,17 +63,14 @@ import java.util.Set;
 
  <h1>Performance</h1>
 
- Sort_Tree generates IO dependent on the size of the input stream. This occurs mostly during the loading phase,
- (when the input stream is being read). There will be some IO when the loaded B-tree is scanned, but this is
- expected to be more efficient, as each page will be read completely before moving on to the next one.
+ Refer to specific implementations of {@link Sorter} for details.
 
  <h1>Memory Requirements</h1>
 
- Memory requirements (and disk requirements) depend on the underlying B-tree.
+ Refer to specific implementations of {@link Sorter} for details.
 
  */
-
-class Sort_Tree extends Operator
+class Sort_General extends Operator
 {
     // Object interface
 
@@ -122,10 +118,10 @@ class Sort_Tree extends Operator
 
     // Sort_Tree interface
 
-    public Sort_Tree(Operator inputOperator,
-                     RowType sortType,
-                     API.Ordering ordering,
-                     API.SortOption sortOption)
+    public Sort_General(Operator inputOperator,
+                        RowType sortType,
+                        API.Ordering ordering,
+                        API.SortOption sortOption)
     {
         ArgumentValidation.notNull("sortType", sortType);
         ArgumentValidation.isGT("ordering.columns()", ordering.sortColumns(), 0);
@@ -140,7 +136,7 @@ class Sort_Tree extends Operator
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_Tree open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_Tree next");
     private static final InOutTap TAP_LOAD = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_Tree load");
-    private static final Logger LOG = LoggerFactory.getLogger(Sort_Tree.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Sort_General.class);
 
     // Object state
 

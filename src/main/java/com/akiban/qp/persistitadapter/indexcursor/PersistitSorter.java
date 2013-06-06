@@ -39,6 +39,28 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * <h1>Overview</h1>
+ *
+ * Sort rows by inserting them into Persistit B-Tree and then read out in order.
+ *
+ * <h1>Behavior</h1>
+ *
+ * The rows of the input stream are written into a B-Tree that orders rows according to the ordering specification.
+ * Once the input stream has been consumed, the B-Tree is traversed from beginning to end to provide rows of the output
+ * stream.
+ *
+ * <h1>Performance</h1>
+*
+ * PersistitSorter generates IO dependent on the size of the input stream. This occurs mostly during the loading phase,
+ * (when the input stream is being read). There will be some IO when the loaded B-Tree is scanned, but this is
+ * expected to be more efficient, as each page will be read completely before moving on to the next one.
+*
+ * <h1>Memory Requirements</h1>
+*
+ * Memory requirements (and disk requirements) depend on the underlying configuration, primarily the buffer pool size,
+ * and concurrent load on the system.
+*/
 public class PersistitSorter implements Sorter
 {
     public PersistitSorter(QueryContext context,
