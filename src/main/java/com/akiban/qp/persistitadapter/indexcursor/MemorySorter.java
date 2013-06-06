@@ -32,8 +32,11 @@ import com.persistit.Key;
 import com.persistit.KeyState;
 import com.persistit.exception.KeyTooLongException;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
@@ -61,15 +64,22 @@ import java.util.TreeMap;
  */
 public class MemorySorter implements Sorter
 {
-    private final NavigableMap<KeyState, Row> navigableMap;
+    /*
+     * Map is a set of keys to (a copy of) the original row.
+     * Keys are encoded such that the output can be a single, forward iteration.
+     * Each "ordering chunk" results in a single key state and comparator, with key encoding being the default
+     * and the comparator inverting the result if DESC is required.
+     * For example, (ASC,ASC,DESC,DESC,ASC) would result in 3 states and 3 comparators.
+     */
+    private final NavigableMap<KeyState[], Row> navigableMap;
+    private final List<Integer> orderChanges;
+
     private final QueryContext context;
     private final Cursor input;
     private final API.Ordering ordering;
     private final Key key;
     private final InOutTap loadTap;
     private final SorterAdapter<?, ?, ?> sorterAdapter;
-    private final boolean isAscending;
-    private long rowCount = 0;
 
     public MemorySorter(QueryContext context,
                         Cursor input,
@@ -79,27 +89,32 @@ public class MemorySorter implements Sorter
                         InOutTap loadTap,
                         Key key)
     {
-        this.navigableMap = new TreeMap<>();
         this.context = context;
         this.input = input;
         this.ordering = ordering.copy();
         this.key = key;
         this.loadTap = loadTap;
         this.sorterAdapter = new PValueSorterAdapter();
-        this.isAscending = ordering.ascending(0);
         // Note: init may change this.ordering
         sorterAdapter.init(rowType, this.ordering, this.key, null, this.context, sortOption);
-        for(int i = 1; i < this.ordering.sortColumns(); ++i) {
-            if(isAscending != this.ordering.ascending(i)) {
-                throw new UnsupportedOperationException("Mixed order sort not supported");
+        // Explicitly use input ordering to avoid appended field
+        this.orderChanges = new ArrayList<>();
+        List<Comparator<KeyState>> comparators = new ArrayList<>();
+        for(int i = 0; i < ordering.sortColumns(); ++i) {
+            Comparator<KeyState> c = ordering.ascending(i) ? ASC_COMPARATOR : DESC_COMPARATOR;
+            if(i == 0 || ordering.ascending(i-1) != ordering.ascending(i)) {
+                orderChanges.add(i);
+                comparators.add(c);
             }
         }
+        this.orderChanges.add(ordering.sortColumns());
+        this.navigableMap = new TreeMap<>(new KeyStateArrayComparator(comparators));
     }
 
     @Override
     public Cursor sort() {
         loadMap();
-        return new CollectionCursor(isAscending ? navigableMap.values() : navigableMap.descendingMap().values());
+        return new CollectionCursor(navigableMap.values());
     }
 
     @Override
@@ -113,17 +128,17 @@ public class MemorySorter implements Sorter
             loadTap.in();
             try {
                 Row row;
+                int rowCount = 0;
                 while((row = input.next()) != null) {
                     ++rowCount;
                     context.checkQueryCancelation();
-                    createKey(row);
-                    KeyState state = new KeyState(key);
+                    KeyState[] states = createKey(row, rowCount);
                     // Copy instead of hold as ProjectedRow cannot be held
                     ValuesHolderRow rowCopy = new ValuesHolderRow(row.rowType(), true);
                     for(int i = 0 ; i < row.rowType().nFields(); ++i) {
                         PValueTargets.copyFrom(row.pvalue(i), rowCopy.pvalueAt(i));
                     }
-                    navigableMap.put(state, rowCopy);
+                    navigableMap.put(states, rowCopy);
                     loadTap.out();
                     loadTap.in();
                 }
@@ -138,23 +153,30 @@ public class MemorySorter implements Sorter
         }
     }
 
-    private void createKey(Row row) {
-        while(true) {
-            try {
-                key.clear();
-                boolean preserveDuplicates = sorterAdapter.preserveDuplicates();
-                int sortFields = ordering.sortColumns() - (preserveDuplicates ? 1 : 0);
-                for(int i = 0; i < sortFields; i++) {
-                    sorterAdapter.evaluateToKey(row, i);
+    private KeyState[] createKey(Row row, int rowCount) {
+        KeyState[] states = new KeyState[orderChanges.size() - 1];
+        for(int i = 0; i < states.length; ++i) {
+            int startOffset = orderChanges.get(i);
+            int endOffset = orderChanges.get(i + 1);
+            boolean isLast = i == states.length - 1;
+            // Loop for key growth
+            while(true) {
+                try {
+                    key.clear();
+                    for(int j = startOffset; j < endOffset; ++j) {
+                        sorterAdapter.evaluateToKey(row, j);
+                    }
+                    if(isLast && sorterAdapter.preserveDuplicates()) {
+                        key.append(rowCount);
+                    }
+                    break;
+                } catch (KeyTooLongException e) {
+                    key.setMaximumSize(key.getMaximumSize() * 2);
                 }
-                if(preserveDuplicates) {
-                    key.append(rowCount);
-                }
-                break;
-            } catch (KeyTooLongException e) {
-                key.setMaximumSize(key.getMaximumSize() * 2);
             }
+            states[i] = new KeyState(key);
         }
+        return states;
     }
 
     private static final class CollectionCursor implements Cursor {
@@ -215,6 +237,38 @@ public class MemorySorter implements Sorter
         @Override
         public boolean isDestroyed() {
             return isDestroyed;
+        }
+    }
+
+    private static final Comparator<KeyState> ASC_COMPARATOR = new Comparator<KeyState>() {
+        @Override
+        public int compare(KeyState k1, KeyState k2) {
+            return k1.compareTo(k2);
+        }
+    };
+
+    private static final Comparator<KeyState> DESC_COMPARATOR = new Comparator<KeyState>() {
+        @Override
+        public int compare(KeyState k1, KeyState k2) {
+            return k2.compareTo(k1);
+        }
+    };
+
+    private static final class KeyStateArrayComparator implements Comparator<KeyState[]> {
+        private final Comparator[] comparators;
+
+        private KeyStateArrayComparator(List<Comparator<KeyState>> comparators) {
+            this.comparators = comparators.toArray(new Comparator[comparators.size()]);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public int compare(KeyState[] k1, KeyState[] k2) {
+            int val = 0;
+            for(int i = 0; (i < comparators.length) && (val == 0); ++i) {
+                val = comparators[i].compare(k1[i], k2[i]);
+            }
+            return val;
         }
     }
 }
