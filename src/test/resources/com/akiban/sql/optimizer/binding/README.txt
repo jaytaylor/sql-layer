@@ -56,6 +56,10 @@ select-9b: Easy way
 
 select-10: Nested easy way, cross schema child name fully qualified
 
+select-11: Qualified column also in outer scope
+
+select-11u: Unqualified equivalent
+
 update-1: Columns of target table.
 
 update-2: Returning columns and functions

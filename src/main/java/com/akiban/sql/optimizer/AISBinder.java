@@ -694,7 +694,6 @@ public class AISBinder implements Visitor
 
             schemaName = defaultSchemaName;
         }
-        FromTable result = null;
         for (BindingContext bindingContext : bindingContexts) {
             for (FromTable fromTable : bindingContext.tables) {
                 if ((fromTable instanceof FromBaseTable) &&
@@ -706,17 +705,12 @@ public class AISBinder implements Visitor
                     Columnar table = tableBinding.getTable();
                     if (table.getName().getSchemaName().equalsIgnoreCase(schemaName) &&
                         table.getName().getTableName().equalsIgnoreCase(tableName)) {
-                        if (result != null)
-                            throw new DuplicateTableNameException (new com.akiban.ais.model.TableName(tableNameNode.getSchemaName(), tableNameNode.getTableName()));
-                        else
-                            result = fromBaseTable;
+                        return fromBaseTable;
                     }
                 }
             }
         }
-        if (result == null)
-            throw new NoSuchTableException(schemaName, tableName, tableNameNode);
-        return result;
+        throw new NoSuchTableException(schemaName, tableName, tableNameNode);
     }
 
     protected void getUniqueColumnBindings(FromTable fromTable, 

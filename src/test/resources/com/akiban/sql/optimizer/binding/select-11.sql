@@ -1,0 +1,1 @@
+SELECT x, z / (SELECT MAX(t1.z) FROM t1) FROM t1
