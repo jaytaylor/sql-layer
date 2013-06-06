@@ -4,6 +4,8 @@ case-1: CASE condition already worked out.
 
 case-2: CASE only partially worked out.
 
+case-3: CASE complex condition
+
 counts: COUNT(NOT NULL column) turns into COUNT(*) but not NULL.
 
 current-date-time: Current date / time is not a constant.
