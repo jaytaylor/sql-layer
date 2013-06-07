@@ -145,7 +145,7 @@ public class TableStatusRecoveryIT extends ITBase {
     private int getOrdinal(final int tableId) throws Exception {
         return transactionally(new Callable<Integer>() {
             public Integer call() throws Exception {
-                return getRowDef(tableId).getTableStatus().getOrdinal();
+                return getUserTable(tableId).getOrdinal();
             }
         });
     }

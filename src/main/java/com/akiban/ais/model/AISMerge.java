@@ -174,6 +174,7 @@ public class AISMerge {
 
             // These don't affect final outcome and may be reset later. Needed by clone process.
             if((newTable != null) && (newTable.getGroup() != null)) {
+                newTable.setOrdinal(oldTable.getOrdinal());
                 newTable.setTableId(oldTable.getTableId());
                 newTable.getGroup().setTreeName(oldTable.getGroup().getTreeName());
             }
@@ -182,6 +183,7 @@ public class AISMerge {
                 case NONE:
                     // None: Handled by cloning process
                 break;
+                case META:
                 case UPDATE: {
                     Join join = (newTable != null) ? newTable.getParentJoin() : oldTable.getParentJoin();
                     joinsToFix.add(new JoinChange(join, desc.getParentName(), desc.getParentColNames(),

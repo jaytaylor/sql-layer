@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -32,7 +31,6 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.TableStatus;
 import com.akiban.server.TableStatusCache;
-import com.persistit.exception.PersistitInterruptedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,10 +68,17 @@ public class RowDefCache {
     }
 
     /**
-     * Receive an instance of the AkibanInformationSchema, crack it and produce
-     * the RowDef instances it defines.
-     */
-    public synchronized void setAIS(final AkibanInformationSchema newAIS) throws PersistitInterruptedException {
+     * Create RowDefs for every table in the given AIS and compute derived information for indexes. */
+    public void setAIS(AkibanInformationSchema newAIS) {
+        setAIS(newAIS, false);
+    }
+
+    /** Like {@link #setAIS(AkibanInformationSchema)} but without derived information changes */
+    public void setAISWithoutOrdinals(AkibanInformationSchema newAIS) {
+        setAIS(newAIS, true);
+    }
+
+    private synchronized void setAIS(AkibanInformationSchema newAIS, boolean skipOrdinals) {
         ais = newAIS;
 
         Map<Integer, RowDef> newRowDefs = new TreeMap<>();
@@ -86,9 +91,11 @@ public class RowDefCache {
             }
         }
 
-        Map<Table,Integer> ordinalMap = fixUpOrdinals();
-        for (RowDef rowDef : newRowDefs.values()) {
-            rowDef.computeFieldAssociations(ordinalMap);
+        if(!skipOrdinals) {
+            Map<Table,Integer> ordinalMap = createOrdinalMap();
+            for (RowDef rowDef : newRowDefs.values()) {
+                rowDef.computeFieldAssociations(ordinalMap);
+            }
         }
 
         if (LOG.isDebugEnabled()) {
@@ -98,51 +105,6 @@ public class RowDefCache {
 
     public synchronized AkibanInformationSchema ais() {
         return ais;
-    }
-
-    /**
-     * Assign "ordinal" values to user table RowDef instances. An ordinal the
-     * integer used to identify a user table subtree within an hkey. This method
-     * Assigned unique integers where needed to any tables that have not already
-     * received non-zero ordinal values. Once a table is populated, its ordinal
-     * is written as part of the TableStatus record, and on subsequent server
-     * start-ups, that value is loaded and reused from the status tree.
-     * @return Map of Table->Ordinal for all Tables/RowDefs in the RowDefCache
-     */
-    protected Map<Table,Integer> fixUpOrdinals() throws PersistitInterruptedException {
-        Map<Group,List<RowDef>> groupToRowDefs = getRowDefsByGroup();
-        Map<Table,Integer> ordinalMap = new HashMap<>();
-        for(List<RowDef> rowDefs  : groupToRowDefs.values()) {
-            // First pass: merge already assigned values
-            HashSet<Integer> assigned = new HashSet<>();
-            for(RowDef rowDef : rowDefs) {
-                int ordinal = rowDef.getTableStatus().getOrdinal();
-                if(ordinal != 0 && !assigned.add(ordinal)) {
-                    throw new IllegalStateException("Non-unique ordinal value " + ordinal + " added to " + assigned);
-                }
-            }
-
-            // Second pass: assign new ordinals
-            int nextOrdinal = 1;
-            for(RowDef rowDef : rowDefs) {
-                int ordinal = rowDef.getTableStatus().getOrdinal();
-                if (ordinal == 0) {
-                    while(assigned.contains(nextOrdinal)) {
-                        ++nextOrdinal;
-                    }
-                    ordinal = nextOrdinal++;
-                    rowDef.getTableStatus().setOrdinal(ordinal);
-                }
-                assigned.add(ordinal);
-                ordinalMap.put(rowDef.table(), ordinal);
-                rowDef.setOrdinalCache(ordinal);
-            }
-
-            if(assigned.size() != rowDefs.size()) {
-                throw new IllegalStateException("Inconsistent ordinal number assignments: " + assigned);
-            }
-        }
-        return ordinalMap;
     }
 
     private RowDef createRowDefCommon(Table table, MemoryTableFactory factory) {
@@ -155,7 +117,18 @@ public class RowDefCache {
         return new RowDef(table, status); // Hooks up table's rowDef too
     }
 
-    private RowDef createUserTableRowDef(UserTable table) throws PersistitInterruptedException {
+    /**  @return Map of Table->Ordinal for all Tables/RowDefs in the RowDefCache */
+    protected Map<Table,Integer> createOrdinalMap() {
+        Map<Table,Integer> ordinalMap = new HashMap<>();
+        for(UserTable table : ais.getUserTables().values()) {
+            Integer ordinal = table.getOrdinal();
+            assert ordinal != null : "Null ordinal: " + table;
+            ordinalMap.put(table, ordinal);
+        }
+        return ordinalMap;
+    }
+
+    private RowDef createUserTableRowDef(UserTable table) {
         RowDef rowDef = createRowDefCommon(table, table.getMemoryTableFactory());
         // parentRowDef
         int[] parentJoinFields;

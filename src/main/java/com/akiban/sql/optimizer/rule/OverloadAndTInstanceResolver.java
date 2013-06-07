@@ -59,6 +59,7 @@ import com.akiban.sql.optimizer.plan.CastExpression;
 import com.akiban.sql.optimizer.plan.ColumnExpression;
 import com.akiban.sql.optimizer.plan.ColumnSource;
 import com.akiban.sql.optimizer.plan.ComparisonCondition;
+import com.akiban.sql.optimizer.plan.ConditionList;
 import com.akiban.sql.optimizer.plan.ConstantExpression;
 import com.akiban.sql.optimizer.plan.Distinct;
 import com.akiban.sql.optimizer.plan.DMLStatement;
@@ -515,14 +516,17 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleIfElseExpression(IfElseExpression expression) {
+            ConditionList conditions = expression.getTestConditions();
             ExpressionNode thenExpr = expression.getThenExpression();
             ExpressionNode elseExpr = expression.getElseExpression();
 
             // constant-fold if the condition is constant
-            PValueSource conditionVal = pval(expression.getTestCondition());
-            if (conditionVal != null) {
-                boolean conditionMet = conditionVal.getBoolean(false);
-                return conditionMet ? thenExpr : elseExpr;
+            if (conditions.size() == 1) {
+                PValueSource conditionVal = pval(conditions.get(0));
+                if (conditionVal != null) {
+                    boolean conditionMet = conditionVal.getBoolean(false);
+                    return conditionMet ? thenExpr : elseExpr;
+                }
             }
 
             TInstance commonInstance = commonInstance(registry.getCastsResolver(), tinst(thenExpr), tinst(elseExpr));

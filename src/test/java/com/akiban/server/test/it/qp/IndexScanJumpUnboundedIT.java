@@ -78,7 +78,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
             createNewRow(t, 1032L, 3L, 4L, null),
             createNewRow(t, 1033L, 3L, 4L, 5L),
         };
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         use(db);
         for (NewRow row : db) {

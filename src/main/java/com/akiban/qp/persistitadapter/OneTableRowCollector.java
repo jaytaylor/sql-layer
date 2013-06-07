@@ -26,15 +26,13 @@ import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.store.PersistitStore;
+import com.akiban.server.store.Store;
 
 public class OneTableRowCollector extends OperatorBasedRowCollector
 {
-    OneTableRowCollector(ConfigurationService config,
-                         Session session,
-                         PersistitStore store,
+    OneTableRowCollector(Session session,
+                         Store store,
                          RowDef rowDef,
                          int indexId,
                          int scanFlags,
@@ -43,7 +41,7 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
                          RowData end,
                          ColumnSelector endColumns)
     {
-        super(store, session, config);
+        super(store, session);
         // rootmostQueryTable
         queryRootTable = rowDef.userTable();
         queryRootType = schema.userTableRowType(queryRootTable);

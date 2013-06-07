@@ -28,7 +28,18 @@ import java.util.Map;
  * Information describing the state of an altered table
  */
 public class ChangedTableDescription {
-    public static enum ParentChange { NONE, UPDATE, ADD, DROP }
+    public static enum ParentChange {
+        /** No change at all **/
+        NONE,
+        /** Metadata only change (e.g. rename o.cid) **/
+        META,
+        /** Group is changing but not the relationship (e.g. i is UPDATE when c.id changes type) **/
+        UPDATE,
+        /** New parent **/
+        ADD,
+        /** Dropped parent **/
+        DROP
+    }
 
     private final TableName tableName;
     private final UserTable newDefinition;
@@ -103,7 +114,7 @@ public class ChangedTableDescription {
     }
 
     public boolean isNewGroup() {
-        return (parentChange != ParentChange.NONE);
+        return (parentChange != ParentChange.NONE) && (parentChange != ParentChange.META);
     }
 
     @Override

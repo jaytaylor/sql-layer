@@ -26,7 +26,6 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.test.ExpressionGenerators;
 import com.akiban.server.types.AkType;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -57,7 +56,7 @@ public class OrphanResolutionIT extends OperatorITBase
         parentRowType = schema.userTableRowType(userTable(parent));
         childRowType = schema.userTableRowType(userTable(child));
         group = group(parent);
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         db = new NewRow[] {
             createNewRow(child, 1L, 100L),

@@ -45,6 +45,7 @@ import com.akiban.ais.util.TableChangeValidator;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.AkServerInterface;
@@ -446,11 +447,19 @@ public class ApiTestBase {
         return session;
     }
 
+    protected final StoreAdapter newStoreAdapter(Schema schema) {
+        return newStoreAdapter(session(), schema);
+    }
+
+    protected final StoreAdapter newStoreAdapter(Session explicit_session, Schema schema) {
+        return store().createAdapter(explicit_session, schema);
+    }
+
     protected final PersistitAdapter persistitAdapter(Schema schema) {
         return new PersistitAdapter(schema, store(), treeService(), session(), configService());
     }
 
-    protected final QueryContext queryContext(PersistitAdapter adapter) {
+    protected final QueryContext queryContext(StoreAdapter adapter) {
         return new SimpleQueryContext(adapter) {
                 @Override
                 public ServiceManager getServiceManager() {

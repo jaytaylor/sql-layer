@@ -29,39 +29,30 @@ public interface TableStatus {
     /** Record that a row has been deleted. */
     void rowDeleted();
 
-    /** Record that a row has been written.
-     * @param count*/
+    /** Record that a row has been written. */
     void rowsWritten(long count);
 
     /** Reset, but do not remove, the state of a table. */
-    void truncate() throws PersistitInterruptedException;
+    void truncate();
 
     /** Set the auto-increment value of a given table. */
-    void setAutoIncrement(long value) throws PersistitInterruptedException;
+    void setAutoIncrement(long value);
 
     /** Set the RowDef of a given table.*/
     void setRowDef(RowDef rowDef);
 
     /** Create a brand new, unique ID for the given table. */
-    long createNewUniqueID() throws PersistitInterruptedException;
-
-    /** Set the ordinal value of a given table. */
-    void setOrdinal(int value) throws PersistitInterruptedException;
+    long createNewUniqueID();
 
     /**
-     * @return Current auto-increment value of the assocated table.
+     * @return Current auto-increment value of the associated table.
      */
-    long getAutoIncrement() throws PersistitInterruptedException;
-
-    /**
-     * @return Ordinal of the associated table.
-     */
-    int getOrdinal() throws PersistitInterruptedException;
+    long getAutoIncrement();
 
     /**
      * @return Current number of rows in the associated table.
      */
-    long getRowCount() throws PersistitInterruptedException;
+    long getRowCount();
 
     /**
      * @return Approximate number of rows in the associated table.
@@ -71,7 +62,7 @@ public interface TableStatus {
     /**
      * @return The <b>last</b> unique value used for the associated table.
      */
-    long getUniqueID() throws PersistitInterruptedException;
+    long getUniqueID();
 
     /** @return The table ID this status is for */
     int getTableID();

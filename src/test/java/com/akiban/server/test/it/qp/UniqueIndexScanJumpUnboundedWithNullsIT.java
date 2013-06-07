@@ -20,7 +20,6 @@ package com.akiban.server.test.it.qp;
 import com.akiban.util.ShareHolder;
 import com.akiban.qp.operator.Operator;
 import org.junit.Test;
-import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Cursor;
@@ -33,7 +32,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.junit.Before;
+
 import com.akiban.qp.rowtype.Schema;
 
 import static com.akiban.qp.operator.API.cursor;
@@ -93,7 +92,7 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
             createNewRow(t, 1024L, 1L, null, 121L),
             createNewRow(t, 1025L, 1L, null, 123L)
         };
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         use(db);
         for (NewRow row : db) {

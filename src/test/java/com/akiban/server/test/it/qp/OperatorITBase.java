@@ -23,8 +23,7 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.persistitadapter.PersistitGroupRow;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
@@ -47,6 +46,8 @@ import com.persistit.exception.PersistitException;
 import com.akiban.util.Strings;
 import org.junit.After;
 import org.junit.Before;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -60,6 +61,8 @@ import static org.junit.Assert.fail;
 
 public class OperatorITBase extends ITBase
 {
+    private static final Logger LOG = LoggerFactory.getLogger(OperatorITBase.class.getName());
+
     @Before
     public void before_beginTransaction() throws PersistitException {
         txnService().beginTransaction(session());
@@ -135,10 +138,10 @@ public class OperatorITBase extends ITBase
         addressAddressIndexRowType = indexType(address, "address");
         customerNameItemOidIndexRowType = groupIndexType(Index.JoinType.LEFT, "customer.name", "item.oid");
         coi = group(customer);
-        customerOrdinal =  ddl().getTable(session(),  customer).rowDef().getOrdinal();
-        orderOrdinal =  ddl().getTable(session(),  order).rowDef().getOrdinal();
-        itemOrdinal = ddl().getTable(session(),  item).rowDef().getOrdinal();
-        addressOrdinal =  ddl().getTable(session(),  address).rowDef().getOrdinal();
+        customerOrdinal =  ddl().getTable(session(),  customer).getOrdinal();
+        orderOrdinal =  ddl().getTable(session(),  order).getOrdinal();
+        itemOrdinal = ddl().getTable(session(),  item).getOrdinal();
+        addressOrdinal =  ddl().getTable(session(),  address).getOrdinal();
         db = new NewRow[]{createNewRow(customer, 1L, "xyz"),
                           createNewRow(customer, 2L, "abc"),
                           createNewRow(order, 11L, 1L, "ori"),
@@ -153,7 +156,7 @@ public class OperatorITBase extends ITBase
                           createNewRow(item, 212L, 21L),
                           createNewRow(item, 221L, 22L),
                           createNewRow(item, 222L, 22L)};
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
     }
 
@@ -333,18 +336,6 @@ public class OperatorITBase extends ITBase
         return new TestRow(rowType, new RowValuesHolder(fields, types), null);
     }
 
-    protected RowBase row(int tableId, Object... values /* alternating field position and value */)
-    {
-        NewRow niceRow = createNewRow(tableId);
-        int i = 0;
-        while (i < values.length) {
-            int position = (Integer) values[i++];
-            Object value = values[i++];
-            niceRow.put(position, value);
-        }
-        return PersistitGroupRow.newPersistitGroupRow(adapter, niceRow.toRowData());
-    }
-
     protected RowBase row(IndexRowType indexRowType, Object... values) {
 /*
         try {
@@ -450,7 +441,7 @@ public class OperatorITBase extends ITBase
         cursor.open();
         Row row;
         while ((row = cursor.next()) != null) {
-            System.out.println(String.valueOf(row));
+            LOG.debug("{}", String.valueOf(row));
         }
         cursor.close();
     }
@@ -481,7 +472,7 @@ public class OperatorITBase extends ITBase
 
     protected int ordinal(RowType rowType)
     {
-        return rowType.userTable().rowDef().getOrdinal();
+        return rowType.userTable().getOrdinal();
     }
 
 
@@ -524,7 +515,7 @@ public class OperatorITBase extends ITBase
     protected Schema schema;
     protected NewRow[] db;
     protected NewRow[] emptyDB = new NewRow[0];
-    protected PersistitAdapter adapter;
+    protected StoreAdapter adapter;
     protected QueryContext queryContext;
     protected AkCollator ciCollator;
     protected int customerOrdinal;

@@ -479,7 +479,7 @@ public class PlanCostEstimator
                 }
                 if (commonAncestor == table) continue;
                 long ancestorCount = tableCounts.get(commonAncestor);
-                if (table.rowDef().getOrdinal() > lastRequired.getOrdinal())
+                if (table.getOrdinal() > lastRequired.getOrdinal())
                     // A table that isn't required; number skipped
                     // depends on relative position.
                     ancestorCount--;

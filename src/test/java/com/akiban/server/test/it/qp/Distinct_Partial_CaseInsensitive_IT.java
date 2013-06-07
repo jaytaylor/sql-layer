@@ -26,11 +26,6 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.collation.AkCollator;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.std.CaseConvertExpression;
-import com.akiban.server.expression.std.FieldExpression;
-import com.akiban.server.types3.Types3Switch;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -59,7 +54,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
     {
         schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         group = group(t);
         caseSensitiveCollator = tRowType.userTable().getColumn("cs").getCollator();

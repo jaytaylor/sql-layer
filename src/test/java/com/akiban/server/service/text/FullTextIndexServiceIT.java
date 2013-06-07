@@ -22,7 +22,8 @@ import com.akiban.ais.model.IndexName;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
 import static com.akiban.qp.operator.API.cursor;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
+
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -48,7 +49,7 @@ public class FullTextIndexServiceIT extends ITBase
     public static final String SCHEMA = "test";
     protected FullTextIndexService fullText;
     protected Schema schema;
-    protected PersistitAdapter adapter;
+    protected StoreAdapter adapter;
     protected QueryContext queryContext;
     private static final Logger logger = LoggerFactory.getLogger(FullTextIndexServiceIT.class);
 
@@ -100,7 +101,7 @@ public class FullTextIndexServiceIT extends ITBase
         fullText = serviceManager().getServiceByClass(FullTextIndexService.class);
 
         schema = SchemaCache.globalSchema(ais());
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
     }
 

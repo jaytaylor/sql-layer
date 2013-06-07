@@ -24,7 +24,6 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.MultiCursor;
 import com.akiban.server.api.dml.ColumnSelector;
-import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -46,7 +45,7 @@ public class MultiCursorIT extends OperatorITBase
     {
         schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
     }
 

@@ -38,16 +38,16 @@
     </properties>
     
     <distributionManagement>
-        <snapshotRepository>
-            <id>akiban</id>
-            <name>akiban-snapshots</name>
-            <url>http://akiban.artifactoryonline.com/akiban/libs-snapshots-local</url>
-        </snapshotRepository>
-        <repository>
-            <id>akiban</id>
-            <name>akiban-releases</name>
-            <url>http://akiban.artifactoryonline.com/akiban/libs-releases-local</url>
-        </repository>
+      <repository>
+      	<id>AlibanLocal</id>
+      	<name>Akiban Local release repository</name>
+      	<url>http://sneezy:8095/nexus/content/repostories/releases/</url>
+      </repository>
+	  <snapshotRepository>
+	    <id>AkibanLocal</id>
+	    <name>Akiban Local Snapshot Repository</name>
+	    <url>http://sneezy:8095/nexus/content/repositories/snapshots/</url>
+     </snapshotRepository>
     </distributionManagement>
     
     <dependencies>
@@ -237,6 +237,16 @@
             </resource>
         </resources>
         <plugins>
+		    <plugin>
+		      <groupId>org.sonatype.plugins</groupId>
+		      <artifactId>nexus-staging-maven-plugin</artifactId>
+		      <version>1.2</version>
+		      <extensions>true</extensions>
+		      <configuration>
+		        <serverId>AkibanLocal</serverId>
+		        <nexusUrl>http://sneezy:8095/nexus/</nexusUrl>
+		      </configuration>
+		    </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>

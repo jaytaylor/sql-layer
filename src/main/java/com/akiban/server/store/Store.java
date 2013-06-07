@@ -17,57 +17,40 @@
 
 package com.akiban.server.store;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Sequence;
-import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
+import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.service.tree.TreeLink;
-import com.persistit.exception.PersistitException;
-import com.persistit.exception.RollbackException;
+import com.akiban.server.store.statistics.IndexStatisticsService;
 
 import java.util.Collection;
 
-/**
- * An abstraction for a layer that stores and retrieves data
- *
- * @author peter
- *
- */
-public interface Store {
+public interface Store extends KeyCreator {
 
     /** Get the RowDef for the given ID. Note, a transaction should be active before calling this. */
     RowDef getRowDef(Session session, int rowDefID);
+    RowDef getRowDef(Session session, TableName tableName);
+    AkibanInformationSchema getAIS(Session session);
 
-    void writeRow(Session session, RowData rowData) throws PersistitException;
+    void writeRow(Session session, RowData rowData);
 
-    void deleteRow(Session session, RowData rowData, boolean deleteIndexes, boolean cascadeDelete) throws PersistitException;
+    void deleteRow(Session session, RowData rowData, boolean deleteIndexes, boolean cascadeDelete);
 
     void updateRow(Session session, RowData oldRowData,
                    RowData newRowData,
-                   ColumnSelector columnSelector, Index[] indexes) throws PersistitException;
-
-    /**
-     * See {@link #newRowCollector(Session, int, int, int, byte[], RowData, ColumnSelector, RowData, ColumnSelector, ScanLimit)}
-     * for parameter descriptions.
-     * @throws Exception 
-     *
-     * @deprecated This constructor is ambiguous and may not return the expected rows. Fields from <code>start</code>
-     * and <code>end</code> that are <code>NULL</code> are considered to be <b>unset</b>.
-     */
-    RowCollector newRowCollector(Session session,
-                                 int rowDefId,
-                                 int indexId,
-                                 int scanFlags,
-                                 RowData start,
-                                 RowData end,
-                                 byte[] columnBitMap,
-                                 ScanLimit scanLimit);
+                   ColumnSelector columnSelector, Index[] indexes);
 
     /**
      * Create a new RowCollector.
@@ -134,13 +117,10 @@ public interface Store {
      * Truncate the given group. This includes indexes from all tables, group
      * indexes, the group itself, and all table statuses.
      */
-    void truncateGroup(Session session, Group group) throws PersistitException;
+    void truncateGroup(Session session, Group group);
 
-    void truncateTableStatus(Session session, int rowDefId) throws RollbackException, PersistitException;
+    void truncateTableStatus(Session session, int rowDefId);
 
-    boolean isDeferIndexes();
-    void setDeferIndexes(boolean b);
-    void flushIndexes(Session session);
     void deleteIndexes(Session session, Collection<? extends Index> indexes);
     void buildIndexes(Session session, Collection<? extends Index> indexes, boolean deferIndexes);
 
@@ -149,10 +129,11 @@ public interface Store {
      * Remove all trees, and their contents, associated with the given table.
      * @param session Session
      * @param table Table
-     * @throws PersistitException 
-     * @throws Exception 
+     * @throws Exception
      */
-    void removeTrees(Session session, Table table);
+    void removeTrees(Session session, UserTable table);
+    void removeTree(Session session, TreeLink treeLink);
+    void truncateTree(Session session, TreeLink treeLink);
 
     /**
      * Low level operation. Removes the given trees and <i>only</i> the given trees.
@@ -171,4 +152,8 @@ public interface Store {
     void finishBulkLoad(Session session);
 
     boolean isBulkloading();
+
+    void setIndexStatistics(IndexStatisticsService indexStatistics);
+
+    StoreAdapter createAdapter(Session session, Schema schema);
 }

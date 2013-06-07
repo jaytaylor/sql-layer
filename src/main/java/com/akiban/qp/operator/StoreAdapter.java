@@ -78,6 +78,23 @@ public abstract class StoreAdapter
 
     public abstract long hash(ValueSource valueSource, AkCollator collator);
 
+    // Persistit Transaction step related. Way to generalize?
+    public int enterUpdateStep() {
+        throw new UnsupportedOperationException(getClass().getSimpleName());
+    }
+
+    public int enterUpdateStep(boolean evenIfZero) {
+        throw new UnsupportedOperationException(getClass().getSimpleName());
+    }
+
+    public void leaveUpdateStep(int step) {
+        throw new UnsupportedOperationException(getClass().getSimpleName());
+    }
+
+    public void withStepChanging(boolean withStepChanging) {
+        throw new UnsupportedOperationException(getClass().getSimpleName());
+    }
+
     public final Session getSession() {
         return session;
     }
@@ -87,8 +104,8 @@ public abstract class StoreAdapter
     }
 
     public enum AdapterType {
-        PERSISTIT_ADAPTER,
-        MEMORY_ADAPTER;
+        STORE_ADAPTER,
+        MEMORY_ADAPTER
     }
     
     public final ConfigurationService getConfig() {

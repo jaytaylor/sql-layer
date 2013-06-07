@@ -25,8 +25,6 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.expression.std.FieldExpression;
-import org.junit.Before;
 import org.junit.Test;
 
 import static com.akiban.qp.operator.API.cursor;
@@ -80,7 +78,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
             createNewRow(t, 2006L, null, null, 5L),
             createNewRow(t, 2007L, null, null, null),
         };
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         use(db);
     }

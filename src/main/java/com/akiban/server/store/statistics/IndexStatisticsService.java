@@ -34,12 +34,12 @@ public interface IndexStatisticsService
     public final static TableName INDEX_STATISTICS_ENTRY_TABLE_NAME = new TableName(INDEX_STATISTICS_TABLE_NAME.getSchemaName(), "index_statistics_entry");
 
     /** Get current count of number of entries in the given index. */
-    public long countEntries(Session session, Index index) throws PersistitInterruptedException;
+    public long countEntries(Session session, Index index);
     
     /** Get <em>approximate</em> count of number of entries in the given index. */
     public long countEntriesApproximate(Session session, Index index);
 
-    public long countEntriesManually(Session session, Index index) throws PersistitException;
+    public long countEntriesManually(Session session, Index index);
     
     /** Get available statistics for the given index. */
     public IndexStatistics getIndexStatistics(Session session, Index index);
@@ -62,4 +62,7 @@ public interface IndexStatisticsService
 
     /** Clear the in-memory cache. */
     public void clearCache();
+
+    /** How many buckets to compute per index */
+    public int bucketCount();
 }

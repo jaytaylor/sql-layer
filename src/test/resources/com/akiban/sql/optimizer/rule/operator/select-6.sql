@@ -1,0 +1,1 @@
+SELECT COUNT(*) FROM t WHERE type = 'foo' AND viewable_id = 1 AND viewable_type = 'bar'

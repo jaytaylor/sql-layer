@@ -37,7 +37,6 @@ import com.akiban.sql.parser.StatementNode;
 
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.*;
 import com.akiban.server.service.monitor.CursorMonitor;
@@ -1133,12 +1132,12 @@ public class PostgresServerConnection extends ServerSessionBase
     protected int executeStatement(PostgresStatement pstmt, PostgresQueryContext context, int maxrows)
             throws IOException {
         int rowsProcessed;
-        PersistitAdapter persistitAdapter = null;
+        StoreAdapter storeAdapter = null;
         if ((transaction != null) &&
             // As opposed to WRITE_STEP_ISOLATED.
             (pstmt.getTransactionMode() == PostgresStatement.TransactionMode.WRITE)) {
-            persistitAdapter = (PersistitAdapter)adapters.get(StoreAdapter.AdapterType.PERSISTIT_ADAPTER);
-            persistitAdapter.withStepChanging(false);
+            storeAdapter = adapters.get(StoreAdapter.AdapterType.STORE_ADAPTER);
+            storeAdapter.withStepChanging(false);
         }
         try {
             if (pstmt.getAISGenerationMode() == ServerStatement.AISGenerationMode.NOT_ALLOWED) {
@@ -1151,8 +1150,8 @@ public class PostgresServerConnection extends ServerSessionBase
             rowsProcessed = pstmt.execute(context, maxrows);
         }
         finally {
-            if (persistitAdapter != null)
-                persistitAdapter.withStepChanging(true); // Keep conservative default.
+            if (storeAdapter != null)
+                storeAdapter.withStepChanging(true); // Keep conservative default.
             sessionMonitor.leaveStage();
         }
         return rowsProcessed;

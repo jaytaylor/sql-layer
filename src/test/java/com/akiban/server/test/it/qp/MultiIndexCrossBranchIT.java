@@ -29,8 +29,6 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.expression.Expression;
-import org.junit.Before;
 import org.junit.Test;
 
 import static com.akiban.qp.operator.API.*;
@@ -75,7 +73,7 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
         dZIndexRowType = indexType(d, "z");
         hKeyRowType = schema.newHKeyRowType(pRowType.userTable().hKey());
         coi = group(p);
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         db = new NewRow[]{
             // 0x: Both sides empty
@@ -270,7 +268,7 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
 
     private String pKey(Long pid)
     {
-        return String.format("{%d,%s}", pRowType.userTable().rowDef().getOrdinal(), hKeyValue(pid));
+        return String.format("{%d,%s}", pRowType.userTable().getOrdinal(), hKeyValue(pid));
     }
 
     private int p;

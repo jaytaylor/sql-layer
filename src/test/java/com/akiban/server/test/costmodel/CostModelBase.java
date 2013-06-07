@@ -19,15 +19,12 @@ package com.akiban.server.test.costmodel;
 
 import com.akiban.ais.model.*;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.persistitadapter.PersistitGroupRow;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.test.ApiTestBase;
 import com.akiban.server.test.it.qp.TestRow;
 import com.akiban.util.tap.Tap;
@@ -95,18 +92,6 @@ public class CostModelBase extends ApiTestBase
         return new TestRow(rowType, fields);
     }
 
-    protected RowBase row(int tableId, Object... values /* alternating field position and value */)
-    {
-        NewRow niceRow = createNewRow(tableId);
-        int i = 0;
-        while (i < values.length) {
-            int position = (Integer) values[i++];
-            Object value = values[i++];
-            niceRow.put(position, value);
-        }
-        return PersistitGroupRow.newPersistitGroupRow(adapter, niceRow.toRowData());
-    }
-    
     protected String schemaName()
     {
         return "schema";
@@ -123,6 +108,6 @@ public class CostModelBase extends ApiTestBase
     }
 
     protected Schema schema;
-    protected PersistitAdapter adapter;
+    protected StoreAdapter adapter;
     protected QueryContext queryContext;
 }

@@ -22,6 +22,7 @@ import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.Quote;
+import com.akiban.server.rowdata.RowData;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueSources;
 import com.akiban.server.types3.TClass;
@@ -164,6 +165,10 @@ public abstract class AbstractRow implements Row
         }
         builder.append(']');
         return builder.toString();
+    }
+
+    public RowData rowData() {
+        throw new UnsupportedOperationException();
     }
 
     // for use by subclasses

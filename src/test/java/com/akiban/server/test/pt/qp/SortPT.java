@@ -25,7 +25,6 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.test.ExpressionGenerators;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
@@ -50,8 +49,8 @@ public class SortPT extends QPProfilePTBase
         group = group(t);
         schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
-        adapter = persistitAdapter(schema);
-        queryContext = queryContext((PersistitAdapter) adapter);
+        adapter = newStoreAdapter(schema);
+        queryContext = queryContext(adapter);
     }
 
     @Test

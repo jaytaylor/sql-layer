@@ -18,6 +18,7 @@
 package com.akiban.server;
 
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowDef;
@@ -61,7 +62,14 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             ts.setRowDef(null);
         }
     }
-    
+
+    public int recoverAccumulatorOrdinal(TableStatus tableStatus) {
+        if(!(tableStatus instanceof AccumulatorStatus)) {
+            throw new IllegalArgumentException("Expected AccumulatorStatus: " + tableStatus);
+        }
+        return ((AccumulatorStatus)tableStatus).getOrdinal();
+    }
+
     //
     // Internal
     //
@@ -97,18 +105,30 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public long getAutoIncrement() throws PersistitInterruptedException {
-            return autoIncrement.getSnapshot();
+        public long getAutoIncrement() {
+            try {
+                return autoIncrement.getSnapshot();
+            } catch(PersistitInterruptedException e) {
+                throw PersistitAdapter.wrapPersistitException(null, e);
+            }
+        }
+
+        /** @deprecated Only used for 'upgrading' previous volumes as ordinal now lives in AIS */
+        public int getOrdinal() {
+            try {
+                return (int) ordinal.getSnapshot();
+            } catch(PersistitInterruptedException e) {
+                throw PersistitAdapter.wrapPersistitException(null, e);
+            }
         }
 
         @Override
-        public int getOrdinal() throws PersistitInterruptedException {
-            return (int) ordinal.getSnapshot();
-        }
-
-        @Override
-        public long getRowCount() throws PersistitInterruptedException {
-            return rowCount.getSnapshot();
+        public long getRowCount() {
+            try {
+                return rowCount.getSnapshot();
+            } catch(PersistitInterruptedException e) {
+                throw PersistitAdapter.wrapPersistitException(null, e);
+            }
         }
 
         @Override
@@ -127,8 +147,12 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public long getUniqueID() throws PersistitInterruptedException {
-            return uniqueID.getSnapshot();
+        public long getUniqueID() {
+            try {
+                return uniqueID.getSnapshot();
+            } catch(PersistitInterruptedException e) {
+                throw PersistitAdapter.wrapPersistitException(null, e);
+            }
         }
 
         @Override
@@ -151,23 +175,23 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             rowCount.sumAdd(count);
         }
 
-        public void setOrdinal(int ordinal) throws PersistitInterruptedException {
-            this.ordinal.set(ordinal);
-        }
-
         @Override
-        public long createNewUniqueID() throws PersistitInterruptedException {
+        public long createNewUniqueID() {
             return uniqueID.seqAllocate();
         }
 
         @Override
-        public void truncate() throws PersistitInterruptedException {
-            internalSetRowCount(0);
-            internalSetAutoIncrement(0, true);
+        public void truncate() {
+            try {
+                internalSetRowCount(0);
+                internalSetAutoIncrement(0, true);
+            } catch(PersistitInterruptedException e) {
+                throw PersistitAdapter.wrapPersistitException(null, e);
+            }
         }
 
         @Override
-        public void setAutoIncrement(long value) throws PersistitInterruptedException {
+        public void setAutoIncrement(long value) {
             internalSetAutoIncrement(value, false);
         }
 
@@ -189,15 +213,18 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             rowCount.set(rowCountValue);
         }
 
-        private void internalSetAutoIncrement(long autoIncrementValue, boolean evenIfLess) throws PersistitInterruptedException {
-            autoIncrement.set(autoIncrementValue, evenIfLess);
+        private void internalSetAutoIncrement(long autoIncrementValue, boolean evenIfLess) {
+            try {
+                autoIncrement.set(autoIncrementValue, evenIfLess);
+            } catch(PersistitInterruptedException e) {
+                throw PersistitAdapter.wrapPersistitException(null, e);
+            }
         }
     }
 
     private class MemoryStatus implements TableStatus {
         private final int expectedID;
         private final MemoryTableFactory factory;
-        private volatile int ordinal;
 
         private MemoryStatus(int expectedID, MemoryTableFactory factory) {
             this.expectedID = expectedID;
@@ -207,11 +234,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         @Override
         public long getAutoIncrement() {
             throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int getOrdinal() {
-            return ordinal;
         }
 
         @Override
@@ -267,11 +289,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         @Override
         public long createNewUniqueID() {
             throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void setOrdinal(int ordinal) {
-            this.ordinal = ordinal;
         }
 
         @Override

@@ -18,36 +18,36 @@
 package com.akiban.server.store.statistics;
 
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.store.IndexVisitor;
-import com.akiban.server.store.PersistitStore;
-import com.persistit.Key;
-import com.persistit.Value;
+import com.akiban.server.store.Store;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class PersistitIndexStatisticsVisitor extends IndexVisitor
+public class IndexStatisticsVisitor<K extends Comparable<? super K>, V> extends IndexVisitor<K,V>
 {
-    public PersistitIndexStatisticsVisitor(PersistitStore store,
-                                           Session session,
-                                           Index index,
-                                           long indexRowCount,
-                                           KeyCreator keyCreator)
+    public interface VisitorCreator<K extends Comparable<? super K>, V> {
+        IndexStatisticsGenerator<K,V> multiColumnVisitor(Index index);
+        IndexStatisticsGenerator<K,V> singleColumnVisitor(Session session, IndexColumn indexColumn);
+    }
+
+    public IndexStatisticsVisitor(Session session,
+                                  Index index,
+                                  long indexRowCount,
+                                  VisitorCreator<K,V> creator)
     {
         this.index = index;
         this.indexRowCount = indexRowCount;
-        this.multiColumnVisitor = new MultiColumnIndexStatisticsVisitor(index, keyCreator);
+        this.multiColumnVisitor = creator.multiColumnVisitor(index);
         this.singleColumnVisitors = new ArrayList<>();
         this.nIndexColumns = index.getKeyColumns().size();
         for (int f = 0; f < nIndexColumns; f++) {
-            SingleColumnIndexStatisticsVisitor singleColumnVisitor =
-                new SingleColumnIndexStatisticsVisitor(store,
-                                                       session,
-                                                       index.getKeyColumns().get(f),
-                                                       keyCreator);
-            singleColumnVisitors.add(singleColumnVisitor);
+            singleColumnVisitors.add(
+                    creator.singleColumnVisitor(session, index.getKeyColumns().get(f))
+            );
         }
     }
 
@@ -67,7 +67,7 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
         }
     }
 
-    protected void visit(Key key, Value value)
+    protected void visit(K key, V value)
     {
         multiColumnVisitor.visit(key, value);
         for (int c = 0; c < nIndexColumns; c++) {
@@ -84,7 +84,7 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
         indexStatistics.setRowCount(rowCount);
         indexStatistics.setSampledCount(rowCount);
         multiColumnVisitor.getIndexStatistics(indexStatistics);
-        for (SingleColumnIndexStatisticsVisitor singleColumnVisitor : singleColumnVisitors) {
+        for (IndexStatisticsGenerator<K,V> singleColumnVisitor : singleColumnVisitors) {
             singleColumnVisitor.getIndexStatistics(indexStatistics);
         }
         return indexStatistics;
@@ -92,7 +92,7 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
 
     private final Index index;
     private final long indexRowCount;
-    private final MultiColumnIndexStatisticsVisitor multiColumnVisitor;
-    private final List<SingleColumnIndexStatisticsVisitor> singleColumnVisitors;
+    private final IndexStatisticsGenerator<K,V> multiColumnVisitor;
+    private final List<IndexStatisticsGenerator<K,V>> singleColumnVisitors;
     private final int nIndexColumns;
 }

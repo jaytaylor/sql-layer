@@ -71,7 +71,7 @@ public class InsertProfilePT extends QPProfilePTBase
         itemIidIndexRowType = indexType(item, "iid");
         customerCidIndexRowType = indexType(customer, "cid");
         addressAddressIndexRowType = indexType(address, "address");
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
     }
 
     @Test

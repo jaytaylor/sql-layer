@@ -49,7 +49,6 @@ import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types3.Types3Switch;
 import com.akiban.sql.optimizer.rule.PlanGenerator;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.PointTap;
@@ -71,7 +70,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     private static final boolean WITH_STEPS = false;
 
 
-    private PersistitAdapter createAdapter(AkibanInformationSchema ais, Session session) {
+    private PersistitAdapter createAdapterNoSteps(AkibanInformationSchema ais, Session session) {
         PersistitAdapter adapter =
             new PersistitAdapter(SchemaCache.globalSchema(ais),
                                  getPersistitStore(),
@@ -87,7 +86,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     @Override
     public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector, Index[] indexes)
-        throws PersistitException
     {
         if(indexes != null) {
             throw new IllegalStateException("Unexpected indexes: " + Arrays.toString(indexes));
@@ -97,7 +95,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             AkibanInformationSchema ais = schemaManager.getAis(session);
             RowDef rowDef = ais.getUserTable(oldRowData.getRowDefId()).rowDef();
             UserTable userTable = rowDef.userTable();
-            PersistitAdapter adapter = createAdapter(ais, session);
+            PersistitAdapter adapter = createAdapterNoSteps(ais, session);
 
             if(canSkipMaintenance(userTable)) {
                 // PersistitStore needs full rows and OperatorStore will look them up (unspecified behavior),
@@ -170,13 +168,13 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     }
 
     @Override
-    public void writeRow(Session session, RowData rowData) throws PersistitException {
+    public void writeRow(Session session, RowData rowData) {
         INSERT_TOTAL.in();
         INSERT_MAINTENANCE.in();
         try {
             if (!isBulkloading()) {
                 AkibanInformationSchema ais = schemaManager.getAis(session);
-                PersistitAdapter adapter = createAdapter(ais, session);
+                PersistitAdapter adapter = createAdapterNoSteps(ais, session);
                 UserTable uTable = ais.getUserTable(rowData.getRowDefId());
                 super.writeRow(session, rowData);
                 maintainGroupIndexes(session,
@@ -195,12 +193,12 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     }
 
     @Override
-    public void deleteRow(Session session, RowData rowData, boolean deleteIndexes, boolean cascadeDelete) throws PersistitException {
+    public void deleteRow(Session session, RowData rowData, boolean deleteIndexes, boolean cascadeDelete) {
         DELETE_TOTAL.in();
         DELETE_MAINTENANCE.in();
         try {
             AkibanInformationSchema ais = schemaManager.getAis(session);
-            PersistitAdapter adapter = createAdapter(ais, session);
+            PersistitAdapter adapter = createAdapterNoSteps(ais, session);
             UserTable uTable = ais.getUserTable(rowData.getRowDefId());
 
             if (cascadeDelete) {
@@ -241,7 +239,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
             
         AkibanInformationSchema ais = schemaManager.getAis(session);
-        PersistitAdapter adapter = createAdapter(ais, session);
+        PersistitAdapter adapter = createAdapterNoSteps(ais, session);
 
         if(!tableIndexes.isEmpty()) {
             super.buildIndexes(session, tableIndexes, defer);
@@ -258,6 +256,11 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                     OperatorStoreGIHandler.Action.STORE
             );
         }
+    }
+
+    @Override
+    public StoreAdapter createAdapter(Session session, com.akiban.qp.rowtype.Schema schema) {
+        return new PersistitAdapter(schema, this, treeService, session, config);
     }
 
     // OperatorStore interface
@@ -292,14 +295,14 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             BitSet columnDifferences,
             OperatorStoreGIHandler handler,
             OperatorStoreGIHandler.Action action)
-    throws PersistitException
     {
         UserTable userTable = ais.getUserTable(rowData.getRowDefId());
         if(canSkipMaintenance(userTable)) {
             return;
         }
-        Exchange hEx = adapter.takeExchange(userTable.getGroup());
+        Exchange hEx = null;
         try {
+            hEx = adapter.takeExchange(userTable.getGroup());
             // the "false" at the end of constructHKey toggles whether the RowData should be modified to increment
             // the hidden PK field, if there is one. For PK-less rows, this field have already been incremented by now,
             // so we don't want to increment it again
@@ -320,8 +323,12 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                     SKIP_MAINTENANCE.hit();
                 }
             }
+        } catch(PersistitException e) {
+            throw PersistitAdapter.wrapPersistitException(session, e);
         } finally {
-            adapter.returnExchange(hEx);
+            if(hEx != null) {
+                adapter.returnExchange(hEx);
+            }
         }
     }
 
@@ -361,7 +368,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             AkibanInformationSchema ais, 
             PersistitAdapter adapter, 
             RowData rowData)
-    throws PersistitException
     {
         UserTable uTable = ais.getUserTable(rowData.getRowDefId());
 

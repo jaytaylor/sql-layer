@@ -159,6 +159,7 @@ public class PersistitGroupRow extends AbstractRow
         } while (exception != null);
     }
 
+    @Override
     public RowData rowData()
     {
         return rowData;

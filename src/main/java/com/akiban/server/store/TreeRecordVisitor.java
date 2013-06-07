@@ -52,7 +52,7 @@ public abstract class TreeRecordVisitor
         for (UserTable table : store.getAIS(session).getUserTables().values()) {
             if (!table.getName().getSchemaName().equals(TableName.INFORMATION_SCHEMA) &&
                 !table.getName().getSchemaName().equals(TableName.SECURITY_SCHEMA)) {
-                ordinalToTable.put(table.rowDef().getOrdinal(), table);
+                ordinalToTable.put(table.getOrdinal(), table);
             }
         }
     }

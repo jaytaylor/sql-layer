@@ -27,7 +27,6 @@ import com.akiban.qp.persistitadapter.indexcursor.Sorter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;

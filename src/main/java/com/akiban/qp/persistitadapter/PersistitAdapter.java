@@ -129,10 +129,6 @@ public class PersistitAdapter extends StoreAdapter
         } catch (InvalidOperationException e) {
             rollbackIfNeeded(e);
             throw e;
-        } catch (PersistitException e) {
-            rollbackIfNeeded(e);
-            handlePersistitException(e);
-            assert false;
         }
         finally {
             leaveUpdateStep(oldStep);
@@ -149,10 +145,6 @@ public class PersistitAdapter extends StoreAdapter
         } catch (InvalidOperationException e) {
             rollbackIfNeeded(e);
             throw e;
-        } catch (PersistitException e) {
-            rollbackIfNeeded(e);
-            handlePersistitException(e);
-            assert false;
         }
         finally {
             leaveUpdateStep(oldStep);
@@ -170,10 +162,6 @@ public class PersistitAdapter extends StoreAdapter
         } catch (InvalidOperationException e) {
             rollbackIfNeeded(e);
             throw e;
-        } catch (PersistitException e) {
-            rollbackIfNeeded(e);
-            handlePersistitException(e);
-            assert false;
         }
         finally {
             leaveUpdateStep(oldStep);
@@ -203,10 +191,6 @@ public class PersistitAdapter extends StoreAdapter
         } catch (InvalidOperationException e) {
             rollbackIfNeeded(e);
             throw e;
-        } catch (PersistitException e) {
-            rollbackIfNeeded(e);
-            handlePersistitException(e);
-            assert false;
         }
         finally {
             leaveUpdateStep(oldStep);
@@ -216,11 +200,7 @@ public class PersistitAdapter extends StoreAdapter
     @Override
     public long rowCount(RowType tableType) {
         RowDef rowDef = tableType.userTable().rowDef();
-        try {
-            return rowDef.getTableStatus().getRowCount();
-        } catch(PersistitInterruptedException e) {
-            throw new QueryCanceledException(getSession());
-        }
+        return rowDef.getTableStatus().getRowCount();
     }
 
     @Override
@@ -235,7 +215,7 @@ public class PersistitAdapter extends StoreAdapter
             key = persistitKeyValueSource.key();
             depth = persistitKeyValueSource.depth();
         } else {
-            key = persistit.getKey();
+            key = persistit.createKey();
             collator.append(key, valueSource.getString());
             depth = 0;
         }
@@ -325,7 +305,10 @@ public class PersistitAdapter extends StoreAdapter
     public static boolean isFromInterruption(Exception e) {
         Throwable cause = e.getCause();
         return (e instanceof PersistitInterruptedException) ||
-               ((cause != null) && (cause instanceof InterruptedIOException || cause instanceof InterruptedException));
+               ((cause != null) &&
+                (cause instanceof PersistitInterruptedException ||
+                 cause instanceof InterruptedIOException ||
+                 cause instanceof InterruptedException));
     }
 
     public static RuntimeException wrapPersistitException(Session session, PersistitException e)
@@ -352,18 +335,17 @@ public class PersistitAdapter extends StoreAdapter
         return treeService.getTransaction(getSession());
     }
 
-    public boolean withStepChanging() {
-        return withStepChanging;
-    }
     public void withStepChanging(boolean withStepChanging) {
         this.withStepChanging = withStepChanging;
     }
 
+    @Override
     public int enterUpdateStep()
     {
         return enterUpdateStep(false);
     }
 
+    @Override
     public int enterUpdateStep(boolean evenIfZero)
     {
         Transaction transaction = transaction();
@@ -373,6 +355,7 @@ public class PersistitAdapter extends StoreAdapter
         return step;
     }
 
+    @Override
     public void leaveUpdateStep(int step) {
         Transaction txn = transaction();
         if(txn.isActive() && !txn.isRollbackPending()) {
@@ -418,7 +401,10 @@ public class PersistitAdapter extends StoreAdapter
 
     // For use by this class
     private void rollbackIfNeeded(Exception e) {
-        if((e instanceof DuplicateKeyException) || (e instanceof PersistitException) || isFromInterruption(e)) {
+        if((e instanceof DuplicateKeyException) ||
+           (e instanceof PersistitException) ||
+           (e instanceof PersistitAdapterException) ||
+           isFromInterruption(e)) {
             Transaction txn = transaction();
             if(txn.isActive()) {
                 txn.rollback();

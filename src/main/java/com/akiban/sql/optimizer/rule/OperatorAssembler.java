@@ -1125,8 +1125,8 @@ public class OperatorAssembler extends BaseRule
            
             for (int n = 0; n < nFieldsToCompare; ++n)
             {
-                TClass left = selectorRowType.typeInstanceAt(index.getPeggedCount() + n).typeClass();
-                TClass right = outputRowType.typeInstanceAt(index.getPeggedCount() + n).typeClass();
+                TClass left = selectorRowType.typeInstanceAt(index.getSelectorIndexScan().getPeggedCount() + n).typeClass();
+                TClass right = outputRowType.typeInstanceAt(index.getOutputIndexScan().getPeggedCount() + n).typeClass();
                 if (left != right)
                     comparisons.add(n, reg.getKeyComparable(left, right).getComparison());
                 else

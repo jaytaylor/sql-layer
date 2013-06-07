@@ -29,8 +29,6 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.expression.std.FieldExpression;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.*;
@@ -68,7 +66,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
             createNewRow(t, 1014L, 1L, 13L, 131L),
             createNewRow(t, 1015L, 1L, 13L, 132L),
         };
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         use(db);
         for (NewRow row : db) {

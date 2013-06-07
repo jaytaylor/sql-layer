@@ -22,7 +22,6 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.*;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -32,7 +31,6 @@ import com.akiban.server.test.it.ITBase;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.pvalue.PValueSource;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -95,7 +93,7 @@ public final class GroupIndexScanIT extends ITBase {
         GroupIndex gi = createGroupIndex(groupName, GI_NAME, "o.when, i.sku");
 
         schema = new Schema(ddl().getAIS(session()));
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         giRowType = schema.indexRowType(gi);
 
@@ -178,7 +176,7 @@ public final class GroupIndexScanIT extends ITBase {
 
     private Integer c, o, i, h;
     private Schema schema;
-    private PersistitAdapter adapter;
+    private StoreAdapter adapter;
     private QueryContext queryContext;
     private IndexRowType giRowType;
 

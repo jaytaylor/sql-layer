@@ -26,7 +26,6 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.scan.NewRow;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -94,12 +93,12 @@ public class IndexRowAndAncestorIT extends OperatorITBase
         ohRightIndexRowType = groupIndexType(Index.JoinType.RIGHT, "o.ox", "i.ix", "h.hx", "o.id");
         chLeftIndexRowType = groupIndexType(Index.JoinType.LEFT, "c.cx", "o.ox", "i.ix", "h.hx", "o.id");
         chRightIndexRowType = groupIndexType(Index.JoinType.RIGHT, "c.cx", "o.ox", "i.ix", "h.hx", "o.id");
-        cOrdinal = ddl().getTable(session(), c).rowDef().getOrdinal();
-        oOrdinal = ddl().getTable(session(), o).rowDef().getOrdinal();
-        iOrdinal = ddl().getTable(session(), i).rowDef().getOrdinal();
-        hOrdinal = ddl().getTable(session(), h).rowDef().getOrdinal();
+        cOrdinal = ddl().getTable(session(), c).getOrdinal();
+        oOrdinal = ddl().getTable(session(), o).getOrdinal();
+        iOrdinal = ddl().getTable(session(), i).getOrdinal();
+        hOrdinal = ddl().getTable(session(), h).getOrdinal();
         group = group(c);
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         loadDatabase();
     }
