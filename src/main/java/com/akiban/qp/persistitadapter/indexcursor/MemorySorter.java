@@ -53,9 +53,7 @@ import java.util.TreeMap;
  *
  * <h1>Performance</h1>
  *
- * MemorySorter generates no IO angenerates IO dependent on the size of the input stream. This occurs mostly during the loading phase,
- * (when the input stream is being read). There will be some IO when the loaded B-Tree is scanned, but this is
- * expected to be more efficient, as each page will be read completely before moving on to the next one.
+ * MemorySorter generates no IO.
  *
  * <h1>Memory Requirements</h1>
  *
