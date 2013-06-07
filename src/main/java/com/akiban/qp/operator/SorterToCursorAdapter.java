@@ -15,21 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.persistitadapter;
+package com.akiban.qp.operator;
 
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.CursorLifecycle;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.persistitadapter.indexcursor.Sorter;
+import com.akiban.qp.persistitadapter.Sorter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.util.tap.InOutTap;
-import com.persistit.exception.PersistitException;
 
-// Cursors are reusable but Sorters are not. This class creates a new Sorter each time a new cursor scan is started.
-
+/**
+ * Cursors are reusable but Sorters are not.
+ * This class creates a new Sorter each time a new cursor scan is started.
+ */
 class SorterToCursorAdapter implements Cursor
 {
     // Cursor interface
@@ -38,13 +35,9 @@ class SorterToCursorAdapter implements Cursor
     public void open()
     {
         CursorLifecycle.checkIdle(this);
-        try {
-            sorter = new Sorter(context, input, rowType, ordering, sortOption, loadTap, usePValues);
-            cursor = sorter.sort();
-            cursor.open();
-        } catch (PersistitException e) {
-            adapter.handlePersistitException(e);
-        }
+        sorter = adapter.createSorter(context, input, rowType, ordering, sortOption, loadTap);
+        cursor = sorter.sort();
+        cursor.open();
     }
 
     @Override
@@ -103,14 +96,13 @@ class SorterToCursorAdapter implements Cursor
 
     // SorterToCursorAdapter interface
 
-    public SorterToCursorAdapter(PersistitAdapter adapter,
+    public SorterToCursorAdapter(StoreAdapter adapter,
                                  QueryContext context,
                                  Cursor input,
                                  RowType rowType,
                                  API.Ordering ordering,
                                  API.SortOption sortOption,
-                                 InOutTap loadTap,
-                                 boolean usePValues)
+                                 InOutTap loadTap)
     {
         this.adapter = adapter;
         this.context = context;
@@ -119,17 +111,15 @@ class SorterToCursorAdapter implements Cursor
         this.ordering = ordering;
         this.sortOption = sortOption;
         this.loadTap = loadTap;
-        this.usePValues = usePValues;
     }
 
-    private final PersistitAdapter adapter;
+    private final StoreAdapter adapter;
     private final QueryContext context;
     private final Cursor input;
     private final RowType rowType;
     private final API.Ordering ordering;
     private final API.SortOption sortOption;
     private final InOutTap loadTap;
-    private final boolean usePValues;
     private Sorter sorter;
     private Cursor cursor;
     private boolean destroyed = false;

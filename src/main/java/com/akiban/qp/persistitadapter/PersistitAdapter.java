@@ -20,6 +20,8 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.ais.model.*;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.*;
+import com.akiban.qp.persistitadapter.indexcursor.MemorySorter;
+import com.akiban.qp.persistitadapter.indexcursor.PersistitSorter;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowPool;
 import com.akiban.qp.row.HKey;
@@ -91,15 +93,14 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public Cursor sort(QueryContext context,
-                       Cursor input,
-                       RowType rowType,
-                       API.Ordering ordering,
-                       API.SortOption sortOption,
-                       InOutTap loadTap,
-                       boolean usePValues)
+    public Sorter createSorter(QueryContext context,
+                               Cursor input,
+                               RowType rowType,
+                               API.Ordering ordering,
+                               API.SortOption sortOption,
+                               InOutTap loadTap)
     {
-        return new SorterToCursorAdapter(this, context, input, rowType, ordering, sortOption, loadTap, usePValues);
+        return new PersistitSorter(context, input, rowType, ordering, sortOption, loadTap);
     }
 
     @Override

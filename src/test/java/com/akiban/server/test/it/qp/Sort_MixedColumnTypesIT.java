@@ -30,15 +30,11 @@ import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.server.types3.texpressions.TPreparedField;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -84,7 +80,7 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
         orderBy(ordering, 1, true);
         orderBy(ordering, 2, true);
 
-        Operator plan = sort_Tree(
+        Operator plan = sort_General(
                 groupScan_Default(customerGroup),
                 customerRowType,
                 ordering,
@@ -110,7 +106,7 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
         orderBy(ordering, 1, true);
         orderBy(ordering, 2, false);
 
-        Operator plan = sort_Tree(
+        Operator plan = sort_General(
                 groupScan_Default(customerGroup),
                 customerRowType,
                 ordering,

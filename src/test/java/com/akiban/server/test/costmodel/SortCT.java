@@ -149,7 +149,7 @@ public class SortCT extends CostModelBase
             }
         }
         Operator sort =
-            sort_Tree(
+            sort_General(
                 setup,
                 inputRowType,
                 ordering,

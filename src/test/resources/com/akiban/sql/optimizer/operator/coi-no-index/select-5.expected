@@ -1,6 +1,6 @@
 PhysicalSelect[name:varchar(32)[VARCHAR], order_date:date[DATE]]
   Project_Default(customers.name, orders.order_date)
-    Sort_Tree(orders.order_date DESC)
+    Sort_General(orders.order_date DESC)
       Filter_Default(customers - orders)
         Flatten_HKeyOrdered(customers INNER orders)
           GroupScan_Default(customers)
