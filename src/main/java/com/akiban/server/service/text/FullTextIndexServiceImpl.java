@@ -52,7 +52,6 @@ import com.akiban.server.types3.mcompat.mfuncs.WaitFunctionHelpers;
 
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.store.LockObtainFailedException;
 
 import com.google.inject.Inject;
 import com.persistit.Exchange;
@@ -142,7 +141,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     @Override
     public void dropIndex(Session session, FullTextIndex idx) {
 
-        logger.trace("Delete {}", idx.getIndexName());
+        logger.error("Delete {}", idx.getIndexName());
         
         // This makes sure if we're dropping a newly created index 
         // the populate thread is stopped, and won't be restarting 
@@ -153,7 +152,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             populatingSession.cancelCurrentQuery(true);
             // wait for the thread to complete 
             try {
-                WaitFunctionHelpers.waitOn(getBackgroundWorks());
+                WaitFunctionHelpers.waitOn(Collections.singletonList(getBackgroundWorks().get(0)));
             } catch (InterruptedException e) {
                 ;// TODO: do nothing
             }
@@ -169,7 +168,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         // no good way to tell if our index is being updated. 
         if (updateRunning) {
             try {
-                WaitFunctionHelpers.waitOn(getBackgroundWorks());
+                WaitFunctionHelpers.waitOn(Collections.singletonList(getBackgroundWorks().get(1)));
             } catch (InterruptedException e) {
                 ;//TODO: do nothing
             }
@@ -499,7 +498,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                 populating.remove(toPopulate);
                 return true;
             }
-        } catch (QueryCanceledException | LockObtainFailedException e2) {
+        } catch (QueryCanceledException e2) {
             // The query could be canceled if the user drops the index  
             // while this thread is populating the index
             // The Lock Obtained failed exception occurs for the same reason.
@@ -512,6 +511,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             // start another thread to make sure we're not missing anything
             populateTimer.schedule(populateWorker(), populateDelayInterval);
             hasScheduled = true;
+            logger.warn("populateNextIndex aborted : {}", e2.getMessage());
         } catch (IOException ioex) {
             throw new AkibanInternalException ("Failed to populate index ", ioex);
         } finally {
@@ -551,7 +551,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     {
         updateRunning = true;
         Session session = sessionService.createSession();
-        boolean transaction = true;
         try
         {
 
@@ -561,14 +560,17 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             {
                 do
                 {
-                    updateIndex(session,
-                                rows.getIndexName(),
-                                rows);
+                    if (populating.get(rows.getIndexName()) == null) {
+                        updateIndex(session,
+                                    rows.getIndexName(),
+                                    rows);
+                        rows.remove();
+                    }
                 }
                 while (rows.nextIndex());
-                rows.removeAll(); // done updating. remove all entries
+                //rows.removeAll(); // done updating. remove all entries
             }
-            transaction= false;
+            transactionService.commitTransaction(session);
         }
         catch(PersistitException e)
         {
@@ -576,10 +578,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         }
         finally
         {
-            if (transaction)
-                transactionService.rollbackTransaction(session);
-            else
-                transactionService.commitTransaction(session);
+            transactionService.rollbackTransactionIfOpen(session);
             session.close();
             backgroundWorks.get(updateWork).notifyObservers();
             updateRunning = false;

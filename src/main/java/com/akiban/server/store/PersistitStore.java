@@ -321,6 +321,11 @@ public class PersistitStore implements Store, Service {
             ex.removeAll(); 
             ++modCount;
         }
+        
+        public void remove() throws PersistitException
+        {
+            ex.remove();
+        }
 
         private class StreamIterator implements Iterator<byte[]>
         {

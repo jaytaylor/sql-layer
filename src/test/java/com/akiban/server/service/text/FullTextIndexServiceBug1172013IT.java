@@ -17,10 +17,8 @@
 package com.akiban.server.service.text;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+
+import java.util.Collections;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -57,8 +55,8 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
     private int i;
     private int a;
     private static final Logger logger = LoggerFactory.getLogger(FullTextIndexServiceBug1172013IT.class);
-    private Object lock = new Object();
-    
+    private final Object lock = new Object();
+    private FullTextIndexServiceImpl fullTextImpl = null;
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
@@ -108,14 +106,16 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
         schema = SchemaCache.globalSchema(ais());
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
+        
+        // This test is specifically for FullTextIndexServiceImpl.java
+        assertEquals(FullTextIndexServiceImpl.class, fullText.getClass());
+        fullTextImpl = (FullTextIndexServiceImpl)fullText;
+
     }
 
     @Test
     public void testDelete1 () throws InterruptedException, PersistitException {
-        logger.debug("Running test delete 1");
-        // This test is specifically for FullTextIndexServiceImpl.java
-        assertEquals(FullTextIndexServiceImpl.class, fullText.getClass());
-        FullTextIndexServiceImpl fullTextImpl = (FullTextIndexServiceImpl)fullText;
+        logger.error("Running test delete 1");
 
         // disable the populate worker (so it doesn't read all the entries
         // out before we get a chance to look at the tree.
@@ -138,36 +138,12 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
             logger.debug("Got Duplicate Column");
             ; // an expected possible outcome
         }
-
-         WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
-
-         traverse(fullTextImpl,
-                 new Visitor()
-                 {
-                     int n = 0;
-                    
-                     @Override
-                     public void visit(IndexName idx)
-                     {
-                         ++n;
-                     }
-
-                     @Override
-                     public void endOfTree()
-                     {
-                         assertEquals (0, n);
-                     } 
-                 });
-
+        verifyClean(fullTextImpl);
     }
     
     @Test
     public void testDelete2() throws InterruptedException, PersistitException {
-        logger.debug("Running test delete 2");
-        // This test is specifically for FullTextIndexServiceImpl.java
-        assertEquals(FullTextIndexServiceImpl.class, fullText.getClass());
-        FullTextIndexServiceImpl fullTextImpl = (FullTextIndexServiceImpl)fullText;
-
+        logger.error("Running test delete 2");
         createFullTextIndex(serviceManager(),
                 SCHEMA, "o", "idx3_o",
                 "oid", "c1", "c2", "c3", "c4");
@@ -192,36 +168,12 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
             ; // an expected possible outcome
         }
 
-         WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
-
-         traverse(fullTextImpl,
-                 new Visitor()
-                 {
-                     int n = 0;
-                    
-                     @Override
-                     public void visit(IndexName idx)
-                     {
-                         ++n;
-                     }
-
-                     @Override
-                     public void endOfTree()
-                     {
-                         assertEquals (0, n);
-                     } 
-                 });
-
-
+        verifyClean(fullTextImpl);
     }
     
     @Test
     public void testDelete3() throws InterruptedException, PersistitException {
-        logger.debug("Running test delete 3");
-        // This test is specifically for FullTextIndexServiceImpl.java
-        assertEquals(FullTextIndexServiceImpl.class, fullText.getClass());
-        FullTextIndexServiceImpl fullTextImpl = (FullTextIndexServiceImpl)fullText;
-
+        logger.error("Running test delete 3");
         createFullTextIndex(serviceManager(),
                 SCHEMA, "o", "idx3_o",
                 "oid", "c1", "c2", "c3", "c4");
@@ -230,36 +182,13 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
         
         deleteFullTextIndex(serviceManager(), new IndexName(new TableName(SCHEMA, "o"), "idx3_o"));
         
-         WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
-
-         traverse(fullTextImpl,
-                 new Visitor()
-                 {
-                     int n = 0;
-                    
-                     @Override
-                     public void visit(IndexName idx)
-                     {
-                         ++n;
-                     }
-
-                     @Override
-                     public void endOfTree()
-                     {
-                         assertEquals (0, n);
-                     } 
-                 });
-
-
+        verifyClean(fullTextImpl);
     }
     
 
     @Test
     public void testDropUpdate1 () throws InterruptedException {
-        logger.debug("Running test drop update 1");
-        // This test is specifically for FullTextIndexServiceImpl.java
-        assertEquals(FullTextIndexServiceImpl.class, fullText.getClass());
-        FullTextIndexServiceImpl fullTextImpl = (FullTextIndexServiceImpl)fullText;
+        logger.error("Running test drop update 1");
 
         // create the index, let it complete
         createFullTextIndex(serviceManager(),
@@ -294,24 +223,39 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
         @Override
         public void run()
         {
-
-            Connection conn;
-            try {
-                conn = DriverManager.getConnection("jdbc:default:connection", "test", "");
-                synchronized (lock) {
-                    lock.notify();
-                }
-                conn.createStatement().execute("DROP INDEX test.o.idx3_o");
-            } catch (SQLException e) {
-                logger.debug("drop index failed; {}", e.getMessage());
-                assertTrue ("Drop index failed", false);
-             }
-            //IndexName name = new IndexName (new TableName(SCHEMA, "o"), "idx3_o");
-            //deleteFullTextIndex(serviceManager(), name);
+            Session session = serviceManager().getSessionService().createSession();
+            TableName tableName = new TableName (SCHEMA, "o");
+            String index = "idx3_o";
+            synchronized (lock) {
+                lock.notify();
+            }
+           
+            ddl().dropTableIndexes(session, tableName, Collections.singletonList(index));
         }
     }; 
 
-    
+
+    private void verifyClean(FullTextIndexServiceImpl fullTextImpl) throws InterruptedException, PersistitException { 
+        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
+        traverse(fullTextImpl,
+                new Visitor()
+                {
+                    int n = 0;
+                   
+                    @Override
+                    public void visit(IndexName idx)
+                    {
+                        ++n;
+                    }
+
+                    @Override
+                    public void endOfTree()
+                    {
+                        assertEquals (0, n);
+                    } 
+                });
+
+    }
     
     private static void traverse(FullTextIndexServiceImpl serv,
             Visitor visitor) throws PersistitException
