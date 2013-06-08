@@ -34,6 +34,7 @@ public class TempVolume
 {
     public static Exchange takeExchange(PersistitStore store, Session session, String treeName)
     {
+        boolean success = false;
         try {
             Persistit persistit = store.getDb();
             TempVolumeState tempVolumeState = session.get(TEMP_VOLUME_STATE);
@@ -51,32 +52,40 @@ public class TempVolume
             if(injectIOException) {
                 throw new PersistitIOException(new IOException());
             }
-            return new Exchange(persistit, tempVolumeState.volume(), treeName, true);
+            Exchange ex = new Exchange(persistit, tempVolumeState.volume(), treeName, true);
+            success = true;
+            return ex;
         } catch (PersistitException e) {
             if (!PersistitAdapter.isFromInterruption(e))
-                LOG.error("Caught exception while getting exchange for sort", e);
-            PersistitAdapter.handlePersistitException(session, e);
-            assert false; // handlePersistitException should throw something
-            return null;
+                LOG.debug("Caught exception while getting exchange for sort", e);
+            throw PersistitAdapter.wrapPersistitException(session, e);
+        } finally {
+            if (!success)
+                releaseAndCloseIfUnshared(session);
         }
     }
 
     public static void returnExchange(Session session, Exchange exchange)
     {
         if (exchange != null) {
-            try {
-                TempVolumeState tempVolumeState = session.get(TEMP_VOLUME_STATE);
-                tempVolumeState.release();
-                if (!tempVolumeState.isShared()) {
-                    // Returns disk space used by the volume
-                    tempVolumeState.volume().close();
-                    session.remove(TEMP_VOLUME_STATE);
-                }
-            } catch (PersistitException e) {
-                PersistitAdapter.handlePersistitException(session, e);
-            }
+            releaseAndCloseIfUnshared(session);
             // Don't return the exchange to the adapter. TreeServiceImpl caches it for the tree, and we're done
             // with the tree. Calling adapter.returnExchange would cause a leak of exchanges.
+        }
+    }
+
+    private static void releaseAndCloseIfUnshared(Session session) {
+        TempVolumeState tempVolumeState = session.get(TEMP_VOLUME_STATE);
+        tempVolumeState.release();
+        if (!tempVolumeState.isShared())
+        {
+            session.remove(TEMP_VOLUME_STATE);
+            try {
+                // Returns disk space used by the volume
+                tempVolumeState.volume().close();
+            } catch(PersistitException e) {
+                throw PersistitAdapter.wrapPersistitException(session, e);
+            }
         }
     }
 
