@@ -19,6 +19,7 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
+import com.akiban.util.Shareable;
 import com.persistit.Exchange;
 import com.persistit.Persistit;
 import com.persistit.Volume;
@@ -43,7 +44,7 @@ public class TempVolume
                 tempVolumeState = new TempVolumeState(volume);
                 session.put(TEMP_VOLUME_STATE, tempVolumeState);
             }
-            tempVolumeState.addUser();
+            tempVolumeState.acquire();
             return new Exchange(persistit, tempVolumeState.volume(), treeName, true);
         } catch (PersistitException e) {
             if (!PersistitAdapter.isFromInterruption(e))
@@ -59,8 +60,8 @@ public class TempVolume
         if (exchange != null) {
             try {
                 TempVolumeState tempVolumeState = session.get(TEMP_VOLUME_STATE);
-                int users = tempVolumeState.removeUser();
-                if (users == 0) {
+                tempVolumeState.release();
+                if (!tempVolumeState.isShared()) {
                     // Returns disk space used by the volume
                     tempVolumeState.volume().close();
                     session.remove(TEMP_VOLUME_STATE);
@@ -73,16 +74,29 @@ public class TempVolume
         }
     }
 
+    // Public for tests
+
+    public static boolean hasTempState(Session session)
+    {
+        return session.get(TEMP_VOLUME_STATE) != null;
+    }
+
+    public static int getTempStateRefCount(Session session)
+    {
+        TempVolumeState tempVolumeState = session.get(TEMP_VOLUME_STATE);
+        return (tempVolumeState != null) ? tempVolumeState.refCount : 0;
+    }
+
+
     private static final Logger LOG = LoggerFactory.getLogger(TempVolume.class);
     private static final Session.Key<TempVolumeState> TEMP_VOLUME_STATE = Session.Key.named("TEMP_VOLUME_STATE");
 
-    // public so that tests can see it
-    public static class TempVolumeState
+    private static class TempVolumeState implements Shareable
     {
         public TempVolumeState(Volume volume)
         {
             this.volume = volume;
-            users = 0;
+            refCount = 0;
         }
 
         public Volume volume()
@@ -90,19 +104,26 @@ public class TempVolume
             return volume;
         }
 
-        public void addUser()
+        @Override
+        public void acquire()
         {
-            users++;
+            ++refCount;
         }
 
-        public int removeUser()
+        @Override
+        public boolean isShared()
         {
-            users--;
-            assert users >= 0;
-            return users;
+            return refCount > 0;
+        }
+
+        @Override
+        public void release()
+        {
+            --refCount;
+            assert refCount >= 0;
         }
 
         private final Volume volume;
-        private int users;
+        private int refCount;
     }
 }
