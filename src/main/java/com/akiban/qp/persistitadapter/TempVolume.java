@@ -24,8 +24,11 @@ import com.persistit.Exchange;
 import com.persistit.Persistit;
 import com.persistit.Volume;
 import com.persistit.exception.PersistitException;
+import com.persistit.exception.PersistitIOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 public class TempVolume
 {
@@ -45,6 +48,9 @@ public class TempVolume
                 session.put(TEMP_VOLUME_STATE, tempVolumeState);
             }
             tempVolumeState.acquire();
+            if(injectIOException) {
+                throw new PersistitIOException(new IOException());
+            }
             return new Exchange(persistit, tempVolumeState.volume(), treeName, true);
         } catch (PersistitException e) {
             if (!PersistitAdapter.isFromInterruption(e))
@@ -81,15 +87,14 @@ public class TempVolume
         return session.get(TEMP_VOLUME_STATE) != null;
     }
 
-    public static int getTempStateRefCount(Session session)
+    public static void setInjectIOException(boolean injectIOException)
     {
-        TempVolumeState tempVolumeState = session.get(TEMP_VOLUME_STATE);
-        return (tempVolumeState != null) ? tempVolumeState.refCount : 0;
+        TempVolume.injectIOException = injectIOException;
     }
-
 
     private static final Logger LOG = LoggerFactory.getLogger(TempVolume.class);
     private static final Session.Key<TempVolumeState> TEMP_VOLUME_STATE = Session.Key.named("TEMP_VOLUME_STATE");
+    private static volatile boolean injectIOException = false;
 
     private static class TempVolumeState implements Shareable
     {

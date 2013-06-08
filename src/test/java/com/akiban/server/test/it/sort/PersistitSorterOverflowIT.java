@@ -21,8 +21,8 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.TempVolume;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.indexcursor.PersistitSorter;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -32,6 +32,7 @@ import com.akiban.server.test.ExpressionGenerators;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
+import com.persistit.exception.PersistitIOException;
 import com.persistit.exception.VolumeFullException;
 import org.junit.Test;
 
@@ -43,6 +44,8 @@ import static org.junit.Assert.assertEquals;
 public class PersistitSorterOverflowIT extends ITBase {
     private static final String SCHEMA = "test";
     private static final String TABLE = "t";
+    private static final int ROW_COUNT = 1000;
+
 
     @Override
     public Map<String,String> startupConfigProperties() {
@@ -54,22 +57,46 @@ public class PersistitSorterOverflowIT extends ITBase {
 
     @Test
     public void tempVolumeFull() {
-        int tid = createTable(SCHEMA, TABLE, "id INT NOT NULL PRIMARY KEY, v VARCHAR(32)");
         boolean caught = false;
+        int tid = createTable();
         for(int i = 0; i < 100 && !caught; ++i) {
-            for(int j = 0; j < 1000; ++j) {
-                writeRow(tid, (i*1000 + j), "test");
-            }
+            loadRows(tid, i * ROW_COUNT);
             try {
                 doSort();
             } catch(PersistitAdapterException e) {
                 assertEquals("caused by", VolumeFullException.class, e.getCause().getClass());
                 caught = true;
             }
-            String msg = "no temp state" + (caught ? " after exception" : "");
+            String msg = "has temp state" + (caught ? " after exception" : "");
             assertEquals(msg, false, TempVolume.hasTempState(session()));
         }
         assertEquals("caught exception", true, caught);
+    }
+
+    @Test
+    public void diskFull() {
+        int tid = createTable();
+        loadRows(tid, 0);
+        assertEquals("has temp state", false, TempVolume.hasTempState(session()));
+        TempVolume.setInjectIOException(true);
+        try {
+            doSort();
+        } catch(PersistitAdapterException e) {
+            assertEquals("caused by", PersistitIOException.class, e.getCause().getClass());
+        } finally {
+            TempVolume.setInjectIOException(false);
+        }
+        assertEquals("has temp state", false, TempVolume.hasTempState(session()));
+    }
+
+    private int createTable() {
+        return createTable(SCHEMA, TABLE, "id INT NOT NULL PRIMARY KEY, v VARCHAR(32)");
+    }
+
+    private void loadRows(int tid, int offset) {
+        for(int i = 0; i < ROW_COUNT; ++i) {
+            writeRow(tid, offset * ROW_COUNT + i, "test");
+        }
     }
 
     private void doSort() {
