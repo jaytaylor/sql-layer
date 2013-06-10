@@ -66,6 +66,7 @@ import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.service.tree.TreeServiceImpl;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.t3expressions.TCastResolver;
 import com.akiban.server.types.ValueSource;
@@ -401,16 +402,18 @@ public class ApiTestBase {
     }
 
     public final void safeRestartTestServices(Map<String, String> propertiesToPreserve) throws Exception {
-        /*
-         * Need this because deleting Trees currently is not transactional.  Therefore after
-         * restart we recover the previous trees and forget about the deleteTree operations.
-         * TODO: remove when transaction Tree management is done.
-         */
-        treeService().getDb().checkpoint();
+        if(treeService() instanceof TreeServiceImpl) {
+            /*
+             * Need this because deleting Trees currently is not transactional.  Therefore after
+             * restart we recover the previous trees and forget about the deleteTree operations.
+             * TODO: remove when transaction Tree management is done.
+             */
+            treeService().getDb().checkpoint();
+        }
         final boolean original = TestConfigService.getDoCleanOnUnload();
         try {
             TestConfigService.setDoCleanOnUnload(defaultDoCleanOnUnload());
-            crashTestServices(); // TODO: WHY doesn't this work with stop?
+            crashTestServices();
         } finally {
             TestConfigService.setDoCleanOnUnload(original);
         }
