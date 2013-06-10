@@ -130,7 +130,7 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
                 if (table.hasMemoryTableFactory()) {
                     return table.getMemoryTableFactory().rowCount();
                 } else {
-                    return table.rowDef().getTableStatus().getRowCount();
+                    return table.rowDef().getTableStatus().getRowCount(session);
                 }
             }
             case GROUP:

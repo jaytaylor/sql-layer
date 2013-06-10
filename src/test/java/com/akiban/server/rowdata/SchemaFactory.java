@@ -142,7 +142,8 @@ public class SchemaFactory {
 
     public void buildRowDefs(AkibanInformationSchema ais) {
         RowDefCache rowDefCache = new FakeRowDefCache();
-        rowDefCache.setAIS(ais);
+        // Note: Somewhat fragile. Fake doesn't need a Session for creating RowDefs.
+        rowDefCache.setAIS(null, ais);
     }
 
     private static class FakeRowDefCache extends RowDefCache {

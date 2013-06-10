@@ -70,7 +70,7 @@ public abstract class StoreAdapter
         return config.queryTimeoutMilli();
     }
 
-    public abstract long rowCount(RowType tableType);
+    public abstract long rowCount(Session session, RowType tableType);
     
     public abstract long sequenceNextValue(TableName sequenceName);
 

@@ -19,6 +19,7 @@ package com.akiban.server;
 
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.service.session.Session;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -65,12 +66,12 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public synchronized long getAutoIncrement() {
+        public synchronized long getAutoIncrement(Session session) {
             return autoIncrement;
         }
 
         @Override
-        public synchronized long getRowCount() {
+        public synchronized long getRowCount(Session session) {
             if(factory != null) {
                 return factory.rowCount();
             }
@@ -78,7 +79,7 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public synchronized void setRowCount(long rowCount) {
+        public synchronized void setRowCount(Session session, long rowCount) {
             if(factory != null) {
                 throw new IllegalArgumentException("Cannot set row count for memory table");
             }
@@ -87,17 +88,17 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
 
         @Override
         public synchronized long getApproximateRowCount() {
-            return getRowCount();
+            return getRowCount(null);
         }
 
         @Override
-        public synchronized long getUniqueID() {
+        public synchronized long getUniqueID(Session session) {
             return uniqueID;
         }
 
         @Override
         public long getApproximateUniqueID() {
-            return getUniqueID();
+            return getUniqueID(null);
         }
 
         @Override
@@ -114,27 +115,27 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public synchronized void rowDeleted() {
+        public synchronized void rowDeleted(Session session) {
             rowCount = Math.max(0, rowCount - 1);
         }
 
         @Override
-        public synchronized void rowsWritten(long count) {
+        public synchronized void rowsWritten(Session session, long count) {
             rowCount += count;
         }
 
         @Override
-        public synchronized void setAutoIncrement(long autoIncrement) {
+        public synchronized void setAutoIncrement(Session session, long autoIncrement) {
             this.autoIncrement = Math.max(this.autoIncrement, autoIncrement);
         }
 
         @Override
-        public synchronized long createNewUniqueID() {
+        public synchronized long createNewUniqueID(Session session) {
             return ++uniqueID;
         }
 
         @Override
-        public synchronized void truncate() {
+        public synchronized void truncate(Session session) {
             autoIncrement = 0;
             uniqueID = 0;
             rowCount = 0;

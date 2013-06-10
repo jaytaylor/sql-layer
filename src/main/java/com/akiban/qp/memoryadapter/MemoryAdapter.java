@@ -79,7 +79,7 @@ public class MemoryAdapter extends StoreAdapter {
     }
 
     @Override
-    public long rowCount(RowType tableType) {
+    public long rowCount(Session session, RowType tableType) {
         long count = 0;
         if (tableType.hasUserTable()) {
             count = tableType.userTable().getMemoryTableFactory().rowCount();
