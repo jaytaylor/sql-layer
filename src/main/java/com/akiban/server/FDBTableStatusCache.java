@@ -91,7 +91,6 @@ public class FDBTableStatusCache implements TableStatusCache {
         private final FDBCounter rowCounter;
         private final byte[] autoIncKey;
         private final byte[] uniqueKey;
-        private RowDef rowDef;
 
         public FDBTableStatus(int tableID) {
             this.tableID = tableID;
@@ -129,7 +128,7 @@ public class FDBTableStatusCache implements TableStatusCache {
 
         @Override
         public void setRowDef(RowDef rowDef) {
-            this.rowDef = rowDef;
+            // None
         }
 
         @Override
@@ -170,7 +169,7 @@ public class FDBTableStatusCache implements TableStatusCache {
 
         @Override
         public long getApproximateRowCount() {
-            // TODO: Avoids conflicts but still round tipe. Cache locally for some time frame?
+            // TODO: Avoids conflicts but still round trip. Cache locally for some time frame?
             Transaction txn = db.createTransaction();
             return rowCounter.getSnapshot(txn);
         }
@@ -210,10 +209,10 @@ public class FDBTableStatusCache implements TableStatusCache {
 
         @Override
         public long getApproximateUniqueID() {
-            // TODO: Avoids conflicts but still round tipe. Cache locally for some time frame?
+            // TODO: Avoids conflicts but still round trip. Cache locally for some time frame?
             Transaction txn = db.createTransaction();
             byte[] bytes = txn.get(uniqueKey).get();
-            return (bytes == null) ? 0 : Tuple.fromBytes(bytes).getLong(0);
+            return decodeOrZero(bytes);
         }
 
         private void clearState(Session session) {
