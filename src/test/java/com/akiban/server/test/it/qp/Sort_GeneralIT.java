@@ -25,7 +25,6 @@ import com.akiban.qp.persistitadapter.TempVolume;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.service.session.Session;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -33,7 +32,7 @@ import java.util.Collections;
 
 import static com.akiban.qp.operator.API.*;
 import static com.akiban.server.test.ExpressionGenerators.field;
-import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 public class Sort_GeneralIT extends OperatorITBase
 {
@@ -440,12 +439,9 @@ public class Sort_GeneralIT extends OperatorITBase
             row(itemRowType, 111L, 11L),
         };
         for (int i = 0; i < 10; i++) {
-            Session.Key<TempVolume.TempVolumeState> tempVolumeStateKey = Session.Key.named("TEMP_VOLUME_STATE");
-            TempVolume.TempVolumeState tempVolumeState = session().get(tempVolumeStateKey);
-            assertTrue(tempVolumeState == null);
+            assertEquals("has temp volume state", false, TempVolume.hasTempState(session()));
             compareRows(expected, cursor(plan, queryContext));
-            tempVolumeState = session().get(tempVolumeStateKey);
-            assertTrue(tempVolumeState == null);
+            assertEquals("has temp volume state", false, TempVolume.hasTempState(session()));
         }
     }
     
@@ -531,6 +527,7 @@ public class Sort_GeneralIT extends OperatorITBase
         };
         testCursorLifecycle(plan, testCase);
     }
+
 
     private Ordering ordering(Object... objects)
     {
