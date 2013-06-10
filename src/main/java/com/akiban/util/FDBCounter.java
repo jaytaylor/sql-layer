@@ -59,7 +59,7 @@ public class FDBCounter {
     public FDBCounter(Database db, byte[] keyPrefix, int seed) {
         this.keyPrefix = keyPrefix;
         this.random = new Random(seed);
-        this.subspace = Tuple.from(new Object[]{ keyPrefix });
+        this.subspace = Tuple.from(keyPrefix);
         this.db = db;
     }
 
