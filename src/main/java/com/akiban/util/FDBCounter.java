@@ -44,7 +44,7 @@ import java.util.Random;
  * </p>
  */
 public class FDBCounter {
-    private static final Logger LOG = LoggerFactory.getLogger(FDBCounter .class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(FDBCounter.class);
     private static final int RANDOM_KEY_SIZE = 20;
     private static final int COALESCE_LIMIT = 20;
     private static final double COALESCE_PROBABILITY = 0.1;
