@@ -203,8 +203,12 @@ public class FDBStore extends AbstractStore implements KeyCreator, Service {
         // store
         txn.set(packedKey, packedValue);
 
-        if(rowDef.isAutoIncrement()) {
-            LOG.error("mysql auto increment RowDef: {}", rowDef);
+        if (rowDef.isAutoIncrement()) {
+            final long location = rowDef.fieldLocation(rowData, rowDef.getAutoIncrementField());
+            if (location != 0) {
+                long autoIncrementValue = rowData.getIntegerValue((int) location, (int) (location >>> 32));
+                rowDef.getTableStatus().setAutoIncrement(session, autoIncrementValue);
+            }
         }
 
         //PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));

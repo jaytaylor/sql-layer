@@ -139,6 +139,8 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     protected abstract void unSavedAISChangeWithRowDefs(Session session, AkibanInformationSchema newAIS);
     protected abstract <V> V transactionally(Session session, ThrowingCallable<V> callable);
 
+    protected abstract void deleteTableStatuses(Session session, Collection<Integer> tableIDs);
+
 
     //
     // Service
@@ -628,7 +630,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             unSavedAISChangeWithRowDefs(session, newAIS);
         } else {
             saveAISChangeWithRowDefs(session, newAIS, schemas);
-            //deleteTableStatuses(tableIDs); // Cannot transactionally remove IDs easily, so don't
+            deleteTableStatuses(session, tableIDs);
         }
     }
 

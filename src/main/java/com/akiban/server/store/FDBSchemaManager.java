@@ -31,7 +31,7 @@ import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.ais.protobuf.ProtobufReader;
 import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
-import com.akiban.server.MemoryOnlyTableStatusCache;
+import com.akiban.server.FDBTableStatusCache;
 import com.akiban.server.collation.AkCollatorFactory;
 import com.akiban.server.error.AISTooLargeException;
 import com.akiban.server.error.AkibanInternalException;
@@ -47,7 +47,6 @@ import com.foundationdb.KeyValue;
 import com.foundationdb.Transaction;
 import com.foundationdb.tuple.Tuple;
 import com.google.inject.Inject;
-import com.persistit.exception.PersistitInterruptedException;
 
 import java.nio.BufferOverflowException;
 import java.util.Arrays;
@@ -64,22 +63,24 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     private static final String AIS_MEMORY_TABLE_KEY = AIS_KEY_PREFIX + "PBMEMAIS";
     // TODO: Proto version?
 
+    private final FDBHolder holder;
     private final FDBTransactionService txnService;
+    private FDBTableStatusCache tableStatusCache;
+    private RowDefCache rowDefCache;
 
     // TODO: all needs to go through the DB
     private AtomicInteger generationCounter = new AtomicInteger();
     private NameGenerator nameGenerator;
     private volatile AkibanInformationSchema curAIS;
-    private MemoryOnlyTableStatusCache tableStatusCache;
-    private RowDefCache rowDefCache;
 
 
     @Inject
     public FDBSchemaManager(ConfigurationService config,
                             SessionService sessionService,
+                            FDBHolder holder,
                             TransactionService txnService) {
         super(config, sessionService);
-
+        this.holder = holder;
         if(txnService instanceof FDBTransactionService) {
             this.txnService = (FDBTransactionService)txnService;
         } else {
@@ -97,7 +98,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
         super.start();
 
         this.generationCounter = new AtomicInteger();
-        this.tableStatusCache = new MemoryOnlyTableStatusCache();
+        this.tableStatusCache = new FDBTableStatusCache(holder.getDatabase(), txnService);
         this.rowDefCache = new RowDefCache(tableStatusCache);
 
         AkCollatorFactory.setUseKeyCoder(false);
@@ -130,6 +131,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     @Override
     public void stop() {
         super.stop();
+        this.tableStatusCache = null;
     }
 
     @Override
@@ -193,6 +195,13 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
             return value;
         } catch(Exception e) {
             throw new AkibanInternalException("unexpected", e);
+        }
+    }
+
+    @Override
+    protected void deleteTableStatuses(Session session, Collection<Integer> tableIDs) {
+        for(Integer id : tableIDs) {
+            tableStatusCache.deleteTableStatus(session, id);
         }
     }
 

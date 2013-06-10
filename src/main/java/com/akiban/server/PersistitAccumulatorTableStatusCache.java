@@ -32,7 +32,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
-    private Map<Integer, MemoryStatus> memoryStatuses = new HashMap<>();
+    private Map<Integer,MemoryTableStatus> memoryStatuses = new HashMap<>();
     private TreeService treeService;
 
     public PersistitAccumulatorTableStatusCache(TreeService treeService) {
@@ -45,13 +45,13 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     }
 
     @Override
-    public TableStatus getOrCreateMemoryTableStatus(int tableID, MemoryTableFactory factory) {
-        MemoryStatus ts = memoryStatuses.get(tableID);
+    public synchronized TableStatus getOrCreateMemoryTableStatus(int tableID, MemoryTableFactory factory) {
+        MemoryTableStatus ts = memoryStatuses.get(tableID);
         if(ts == null) {
             if(factory == null) {
                 throw new IllegalArgumentException("Null factory");
             }
-            ts = new MemoryStatus(tableID, factory);
+            ts = new MemoryTableStatus(tableID, factory);
             memoryStatuses.put(tableID, ts);
         }
         return ts;
@@ -59,7 +59,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
 
     @Override
     public synchronized void detachAIS() {
-        for(MemoryStatus ts : memoryStatuses.values()) {
+        for(MemoryTableStatus ts : memoryStatuses.values()) {
             ts.setRowDef(null);
         }
     }
@@ -220,81 +220,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             } catch(PersistitInterruptedException e) {
                 throw PersistitAdapter.wrapPersistitException(null, e);
             }
-        }
-    }
-
-    private class MemoryStatus implements TableStatus {
-        private final int expectedID;
-        private final MemoryTableFactory factory;
-
-        private MemoryStatus(int expectedID, MemoryTableFactory factory) {
-            this.expectedID = expectedID;
-            this.factory = factory;
-        }
-
-        @Override
-        public long getAutoIncrement(Session session) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public long getRowCount(Session session) {
-            return factory.rowCount();
-        }
-
-        @Override
-        public long getApproximateRowCount() {
-            return factory.rowCount();
-        }
-
-        @Override
-        public long getUniqueID(Session session) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public long getApproximateUniqueID() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int getTableID() {
-            return expectedID;
-        }
-
-        @Override
-        public void setRowCount(Session session, long rowCount) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void rowDeleted(Session session) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void rowsWritten(Session session, long count) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void truncate(Session session) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void setAutoIncrement(Session session, long value) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public long createNewUniqueID(Session session) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void setRowDef(RowDef rowDef) {
-            checkExpectedRowDefID(expectedID, rowDef);
         }
     }
 }
