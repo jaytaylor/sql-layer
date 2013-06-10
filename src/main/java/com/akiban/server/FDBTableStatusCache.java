@@ -142,7 +142,6 @@ public class FDBTableStatusCache implements TableStatusCache {
                     public void attempt(Transaction txn) {
                         byte[] curBytes = txn.get(uniqueKey).get();
                         newValue[0] = 1 + decodeOrZero(curBytes);
-                        System.out.println("Saved " + newValue[0]);
                         txn.set(uniqueKey, Tuple.from(newValue[0]).pack());
                     }
                 });
@@ -178,12 +177,24 @@ public class FDBTableStatusCache implements TableStatusCache {
 
         @Override
         public long getUniqueID(Session session) {
-            Transaction txn = txnService.getTransaction(session);
-            byte[] bytes = txn.get(uniqueKey).get();
-            long value = decodeOrZero(bytes);
-            System.out.println("Read " + value);
-            return value;
-
+            // Use new transaction to avoid conflicts.
+            final long[] currentValue = { 0 };
+            try {
+                db.run(new Retryable() {
+                    @Override
+                    public void attempt(Transaction txn) {
+                        byte[] curBytes = txn.snapshot.get(uniqueKey).get();
+                        currentValue[0] = decodeOrZero(curBytes);
+                    }
+                });
+            } catch(Exception e) {
+                throw new AkibanInternalException("", e);
+            } catch(Throwable t) {
+                Error e = new Error();
+                e.initCause(t);
+                throw e;
+            }
+            return currentValue[0];
         }
 
         @Override
