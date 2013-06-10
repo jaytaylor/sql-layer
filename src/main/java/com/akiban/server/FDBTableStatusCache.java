@@ -112,7 +112,7 @@ public class FDBTableStatusCache implements TableStatusCache {
         @Override
         public void rowsWritten(Session session, long count) {
             Transaction txn = txnService.getTransaction(session);
-            rowCounter.add(txn, 1);
+            rowCounter.add(txn, count);
         }
 
         @Override
