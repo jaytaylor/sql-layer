@@ -18,6 +18,7 @@
 package com.akiban.server;
 
 import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.service.session.Session;
 import com.persistit.exception.PersistitInterruptedException;
 
 /**
@@ -27,32 +28,32 @@ import com.persistit.exception.PersistitInterruptedException;
  */
 public interface TableStatus {
     /** Record that a row has been deleted. */
-    void rowDeleted();
+    void rowDeleted(Session session);
 
     /** Record that a row has been written. */
-    void rowsWritten(long count);
+    void rowsWritten(Session session, long count);
 
     /** Reset, but do not remove, the state of a table. */
-    void truncate();
+    void truncate(Session session);
 
     /** Set the auto-increment value of a given table. */
-    void setAutoIncrement(long value);
+    void setAutoIncrement(Session session, long value);
 
     /** Set the RowDef of a given table.*/
     void setRowDef(RowDef rowDef);
 
     /** Create a brand new, unique ID for the given table. */
-    long createNewUniqueID();
+    long createNewUniqueID(Session session);
 
     /**
      * @return Current auto-increment value of the associated table.
      */
-    long getAutoIncrement();
+    long getAutoIncrement(Session session);
 
     /**
      * @return Current number of rows in the associated table.
      */
-    long getRowCount();
+    long getRowCount(Session session);
 
     /**
      * @return Approximate number of rows in the associated table.
@@ -62,12 +63,12 @@ public interface TableStatus {
     /**
      * @return The <b>last</b> unique value used for the associated table.
      */
-    long getUniqueID();
+    long getUniqueID(Session session);
 
     /** @return The table ID this status is for */
     int getTableID();
 
-    void setRowCount(long rowCount);
+    void setRowCount(Session session, long rowCount);
 
     long getApproximateUniqueID();
 }

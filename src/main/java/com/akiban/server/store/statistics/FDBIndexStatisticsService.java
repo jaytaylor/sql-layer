@@ -59,8 +59,8 @@ public class FDBIndexStatisticsService extends AbstractIndexStatisticsService {
     protected long countGIEntries(Session session, GroupIndex index) {
         LOG.warn("Faking countGIEntries");
         // TODO: Generalize GI count tracking
-        long rootCount = index.rootMostTable().rowDef().getTableStatus().getRowCount();
-        long leafCount = index.leafMostTable().rowDef().getTableStatus().getRowCount();
+        long rootCount = index.rootMostTable().rowDef().getTableStatus().getRowCount(session);
+        long leafCount = index.leafMostTable().rowDef().getTableStatus().getRowCount(session);
         return rootCount * leafCount;
 
     }

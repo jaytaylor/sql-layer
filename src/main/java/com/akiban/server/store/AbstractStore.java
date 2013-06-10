@@ -328,8 +328,8 @@ public abstract class AbstractStore implements Store {
         final RowDef rowDef = getRowDef(session, tableId);
         final TableStatistics ts = new TableStatistics(tableId);
         final TableStatus status = rowDef.getTableStatus();
-        ts.setAutoIncrementValue(status.getAutoIncrement());
-        ts.setRowCount(status.getRowCount());
+        ts.setAutoIncrementValue(status.getAutoIncrement(session));
+        ts.setRowCount(status.getRowCount(session));
         // TODO - get correct values
         ts.setMeanRecordLength(100);
         ts.setBlockSize(8192);
@@ -370,7 +370,7 @@ public abstract class AbstractStore implements Store {
             @Override
             public void visitUserTable(UserTable table) {
                 indexes.addAll(table.getIndexesIncludingInternal());
-                table.rowDef().getTableStatus().truncate();
+                table.rowDef().getTableStatus().truncate(session);
             }
         });
 
@@ -383,7 +383,7 @@ public abstract class AbstractStore implements Store {
 
     @Override
     public void truncateTableStatus(final Session session, final int rowDefId) {
-        getRowDef(session, rowDefId).getTableStatus().truncate();
+        getRowDef(session, rowDefId).getTableStatus().truncate(session);
     }
 
     @Override

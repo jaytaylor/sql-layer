@@ -70,9 +70,9 @@ public abstract class StoreAdapter
         return config.queryTimeoutMilli();
     }
 
-    public long rowCount(RowType tableType) {
+    public long rowCount(Session session, RowType tableType) {
         assert tableType.hasUserTable() : tableType;
-        return tableType.userTable().rowDef().getTableStatus().getRowCount();
+        return tableType.userTable().rowDef().getTableStatus().getRowCount(session);
     }
     
     public abstract long sequenceNextValue(TableName sequenceName);

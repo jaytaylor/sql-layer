@@ -31,6 +31,7 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.TableStatus;
 import com.akiban.server.TableStatusCache;
+import com.akiban.server.service.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +46,7 @@ import com.akiban.ais.model.UserTable;
 /**
  * Caches RowDef instances. In this incarnation, this class also constructs
  * RowDef objects from the AkibanInformationSchema. The translation is done in
- * the {@link #setAIS(AkibanInformationSchema)} method.
+ * the {@link #setAIS(Session,AkibanInformationSchema)} method.
  * 
  * @author peter
  */
@@ -69,21 +70,21 @@ public class RowDefCache {
 
     /**
      * Create RowDefs for every table in the given AIS and compute derived information for indexes. */
-    public void setAIS(AkibanInformationSchema newAIS) {
-        setAIS(newAIS, false);
+    public void setAIS(Session session, AkibanInformationSchema newAIS) {
+        setAIS(session, newAIS, false);
     }
 
-    /** Like {@link #setAIS(AkibanInformationSchema)} but without derived information changes */
-    public void setAISWithoutOrdinals(AkibanInformationSchema newAIS) {
-        setAIS(newAIS, true);
+    /** Like {@link #setAIS(Session,AkibanInformationSchema)} but without derived information changes */
+    public void setAISWithoutOrdinals(Session session, AkibanInformationSchema newAIS) {
+        setAIS(session, newAIS, true);
     }
 
-    private synchronized void setAIS(AkibanInformationSchema newAIS, boolean skipOrdinals) {
+    private synchronized void setAIS(Session session, AkibanInformationSchema newAIS, boolean skipOrdinals) {
         ais = newAIS;
 
         Map<Integer, RowDef> newRowDefs = new TreeMap<>();
         for (final UserTable table : ais.getUserTables().values()) {
-            RowDef rowDef = createUserTableRowDef(table);
+            RowDef rowDef = createUserTableRowDef(session, table);
             Integer key = rowDef.getRowDefId();
             RowDef prev = newRowDefs.put(key, rowDef);
             if (prev != null) {
@@ -128,7 +129,7 @@ public class RowDefCache {
         return ordinalMap;
     }
 
-    private RowDef createUserTableRowDef(UserTable table) {
+    private RowDef createUserTableRowDef(Session session, UserTable table) {
         RowDef rowDef = createRowDefCommon(table, table.getMemoryTableFactory());
         // parentRowDef
         int[] parentJoinFields;
@@ -184,7 +185,7 @@ public class RowDefCache {
         Column autoIncColumn = table.getAutoIncrementColumn();
         if(autoIncColumn != null) {
             long initialAutoIncrementValue = autoIncColumn.getInitialAutoIncrementValue();
-            rowDef.getTableStatus().setAutoIncrement(initialAutoIncrementValue);
+            rowDef.getTableStatus().setAutoIncrement(session, initialAutoIncrementValue);
         }
 
         return rowDef;

@@ -113,7 +113,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
                             Tuple tuple = Tuple.from(SCHEMA_MANAGER_PREFIX, AIS_MEMORY_TABLE_KEY);
                             txn.clearRangeStartsWith(tuple.pack());
                             AkibanInformationSchema newAIS = loadAISFromStorage(session);
-                            buildRowDefCache(newAIS);
+                            buildRowDefCache(session, newAIS);
                             return null;
                         }
                     }
@@ -157,7 +157,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
             for(String schema : schemaNames) {
                 checkAndSerialize(txnService.getTransaction(session), byteBuffer, newAIS, schema);
             }
-            buildRowDefCache(newAIS);
+            buildRowDefCache(session, newAIS);
             //addCallbacksForAISChange(session);
         } catch(BufferOverflowException e) {
             throw new AISTooLargeException(byteBuffer.getMaxBurstSize());
@@ -178,7 +178,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     protected void unSavedAISChangeWithRowDefs(Session session, AkibanInformationSchema newAIS) {
         validateAndFreeze(session, newAIS);
         serializeMemoryTables(session, newAIS);
-        buildRowDefCache(newAIS);
+        buildRowDefCache(session, newAIS);
         //addCallbacksForAISChange(session);
     }
 
@@ -324,9 +324,9 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
         txn.set(packedKey, packedValue);
     }
 
-    private void buildRowDefCache(AkibanInformationSchema newAIS) {
+    private void buildRowDefCache(Session session, AkibanInformationSchema newAIS) {
         //treeService.getTableStatusCache().detachAIS();
-        rowDefCache.setAIS(newAIS);
+        rowDefCache.setAIS(session, newAIS);
         curAIS = newAIS;
         // This creates|verifies the trees exist for sequences.
         // TODO: Why are sequences special here?

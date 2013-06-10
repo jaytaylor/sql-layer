@@ -195,7 +195,7 @@ public class FDBStore extends AbstractStore implements KeyCreator, Service {
         Transaction txn = txnService.getTransaction(session);
 
         Key hKey = createKey();
-        constructHKey(txn, hKey, rowDef, rowData, true);
+        constructHKey(session, txn, hKey, rowDef, rowData, true);
 
         byte[] packedKey = packedTuple(rowDef.getGroup(), hKey);
         byte[] packedValue = Arrays.copyOfRange(rowData.getBytes(), rowData.getBufferStart(), rowData.getBufferEnd());
@@ -215,7 +215,7 @@ public class FDBStore extends AbstractStore implements KeyCreator, Service {
         }
 
         // bug1112940: Bump row count *after* uniqueness checks in insertIntoIndex
-        rowDef.getTableStatus().rowsWritten(1);
+        rowDef.getTableStatus().rowsWritten(session, 1);
 
         if (/*propagateHKeyChanges &&*/ rowDef.userTable().hasChildren()) {
             LOG.warn("propagateHKeyChanges skipped: {}", rowDef);
@@ -266,7 +266,7 @@ public class FDBStore extends AbstractStore implements KeyCreator, Service {
         final RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
         Transaction txn = txnService.getTransaction(session);
         Key hKey = createKey();
-        constructHKey(txn, hKey, rowDef, rowData, false);
+        constructHKey(session, txn, hKey, rowDef, rowData, false);
 
         byte[] packedKey = packedTuple(rowDef.getGroup(), hKey);
         byte[] fetched = txn.get(packedKey).get();
@@ -280,7 +280,7 @@ public class FDBStore extends AbstractStore implements KeyCreator, Service {
 
         // Remove the h-row
         txn.clear(packedKey);
-        rowDef.getTableStatus().rowDeleted();
+        rowDef.getTableStatus().rowDeleted(session);
 
         // Remove the indexes, including the PK index
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
@@ -426,7 +426,7 @@ public class FDBStore extends AbstractStore implements KeyCreator, Service {
     //
 
     // TODO: Copied from PersistitStore, consolidate
-    private long constructHKey(Transaction txn, Key hKey, RowDef rowDef, RowData rowData, boolean insertingRow) {
+    private long constructHKey(Session session, Transaction txn, Key hKey, RowDef rowDef, RowData rowData, boolean insertingRow) {
         // Initialize the hkey being constructed
         long uniqueId = -1;
         PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKey);
@@ -484,7 +484,7 @@ public class FDBStore extends AbstractStore implements KeyCreator, Service {
                     FieldDef fieldDef = fieldDefs[column.getPosition()];
                     if (insertingRow && column.isAkibanPKColumn()) {
                         // Must be a PK-less table. Use unique id from TableStatus.
-                        uniqueId = segmentRowDef.getTableStatus().createNewUniqueID();
+                        uniqueId = segmentRowDef.getTableStatus().createNewUniqueID(session);
                         hKeyAppender.append(uniqueId);
                         // Write rowId into the value part of the row also.
                         rowData.updateNonNullLong(fieldDef, uniqueId);

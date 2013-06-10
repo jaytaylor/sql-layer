@@ -1162,7 +1162,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             if (expected != actual) {
                 PersistitStore pStore = this.store().getPersistitStore();
                 if (index.isTableIndex()) {
-                    index.leafMostTable().rowDef().getTableStatus().setRowCount(actual);
+                    index.leafMostTable().rowDef().getTableStatus().setRowCount(session, actual);
                 }
                 else {
                     final Exchange ex = pStore.getExchange(session, index);
