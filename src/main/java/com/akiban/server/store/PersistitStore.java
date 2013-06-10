@@ -675,7 +675,7 @@ public class PersistitStore extends AbstractStore implements Service
                     if (insertingRow && column.isAkibanPKColumn()) {
                         // Must be a PK-less table. Use unique id from TableStatus.
                         if (hiddenPk == null)
-                            uniqueId = segmentRowDef.getTableStatus().createNewUniqueID();
+                            uniqueId = segmentRowDef.getTableStatus().createNewUniqueID(session);
                         else
                             uniqueId = hiddenPk.incrementAndGet();
                         hKeyAppender.append(uniqueId);
@@ -782,7 +782,7 @@ public class PersistitStore extends AbstractStore implements Service
                 final long location = rowDef.fieldLocation(rowData, rowDef.getAutoIncrementField());
                 if (location != 0) {
                     long autoIncrementValue = rowData.getIntegerValue((int) location, (int) (location >>> 32));
-                    rowDef.getTableStatus().setAutoIncrement(autoIncrementValue);
+                    rowDef.getTableStatus().setAutoIncrement(session, autoIncrementValue);
                 }
             }
 
@@ -793,7 +793,7 @@ public class PersistitStore extends AbstractStore implements Service
             }
 
             // bug1112940: Bump row count *after* uniqueness checks in insertIntoIndex
-            rowDef.getTableStatus().rowsWritten(1);
+            rowDef.getTableStatus().rowsWritten(session, 1);
 
             if (propagateHKeyChanges && rowDef.userTable().hasChildren()) {
                 // The row being inserted might be the parent of orphan rows
@@ -948,15 +948,15 @@ public class PersistitStore extends AbstractStore implements Service
             try {
                 for (Map.Entry<RowDef, AtomicLong> rowCountEntry : bulkload.rowsByRowDef.entrySet()) {
                     RowDef rowDef = rowCountEntry.getKey();
-                    rowDef.getTableStatus().rowsWritten(rowCountEntry.getValue().get());
+                    rowDef.getTableStatus().rowsWritten(session, rowCountEntry.getValue().get());
                 }
                 for (Map.Entry<RowDef, AtomicLong> hiddenPkEntry : bulkload.hiddenPks.entrySet()) {
                     RowDef rowDef = hiddenPkEntry.getKey();
                     TableStatus status = rowDef.getTableStatus();
                     long target = hiddenPkEntry.getValue().get();
-                    long diff = target - status.getUniqueID();
+                    long diff = target - status.getUniqueID(session);
                     while(diff > 0) {
-                        status.createNewUniqueID();
+                        status.createNewUniqueID(session);
                         --diff;
                     }
                 }
@@ -1029,7 +1029,7 @@ public class PersistitStore extends AbstractStore implements Service
 
             // Remove the h-row
             hEx.remove();
-            rowDef.getTableStatus().rowDeleted();
+            rowDef.getTableStatus().rowDeleted(session);
 
             // Remove the indexes, including the PK index
 
@@ -1187,7 +1187,7 @@ public class PersistitStore extends AbstractStore implements Service
                 // Delete the current row from the tree. Don't call deleteRow, because we don't need to recompute
                 // the hkey.
                 exchange.remove();
-                descendentRowDef.getTableStatus().rowDeleted();
+                descendentRowDef.getTableStatus().rowDeleted(session);
                 if(deleteIndexes) {
                     for (Index index : descendentRowDef.getIndexes()) {
                         deleteIndex(session, index, descendentRowData, exchange.getKey(), indexRowBuffer);
@@ -1211,7 +1211,7 @@ public class PersistitStore extends AbstractStore implements Service
             for(UserTable table : group.getRoot().getAIS().getUserTables().values()) {
                 if(table.getGroup() == group) {
                     indexes.addAll(table.getIndexesIncludingInternal());
-                    table.rowDef().getTableStatus().truncate();
+                    table.rowDef().getTableStatus().truncate(session);
                 }
             }
             indexes.addAll(group.getIndexes());

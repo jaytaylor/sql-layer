@@ -166,7 +166,7 @@ class Count_TableStatus extends Operator
                 Row output;
                 checkQueryCancelation();
                 if (pending) {
-                    long rowCount = adapter().rowCount(tableType);
+                    long rowCount = adapter().rowCount(adapter().getSession(), tableType);
                     close();
                     output = usePValues
                              ? new PValuesRow(resultType, new PValue(MNumeric.BIGINT.instance(false), rowCount))
