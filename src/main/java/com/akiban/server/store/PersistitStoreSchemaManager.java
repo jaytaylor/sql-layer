@@ -1083,6 +1083,11 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
         }
     }
 
+    @Override
+    protected void deleteTableStatuses(Session session, Collection<Integer> tableIDs) {
+        // Nothing extra to do, table status state stored in accumulators, which are attached to the trees.
+    }
+
     /**
      * Find UserTables without ordinals and look them up in the old Accumulator based location.
      * @return count of tables whose ordinal was updated
