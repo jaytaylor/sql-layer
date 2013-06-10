@@ -35,7 +35,7 @@ import static com.akiban.qp.operator.API.*;
 import static com.akiban.server.test.ExpressionGenerators.field;
 import static junit.framework.Assert.assertTrue;
 
-public class Sort_TreeIT extends OperatorITBase
+public class Sort_GeneralIT extends OperatorITBase
 {
     @Override
     protected void setupPostCreateSchema() {

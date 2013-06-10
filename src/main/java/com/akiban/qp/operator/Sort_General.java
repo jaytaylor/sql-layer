@@ -35,7 +35,7 @@ import java.util.Set;
 /**
  <h1>Overview</h1>
 
- Sort_Tree generates an output stream containing all the rows of the input stream, sorted according to an
+ Sort_General generates an output stream containing all the rows of the input stream, sorted according to an
  ordering specification. The "General" in the name refers to the flexible implementation which is provided by
  the underlying {@link StoreAdapter}.
 
@@ -116,7 +116,7 @@ class Sort_General extends Operator
         return describePlan(inputOperator);
     }
 
-    // Sort_Tree interface
+    // Sort_General interface
 
     public Sort_General(Operator inputOperator,
                         RowType sortType,
@@ -133,9 +133,9 @@ class Sort_General extends Operator
     
     // Class state
 
-    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_Tree open");
-    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_Tree next");
-    private static final InOutTap TAP_LOAD = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_Tree load");
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_General open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_General next");
+    private static final InOutTap TAP_LOAD = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_General load");
     private static final Logger LOG = LoggerFactory.getLogger(Sort_General.class);
 
     // Object state
@@ -195,7 +195,7 @@ class Sort_General extends Operator
                 }
             }
             if (LOG_EXECUTION) {
-                LOG.debug("Sort_Tree: yield {}", row);
+                LOG.debug("Sort_General: yield {}", row);
             }
             return row;
         }

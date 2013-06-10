@@ -61,7 +61,9 @@ public final class RowsBuilder {
         if (usingPValues()) {
             PValueSource[] pvalues = new PValueSource[values.length];
             for (int i = 0; i < values.length; ++i) {
-                PValueSource psource = PValueSources.fromObject(values[i], null).value();
+                PValueSource psource = (values[i] == null) ?
+                        PValueSources.getNullSource(tinsts[i]) :
+                        PValueSources.fromObject(values[i], null).value();
                 if (!psource.tInstance().equalsExcludingNullable(tinsts[i])) {
                     // This assumes that anything that doesn't match is a string.
                     TExecutionContext context = new TExecutionContext(null,
