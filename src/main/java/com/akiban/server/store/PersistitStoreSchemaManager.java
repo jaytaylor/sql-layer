@@ -1041,27 +1041,9 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
                 .colBigInt("outstanding_count", false)
                 .colBigInt("task_queue_size", false);
 
-        final int IDENT_MAX = 128;
-        builder.defaultSchema(TableName.SYS_SCHEMA);
-        builder.procedure("seq_tree_reset")
-               .language("java", Routine.CallingConvention.JAVA)
-               .paramStringIn("seq_schema", IDENT_MAX)
-               .paramStringIn("seq_name", IDENT_MAX)
-               .paramLongIn("new_value")
-               .externalName(SequenceFixUpRoutines.class.getCanonicalName(), "seq_tree_reset");
-        builder.procedure("seq_identity_default_to_always")
-                .language("java", Routine.CallingConvention.JAVA)
-                .paramStringIn("schema", IDENT_MAX)
-                .paramStringIn("table", IDENT_MAX)
-                .paramStringIn("column", IDENT_MAX)
-                .externalName(SequenceFixUpRoutines.class.getCanonicalName(), "seq_identity_default_to_always");
-
         AkibanInformationSchema ais = builder.ais();
         UserTable table = ais.getUserTable(factory.getName());
         registerMemoryInformationSchemaTable(table, factory);
-        for(Routine routine : ais.getRoutines().values()) {
-            registerSystemRoutine(routine);
-        }
     }
 
     @Override
