@@ -40,7 +40,6 @@ import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.externaldata.JsonRowWriter.WriteTableRow;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;

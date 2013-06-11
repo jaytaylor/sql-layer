@@ -20,9 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableName;
-import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.t3expressions.T3RegistryService;
 

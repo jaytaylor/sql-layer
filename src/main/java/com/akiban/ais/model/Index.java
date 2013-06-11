@@ -24,7 +24,6 @@ import com.akiban.server.collation.AkCollator;
 import com.akiban.server.geophile.Space;
 import com.akiban.server.geophile.SpaceLatLon;
 import com.akiban.server.rowdata.IndexDef;
-import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;

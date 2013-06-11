@@ -27,14 +27,12 @@ import com.akiban.server.service.restdml.RestDMLService;
 import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.google.inject.Inject;
 import com.sun.jersey.api.core.DefaultResourceConfig;
 import com.sun.jersey.api.core.ResourceConfig;
 import com.sun.jersey.spi.container.servlet.ServletContainer;
 
-import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 
 import java.util.Arrays;

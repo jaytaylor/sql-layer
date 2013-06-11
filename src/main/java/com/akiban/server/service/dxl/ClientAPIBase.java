@@ -19,7 +19,6 @@ package com.akiban.server.service.dxl;
 
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 

@@ -47,7 +47,6 @@ import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.text.FullTextIndexService;
 import com.akiban.server.service.text.FullTextQueryBuilder;
 import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.sql.embedded.EmbeddedJDBCService;
@@ -123,8 +122,6 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                               ExternalDataService extDataService,
                               EmbeddedJDBCService jdbcService,
                               FullTextIndexService fullTextService,
-                              ConfigurationService configService,
-                              TreeService treeService,
                               Store store,
                               T3RegistryService registryService) {
         this.sessionService = sessionService;

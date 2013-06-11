@@ -33,8 +33,6 @@ import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.service.tree.KeyCreator;
-import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import org.slf4j.Logger;

@@ -33,7 +33,6 @@ import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.SessionService;
-import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.store.statistics.IndexStatisticsService;
 
