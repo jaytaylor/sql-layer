@@ -35,9 +35,7 @@ import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
-import com.akiban.server.store.Store;
 import com.akiban.server.util.GroupIndexCreator;
-import com.google.common.base.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,21 +50,13 @@ import java.util.regex.Pattern;
 
 class DXLMXBeanImpl implements DXLMXBean {
     private final DXLServiceImpl dxlService;
-    private final Store store;
     private final AtomicReference<String> usingSchema = new AtomicReference<>("test");
     private final SessionService sessionService;
     private static final Logger LOG = LoggerFactory.getLogger(DXLMXBeanImpl.class);
     private static final String CREATE_GROUP_INDEX_LOG_FORMAT = "createGroupIndex failed: %s %s %s";
-    private static final DXLService.GroupIndexRecreatePredicate ALL_GIS = new DXLService.GroupIndexRecreatePredicate() {
-        @Override
-        public boolean shouldRecreate(GroupIndex index) {
-            return true;
-        }
-    };
 
-    public DXLMXBeanImpl(DXLServiceImpl dxlService, Store store, SessionService sessionService) {
+    public DXLMXBeanImpl(DXLServiceImpl dxlService, SessionService sessionService) {
         this.dxlService = dxlService;
-        this.store = store;
         this.sessionService = sessionService;
     }
 
@@ -78,11 +68,6 @@ class DXLMXBeanImpl implements DXLMXBean {
     @Override
     public void setUsingSchema(String schema) {
         usingSchema.set(schema);
-    }
-
-    @Override
-    public void recreateGroupIndexes() {
-        dxlService.recreateGroupIndexes(ALL_GIS);
     }
 
     @Override

@@ -26,8 +26,6 @@ import java.util.List;
 public interface DXLMXBean {
     String getUsingSchema();
 
-    void recreateGroupIndexes();
-
     void setUsingSchema(String schema);
 
     void createGroupIndex(String schemaName, String groupName, String indexName, String tableColumnList, Index.JoinType joinType);
