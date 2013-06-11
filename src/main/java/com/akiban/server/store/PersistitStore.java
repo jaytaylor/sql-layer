@@ -26,7 +26,6 @@ import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.*;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
@@ -42,15 +41,11 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.text.FullTextIndexService;
-import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
-import com.google.common.base.Function;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.persistit.*;
 import com.persistit.Management.DisplayFilter;
 import com.persistit.encoding.CoderManager;
@@ -58,18 +53,13 @@ import com.persistit.exception.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.rmi.RemoteException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class PersistitStore extends AbstractStore<Exchange, PersistitException> implements Service
 {
-    private static final AtomicReference<Bulkload> activeBulkload = new AtomicReference<>();
-
-    private static final Logger LOG = LoggerFactory
-            .getLogger(PersistitStore.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(PersistitStore.class);
 
     private static final InOutTap WRITE_ROW_TAP = Tap.createTimer("write: write_row");
 
@@ -84,10 +74,6 @@ public class PersistitStore extends AbstractStore<Exchange, PersistitException> 
     private static final PointTap PROPAGATE_HKEY_CHANGE_TAP = Tap.createCount("write: propagate_hkey_change");
     private static final PointTap PROPAGATE_HKEY_CHANGE_ROW_REPLACE_TAP = Tap.createCount("write: propagate_hkey_change_row_replace");
 
-    private static final String NO_BULKLOAD_IN_PROGRESS = "no bulkload in progress";
-    private static final String BULKLOAD_TMPDIRS_CONFIG = "akserver.bulkload.tmpdirs";
-    private static final String BULKLOAD_PK_BUFFER_ALLOC = "akserver.bulkload.bufferalloc.pk";
-    private static final String BULKLOAD_GROUP_BUFFER_ALLOC = "akserver.bulkload.bufferalloc.group";
     private static final String WRITE_LOCK_ENABLED_CONFIG = "akserver.write_lock_enabled";
     private static final String MAINTENANCE_SCHEMA = "maintenance";
     private static final String FULL_TEXT_TABLE = "full_text";
@@ -108,8 +94,6 @@ public class PersistitStore extends AbstractStore<Exchange, PersistitException> 
 
     private final LockService lockService;
 
-    private final TransactionService transactionService;
-
     private DisplayFilter originalDisplayFilter;
 
     private FullTextIndexService fullTextService;
@@ -118,27 +102,16 @@ public class PersistitStore extends AbstractStore<Exchange, PersistitException> 
 
     // Each row change has a 'uniqueChangeId', stored in the 'maintenance.full_text' table
     // The number would be reset after all maintenance is done
-    private volatile AtomicLong uniqueChangeId = new AtomicLong(0); // TODO: change this back to MIN_VAL
-    
-    private static final StorageAction DIRECT_STORAGE = new StorageAction() {
-        @Override
-        public void doStore(Exchange exchange) throws PersistitException {
-            exchange.store();
-        }
-    };
+    private volatile AtomicLong uniqueChangeId = new AtomicLong(0);
 
-    private volatile List<File> treeBuilderDirs;
-    private volatile float pkBlBufferAllocation;
-    private volatile float groupBlBufferAllocation;
 
     public PersistitStore(boolean updateGroupIndexes, TreeService treeService, ConfigurationService config,
-                          SchemaManager schemaManager, LockService lockService, TransactionService transactionService) {
+                          SchemaManager schemaManager, LockService lockService) {
         this.updateGroupIndexes = updateGroupIndexes;
         this.treeService = treeService;
         this.config = config;
         this.schemaManager = schemaManager;
         this.lockService = lockService;
-        this.transactionService = transactionService;
     }
 
 
@@ -510,31 +483,9 @@ public class PersistitStore extends AbstractStore<Exchange, PersistitException> 
         } catch (RemoteException e) {
             throw new DisplayFilterSetException (e.getMessage());
         }
-        String tbConfigString = "";
         if (config != null) {
-            config.getProperty(BULKLOAD_TMPDIRS_CONFIG).trim();
-            pkBlBufferAllocation = Float.parseFloat(config.getProperty(BULKLOAD_PK_BUFFER_ALLOC));
-            groupBlBufferAllocation = Float.parseFloat(config.getProperty(BULKLOAD_GROUP_BUFFER_ALLOC));
             writeLockEnabled = Boolean.parseBoolean(config.getProperty(WRITE_LOCK_ENABLED_CONFIG));
-
         }
-        else {
-            pkBlBufferAllocation = .5f;
-            groupBlBufferAllocation = .5f;
-        }
-        if (!tbConfigString.isEmpty())
-            treeBuilderDirs = ImmutableList.copyOf(Lists.transform(
-                    Arrays.asList(tbConfigString.split(File.pathSeparator)),
-                    new Function<String, File>() {
-                        @Override
-                        public File apply(String input) {
-                            File file = new File(input);
-                            if (!file.isDirectory() && file.canWrite())
-                                throw new AkibanInternalException(file + " is not a directory with write access");
-                            return file;
-                        }
-                    }
-            ));
     }
 
     @Override
@@ -631,32 +582,24 @@ public class PersistitStore extends AbstractStore<Exchange, PersistitException> 
 
     @Override
     public AkibanInformationSchema getAIS(Session session) {
-        Bulkload bulkload = activeBulkload.get();
-        if (bulkload != null)
-            return bulkload.ais;
         return schemaManager.getAis(session);
     }
 
     @Override
-    public void writeRow(Session session, RowData rowData)
-    {
-        Bulkload bulkload = activeBulkload.get();
+    public void writeRow(Session session, RowData rowData) {
         try {
-            if (bulkload != null)
-                writeRowBulk(session, rowData, bulkload);
-            else
-                writeRowStandard(session, rowData, null, true);
+            writeRow(session, rowData, null, true);
         } catch(PersistitException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         }
     }
 
-    private void writeRowStandard(Session session,
-                                  RowData rowData,
-                                  BitSet tablesRequiringHKeyMaintenance,
-                                  boolean propagateHKeyChanges) throws PersistitException
+    private void writeRow(Session session,
+                          RowData rowData,
+                          BitSet tablesRequiringHKeyMaintenance,
+                          boolean propagateHKeyChanges) throws PersistitException
     {
-        final RowDef rowDef = writeRowCheck(session, rowData, false);
+        final RowDef rowDef = writeRowCheck(session, rowData);
         Exchange hEx;
         hEx = getExchange(session, rowDef);
         
@@ -738,165 +681,18 @@ public class PersistitStore extends AbstractStore<Exchange, PersistitException> 
         }
     }
 
-    private void writeRowBulk(Session session, RowData rowData, Bulkload bulkload) {
-        final RowDef rowDef = writeRowCheck(session, rowData, true);
-        if(session.get(StoreAdapter.STORE_ADAPTER_KEY) == null) {
-            // Attaches itself to the session
-            new PersistitAdapter(SchemaCache.globalSchema(bulkload.ais), this, treeService, session, config, false);
-        }
-        AtomicLong hiddenPk;
-        AtomicLong insertedRowsCount;
-        synchronized (bulkload) {
-            if (bulkload.activeRowDef != rowDef) {
-                validateRowDefForBulk(bulkload, rowDef);
-                try {
-                    bulkload.pkStorage.treeBuilder.merge();
-                } catch (com.persistit.exception.DuplicateKeyException e) {
-                    throw new DuplicateKeyException("PK", null);
-                } catch (Exception e) {
-                    LOG.error("while merging PKs", e);
-                    throw new BulkloadException("unknown exception (see log): " + e.getMessage());
-                }
-                bulkload.activeRowsInserted = new AtomicLong();
-                Object old = bulkload.rowsByRowDef.put(rowDef, bulkload.activeRowsInserted);
-                assert old == null : old;
-                bulkload.activeRowDef = rowDef;
-                if (rowDef.userTable().getPrimaryKey() == null) {
-                    bulkload.activeHiddenPk = new AtomicLong(rowDef.getTableStatus().getApproximateUniqueID());
-                    bulkload.hiddenPks.put(rowDef, bulkload.activeHiddenPk);
-                }
-                else {
-                    bulkload.activeHiddenPk = null;
-                }
-            }
-            hiddenPk = bulkload.activeHiddenPk;
-            insertedRowsCount = bulkload.activeRowsInserted;
-        }
-
-        // Group table
-        Key groupTableKey = bulkload.groupTableKey.get();
-        Value groupTableValue = bulkload.groupTableValue.get();
-        try {
-            constructHKey(session, rowDef, rowData, true, hiddenPk, groupTableKey); // invokes key.clear()
-            groupTableValue.clear();
-            packRowData(groupTableValue, rowData);
-            Tree tree = treeService.populateTreeCache(rowDef.getGroup()).getTree();
-            bulkload.groupBuilder.treeBuilder.store(tree, groupTableKey, groupTableValue);
-
-            PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
-            for (Index index : rowDef.getIndexes()) {
-                StorageAction action = index.isPrimaryKey() ? bulkload.pkStorage : bulkload.groupBuilder;
-                insertIntoIndex(session, index, rowData, groupTableKey, indexRow, action);
-            }
-        } catch (InvalidOperationException e) {
-            throw e;
-        } catch (PersistitException e) {
-            throw PersistitAdapter.wrapPersistitException(session, e);
-        } catch (Exception e) {
-            LOG.error("while merging PKs", e);
-            throw new BulkloadException("unknown exception (see log): " + e.getMessage());
-        }
-
-        insertedRowsCount.incrementAndGet();
-    }
-
-    private void validateRowDefForBulk(Bulkload bulkload, RowDef rowDef) {
-        RowDef rowDataParent = rowDef.getParentRowDef();
-        if (rowDataParent == null)
-            // This is the root, so check that the group has no GIs
-            checkNoGIsInGroup(rowDef);
-        else if (!bulkload.seenTables.contains(rowDataParent))
-            // This is not the root, so check that its parent has been loaded
-            throw new BulkloadException( "can't load " + rowDef.userTable() + " because parent "
-                    + rowDef.userTable() + " hasn't been loaded yet");
-        if (!bulkload.seenTables.add(rowDef))
-            throw new BulkloadException("table " + rowDef.userTable() + " has already finished bulkloading");
-    }
-
-    private void checkNoGIsInGroup(RowDef rowDef) {
-        Collection<GroupIndex> gis = rowDef.table().getGroup().getRoot().getGroupIndexes();
-        if (!gis.isEmpty())
-            throw new BulkloadException("can't bulk load with group indexes: " + gis.toString());
-    }
-
-    @Override
-    public void startBulkLoad(Session session) {
-        if (transactionService.isTransactionActive(session))
-            throw new BulkloadException("can't start bulk load when transaction is active");
-        transactionService.beginTransaction(session);
-        Bulkload newBulkload;
-        try {
-            newBulkload = new Bulkload(getDb(), schemaManager.getAis(session));
-        } finally {
-            transactionService.commitTransaction(session);
-        }
-        
-        if (!activeBulkload.compareAndSet(null, newBulkload))
-            throw new BulkloadException("another bulkload is already in progress");
-        // writeRowBulk ensures this is set, clear out any potentially incompatible
-        session.remove(StoreAdapter.STORE_ADAPTER_KEY);
-    }
-
-    @Override
-    public void finishBulkLoad(Session session) {
-        Bulkload bulkload = activeBulkload.getAndSet(null);
-        if (bulkload == null)
-            throw new BulkloadException(NO_BULKLOAD_IN_PROGRESS);
-        try {
-            bulkload.pkStorage.treeBuilder.merge();
-            bulkload.groupBuilder.treeBuilder.merge();
-            transactionService.beginTransaction(session);
-            try {
-                for (Map.Entry<RowDef, AtomicLong> rowCountEntry : bulkload.rowsByRowDef.entrySet()) {
-                    RowDef rowDef = rowCountEntry.getKey();
-                    rowDef.getTableStatus().rowsWritten(session, rowCountEntry.getValue().get());
-                }
-                for (Map.Entry<RowDef, AtomicLong> hiddenPkEntry : bulkload.hiddenPks.entrySet()) {
-                    RowDef rowDef = hiddenPkEntry.getKey();
-                    TableStatus status = rowDef.getTableStatus();
-                    long target = hiddenPkEntry.getValue().get();
-                    long diff = target - status.getUniqueID(session);
-                    while(diff > 0) {
-                        status.createNewUniqueID(session);
-                        --diff;
-                    }
-                }
-            }
-            finally {
-                transactionService.commitTransaction(session);
-            }
-        } catch (InvalidOperationException e) {
-            throw e;
-        } catch (Exception e) {
-            LOG.error("while merging TreeBuilders", e);
-            throw new BulkloadException("while finishing bulkloading: " + e);
-        }
-    }
-
-    private RowDef writeRowCheck(Session session, RowData rowData, boolean bulkload) {
+    private RowDef writeRowCheck(Session session, RowData rowData) {
         if (rowData.getRowSize() > MAX_ROW_SIZE) {
             LOG.warn("RowData size {} is larger than current limit of {} bytes" + rowData.getRowSize(), MAX_ROW_SIZE);
         }
-        return writeCheck(session, rowData, bulkload);
+        return writeCheck(session, rowData);
     }
 
-    private RowDef writeCheck(Session session, RowData rowData, boolean bulkloadExpected) {
-        if (bulkloadExpected != isBulkloading()) {
-            String msg = bulkloadExpected
-                    ? NO_BULKLOAD_IN_PROGRESS
-                    : "can't perform non-bulkload operation while bulkload is in progress";
-            throw new BulkloadException(msg);
-        }
+    private RowDef writeCheck(Session session, RowData rowData) {
         final RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
         checkNoGroupIndexes(rowDef.table());
-        if (!bulkloadExpected)
-            lockAndCheckVersion(session, rowDef);
+        lockAndCheckVersion(session, rowDef);
         return rowDef;
-    }
-
-    @Override
-    public boolean isBulkloading() {
-        return activeBulkload.get() != null;
     }
 
     @Override
@@ -908,7 +704,7 @@ public class PersistitStore extends AbstractStore<Exchange, PersistitException> 
     private void deleteRow(Session session, RowData rowData, boolean deleteIndexes, boolean cascadeDelete,
                            BitSet tablesRequiringHKeyMaintenance, boolean propagateHKeyChanges)
     {
-        RowDef rowDef = writeCheck(session, rowData, false);
+        RowDef rowDef = writeCheck(session, rowData);
         Exchange hEx = null;
         
         DELETE_ROW_TAP.in();
@@ -981,7 +777,7 @@ public class PersistitStore extends AbstractStore<Exchange, PersistitException> 
 
         // RowDefs may be different (e.g. during an ALTER)
         // Only non-pk or grouping columns could have change in this scenario
-        RowDef rowDef = writeCheck(session, oldRowData, false);
+        RowDef rowDef = writeCheck(session, oldRowData);
         RowDef newRowDef = rowDefFromExplicitOrId(session, newRowData);
         PersistitAdapter adapter = adapter(session);
         Exchange hEx = null;
@@ -1036,7 +832,7 @@ public class PersistitStore extends AbstractStore<Exchange, PersistitException> 
                 // rows maintained. tablesRequiringHKeyMaintenance contains the ordinals of the tables whose hkeys
                 // could possible be affected.
                 deleteRow(session, oldRowData, true, false, tablesRequiringHKeyMaintenance, true);
-                writeRowStandard(session, mergedRowData, tablesRequiringHKeyMaintenance, true); // May throw DuplicateKeyException
+                writeRow(session, mergedRowData, tablesRequiringHKeyMaintenance, true); // May throw DuplicateKeyException
             }
         } catch(PersistitException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
@@ -1096,7 +892,7 @@ public class PersistitStore extends AbstractStore<Exchange, PersistitException> 
                 }
                 if (!cascadeDelete) {
                     // Reinsert it, recomputing the hkey and maintaining indexes
-                    writeRowStandard(session, descendentRowData, tablesRequiringHKeyMaintenance, false);
+                    writeRow(session, descendentRowData, tablesRequiringHKeyMaintenance, false);
                 }
             }
         }
@@ -1146,28 +942,19 @@ public class PersistitStore extends AbstractStore<Exchange, PersistitException> 
             throw new UnsupportedOperationException("can't update group indexes from PersistitStore: " + index);
         }
     }
+
     private void insertIntoIndex(Session session,
                                  Index index,
                                  RowData rowData,
                                  Key hkey,
                                  PersistitIndexRowBuffer indexRow) throws PersistitException
     {
-        insertIntoIndex(session, index, rowData, hkey, indexRow, DIRECT_STORAGE);
-    }
-
-    private void insertIntoIndex(Session session,
-                                 Index index,
-                                 RowData rowData,
-                                 Key hkey,
-                                 PersistitIndexRowBuffer indexRow,
-                                 StorageAction storageAction) throws PersistitException
-    {
         checkNotGroupIndex(index);
         Exchange iEx = getExchange(session, index);
         try {
             constructIndexRow(iEx, rowData, index, hkey, indexRow, true);
             checkUniqueness(index, rowData, iEx);
-            storageAction.store(iEx);
+            iEx.store();
         } finally {
             releaseExchange(session, iEx);
         }
@@ -1462,25 +1249,6 @@ public class PersistitStore extends AbstractStore<Exchange, PersistitException> 
         return (PersistitAdapter) session.get(StoreAdapter.STORE_ADAPTER_KEY);
     }
 
-    private TreeBuilder createTreeBuilder(String name, float bufferBoolFraction) {
-        TreeBuilder tb = new TreeBuilder(getDb(), name, -1, bufferBoolFraction)
-        // TODO: throw an Akiban dup-key exception once we can handle them
-        {
-            @Override
-            protected boolean duplicateKeyDetected(Tree tree, Key key, Value v1, Value v2) throws Exception {
-                throw new DuplicateKeyException("unknown index with tree<" + tree.getName() + ">", key);
-            }
-        };
-        if (treeBuilderDirs != null) {
-            try {
-                tb.setSortTreeDirectories(treeBuilderDirs);
-            } catch (Exception e) {
-                throw new AkibanInternalException("while creating TreeBuilder", e);
-            }
-        }
-        return tb;
-    }
-
     private void lockKeys(PersistitAdapter adapter, RowDef rowDef, RowData rowData, Exchange exchange)
         throws PersistitException
     {
@@ -1557,77 +1325,5 @@ public class PersistitStore extends AbstractStore<Exchange, PersistitException> 
             LOG.debug("Exception removing tree from Persistit", e);
             throw PersistitAdapter.wrapPersistitException(session, e);
         }
-    }
-
-    private class Bulkload {
-
-        Bulkload(final Persistit persistit, AkibanInformationSchema ais) {
-            this.persistit = persistit;
-            groupTableKey = new ThreadLocal<Key>() {
-                @Override
-                protected Key initialValue() {
-                    return new Key(persistit);
-                }
-            };
-
-            groupTableValue = new ThreadLocal<Value>() {
-                @Override
-                protected Value initialValue() {
-                    return new Value(persistit);
-                }
-            };
-            pkStorage = new TreeBuilderStorage("pk_TreeBuilder", pkBlBufferAllocation);
-            groupBuilder = new TreeBuilderStorage("group_TreeBuilder", groupBlBufferAllocation);
-            this.ais = ais;
-        }
-
-        public final Persistit persistit;
-        public final TreeBuilderStorage pkStorage;
-        public final TreeBuilderStorage groupBuilder;
-        public final AkibanInformationSchema ais;
-        public final ThreadLocal<Key> groupTableKey;
-        public final ThreadLocal<Value> groupTableValue;
-        public final Set<RowDef> seenTables = new HashSet<>();
-        public final Map<RowDef, AtomicLong> rowsByRowDef =
-                Collections.synchronizedMap(new HashMap<RowDef, AtomicLong>());
-        public final Map<RowDef, AtomicLong> hiddenPks =
-                Collections.synchronizedMap(new HashMap<RowDef, AtomicLong>());
-        public RowDef activeRowDef; // guarded by "this"
-        public AtomicLong activeHiddenPk; // guarded by "this"
-        public AtomicLong activeRowsInserted; // guarded by "this"
-    }
-
-    private abstract static class StorageAction {
-
-        public void store(Exchange exchange) {
-            try {
-                doStore(exchange);
-            }
-            catch (InvalidOperationException e) {
-                throw e;
-            }
-            catch (PersistitException e) {
-                throw new PersistitAdapterException(e);
-            }
-            catch (Exception e) {
-                LOG.error("while storing key-value pair: {} = {}", exchange, exchange.getValue());
-                throw new AkibanInternalException("while storing value", e);
-            }
-        }
-
-        protected abstract void doStore(Exchange exchange) throws Exception;
-    }
-
-    private class TreeBuilderStorage extends StorageAction {
-        @Override
-        public void doStore(Exchange exchange) throws Exception {
-            treeBuilder.store(exchange);
-        }
-
-        private TreeBuilderStorage(String name, float allocation) {
-            this.treeBuilder = createTreeBuilder(name, allocation);
-        }
-
-        private final TreeBuilder treeBuilder;
     }
 }

@@ -1554,12 +1554,6 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                 "- output: [[3, 'Zoolander'],[1, 'Smith'],[2, 'Jones'],[4, 'Adams']]");
     }
 
-    @Test
-    public void testIgnoreBulkloadCommand() throws Exception {
-        testYamlFail("---\n- Bulkload: /home/akiba/fts_basis.properties\n"+
-        "- properties: {'dataset.coi.address.ratio': 3, 'dataset.coi.order.ratio': 2, 'dataset.coi.customer.count': 200, 'dataset.coi.item.ratio': 2}\n...");
-    }
-    
     /* Test Statement warnings_count */
     @Test
     public void testStatementWarningsCountNoValue() throws Exception {
