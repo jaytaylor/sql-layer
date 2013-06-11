@@ -102,32 +102,6 @@ public class Column implements ColumnContainer
     public String toString()
     {
         return table.getName().getTableName() + "." + columnName;
-        /*** Too verbose for my taste. Restore this if you really need it
-        StringBuilder typeDescription = new StringBuilder();
-        typeDescription.append(type.name());
-        if (type.nTypeParameters() > 0) {
-            typeDescription.append("(");
-            typeDescription.append(typeParameter1);
-            if (type.nTypeParameters() > 1) {
-                typeDescription.append(", ");
-                typeDescription.append(typeParameter2);
-            }
-            typeDescription.append(")");
-        }
-        String s;
-        if (groupColumn == null && userColumn == null) {
-            s = "Column(" + columnName + ": " + typeDescription + ")";
-        } else if (groupColumn != null) {
-            s = "Column(" + columnName + ": " + typeDescription + " -> "
-                + groupColumn.getTable().getName().getTableName() + "."
-                + groupColumn.getName() + ")";
-        } else {
-            s = "Column(" + columnName + ": " + typeDescription + " -> "
-                + userColumn.getTable().getName().getTableName() + "."
-                + userColumn.getName() + ")";
-        }
-        return s;
-         ***/
     }
 
     public void finishCreating() {

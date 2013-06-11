@@ -19,9 +19,6 @@ package com.akiban.ais.model;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
-
-import com.akiban.ais.gwtutils.SerializableEnumSet;
 
 public class Join implements Traversable, HasGroup
 {
@@ -94,45 +91,9 @@ public class Join implements Traversable, HasGroup
         this.group = group;
     }
 
-    public Integer getWeight()
-    {
-        return weight;
-    }
-
-    public void setWeight(Integer weight)
-    {
-        this.weight = weight;
-    }
-
     public List<JoinColumn> getJoinColumns()
     {
         return joinColumns;
-    }
-
-    public GroupingUsage getGroupingUsage()
-    {
-        return groupingUsage;
-    }
-
-    public void setGroupingUsage(GroupingUsage usage)
-    {
-        this.groupingUsage = usage;
-    }
-
-
-    public Set<SourceType> getSourceTypes()
-    {
-        return sourceTypes;
-    }
-    
-    public int getSourceTypesInt() {
-        return sourceTypes.toInt();
-    }
-
-    public void setSourceTypes(SerializableEnumSet<SourceType> sourceTypes)
-    {
-        assert sourceTypes != null;
-        this.sourceTypes = sourceTypes;
     }
 
     public Column getMatchingChild(Column parentColumn)
@@ -183,16 +144,6 @@ public class Join implements Traversable, HasGroup
         joinColumns = new LinkedList<>();
     }
 
-    public enum GroupingUsage
-    {
-        ALWAYS, NEVER, WHEN_OPTIMAL, IGNORE
-    }
-
-    public enum SourceType
-    {
-        FK, COLUMN_NAME, QUERY, USER
-    }
-
     /**
      * @deprecated - use {@link AkibanInformationSchema#validate(java.util.Collection)}
      * @param out
@@ -238,9 +189,5 @@ public class Join implements Traversable, HasGroup
     private final UserTable child;
     private final List<JoinColumn> joinColumns;
     private String joinName;
-    private Integer weight;
     private Group group;
-
-    private GroupingUsage groupingUsage = GroupingUsage.WHEN_OPTIMAL;
-    private SerializableEnumSet<SourceType> sourceTypes = new SerializableEnumSet<>(SourceType.class);
 }

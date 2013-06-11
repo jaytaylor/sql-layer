@@ -19,10 +19,9 @@ package com.akiban.server.api.dml.scan;
 
 import java.nio.ByteBuffer;
 
-import com.akiban.server.api.common.ByteBufferWriter;
 import com.akiban.server.api.common.WrongByteAllocationException;
 
-public final class CursorId extends ByteBufferWriter {
+public final class CursorId {
     private static final int SIZE_ON_BUFFER = 2 * (Long.SIZE / 8) + Integer.SIZE / 8;
 
     private final long sessionId;
@@ -46,13 +45,6 @@ public final class CursorId extends ByteBufferWriter {
         sessionId = readFrom.getLong();
         cursorId = readFrom.getLong();
         tableId = readFrom.getInt();
-    }
-
-    @Override
-    protected void writeToBuffer(ByteBuffer output) throws Exception {
-        output.putLong(sessionId);
-        output.putLong(cursorId);
-        output.putInt(tableId);
     }
 
     public int getTableId() {

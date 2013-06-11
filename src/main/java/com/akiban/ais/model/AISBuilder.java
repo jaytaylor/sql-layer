@@ -29,9 +29,6 @@ import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.ais.model.Join.GroupingUsage;
-import com.akiban.ais.model.Join.SourceType;
-
 // AISBuilder can be used to create an AIS. The API is designed to sify the creation of an AIS during a scan
 // of a dump. The user need not search the AIS and hold on to AIS objects (UserTable, Column, etc.). Instead,
 // only names from the dump need be supplied. 
@@ -521,7 +518,6 @@ public class AISBuilder {
         checkCycle(child, group);
         setTablesGroup(child, group);
         join.setGroup(group);
-        join.setWeight(weight);
         assert join.getParent() == parent : join;
         checkGroupAddition(group, join.getGroup(), joinName);
     }
@@ -621,9 +617,6 @@ public class AISBuilder {
         Join parentJoin = table.getParentJoin();
         if (parentJoin != null) {
             parentJoin.setGroup(null);
-
-            // set group usage to NEVER on old parent join
-            parentJoin.setGroupingUsage(GroupingUsage.NEVER);
         }
 
         // Move table to group. Get the children first, because moving the table
@@ -634,10 +627,6 @@ public class AISBuilder {
 
         // Move the join to the group
         join.setGroup(group);
-
-        // set group usage to ALWAYS on new join
-        join.getSourceTypes().add(SourceType.USER);
-        join.setGroupingUsage(GroupingUsage.ALWAYS);
 
         moveTree(children, group);
     }
@@ -663,11 +652,6 @@ public class AISBuilder {
         Join parentJoin = table.getParentJoin();
         if (parentJoin != null) {
             parentJoin.setGroup(null);
-        }
-        // find all candidate parent joins and set usage to NEVER to indicate
-        // table should be ROOT
-        for (Join canParentJoin : table.getCandidateParentJoins()) {
-            canParentJoin.setGroupingUsage(GroupingUsage.NEVER);
         }
 
         // Move table to group. Get the children first (see comment in

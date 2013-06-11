@@ -1126,64 +1126,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public IndexCheckSummary checkAndFixIndexes(Session session, String schemaRegex, String tableRegex) {
-        long startNs = System.nanoTime();
-        Pattern schemaPattern = Pattern.compile(schemaRegex);
-        Pattern tablePattern = Pattern.compile(tableRegex);
-        List<IndexCheckResult> results = new ArrayList<>();
-        AkibanInformationSchema ais = getAIS(session);
-
-        for (Map.Entry<TableName,UserTable> entry : ais.getUserTables().entrySet()) {
-            TableName tName = entry.getKey();
-            if (schemaPattern.matcher(tName.getSchemaName()).find()
-                    && tablePattern.matcher(tName.getTableName()).find())
-            {
-                UserTable uTable = entry.getValue();
-                List<Index> indexes = new ArrayList<>();
-                indexes.add(uTable.getPrimaryKeyIncludingInternal().getIndex());
-                for (Index gi : uTable.getGroup().getIndexes()) {
-                    if (gi.leafMostTable().equals(uTable))
-                        indexes.add(gi);
-                }
-                for (Index index : indexes) {
-                    IndexCheckResult indexCheckResult = checkAndFixIndex(session, index);
-                    results.add(indexCheckResult);
-                }
-            }
-        }
-        long endNs = System.nanoTime();
-        return new IndexCheckSummary(results,  endNs - startNs);
-    }
-
-    private IndexCheckResult checkAndFixIndex(Session session, Index index) {
-        try {
-            long expected = indexStatisticsService.countEntries(session, index);
-            long actual = indexStatisticsService.countEntriesManually(session, index);
-            if (expected != actual) {
-                PersistitStore pStore = this.store().getPersistitStore();
-                if (index.isTableIndex()) {
-                    index.leafMostTable().rowDef().getTableStatus().setRowCount(session, actual);
-                }
-                else {
-                    final Exchange ex = pStore.getExchange(session, index);
-                    try {
-                        AccumulatorAdapter accum = new AccumulatorAdapter(AccumInfo.ROW_COUNT, ex.getTree());
-                        accum.set(actual);
-                    }
-                    finally {
-                        pStore.releaseExchange(session, ex);
-                    }
-                }
-            }
-            return new IndexCheckResult(index.getIndexName(), expected, actual, indexStatisticsService.countEntries(session, index));
-        }
-        catch (Exception e) {
-            logger.error("while checking/fixing " + index, e);
-            return new IndexCheckResult(index.getIndexName(), -1, -1, -1);
-        }
-    }
-
-    @Override
     public void createView(Session session, View view)
     {
         schemaManager().createView(session, view);

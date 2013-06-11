@@ -418,23 +418,6 @@ public class UserTable extends Table
         return getGroup() == null || getParentJoin() == null;
     }
 
-    public MigrationUsage getMigrationUsage()
-    {
-        return migrationUsage;
-    }
-
-    public void setMigrationUsage(MigrationUsage migrationUsage)
-    {
-        assert (this.migrationUsage != MigrationUsage.INCOMPATIBLE || migrationUsage == MigrationUsage.INCOMPATIBLE)
-            : "cannot change migration usage from INCOMPATIBLE to " + migrationUsage;
-        this.migrationUsage = migrationUsage;
-    }
-
-    public void setEngine(String engine)
-    {
-        this.engine = engine;
-    }
-
     public HKey hKey()
     {
         assert getGroup() != null;
