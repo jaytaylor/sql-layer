@@ -115,16 +115,13 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
 
     @Test
     public void testDelete1 () throws InterruptedException, PersistitException {
-        logger.error("Running test delete 1");
+        logger.debug("Running test delete 1");
 
         // disable the populate worker (so it doesn't read all the entries
         // out before we get a chance to look at the tree.
         createFullTextIndex(serviceManager(),
                 SCHEMA, "o", "idx3_o",
                 "oid", "c1", "c2", "c3", "c4");
-        //fullTextImpl.getBackgroundWorks().get(0).forceExecution();
-        //WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
-        
         new Thread(new DropIndex()).start();
         
         try {
@@ -143,7 +140,7 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
     
     @Test
     public void testDelete2() throws InterruptedException, PersistitException {
-        logger.error("Running test delete 2");
+        logger.debug("Running test delete 2");
         createFullTextIndex(serviceManager(),
                 SCHEMA, "o", "idx3_o",
                 "oid", "c1", "c2", "c3", "c4");
@@ -173,13 +170,11 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
     
     @Test
     public void testDelete3() throws InterruptedException, PersistitException {
-        logger.error("Running test delete 3");
+        logger.debug("Running test delete 3");
         createFullTextIndex(serviceManager(),
                 SCHEMA, "o", "idx3_o",
                 "oid", "c1", "c2", "c3", "c4");
         fullTextImpl.getBackgroundWorks().get(0).forceExecution();
-        //WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
-        
         deleteFullTextIndex(serviceManager(), new IndexName(new TableName(SCHEMA, "o"), "idx3_o"));
         
         verifyClean(fullTextImpl);
@@ -188,7 +183,7 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
 
     @Test
     public void testDropUpdate1 () throws InterruptedException {
-        logger.error("Running test drop update 1");
+        logger.debug("Running test drop update 1");
 
         // create the index, let it complete
         createFullTextIndex(serviceManager(),
