@@ -202,12 +202,6 @@ public class PersistitStore extends AbstractStore implements Service
      *           table[0],
      *      and  indexName[0]
      *  with correct values
-     * 
-     * @param schema
-     * @param table
-     * @param indexName
-     * @param ex
-     * @return 
      */
     public HKeyBytesStream getChangedRows(Session session) throws PersistitException
     {
@@ -468,11 +462,6 @@ public class PersistitStore extends AbstractStore implements Service
          * Check if the given id is the same as the current index's id.
          * 
          * (If the index with the given name no longer exists, return false)
-         * @param schema
-         * @param table
-         * @param indexName
-         * @param id
-         * @return 
          */
         private int sameIdAsCurrent(Session session, IndexName indexName, Integer id)
         {
@@ -720,7 +709,7 @@ public class PersistitStore extends AbstractStore implements Service
         exchange.fetch();
         PersistitIndexRowBuffer indexRow = null;
         if (exchange.getValue().isDefined()) {
-            indexRow = new PersistitIndexRowBuffer(adapter);
+            indexRow = new PersistitIndexRowBuffer(this);
             indexRow.resetForRead(pkIndex, exchange.getKey(), exchange.getValue());
         }
         return indexRow;
@@ -786,7 +775,7 @@ public class PersistitStore extends AbstractStore implements Service
                 }
             }
 
-            PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
+            PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
             addChangeFor(rowDef.userTable(), session, hEx.getKey());
             for (Index index : rowDef.getIndexes()) {
                 insertIntoIndex(session, index, rowData, hEx.getKey(), indexRow, deferIndexes);
@@ -882,7 +871,7 @@ public class PersistitStore extends AbstractStore implements Service
             Tree tree = treeService.populateTreeCache(rowDef.getGroup()).getTree();
             bulkload.groupBuilder.treeBuilder.store(tree, groupTableKey, groupTableValue);
 
-            PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
+            PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
             for (Index index : rowDef.getIndexes()) {
                 StorageAction action = index.isPrimaryKey() ? bulkload.pkStorage : bulkload.groupBuilder;
                 insertIntoIndex(session, index, rowData, groupTableKey, indexRow, deferIndexes, action);
@@ -1033,7 +1022,7 @@ public class PersistitStore extends AbstractStore implements Service
 
             // Remove the indexes, including the PK index
 
-            PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
+            PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
             if(deleteIndexes) {
                 for (Index index : rowDef.getIndexes()) {
                     deleteIndex(session, index, rowData, hEx.getKey(), indexRow);
@@ -1121,7 +1110,7 @@ public class PersistitStore extends AbstractStore implements Service
                 // Update the indexes (new row)
                 addChangeFor(newRowDef.userTable(), session, hEx.getKey());
                 
-                PersistitIndexRowBuffer indexRowBuffer = new PersistitIndexRowBuffer(adapter);
+                PersistitIndexRowBuffer indexRowBuffer = new PersistitIndexRowBuffer(this);
                 Index[] indexes = (indexesToMaintain == null) ? rowDef.getIndexes() : indexesToMaintain;
                 for (Index index : indexes) {
                     if(indexesAsInsert) {
@@ -1428,7 +1417,7 @@ public class PersistitStore extends AbstractStore implements Service
             userRowDefs.put(rowDef.getRowDefId(), rowDef);
             groups.add(rowDef.table().getGroup());
         }
-        PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
+        PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
         for (Group group : groups) {
             RowData rowData = new RowData(new byte[MAX_ROW_SIZE]);
 

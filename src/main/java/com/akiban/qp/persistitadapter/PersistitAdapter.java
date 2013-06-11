@@ -396,7 +396,7 @@ public class PersistitAdapter extends StoreAdapter
     // For use within hierarchy
 
     @Override
-    protected Store getUnderlyingStore() {
+    public Store getUnderlyingStore() {
         return store;
     }
 
