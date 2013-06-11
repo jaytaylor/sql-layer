@@ -86,47 +86,43 @@ public abstract class AbstractStore<StoreType,ExceptionType extends Exception> i
     // TODO: These can be protected after OperatorStore refactoring
 
     public void constructHKey(Session session,
-                              Key hKeyOut,
-                              RowDef rowDef,
-                              RowData rowData,
-                              boolean insertingRow) throws ExceptionType {
-        constructHKey(session, hKeyOut, rowDef, rowData, insertingRow, null);
-    }
-
-    public void constructHKey(Session session,
-                              Key hKeyOut,
                               RowDef rowDef,
                               RowData rowData,
                               boolean insertingRow,
-                              AtomicLong hiddenPk) throws ExceptionType {
-        // Initialize the hkey being constructed
+                              Key hKeyOut) throws ExceptionType {
+        constructHKey(session, rowDef, rowData, insertingRow, null, hKeyOut);
+    }
+
+    public void constructHKey(Session session,
+                              RowDef rowDef,
+                              RowData rowData,
+                              boolean insertingRow,
+                              AtomicLong hiddenPk,
+                              Key hKeyOut) throws ExceptionType {
+        // Initialize the HKey being constructed
         PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKeyOut);
         hKeyAppender.key().clear();
+
         // Metadata for the row's table
         UserTable table = rowDef.userTable();
         FieldDef[] fieldDefs = rowDef.getFieldDefs();
-        // Metadata and other state for the parent table
-        IndexToHKey indexToHKey = null;
+
+        // Only set if parent row is looked up
         int i2hPosition = 0;
+        IndexToHKey indexToHKey = null;
         StoreType parentStoreData = null;
         PersistitIndexRowBuffer parentPKIndexRow = null;
-        // Nested loop over hkey metadata: All the segments of an hkey, and all
-        // the columns of a segment.
-        List<HKeySegment> hKeySegments = table.hKey().segments();
-        int s = 0;
-        while(s < hKeySegments.size()) {
-            HKeySegment hKeySegment = hKeySegments.get(s++);
-            // Write the ordinal for this segment
+
+        // All columns of all segments of the HKey
+        for(HKeySegment hKeySegment : table.hKey().segments()) {
+            // Ordinal for this segment
             RowDef segmentRowDef = hKeySegment.table().rowDef();
-            hKeyAppender.append(segmentRowDef.userTable().getOrdinal());
-            // Iterate over the segment's columns
-            List<HKeyColumn> hKeyColumns = hKeySegment.columns();
-            int c = 0;
-            while (c < hKeyColumns.size()) {
-                HKeyColumn hKeyColumn = hKeyColumns.get(c++);
+            hKeyAppender.append(segmentRowDef.table().getOrdinal());
+            // Segment's columns
+            for(HKeyColumn hKeyColumn : hKeySegment.columns()) {
                 UserTable hKeyColumnTable = hKeyColumn.column().getUserTable();
-                if (hKeyColumnTable != table) {
-                    // Hkey column from row of parent table
+                if(hKeyColumnTable != table) {
+                    // HKey column from row of parent table
                     if (parentStoreData == null) {
                         // Initialize parent metadata and state
                         RowDef parentRowDef = rowDef.getParentRowDef();
@@ -139,17 +135,18 @@ public abstract class AbstractStore<StoreType,ExceptionType extends Exception> i
                         assert indexToHKey.getOrdinal(i2hPosition) == segmentRowDef.userTable().getOrdinal() : hKeyColumn;
                         ++i2hPosition;
                     }
-                    if (parentPKIndexRow != null) {
+                    if(parentPKIndexRow != null) {
                         parentPKIndexRow.appendFieldTo(indexToHKey.getIndexRowPosition(i2hPosition), hKeyAppender.key());
                     } else {
-                        hKeyAppender.appendNull(); // orphan row
+                        // Orphan row
+                        hKeyAppender.appendNull();
                     }
                     ++i2hPosition;
                 } else {
-                    // Hkey column from rowData
+                    // HKey column from rowData
                     Column column = hKeyColumn.column();
                     FieldDef fieldDef = fieldDefs[column.getPosition()];
-                    if (insertingRow && column.isAkibanPKColumn()) {
+                    if(insertingRow && column.isAkibanPKColumn()) {
                         // Must be a PK-less table. Use unique id from TableStatus.
                         final long uniqueId;
                         if(hiddenPk == null) {
@@ -166,7 +163,7 @@ public abstract class AbstractStore<StoreType,ExceptionType extends Exception> i
                 }
             }
         }
-        if (parentStoreData != null) {
+        if(parentStoreData != null) {
             releaseStoreType(session, parentStoreData);
         }
     }

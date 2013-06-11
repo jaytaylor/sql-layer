@@ -671,7 +671,7 @@ public class PersistitStore extends AbstractStore<Exchange, PersistitException> 
             // being done as part of hkey maintenance (called from propagateDownGroup with propagateHKeyChanges
             // false), then we are deleting and reinserting a row, and we don't want the PK value changed.
             // See bug 1020342.
-            constructHKey(session, hEx.getKey(), rowDef, rowData, propagateHKeyChanges);
+            constructHKey(session, rowDef, rowData, propagateHKeyChanges, hEx.getKey());
             // Don't check hkey uniqueness. That requires a database access (hEx.isValueDefined()), and we are not
             // in a good position to report a meaningful uniqueness violation, e.g. on the PK, since we don't have
             // the PK value handy. Instead, rely on PK validation when indexes are maintained.
@@ -777,7 +777,7 @@ public class PersistitStore extends AbstractStore<Exchange, PersistitException> 
         Key groupTableKey = bulkload.groupTableKey.get();
         Value groupTableValue = bulkload.groupTableValue.get();
         try {
-            constructHKey(session, groupTableKey, rowDef, rowData, true, hiddenPk); // invokes key.clear()
+            constructHKey(session, rowDef, rowData, true, hiddenPk, groupTableKey); // invokes key.clear()
             groupTableValue.clear();
             packRowData(groupTableValue, rowData);
             Tree tree = treeService.populateTreeCache(rowDef.getGroup()).getTree();
@@ -916,7 +916,7 @@ public class PersistitStore extends AbstractStore<Exchange, PersistitException> 
             hEx = getExchange(session, rowDef);
             
             lockKeys(adapter(session), rowDef, rowData, hEx);
-            constructHKey(session, hEx.getKey(), rowDef, rowData, false);
+            constructHKey(session, rowDef, rowData, false, hEx.getKey());
             hEx.fetch();
             //
             // Verify that the row exists
@@ -991,7 +991,7 @@ public class PersistitStore extends AbstractStore<Exchange, PersistitException> 
             hEx = getExchange(session, rowDef);
             lockKeys(adapter, rowDef, oldRowData, hEx);
             lockKeys(adapter, newRowDef, newRowData, hEx);
-            constructHKey(session, hEx.getKey(), rowDef, oldRowData, false);
+            constructHKey(session, rowDef, oldRowData, false, hEx.getKey());
             hEx.fetch();
             //
             // Verify that the row exists
