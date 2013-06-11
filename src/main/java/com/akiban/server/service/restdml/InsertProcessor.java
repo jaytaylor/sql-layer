@@ -30,17 +30,13 @@ import com.akiban.ais.model.CacheValueGenerator;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.FKValueMismatchException;
-import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.externaldata.JsonRowWriter;
 import com.akiban.server.service.externaldata.JsonRowWriter.WriteCapturePKRow;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.types3.TClass;
@@ -53,11 +49,10 @@ public class InsertProcessor extends DMLProcessor {
     private OperatorGenerator insertGenerator;
     private static final Logger LOG = LoggerFactory.getLogger(InsertProcessor.class);
 
-    public InsertProcessor (ConfigurationService configService, 
-            TreeService treeService, 
+    public InsertProcessor (
             Store store,
             T3RegistryService t3RegistryService) {
-        super (configService, treeService, store, t3RegistryService);
+        super (store, t3RegistryService);
     }
     
     private static final CacheValueGenerator<InsertGenerator> CACHED_INSERT_GENERATOR =

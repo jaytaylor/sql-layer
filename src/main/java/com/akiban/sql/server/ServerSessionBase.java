@@ -38,7 +38,6 @@ import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.KeyCreator;
-import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.sql.optimizer.AISBinderContext;
 import com.akiban.sql.optimizer.rule.cost.CostEstimator;
@@ -187,11 +186,6 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             return adapters.get(StoreAdapter.AdapterType.MEMORY_ADAPTER);
         }
         return adapters.get(StoreAdapter.AdapterType.STORE_ADAPTER);
-    }
-
-    @Override
-    public TreeService getTreeService() {
-        return reqs.treeService();
     }
 
     @Override

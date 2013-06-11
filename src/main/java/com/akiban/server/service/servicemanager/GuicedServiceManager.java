@@ -35,7 +35,6 @@ import com.akiban.server.service.servicemanager.configuration.ServiceConfigurati
 import com.akiban.server.service.servicemanager.configuration.yaml.YamlConfiguration;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.stats.StatisticsService;
-import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import org.slf4j.Logger;
@@ -120,11 +119,6 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
     @Override
     public Store getStore() {
         return getServiceByClass(Store.class);
-    }
-
-    @Override
-    public TreeService getTreeService() {
-        return getServiceByClass(TreeService.class);
     }
 
     @Override

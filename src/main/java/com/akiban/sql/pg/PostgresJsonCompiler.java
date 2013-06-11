@@ -17,6 +17,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.sql.optimizer.NestedResultSetTypeComputer;
 import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
@@ -51,9 +52,9 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
         typeComputer = new NestedResultSetTypeComputer(functionsRegistry);
     }
 
-    public static PostgresJsonCompiler create(PostgresServerSession server) {
+    public static PostgresJsonCompiler create(PostgresServerSession server, KeyCreator keyCreator) {
         PostgresJsonCompiler compiler = new PostgresJsonCompiler();
-        compiler.initServer(server);
+        compiler.initServer(server, keyCreator);
         compiler.initDone();
         return compiler;
     }

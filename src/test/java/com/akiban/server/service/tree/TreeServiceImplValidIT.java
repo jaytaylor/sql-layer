@@ -46,7 +46,7 @@ public class TreeServiceImplValidIT extends ITBase {
 
     @Test
     public void buildValidSchemaMap() throws Exception {
-        final TreeServiceImpl treeService = (TreeServiceImpl) serviceManager().getTreeService();
+        final TreeServiceImpl treeService = (TreeServiceImpl)treeService();
         final SortedMap<String, SchemaNode> result = treeService.getSchemaMap();
         assertEquals(4, result.size()); // +1 for default in base properties
         final String vs1 = treeService.volumeForTree("drupalxx","_schema_");

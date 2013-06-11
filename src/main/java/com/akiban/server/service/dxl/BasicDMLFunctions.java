@@ -61,14 +61,12 @@ import com.akiban.server.error.CursorIsUnknownException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.OldAISException;
-import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.RowOutputException;
 import com.akiban.server.error.ScanRetryAbandonedException;
 import com.akiban.server.error.TableDefinitionChangedException;
 import com.akiban.server.error.TableDefinitionMismatchException;
 import com.akiban.server.service.dxl.BasicDXLMiddleman.ScanData;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.RowCollector;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
@@ -77,7 +75,6 @@ import com.akiban.util.GrowableByteBuffer;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 import com.google.inject.Inject;
-import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,8 +92,8 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     private static PointTap SCAN_RETRY_ABANDON_TAP = Tap.createCount("BasicDMLFunctions: scan abandons");
 
     @Inject
-    BasicDMLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, TreeService treeService, DDLFunctions ddlFunctions) {
-        super(middleman, schemaManager, store, treeService);
+    BasicDMLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, DDLFunctions ddlFunctions) {
+        super(middleman, schemaManager, store);
         this.ddlFunctions = ddlFunctions;
         this.scanner = new Scanner();
     }

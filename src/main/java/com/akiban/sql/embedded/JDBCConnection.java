@@ -220,7 +220,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
 
     protected void rebuildCompiler() {
         initParser();
-        compiler = EmbeddedOperatorCompiler.create(this);
+        compiler = EmbeddedOperatorCompiler.create(this, reqs.store());
         initAdapters(compiler);
     }
 

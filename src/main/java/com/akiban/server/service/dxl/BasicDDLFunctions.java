@@ -114,8 +114,6 @@ import com.akiban.server.types3.texpressions.TCastExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
-import com.persistit.Exchange;
-import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.akiban.server.store.statistics.IndexStatisticsService;
@@ -266,7 +264,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             throw new UnsupportedDropException(table.getName());
         }
 
-        DMLFunctions dml = new BasicDMLFunctions(middleman(), schemaManager(), store(), treeService(), this);
+        DMLFunctions dml = new BasicDMLFunctions(middleman(), schemaManager(), store(), this);
         if(table.isRoot()) {
             // Root table and no child tables, can delete all associated trees
             store().removeTrees(session, table);
@@ -1256,10 +1254,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         schemaManager().dropSequence(session, sequence);
     }
 
-    BasicDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, TreeService treeService,
+    BasicDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store,
                       IndexStatisticsService indexStatisticsService, ConfigurationService configService,
                       T3RegistryService t3Registry, LockService lockService, TransactionService txnService) {
-        super(middleman, schemaManager, store, treeService);
+        super(middleman, schemaManager, store);
         this.indexStatisticsService = indexStatisticsService;
         this.configService = configService;
         this.t3Registry = t3Registry;

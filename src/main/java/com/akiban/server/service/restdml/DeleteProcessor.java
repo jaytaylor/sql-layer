@@ -29,9 +29,7 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.Row;
-import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.types3.mcompat.mtypes.MString;
@@ -42,11 +40,10 @@ public class DeleteProcessor extends DMLProcessor {
     private static final Logger LOG = LoggerFactory.getLogger(DeleteProcessor.class);
     private OperatorGenerator deleteGenerator;
     
-    public DeleteProcessor (ConfigurationService configService, 
-            TreeService treeService, 
+    public DeleteProcessor (
             Store store,
             T3RegistryService t3RegistryService) {
-        super (configService, treeService, store, t3RegistryService);
+        super (store, t3RegistryService);
     }
 
     private static final CacheValueGenerator<DeleteGenerator> CACHED_DELETE_GENERATOR =
