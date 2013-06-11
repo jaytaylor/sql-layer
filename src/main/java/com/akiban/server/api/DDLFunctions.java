@@ -35,7 +35,6 @@ import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchTableIdException;
 import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.service.dxl.IndexCheckSummary;
 import com.akiban.server.service.session.Session;
 
 import static com.akiban.ais.util.TableChangeValidator.ChangeLevel;
