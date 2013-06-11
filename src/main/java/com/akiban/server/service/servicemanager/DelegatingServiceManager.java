@@ -70,11 +70,6 @@ public abstract class DelegatingServiceManager implements ServiceManager {
     }
 
     @Override
-    public TreeService getTreeService() {
-        return delegate().getTreeService();
-    }
-
-    @Override
     public SchemaManager getSchemaManager() {
         return delegate().getSchemaManager();
     }

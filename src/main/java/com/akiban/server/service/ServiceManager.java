@@ -52,8 +52,6 @@ public interface ServiceManager extends ServiceManagerBase {
 
     Store getStore();
 
-    TreeService getTreeService();
-
     SchemaManager getSchemaManager();
 
     JmxRegistryService getJmxRegistryService();

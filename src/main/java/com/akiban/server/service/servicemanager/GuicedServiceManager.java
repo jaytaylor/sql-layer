@@ -123,11 +123,6 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
     }
 
     @Override
-    public TreeService getTreeService() {
-        return getServiceByClass(TreeService.class);
-    }
-
-    @Override
     public SchemaManager getSchemaManager() {
         return getServiceByClass(SchemaManager.class);
     }
