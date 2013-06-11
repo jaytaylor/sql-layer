@@ -33,21 +33,11 @@ class DXLMXBeanImpl implements DXLMXBean {
     }
 
     @Override
-    public void dropGroup(String schemaName, String groupName) {
-        Session session = sessionService.createSession();
-        try {
-            dxlService.ddlFunctions().dropGroup(session, new TableName(schemaName, groupName));
-        } finally {
-            session.close();
-        }
-    }
-
-    @Override
     public void dropAllGroups() {
         Session session = sessionService.createSession();
         try {
             for(TableName groupName : dxlService.ddlFunctions().getAIS(session).getGroups().keySet()) {
-                dropGroup(groupName.getSchemaName(), groupName.getTableName());
+                dxlService.ddlFunctions().dropGroup(session, groupName);
             }
         } finally {
             session.close();

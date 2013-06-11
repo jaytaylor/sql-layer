@@ -19,8 +19,6 @@ package com.akiban.server.service.dxl;
 
 @SuppressWarnings("unused") // jmx
 public interface DXLMXBean {
-    void dropGroup(String schemaName, String groupName) ;
-    
     void dropAllGroups() ;
 
     String printAIS();
