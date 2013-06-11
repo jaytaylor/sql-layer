@@ -64,7 +64,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class PersistitStore extends AbstractStore implements Service
+public class PersistitStore extends AbstractStore<Exchange, PersistitException> implements Service
 {
     private static final AtomicReference<Bulkload> activeBulkload = new AtomicReference<>();
 
@@ -99,8 +99,6 @@ public class PersistitStore extends AbstractStore implements Service
     private boolean writeLockEnabled;
 
     private boolean updateGroupIndexes;
-
-    private boolean deferIndexes = false;
 
     private final ConfigurationService config;
 
@@ -570,116 +568,19 @@ public class PersistitStore extends AbstractStore implements Service
     }
 
     public Exchange getExchange(Session session, Group group) {
-        return treeService.getExchange(session, group);
+        return createStoreType(session, group);
     }
 
     public Exchange getExchange(final Session session, final RowDef rowDef) {
-        return treeService.getExchange(session, rowDef.getGroup());
+        return createStoreType(session, rowDef.getGroup());
     }
 
     public Exchange getExchange(final Session session, final Index index) {
-        return treeService.getExchange(session, index.indexDef());
+        return createStoreType(session, index.indexDef());
     }
 
     public void releaseExchange(final Session session, final Exchange exchange) {
-        treeService.releaseExchange(session, exchange);
-    }
-
-    public long constructHKey(Session session,
-                              Exchange hEx,
-                              RowDef rowDef,
-                              RowData rowData,
-                              boolean insertingRow) throws PersistitException
-    {
-        return constructHKey(session, hEx.getKey(), rowDef, rowData, insertingRow, null);
-    }
-
-    // Given a RowData for a table, construct an hkey for a row in the table.
-    // For a table that does not contain its own hkey, this method uses the
-    // parent join columns as needed to find the hkey of the parent table.
-    public long constructHKey(Session session,
-                              Key hKey,
-                              RowDef rowDef,
-                              RowData rowData,
-                              boolean insertingRow,
-                              AtomicLong hiddenPk) throws PersistitException
-    {
-        PersistitAdapter adapter = adapter(session);
-        // Initialize the hkey being constructed
-        long uniqueId = -1;
-        PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKey);
-        hKeyAppender.key().clear();
-        // Metadata for the row's table
-        UserTable table = rowDef.userTable();
-        FieldDef[] fieldDefs = rowDef.getFieldDefs();
-        // Metadata and other state for the parent table
-        RowDef parentRowDef = rowDef.getParentRowDef();
-        TableIndex parentPK = null;
-        if (parentRowDef != null) {
-            parentPK = parentRowDef.getPKIndex();
-        }
-        IndexToHKey indexToHKey = null;
-        int i2hPosition = 0;
-        Exchange parentPKExchange = null;
-        PersistitIndexRowBuffer parentPKIndexRow = null;
-        // Nested loop over hkey metadata: All the segments of an hkey, and all
-        // the columns of a segment.
-        List<HKeySegment> hKeySegments = table.hKey().segments();
-        int s = 0;
-        while (s < hKeySegments.size()) {
-            HKeySegment hKeySegment = hKeySegments.get(s++);
-            // Write the ordinal for this segment
-            RowDef segmentRowDef = hKeySegment.table().rowDef();
-            hKeyAppender.append(segmentRowDef.userTable().getOrdinal());
-            // Iterate over the segment's columns
-            List<HKeyColumn> hKeyColumns = hKeySegment.columns();
-            int c = 0;
-            while (c < hKeyColumns.size()) {
-                HKeyColumn hKeyColumn = hKeyColumns.get(c++);
-                UserTable hKeyColumnTable = hKeyColumn.column().getUserTable();
-                if (hKeyColumnTable != table) {
-                    // Hkey column from row of parent table
-                    if (parentPKExchange == null) {
-                        // Initialize parent metadata and state
-                        assert parentRowDef != null : rowDef;
-                        assert parentPK != null : parentRowDef;
-                        indexToHKey = parentPK.indexToHKey();
-                        parentPKExchange = getExchange(session, parentPK);
-                        parentPKIndexRow = readPKIndexRow(adapter, parentPK, parentPKExchange, rowDef, rowData);
-                    }
-                    if(indexToHKey.isOrdinal(i2hPosition)) {
-                        assert indexToHKey.getOrdinal(i2hPosition) == segmentRowDef.userTable().getOrdinal() : hKeyColumn;
-                        ++i2hPosition;
-                    }
-                    if (parentPKIndexRow != null) {
-                        parentPKIndexRow.appendFieldTo(indexToHKey.getIndexRowPosition(i2hPosition), hKeyAppender.key());
-                    } else {
-                        hKeyAppender.appendNull(); // orphan row
-                    }
-                    ++i2hPosition;
-                } else {
-                    // Hkey column from rowData
-                    Column column = hKeyColumn.column();
-                    FieldDef fieldDef = fieldDefs[column.getPosition()];
-                    if (insertingRow && column.isAkibanPKColumn()) {
-                        // Must be a PK-less table. Use unique id from TableStatus.
-                        if (hiddenPk == null)
-                            uniqueId = segmentRowDef.getTableStatus().createNewUniqueID(session);
-                        else
-                            uniqueId = hiddenPk.incrementAndGet();
-                        hKeyAppender.append(uniqueId);
-                        // Write rowId into the value part of the row also.
-                        rowData.updateNonNullLong(fieldDef, uniqueId);
-                    } else {
-                        hKeyAppender.append(fieldDef, rowData);
-                    }
-                }
-            }
-        }
-        if (parentPKExchange != null) {
-            releaseExchange(session, parentPKExchange);
-        }
-        return uniqueId;
+        releaseStoreType(session, exchange);
     }
 
     private static void constructIndexRow(Exchange exchange,
@@ -694,11 +595,22 @@ public class PersistitStore extends AbstractStore implements Service
         indexRow.close(forInsert);
     }
 
-    private PersistitIndexRowBuffer readPKIndexRow(PersistitAdapter adapter,
-                                                   Index pkIndex,
-                                                   Exchange exchange,
-                                                   RowDef rowDef,
-                                                   RowData rowData) throws PersistitException
+    @Override
+    protected Exchange createStoreType(Session session, TreeLink treeLink) {
+        return treeService.getExchange(session, treeLink);
+    }
+
+    @Override
+    protected void releaseStoreType(Session session, Exchange exchange) {
+        treeService.releaseExchange(session, exchange);
+    }
+
+    @Override
+    public PersistitIndexRowBuffer readPKIndexRow(Session session,
+                                                  Index pkIndex,
+                                                  Exchange exchange,
+                                                  RowDef rowDef,
+                                                  RowData rowData) throws PersistitException
     {
         PersistitKeyAppender keyAppender = PersistitKeyAppender.create(exchange.getKey());
         int[] fields = rowDef.getParentJoinFields();
@@ -759,7 +671,7 @@ public class PersistitStore extends AbstractStore implements Service
             // being done as part of hkey maintenance (called from propagateDownGroup with propagateHKeyChanges
             // false), then we are deleting and reinserting a row, and we don't want the PK value changed.
             // See bug 1020342.
-            constructHKey(session, hEx, rowDef, rowData, propagateHKeyChanges);
+            constructHKey(session, hEx.getKey(), rowDef, rowData, propagateHKeyChanges);
             // Don't check hkey uniqueness. That requires a database access (hEx.isValueDefined()), and we are not
             // in a good position to report a meaningful uniqueness violation, e.g. on the PK, since we don't have
             // the PK value handy. Instead, rely on PK validation when indexes are maintained.
@@ -778,7 +690,7 @@ public class PersistitStore extends AbstractStore implements Service
             PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
             addChangeFor(rowDef.userTable(), session, hEx.getKey());
             for (Index index : rowDef.getIndexes()) {
-                insertIntoIndex(session, index, rowData, hEx.getKey(), indexRow, deferIndexes);
+                insertIntoIndex(session, index, rowData, hEx.getKey(), indexRow);
             }
 
             // bug1112940: Bump row count *after* uniqueness checks in insertIntoIndex
@@ -874,7 +786,7 @@ public class PersistitStore extends AbstractStore implements Service
             PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
             for (Index index : rowDef.getIndexes()) {
                 StorageAction action = index.isPrimaryKey() ? bulkload.pkStorage : bulkload.groupBuilder;
-                insertIntoIndex(session, index, rowData, groupTableKey, indexRow, deferIndexes, action);
+                insertIntoIndex(session, index, rowData, groupTableKey, indexRow, action);
             }
         } catch (InvalidOperationException e) {
             throw e;
@@ -1004,7 +916,7 @@ public class PersistitStore extends AbstractStore implements Service
             hEx = getExchange(session, rowDef);
             
             lockKeys(adapter(session), rowDef, rowData, hEx);
-            constructHKey(session, hEx, rowDef, rowData, false);
+            constructHKey(session, hEx.getKey(), rowDef, rowData, false);
             hEx.fetch();
             //
             // Verify that the row exists
@@ -1079,7 +991,7 @@ public class PersistitStore extends AbstractStore implements Service
             hEx = getExchange(session, rowDef);
             lockKeys(adapter, rowDef, oldRowData, hEx);
             lockKeys(adapter, newRowDef, newRowData, hEx);
-            constructHKey(session, hEx, rowDef, oldRowData, false);
+            constructHKey(session, hEx.getKey(), rowDef, oldRowData, false);
             hEx.fetch();
             //
             // Verify that the row exists
@@ -1114,7 +1026,7 @@ public class PersistitStore extends AbstractStore implements Service
                 Index[] indexes = (indexesToMaintain == null) ? rowDef.getIndexes() : indexesToMaintain;
                 for (Index index : indexes) {
                     if(indexesAsInsert) {
-                        insertIntoIndex(session, index, mergedRowData, hEx.getKey(), indexRowBuffer, deferIndexes);
+                        insertIntoIndex(session, index, mergedRowData, hEx.getKey(), indexRowBuffer);
                     } else {
                         updateIndex(session, index, rowDef, currentRow, mergedRowData, hEx.getKey(), indexRowBuffer);
                     }
@@ -1238,10 +1150,9 @@ public class PersistitStore extends AbstractStore implements Service
                                  Index index,
                                  RowData rowData,
                                  Key hkey,
-                                 PersistitIndexRowBuffer indexRow,
-                                 boolean deferIndexes) throws PersistitException
+                                 PersistitIndexRowBuffer indexRow) throws PersistitException
     {
-        insertIntoIndex(session, index, rowData, hkey, indexRow, deferIndexes, DIRECT_STORAGE);
+        insertIntoIndex(session, index, rowData, hkey, indexRow, DIRECT_STORAGE);
     }
 
     private void insertIntoIndex(Session session,
@@ -1249,7 +1160,6 @@ public class PersistitStore extends AbstractStore implements Service
                                  RowData rowData,
                                  Key hkey,
                                  PersistitIndexRowBuffer indexRow,
-                                 boolean deferIndexes,
                                  StorageAction storageAction) throws PersistitException
     {
         checkNotGroupIndex(index);
@@ -1432,7 +1342,7 @@ public class PersistitStore extends AbstractStore implements Service
                     if (userRowDef != null) {
                         for (Index index : userRowDef.getIndexes()) {
                             if(indexesToBuild.contains(index)) {
-                                insertIntoIndex(session, index, rowData, hEx.getKey(), indexRow, defer);
+                                insertIntoIndex(session, index, rowData, hEx.getKey(), indexRow);
                                 indexKeyCount++;
                             }
                         }
