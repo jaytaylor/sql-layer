@@ -43,7 +43,7 @@ import static org.junit.Assert.fail;
 
 public final class DropTreesIT extends ITBase {
     private boolean treeExists(TreeLink link) throws Exception {
-        return serviceManager().getTreeService().treeExists(link.getSchemaName(), link.getTreeName());
+        return treeService().treeExists(link.getSchemaName(), link.getTreeName());
     }
 
     private TreeLink treeLink(Object o) {

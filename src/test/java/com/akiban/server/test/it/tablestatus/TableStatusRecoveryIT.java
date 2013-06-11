@@ -132,7 +132,7 @@ public class TableStatusRecoveryIT extends ITBase {
     }
 
     private void crashAndRestartSaveDatapath() throws Exception {
-        final Persistit db = serviceManager().getTreeService().getDb();
+        final Persistit db = treeService().getDb();
 
         final String datapath = db.getProperty("datapath");
         db.force();
