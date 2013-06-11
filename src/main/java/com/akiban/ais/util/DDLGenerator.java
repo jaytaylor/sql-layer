@@ -197,7 +197,7 @@ public class DDLGenerator
 
     private String tableOptions(Table table) {
         StringBuilder tableOptions = new StringBuilder();
-        final String engine = table.getEngine() != null ? table.getEngine() : "akibandb";
+        final String engine = "akibandb";
         tableOptions.append(" engine=");
         tableOptions.append(engine);
         final CharsetAndCollation charAndCol = table.getCharsetAndCollation();
