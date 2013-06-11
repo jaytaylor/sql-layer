@@ -49,7 +49,7 @@ public class ServerSessionITBase extends ITBase {
 
     protected class TestOperatorCompiler extends ServerOperatorCompiler {
         public TestOperatorCompiler(TestSession session) {
-            initServer(session);
+            initServer(session, store());
             initDone();
         }
     }
@@ -61,7 +61,6 @@ public class ServerSessionITBase extends ITBase {
                                                 serviceManager().getMonitorService(),
                                                 serviceManager().getSessionService(),
                                                 store(),
-                                                treeService(),
                                                 serviceManager().getServiceByClass(com.akiban.server.service.functions.FunctionsRegistry.class),
                                                 configService(),
                                                 serviceManager().getServiceByClass(com.akiban.server.store.statistics.IndexStatisticsService.class),

@@ -31,12 +31,11 @@ public class UpdateProcessor extends DMLProcessor {
     private final DeleteProcessor deleteProcessor;
     private final InsertProcessor insertProcessor;
 
-    public UpdateProcessor(ConfigurationService configService,
-            TreeService treeService, Store store,
+    public UpdateProcessor(Store store,
             T3RegistryService t3RegistryService,
             DeleteProcessor deleteProcessor,
             InsertProcessor insertProcessor) {
-        super(configService, treeService, store, t3RegistryService);
+        super(store, t3RegistryService);
         this.deleteProcessor = deleteProcessor;
         this.insertProcessor = insertProcessor;
     }

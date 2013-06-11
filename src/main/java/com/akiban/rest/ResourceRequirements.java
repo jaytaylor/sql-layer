@@ -35,7 +35,6 @@ public class ResourceRequirements {
     public final SessionService sessionService;
     public final TransactionService transactionService;
     public final Store store;
-    public final TreeService treeService;
     public final ConfigurationService configService;
 
     public ResourceRequirements(DXLService dxlService,
@@ -45,7 +44,6 @@ public class ResourceRequirements {
                                 SessionService sessionService,
                                 TransactionService transactionService,
                                 Store store,
-                                TreeService treeService,
                                 ConfigurationService configService) {
         this.dxlService = dxlService;
         this.restDMLService = restDMLService;
@@ -54,7 +52,6 @@ public class ResourceRequirements {
         this.sessionService = sessionService;
         this.transactionService = transactionService;
         this.store = store;
-        this.treeService = treeService;
         this.configService = configService;
     }
 }

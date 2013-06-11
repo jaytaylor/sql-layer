@@ -133,12 +133,10 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         this.extDataService = extDataService;
         this.jdbcService = jdbcService;
         this.fullTextService = fullTextService;
-        this.insertProcessor = new InsertProcessor (configService, treeService, store, registryService);
-        this.deleteProcessor = new DeleteProcessor (configService, treeService, store, registryService);
-        this.updateProcessor = new UpdateProcessor (configService, treeService, store, registryService,
-                deleteProcessor, insertProcessor);
-        this.upsertProcessor = new UpsertProcessor (configService, treeService, store, registryService,
-                insertProcessor, extDataService);
+        this.insertProcessor = new InsertProcessor (store, registryService);
+        this.deleteProcessor = new DeleteProcessor (store, registryService);
+        this.updateProcessor = new UpdateProcessor (store, registryService, deleteProcessor, insertProcessor);
+        this.upsertProcessor = new UpsertProcessor (store, registryService, insertProcessor, extDataService);
     }
     
     /* Service */

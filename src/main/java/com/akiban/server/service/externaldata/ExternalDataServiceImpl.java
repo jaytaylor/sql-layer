@@ -61,7 +61,6 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     private final DXLService dxlService;
     private final Store store;
     private final TransactionService transactionService;
-    private final TreeService treeService;
     private final ServiceManager serviceManager;
     
     private static final Logger logger = LoggerFactory.getLogger(ExternalDataServiceImpl.class);
@@ -79,13 +78,11 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     public ExternalDataServiceImpl(ConfigurationService configService,
                                    DXLService dxlService, Store store,
                                    TransactionService transactionService,
-                                   TreeService treeService,
                                    ServiceManager serviceManager) {
         this.configService = configService;
         this.dxlService = dxlService;
         this.store = store;
         this.transactionService = transactionService;
-        this.treeService = treeService;
         this.serviceManager = serviceManager;
     }
 

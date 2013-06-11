@@ -35,24 +35,19 @@ import com.persistit.exception.PersistitInterruptedException;
 
 public class PersistitIndexStatisticsService extends AbstractIndexStatisticsService {
     private final PersistitStore store;
-    private final TreeService treeService;
-    private final ConfigurationService configurationService;
 
     @Inject
     public PersistitIndexStatisticsService(Store store,
-                                           TreeService treeService,
                                            TransactionService txnService,
                                            SchemaManager schemaManager,
                                            SessionService sessionService,
                                            ConfigurationService configurationService) {
-        super(store, treeService, txnService, schemaManager, sessionService, configurationService);
+        super(store, txnService, schemaManager, sessionService, configurationService);
         if(store instanceof OperatorStore) {
             this.store = ((OperatorStore)store).getDelegate();
         } else {
             this.store = (PersistitStore)store;
         }
-        this.treeService = treeService;
-        this.configurationService = configurationService;
     }
 
     @Override

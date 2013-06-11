@@ -107,9 +107,6 @@ public interface ServerSession
     /** Return an adapter for the session's store. */
     public StoreAdapter getStore(UserTable table);
 
-    /** Return the tree service. */
-    public TreeService getTreeService();
-
     /** Return the transaction service */
     public TransactionService getTransactionService();
 

@@ -95,8 +95,8 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     private static PointTap SCAN_RETRY_ABANDON_TAP = Tap.createCount("BasicDMLFunctions: scan abandons");
 
     @Inject
-    BasicDMLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, TreeService treeService, DDLFunctions ddlFunctions) {
-        super(middleman, schemaManager, store, treeService);
+    BasicDMLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, DDLFunctions ddlFunctions) {
+        super(middleman, schemaManager, store);
         this.ddlFunctions = ddlFunctions;
         this.scanner = new Scanner();
     }

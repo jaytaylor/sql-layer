@@ -17,7 +17,6 @@
 
 package com.akiban.server.service.dxl;
 
-import com.akiban.ais.model.GroupIndex;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.error.ServiceNotStartedException;
@@ -51,7 +50,6 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     private volatile DMLFunctions dmlFunctions;
     private final SchemaManager schemaManager;
     private final Store store;
-    private final TreeService treeService;
     private final SessionService sessionService;
     private final IndexStatisticsService indexStatisticsService;
     private final ConfigurationService configService;
@@ -85,11 +83,11 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     }
 
     DMLFunctions createDMLFunctions(BasicDXLMiddleman middleman, DDLFunctions newlyCreatedDDLF) {
-        return new BasicDMLFunctions(middleman, schemaManager, store, treeService, newlyCreatedDDLF);
+        return new BasicDMLFunctions(middleman, schemaManager, store, newlyCreatedDDLF);
     }
 
     DDLFunctions createDDLFunctions(BasicDXLMiddleman middleman) {
-        return new BasicDDLFunctions(middleman, schemaManager, store, treeService, indexStatisticsService, configService,
+        return new BasicDDLFunctions(middleman, schemaManager, store, indexStatisticsService, configService,
                                      t3Registry, lockService, txnService);
     }
 
@@ -139,12 +137,11 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     }
 
     @Inject
-    public DXLServiceImpl(SchemaManager schemaManager, Store store, TreeService treeService, SessionService sessionService,
+    public DXLServiceImpl(SchemaManager schemaManager, Store store, SessionService sessionService,
                           IndexStatisticsService indexStatisticsService, ConfigurationService configService, T3RegistryService t3Registry,
                           TransactionService txnService, LockService lockService) {
         this.schemaManager = schemaManager;
         this.store = store;
-        this.treeService = treeService;
         this.sessionService = sessionService;
         this.indexStatisticsService = indexStatisticsService;
         this.configService = configService;
@@ -161,10 +158,6 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     protected final Store store() {
         return store;
-    }
-
-    protected final TreeService treeService() {
-        return treeService;
     }
 
     protected final IndexStatisticsService indexStatisticsService() {

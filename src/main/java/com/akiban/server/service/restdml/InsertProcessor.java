@@ -53,11 +53,10 @@ public class InsertProcessor extends DMLProcessor {
     private OperatorGenerator insertGenerator;
     private static final Logger LOG = LoggerFactory.getLogger(InsertProcessor.class);
 
-    public InsertProcessor (ConfigurationService configService, 
-            TreeService treeService, 
+    public InsertProcessor (
             Store store,
             T3RegistryService t3RegistryService) {
-        super (configService, treeService, store, t3RegistryService);
+        super (store, t3RegistryService);
     }
     
     private static final CacheValueGenerator<InsertGenerator> CACHED_INSERT_GENERATOR =

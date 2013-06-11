@@ -42,11 +42,10 @@ public class DeleteProcessor extends DMLProcessor {
     private static final Logger LOG = LoggerFactory.getLogger(DeleteProcessor.class);
     private OperatorGenerator deleteGenerator;
     
-    public DeleteProcessor (ConfigurationService configService, 
-            TreeService treeService, 
+    public DeleteProcessor (
             Store store,
             T3RegistryService t3RegistryService) {
-        super (configService, treeService, store, t3RegistryService);
+        super (store, t3RegistryService);
     }
 
     private static final CacheValueGenerator<DeleteGenerator> CACHED_DELETE_GENERATOR =

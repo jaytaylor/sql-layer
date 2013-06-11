@@ -59,8 +59,6 @@ public class BuilderResource {
                 reqs.transactionService,
                 reqs.dxlService,
                 reqs.store,
-                reqs.treeService,
-                reqs.configService,
                 restDMLService
         );
     }

@@ -57,8 +57,7 @@ public class RestServiceImpl implements RestService, Service {
                            TransactionService transactionService,
                            SecurityService securityService,
                            DXLService dxlService,
-                           Store store,
-                           TreeService treeService) {
+                           Store store) {
         this.configService = configService;
 		this.http = http;
         this.reqs = new ResourceRequirements(
@@ -69,7 +68,6 @@ public class RestServiceImpl implements RestService, Service {
             sessionService,
             transactionService,
             store,
-            treeService,
             configService
         );
     }

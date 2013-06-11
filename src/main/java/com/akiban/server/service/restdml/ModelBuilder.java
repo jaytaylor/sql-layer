@@ -79,23 +79,17 @@ public class ModelBuilder {
     private final TransactionService txnService;
     private final DDLFunctions ddlFunctions;
     private final Store store;
-    private final TreeService treeService;
-    private final ConfigurationService configService;
     private final RestDMLService restDMLService;
 
     public ModelBuilder(SessionService sessionService,
                         TransactionService txnService,
                         DXLService dxlService,
                         Store store,
-                        TreeService treeService,
-                        ConfigurationService configService,
                         RestDMLService restDMLService) {
         this.sessionService = sessionService;
         this.txnService = txnService;
         this.ddlFunctions = dxlService.ddlFunctions();
         this.store = store;
-        this.treeService = treeService;
-        this.configService = configService;
         this.restDMLService = restDMLService;
     }
 

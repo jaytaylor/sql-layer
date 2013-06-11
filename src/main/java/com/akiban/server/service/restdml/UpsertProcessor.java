@@ -55,12 +55,11 @@ public class UpsertProcessor extends DMLProcessor {
     private final InsertProcessor insertProcessor;
     private final ExternalDataService extDataService;
     
-    public UpsertProcessor(ConfigurationService configService,
-            TreeService treeService, Store store,
+    public UpsertProcessor(Store store,
             T3RegistryService t3RegistryService,
             InsertProcessor insertProcessor,
             ExternalDataService extDataService) {
-        super(configService, treeService, store, t3RegistryService);
+        super(store, t3RegistryService);
         this.insertProcessor = insertProcessor;
         this.extDataService = extDataService;
     }

@@ -29,14 +29,12 @@ abstract class ClientAPIBase {
 
     private final Store store;
     private final SchemaManager schemaManager;
-    private final TreeService treeService;
     private final BasicDXLMiddleman middleman;
 
-    ClientAPIBase(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, TreeService treeService) {
+    ClientAPIBase(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store) {
         this.middleman = middleman;
         this.schemaManager = schemaManager;
         this.store = store;
-        this.treeService = treeService;
     }
 
     final public Store store() {
@@ -45,10 +43,6 @@ abstract class ClientAPIBase {
 
     final public SchemaManager schemaManager() {
         return schemaManager;
-    }
-
-    final public TreeService treeService() {
-        return treeService;
     }
 
     BasicDXLMiddleman.ScanData putScanData(Session session, CursorId cursorId, BasicDXLMiddleman.ScanData scanData) {

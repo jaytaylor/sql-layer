@@ -42,17 +42,11 @@ import com.akiban.server.types3.pvalue.PValueSource;
 
 public abstract class DMLProcessor {
 
-    private final ConfigurationService configService;
-    private final TreeService treeService;
     private final Store store;
     private final T3RegistryService registryService;
     
-    public DMLProcessor (ConfigurationService configService, 
-            TreeService treeService, 
-            Store store,
-            T3RegistryService t3RegistryService) {
-        this.configService = configService;
-        this.treeService = treeService;
+    public DMLProcessor(Store store,
+                        T3RegistryService t3RegistryService) {
         this.store = store;
         this.registryService = t3RegistryService;
     }

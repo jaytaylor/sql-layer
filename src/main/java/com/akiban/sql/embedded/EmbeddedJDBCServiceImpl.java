@@ -60,7 +60,6 @@ public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
                                    MonitorService monitor,
                                    SessionService sessionService,
                                    Store store,
-                                   TreeService treeService,
                                    FunctionsRegistry functionsRegistry,
                                    ConfigurationService config,
                                    IndexStatisticsService indexStatisticsService,
@@ -70,7 +69,7 @@ public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
                                    SecurityService securityService,
                                    ServiceManager serviceManager) {
         reqs = new ServerServiceRequirements(akServer, dxlService, monitor, 
-                sessionService, store, treeService, functionsRegistry, 
+                sessionService, store, functionsRegistry,
                 config, indexStatisticsService, overloadResolutionService, 
                 routineLoader, txnService, securityService, serviceManager);
     }
