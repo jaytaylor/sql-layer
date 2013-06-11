@@ -948,10 +948,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     @Override
     public void createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
-        logger.trace("creating indexes {}", indexesToAdd);
         if (indexesToAdd.isEmpty() == true) {
             return;
         }
+        logger.debug("creating indexes {}", indexesToAdd);
 
         List<Integer> tableIDs = new ArrayList<>(indexesToAdd.size());
         txnService.beginTransaction(session);

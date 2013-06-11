@@ -326,7 +326,7 @@ public class FullTextIndexServiceIT extends ITBase
         writeRow(c, 8, "Flintstone Hudson");
         writeRow(c, 9, "Jim Flintstone");
         
-        // The worker has been disabled, waitOn should return immidately
+        // The worker has been disabled, waitOn should return immediately
         WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
         
         // confirm that new rows are not found (ie., expected2 still works)
@@ -354,11 +354,9 @@ public class FullTextIndexServiceIT extends ITBase
 
     @Test
     public void cDown() throws InterruptedException {
-        logger.error("cDown test running");
         FullTextIndex index = createFullTextIndex(serviceManager(),
                                                   SCHEMA, "c", "idx_c", 
                                                   "name", "i.sku", "a.state");
-        logger.error("cDown index: {} ", index.toString());
         WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
         RowType rowType = rowType("c");
         RowBase[] expected = new RowBase[] {
@@ -376,7 +374,6 @@ public class FullTextIndexServiceIT extends ITBase
 
     @Test
     public void oUpDown() throws InterruptedException {
-        logger.error("oUpDown test running");
         FullTextIndex index = createFullTextIndex(serviceManager(),
                                                   SCHEMA, "o", "idx_o",
                                                   "c.name", "i.sku");

@@ -89,7 +89,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
 
     private Timer maintenanceTimer;
     private long maintenanceInterval;
-    private TimerTask updateWorker;
+    private volatile TimerTask updateWorker;
     private PersistitStore persistitStore;
 
     private Timer populateTimer;
@@ -349,11 +349,11 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     @Override
     public void schedulePopulate(Session session, IndexName name)
     {   
-        logger.error("Scheduled populate {}", name.toString());
+        logger.debug("Scheduled populate {}", name.toString());
         
         try
         {
-            // Add the index to the list (in persisit) of indexes to build
+            // Add the index to the list (in persistit) of indexes to build
             addPopulate(session, name);
 
             // if there are no scheduled populate workers running, 
@@ -518,7 +518,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     {
         populateRunning = true;
         Session session = sessionService.createSession();
-        logger.error("runPopulate started");
         try
         {
             while (populateNextIndex(session)) {}
@@ -563,7 +562,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                     }
                 }
                 while (rows.nextIndex());
-                //rows.removeAll(); // done updating. remove all entries
             }
             transactionService.commitTransaction(session);
         }
@@ -607,7 +605,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         if (!populateEnabled || !hasScheduled || populateRunning)
             return false;
 
-        logger.error("ForcePopulate running");
         // block the timer (so other threads would have to wait)
         // Unlike the update case, this is needed because population does not
         // have to be done  periodically
@@ -622,7 +619,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         // because we'd otherwise get "transaction already began" exception
         //  as each thread only has one session)
         new Thread(populateWorker()).start();
-
+        hasScheduled = true;
         // get a new timer
         // (So schedulePopulate can schedule new task if new index is created)
         populateTimer = new Timer();
@@ -645,7 +642,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             IndexName ret = new IndexName(new TableName(key.decodeString(),
                                                         key.decodeString()),
                                           key.decodeString());
-            logger.error("next index in queue: {}", ret.toString());
             // The populating map contains the indexes currently being built
             // if this name is already in the tree, skip this one, and try
             // the next.
