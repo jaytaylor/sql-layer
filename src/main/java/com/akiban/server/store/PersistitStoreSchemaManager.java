@@ -181,7 +181,6 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
     }
 
     private static final String AIS_KEY_PREFIX = "by";
-    private static final String AIS_METAMODEL_PARENT_KEY = AIS_KEY_PREFIX + "AIS";
     private static final String AIS_PROTOBUF_PARENT_KEY = AIS_KEY_PREFIX + "PBAIS";
     private static final String AIS_MEMORY_TABLE_KEY = AIS_KEY_PREFIX + "PBMEMAIS";
     private static final String DELAYED_TREE_KEY = "delayedTree";
@@ -751,7 +750,6 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
             SerializationType type = SerializationType.NONE;
 
             // Simple heuristic to determine which style AIS storage we have
-            boolean hasMetaModel = false;
             boolean hasProtobuf = false;
             boolean hasUnknown = false;
 
@@ -766,17 +764,13 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
                 }
                 if(k.equals(AIS_PROTOBUF_PARENT_KEY) || k.equals(AIS_MEMORY_TABLE_KEY)) {
                     hasProtobuf = true;
-                } else if(k.equals(AIS_METAMODEL_PARENT_KEY)) {
-                    hasMetaModel = true;
                 } else {
                     hasUnknown = true;
                 }
             }
 
-            if(hasMetaModel && hasProtobuf) {
-                throw new IllegalStateException("Both AIS and Protobuf serializations");
-            } else if(hasMetaModel) {
-                type = SerializationType.META_MODEL;
+            if(hasUnknown && hasProtobuf) {
+                throw new IllegalStateException("Both multiple serializations");
             } else if(hasProtobuf) {
                 type = SerializationType.PROTOBUF;
             } else if(hasUnknown) {
