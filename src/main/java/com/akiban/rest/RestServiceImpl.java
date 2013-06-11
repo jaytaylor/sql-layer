@@ -27,14 +27,12 @@ import com.akiban.server.service.restdml.RestDMLService;
 import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.google.inject.Inject;
 import com.sun.jersey.api.core.DefaultResourceConfig;
 import com.sun.jersey.api.core.ResourceConfig;
 import com.sun.jersey.spi.container.servlet.ServletContainer;
 
-import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 
 import java.util.Arrays;
@@ -57,8 +55,7 @@ public class RestServiceImpl implements RestService, Service {
                            TransactionService transactionService,
                            SecurityService securityService,
                            DXLService dxlService,
-                           Store store,
-                           TreeService treeService) {
+                           Store store) {
         this.configService = configService;
 		this.http = http;
         this.reqs = new ResourceRequirements(
@@ -69,7 +66,6 @@ public class RestServiceImpl implements RestService, Service {
             sessionService,
             transactionService,
             store,
-            treeService,
             configService
         );
     }

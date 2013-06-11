@@ -28,7 +28,6 @@ import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.akiban.server.t3expressions.T3RegistryService;
@@ -40,7 +39,6 @@ public final class ServerServiceRequirements {
                                      MonitorService monitor,
                                      SessionService sessionService,
                                      Store store,
-                                     TreeService treeService,
                                      FunctionsRegistry functionsRegistry,
                                      ConfigurationService config,
                                      IndexStatisticsService indexStatistics,
@@ -54,7 +52,6 @@ public final class ServerServiceRequirements {
         this.monitor = monitor;
         this.sessionService = sessionService;
         this.store = store;
-        this.treeService = treeService;
         this.functionsRegistry = functionsRegistry;
         this.config = config;
         this.indexStatistics = indexStatistics;
@@ -83,10 +80,6 @@ public final class ServerServiceRequirements {
 
     public Store store() {
         return store;
-    }
-
-    public TreeService treeService() {
-        return treeService;
     }
 
     public FunctionsRegistry functionsRegistry() {
@@ -132,7 +125,6 @@ public final class ServerServiceRequirements {
     private final MonitorService monitor;
     private final SessionService sessionService;
     private final Store store;
-    private final TreeService treeService;
     private final FunctionsRegistry functionsRegistry;
     private final ConfigurationService config;
     private final IndexStatisticsService indexStatistics;

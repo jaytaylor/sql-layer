@@ -42,7 +42,6 @@ import com.akiban.server.service.externaldata.PlanGenerator;
 import com.akiban.server.service.externaldata.TableRowTracker;
 import com.akiban.server.service.externaldata.JsonRowWriter.WriteCapturePKRow;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.types3.mcompat.mtypes.MString;
@@ -55,12 +54,11 @@ public class UpsertProcessor extends DMLProcessor {
     private final InsertProcessor insertProcessor;
     private final ExternalDataService extDataService;
     
-    public UpsertProcessor(ConfigurationService configService,
-            TreeService treeService, Store store,
+    public UpsertProcessor(Store store,
             T3RegistryService t3RegistryService,
             InsertProcessor insertProcessor,
             ExternalDataService extDataService) {
-        super(configService, treeService, store, t3RegistryService);
+        super(store, t3RegistryService);
         this.insertProcessor = insertProcessor;
         this.extDataService = extDataService;
     }

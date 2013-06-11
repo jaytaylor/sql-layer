@@ -37,12 +37,11 @@ public class FDBIndexStatisticsService extends AbstractIndexStatisticsService {
 
     @Inject
     public FDBIndexStatisticsService(Store store,
-                                     TreeService treeService,
                                      TransactionService txnService,
                                      SchemaManager schemaManager,
                                      SessionService sessionService,
                                      ConfigurationService configurationService) {
-        super(store, treeService, txnService, schemaManager, sessionService, configurationService);
+        super(store, txnService, schemaManager, sessionService, configurationService);
         if(store instanceof FDBStore) {
             this.store = (FDBStore)store;
         } else {

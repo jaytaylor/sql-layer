@@ -84,7 +84,6 @@ import java.util.UUID;
 public abstract class AbstractSchemaManager implements Service, SchemaManager {
     public static enum SerializationType {
         NONE,
-        META_MODEL,
         PROTOBUF,
         UNKNOWN
     }

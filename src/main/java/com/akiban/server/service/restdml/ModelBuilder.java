@@ -37,14 +37,12 @@ import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.entity.changes.EntityParser;
 import com.akiban.server.error.ModelBuilderException;
-import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.externaldata.JsonRowWriter;
 import com.akiban.server.service.externaldata.TableRowTracker;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
@@ -79,23 +77,17 @@ public class ModelBuilder {
     private final TransactionService txnService;
     private final DDLFunctions ddlFunctions;
     private final Store store;
-    private final TreeService treeService;
-    private final ConfigurationService configService;
     private final RestDMLService restDMLService;
 
     public ModelBuilder(SessionService sessionService,
                         TransactionService txnService,
                         DXLService dxlService,
                         Store store,
-                        TreeService treeService,
-                        ConfigurationService configService,
                         RestDMLService restDMLService) {
         this.sessionService = sessionService;
         this.txnService = txnService;
         this.ddlFunctions = dxlService.ddlFunctions();
         this.store = store;
-        this.treeService = treeService;
-        this.configService = configService;
         this.restDMLService = restDMLService;
     }
 

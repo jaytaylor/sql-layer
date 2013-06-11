@@ -40,7 +40,6 @@ import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.externaldata.JsonRowWriter.WriteTableRow;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
@@ -61,7 +60,6 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     private final DXLService dxlService;
     private final Store store;
     private final TransactionService transactionService;
-    private final TreeService treeService;
     private final ServiceManager serviceManager;
     
     private static final Logger logger = LoggerFactory.getLogger(ExternalDataServiceImpl.class);
@@ -79,13 +77,11 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     public ExternalDataServiceImpl(ConfigurationService configService,
                                    DXLService dxlService, Store store,
                                    TransactionService transactionService,
-                                   TreeService treeService,
                                    ServiceManager serviceManager) {
         this.configService = configService;
         this.dxlService = dxlService;
         this.store = store;
         this.transactionService = transactionService;
-        this.treeService = treeService;
         this.serviceManager = serviceManager;
     }
 

@@ -131,7 +131,7 @@ public class PersistitSorter implements Sorter
             loaded = true;
         } catch (PersistitException e) {
             if (!PersistitAdapter.isFromInterruption(e))
-                LOG.error("Caught exception while loading tree for sort", e);
+                LOG.debug("Caught exception while loading tree for sort", e);
             adapter.handlePersistitException(e);
         } finally {
             if (!loaded) {

@@ -18,6 +18,7 @@
 package com.akiban.sql.pg;
 
 import com.akiban.qp.operator.Operator;
+import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.sql.server.ServerOperatorCompiler;
 
 import com.akiban.sql.optimizer.TypesTranslation;
@@ -51,9 +52,9 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
     protected PostgresOperatorCompiler() {
     }
 
-    public static PostgresOperatorCompiler create(PostgresServerSession server) {
+    public static PostgresOperatorCompiler create(PostgresServerSession server, KeyCreator keyCreator) {
         PostgresOperatorCompiler compiler = new PostgresOperatorCompiler();
-        compiler.initServer(server);
+        compiler.initServer(server, keyCreator);
         compiler.initDone();
         return compiler;
     }

@@ -19,8 +19,7 @@ package com.akiban.server.test.it.bugs.bug720768;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.staticgrouping.GroupsBuilder;
+import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
@@ -50,28 +49,17 @@ public class GroupNameCollisionIT extends ITBase {
             fail("same group names: " + group1 + " and " + group2);
         }
 
-        GroupsBuilder expectedBuilder = new GroupsBuilder("foo");
-        for(com.akiban.ais.model.Group aisGroup : ais.getGroups().values()) {
-            TableName rootTable = aisGroup.getRoot().getName();
-            if (TableName.INFORMATION_SCHEMA.equals(rootTable.getSchemaName())) {
-                expectedBuilder.rootTable(rootTable, aisGroup.getName());
-                if ("index_statistics".equals(rootTable.getTableName())) {
-                  expectedBuilder.joinTables(rootTable,
-                                             new TableName(rootTable.getSchemaName(),
-                                                           "index_statistics_entry"))
-                    .column("table_id", "table_id")
-                    .column("index_id", "index_id");
-                }
-            }
-        }
-        expectedBuilder.rootTable("s1", "t", group1.getName());
-        expectedBuilder.joinTables("s1", "t", "s1", "c").column("id", "pid");
-        expectedBuilder.rootTable("s2", "t", group2.getName());
-        expectedBuilder.joinTables("s2", "t", "s2", "c").column("id", "pid");
+        UserTable s1T = ais.getUserTable("s1", "t");
+        UserTable s1C = ais.getUserTable("s1", "c");
+        UserTable s2T = ais.getUserTable("s2", "t");
+        UserTable s2C = ais.getUserTable("s2", "c");
 
-        assertEquals("grouping",
-                expectedBuilder.getGrouping().toString(),
-                GroupsBuilder.fromAis(ais, "foo").toString()
-        );
+        assertEquals("s1.t root", s1T, group1.getRoot());
+        assertEquals("s1.c parent", s1T, s1C.getParentJoin().getParent());
+        assertEquals("s1.c join cols", "[JoinColumn(pid -> id)]", s1C.getParentJoin().getJoinColumns().toString());
+
+        assertEquals("s2.t root", s2T, group2.getRoot());
+        assertEquals("s2.c parent", s2T, s2C.getParentJoin().getParent());
+        assertEquals("s2.c join cols", "[JoinColumn(pid -> id)]", s2C.getParentJoin().getJoinColumns().toString());
     }
 }

@@ -17,6 +17,7 @@
 
 package com.akiban.sql.server;
 
+import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.sql.optimizer.OperatorCompiler;
 
@@ -25,7 +26,7 @@ public abstract class ServerOperatorCompiler extends OperatorCompiler
     protected ServerOperatorCompiler() {
     }
 
-    protected void initServer(ServerSession server) {
+    protected void initServer(ServerSession server, KeyCreator keyCreator) {
         boolean usePValues = server.getBooleanProperty("newtypes", Types3Switch.DEFAULT);
         // the following is racy, but everything about the Types3Switch is
         if (usePValues != Types3Switch.ON)
@@ -34,7 +35,7 @@ public abstract class ServerOperatorCompiler extends OperatorCompiler
         initAIS(server.getAIS(), server.getDefaultSchemaName());
         initParser(server.getParser());
         initFunctionsRegistry(server.functionsRegistry());
-        initCostEstimator(server.costEstimator(this, server.getTreeService()), usePValues);
+        initCostEstimator(server.costEstimator(this, keyCreator), usePValues);
         if (usePValues)
             initT3Registry(server.t3RegistryService());
         

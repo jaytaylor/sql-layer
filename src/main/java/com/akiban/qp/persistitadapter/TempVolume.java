@@ -19,17 +19,22 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
+import com.akiban.util.Shareable;
 import com.persistit.Exchange;
 import com.persistit.Persistit;
 import com.persistit.Volume;
 import com.persistit.exception.PersistitException;
+import com.persistit.exception.PersistitIOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 public class TempVolume
 {
     public static Exchange takeExchange(PersistitStore store, Session session, String treeName)
     {
+        boolean success = false;
         try {
             Persistit persistit = store.getDb();
             TempVolumeState tempVolumeState = session.get(TEMP_VOLUME_STATE);
@@ -43,46 +48,69 @@ public class TempVolume
                 tempVolumeState = new TempVolumeState(volume);
                 session.put(TEMP_VOLUME_STATE, tempVolumeState);
             }
-            tempVolumeState.addUser();
-            return new Exchange(persistit, tempVolumeState.volume(), treeName, true);
+            tempVolumeState.acquire();
+            if(injectIOException) {
+                throw new PersistitIOException(new IOException());
+            }
+            Exchange ex = new Exchange(persistit, tempVolumeState.volume(), treeName, true);
+            success = true;
+            return ex;
         } catch (PersistitException e) {
             if (!PersistitAdapter.isFromInterruption(e))
-                LOG.error("Caught exception while getting exchange for sort", e);
-            PersistitAdapter.handlePersistitException(session, e);
-            assert false; // handlePersistitException should throw something
-            return null;
+                LOG.debug("Caught exception while getting exchange for sort", e);
+            throw PersistitAdapter.wrapPersistitException(session, e);
+        } finally {
+            if (!success)
+                releaseAndCloseIfUnshared(session);
         }
     }
 
     public static void returnExchange(Session session, Exchange exchange)
     {
         if (exchange != null) {
-            try {
-                TempVolumeState tempVolumeState = session.get(TEMP_VOLUME_STATE);
-                int users = tempVolumeState.removeUser();
-                if (users == 0) {
-                    // Returns disk space used by the volume
-                    tempVolumeState.volume().close();
-                    session.remove(TEMP_VOLUME_STATE);
-                }
-            } catch (PersistitException e) {
-                PersistitAdapter.handlePersistitException(session, e);
-            }
+            releaseAndCloseIfUnshared(session);
             // Don't return the exchange to the adapter. TreeServiceImpl caches it for the tree, and we're done
             // with the tree. Calling adapter.returnExchange would cause a leak of exchanges.
         }
     }
 
+    private static void releaseAndCloseIfUnshared(Session session) {
+        TempVolumeState tempVolumeState = session.get(TEMP_VOLUME_STATE);
+        tempVolumeState.release();
+        if (!tempVolumeState.isShared())
+        {
+            session.remove(TEMP_VOLUME_STATE);
+            try {
+                // Returns disk space used by the volume
+                tempVolumeState.volume().close();
+            } catch(PersistitException e) {
+                throw PersistitAdapter.wrapPersistitException(session, e);
+            }
+        }
+    }
+
+    // Public for tests
+
+    public static boolean hasTempState(Session session)
+    {
+        return session.get(TEMP_VOLUME_STATE) != null;
+    }
+
+    public static void setInjectIOException(boolean injectIOException)
+    {
+        TempVolume.injectIOException = injectIOException;
+    }
+
     private static final Logger LOG = LoggerFactory.getLogger(TempVolume.class);
     private static final Session.Key<TempVolumeState> TEMP_VOLUME_STATE = Session.Key.named("TEMP_VOLUME_STATE");
+    private static volatile boolean injectIOException = false;
 
-    // public so that tests can see it
-    public static class TempVolumeState
+    private static class TempVolumeState implements Shareable
     {
         public TempVolumeState(Volume volume)
         {
             this.volume = volume;
-            users = 0;
+            refCount = 0;
         }
 
         public Volume volume()
@@ -90,19 +118,26 @@ public class TempVolume
             return volume;
         }
 
-        public void addUser()
+        @Override
+        public void acquire()
         {
-            users++;
+            ++refCount;
         }
 
-        public int removeUser()
+        @Override
+        public boolean isShared()
         {
-            users--;
-            assert users >= 0;
-            return users;
+            return refCount > 0;
+        }
+
+        @Override
+        public void release()
+        {
+            --refCount;
+            assert refCount >= 0;
         }
 
         private final Volume volume;
-        private int users;
+        private int refCount;
     }
 }

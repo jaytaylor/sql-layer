@@ -47,7 +47,6 @@ import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.text.FullTextIndexService;
 import com.akiban.server.service.text.FullTextQueryBuilder;
 import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.sql.embedded.EmbeddedJDBCService;
@@ -123,8 +122,6 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                               ExternalDataService extDataService,
                               EmbeddedJDBCService jdbcService,
                               FullTextIndexService fullTextService,
-                              ConfigurationService configService,
-                              TreeService treeService,
                               Store store,
                               T3RegistryService registryService) {
         this.sessionService = sessionService;
@@ -133,12 +130,10 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         this.extDataService = extDataService;
         this.jdbcService = jdbcService;
         this.fullTextService = fullTextService;
-        this.insertProcessor = new InsertProcessor (configService, treeService, store, registryService);
-        this.deleteProcessor = new DeleteProcessor (configService, treeService, store, registryService);
-        this.updateProcessor = new UpdateProcessor (configService, treeService, store, registryService,
-                deleteProcessor, insertProcessor);
-        this.upsertProcessor = new UpsertProcessor (configService, treeService, store, registryService,
-                insertProcessor, extDataService);
+        this.insertProcessor = new InsertProcessor (store, registryService);
+        this.deleteProcessor = new DeleteProcessor (store, registryService);
+        this.updateProcessor = new UpdateProcessor (store, registryService, deleteProcessor, insertProcessor);
+        this.upsertProcessor = new UpsertProcessor (store, registryService, insertProcessor, extDataService);
     }
     
     /* Service */

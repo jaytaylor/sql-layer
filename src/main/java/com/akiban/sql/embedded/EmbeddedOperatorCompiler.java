@@ -17,6 +17,7 @@
 
 package com.akiban.sql.embedded;
 
+import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.sql.embedded.JDBCResultSetMetaData.ResultColumn;
 import com.akiban.sql.embedded.JDBCParameterMetaData.ParameterType;
 
@@ -59,9 +60,9 @@ public class EmbeddedOperatorCompiler extends ServerOperatorCompiler
     protected EmbeddedOperatorCompiler() {
     }
 
-    protected static EmbeddedOperatorCompiler create(JDBCConnection connection) {
+    protected static EmbeddedOperatorCompiler create(JDBCConnection connection, KeyCreator keyCreator) {
         EmbeddedOperatorCompiler compiler = new EmbeddedOperatorCompiler();
-        compiler.initServer(connection);
+        compiler.initServer(connection, keyCreator);
         compiler.initDone();
         return compiler;
     }

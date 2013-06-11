@@ -46,42 +46,17 @@ import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.ProtectedIndexException;
 
-import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.dxl.DXLServiceImpl;
-import com.akiban.server.service.lock.LockService;
-import com.akiban.server.service.servicemanager.GuicedServiceManager;
-import com.akiban.server.service.session.SessionService;
-import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.service.tree.TreeService;
-import com.akiban.server.store.SchemaManager;
-import com.akiban.server.store.Store;
-import com.akiban.server.store.statistics.IndexStatisticsService;
-import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.util.GroupIndexCreator;
-import com.google.inject.Inject;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 
-public final class CreateIndexesIT extends ITBase {
-
-    @Override
-    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
-        return super.serviceBindingsProvider().bind(DXLService.class, StartHookDxlService.class);
-    }
-
-    @Override
-    protected Map<String, String> startupConfigProperties() {
-        return uniqueStartupConfigProperties(getClass());
-    }
-
+public final class CreateIndexesIT extends ITBase
+{
     private AkibanInformationSchema createAISWithTable(Integer... tableIds) {
         AkibanInformationSchema ais = new AkibanInformationSchema();
         for(Integer id : tableIds) {
@@ -132,16 +107,6 @@ public final class CreateIndexesIT extends ITBase {
         }
     }
 
-    @Before
-    public void logRecreatedGis() {
-        recreatedGiNames = new ArrayList<>();
-    }
-
-    @After
-    public void clearRecreatedGis() {
-        recreatedGiNames = null;
-    }
-    
     @Test
     public void emptyIndexList() throws InvalidOperationException {
         ArrayList<Index> indexes = new ArrayList<>();
@@ -245,27 +210,6 @@ public final class CreateIndexesIT extends ITBase {
         assertEquals("join type", Index.JoinType.RIGHT, reconstructedGi.getJoinType());
     }
 
-    @Test
-    public void invalidGiRecreatedOnStartup() throws Exception {
-        createTable("test", "c", "cid int not null primary key, name varchar(255)");
-        int oid = createTable("test", "o", "oid int not null primary key, c_id int, priority int, " + akibanFK("c_id", "c", "cid"));
-        AkibanInformationSchema ais = ddl().getAIS(session());
-        TableName groupName = ais.getUserTable(oid).getGroup().getName();
-        GroupIndex invalidIndex = GroupIndexCreator.createIndex(
-                ais,
-                groupName,
-                "my_gi",
-                "c.name,o.priority",
-                Index.JoinType.LEFT
-        );
-        ddl().createIndexes(session(), Collections.singleton(invalidIndex));
-
-        recreatedGiNames.clear();
-        safeRestartTestServices();
-
-        assertEquals("recreated GIs", Collections.singletonList(recreatingString("my_gi", false)), recreatedGiNames);
-    }
-    
     @Test
     public void nonUniqueVarchar() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int not null primary key, name varchar(255)");
@@ -522,25 +466,4 @@ public final class CreateIndexesIT extends ITBase {
         updateAISGeneration();
         checkIndexIDsInGroup(getUserTable(tId).getGroup());
     }
-
-    public static class StartHookDxlService extends DXLServiceImpl {
-
-        @Inject
-        public StartHookDxlService(SchemaManager schemaManager, Store store, TreeService treeService,
-                                   SessionService sessionService, IndexStatisticsService indexStatisticsService,
-                                   ConfigurationService configService, T3RegistryService t3Registry, TransactionService txnService, LockService lockService) {
-            super(schemaManager, store, treeService, sessionService, indexStatisticsService, configService, t3Registry, txnService, lockService);
-        }
-
-        @Override
-        protected void groupIndexMayNeedRecreating(GroupIndex groupIndex, boolean needsRecreating) {
-            recreatedGiNames.add(recreatingString(groupIndex.getIndexName().getName(), needsRecreating));
-        }
-    }
-
-    private static String recreatingString(String giName, boolean needsRecreating) {
-        return giName + ", " + needsRecreating;
-    }
-
-    private static volatile List<String> recreatedGiNames = null;
 }

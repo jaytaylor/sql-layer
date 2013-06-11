@@ -39,7 +39,6 @@ import java.util.List;
 
 import static com.akiban.ais.util.TableChangeValidator.ChangeLevel;
 import static com.akiban.util.Exceptions.throwAlways;
-import static com.akiban.util.Exceptions.throwIfInstanceOf;
 
 public final class HookableDDLFunctions implements DDLFunctions {
 
@@ -462,21 +461,6 @@ public final class HookableDDLFunctions implements DDLFunctions {
             throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DXLFunction.UPDATE_TABLE_STATISTICS, thrown);
-        }
-    }
-
-    @Override
-    public IndexCheckSummary checkAndFixIndexes(Session session, String schemaRegex, String tableRegex) {
-        Throwable thrown = null;
-        try {
-            hook.hookFunctionIn(session, DXLFunction.CHECK_AND_FIX_INDEXES);
-            return delegate.checkAndFixIndexes(session, schemaRegex, tableRegex);
-        } catch (Throwable t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunction.CHECK_AND_FIX_INDEXES, t);
-            throw throwAlways(t);
-        } finally {
-            hook.hookFunctionFinally(session, DXLFunction.CHECK_AND_FIX_INDEXES, thrown);
         }
     }
 

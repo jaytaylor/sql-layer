@@ -1029,11 +1029,11 @@ public class PostgresServerConnection extends ServerSessionBase
         switch (outputFormat) {
         case TABLE:
         default:
-            compiler = PostgresOperatorCompiler.create(this);
+            compiler = PostgresOperatorCompiler.create(this, reqs.store());
             break;
         case JSON:
         case JSON_WITH_META_DATA:
-            compiler = PostgresJsonCompiler.create(this);
+            compiler = PostgresJsonCompiler.create(this, reqs.store());
             break;
         }
 

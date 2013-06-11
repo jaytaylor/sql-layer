@@ -1,4 +1,0 @@
-groupschema test_schema
-
-CREATE GROUP group_01
-ROOT TABLE customers;

@@ -39,7 +39,6 @@ import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.KeyCreator;
-import com.akiban.server.service.tree.TreeService;
 
 import java.io.IOException;
 import java.util.Date;
@@ -106,9 +105,6 @@ public interface ServerSession
 
     /** Return an adapter for the session's store. */
     public StoreAdapter getStore(UserTable table);
-
-    /** Return the tree service. */
-    public TreeService getTreeService();
 
     /** Return the transaction service */
     public TransactionService getTransactionService();

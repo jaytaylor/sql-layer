@@ -68,8 +68,7 @@ public class AISMergeTest {
         assertEquals (targetTable.getName(), sourceTable.getName());
         checkColumns (targetTable.getColumns(), "c1", "c2");
         checkColumns (targetTable.getColumnsIncludingInternal(), "c1", "c2", Column.AKIBAN_PK_NAME);
-        assertEquals (targetTable.getEngine(), sourceTable.getEngine());
-        
+
         // hidden primary key gets moved/re-created
         assertEquals (targetTable.getIndexes().size() , sourceTable.getIndexes().size());
         // hidden primary key is not a user visible index. 
