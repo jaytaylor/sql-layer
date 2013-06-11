@@ -147,11 +147,6 @@ public class DDLFunctionsMockBase implements DDLFunctions {
     }
 
     @Override
-    public IndexCheckSummary checkAndFixIndexes(Session session, String schemaRegex, String tableRegex) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void createView(Session session, View view) {
         throw new UnsupportedOperationException();
     }

@@ -196,22 +196,6 @@ class DXLMXBeanImpl implements DXLMXBean {
         return new ProtobufWriter().save(ais()).toString();
     }
 
-    @Override
-    public IndexCheckSummary checkAndFix(final String schemaRegex, final String tableRegex) {
-        Session session = sessionService.createSession();
-        try {
-            return dxlService.ddlFunctions().checkAndFixIndexes(session, schemaRegex, tableRegex);
-        }
-        finally {
-            session.close();
-        }
-    }
-
-    @Override
-    public IndexCheckSummary checkAndFixAll() {
-        return checkAndFix(".*", ".*");
-    }
-
     public List<String> getGrouping(String schema) {
         AkibanInformationSchema ais = ais();
         Grouping grouping = GroupsBuilder.fromAis(ais, schema);

@@ -51,8 +51,4 @@ public interface DXLMXBean {
     TableName getGroupNameFromTableName(String schema, String table);
 
     String printAIS();
-
-    public IndexCheckSummary checkAndFix(String schemaRegex, String tableRegex);
-
-    public IndexCheckSummary checkAndFixAll();
 }

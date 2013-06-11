@@ -211,8 +211,6 @@ public interface DDLFunctions {
      */
     void updateTableStatistics(Session session, TableName tableName, Collection<String> indexesToUpdate);
 
-    IndexCheckSummary checkAndFixIndexes(Session session, String schemaRegex, String tableRegex);
-
     /**
      * Create a view.
      * @param session the session to run the Create under
