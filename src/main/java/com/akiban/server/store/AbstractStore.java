@@ -70,14 +70,12 @@ import java.util.concurrent.atomic.AtomicLong;
 public abstract class AbstractStore<SDType> implements Store {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractStore.class.getName());
 
+    protected final static int MAX_ROW_SIZE = 5000000;
     private static final InOutTap WRITE_ROW_TAP = Tap.createTimer("write: write_row");
     private static final InOutTap NEW_COLLECTOR_TAP = Tap.createTimer("read: new_collector");
-    private static final InOutTap PROPAGATE_HKEY_CHANGE_TAP = Tap.createTimer("write: propagate_hkey_change");
-    private static final InOutTap PROPAGATE_HKEY_CHANGE_ROW_REPLACE_TAP = Tap.createTimer("write: propagate_hkey_change_row_replace");
-
+    private static final InOutTap PROPAGATE_CHANGE_TAP = Tap.createTimer("write: propagate_hkey_change");
+    private static final InOutTap PROPAGATE_REPLACE_TAP = Tap.createTimer("write: propagate_hkey_change_row_replace");
     private static final Session.MapKey<Integer,List<RowCollector>> COLLECTORS = Session.MapKey.mapNamed("collectors");
-
-    protected final static int MAX_ROW_SIZE = 5000000;
 
     protected final LockService lockService;
     protected final SchemaManager schemaManager;
@@ -127,8 +125,8 @@ public abstract class AbstractStore<SDType> implements Store {
                               AtomicLong hiddenPk,
                               Key hKeyOut) {
         // Initialize the HKey being constructed
+        hKeyOut.clear();
         PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKeyOut);
-        hKeyAppender.key().clear();
 
         // Metadata for the row's table
         UserTable table = rowDef.userTable();
@@ -653,7 +651,7 @@ public abstract class AbstractStore<SDType> implements Store {
                                       boolean cascadeDelete)
     {
         beginDescendantIteration(session, storeData);
-        PROPAGATE_HKEY_CHANGE_TAP.in();
+        PROPAGATE_CHANGE_TAP.in();
         try {
             Key hKey = getKey(session, storeData);
             RowData descendantRowData = new RowData(new byte[0]);
@@ -663,7 +661,7 @@ public abstract class AbstractStore<SDType> implements Store {
                 RowDef descendantRowDef = getRowDef(session, descendantRowDefId);
                 int descendantOrdinal = descendantRowDef.userTable().getOrdinal();
                 if((tablesRequiringHKeyMaintenance == null || tablesRequiringHKeyMaintenance.get(descendantOrdinal))) {
-                    PROPAGATE_HKEY_CHANGE_ROW_REPLACE_TAP.in();
+                    PROPAGATE_REPLACE_TAP.in();
                     try {
                         addChangeFor(descendantRowDef.userTable(), session, hKey);
                         // Don't call deleteRow as the hKey does not need recomputed.
@@ -679,12 +677,12 @@ public abstract class AbstractStore<SDType> implements Store {
                             writeRow(session, descendantRowData, tablesRequiringHKeyMaintenance, false);
                         }
                     } finally {
-                        PROPAGATE_HKEY_CHANGE_ROW_REPLACE_TAP.out();
+                        PROPAGATE_REPLACE_TAP.out();
                     }
                 }
             }
         } finally {
-            PROPAGATE_HKEY_CHANGE_TAP.out();
+            PROPAGATE_CHANGE_TAP.out();
             endDescendantIteration(session, storeData);
         }
     }
@@ -715,18 +713,16 @@ public abstract class AbstractStore<SDType> implements Store {
         Key hKey = getKey(session, storeData);
         /*
          * About propagateHKeyChanges as second to last argument to constructHKey (i.e. insertingRow):
-         * - If this argument is true, it means that we're inserting a new row, and if the row's type
-         *   has a generated PK, then a PK value needs to be generated.
-         * - If this writeRow invocation is being done as part of hKey maintenance (called from
-         *   propagateDownGroup with propagateHKeyChanges false), then we are deleting and reinserting
-         *   a row, and we don't want the PK value changed.
+         * - If true, we're inserting a row and may need to generate a PK (for no-pk tables)
+         * - If this invocation is being done as part of hKey maintenance (propagate = false),
+         *   then we are deleting and reinserting a row, and we don't want the PK value changed.
          * - See bug 1020342.
          */
         constructHKey(session, rowDef, rowData, propagateHKeyChanges, hKey);
         /*
-         * Don't check hKey uniqueness here. It would require a database access and we're not int
-         * in a good position to report a meaningful uniqueness violation, e.g. on the PK, since
-         * we don't have the PK value handy. Instead, rely on PK validation when indexes are maintained.
+         * Don't check hKey uniqueness here. It would require a database access and we're not in
+         * in a good position to report a meaningful uniqueness violation (e.g. on the PK).
+         * Instead, rely on PK validation when indexes are maintained.
          */
         packRowData(session, storeData, rowData);
         save(session, storeData);
@@ -744,11 +740,7 @@ public abstract class AbstractStore<SDType> implements Store {
             insertIntoIndex(session, index, rowData, hKey, indexRow);
         }
 
-        /*
-         * Bump row count *after* uniqueness checks in insertIntoIndex.
-         * Avoids spurious live value increases to the TableStatus row count.
-         * See bug1112940.
-         */
+        // Bump row count *after* uniqueness checks. Avoids drift of TableStatus#getApproximateRowCount. See bug1112940.
         rowDef.getTableStatus().rowsWritten(session, 1);
 
         if(propagateHKeyChanges && rowDef.userTable().hasChildren()) {
@@ -761,19 +753,13 @@ public abstract class AbstractStore<SDType> implements Store {
             PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKey);
             UserTable table = rowDef.userTable();
             List<Column> pkColumns = table.getPrimaryKeyIncludingInternal().getColumns();
-            List<HKeySegment> hKeySegments = table.hKey().segments();
-            int s = 0;
-            while (s < hKeySegments.size()) {
-                HKeySegment segment = hKeySegments.get(s++);
+            for(HKeySegment segment : table.hKey().segments()) {
                 RowDef segmentRowDef = segment.table().rowDef();
                 hKey.append(segmentRowDef.userTable().getOrdinal());
-                List<HKeyColumn> hKeyColumns = segment.columns();
-                int c = 0;
-                while (c < hKeyColumns.size()) {
-                    HKeyColumn hKeyColumn = hKeyColumns.get(c++);
+                for(HKeyColumn hKeyColumn : segment.columns()) {
                     Column column = hKeyColumn.column();
-                    RowDef columnTableRowDef = column.getTable().rowDef();
-                    if (pkColumns.contains(column)) {
+                    if(pkColumns.contains(column)) {
+                        RowDef columnTableRowDef = column.getTable().rowDef();
                         hKeyAppender.append(columnTableRowDef.getFieldDef(column.getPosition()), rowData);
                     } else {
                         hKey.append(null);
