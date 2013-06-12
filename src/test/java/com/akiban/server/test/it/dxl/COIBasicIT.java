@@ -246,21 +246,27 @@ public final class COIBasicIT extends ITBase {
 
         Object[] cCols = { 1, "c1" };
         Object[] oCols = { 10, 1 };
+        Object[] o2Cols = { 20, 2 };
         Object[] iCols = { 100, 10, "i100" };
 
         TestRow cRow = new TestRow(cType, cCols);
         TestRow oRow = new TestRow(oType, oCols);
+        TestRow o2Row = new TestRow(oType, o2Cols);
         TestRow iRow = new TestRow(iType, iCols);
 
-        // Insert in reverse order and scan after each to ensure hkey changes and expected ordering
+        // Unrelated o row, to demonstrate i ordering/adoption
+        writeRow(tids.o, o2Cols);
+        compareRows( new RowBase[] { o2Row }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+
+        // i is first due to null cid component
         writeRow(tids.i, iCols);
-        compareRows( new RowBase[] { iRow }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        compareRows( new RowBase[] { iRow, o2Row }, adapter.newGroupCursor(cType.userTable().getGroup()) );
 
         // i should get adopted by the new o, filling in it's cid component
         writeRow(tids.o, oCols);
-        compareRows( new RowBase[] { oRow, iRow }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        compareRows( new RowBase[] { oRow, iRow, o2Row }, adapter.newGroupCursor(cType.userTable().getGroup()) );
 
         writeRow(tids.c, cCols);
-        compareRows( new RowBase[] { cRow, oRow, iRow }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        compareRows( new RowBase[] { cRow, oRow, iRow, o2Row }, adapter.newGroupCursor(cType.userTable().getGroup()) );
     }
 }
