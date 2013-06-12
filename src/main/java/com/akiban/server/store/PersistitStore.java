@@ -127,21 +127,26 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
                            String table,
                            String index,
                            Integer indexId,
-                           Key rowHKey) throws PersistitException
+                           Key rowHKey)
     {
-        Exchange ex = getChangeExchange(session);
+        try {
+            Exchange ex = getChangeExchange(session);
 
-        // KEY: schema | table | indexName | indexId | unique_num 
-        ex.clear().append(schema).append(table).append(index).append(indexId).append(uniqueChangeId.getAndIncrement());
+            // KEY: schema | table | indexName | indexId | unique_num
+            ex.clear().append(schema).append(table).append(index).append(indexId).append(uniqueChangeId.getAndIncrement());
 
-        // VALUE: rowHKey's bytes | indexId
-        ex.getValue().clear().putByteArray(rowHKey.getEncodedBytes(),
-                                           0,
-                                           rowHKey.getEncodedSize());
-        ex.store();
+            // VALUE: rowHKey's bytes | indexId
+            ex.getValue().clear().putByteArray(rowHKey.getEncodedBytes(),
+                                               0,
+                                               rowHKey.getEncodedSize());
+            ex.store();
+        } catch(PersistitException e) {
+            throw PersistitAdapter.wrapPersistitException(session, e);
+        }
     }
 
-    private void addChangeFor(UserTable tb, Session session, Key hKey) throws PersistitException
+    @Override
+    protected void addChangeFor(UserTable tb, Session session, Key hKey)
     {
         for (Index index : tb.getFullTextIndexes())
         {
