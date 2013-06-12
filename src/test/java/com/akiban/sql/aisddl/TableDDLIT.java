@@ -33,11 +33,20 @@ import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.DuplicateSequenceNameException;
 import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.service.servicemanager.GuicedServiceManager;
+import com.akiban.server.service.text.FullTextIndexService;
+import com.akiban.server.service.text.FullTextIndexServiceImpl;
 
 public class TableDDLIT extends AISDDLITBase {
 
     private static final String DROP_T1 = "DROP TABLE test.t1";
     private static final String DROP_T2 = "DROP TABLE test.t2";
+
+    @Override
+    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
+        return super.serviceBindingsProvider()
+                .bindAndRequire(FullTextIndexService.class, FullTextIndexServiceImpl.class);
+    }
     
     @Test (expected=NoSuchTableException.class)
     public void testDropFail() throws Exception {
