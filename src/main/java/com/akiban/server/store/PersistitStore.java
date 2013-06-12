@@ -67,11 +67,6 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
 
     private static final InOutTap TABLE_INDEX_MAINTENANCE_TAP = Tap.createTimer("index: maintain_table");
 
-    // an InOutTap would be nice, but pre-propagateDownGroup optimization, propagateDownGroup was called recursively
-    // (via writeRow). PointTap handles this correctly, InOutTap does not, currently.
-    private static final PointTap PROPAGATE_HKEY_CHANGE_TAP = Tap.createCount("write: propagate_hkey_change");
-    private static final PointTap PROPAGATE_HKEY_CHANGE_ROW_REPLACE_TAP = Tap.createCount("write: propagate_hkey_change_row_replace");
-
     private static final String WRITE_LOCK_ENABLED_CONFIG = "akserver.write_lock_enabled";
     private static final String MAINTENANCE_SCHEMA = "maintenance";
     private static final String FULL_TEXT_TABLE = "full_text";
@@ -616,7 +611,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
             PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
             if(deleteIndexes) {
                 for (Index index : rowDef.getIndexes()) {
-                    deleteIndex(session, index, rowData, hEx.getKey(), indexRow);
+                    deleteIndexRow(session, index, rowData, hEx.getKey(), indexRow);
                 }
             }
 
@@ -728,62 +723,6 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     private void checkNoGroupIndexes(Table table) {
         if (updateGroupIndexes && !table.getGroupIndexes().isEmpty()) {
             throw new UnsupportedOperationException("PersistitStore can't update group indexes; found on " + table);
-        }
-    }
-
-    /**
-     * tablesRequiringHKeyMaintenance is non-null only when we're implementing an updateRow as delete/insert, due
-     * to a PK or FK column being updated.
-     */
-    @Override
-    protected void propagateDownGroup(Session session,
-                                      Exchange exchange,
-                                      BitSet tablesRequiringHKeyMaintenance,
-                                      PersistitIndexRowBuffer indexRowBuffer,
-                                      boolean deleteIndexes,
-                                      boolean cascadeDelete)
-    {
-        try {
-        // exchange is positioned at a row R that has just been replaced by R', (because we're processing an update
-        // that has to be implemented as delete/insert). hKey is the hkey of R. The replacement, R', is already
-        // present. For each descendent* D of R, this method deletes and reinserts D. Reinsertion of D causes its
-        // hkey to be recomputed. This may depend on an ancestor being updated (if part of D's hkey comes from
-        // the parent's PK index). That's OK because updates are processed preorder, (i.e., ancestors before
-        // descendents). This method will modify the state of exchange.
-        //
-        // * D is a descendent of R means that D is below R in the group. I.e., hkey(R) is a prefix of hkey(D).
-        PROPAGATE_HKEY_CHANGE_TAP.hit();
-        Key hKey = exchange.getKey();
-        KeyFilter filter = new KeyFilter(hKey, hKey.getDepth() + 1, Integer.MAX_VALUE);
-        RowData descendentRowData = new RowData(EMPTY_BYTE_ARRAY);
-        while (exchange.next(filter)) {
-            expandRowData(exchange, descendentRowData);
-            int descendentRowDefId = descendentRowData.getRowDefId();
-            RowDef descendentRowDef = getRowDef(session, descendentRowDefId);
-            int descendentOrdinal = descendentRowDef.userTable().getOrdinal();
-            if ((tablesRequiringHKeyMaintenance == null || tablesRequiringHKeyMaintenance.get(descendentOrdinal))) {
-                PROPAGATE_HKEY_CHANGE_ROW_REPLACE_TAP.hit();
-                
-                // record the change
-                addChangeFor(descendentRowDef.userTable(), session, exchange.getKey());
-                
-                // Delete the current row from the tree. Don't call deleteRow, because we don't need to recompute
-                // the hkey.
-                exchange.remove();
-                descendentRowDef.getTableStatus().rowDeleted(session);
-                if(deleteIndexes) {
-                    for (Index index : descendentRowDef.getIndexes()) {
-                        deleteIndex(session, index, descendentRowData, exchange.getKey(), indexRowBuffer);
-                    }
-                }
-                if (!cascadeDelete) {
-                    // Reinsert it, recomputing the hkey and maintaining indexes
-                    writeRow(session, descendentRowData, tablesRequiringHKeyMaintenance, false);
-                }
-            }
-        }
-        } catch(PersistitException e) {
-            throw PersistitAdapter.wrapPersistitException(session, e);
         }
     }
 
@@ -958,16 +897,21 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         assert deleted : "Exchange remove on deleteIndexRow";
     }
 
-    private void deleteIndex(Session session,
-                             Index index,
-                             RowData rowData,
-                             Key hkey,
-                             PersistitIndexRowBuffer indexRowBuffer)
-            throws PersistitException {
+    @Override
+    protected void deleteIndexRow(Session session,
+                                  Index index,
+                                  RowData rowData,
+                                  Key hKey,
+                                  PersistitIndexRowBuffer indexRowBuffer) {
         checkNotGroupIndex(index);
         Exchange iEx = getExchange(session, index);
-        deleteIndexRow(session, index, iEx, rowData, hkey, indexRowBuffer);
-        releaseExchange(session, iEx);
+        try {
+            deleteIndexRow(session, index, iEx, rowData, hKey, indexRowBuffer);
+        } catch(PersistitException e) {
+            throw PersistitAdapter.wrapPersistitException(session, e);
+        } finally {
+            releaseExchange(session, iEx);
+        }
     }
 
     @Override
@@ -985,6 +929,39 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         }
     }
 
+    @Override
+    protected void remove(Session session, Exchange ex) {
+        try {
+            ex.remove();
+        } catch(PersistitException e) {
+            throw PersistitAdapter.wrapPersistitException(session, e);
+        }
+    }
+
+    @Override
+    protected void beginDescendantIteration(Session session, Exchange ex) {
+        assert ex.getAppCache() == null : "Iteration already open";
+        Key hKey = ex.getKey();
+        KeyFilter filter = new KeyFilter(hKey, hKey.getDepth() + 1, Integer.MAX_VALUE);
+        ex.setAppCache(filter);
+    }
+
+    @Override
+    protected void endDescendantIteration(Session session, Exchange ex) {
+        ex.setAppCache(null);
+    }
+
+    @Override
+    protected boolean nextDescendant(Session session, Exchange ex) {
+        KeyFilter filter = (KeyFilter)ex.getAppCache();
+        try {
+            return ex.next(filter);
+        } catch(PersistitException e) {
+            throw PersistitAdapter.wrapPersistitException(session, e);
+        }
+    }
+
+    @Override
     public void expandRowData(final Exchange exchange, final RowData rowData) {
         final Value value = exchange.getValue();
         try {

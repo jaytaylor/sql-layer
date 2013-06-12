@@ -54,6 +54,7 @@ import com.akiban.server.store.statistics.HistogramEntry;
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 import com.persistit.Key;
 import org.slf4j.Logger;
@@ -72,6 +73,11 @@ public abstract class AbstractStore<SDType> implements Store {
 
     private static final InOutTap WRITE_ROW_TAP = Tap.createTimer("write: write_row");
     private static final InOutTap NEW_COLLECTOR_TAP = Tap.createTimer("read: new_collector");
+    // An InOutTap would be nice, but pre-propagateDownGroup optimization, propagateDownGroup was called recursively
+    // (via writeRow). PointTap handles this correctly, InOutTap does not, currently.
+    private static final PointTap PROPAGATE_HKEY_CHANGE_TAP = Tap.createCount("write: propagate_hkey_change");
+    private static final PointTap PROPAGATE_HKEY_CHANGE_ROW_REPLACE_TAP = Tap.createCount("write: propagate_hkey_change_row_replace");
+
     private static final Session.MapKey<Integer,List<RowCollector>> COLLECTORS = Session.MapKey.mapNamed("collectors");
 
     protected final static int MAX_ROW_SIZE = 5000000;
@@ -597,15 +603,78 @@ public abstract class AbstractStore<SDType> implements Store {
     protected abstract Key getKey(Session session, SDType storeData);
 
     protected abstract void packRowData(Session session, SDType storeData, RowData rowData);
+    public abstract void expandRowData(SDType storeData, RowData rowData);
 
     protected abstract void save(Session session, SDType storeData);
+    protected abstract void remove(Session session, SDType storeData);
 
-    protected abstract void propagateDownGroup(Session session,
-                                               SDType storeData,
-                                               BitSet tablesRequiringHKeyMaintenance,
-                                               PersistitIndexRowBuffer indexRowBuffer,
-                                               boolean deleteIndexes,
-                                               boolean cascadeDelete);
+    protected abstract void beginDescendantIteration(Session session, SDType storeData);
+    protected abstract void endDescendantIteration(Session session, SDType storeData);
+    protected abstract boolean nextDescendant(Session session, SDType storeData);
+
+
+    protected abstract void deleteIndexRow(Session session,
+                                           Index index,
+                                           RowData rowData,
+                                           Key hKey,
+                                           PersistitIndexRowBuffer indexRowBuffer);
+
+    /**
+     * tablesRequiringHKeyMaintenance is non-null only when we're implementing an updateRow as delete/insert, due
+     * to a PK or FK column being updated.
+     */
+    protected void propagateDownGroup(Session session,
+                                      SDType storeData,
+                                      BitSet tablesRequiringHKeyMaintenance,
+                                      PersistitIndexRowBuffer indexRowBuffer,
+                                      boolean deleteIndexes,
+                                      boolean cascadeDelete)
+    {
+        // exchange is positioned at a row R that has just been replaced by R', (because we're processing an update
+        // that has to be implemented as delete/insert). hKey is the hKey of R. The replacement, R', is already
+        // present. For each descendant* D of R, this method deletes and reinserts D. Reinsertion of D causes its
+        // hKey to be recomputed. This may depend on an ancestor being updated (if part of D's hKey comes from
+        // the parent's PK index). That's OK because updates are processed pre-order, (i.e., ancestors before
+        // descendants). This method will modify the state of exchange.
+        //
+        // * D is a descendant of R means that D is below R in the group. I.e., hKey(R) is a prefix of hKey(D).
+        PROPAGATE_HKEY_CHANGE_TAP.hit();
+        beginDescendantIteration(session, storeData);
+        try {
+            Key hKey = getKey(session, storeData);
+            RowData descendantRowData = new RowData(new byte[0]);
+
+            while(nextDescendant(session, storeData)) {
+                expandRowData(storeData, descendantRowData);
+
+                int descendantRowDefId = descendantRowData.getRowDefId();
+                RowDef descendantRowDef = getRowDef(session, descendantRowDefId);
+                int descendantOrdinal = descendantRowDef.userTable().getOrdinal();
+                if ((tablesRequiringHKeyMaintenance == null || tablesRequiringHKeyMaintenance.get(descendantOrdinal))) {
+                    PROPAGATE_HKEY_CHANGE_ROW_REPLACE_TAP.hit();
+
+                    // TODO: FullText
+                    //addChangeFor(descendantRowDef.userTable(), session, hKey);
+
+                    // Delete the current row. Don't call deleteRow, because we don't need to recompute the hKey.
+                    remove(session, storeData);
+
+                    descendantRowDef.getTableStatus().rowDeleted(session);
+                    if(deleteIndexes) {
+                        for (Index index : descendantRowDef.getIndexes()) {
+                            deleteIndexRow(session, index, descendantRowData, hKey, indexRowBuffer);
+                        }
+                    }
+                    if (!cascadeDelete) {
+                        // Reinsert it, recomputing the hKey and maintaining indexes
+                        writeRow(session, descendantRowData, tablesRequiringHKeyMaintenance, false);
+                    }
+                }
+            }
+        } finally {
+            endDescendantIteration(session, storeData);
+        }
+    }
 
     protected void writeRow(Session session,
                             RowData rowData,
