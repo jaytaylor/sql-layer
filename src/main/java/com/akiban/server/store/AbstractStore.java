@@ -64,6 +64,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -600,12 +601,10 @@ public abstract class AbstractStore<SDType> implements Store {
     protected abstract void packRowData(Session session, SDType storeData, RowData rowData);
     public abstract void expandRowData(SDType storeData, RowData rowData);
 
-    protected abstract void save(Session session, SDType storeData);
-    protected abstract void remove(Session session, SDType storeData);
+    protected abstract void store(Session session, SDType storeData);
+    protected abstract void clear(Session session, SDType storeData);
 
-    protected abstract void beginDescendantIteration(Session session, SDType storeData);
-    protected abstract void endDescendantIteration(Session session, SDType storeData);
-    protected abstract boolean nextDescendant(Session session, SDType storeData);
+    protected abstract Iterator<Void> createDescendantIterator(Session session, SDType storeData);
 
     protected abstract void deleteIndexRow(Session session,
                                            Index index,
@@ -650,31 +649,31 @@ public abstract class AbstractStore<SDType> implements Store {
                                       boolean deleteIndexes,
                                       boolean cascadeDelete)
     {
-        beginDescendantIteration(session, storeData);
+        Iterator it = createDescendantIterator(session, storeData);
         PROPAGATE_CHANGE_TAP.in();
         try {
             Key hKey = getKey(session, storeData);
-            RowData descendantRowData = new RowData(new byte[0]);
-            while(nextDescendant(session, storeData)) {
-                expandRowData(storeData, descendantRowData);
-                int descendantRowDefId = descendantRowData.getRowDefId();
-                RowDef descendantRowDef = getRowDef(session, descendantRowDefId);
-                int descendantOrdinal = descendantRowDef.userTable().getOrdinal();
-                if((tablesRequiringHKeyMaintenance == null || tablesRequiringHKeyMaintenance.get(descendantOrdinal))) {
+            RowData rowData = new RowData();
+            while(it.hasNext()) {
+                it.next();
+                expandRowData(storeData, rowData);
+                RowDef rowDef = getRowDef(session, rowData.getRowDefId());
+                int ordinal = rowDef.userTable().getOrdinal();
+                if(tablesRequiringHKeyMaintenance == null || tablesRequiringHKeyMaintenance.get(ordinal)) {
                     PROPAGATE_REPLACE_TAP.in();
                     try {
-                        addChangeFor(descendantRowDef.userTable(), session, hKey);
+                        addChangeFor(rowDef.userTable(), session, hKey);
                         // Don't call deleteRow as the hKey does not need recomputed.
-                        remove(session, storeData);
-                        descendantRowDef.getTableStatus().rowDeleted(session);
+                        clear(session, storeData);
+                        rowDef.getTableStatus().rowDeleted(session);
                         if(deleteIndexes) {
-                            for (Index index : descendantRowDef.getIndexes()) {
-                                deleteIndexRow(session, index, descendantRowData, hKey, indexRowBuffer);
+                            for(Index index : rowDef.getIndexes()) {
+                                deleteIndexRow(session, index, rowData, hKey, indexRowBuffer);
                             }
                         }
                         if(!cascadeDelete) {
                             // Reinsert it, recomputing the hKey and maintaining indexes
-                            writeRow(session, descendantRowData, tablesRequiringHKeyMaintenance, false);
+                            writeRow(session, rowData, tablesRequiringHKeyMaintenance, false);
                         }
                     } finally {
                         PROPAGATE_REPLACE_TAP.out();
@@ -683,7 +682,6 @@ public abstract class AbstractStore<SDType> implements Store {
             }
         } finally {
             PROPAGATE_CHANGE_TAP.out();
-            endDescendantIteration(session, storeData);
         }
     }
 
@@ -725,7 +723,7 @@ public abstract class AbstractStore<SDType> implements Store {
          * Instead, rely on PK validation when indexes are maintained.
          */
         packRowData(session, storeData, rowData);
-        save(session, storeData);
+        store(session, storeData);
         if(rowDef.isAutoIncrement()) {
             final long location = rowDef.fieldLocation(rowData, rowDef.getAutoIncrementField());
             if(location != 0) {

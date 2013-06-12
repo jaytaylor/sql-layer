@@ -44,7 +44,6 @@ import com.akiban.server.service.text.FullTextIndexService;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 import com.persistit.*;
 import com.persistit.Management.DisplayFilter;
@@ -926,7 +925,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
-    public void save(Session session, Exchange ex) {
+    public void store(Session session, Exchange ex) {
         try {
             ex.store();
         } catch(PersistitException e) {
@@ -935,7 +934,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
-    protected void remove(Session session, Exchange ex) {
+    protected void clear(Session session, Exchange ex) {
         try {
             ex.remove();
         } catch(PersistitException e) {
@@ -944,26 +943,39 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
-    protected void beginDescendantIteration(Session session, Exchange ex) {
-        assert ex.getAppCache() == null : "Iteration already open";
-        Key hKey = ex.getKey();
-        KeyFilter filter = new KeyFilter(hKey, hKey.getDepth() + 1, Integer.MAX_VALUE);
-        ex.setAppCache(filter);
-    }
+    protected Iterator<Void> createDescendantIterator(final Session session, final Exchange ex) {
+        final Key hKey = ex.getKey();
+        final KeyFilter filter = new KeyFilter(hKey, hKey.getDepth() + 1, Integer.MAX_VALUE);
+        return new Iterator<Void>() {
+            private Boolean lastExNext = null;
 
-    @Override
-    protected void endDescendantIteration(Session session, Exchange ex) {
-        ex.setAppCache(null);
-    }
+            @Override
+            public boolean hasNext() {
+                if(lastExNext == null) {
+                    next();
+                }
+                return lastExNext;
+            }
 
-    @Override
-    protected boolean nextDescendant(Session session, Exchange ex) {
-        KeyFilter filter = (KeyFilter)ex.getAppCache();
-        try {
-            return ex.next(filter);
-        } catch(PersistitException e) {
-            throw PersistitAdapter.wrapPersistitException(session, e);
-        }
+            @Override
+            public Void next() {
+                if(lastExNext != null) {
+                    lastExNext = null;
+                } else {
+                    try {
+                        lastExNext = ex.next(filter);
+                    } catch(PersistitException e) {
+                        throw PersistitAdapter.wrapPersistitException(session, e);
+                    }
+                }
+                return null;
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        };
     }
 
     @Override
