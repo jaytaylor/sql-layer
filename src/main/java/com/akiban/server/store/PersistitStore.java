@@ -557,16 +557,16 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
 
     @Override
     public PersistitIndexRowBuffer readIndexRow(Session session,
-                                                Index index,
+                                                Index parentPKIndex,
                                                 Exchange exchange,
-                                                RowDef rowDef,
-                                                RowData rowData)
+                                                RowDef childRowDef,
+                                                RowData childRowData)
     {
         PersistitKeyAppender keyAppender = PersistitKeyAppender.create(exchange.getKey());
-        int[] fields = rowDef.getParentJoinFields();
+        int[] fields = childRowDef.getParentJoinFields();
         for (int fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
-            FieldDef fieldDef = rowDef.getFieldDef(fields[fieldIndex]);
-            keyAppender.append(fieldDef, rowData);
+            FieldDef fieldDef = childRowDef.getFieldDef(fields[fieldIndex]);
+            keyAppender.append(fieldDef, childRowData);
         }
         try {
             exchange.fetch();
@@ -576,7 +576,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         PersistitIndexRowBuffer indexRow = null;
         if (exchange.getValue().isDefined()) {
             indexRow = new PersistitIndexRowBuffer(this);
-            indexRow.resetForRead(index, exchange.getKey(), exchange.getValue());
+            indexRow.resetForRead(parentPKIndex, exchange.getKey(), exchange.getValue());
         }
         return indexRow;
     }
@@ -700,7 +700,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
                     : null;
             if (tablesRequiringHKeyMaintenance == null) {
                 // No PK or FK fields have changed. Just update the row.
-                packRowData(session, hEx, mergedRowData);
+                packRowData(hEx, mergedRowData);
                 // Store the h-row
                 hEx.store();
                 // Update the indexes (new row)
@@ -919,7 +919,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
-    public void packRowData(Session session, Exchange ex, RowData rowData) {
+    public void packRowData(Exchange ex, RowData rowData) {
         Value value = ex.getValue();
         value.directPut(valueCoder, rowData, null);
     }

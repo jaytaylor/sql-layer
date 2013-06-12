@@ -111,17 +111,17 @@ public abstract class AbstractStore<SDType> implements Store {
     protected abstract void expandRowData(SDType storeData, RowData rowData);
 
     /** Store the RowData in associated value. */
-    protected abstract void packRowData(Session session, SDType storeData, RowData rowData);
+    protected abstract void packRowData(SDType storeData, RowData rowData);
 
     /** Create an iterator to visit all descendants of the current key. */
     protected abstract Iterator<Void> createDescendantIterator(Session session, SDType storeData);
 
     /** Read the index row for the given RowData or null if not present. storeData has been initialized for index. */
     protected abstract PersistitIndexRowBuffer readIndexRow(Session session,
-                                                            Index index,
+                                                            Index parentPKIndex,
                                                             SDType storeData,
-                                                            RowDef rowDef,
-                                                            RowData rowData);
+                                                            RowDef childRowDef,
+                                                            RowData childRowData);
 
     /** Save the index row for the given RowData. Key has been pre-filled with the owning hKey. */
     protected abstract void writeIndexRow(Session session,
@@ -643,7 +643,7 @@ public abstract class AbstractStore<SDType> implements Store {
          * in a good position to report a meaningful uniqueness violation (e.g. on the PK).
          * Instead, rely on PK validation when indexes are maintained.
          */
-        packRowData(session, storeData, rowData);
+        packRowData(storeData, rowData);
         store(session, storeData);
         if(rowDef.isAutoIncrement()) {
             final long location = rowDef.fieldLocation(rowData, rowDef.getAutoIncrementField());
