@@ -60,7 +60,7 @@ public class SortPT extends QPProfilePTBase
         Tap.setEnabled(OPERATOR_TAPS, true);
         ordering = ordering();
         ordering.append(ExpressionGenerators.field(tRowType, 0), true);
-        plan = sort_Tree(groupScan_Default(group), tRowType, ordering, SortOption.PRESERVE_DUPLICATES);
+        plan = sort_General(groupScan_Default(group), tRowType, ordering, SortOption.PRESERVE_DUPLICATES);
         populateDB(10000000);
         // Warmup
         profileSort(10000, 0, false);
@@ -103,7 +103,7 @@ public class SortPT extends QPProfilePTBase
         Ordering ordering = ordering();
         ordering.append(ExpressionGenerators.field(tRowType, field), true);
         Operator plan = 
-            sort_Tree(
+            sort_General(
                 limit_Default(
                     groupScan_Default(group),
                     n),

@@ -86,8 +86,6 @@ public class ModelBuilderIT extends ITBase {
             txnService(),
             dxl(),
             store(),
-            treeService(),
-            configService(),
             restDMLService
         );
     }

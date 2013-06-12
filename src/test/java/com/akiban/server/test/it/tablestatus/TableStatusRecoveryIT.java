@@ -77,9 +77,9 @@ public class TableStatusRecoveryIT extends ITBase {
         transactionally(new Callable<Void>() {
             public Void call() throws Exception {
                 final TableStatus status = getRowDef(tableId).getTableStatus();
-                assertEquals(20000, status.getRowCount());
+                assertEquals(20000, status.getRowCount(session()));
                 writeRows(createNewRow(tableId, 20001, "This is record # ", -1));
-                assertEquals(20001, status.getUniqueID());
+                assertEquals(20001, status.getUniqueID(session()));
                 return null;
             }
         });
@@ -132,7 +132,7 @@ public class TableStatusRecoveryIT extends ITBase {
     }
 
     private void crashAndRestartSaveDatapath() throws Exception {
-        final Persistit db = serviceManager().getTreeService().getDb();
+        final Persistit db = treeService().getDb();
 
         final String datapath = db.getProperty("datapath");
         db.force();

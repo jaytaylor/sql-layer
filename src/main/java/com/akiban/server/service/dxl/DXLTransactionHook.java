@@ -91,7 +91,6 @@ public class DXLTransactionHook implements DXLFunctionsHook {
             // Remaining methods on DDL interface, querying only
             case GET_DDLS:
             case UPDATE_TABLE_STATISTICS:
-            case CHECK_AND_FIX_INDEXES:
             case GET_AIS:
             case GET_TABLE_ID:
             case GET_TABLE_BY_ID:

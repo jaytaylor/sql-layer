@@ -17,10 +17,6 @@
 
 package com.akiban.server.service.dxl;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableName;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.error.ServiceNotStartedException;
@@ -32,7 +28,6 @@ import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.akiban.server.store.statistics.IndexStatisticsService;
@@ -42,10 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     private final static String CONFIG_USE_GLOBAL_LOCK = "akserver.dxl.use_global_lock";
@@ -57,7 +49,6 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     private volatile DMLFunctions dmlFunctions;
     private final SchemaManager schemaManager;
     private final Store store;
-    private final TreeService treeService;
     private final SessionService sessionService;
     private final IndexStatisticsService indexStatisticsService;
     private final ConfigurationService configService;
@@ -67,7 +58,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
-        return new JmxObjectInfo("DXL", new DXLMXBeanImpl(this, store(), sessionService), DXLMXBean.class);
+        return new JmxObjectInfo("DXL", new DXLMXBeanImpl(this, sessionService), DXLMXBean.class);
     }
 
     @Override
@@ -88,15 +79,14 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
             ddlFunctions = localDdlFunctions;
             dmlFunctions = localDmlFunctions;
         }
-        recreateGroupIndexes(startupGiRecreatePredicate());
     }
 
     DMLFunctions createDMLFunctions(BasicDXLMiddleman middleman, DDLFunctions newlyCreatedDDLF) {
-        return new BasicDMLFunctions(middleman, schemaManager, store, treeService, newlyCreatedDDLF);
+        return new BasicDMLFunctions(middleman, schemaManager, store, newlyCreatedDDLF);
     }
 
     DDLFunctions createDDLFunctions(BasicDXLMiddleman middleman) {
-        return new BasicDDLFunctions(middleman, schemaManager, store, treeService, indexStatisticsService, configService,
+        return new BasicDDLFunctions(middleman, schemaManager, store, indexStatisticsService, configService,
                                      t3Registry, lockService, txnService);
     }
 
@@ -130,39 +120,6 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
         return ret;
     }
 
-    @Override
-    public void recreateGroupIndexes(GroupIndexRecreatePredicate predicate) {
-        Session session = sessionService.createSession();
-        try {
-            DDLFunctions ddl = ddlFunctions();
-            AkibanInformationSchema ais = ddl.getAIS(session);
-            Map<TableName,List<GroupIndex>> gisByGroup = new HashMap<>();
-            for (com.akiban.ais.model.Group group : ais.getGroups().values()) {
-                ArrayList<GroupIndex> groupGis = new ArrayList<>(group.getIndexes());
-                for (Iterator<GroupIndex> iterator = groupGis.iterator(); iterator.hasNext(); ) {
-                    GroupIndex gi = iterator.next();
-                    boolean shouldRecreate = predicate.shouldRecreate(gi);
-                    groupIndexMayNeedRecreating(gi, shouldRecreate);
-                    if (!shouldRecreate) {
-                        iterator.remove();
-                    }
-                }
-                gisByGroup.put(group.getName(), groupGis);
-            }
-            for (Map.Entry<TableName,List<GroupIndex>> entry : gisByGroup.entrySet()) {
-                List<GroupIndex> gis = entry.getValue();
-                List<String> giNames = new ArrayList<>(gis.size());
-                for (Index gi : gis) {
-                    giNames.add(gi.getIndexName().getName());
-                }
-                ddl.dropGroupIndexes(session, entry.getKey(), giNames);
-                ddl.createIndexes(session, gis);
-            }
-        } finally {
-            session.close();
-        }
-    }
-
     protected List<DXLFunctionsHook> getHooks(boolean useGlobalLock) {
         List<DXLFunctionsHook> hooks = new ArrayList<>();
         if(useGlobalLock) {
@@ -179,12 +136,11 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     }
 
     @Inject
-    public DXLServiceImpl(SchemaManager schemaManager, Store store, TreeService treeService, SessionService sessionService,
+    public DXLServiceImpl(SchemaManager schemaManager, Store store, SessionService sessionService,
                           IndexStatisticsService indexStatisticsService, ConfigurationService configService, T3RegistryService t3Registry,
                           TransactionService txnService, LockService lockService) {
         this.schemaManager = schemaManager;
         this.store = store;
-        this.treeService = treeService;
         this.sessionService = sessionService;
         this.indexStatisticsService = indexStatisticsService;
         this.configService = configService;
@@ -201,10 +157,6 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     protected final Store store() {
         return store;
-    }
-
-    protected final TreeService treeService() {
-        return treeService;
     }
 
     protected final IndexStatisticsService indexStatisticsService() {
@@ -229,24 +181,5 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     protected final Session session() {
         return null;
-    }
-
-    /**
-     * Invoked when a group index may need recreating due to an invocation of {@linkplain #recreateGroupIndexes}. This
-     * method will be invoked <em>before</em> the index has been rebuilt; it'll still be active.
-     * @param groupIndex the index that's about to be recreated
-     * @param needsRecreating whether the index will be recreated
-     */
-    protected void groupIndexMayNeedRecreating(GroupIndex groupIndex, boolean needsRecreating) {
-        // nothing
-    }
-
-    private GroupIndexRecreatePredicate startupGiRecreatePredicate() {
-        return new GroupIndexRecreatePredicate() {
-            @Override
-            public boolean shouldRecreate(GroupIndex index) {
-                return ! index.isValid();
-            }
-        };
     }
 }

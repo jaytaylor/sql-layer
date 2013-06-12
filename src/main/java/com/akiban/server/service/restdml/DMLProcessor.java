@@ -31,9 +31,7 @@ import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.ProtectedTableDDLException;
-import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.types3.mcompat.mtypes.MString;
@@ -42,17 +40,11 @@ import com.akiban.server.types3.pvalue.PValueSource;
 
 public abstract class DMLProcessor {
 
-    private final ConfigurationService configService;
-    private final TreeService treeService;
     private final Store store;
     private final T3RegistryService registryService;
     
-    public DMLProcessor (ConfigurationService configService, 
-            TreeService treeService, 
-            Store store,
-            T3RegistryService t3RegistryService) {
-        this.configService = configService;
-        this.treeService = treeService;
+    public DMLProcessor(Store store,
+                        T3RegistryService t3RegistryService) {
         this.store = store;
         this.registryService = t3RegistryService;
     }

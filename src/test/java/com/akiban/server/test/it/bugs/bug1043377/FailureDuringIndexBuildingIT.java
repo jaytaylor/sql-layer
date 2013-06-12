@@ -77,8 +77,8 @@ public final class FailureDuringIndexBuildingIT extends ITBase {
     public static class ThrowsAfterBuildIndexesStore extends OperatorStore {
         @Inject
         public ThrowsAfterBuildIndexesStore(TreeService treeService, SchemaManager schemaManager,
-                                            LockService lockService, TransactionService transactionService) {
-            super(treeService, null, schemaManager, lockService, transactionService);
+                                            LockService lockService) {
+            super(treeService, null, schemaManager, lockService);
         }
 
         @Override

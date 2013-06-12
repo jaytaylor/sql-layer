@@ -26,7 +26,6 @@ import com.akiban.server.service.monitor.MonitorService;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.stats.StatisticsService;
-import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 
@@ -67,11 +66,6 @@ public abstract class DelegatingServiceManager implements ServiceManager {
     @Override
     public Store getStore() {
         return delegate().getStore();
-    }
-
-    @Override
-    public TreeService getTreeService() {
-        return delegate().getTreeService();
     }
 
     @Override

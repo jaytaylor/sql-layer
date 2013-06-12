@@ -33,7 +33,7 @@ public class TreeServiceImplRemoveTreeIT extends ITBase {
     
     @Test
     public void verifyDeleteTreeReleasesResources() throws Exception {
-        final TreeServiceImpl treeService = (TreeServiceImpl) serviceManager().getTreeService();
+        final TreeServiceImpl treeService = (TreeServiceImpl)treeService();
         final SessionService sessionService = (SessionService) serviceManager().getSessionService();
         final Session session = sessionService.createSession();
         final Exchange ex1 = treeService.getExchange(session, new TestLink("schema", "someTree"));

@@ -21,11 +21,13 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.persistitadapter.Sorter;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.collation.AkCollator;
+import com.akiban.server.service.session.Session;
 import com.akiban.server.store.Store;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
@@ -224,13 +226,12 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public Cursor sort(QueryContext context,
+        public Sorter createSorter(QueryContext context,
                            Cursor input,
                            RowType rowType,
                            API.Ordering ordering,
                            API.SortOption sortOption,
-                           InOutTap loadTap,
-                           boolean usePValues)
+                           InOutTap loadTap)
         {
             throw new UnsupportedOperationException();
         }
@@ -242,7 +243,7 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public long rowCount(RowType tableType)
+        public long rowCount(Session session, RowType tableType)
         {
             throw new UnsupportedOperationException();
         }

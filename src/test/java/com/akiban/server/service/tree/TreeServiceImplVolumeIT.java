@@ -47,7 +47,7 @@ public class TreeServiceImplVolumeIT extends ITBase {
 
     @Test
     public void testCreateVolume() throws Exception {
-        final TreeService treeService = serviceManager().getTreeService();
+        final TreeService treeService = treeService();
         final TestLink link0 = new TestLink("not_drupal", "_schema_");
         checkExchangeName(treeService, link0, "akiban_data");
         final TestLink link1 = new TestLink("drupal_large", "_schema_");

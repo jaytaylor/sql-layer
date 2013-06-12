@@ -17,13 +17,19 @@
 
 package com.akiban.server.store;
 
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
+import com.akiban.ais.model.HKeyColumn;
+import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexToHKey;
 import com.akiban.ais.model.NopVisitor;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
+import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.TableStatus;
 import com.akiban.server.api.dml.ColumnSelector;
@@ -32,6 +38,7 @@ import com.akiban.server.error.CursorCloseBadException;
 import com.akiban.server.error.CursorIsUnknownException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.RowDefNotFoundException;
+import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
@@ -53,8 +60,9 @@ import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
-public abstract class AbstractStore implements Store {
+public abstract class AbstractStore<StoreType,ExceptionType extends Exception> implements Store {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractStore.class.getName());
     private static final InOutTap NEW_COLLECTOR_TAP = Tap.createTimer("read: new_collector");
     private static final Session.MapKey<Integer,List<RowCollector>> COLLECTORS = Session.MapKey.mapNamed("collectors");
@@ -64,6 +72,101 @@ public abstract class AbstractStore implements Store {
     //
     // AbstractStore
     //
+
+    protected abstract StoreType createStoreType(Session session, TreeLink treeLink);
+
+    protected abstract void releaseStoreType(Session session, StoreType storeType);
+
+    protected abstract PersistitIndexRowBuffer readPKIndexRow(Session session,
+                                                              Index pkIndex,
+                                                              StoreType storeData,
+                                                              RowDef rowDef,
+                                                              RowData rowData) throws ExceptionType;
+
+    // TODO: These can be protected after OperatorStore refactoring
+
+    public void constructHKey(Session session,
+                              RowDef rowDef,
+                              RowData rowData,
+                              boolean insertingRow,
+                              Key hKeyOut) throws ExceptionType {
+        constructHKey(session, rowDef, rowData, insertingRow, null, hKeyOut);
+    }
+
+    public void constructHKey(Session session,
+                              RowDef rowDef,
+                              RowData rowData,
+                              boolean insertingRow,
+                              AtomicLong hiddenPk,
+                              Key hKeyOut) throws ExceptionType {
+        // Initialize the HKey being constructed
+        PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKeyOut);
+        hKeyAppender.key().clear();
+
+        // Metadata for the row's table
+        UserTable table = rowDef.userTable();
+        FieldDef[] fieldDefs = rowDef.getFieldDefs();
+
+        // Only set if parent row is looked up
+        int i2hPosition = 0;
+        IndexToHKey indexToHKey = null;
+        StoreType parentStoreData = null;
+        PersistitIndexRowBuffer parentPKIndexRow = null;
+
+        // All columns of all segments of the HKey
+        for(HKeySegment hKeySegment : table.hKey().segments()) {
+            // Ordinal for this segment
+            RowDef segmentRowDef = hKeySegment.table().rowDef();
+            hKeyAppender.append(segmentRowDef.table().getOrdinal());
+            // Segment's columns
+            for(HKeyColumn hKeyColumn : hKeySegment.columns()) {
+                UserTable hKeyColumnTable = hKeyColumn.column().getUserTable();
+                if(hKeyColumnTable != table) {
+                    // HKey column from row of parent table
+                    if (parentStoreData == null) {
+                        // Initialize parent metadata and state
+                        RowDef parentRowDef = rowDef.getParentRowDef();
+                        TableIndex parentPkIndex = parentRowDef.getPKIndex();
+                        indexToHKey = parentPkIndex.indexToHKey();
+                        parentStoreData = createStoreType(session, parentPkIndex.indexDef());
+                        parentPKIndexRow = readPKIndexRow(session, parentPkIndex, parentStoreData, rowDef, rowData);
+                    }
+                    if(indexToHKey.isOrdinal(i2hPosition)) {
+                        assert indexToHKey.getOrdinal(i2hPosition) == segmentRowDef.userTable().getOrdinal() : hKeyColumn;
+                        ++i2hPosition;
+                    }
+                    if(parentPKIndexRow != null) {
+                        parentPKIndexRow.appendFieldTo(indexToHKey.getIndexRowPosition(i2hPosition), hKeyAppender.key());
+                    } else {
+                        // Orphan row
+                        hKeyAppender.appendNull();
+                    }
+                    ++i2hPosition;
+                } else {
+                    // HKey column from rowData
+                    Column column = hKeyColumn.column();
+                    FieldDef fieldDef = fieldDefs[column.getPosition()];
+                    if(insertingRow && column.isAkibanPKColumn()) {
+                        // Must be a PK-less table. Use unique id from TableStatus.
+                        final long uniqueId;
+                        if(hiddenPk == null) {
+                            uniqueId = segmentRowDef.getTableStatus().createNewUniqueID(session);
+                        } else {
+                            uniqueId = hiddenPk.incrementAndGet();
+                        }
+                        hKeyAppender.append(uniqueId);
+                        // Write rowId into the value part of the row also.
+                        rowData.updateNonNullLong(fieldDef, uniqueId);
+                    } else {
+                        hKeyAppender.append(fieldDef, rowData);
+                    }
+                }
+            }
+        }
+        if(parentStoreData != null) {
+            releaseStoreType(session, parentStoreData);
+        }
+    }
 
     protected RowDef rowDefFromExplicitOrId(Session session, RowData rowData) {
         RowDef rowDef = rowData.getExplicitRowDef();
@@ -328,8 +431,8 @@ public abstract class AbstractStore implements Store {
         final RowDef rowDef = getRowDef(session, tableId);
         final TableStatistics ts = new TableStatistics(tableId);
         final TableStatus status = rowDef.getTableStatus();
-        ts.setAutoIncrementValue(status.getAutoIncrement());
-        ts.setRowCount(status.getRowCount());
+        ts.setAutoIncrementValue(status.getAutoIncrement(session));
+        ts.setRowCount(status.getRowCount(session));
         // TODO - get correct values
         ts.setMeanRecordLength(100);
         ts.setBlockSize(8192);
@@ -370,7 +473,7 @@ public abstract class AbstractStore implements Store {
             @Override
             public void visitUserTable(UserTable table) {
                 indexes.addAll(table.getIndexesIncludingInternal());
-                table.rowDef().getTableStatus().truncate();
+                table.rowDef().getTableStatus().truncate(session);
             }
         });
 
@@ -383,7 +486,7 @@ public abstract class AbstractStore implements Store {
 
     @Override
     public void truncateTableStatus(final Session session, final int rowDefId) {
-        getRowDef(session, rowDefId).getTableStatus().truncate();
+        getRowDef(session, rowDefId).getTableStatus().truncate(session);
     }
 
     @Override

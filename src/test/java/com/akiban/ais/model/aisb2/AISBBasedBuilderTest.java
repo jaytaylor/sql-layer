@@ -18,8 +18,9 @@
 package com.akiban.ais.model.aisb2;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.staticgrouping.Grouping;
-import com.akiban.ais.model.staticgrouping.GroupsBuilder;
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -36,17 +37,25 @@ public class AISBBasedBuilderTest {
             .userTable("address").colLong("aid").colLong("c_id").key("c_id", "c_id").joinTo("customer").on("c_id", "cid")
             .ais();
 
-        Grouping actualGrouping = GroupsBuilder.fromAis(ais, "sch");
+        Group cGroup = ais.getGroup(new TableName("sch", "customer"));
+        UserTable cTable = ais.getUserTable("sch", "customer");
+        UserTable aTable = ais.getUserTable("sch", "address");
+        UserTable oTable = ais.getUserTable("sch", "order");
+        UserTable iTable = ais.getUserTable("sch", "item");
 
-        GroupsBuilder expectedGrouping = new GroupsBuilder("sch");
-        expectedGrouping.rootTable("sch", "customer", "customer");
-        // address goes first, since GroupsBuilder.fromAis goes in alphabetical order
-        expectedGrouping.joinTables("sch", "customer", "sch", "address").column("cid", "c_id");
-        expectedGrouping.joinTables("sch", "customer", "sch", "order").column("cid", "c_id");
-        expectedGrouping.joinTables("sch", "order", "sch", "item").column("oid", "o_id").column("c2", "o_c2");
+        assertNotNull("customer group", cGroup);
+        assertEquals("customer group root", cGroup.getRoot(), cTable);
 
-        assertEquals("grouping string", expectedGrouping.getGrouping().toString(), actualGrouping.toString());
+        assertEquals("address parent", cTable, aTable.getParentJoin().getParent());
+        assertEquals("address join", "[JoinColumn(c_id -> cid)]", aTable.getParentJoin().getJoinColumns().toString());
+
+        assertEquals("order parent", cTable, oTable.getParentJoin().getParent());
+        assertEquals("order join", "[JoinColumn(c_id -> cid)]", oTable.getParentJoin().getJoinColumns().toString());
+
+        assertEquals("item parent", oTable, iTable.getParentJoin().getParent());
+        assertEquals("item join", "[JoinColumn(o_id -> oid), JoinColumn(o_c2 -> c2)]", iTable.getParentJoin().getJoinColumns().toString());
     }
+
     @Test
     public void exampleWithGroupIndexes() {
         NewAISBuilder builder = AISBBasedBuilder.create();
@@ -60,15 +69,22 @@ public class AISBBasedBuilderTest {
                 .groupIndex("iid_name_c2").on("item", "iid").and("customer", "name").and("order", "c2")
                         .ais();
 
-        Grouping actualGrouping = GroupsBuilder.fromAis(ais, "sch");
+        Group cGroup = ais.getGroup(new TableName("sch", "customer"));
+        UserTable cTable = ais.getUserTable("sch", "customer");
+        UserTable aTable = ais.getUserTable("sch", "address");
+        UserTable oTable = ais.getUserTable("sch", "order");
+        UserTable iTable = ais.getUserTable("sch", "item");
 
-        GroupsBuilder expectedGrouping = new GroupsBuilder("sch");
-        expectedGrouping.rootTable("sch", "customer", "customer");
-        // address goes first, since GroupsBuilder.fromAis goes in alphabetical order
-        expectedGrouping.joinTables("sch", "customer", "sch", "address").column("cid", "c_id");
-        expectedGrouping.joinTables("sch", "customer", "sch", "order").column("cid", "c_id");
-        expectedGrouping.joinTables("sch", "order", "sch", "item").column("oid", "o_id").column("c2", "o_c2");
+        assertNotNull("customer group", cGroup);
+        assertEquals("customer group root", cGroup.getRoot(), cTable);
 
-        assertEquals("grouping string", expectedGrouping.getGrouping().toString(), actualGrouping.toString());
+        assertEquals("address parent", cTable, aTable.getParentJoin().getParent());
+        assertEquals("address join", "[JoinColumn(c_id -> cid)]", aTable.getParentJoin().getJoinColumns().toString());
+
+        assertEquals("order parent", cTable, oTable.getParentJoin().getParent());
+        assertEquals("order join", "[JoinColumn(c_id -> cid)]", oTable.getParentJoin().getJoinColumns().toString());
+
+        assertEquals("item parent", oTable, iTable.getParentJoin().getParent());
+        assertEquals("item join", "[JoinColumn(o_id -> oid), JoinColumn(o_c2 -> c2)]", iTable.getParentJoin().getJoinColumns().toString());
     }
 }

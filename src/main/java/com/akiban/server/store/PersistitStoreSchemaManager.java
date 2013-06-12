@@ -181,7 +181,6 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
     }
 
     private static final String AIS_KEY_PREFIX = "by";
-    private static final String AIS_METAMODEL_PARENT_KEY = AIS_KEY_PREFIX + "AIS";
     private static final String AIS_PROTOBUF_PARENT_KEY = AIS_KEY_PREFIX + "PBAIS";
     private static final String AIS_MEMORY_TABLE_KEY = AIS_KEY_PREFIX + "PBMEMAIS";
     private static final String DELAYED_TREE_KEY = "delayedTree";
@@ -277,7 +276,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
                     loadAISFromStorageCount.incrementAndGet();
                     try {
                         local = loadAISFromStorage(session, GenValue.SNAPSHOT, GenMap.PUT_NEW);
-                        buildRowDefCache(local.ais);
+                        buildRowDefCache(session, local.ais);
                     } catch(PersistitException e) {
                         throw wrapPersistitException(session, e);
                     }
@@ -343,10 +342,10 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
                         SharedAIS sAIS = loadAISFromStorage(session, GenValue.SNAPSHOT, GenMap.PUT_NEW);
 
                         // Migrate requires RowDefs, but shouldn't generate ordinals (otherwise nulls will be lost)
-                        buildRowDefCache(sAIS.ais, true);
+                        buildRowDefCache(session, sAIS.ais, true);
                         ordinalChangeCount[0] = migrateAccumulatorOrdinals(sAIS.ais);
                         // And generate it fully now that ordinals are definitely set
-                        buildRowDefCache(sAIS.ais, false);
+                        buildRowDefCache(session, sAIS.ais, false);
 
                         long startTimestamp = txnService.getTransactionStartTimestamp(session);
                         sAIS.acquire(); // So count while in cache is 1
@@ -517,17 +516,17 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
         builder.groupingIsComplete();
     }
 
-    private void buildRowDefCache(AkibanInformationSchema newAis ) throws PersistitException {
-        buildRowDefCache(newAis, false);
+    private void buildRowDefCache(Session session, AkibanInformationSchema newAis ) throws PersistitException {
+        buildRowDefCache(session, newAis, false);
     }
 
-    private void buildRowDefCache(AkibanInformationSchema newAis, boolean skipOrdinals) throws PersistitException {
+    private void buildRowDefCache(Session session, AkibanInformationSchema newAis, boolean skipOrdinals) throws PersistitException {
         treeService.getTableStatusCache().detachAIS();
         // This create|verifies the trees exist for indexes & tables
         if(skipOrdinals) {
-            rowDefCache.setAISWithoutOrdinals(newAis);
+            rowDefCache.setAISWithoutOrdinals(session, newAis);
         } else {
-            rowDefCache.setAIS(newAis);
+            rowDefCache.setAIS(session, newAis);
         }
         // This creates|verifies the trees exist for sequences.
         // TODO: Why are sequences special here?
@@ -701,7 +700,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
                 treeService.releaseExchange(session, ex);
                 ex = null;
             }
-            buildRowDefCache(newAIS);
+            buildRowDefCache(session, newAIS);
             addCallbacksForAISChange(session);
         } catch(BufferOverflowException e) {
             throw new AISTooLargeException(byteBuffer.getMaxBurstSize());
@@ -739,7 +738,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
         try {
             validateAndFreeze(session, newAIS, GenValue.NEW, GenMap.NO_PUT);
             serializeMemoryTables(session, newAIS);
-            buildRowDefCache(newAIS);
+            buildRowDefCache(session, newAIS);
             addCallbacksForAISChange(session);
         } catch(PersistitException e) {
             throw wrapPersistitException(session, e);
@@ -751,7 +750,6 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
             SerializationType type = SerializationType.NONE;
 
             // Simple heuristic to determine which style AIS storage we have
-            boolean hasMetaModel = false;
             boolean hasProtobuf = false;
             boolean hasUnknown = false;
 
@@ -766,17 +764,13 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
                 }
                 if(k.equals(AIS_PROTOBUF_PARENT_KEY) || k.equals(AIS_MEMORY_TABLE_KEY)) {
                     hasProtobuf = true;
-                } else if(k.equals(AIS_METAMODEL_PARENT_KEY)) {
-                    hasMetaModel = true;
                 } else {
                     hasUnknown = true;
                 }
             }
 
-            if(hasMetaModel && hasProtobuf) {
-                throw new IllegalStateException("Both AIS and Protobuf serializations");
-            } else if(hasMetaModel) {
-                type = SerializationType.META_MODEL;
+            if(hasUnknown && hasProtobuf) {
+                throw new IllegalStateException("Both multiple serializations");
             } else if(hasProtobuf) {
                 type = SerializationType.PROTOBUF;
             } else if(hasUnknown) {
@@ -1041,27 +1035,9 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
                 .colBigInt("outstanding_count", false)
                 .colBigInt("task_queue_size", false);
 
-        final int IDENT_MAX = 128;
-        builder.defaultSchema(TableName.SYS_SCHEMA);
-        builder.procedure("seq_tree_reset")
-               .language("java", Routine.CallingConvention.JAVA)
-               .paramStringIn("seq_schema", IDENT_MAX)
-               .paramStringIn("seq_name", IDENT_MAX)
-               .paramLongIn("new_value")
-               .externalName(SequenceFixUpRoutines.class.getCanonicalName(), "seq_tree_reset");
-        builder.procedure("seq_identity_default_to_always")
-                .language("java", Routine.CallingConvention.JAVA)
-                .paramStringIn("schema", IDENT_MAX)
-                .paramStringIn("table", IDENT_MAX)
-                .paramStringIn("column", IDENT_MAX)
-                .externalName(SequenceFixUpRoutines.class.getCanonicalName(), "seq_identity_default_to_always");
-
         AkibanInformationSchema ais = builder.ais();
         UserTable table = ais.getUserTable(factory.getName());
         registerMemoryInformationSchemaTable(table, factory);
-        for(Routine routine : ais.getRoutines().values()) {
-            registerSystemRoutine(routine);
-        }
     }
 
     @Override

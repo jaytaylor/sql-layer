@@ -83,10 +83,6 @@ public class AkCollatorMySqlIT extends ITBase {
             168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188,
             189, 190, 191, 215, 216, 248, 222, 254, 223, 247, 255, };
 
-    private Persistit getDb() {
-        return treeService().getDb();
-    }
-
     @Test
     public void keyComparisons() throws Exception {
         final AkCollator collator = AkCollatorFactory.getAkCollator("latin1_swedish_ci");
@@ -100,8 +96,8 @@ public class AkCollatorMySqlIT extends ITBase {
     @Test
     public void keyEncoding() throws Exception {
         final AkCollator collator = AkCollatorFactory.getAkCollator("latin1_swedish_ci");
-        final Key key1 = new Key(getDb());
-        final Key key2 = new Key(getDb());
+        final Key key1 = store().createKey();
+        final Key key2 = store().createKey();
         collator.append(key1, "abc");
         collator.append(key2, "abc");
         assertTrue("Keys should compare equal", key1.compareTo(key2) == 0);
@@ -118,7 +114,7 @@ public class AkCollatorMySqlIT extends ITBase {
     @Test
     public void keyDecoding() throws Exception {
         final AkCollator collator = AkCollatorFactory.getAkCollator("latin1_swedish_ci");
-        final Key key = new Key(getDb());
+        final Key key = store().createKey();
         key.append(new CString("aBcDe123!@#$%^&*(()", collator.getCollationId()));
         assertEquals("Incorrect display form", "{(com.akiban.server.collation.CString)ABCDE123!@#$%^&*(()}", key.toString());
     }
@@ -131,7 +127,7 @@ public class AkCollatorMySqlIT extends ITBase {
 
     private void verifySequence(final String collation, final Integer[] expected) {
         final AkCollator collator = AkCollatorFactory.getAkCollator(collation);
-        final Key key = new Key(getDb());
+        final Key key = store().createKey();
         final Map<KeyState, Integer> map = new TreeMap<>();
         for (int i = 0; i < 256; i++) {
             final String s = new String(new char[] { (char) i });
@@ -161,7 +157,7 @@ public class AkCollatorMySqlIT extends ITBase {
         final Map<KeyState, Integer> map2 = new TreeMap<>();
         Random random = new Random();
         StringBuilder sb = new StringBuilder();
-        final Key key = new Key(getDb());
+        final Key key = store().createKey();
         for (int i = 0; i < count; i++) {
             sb.setLength(0);
             key.clear();

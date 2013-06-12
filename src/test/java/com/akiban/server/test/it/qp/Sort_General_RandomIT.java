@@ -33,23 +33,26 @@ import java.util.*;
 import static com.akiban.server.test.ExpressionGenerators.field;
 import static com.akiban.qp.operator.API.*;
 
-// More Sort_Tree testing, with long string values
+// More sort_General testing, with randomly generated data
 
-public class Sort_Tree_LargeKeyIT extends OperatorITBase {
+public class Sort_General_RandomIT extends OperatorITBase
+{
     @Override
-    protected void setupCreateSchema() {
-        // Don't call super.before(). This is a different schema from most
-        // operator ITs.
-        t = createTable("schema", "t", 
-                "a int not null", 
-                "b varchar(65535) not null", 
-                "c varchar(65535) not null",
-                "d varchar(65535) not null", 
-                "id int not null primary key");
+    protected void setupCreateSchema()
+    {
+        // Don't call super.before(). This is a different schema from most operator ITs.
+        t = createTable(
+            "schema", "t",
+            "a int not null",
+            "b int not null",
+            "c int not null",
+            "d int not null",
+            "id int not null primary key");
     }
 
     @Override
-    protected void setupPostCreateSchema() {
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         group = group(t);
@@ -58,15 +61,12 @@ public class Sort_Tree_LargeKeyIT extends OperatorITBase {
         long key = 0;
         for (long a = 0; a < A; a++) {
             int nB = random.nextInt(R) + 1;
-            int lB = random.nextInt(MAX_STRING_LENGTH) + 48;
             for (long b = 0; b < nB; b++) {
                 int nC = random.nextInt(R) + 1;
-                int lC = random.nextInt(MAX_STRING_LENGTH) + 48;
                 for (long c = 0; c < nC; c++) {
                     int nD = random.nextInt(R) + 1;
-                    int lD = random.nextInt(MAX_STRING_LENGTH) + 48;
                     for (long d = 0; d < nD; d++) {
-                        NewRow row = createNewRow(t, a, str(b, lB), str(c, lC), str(d, lD), key++);
+                        NewRow row = createNewRow(t, a, b, c, d, key++);
                         rows.add(row);
                     }
                 }
@@ -79,62 +79,57 @@ public class Sort_Tree_LargeKeyIT extends OperatorITBase {
         use(db);
     }
 
-    private String str(final long value, final int length) {
-        StringBuilder sb = new StringBuilder(String.format("%048d", value));
-        while (sb.length() < length) {
-            sb.append("x");
-        }
-        return sb.toString();
-    }
-
     @Test
-    public void testSort() {
+    public void testSort()
+    {
         for (int x = 0; x < 16; x++) {
             boolean aAsc = (x & 8) != 0;
             boolean bAsc = (x & 4) != 0;
             boolean cAsc = (x & 2) != 0;
             boolean dAsc = (x & 1) != 0;
-            Operator plan = sort_Tree(
+            Operator plan =
+                sort_General(
                     groupScan_Default(group),
                     tRowType,
-                    ordering(field(tRowType, 0), aAsc, field(tRowType, 1), bAsc, field(tRowType, 2), cAsc,
-                            field(tRowType, 3), dAsc), SortOption.PRESERVE_DUPLICATES);
+                    ordering(field(tRowType, 0), aAsc, field(tRowType, 1), bAsc, field(tRowType, 2), cAsc, field(tRowType, 3), dAsc),
+                    SortOption.PRESERVE_DUPLICATES);
             Cursor cursor = cursor(plan, queryContext);
             compareRows(expected(aAsc, bAsc, cAsc, dAsc), cursor);
         }
     }
 
-    private RowBase[] expected(final boolean... asc) {
+    private RowBase[] expected(final boolean ... asc)
+    {
         RowBase[] sorted = new RowBase[db.length];
-        Comparator<NewRow> comparator = new Comparator<NewRow>() {
-            @Override
-            public int compare(NewRow x, NewRow y) {
-                int c = 0;
-                for (int i = 0; c == 0 && i < 4; i++) {
-                    c = compare(x, y, asc, i);
+        Comparator<NewRow> comparator =
+            new Comparator<NewRow>()
+            {
+                @Override
+                public int compare(NewRow x, NewRow y)
+                {
+                    int c = 0;
+                    for (int i = 0; c == 0 && i < 4; i++) {
+                        c = compare(x, y, asc, i);
+                    }
+                    return c;
                 }
-                return c;
-            }
 
-            private int compare(NewRow x, NewRow y, boolean[] asc, int i) {
-                return compareXY(x.get(i), y.get(i)) * (asc[i] ? 1 : -1);
-            }
-        };
+                private int compare(NewRow x, NewRow y, boolean[] asc, int i)
+                {
+                    return (int) (((Long) x.get(i)) - ((Long) y.get(i))) * (asc[i] ? 1 : -1);
+                }
+            };
         Arrays.sort(db, comparator);
         int r = 0;
         for (NewRow dbRow : db) {
-            Object[] fields = new Object[] { dbRow.get(0), dbRow.get(1), dbRow.get(2), dbRow.get(3), dbRow.get(4) };
+            Object[] fields = new Object[]{dbRow.get(0), dbRow.get(1), dbRow.get(2), dbRow.get(3), dbRow.get(4)};
             sorted[r++] = new TestRow(tRowType, fields);
         }
         return sorted;
     }
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    static int compareXY(final Object x, final Object y) {
-        return ((Comparable) x).compareTo((Comparable) y);
-    }
-
-    private Ordering ordering(Object... objects) {
+    private Ordering ordering(Object... objects)
+    {
         Ordering ordering = API.ordering();
         int i = 0;
         while (i < objects.length) {
@@ -146,10 +141,8 @@ public class Sort_Tree_LargeKeyIT extends OperatorITBase {
     }
 
     private static final int A = 100; // Number of distinct t.a values
-    private static final int R = 3; // Maximum number of t.b values per a, c
-                                    // values per b, d values per c
-    private static final int MAX_STRING_LENGTH = 1000;
-    
+    private static final int R = 3; // Maximum number of t.b values per a, c values per b, d values per c
+
     private int t;
     private RowType tRowType;
     private Group group;

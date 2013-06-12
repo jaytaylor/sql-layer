@@ -489,7 +489,7 @@ public class ApiTestBase {
     }
 
     protected final TreeService treeService() {
-        return sm.getTreeService();
+        return sm.getServiceByClass(TreeService.class);
     }
 
     protected final TransactionService txnService() {

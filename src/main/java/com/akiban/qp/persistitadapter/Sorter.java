@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.util;
+package com.akiban.qp.persistitadapter;
 
-public enum LogLevel {
-    TRACE,
-    DEBUG,
-    INFO,
-    WARN,
-    ERROR,
+import com.akiban.qp.operator.Cursor;
+import com.persistit.exception.PersistitException;
+
+public interface Sorter {
+    Cursor sort();
+    void close();
 }

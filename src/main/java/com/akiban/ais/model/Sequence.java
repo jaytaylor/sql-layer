@@ -24,7 +24,6 @@ import com.akiban.server.AccumulatorAdapter.AccumInfo;
 import com.akiban.server.error.SequenceLimitExceededException;
 import com.akiban.server.service.tree.TreeCache;
 import com.akiban.server.service.tree.TreeLink;
-import com.akiban.server.service.tree.TreeService;
 import com.persistit.Tree;
 import com.persistit.exception.PersistitException;
 

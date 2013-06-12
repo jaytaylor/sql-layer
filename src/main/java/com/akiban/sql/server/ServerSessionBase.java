@@ -38,7 +38,6 @@ import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.KeyCreator;
-import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.sql.optimizer.AISBinderContext;
 import com.akiban.sql.optimizer.rule.cost.CostEstimator;
@@ -190,11 +189,6 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
 
     @Override
-    public TreeService getTreeService() {
-        return reqs.treeService();
-    }
-
-    @Override
     public TransactionService getTransactionService() {
         return reqs.txnService();
     }
@@ -339,8 +333,6 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             case WRITE:
             case NEW_WRITE:
             case WRITE_STEP_ISOLATED:
-                if (getStore().isBulkloading())
-                    break;
                 if (transactionDefaultReadOnly)
                     throw new TransactionReadOnlyException();
                 localTransaction = new ServerTransaction(this, false);
@@ -383,8 +375,6 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             case WRITE_STEP_ISOLATED:
                 if (transaction != null)
                     transaction.afterUpdate(transactionMode == ServerStatement.TransactionMode.WRITE_STEP_ISOLATED);
-                else
-                    assert getStore() != null && getStore().isBulkloading() : "no transaction, but not bulk loading";
                 break;
             }
         }

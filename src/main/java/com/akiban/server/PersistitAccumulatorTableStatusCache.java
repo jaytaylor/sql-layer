@@ -22,6 +22,7 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.persistit.Tree;
 import com.persistit.exception.PersistitException;
@@ -105,7 +106,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public long getAutoIncrement() {
+        public long getAutoIncrement(Session session) {
             try {
                 return autoIncrement.getSnapshot();
             } catch(PersistitInterruptedException e) {
@@ -123,7 +124,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public long getRowCount() {
+        public long getRowCount(Session session) {
             try {
                 return rowCount.getSnapshot();
             } catch(PersistitInterruptedException e) {
@@ -132,7 +133,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public void setRowCount(long rowCount) {
+        public void setRowCount(Session session, long rowCount) {
             try {
                 internalSetRowCount(rowCount);
             }
@@ -147,7 +148,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public long getUniqueID() {
+        public long getUniqueID(Session session) {
             try {
                 return uniqueID.getSnapshot();
             } catch(PersistitInterruptedException e) {
@@ -166,22 +167,22 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public void rowDeleted() {
+        public void rowDeleted(Session session) {
             rowCount.sumAdd(-1);
         }
 
         @Override
-        public void rowsWritten(long count) {
+        public void rowsWritten(Session session, long count) {
             rowCount.sumAdd(count);
         }
 
         @Override
-        public long createNewUniqueID() {
+        public long createNewUniqueID(Session session) {
             return uniqueID.seqAllocate();
         }
 
         @Override
-        public void truncate() {
+        public void truncate(Session session) {
             try {
                 internalSetRowCount(0);
                 internalSetAutoIncrement(0, true);
@@ -191,7 +192,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public void setAutoIncrement(long value) {
+        public void setAutoIncrement(Session session, long value) {
             internalSetAutoIncrement(value, false);
         }
 
@@ -232,12 +233,12 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public long getAutoIncrement() {
+        public long getAutoIncrement(Session session) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public long getRowCount() {
+        public long getRowCount(Session session) {
             return factory.rowCount();
         }
 
@@ -247,7 +248,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public long getUniqueID() {
+        public long getUniqueID(Session session) {
             throw new UnsupportedOperationException();
         }
 
@@ -262,32 +263,32 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public void setRowCount(long rowCount) {
+        public void setRowCount(Session session, long rowCount) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void rowDeleted() {
+        public void rowDeleted(Session session) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void rowsWritten(long count) {
+        public void rowsWritten(Session session, long count) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void truncate() {
+        public void truncate(Session session) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void setAutoIncrement(long value) {
+        public void setAutoIncrement(Session session, long value) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public long createNewUniqueID() {
+        public long createNewUniqueID(Session session) {
             throw new UnsupportedOperationException();
         }
 

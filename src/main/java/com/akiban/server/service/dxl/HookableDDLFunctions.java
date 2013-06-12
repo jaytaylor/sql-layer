@@ -465,21 +465,6 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public IndexCheckSummary checkAndFixIndexes(Session session, String schemaRegex, String tableRegex) {
-        Throwable thrown = null;
-        try {
-            hook.hookFunctionIn(session, DXLFunction.CHECK_AND_FIX_INDEXES);
-            return delegate.checkAndFixIndexes(session, schemaRegex, tableRegex);
-        } catch (Throwable t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunction.CHECK_AND_FIX_INDEXES, t);
-            throw throwAlways(t);
-        } finally {
-            hook.hookFunctionFinally(session, DXLFunction.CHECK_AND_FIX_INDEXES, thrown);
-        }
-    }
-
-    @Override
     public void createSequence(Session session, Sequence sequence) {
         Throwable thrown = null;
         try {

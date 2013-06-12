@@ -38,7 +38,7 @@ public class TreeServiceImplInvalidIT extends ITBase {
 
     @Test
     public void buildInvalidSchemaMaps() throws Exception {
-        final TreeServiceImpl treeService = (TreeServiceImpl)serviceManager().getTreeService();
+        final TreeServiceImpl treeService = (TreeServiceImpl)treeService();
         final SortedMap<String, SchemaNode> result = treeService.getSchemaMap();
         assertEquals(1, result.size());
     }

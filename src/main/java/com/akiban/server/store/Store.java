@@ -147,12 +147,6 @@ public interface Store extends KeyCreator {
 
     void truncateIndexes(Session session, Collection<? extends Index> indexes);
 
-    void startBulkLoad(Session session);
-
-    void finishBulkLoad(Session session);
-
-    boolean isBulkloading();
-
     void setIndexStatistics(IndexStatisticsService indexStatistics);
 
     StoreAdapter createAdapter(Session session, Schema schema);

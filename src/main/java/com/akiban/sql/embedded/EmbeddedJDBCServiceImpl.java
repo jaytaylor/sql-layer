@@ -33,7 +33,6 @@ import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.security.User;
 import com.akiban.server.service.session.SessionService;
-import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.store.statistics.IndexStatisticsService;
 
@@ -60,7 +59,6 @@ public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
                                    MonitorService monitor,
                                    SessionService sessionService,
                                    Store store,
-                                   TreeService treeService,
                                    FunctionsRegistry functionsRegistry,
                                    ConfigurationService config,
                                    IndexStatisticsService indexStatisticsService,
@@ -70,7 +68,7 @@ public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
                                    SecurityService securityService,
                                    ServiceManager serviceManager) {
         reqs = new ServerServiceRequirements(akServer, dxlService, monitor, 
-                sessionService, store, treeService, functionsRegistry, 
+                sessionService, store, functionsRegistry,
                 config, indexStatisticsService, overloadResolutionService, 
                 routineLoader, txnService, securityService, serviceManager);
     }

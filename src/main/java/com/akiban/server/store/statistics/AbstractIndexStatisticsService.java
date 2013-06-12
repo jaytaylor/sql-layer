@@ -33,7 +33,6 @@ import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import org.slf4j.Logger;
@@ -62,7 +61,6 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
     private static final String BUCKET_COUNT_PROPERTY = "akserver.index_statistics.bucket_count";
 
     private final Store store;
-    private final TreeService treeService;
     private final TransactionService txnService;
     // Following couple only used by JMX method, where there is no context.
     private final SchemaManager schemaManager;
@@ -74,13 +72,11 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
     private int bucketCount;
 
     protected AbstractIndexStatisticsService(Store store,
-                                             TreeService treeService,
                                              TransactionService txnService,
                                              SchemaManager schemaManager,
                                              SessionService sessionService,
                                              ConfigurationService configurationService) {
         this.store = store;
-        this.treeService = treeService;
         this.txnService = txnService;
         this.schemaManager = schemaManager;
         this.sessionService = sessionService;
@@ -130,7 +126,7 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
                 if (table.hasMemoryTableFactory()) {
                     return table.getMemoryTableFactory().rowCount();
                 } else {
-                    return table.rowDef().getTableStatus().getRowCount();
+                    return table.rowDef().getTableStatus().getRowCount(session);
                 }
             }
             case GROUP:
@@ -254,7 +250,7 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
                                     String schema, File file) throws IOException {
         ensureAdapter(session);
         AkibanInformationSchema ais = schemaManager.getAis(session);
-        Map<Index,IndexStatistics> stats = new IndexStatisticsYamlLoader(ais, schema, treeService).load(file);
+        Map<Index,IndexStatistics> stats = new IndexStatisticsYamlLoader(ais, schema, store).load(file);
         for (Map.Entry<Index,IndexStatistics> entry : stats.entrySet()) {
             Index index = entry.getKey();
             IndexStatistics indexStatistics = entry.getValue();
@@ -284,7 +280,7 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
                 toDump.put(index, stats);
             }
         }
-        new IndexStatisticsYamlLoader(ais, schema, treeService).dump(toDump, file);
+        new IndexStatisticsYamlLoader(ais, schema, store).dump(toDump, file);
     }
 
     @Override

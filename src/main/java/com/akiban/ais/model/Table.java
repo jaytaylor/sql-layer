@@ -101,14 +101,6 @@ public abstract class Table extends Columnar implements Traversable, HasGroup
         return unmodifiableGroupIndexes;
     }
 
-    public MigrationUsage getMigrationUsage() {
-        return migrationUsage;
-    }
-
-    public void setMigrationUsage(MigrationUsage migrationUsage) {
-        this.migrationUsage = migrationUsage;
-    }
-
     protected void addIndex(TableIndex index)
     {
         indexMap.put(index.getIndexName().getName().toLowerCase(), index);
@@ -128,60 +120,6 @@ public abstract class Table extends Columnar implements Traversable, HasGroup
 
     public void removeIndexes(Collection<TableIndex> indexesToDrop) {
         indexMap.values().removeAll(indexesToDrop);
-    }
-
-    /**
-     * <p>Our intended migration policy; the grouping algorithm must also take these values into account.</p>
-     * <p/>
-     * <p>The enums {@linkplain #KEEP_ENGINE} and {@linkplain #INCOMPATIBLE} have similar effects on grouping and
-     * migration: tables marked with these values will not be included in any groups, and during migration, their
-     * storage engine is not changed to AkibanDb. The difference between the two enums is that {@linkplain #KEEP_ENGINE}
-     * is set by the user and can later be changed to {@linkplain #AKIBAN_STANDARD} or
-     * {@linkplain @#AKIBAN_LOOKUP_TABLE}; on the other hand, {@linkplain #INCOMPATIBLE} is set during analysis and
-     * signifies that migration will not work for this table. The user should not be able to set this flag, and if
-     * this flag is set, the user should not be able to change it.</p>
-     */
-    public enum MigrationUsage
-    {
-        /**
-         * Migrate this table to AkibanDb, grouping it as a standard user table. This is just a normal migration.
-         */
-        AKIBAN_STANDARD,
-        /**
-         * Migrate this table to AkibanDb, but as a lookup table. Lookup tables are grouped alone.
-         */
-        AKIBAN_LOOKUP_TABLE,
-        /**
-         * User wants to keep this table's engine as-is; don't migrate it to AkibanDb.
-         */
-        KEEP_ENGINE,
-        /**
-         * This table can't be migrated to AkibanDb.
-         */
-        INCOMPATIBLE;
-
-        /**
-         * Returns whether this usage requires an AkibanDB engine.
-         *
-         * @return whether this enum is one that requires AkibanDB
-         */
-        public boolean isAkiban()
-        {
-            return (this == AKIBAN_STANDARD) || (this == AKIBAN_LOOKUP_TABLE);
-        }
-
-        /**
-         * <p>Returns whether this usage requires that the table participate in grouping.</p>
-         * <p/>
-         * <p>Tables participate in grouping if they're AkibanDB (see {@linkplain #isAkiban()} <em>and</em>
-         * are not lookups.</p>
-         *
-         * @return
-         */
-        public boolean includeInGrouping()
-        {
-            return this == AKIBAN_STANDARD;
-        }
     }
 
     /**
@@ -237,11 +175,6 @@ public abstract class Table extends Columnar implements Traversable, HasGroup
         }
     }
 
-    public String getEngine()
-    {
-        return engine;
-    }
-
     public void rowDef(RowDef rowDef)
     {
         this.rowDef = rowDef;
@@ -260,8 +193,6 @@ public abstract class Table extends Columnar implements Traversable, HasGroup
 
     protected Group group;
     private Integer tableId;
-    protected MigrationUsage migrationUsage = MigrationUsage.AKIBAN_STANDARD;
-    protected String engine;
     private RowDef rowDef;
     private Integer ordinal;
 }
