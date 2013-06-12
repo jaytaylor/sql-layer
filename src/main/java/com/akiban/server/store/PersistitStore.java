@@ -145,9 +145,9 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
-    protected void addChangeFor(UserTable tb, Session session, Key hKey)
+    protected void addChangeFor(Session session, UserTable table, Key hKey)
     {
-        for (Index index : tb.getFullTextIndexes())
+        for (Index index : table.getFullTextIndexes())
         {
             IndexName idxName = index.getIndexName();
             addChange(session,
@@ -159,6 +159,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         }
     }
     // --- for reporting changes
+
     /**
      * Collect all 'HKeyRow's from the list of key-value pairs that have
      * the same schema.table.indexName,
@@ -527,6 +528,12 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         releaseStoreData(session, exchange);
     }
 
+    // Promote visibility. TODO: Remove when OperatorStore goes away.
+    @Override
+    public void constructHKey(Session session, RowDef rowDef, RowData rowData, boolean insertingRow, Key hKeyOut) {
+        super.constructHKey(session, rowDef, rowData, insertingRow, hKeyOut);
+    }
+
     private static void constructIndexRow(Exchange exchange,
                                           RowData rowData,
                                           Index index,
@@ -550,11 +557,11 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
-    public PersistitIndexRowBuffer readPKIndexRow(Session session,
-                                                  Index pkIndex,
-                                                  Exchange exchange,
-                                                  RowDef rowDef,
-                                                  RowData rowData)
+    public PersistitIndexRowBuffer readIndexRow(Session session,
+                                                Index index,
+                                                Exchange exchange,
+                                                RowDef rowDef,
+                                                RowData rowData)
     {
         PersistitKeyAppender keyAppender = PersistitKeyAppender.create(exchange.getKey());
         int[] fields = rowDef.getParentJoinFields();
@@ -570,7 +577,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         PersistitIndexRowBuffer indexRow = null;
         if (exchange.getValue().isDefined()) {
             indexRow = new PersistitIndexRowBuffer(this);
-            indexRow.resetForRead(pkIndex, exchange.getKey(), exchange.getValue());
+            indexRow.resetForRead(index, exchange.getKey(), exchange.getValue());
         }
         return indexRow;
     }
@@ -604,7 +611,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
             }
             // record the deletion of the old index row
             if (deleteIndexes)
-                addChangeFor(rowDef.userTable(), session, hEx.getKey());
+                addChangeFor(session, rowDef.userTable(), hEx.getKey());
 
             // Remove the h-row
             hEx.remove();
@@ -698,13 +705,13 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
                 // Store the h-row
                 hEx.store();
                 // Update the indexes (new row)
-                addChangeFor(newRowDef.userTable(), session, hEx.getKey());
+                addChangeFor(session, newRowDef.userTable(), hEx.getKey());
                 
                 PersistitIndexRowBuffer indexRowBuffer = new PersistitIndexRowBuffer(this);
                 Index[] indexes = (indexesToMaintain == null) ? rowDef.getIndexes() : indexesToMaintain;
                 for (Index index : indexes) {
                     if(indexesAsInsert) {
-                        insertIntoIndex(session, index, mergedRowData, hEx.getKey(), indexRowBuffer);
+                        writeIndexRow(session, index, mergedRowData, hEx.getKey(), indexRowBuffer);
                     } else {
                         updateIndex(session, index, rowDef, currentRow, mergedRowData, hEx.getKey(), indexRowBuffer);
                     }
@@ -776,11 +783,11 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
-    protected void insertIntoIndex(Session session,
-                                   Index index,
-                                   RowData rowData,
-                                   Key hKey,
-                                   PersistitIndexRowBuffer indexRow)
+    protected void writeIndexRow(Session session,
+                                 Index index,
+                                 RowData rowData,
+                                 Key hKey,
+                                 PersistitIndexRowBuffer indexRow)
     {
         checkNotGroupIndex(index);
         Exchange iEx = getExchange(session, index);
@@ -1022,7 +1029,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
                     if (userRowDef != null) {
                         for (Index index : userRowDef.getIndexes()) {
                             if(indexesToBuild.contains(index)) {
-                                insertIntoIndex(session, index, rowData, hEx.getKey(), indexRow);
+                                writeIndexRow(session, index, rowData, hEx.getKey(), indexRow);
                                 indexKeyCount++;
                             }
                         }

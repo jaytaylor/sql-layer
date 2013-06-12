@@ -90,41 +90,80 @@ public abstract class AbstractStore<SDType> implements Store {
 
 
     //
+    // Implementation methods
+    //
+
+    /** Create store specific data for working with the given TreeLink. */
+    protected abstract SDType createStoreData(Session session, TreeLink treeLink);
+
+    /** Release (or cache) any data created through {@link #createStoreData(Session, TreeLink)}. */
+    protected abstract void releaseStoreData(Session session, SDType storeData);
+
+    /** Get the associated key */
+    protected abstract Key getKey(Session session, SDType storeData);
+
+    /** Save the current key and value. */
+    protected abstract void store(Session session, SDType storeData);
+
+    /** Delete the key. */
+    protected abstract void clear(Session session, SDType storeData);
+
+    /** Fill the given <code>RowData</code> from the current value. */
+    protected abstract void expandRowData(SDType storeData, RowData rowData);
+
+    /** Store the RowData in associated value. */
+    protected abstract void packRowData(Session session, SDType storeData, RowData rowData);
+
+    /** Create an iterator to visit all descendants of the current key. */
+    protected abstract Iterator<Void> createDescendantIterator(Session session, SDType storeData);
+
+    /** Read the index row for the given RowData or null if not present. storeData has been initialized for index. */
+    protected abstract PersistitIndexRowBuffer readIndexRow(Session session,
+                                                            Index index,
+                                                            SDType storeData,
+                                                            RowDef rowDef,
+                                                            RowData rowData);
+
+    /** Save the index row for the given RowData. Key has been pre-filled with the owning hKey. */
+    protected abstract void writeIndexRow(Session session,
+                                          Index index,
+                                          RowData rowData,
+                                          Key hKey,
+                                          PersistitIndexRowBuffer indexRow);
+
+    /** Clear the index row for the given RowData. Key has been pre-filled with the owning hKey. */
+    protected abstract void deleteIndexRow(Session session,
+                                           Index index,
+                                           RowData rowData,
+                                           Key hKey,
+                                           PersistitIndexRowBuffer indexRowBuffer);
+
+    /** Called prior to executing writeRow(), for store specific needs only (i.e. can no-op). */
+    protected abstract void preWriteRow(Session session, SDType storeData, RowDef rowDef, RowData rowData);
+
+    // TODO: Pull FullText out of Store
+    /** The hKey of the given table is changing. */
+    protected abstract void addChangeFor(Session session, UserTable table, Key hKey);
+
+
+    //
     // AbstractStore
     //
 
-    protected abstract SDType createStoreData(Session session, TreeLink treeLink);
-
-    protected abstract void releaseStoreData(Session session, SDType storeData);
-
-    protected abstract PersistitIndexRowBuffer readPKIndexRow(Session session,
-                                                              Index pkIndex,
-                                                              SDType storeData,
-                                                              RowDef rowDef,
-                                                              RowData rowData);
-
-    protected abstract void insertIntoIndex(Session session,
-                                            Index index,
-                                            RowData rowData,
-                                            Key hKey,
-                                            PersistitIndexRowBuffer indexRow);
-
-    // TODO: These can be protected after OperatorStore refactoring
-
-    public void constructHKey(Session session,
-                              RowDef rowDef,
-                              RowData rowData,
-                              boolean insertingRow,
-                              Key hKeyOut) {
+    protected void constructHKey(Session session,
+                                 RowDef rowDef,
+                                 RowData rowData,
+                                 boolean insertingRow,
+                                 Key hKeyOut) {
         constructHKey(session, rowDef, rowData, insertingRow, null, hKeyOut);
     }
 
-    public void constructHKey(Session session,
-                              RowDef rowDef,
-                              RowData rowData,
-                              boolean insertingRow,
-                              AtomicLong hiddenPk,
-                              Key hKeyOut) {
+    protected void constructHKey(Session session,
+                                 RowDef rowDef,
+                                 RowData rowData,
+                                 boolean insertingRow,
+                                 AtomicLong hiddenPk,
+                                 Key hKeyOut) {
         // Initialize the HKey being constructed
         hKeyOut.clear();
         PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKeyOut);
@@ -155,7 +194,7 @@ public abstract class AbstractStore<SDType> implements Store {
                         TableIndex parentPkIndex = parentRowDef.getPKIndex();
                         indexToHKey = parentPkIndex.indexToHKey();
                         parentStoreData = createStoreData(session, parentPkIndex.indexDef());
-                        parentPKIndexRow = readPKIndexRow(session, parentPkIndex, parentStoreData, rowDef, rowData);
+                        parentPKIndexRow = readIndexRow(session, parentPkIndex, parentStoreData, rowDef, rowData);
                     }
                     if(indexToHKey.isOrdinal(i2hPosition)) {
                         assert indexToHKey.getOrdinal(i2hPosition) == segmentRowDef.userTable().getOrdinal() : hKeyColumn;
@@ -349,6 +388,23 @@ public abstract class AbstractStore<SDType> implements Store {
         //checkNoGroupIndexes(rowDef.table());
         lockAndCheckVersion(session, rowDef);
         return rowDef;
+    }
+
+    protected void writeRow(Session session,
+                            RowData rowData,
+                            BitSet tablesRequiringHKeyMaintenance,
+                            boolean propagateHKeyChanges)
+    {
+        RowDef rowDef = writeRowCheck(session, rowData);
+        SDType storeData = createStoreData(session, rowDef.getGroup());
+        WRITE_ROW_TAP.in();
+        try {
+            preWriteRow(session, storeData, rowDef, rowData);
+            writeRowInternal(session, storeData, rowDef, rowData, tablesRequiringHKeyMaintenance, propagateHKeyChanges);
+        } finally {
+            WRITE_ROW_TAP.out();
+            releaseStoreData(session, storeData);
+        }
     }
 
 
@@ -594,26 +650,72 @@ public abstract class AbstractStore<SDType> implements Store {
     // Internal
     //
 
-    protected abstract void preWriteRow(Session session, SDType storeData, RowDef rowDef, RowData rowData);
+    private void writeRowInternal(Session session,
+                                  SDType storeData,
+                                  RowDef rowDef,
+                                  RowData rowData,
+                                  BitSet tablesRequiringHKeyMaintenance,
+                                  boolean propagateHKeyChanges) {
+        Key hKey = getKey(session, storeData);
+        /*
+         * About propagateHKeyChanges as second to last argument to constructHKey (i.e. insertingRow):
+         * - If true, we're inserting a row and may need to generate a PK (for no-pk tables)
+         * - If this invocation is being done as part of hKey maintenance (propagate = false),
+         *   then we are deleting and reinserting a row, and we don't want the PK value changed.
+         * - See bug 1020342.
+         */
+        constructHKey(session, rowDef, rowData, propagateHKeyChanges, hKey);
+        /*
+         * Don't check hKey uniqueness here. It would require a database access and we're not in
+         * in a good position to report a meaningful uniqueness violation (e.g. on the PK).
+         * Instead, rely on PK validation when indexes are maintained.
+         */
+        packRowData(session, storeData, rowData);
+        store(session, storeData);
+        if(rowDef.isAutoIncrement()) {
+            final long location = rowDef.fieldLocation(rowData, rowDef.getAutoIncrementField());
+            if(location != 0) {
+                long autoIncrementValue = rowData.getIntegerValue((int) location, (int) (location >>> 32));
+                rowDef.getTableStatus().setAutoIncrement(session, autoIncrementValue);
+            }
+        }
 
-    protected abstract Key getKey(Session session, SDType storeData);
+        addChangeFor(session, rowDef.userTable(), hKey);
+        PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
+        for(Index index : rowDef.getIndexes()) {
+            writeIndexRow(session, index, rowData, hKey, indexRow);
+        }
 
-    protected abstract void packRowData(Session session, SDType storeData, RowData rowData);
-    public abstract void expandRowData(SDType storeData, RowData rowData);
+        // Bump row count *after* uniqueness checks. Avoids drift of TableStatus#getApproximateRowCount. See bug1112940.
+        rowDef.getTableStatus().rowsWritten(session, 1);
 
-    protected abstract void store(Session session, SDType storeData);
-    protected abstract void clear(Session session, SDType storeData);
+        if(propagateHKeyChanges && rowDef.userTable().hasChildren()) {
+            /*
+             * Row being inserted might be the parent of orphan rows already present.
+             * The hKeys of these orphan rows need to be maintained. The ones of interest
+             * contain the PK from the inserted row, and nulls for other hKey fields nearer the root.
+             */
+            hKey.clear();
+            PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKey);
+            UserTable table = rowDef.userTable();
+            List<Column> pkColumns = table.getPrimaryKeyIncludingInternal().getColumns();
+            for(HKeySegment segment : table.hKey().segments()) {
+                RowDef segmentRowDef = segment.table().rowDef();
+                hKey.append(segmentRowDef.userTable().getOrdinal());
+                for(HKeyColumn hKeyColumn : segment.columns()) {
+                    Column column = hKeyColumn.column();
+                    if(pkColumns.contains(column)) {
+                        RowDef columnTableRowDef = column.getTable().rowDef();
+                        hKeyAppender.append(columnTableRowDef.getFieldDef(column.getPosition()), rowData);
+                    } else {
+                        hKey.append(null);
+                    }
+                }
+            }
+            propagateDownGroup(session, storeData, tablesRequiringHKeyMaintenance, indexRow, true, false);
+        }
+    }
 
-    protected abstract Iterator<Void> createDescendantIterator(Session session, SDType storeData);
-
-    protected abstract void deleteIndexRow(Session session,
-                                           Index index,
-                                           RowData rowData,
-                                           Key hKey,
-                                           PersistitIndexRowBuffer indexRowBuffer);
-
-    // TODO: Pull FullText out of Store
-    protected abstract void addChangeFor(UserTable tb, Session session, Key hKey);
 
     /**
      * <p>
@@ -662,7 +764,7 @@ public abstract class AbstractStore<SDType> implements Store {
                 if(tablesRequiringHKeyMaintenance == null || tablesRequiringHKeyMaintenance.get(ordinal)) {
                     PROPAGATE_REPLACE_TAP.in();
                     try {
-                        addChangeFor(rowDef.userTable(), session, hKey);
+                        addChangeFor(session, rowDef.userTable(), hKey);
                         // Don't call deleteRow as the hKey does not need recomputed.
                         clear(session, storeData);
                         rowDef.getTableStatus().rowDeleted(session);
@@ -682,89 +784,6 @@ public abstract class AbstractStore<SDType> implements Store {
             }
         } finally {
             PROPAGATE_CHANGE_TAP.out();
-        }
-    }
-
-    protected void writeRow(Session session,
-                            RowData rowData,
-                            BitSet tablesRequiringHKeyMaintenance,
-                            boolean propagateHKeyChanges)
-    {
-        RowDef rowDef = writeRowCheck(session, rowData);
-        SDType storeData = createStoreData(session, rowDef.getGroup());
-        WRITE_ROW_TAP.in();
-        try {
-            preWriteRow(session, storeData, rowDef, rowData);
-            writeRowInternal(session, storeData, rowDef, rowData, tablesRequiringHKeyMaintenance, propagateHKeyChanges);
-        } finally {
-            WRITE_ROW_TAP.out();
-            releaseStoreData(session, storeData);
-        }
-    }
-
-    private void writeRowInternal(Session session,
-                                  SDType storeData,
-                                  RowDef rowDef,
-                                  RowData rowData,
-                                  BitSet tablesRequiringHKeyMaintenance,
-                                  boolean propagateHKeyChanges) {
-        Key hKey = getKey(session, storeData);
-        /*
-         * About propagateHKeyChanges as second to last argument to constructHKey (i.e. insertingRow):
-         * - If true, we're inserting a row and may need to generate a PK (for no-pk tables)
-         * - If this invocation is being done as part of hKey maintenance (propagate = false),
-         *   then we are deleting and reinserting a row, and we don't want the PK value changed.
-         * - See bug 1020342.
-         */
-        constructHKey(session, rowDef, rowData, propagateHKeyChanges, hKey);
-        /*
-         * Don't check hKey uniqueness here. It would require a database access and we're not in
-         * in a good position to report a meaningful uniqueness violation (e.g. on the PK).
-         * Instead, rely on PK validation when indexes are maintained.
-         */
-        packRowData(session, storeData, rowData);
-        store(session, storeData);
-        if(rowDef.isAutoIncrement()) {
-            final long location = rowDef.fieldLocation(rowData, rowDef.getAutoIncrementField());
-            if(location != 0) {
-                long autoIncrementValue = rowData.getIntegerValue((int) location, (int) (location >>> 32));
-                rowDef.getTableStatus().setAutoIncrement(session, autoIncrementValue);
-            }
-        }
-
-        addChangeFor(rowDef.userTable(), session, hKey);
-        PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
-        for(Index index : rowDef.getIndexes()) {
-            insertIntoIndex(session, index, rowData, hKey, indexRow);
-        }
-
-        // Bump row count *after* uniqueness checks. Avoids drift of TableStatus#getApproximateRowCount. See bug1112940.
-        rowDef.getTableStatus().rowsWritten(session, 1);
-
-        if(propagateHKeyChanges && rowDef.userTable().hasChildren()) {
-            /*
-             * Row being inserted might be the parent of orphan rows already present.
-             * The hKeys of these orphan rows need to be maintained. The ones of interest
-             * contain the PK from the inserted row, and nulls for other hKey fields nearer the root.
-             */
-            hKey.clear();
-            PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKey);
-            UserTable table = rowDef.userTable();
-            List<Column> pkColumns = table.getPrimaryKeyIncludingInternal().getColumns();
-            for(HKeySegment segment : table.hKey().segments()) {
-                RowDef segmentRowDef = segment.table().rowDef();
-                hKey.append(segmentRowDef.userTable().getOrdinal());
-                for(HKeyColumn hKeyColumn : segment.columns()) {
-                    Column column = hKeyColumn.column();
-                    if(pkColumns.contains(column)) {
-                        RowDef columnTableRowDef = column.getTable().rowDef();
-                        hKeyAppender.append(columnTableRowDef.getFieldDef(column.getPosition()), rowData);
-                    } else {
-                        hKey.append(null);
-                    }
-                }
-            }
-            propagateDownGroup(session, storeData, tablesRequiringHKeyMaintenance, indexRow, true, false);
         }
     }
 
@@ -806,7 +825,7 @@ public abstract class AbstractStore<SDType> implements Store {
         final LockService.Mode mode = LockService.Mode.SHARED;
         final int tableID = rowDef.getRowDefId();
 
-        // Since this is called on a per-row basis, we can't rely on reentrancy.
+        // Since this is called on a per-row basis, we can't rely on re-entrancy.
         if(lockService.isTableClaimed(session, mode, tableID)) {
             return;
         }
