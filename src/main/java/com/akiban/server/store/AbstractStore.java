@@ -150,20 +150,7 @@ public abstract class AbstractStore<SDType> implements Store {
     // AbstractStore
     //
 
-    protected void constructHKey(Session session,
-                                 RowDef rowDef,
-                                 RowData rowData,
-                                 boolean insertingRow,
-                                 Key hKeyOut) {
-        constructHKey(session, rowDef, rowData, insertingRow, null, hKeyOut);
-    }
-
-    protected void constructHKey(Session session,
-                                 RowDef rowDef,
-                                 RowData rowData,
-                                 boolean insertingRow,
-                                 AtomicLong hiddenPk,
-                                 Key hKeyOut) {
+    protected void constructHKey(Session session, RowDef rowDef, RowData rowData, boolean isInsert, Key hKeyOut) {
         // Initialize the HKey being constructed
         hKeyOut.clear();
         PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKeyOut);
@@ -211,14 +198,9 @@ public abstract class AbstractStore<SDType> implements Store {
                     // HKey column from rowData
                     Column column = hKeyColumn.column();
                     FieldDef fieldDef = fieldDefs[column.getPosition()];
-                    if(insertingRow && column.isAkibanPKColumn()) {
+                    if(isInsert && column.isAkibanPKColumn()) {
                         // Must be a PK-less table. Use unique id from TableStatus.
-                        final long uniqueId;
-                        if(hiddenPk == null) {
-                            uniqueId = segmentRowDef.getTableStatus().createNewUniqueID(session);
-                        } else {
-                            uniqueId = hiddenPk.incrementAndGet();
-                        }
+                        long uniqueId = segmentRowDef.getTableStatus().createNewUniqueID(session);
                         hKeyAppender.append(uniqueId);
                         // Write rowId into the value part of the row also.
                         rowData.updateNonNullLong(fieldDef, uniqueId);
@@ -376,16 +358,15 @@ public abstract class AbstractStore<SDType> implements Store {
         return ordinals;
     }
 
-    protected RowDef writeRowCheck(Session session, RowData rowData) {
-        if (rowData.getRowSize() > MAX_ROW_SIZE) {
-            LOG.warn("RowData size {} is larger than current limit of {} bytes" + rowData.getRowSize(), MAX_ROW_SIZE);
+    protected void checkNoGroupIndexes(Table table) {
+        if(!table.getGroupIndexes().isEmpty()) {
+            throw new UnsupportedOperationException("PersistitStore can't update group indexes; found on " + table);
         }
-        return writeCheck(session, rowData);
     }
 
     protected RowDef writeCheck(Session session, RowData rowData) {
         final RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
-        //checkNoGroupIndexes(rowDef.table());
+        checkNoGroupIndexes(rowDef.table());
         lockAndCheckVersion(session, rowDef);
         return rowDef;
     }
@@ -395,7 +376,7 @@ public abstract class AbstractStore<SDType> implements Store {
                             BitSet tablesRequiringHKeyMaintenance,
                             boolean propagateHKeyChanges)
     {
-        RowDef rowDef = writeRowCheck(session, rowData);
+        RowDef rowDef = writeCheck(session, rowData);
         SDType storeData = createStoreData(session, rowDef.getGroup());
         WRITE_ROW_TAP.in();
         try {

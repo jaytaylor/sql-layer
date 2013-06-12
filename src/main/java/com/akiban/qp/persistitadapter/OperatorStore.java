@@ -260,7 +260,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     @Inject
     public OperatorStore(TreeService treeService, ConfigurationService config, SchemaManager schemaManager,
                          LockService lockService) {
-        super(new PersistitStore(false, treeService, config, schemaManager, lockService));
+        super(new PersistitStore(treeService, config, schemaManager, lockService));
         this.treeService = treeService;
         this.config = config;
         this.schemaManager = schemaManager;

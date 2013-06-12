@@ -74,8 +74,6 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     
     private boolean writeLockEnabled;
 
-    private boolean updateGroupIndexes;
-
     private final ConfigurationService config;
 
     private final TreeService treeService;
@@ -93,10 +91,11 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     private volatile AtomicLong uniqueChangeId = new AtomicLong(0);
 
 
-    public PersistitStore(boolean updateGroupIndexes, TreeService treeService, ConfigurationService config,
-                          SchemaManager schemaManager, LockService lockService) {
+    public PersistitStore(TreeService treeService,
+                          ConfigurationService config,
+                          SchemaManager schemaManager,
+                          LockService lockService) {
         super(lockService, schemaManager);
-        this.updateGroupIndexes = updateGroupIndexes;
         this.treeService = treeService;
         this.config = config;
         this.schemaManager = schemaManager;
@@ -530,8 +529,8 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
 
     // Promote visibility. TODO: Remove when OperatorStore goes away.
     @Override
-    public void constructHKey(Session session, RowDef rowDef, RowData rowData, boolean insertingRow, Key hKeyOut) {
-        super.constructHKey(session, rowDef, rowData, insertingRow, hKeyOut);
+    public void constructHKey(Session session, RowDef rowDef, RowData rowData, boolean isInsert, Key hKeyOut) {
+        super.constructHKey(session, rowDef, rowData, isInsert, hKeyOut);
     }
 
     private static void constructIndexRow(Exchange exchange,
@@ -728,12 +727,6 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         } finally {
             UPDATE_ROW_TAP.out();
             releaseExchange(session, hEx);
-        }
-    }
-
-    private void checkNoGroupIndexes(Table table) {
-        if (updateGroupIndexes && !table.getGroupIndexes().isEmpty()) {
-            throw new UnsupportedOperationException("PersistitStore can't update group indexes; found on " + table);
         }
     }
 
