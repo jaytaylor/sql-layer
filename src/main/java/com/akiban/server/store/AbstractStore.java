@@ -17,6 +17,7 @@
 
 package com.akiban.server.store;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.HKeyColumn;
@@ -37,11 +38,15 @@ import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.error.CursorCloseBadException;
 import com.akiban.server.error.CursorIsUnknownException;
 import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.QueryCanceledException;
+import com.akiban.server.error.QueryTimedOutException;
 import com.akiban.server.error.RowDefNotFoundException;
+import com.akiban.server.error.TableChangedByDDLException;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.store.statistics.Histogram;
@@ -64,10 +69,23 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class AbstractStore<StoreType,ExceptionType extends Exception> implements Store {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractStore.class.getName());
+
+    private static final InOutTap WRITE_ROW_TAP = Tap.createTimer("write: write_row");
     private static final InOutTap NEW_COLLECTOR_TAP = Tap.createTimer("read: new_collector");
     private static final Session.MapKey<Integer,List<RowCollector>> COLLECTORS = Session.MapKey.mapNamed("collectors");
 
+    protected final static int MAX_ROW_SIZE = 5000000;
+
+    protected final LockService lockService;
+    protected final SchemaManager schemaManager;
     protected IndexStatisticsService indexStatisticsService;
+
+
+    protected AbstractStore(LockService lockService, SchemaManager schemaManager) {
+        this.lockService = lockService;
+        this.schemaManager = schemaManager;
+    }
+
 
     //
     // AbstractStore
@@ -81,7 +99,13 @@ public abstract class AbstractStore<StoreType,ExceptionType extends Exception> i
                                                               Index pkIndex,
                                                               StoreType storeData,
                                                               RowDef rowDef,
-                                                              RowData rowData) throws ExceptionType;
+                                                              RowData rowData);
+
+    protected abstract void insertIntoIndex(Session session,
+                                            Index index,
+                                            RowData rowData,
+                                            Key hKey,
+                                            PersistitIndexRowBuffer indexRow);
 
     // TODO: These can be protected after OperatorStore refactoring
 
@@ -89,7 +113,7 @@ public abstract class AbstractStore<StoreType,ExceptionType extends Exception> i
                               RowDef rowDef,
                               RowData rowData,
                               boolean insertingRow,
-                              Key hKeyOut) throws ExceptionType {
+                              Key hKeyOut) {
         constructHKey(session, rowDef, rowData, insertingRow, null, hKeyOut);
     }
 
@@ -98,7 +122,7 @@ public abstract class AbstractStore<StoreType,ExceptionType extends Exception> i
                               RowData rowData,
                               boolean insertingRow,
                               AtomicLong hiddenPk,
-                              Key hKeyOut) throws ExceptionType {
+                              Key hKeyOut) {
         // Initialize the HKey being constructed
         PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKeyOut);
         hKeyAppender.key().clear();
@@ -311,10 +335,29 @@ public abstract class AbstractStore<StoreType,ExceptionType extends Exception> i
         return ordinals;
     }
 
+    protected RowDef writeRowCheck(Session session, RowData rowData) {
+        if (rowData.getRowSize() > MAX_ROW_SIZE) {
+            LOG.warn("RowData size {} is larger than current limit of {} bytes" + rowData.getRowSize(), MAX_ROW_SIZE);
+        }
+        return writeCheck(session, rowData);
+    }
+
+    protected RowDef writeCheck(Session session, RowData rowData) {
+        final RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
+        //checkNoGroupIndexes(rowDef.table());
+        lockAndCheckVersion(session, rowDef);
+        return rowDef;
+    }
+
 
     //
     // Store methods
     //
+
+    @Override
+    public AkibanInformationSchema getAIS(Session session) {
+        return schemaManager.getAis(session);
+    }
 
     @Override
     public RowDef getRowDef(Session session, int rowDefID) {
@@ -332,6 +375,11 @@ public abstract class AbstractStore<StoreType,ExceptionType extends Exception> i
             throw new NoSuchTableException(tableName);
         }
         return table.rowDef();
+    }
+
+    @Override
+    public void writeRow(Session session, RowData rowData) {
+        writeRow(session, rowData, null, true);
     }
 
     @Override
@@ -544,6 +592,117 @@ public abstract class AbstractStore<StoreType,ExceptionType extends Exception> i
     // Internal
     //
 
+    protected abstract void preWriteRow(Session session, RowDef rowDef, RowData rowData, StoreType storeData);
+
+    protected abstract Key getKey(Session session, StoreType storeType);
+
+    protected abstract void packRowData(Session sesiosn, StoreType storeType, RowData rowData);
+
+    protected abstract void save(Session session, StoreType storeType);
+
+    protected abstract void propagateDownGroup(Session session,
+                                               StoreType exchange,
+                                               BitSet tablesRequiringHKeyMaintenance,
+                                               PersistitIndexRowBuffer indexRowBuffer,
+                                               boolean deleteIndexes,
+                                               boolean cascadeDelete);
+
+    protected void writeRow(Session session,
+                            RowData rowData,
+                            BitSet tablesRequiringHKeyMaintenance,
+                            boolean propagateHKeyChanges)
+    {
+        RowDef rowDef = writeRowCheck(session, rowData);
+        StoreType storeType = createStoreType(session, rowDef.getGroup());
+        WRITE_ROW_TAP.in();
+        try {
+            preWriteRow(session, rowDef, rowData, storeType);
+            writeRowInternal(session, storeType, rowDef, rowData, tablesRequiringHKeyMaintenance, propagateHKeyChanges);
+        } finally {
+            WRITE_ROW_TAP.out();
+            releaseStoreType(session, storeType);
+        }
+    }
+
+    private void writeRowInternal(Session session,
+                                  StoreType storeType,
+                                  RowDef rowDef,
+                                  RowData rowData,
+                                  BitSet tablesRequiringHKeyMaintenance,
+                                  boolean propagateHKeyChanges) {
+        Key hKey = getKey(session, storeType);
+        /*
+         * About propagateHKeyChanges as second to last argument to constructHKey (i.e. insertingRow):
+         * - If this argument is true, it means that we're inserting a new row, and if the row's type
+         *   has a generated PK, then a PK value needs to be generated.
+         * - If this writeRow invocation is being done as part of hKey maintenance (called from
+         *   propagateDownGroup with propagateHKeyChanges false), then we are deleting and reinserting
+         *   a row, and we don't want the PK value changed.
+         * - See bug 1020342.
+         */
+        constructHKey(session, rowDef, rowData, propagateHKeyChanges, hKey);
+        /*
+         * Don't check hKey uniqueness here. It would require a database access and we're not int
+         * in a good position to report a meaningful uniqueness violation, e.g. on the PK, since
+         * we don't have the PK value handy. Instead, rely on PK validation when indexes are maintained.
+         */
+        packRowData(session, storeType, rowData);
+        save(session, storeType);
+        if (rowDef.isAutoIncrement()) {
+            final long location = rowDef.fieldLocation(rowData, rowDef.getAutoIncrementField());
+            if (location != 0) {
+                long autoIncrementValue = rowData.getIntegerValue((int) location, (int) (location >>> 32));
+                rowDef.getTableStatus().setAutoIncrement(session, autoIncrementValue);
+            }
+        }
+
+        // TODO: FullText
+        // addChangeFor(rowDef.userTable(), session, hEx.getKey());
+        PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
+        for(Index index : rowDef.getIndexes()) {
+            insertIntoIndex(session, index, rowData, hKey, indexRow);
+        }
+
+        /*
+         * Bump row count *after* uniqueness checks in insertIntoIndex.
+         * Avoids spurious live value increases to the TableStatus row count.
+         * See bug1112940.
+         */
+        rowDef.getTableStatus().rowsWritten(session, 1);
+
+        if(propagateHKeyChanges && rowDef.userTable().hasChildren()) {
+            /*
+             * Row being inserted might be the parent of orphan rows already present.
+             * The hKeys of these orphan rows need to be maintained. The ones of interest
+             * contain the PK from the inserted row, and nulls for other hKey fields nearer the root.
+             */
+            hKey.clear();
+            PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKey);
+            UserTable table = rowDef.userTable();
+            List<Column> pkColumns = table.getPrimaryKeyIncludingInternal().getColumns();
+            List<HKeySegment> hKeySegments = table.hKey().segments();
+            int s = 0;
+            while (s < hKeySegments.size()) {
+                HKeySegment segment = hKeySegments.get(s++);
+                RowDef segmentRowDef = segment.table().rowDef();
+                hKey.append(segmentRowDef.userTable().getOrdinal());
+                List<HKeyColumn> hKeyColumns = segment.columns();
+                int c = 0;
+                while (c < hKeyColumns.size()) {
+                    HKeyColumn hKeyColumn = hKeyColumns.get(c++);
+                    Column column = hKeyColumn.column();
+                    RowDef columnTableRowDef = column.getTable().rowDef();
+                    if (pkColumns.contains(column)) {
+                        hKeyAppender.append(columnTableRowDef.getFieldDef(column.getPosition()), rowData);
+                    } else {
+                        hKey.append(null);
+                    }
+                }
+            }
+            propagateDownGroup(session, storeType, tablesRequiringHKeyMaintenance, indexRow, true, false);
+        }
+    }
+
     private List<RowCollector> collectorsForTableId(final Session session, final int tableId) {
         List<RowCollector> list = session.get(COLLECTORS, tableId);
         if (list == null) {
@@ -576,6 +735,42 @@ public abstract class AbstractStore<StoreType,ExceptionType extends Exception> i
             throw new IllegalArgumentException("No RowDef for rowDefId " + rowDefId);
         }
         return rowDef;
+    }
+
+    private void lockAndCheckVersion(Session session, RowDef rowDef) {
+        final LockService.Mode mode = LockService.Mode.SHARED;
+        final int tableID = rowDef.getRowDefId();
+
+        // Since this is called on a per-row basis, we can't rely on reentrancy.
+        if(lockService.isTableClaimed(session, mode, tableID)) {
+            return;
+        }
+
+        /*
+         * No need to retry locks or back off already acquired. Other locker is DDL
+         * and it performs needed backoff to prevent deadlocks.
+         * Note that tryClaim() could be used and if false, throw TableChanged
+         * right away. Instead, desire is for timeout to elapse here so that client
+         * doesn't spin in a try lop.
+         */
+        try {
+            if(session.hasTimeoutAfterNanos()) {
+                long remaining = session.getRemainingNanosBeforeTimeout();
+                if(remaining <= 0 || !lockService.tryClaimTableNanos(session, mode, tableID, remaining)) {
+                    throw new QueryTimedOutException(session.getElapsedMillis());
+                }
+            } else {
+                lockService.claimTableInterruptible(session, mode, tableID);
+            }
+        } catch(InterruptedException e) {
+            throw new QueryCanceledException(session);
+        }
+
+        if(schemaManager.hasTableChanged(session, tableID)) {
+            // Simple: Release claim so we hit this block again. Could also rollback transaction?
+            lockService.releaseTable(session, LockService.Mode.SHARED, tableID);
+            throw new TableChangedByDDLException(rowDef.table().getName());
+        }
     }
 
     private static ColumnSelector createNonNullFieldSelector(final RowData rowData) {
