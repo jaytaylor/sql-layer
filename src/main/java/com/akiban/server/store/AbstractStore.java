@@ -66,7 +66,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class AbstractStore<SDType> implements Store {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractStore.class.getName());
@@ -358,15 +357,8 @@ public abstract class AbstractStore<SDType> implements Store {
         return ordinals;
     }
 
-    protected void checkNoGroupIndexes(Table table) {
-        if(!table.getGroupIndexes().isEmpty()) {
-            throw new UnsupportedOperationException("PersistitStore can't update group indexes; found on " + table);
-        }
-    }
-
     protected RowDef writeCheck(Session session, RowData rowData) {
         final RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
-        checkNoGroupIndexes(rowDef.table());
         lockAndCheckVersion(session, rowDef);
         return rowDef;
     }
@@ -696,7 +688,6 @@ public abstract class AbstractStore<SDType> implements Store {
             propagateDownGroup(session, storeData, tablesRequiringHKeyMaintenance, indexRow, true, false);
         }
     }
-
 
     /**
      * <p>
