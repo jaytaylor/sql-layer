@@ -57,7 +57,7 @@ import java.rmi.RemoteException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class PersistitStore extends AbstractStore<Exchange, PersistitException> implements Service
+public class PersistitStore extends AbstractStore<Exchange> implements Service
 {
     private static final Logger LOG = LoggerFactory.getLogger(PersistitStore.class);
 
@@ -513,19 +513,19 @@ public class PersistitStore extends AbstractStore<Exchange, PersistitException> 
     }
 
     public Exchange getExchange(Session session, Group group) {
-        return createStoreType(session, group);
+        return createStoreData(session, group);
     }
 
     public Exchange getExchange(final Session session, final RowDef rowDef) {
-        return createStoreType(session, rowDef.getGroup());
+        return createStoreData(session, rowDef.getGroup());
     }
 
     public Exchange getExchange(final Session session, final Index index) {
-        return createStoreType(session, index.indexDef());
+        return createStoreData(session, index.indexDef());
     }
 
     public void releaseExchange(final Session session, final Exchange exchange) {
-        releaseStoreType(session, exchange);
+        releaseStoreData(session, exchange);
     }
 
     private static void constructIndexRow(Exchange exchange,
@@ -541,12 +541,12 @@ public class PersistitStore extends AbstractStore<Exchange, PersistitException> 
     }
 
     @Override
-    protected Exchange createStoreType(Session session, TreeLink treeLink) {
+    protected Exchange createStoreData(Session session, TreeLink treeLink) {
         return treeService.getExchange(session, treeLink);
     }
 
     @Override
-    protected void releaseStoreType(Session session, Exchange exchange) {
+    protected void releaseStoreData(Session session, Exchange exchange) {
         treeService.releaseExchange(session, exchange);
     }
 
@@ -1052,7 +1052,7 @@ public class PersistitStore extends AbstractStore<Exchange, PersistitException> 
     }
 
     @Override
-    protected void preWriteRow(Session session, RowDef rowDef, RowData rowData, Exchange storeData) {
+    protected void preWriteRow(Session session, Exchange storeData, RowDef rowDef, RowData rowData) {
         try {
             lockKeys(adapter(session), rowDef, rowData, storeData);
         } catch(PersistitException e) {

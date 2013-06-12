@@ -67,7 +67,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-public abstract class AbstractStore<StoreType,ExceptionType extends Exception> implements Store {
+public abstract class AbstractStore<SDType> implements Store {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractStore.class.getName());
 
     private static final InOutTap WRITE_ROW_TAP = Tap.createTimer("write: write_row");
@@ -91,13 +91,13 @@ public abstract class AbstractStore<StoreType,ExceptionType extends Exception> i
     // AbstractStore
     //
 
-    protected abstract StoreType createStoreType(Session session, TreeLink treeLink);
+    protected abstract SDType createStoreData(Session session, TreeLink treeLink);
 
-    protected abstract void releaseStoreType(Session session, StoreType storeType);
+    protected abstract void releaseStoreData(Session session, SDType storeData);
 
     protected abstract PersistitIndexRowBuffer readPKIndexRow(Session session,
                                                               Index pkIndex,
-                                                              StoreType storeData,
+                                                              SDType storeData,
                                                               RowDef rowDef,
                                                               RowData rowData);
 
@@ -134,7 +134,7 @@ public abstract class AbstractStore<StoreType,ExceptionType extends Exception> i
         // Only set if parent row is looked up
         int i2hPosition = 0;
         IndexToHKey indexToHKey = null;
-        StoreType parentStoreData = null;
+        SDType parentStoreData = null;
         PersistitIndexRowBuffer parentPKIndexRow = null;
 
         // All columns of all segments of the HKey
@@ -152,7 +152,7 @@ public abstract class AbstractStore<StoreType,ExceptionType extends Exception> i
                         RowDef parentRowDef = rowDef.getParentRowDef();
                         TableIndex parentPkIndex = parentRowDef.getPKIndex();
                         indexToHKey = parentPkIndex.indexToHKey();
-                        parentStoreData = createStoreType(session, parentPkIndex.indexDef());
+                        parentStoreData = createStoreData(session, parentPkIndex.indexDef());
                         parentPKIndexRow = readPKIndexRow(session, parentPkIndex, parentStoreData, rowDef, rowData);
                     }
                     if(indexToHKey.isOrdinal(i2hPosition)) {
@@ -188,7 +188,7 @@ public abstract class AbstractStore<StoreType,ExceptionType extends Exception> i
             }
         }
         if(parentStoreData != null) {
-            releaseStoreType(session, parentStoreData);
+            releaseStoreData(session, parentStoreData);
         }
     }
 
@@ -592,16 +592,16 @@ public abstract class AbstractStore<StoreType,ExceptionType extends Exception> i
     // Internal
     //
 
-    protected abstract void preWriteRow(Session session, RowDef rowDef, RowData rowData, StoreType storeData);
+    protected abstract void preWriteRow(Session session, SDType storeData, RowDef rowDef, RowData rowData);
 
-    protected abstract Key getKey(Session session, StoreType storeType);
+    protected abstract Key getKey(Session session, SDType storeData);
 
-    protected abstract void packRowData(Session sesiosn, StoreType storeType, RowData rowData);
+    protected abstract void packRowData(Session session, SDType storeData, RowData rowData);
 
-    protected abstract void save(Session session, StoreType storeType);
+    protected abstract void save(Session session, SDType storeData);
 
     protected abstract void propagateDownGroup(Session session,
-                                               StoreType exchange,
+                                               SDType storeData,
                                                BitSet tablesRequiringHKeyMaintenance,
                                                PersistitIndexRowBuffer indexRowBuffer,
                                                boolean deleteIndexes,
@@ -613,24 +613,24 @@ public abstract class AbstractStore<StoreType,ExceptionType extends Exception> i
                             boolean propagateHKeyChanges)
     {
         RowDef rowDef = writeRowCheck(session, rowData);
-        StoreType storeType = createStoreType(session, rowDef.getGroup());
+        SDType storeData = createStoreData(session, rowDef.getGroup());
         WRITE_ROW_TAP.in();
         try {
-            preWriteRow(session, rowDef, rowData, storeType);
-            writeRowInternal(session, storeType, rowDef, rowData, tablesRequiringHKeyMaintenance, propagateHKeyChanges);
+            preWriteRow(session, storeData, rowDef, rowData);
+            writeRowInternal(session, storeData, rowDef, rowData, tablesRequiringHKeyMaintenance, propagateHKeyChanges);
         } finally {
             WRITE_ROW_TAP.out();
-            releaseStoreType(session, storeType);
+            releaseStoreData(session, storeData);
         }
     }
 
     private void writeRowInternal(Session session,
-                                  StoreType storeType,
+                                  SDType storeData,
                                   RowDef rowDef,
                                   RowData rowData,
                                   BitSet tablesRequiringHKeyMaintenance,
                                   boolean propagateHKeyChanges) {
-        Key hKey = getKey(session, storeType);
+        Key hKey = getKey(session, storeData);
         /*
          * About propagateHKeyChanges as second to last argument to constructHKey (i.e. insertingRow):
          * - If this argument is true, it means that we're inserting a new row, and if the row's type
@@ -646,8 +646,8 @@ public abstract class AbstractStore<StoreType,ExceptionType extends Exception> i
          * in a good position to report a meaningful uniqueness violation, e.g. on the PK, since
          * we don't have the PK value handy. Instead, rely on PK validation when indexes are maintained.
          */
-        packRowData(session, storeType, rowData);
-        save(session, storeType);
+        packRowData(session, storeData, rowData);
+        save(session, storeData);
         if (rowDef.isAutoIncrement()) {
             final long location = rowDef.fieldLocation(rowData, rowDef.getAutoIncrementField());
             if (location != 0) {
@@ -699,7 +699,7 @@ public abstract class AbstractStore<StoreType,ExceptionType extends Exception> i
                     }
                 }
             }
-            propagateDownGroup(session, storeType, tablesRequiringHKeyMaintenance, indexRow, true, false);
+            propagateDownGroup(session, storeData, tablesRequiringHKeyMaintenance, indexRow, true, false);
         }
     }
 
