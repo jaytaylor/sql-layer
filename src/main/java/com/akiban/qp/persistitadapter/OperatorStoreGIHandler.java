@@ -224,7 +224,7 @@ class OperatorStoreGIHandler {
 
     private OperatorStoreGIHandler(PersistitAdapter adapter, UserTable sourceTable) {
         this.adapter = adapter;
-        this.indexRow = new PersistitIndexRowBuffer(adapter);
+        this.indexRow = new PersistitIndexRowBuffer(adapter.getUnderlyingStore());
         this.sourceTable = sourceTable;
     }
 

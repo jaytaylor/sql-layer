@@ -154,9 +154,6 @@ import org.yaml.snakeyaml.nodes.Tag;
      each output row
    - The warning message is optional
    
-   BulkLoad is not supported in IT level tests
-   if used, please suppress the IT level calls or place tests in AAS directly
-   
    - JMX: <objectName>   (i.e com.akiban:type=IndexStatistics)
    ** Only one allowed of the following three (3) per command set
    - set: <set method>
@@ -270,10 +267,8 @@ class YamlTester {
 		    statementCommand(value, sequence);
 		} else if ("Message".equals(commandName)) {
 	        messageCommand(value);
-		} else if ("Bulkload".equals(commandName)) {
-                    bulkloadCommand(value, sequence); 
-                } else if ("JMX".equals(commandName)) {
-                    jmxCommand(value, sequence);
+        } else if ("JMX".equals(commandName)) {
+            jmxCommand(value, sequence);
         } else if ("Newtypes".equals(commandName)) {
             newtypesCommand(value);
 		} else {
@@ -309,11 +304,6 @@ class YamlTester {
             LOG.error("SQL Failed on connection {} with message {}", connection, e.getMessage());
             throw new ContextAssertionError(sql, e.toString(), e);
         }
-    }
-
-    private void bulkloadCommand(Object value, List<Object> sequence) {
-        // ignore this command.  Not meant for ITs, only system testing
-        throw new ContextAssertionError(null, "Bulk Load command is not supported in ITs");
     }
 
     private void includeCommand(Object value, List<Object> sequence) {

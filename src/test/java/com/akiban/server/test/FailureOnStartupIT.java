@@ -80,9 +80,8 @@ public final class FailureOnStartupIT extends ApiTestBase {
     public static class BadStore extends OperatorStore {
 
         @Inject
-        public BadStore(TreeService treeService, SchemaManager schemaManager, LockService lockService,
-                        TransactionService transactionService) {
-            super(treeService, null, schemaManager, lockService, transactionService);
+        public BadStore(TreeService treeService, SchemaManager schemaManager, LockService lockService) {
+            super(treeService, null, schemaManager, lockService);
         }
 
         @Override
