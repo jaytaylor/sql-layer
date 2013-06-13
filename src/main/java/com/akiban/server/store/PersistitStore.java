@@ -56,13 +56,13 @@ import java.rmi.RemoteException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.persistit.Key.EQ;
+
 public class PersistitStore extends AbstractStore<Exchange> implements Service
 {
     private static final Logger LOG = LoggerFactory.getLogger(PersistitStore.class);
 
     private static final InOutTap UPDATE_ROW_TAP = Tap.createTimer("write: update_row");
-
-    private static final InOutTap DELETE_ROW_TAP = Tap.createTimer("write: delete_row");
 
     private static final InOutTap TABLE_INDEX_MAINTENANCE_TAP = Tap.createTimer("index: maintain_table");
 
@@ -584,62 +584,6 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     // --------------------- Implement Store interface --------------------
 
     @Override
-    public void deleteRow(Session session, RowData rowData, boolean deleteIndexes, boolean cascadeDelete)
-    {
-        deleteRow(session, rowData, deleteIndexes, cascadeDelete, null, true);
-    }
-
-    private void deleteRow(Session session, RowData rowData, boolean deleteIndexes, boolean cascadeDelete,
-                           BitSet tablesRequiringHKeyMaintenance, boolean propagateHKeyChanges)
-    {
-        RowDef rowDef = writeCheck(session, rowData);
-        Exchange hEx = null;
-        
-        DELETE_ROW_TAP.in();
-        try {
-            hEx = getExchange(session, rowDef);
-            
-            lockKeys(adapter(session), rowDef, rowData, hEx);
-            constructHKey(session, rowDef, rowData, false, hEx.getKey());
-            hEx.fetch();
-            //
-            // Verify that the row exists
-            //
-            if (!hEx.getValue().isDefined()) {
-                throw new NoSuchRowException(hEx.getKey());
-            }
-            // record the deletion of the old index row
-            if (deleteIndexes)
-                addChangeFor(session, rowDef.userTable(), hEx.getKey());
-
-            // Remove the h-row
-            hEx.remove();
-            rowDef.getTableStatus().rowDeleted(session);
-
-            // Remove the indexes, including the PK index
-
-            PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
-            if(deleteIndexes) {
-                for (Index index : rowDef.getIndexes()) {
-                    deleteIndexRow(session, index, rowData, hEx.getKey(), indexRow);
-                }
-            }
-
-            // The row being deleted might be the parent of rows that
-            // now become orphans. The hkeys
-            // of these rows need to be maintained.
-            if(propagateHKeyChanges && rowDef.userTable().hasChildren()) {
-                propagateDownGroup(session, hEx, tablesRequiringHKeyMaintenance, indexRow, deleteIndexes, cascadeDelete);
-            }
-        } catch(PersistitException e) {
-            throw PersistitAdapter.wrapPersistitException(session, e);
-        } finally {
-            DELETE_ROW_TAP.out();
-            releaseExchange(session, hEx);
-        }
-    }
-
-    @Override
     public void updateRow(Session session,
                           RowData oldRowData,
                           RowData newRowData,
@@ -934,6 +878,17 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
+    protected boolean fetch(Session session, Exchange ex) {
+        try {
+            // ex.isValueDefined() doesn't actually fetch the value
+            // ex.fetch() + ex.getValue().isDefined() would give false negatives (i.e. stored key with no value)
+            return ex.traverse(EQ, true, Integer.MAX_VALUE);
+        } catch(PersistitException e) {
+            throw PersistitAdapter.wrapPersistitException(session, e);
+        }
+    }
+
+    @Override
     protected void clear(Session session, Exchange ex) {
         try {
             ex.remove();
@@ -1046,7 +1001,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
-    protected void preWriteRow(Session session, Exchange storeData, RowDef rowDef, RowData rowData) {
+    protected void preWrite(Session session, Exchange storeData, RowDef rowDef, RowData rowData) {
         try {
             lockKeys(adapter(session), rowDef, rowData, storeData);
         } catch(PersistitException e) {

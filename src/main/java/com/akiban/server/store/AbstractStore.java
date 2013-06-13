@@ -37,6 +37,7 @@ import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.error.CursorCloseBadException;
 import com.akiban.server.error.CursorIsUnknownException;
+import com.akiban.server.error.NoSuchRowException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.QueryCanceledException;
 import com.akiban.server.error.QueryTimedOutException;
@@ -72,6 +73,7 @@ public abstract class AbstractStore<SDType> implements Store {
 
     protected final static int MAX_ROW_SIZE = 5000000;
     private static final InOutTap WRITE_ROW_TAP = Tap.createTimer("write: write_row");
+    private static final InOutTap DELETE_ROW_TAP = Tap.createTimer("write: delete_row");
     private static final InOutTap NEW_COLLECTOR_TAP = Tap.createTimer("read: new_collector");
     private static final InOutTap PROPAGATE_CHANGE_TAP = Tap.createTimer("write: propagate_hkey_change");
     private static final InOutTap PROPAGATE_REPLACE_TAP = Tap.createTimer("write: propagate_hkey_change_row_replace");
@@ -103,6 +105,9 @@ public abstract class AbstractStore<SDType> implements Store {
 
     /** Save the current key and value. */
     protected abstract void store(Session session, SDType storeData);
+
+    /** Fetch the value for the current key. Return <code>true</code> if it existed. */
+    protected abstract boolean fetch(Session session, SDType storeData);
 
     /** Delete the key. */
     protected abstract void clear(Session session, SDType storeData);
@@ -137,8 +142,8 @@ public abstract class AbstractStore<SDType> implements Store {
                                            Key hKey,
                                            PersistitIndexRowBuffer indexRowBuffer);
 
-    /** Called prior to executing writeRow(), for store specific needs only (i.e. can no-op). */
-    protected abstract void preWriteRow(Session session, SDType storeData, RowDef rowDef, RowData rowData);
+    /** Called prior to executing write, update, or delete row. For store specific needs only (i.e. can no-op). */
+    protected abstract void preWrite(Session session, SDType storeData, RowDef rowDef, RowData rowData);
 
     // TODO: Pull FullText out of Store
     /** The hKey of the given table is changing. */
@@ -372,7 +377,7 @@ public abstract class AbstractStore<SDType> implements Store {
         SDType storeData = createStoreData(session, rowDef.getGroup());
         WRITE_ROW_TAP.in();
         try {
-            preWriteRow(session, storeData, rowDef, rowData);
+            preWrite(session, storeData, rowDef, rowData);
             writeRowInternal(session, storeData, rowDef, rowData, tablesRequiringHKeyMaintenance, propagateHKeyChanges);
         } finally {
             WRITE_ROW_TAP.out();
@@ -380,6 +385,24 @@ public abstract class AbstractStore<SDType> implements Store {
         }
     }
 
+    protected void deleteRow(Session session,
+                             RowData rowData,
+                             boolean deleteIndexes,
+                             boolean cascadeDelete,
+                             BitSet tablesRequiringHKeyMaintenance,
+                             boolean propagateHKeyChanges)
+    {
+        RowDef rowDef = writeCheck(session, rowData);
+        SDType storeData = createStoreData(session, rowDef.getGroup());
+        DELETE_ROW_TAP.in();
+        try {
+            preWrite(session, storeData, rowDef, rowData);
+            deleteRowInternal(session, storeData, rowDef, rowData, deleteIndexes, cascadeDelete, tablesRequiringHKeyMaintenance, propagateHKeyChanges);
+        } finally {
+            DELETE_ROW_TAP.out();
+            releaseStoreData(session, storeData);
+        }
+    }
 
     //
     // Store methods
@@ -411,6 +434,11 @@ public abstract class AbstractStore<SDType> implements Store {
     @Override
     public void writeRow(Session session, RowData rowData) {
         writeRow(session, rowData, null, true);
+    }
+
+    @Override
+    public void deleteRow(Session session, RowData rowData, boolean deleteIndexes, boolean cascadeDelete) {
+        deleteRow(session, rowData, deleteIndexes, cascadeDelete, null, true);
     }
 
     @Override
@@ -686,6 +714,43 @@ public abstract class AbstractStore<SDType> implements Store {
                 }
             }
             propagateDownGroup(session, storeData, tablesRequiringHKeyMaintenance, indexRow, true, false);
+        }
+    }
+
+    protected void deleteRowInternal(Session session,
+                                     SDType storeData,
+                                     RowDef rowDef,
+                                     RowData rowData,
+                                     boolean deleteIndexes,
+                                     boolean cascadeDelete,
+                                     BitSet tablesRequiringHKeyMaintenance,
+                                     boolean propagateHKeyChanges)
+    {
+        Key hKey = getKey(session, storeData);
+        constructHKey(session, rowDef, rowData, false, hKey);
+
+        boolean existed = fetch(session, storeData);
+        if(!existed) {
+            throw new NoSuchRowException(hKey);
+        }
+
+        // Remove the group row
+        clear(session, storeData);
+        rowDef.getTableStatus().rowDeleted(session);
+
+        // Remove all indexes
+        PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
+        if(deleteIndexes) {
+            addChangeFor(session, rowDef.userTable(), hKey);
+
+            for(Index index : rowDef.getIndexes()) {
+                deleteIndexRow(session, index, rowData, hKey, indexRow);
+            }
+        }
+
+        // Maintain hKeys of any existing descendants (i.e. create orphans)
+        if(propagateHKeyChanges && rowDef.userTable().hasChildren()) {
+            propagateDownGroup(session, storeData, tablesRequiringHKeyMaintenance, indexRow, deleteIndexes, cascadeDelete);
         }
     }
 
