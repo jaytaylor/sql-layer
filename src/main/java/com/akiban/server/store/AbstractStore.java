@@ -762,8 +762,6 @@ public abstract class AbstractStore<SDType> implements Store {
         }
     }
 
-
-
     private void updateRowInternal(Session session,
                                    SDType storeData,
                                    RowDef oldRowDef,
