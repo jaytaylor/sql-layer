@@ -34,6 +34,9 @@ import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.TableStatus;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.api.dml.scan.LegacyRowWrapper;
+import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.error.CursorCloseBadException;
 import com.akiban.server.error.CursorIsUnknownException;
@@ -74,6 +77,8 @@ public abstract class AbstractStore<SDType> implements Store {
     protected final static int MAX_ROW_SIZE = 5000000;
     private static final InOutTap WRITE_ROW_TAP = Tap.createTimer("write: write_row");
     private static final InOutTap DELETE_ROW_TAP = Tap.createTimer("write: delete_row");
+    private static final InOutTap UPDATE_ROW_TAP = Tap.createTimer("write: update_row");
+    private static final InOutTap UPDATE_INDEX_TAP = Tap.createTimer("index: update_index");
     private static final InOutTap NEW_COLLECTOR_TAP = Tap.createTimer("read: new_collector");
     private static final InOutTap PROPAGATE_CHANGE_TAP = Tap.createTimer("write: propagate_hkey_change");
     private static final InOutTap PROPAGATE_REPLACE_TAP = Tap.createTimer("write: propagate_hkey_change_row_replace");
@@ -283,39 +288,6 @@ public abstract class AbstractStore<SDType> implements Store {
         return toHistogram;
     }
 
-    protected static boolean bytesEqual(byte[] a, int aoffset, int asize, byte[] b, int boffset, int bsize) {
-        if (asize != bsize) {
-            return false;
-        }
-        for (int i = 0; i < asize; i++) {
-            if (a[i + aoffset] != b[i + boffset]) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    protected static boolean fieldsEqual(RowDef rowDef, RowData a, RowData b, int[] fieldIndexes)
-    {
-        for (int fieldIndex : fieldIndexes) {
-            long aloc = rowDef.fieldLocation(a, fieldIndex);
-            long bloc = rowDef.fieldLocation(b, fieldIndex);
-            if (!bytesEqual(a.getBytes(), (int) aloc, (int) (aloc >>> 32),
-                            b.getBytes(), (int) bloc, (int) (bloc >>> 32))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    protected static boolean fieldEqual(RowDef rowDef, RowData a, RowData b, int fieldPosition)
-    {
-        long aloc = rowDef.fieldLocation(a, fieldPosition);
-        long bloc = rowDef.fieldLocation(b, fieldPosition);
-        return bytesEqual(a.getBytes(), (int) aloc, (int) (aloc >>> 32),
-                          b.getBytes(), (int) bloc, (int) (bloc >>> 32));
-    }
-
     protected BitSet analyzeFieldChanges(Session session, RowDef rowDef, RowData oldRow, RowData newRow)
     {
         BitSet tablesRequiringHKeyMaintenance;
@@ -404,6 +376,37 @@ public abstract class AbstractStore<SDType> implements Store {
         }
     }
 
+    private void updateRow(Session session,
+                           RowData oldRow,
+                           RowData newRow,
+                           ColumnSelector selector,
+                           Index[] indexes,
+                           boolean indexesAsInsert,
+                           boolean propagateHKeyChanges)
+    {
+        int oldID = oldRow.getRowDefId();
+        int newID = newRow.getRowDefId();
+        if(oldID != newID) {
+            String msg = String.format("RowData values have different RowDef IDs: (%d vs %d)", oldID, newID);
+            throw new IllegalArgumentException(msg);
+        }
+
+        // RowDefs may be different during an ALTER. Only non-PK/FK columns change in this scenario.
+        RowDef oldRowDef = writeCheck(session, oldRow);
+        RowDef newRowDef = rowDefFromExplicitOrId(session, newRow);
+        SDType storeData = createStoreData(session, oldRowDef.getGroup());
+
+        UPDATE_ROW_TAP.in();
+        try {
+            preWrite(session, storeData, oldRowDef, oldRow);
+            preWrite(session, storeData, newRowDef, newRow);
+            updateRowInternal(session, storeData, oldRowDef, oldRow, newRowDef, newRow, selector, indexes, indexesAsInsert, propagateHKeyChanges);
+        } finally {
+            UPDATE_ROW_TAP.out();
+            releaseStoreData(session, storeData);
+        }
+    }
+
     //
     // Store methods
     //
@@ -439,6 +442,11 @@ public abstract class AbstractStore<SDType> implements Store {
     @Override
     public void deleteRow(Session session, RowData rowData, boolean deleteIndexes, boolean cascadeDelete) {
         deleteRow(session, rowData, deleteIndexes, cascadeDelete, null, true);
+    }
+
+    @Override
+    public void updateRow(Session session, RowData oldRow, RowData newRow, ColumnSelector selector, Index[] indexes) {
+        updateRow(session, oldRow, newRow, selector, indexes, (indexes != null), true);
     }
 
     @Override
@@ -754,6 +762,59 @@ public abstract class AbstractStore<SDType> implements Store {
         }
     }
 
+
+
+    private void updateRowInternal(Session session,
+                                   SDType storeData,
+                                   RowDef oldRowDef,
+                                   RowData oldRow,
+                                   RowDef newRowDef,
+                                   RowData newRow,
+                                   ColumnSelector selector,
+                                   Index[] indexes,
+                                   boolean indexesAsInsert,
+                                   boolean propagateHKeyChanges)
+    {
+        Key hKey = getKey(session, storeData);
+        constructHKey(session, oldRowDef, oldRow, false, hKey);
+
+        boolean existed = fetch(session, storeData);
+        if(!existed) {
+            throw new NoSuchRowException(hKey);
+        }
+
+        RowData currentRow = new RowData();
+        expandRowData(storeData, currentRow);
+        RowData mergedRow = mergeRows(oldRowDef, currentRow, newRow, selector);
+
+        BitSet tablesRequiringHKeyMaintenance = null;
+        if(propagateHKeyChanges) {
+            tablesRequiringHKeyMaintenance = analyzeFieldChanges(session, oldRowDef, oldRow, mergedRow);
+        }
+
+        // May still be null (i.e. no pk or fk changes), check again
+        if(tablesRequiringHKeyMaintenance == null) {
+            packRowData(storeData, mergedRow);
+            store(session, storeData);
+            addChangeFor(session, newRowDef.userTable(), hKey);
+
+            PersistitIndexRowBuffer indexRowBuffer = new PersistitIndexRowBuffer(this);
+            Index[] indexesToMaintain = (indexes == null) ? oldRowDef.getIndexes() : indexes;
+            for(Index index : indexesToMaintain) {
+                if(indexesAsInsert) {
+                    writeIndexRow(session, index, mergedRow, hKey, indexRowBuffer);
+                } else {
+                    updateIndex(session, index, oldRowDef, currentRow, mergedRow, hKey, indexRowBuffer);
+                }
+            }
+        } else {
+            // A PK or FK field has changed. Process the update by delete and insert.
+            // tablesRequiringHKeyMaintenance contains the ordinals of the tables whose hKey could have been affected.
+            deleteRow(session, oldRow, true, false, tablesRequiringHKeyMaintenance, true);
+            writeRow(session, mergedRow, tablesRequiringHKeyMaintenance, true); // May throw DuplicateKeyException
+        }
+    }
+
     /**
      * <p>
      *   Propagate any change to the HKey, signified by the Key contained within <code>storeData</code>, to all
@@ -858,6 +919,24 @@ public abstract class AbstractStore<SDType> implements Store {
         return rowDef;
     }
 
+    private void updateIndex(Session session,
+                             Index index,
+                             RowDef rowDef,
+                             RowData oldRow,
+                             RowData newRow, Key hKey,
+                             PersistitIndexRowBuffer indexRowBuffer) {
+        IndexDef indexDef = index.indexDef();
+        if(!fieldsEqual(rowDef, oldRow, newRow, indexDef.getFields())) {
+            UPDATE_INDEX_TAP.in();
+            try {
+                deleteIndexRow(session, index, oldRow, hKey, indexRowBuffer);
+                writeIndexRow(session, index, newRow, hKey, indexRowBuffer);
+            } finally {
+                UPDATE_INDEX_TAP.out();
+            }
+        }
+    }
+
     private void lockAndCheckVersion(Session session, RowDef rowDef) {
         final LockService.Mode mode = LockService.Mode.SHARED;
         final int tableID = rowDef.getRowDefId();
@@ -892,6 +971,54 @@ public abstract class AbstractStore<SDType> implements Store {
             lockService.releaseTable(session, LockService.Mode.SHARED, tableID);
             throw new TableChangedByDDLException(rowDef.table().getName());
         }
+    }
+
+
+    //
+    // Static helpers
+    //
+
+    protected static boolean bytesEqual(byte[] a, int aOffset, int aSize, byte[] b, int bOffset, int bSize) {
+        if(aSize != bSize) {
+            return false;
+        }
+        for(int i = 0; i < aSize; i++) {
+            if(a[i + aOffset] != b[i + bOffset]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    protected static boolean fieldsEqual(RowDef rowDef, RowData a, RowData b, int[] fieldIndexes) {
+        for(int fieldIndex : fieldIndexes) {
+            if(!fieldEqual(rowDef, a, b, fieldIndex)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    protected static boolean fieldEqual(RowDef rowDef, RowData a, RowData b, int fieldPosition) {
+        long aLoc = rowDef.fieldLocation(a, fieldPosition);
+        long bLoc = rowDef.fieldLocation(b, fieldPosition);
+        return bytesEqual(a.getBytes(), (int)aLoc, (int)(aLoc >>> 32),
+                          b.getBytes(), (int)bLoc, (int)(bLoc >>> 32));
+    }
+
+    private static RowData mergeRows(RowDef rowDef, RowData currentRow, RowData newRowData, ColumnSelector selector) {
+        if(selector == null) {
+            return newRowData;
+        }
+        NewRow mergedRow = NiceRow.fromRowData(currentRow, rowDef);
+        NewRow newRow = new LegacyRowWrapper(rowDef, newRowData);
+        int fields = rowDef.getFieldCount();
+        for (int i = 0; i < fields; i++) {
+            if (selector.includesColumn(i)) {
+                mergedRow.put(i, newRow.get(i));
+            }
+        }
+        return mergedRow.toRowData();
     }
 
     private static ColumnSelector createNonNullFieldSelector(final RowData rowData) {
