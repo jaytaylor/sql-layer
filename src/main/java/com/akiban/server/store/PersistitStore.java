@@ -372,7 +372,7 @@ public class PersistitStore extends AbstractStore<Exchange, PersistitException> 
             assert indexName.getSchemaName().equals(key.decodeString()) 
                     : "Unexpected schema" ;
             assert indexName.getTableName().equals(key.decodeString())
-                    : "Unexpected table";
+                    : "Unexpected table: " + indexName.toString() + " vs. " + key.decodeString();
             assert indexName.getName().equals(key.decodeString())
                     : "Unexpected name";
 
