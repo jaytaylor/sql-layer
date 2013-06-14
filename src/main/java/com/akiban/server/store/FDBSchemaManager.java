@@ -40,7 +40,6 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.util.ReadWriteMap;
 import com.akiban.util.GrowableByteBuffer;
 import com.foundationdb.KeyValue;
 import com.foundationdb.Transaction;
@@ -50,38 +49,40 @@ import com.google.inject.Inject;
 import java.nio.BufferOverflowException;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 
 /**
- * Layout:
+ * Keyspace Usage:
  * sm/
- * sm/trees/
- * sm/trees/[allocated tree name] => [none]
  * sm/ais/
  * sm/ais/generation => [current generation number]
  * sm/ais/pb
  * sm/ais/pb/[schema name] => [protobuf data]
+ *
+ * Transactionality:
+ * - All consumers of getAis() do a full read of the sm/ais/generation key to determine the proper version.
+ * - All DDL executors increment the generation while making the AIS changes
+ * - Whenever a new AIS is read, the name generator and table version map is re-set
+ * - Since there can be exactly one change to the generation at a time, all generated names and ids will be unique
  */
 public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     private static final String SM_PREFIX = "sm/";
-    private static final String AIS_TREE_PREFIX = "trees/";
     private static final String AIS_PREFIX = "ais/";
     private static final String AIS_GENERATION_KEY = "generation";
     private static final String AIS_PB_PREFIX = "pb/";
-
     private static final byte[] PACKED_GENERATION_KEY = Tuple.from(SM_PREFIX, AIS_PREFIX, AIS_GENERATION_KEY).pack();
+    private static final Session.Key<AkibanInformationSchema> SESSION_AIS_KEY = Session.Key.named("AIS_KEY");
 
     // TODO: versioning?
 
     private final FDBHolder holder;
     private final FDBTransactionService txnService;
+    private final Object AIS_LOCK = new Object();
+
     private FDBTableStatusCache tableStatusCache;
     private RowDefCache rowDefCache;
-
-    // TODO: all needs to go through the DB
+    private AkibanInformationSchema curAIS;
     private NameGenerator nameGenerator;
-    private volatile AkibanInformationSchema curAIS;
 
 
     @Inject
@@ -106,11 +107,10 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     @Override
     public void start() {
         super.start();
+        AkCollatorFactory.setUseKeyCoder(false);
 
         this.tableStatusCache = new FDBTableStatusCache(holder.getDatabase(), txnService);
         this.rowDefCache = new RowDefCache(tableStatusCache);
-
-        AkCollatorFactory.setUseKeyCoder(false);
 
         try(Session session = sessionService.createSession()) {
             transactionally(
@@ -120,23 +120,25 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
                         public Void runAndReturn(Session session) {
                             AkibanInformationSchema newAIS = loadAISFromStorage(session);
                             buildRowDefCache(session, newAIS);
+                            FDBSchemaManager.this.curAIS = newAIS;
                             return null;
                         }
                     }
             );
         }
 
-        this.nameGenerator = SynchronizedNameGenerator.wrap(new DefaultNameGenerator(curAIS));
-        this.tableVersionMap = ReadWriteMap.wrapNonFair(new HashMap<Integer,Integer>());
-        for(UserTable table : curAIS.getUserTables().values()) {
-            tableVersionMap.put(table.getTableId(), table.getVersion());
-        }
+        // nameGenerator and tableVersionMap will be set upon first getAis
+        this.nameGenerator = SynchronizedNameGenerator.wrap(new DefaultNameGenerator());
+        mergeNewAIS(curAIS);
     }
 
     @Override
     public void stop() {
         super.stop();
         this.tableStatusCache = null;
+        this.rowDefCache = null;
+        this.curAIS = null;
+        this.nameGenerator = null;
     }
 
     @Override
@@ -165,7 +167,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
                 checkAndSerialize(txnService.getTransaction(session), byteBuffer, newAIS, schema);
             }
             buildRowDefCache(session, newAIS);
-            //addCallbacksForAISChange(session);
         } catch(BufferOverflowException e) {
             throw new AISTooLargeException(byteBuffer.getMaxBurstSize());
         }
@@ -188,7 +189,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
         validateAndFreeze(session, newAIS);
         serializeMemoryTables(session, newAIS);
         buildRowDefCache(session, newAIS);
-        //addCallbacksForAISChange(session);
     }
 
     @Override
@@ -214,7 +214,29 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
 
     @Override
     public AkibanInformationSchema getAis(Session session) {
-        return curAIS;
+        AkibanInformationSchema localAIS = session.get(SESSION_AIS_KEY);
+        if(localAIS != null) {
+            return localAIS;
+        }
+        long generation = getTransactionalGeneration(session);
+        localAIS = curAIS;
+        if(generation != localAIS.getGeneration()) {
+            synchronized(AIS_LOCK) {
+                // May have been waiting
+                if(generation == curAIS.getGeneration()) {
+                    localAIS = curAIS;
+                } else {
+                    localAIS = loadAISFromStorage(session);
+                    buildRowDefCache(session, localAIS);
+                    if(localAIS.getGeneration() > curAIS.getGeneration()) {
+                        curAIS = localAIS;
+                        mergeNewAIS(curAIS);
+                    }
+                }
+            }
+        }
+        attachToSession(session, localAIS);
+        return localAIS;
     }
 
     @Override
@@ -244,19 +266,16 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
 
     private void validateAndFreeze(Session session, AkibanInformationSchema newAIS) {
         newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary(); // TODO: Often redundant, cleanup
-
         // Read, increment, and write generation
         Transaction txn = txnService.getTransaction(session);
-        long newGeneration = 1;
-        byte[] packedGen = txn.get(PACKED_GENERATION_KEY).get();
-        if(packedGen != null) {
-            newGeneration += Tuple.fromBytes(packedGen).getLong(0);
-        }
-        packedGen = Tuple.from(newGeneration).pack();
+        long newGeneration = 1 + getTransactionalGeneration(session);
+        byte[] packedGen = Tuple.from(newGeneration).pack();
         txn.set(PACKED_GENERATION_KEY, packedGen);
 
         newAIS.setGeneration(newGeneration);
         newAIS.freeze();
+
+        attachToSession(session, newAIS);
     }
 
     private void checkAndSerialize(Transaction txn, GrowableByteBuffer buffer, AkibanInformationSchema newAIS, String schema) {
@@ -337,22 +356,23 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
 
     private void buildRowDefCache(Session session, AkibanInformationSchema newAIS) {
         tableStatusCache.detachAIS();
+        // TODO: set only if greater
         rowDefCache.setAIS(session, newAIS);
-        curAIS = newAIS;
     }
 
     private AkibanInformationSchema loadAISFromStorage(final Session session) {
         final AkibanInformationSchema newAIS = new AkibanInformationSchema();
         Transaction txn = txnService.getTransaction(session);
 
-        // User tables
-        Tuple tuple = makePBTuple();
-        Iterator<KeyValue> iterator = txn.getRangeStartsWith(tuple.pack()).iterator();
+        ProtobufReader reader = new ProtobufReader(newAIS);
+        Iterator<KeyValue> iterator = txn.getRangeStartsWith(makePBTuple().pack()).iterator();
         while(iterator.hasNext()) {
             KeyValue kv = iterator.next();
-            //checkAndSetSerialization(typeForVolume);
-            loadProtobuf(kv, newAIS);
+            byte[] storedAIS = kv.getValue();
+            GrowableByteBuffer buffer = GrowableByteBuffer.wrap(storedAIS);
+            reader.loadBuffer(buffer);
         }
+        reader.loadAIS();
 
         // TODO: Merge memory tables
 
@@ -360,15 +380,52 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
         return newAIS;
     }
 
-    private static void loadProtobuf(KeyValue kv, AkibanInformationSchema newAIS) {
-        ProtobufReader reader = new ProtobufReader(newAIS);
-        byte[] storedAIS = kv.getValue();
-        GrowableByteBuffer buffer = GrowableByteBuffer.wrap(storedAIS);
-        reader.loadBuffer(buffer);
-        reader.loadAIS();
+    private long getTransactionalGeneration(Session session) {
+        Transaction txn = txnService.getTransaction(session);
+        long generation = 0;
+        byte[] packedGen = txn.get(PACKED_GENERATION_KEY).get();
+        if(packedGen != null) {
+            generation = Tuple.fromBytes(packedGen).getLong(0);
+        }
+        return generation;
     }
+
+    private void mergeNewAIS(AkibanInformationSchema newAIS) {
+        nameGenerator.mergeAIS(newAIS);
+        tableVersionMap.claimExclusive();
+        try {
+            for(UserTable table : newAIS.getUserTables().values()) {
+                int newValue = table.getVersion();
+                Integer current = tableVersionMap.get(table.getTableId());
+                if(current == null || newValue > current) {
+                    tableVersionMap.put(table.getTableId(), newValue);
+                }
+            }
+        } finally {
+            tableVersionMap.releaseExclusive();
+        }
+    }
+
+    private void attachToSession(Session session, AkibanInformationSchema ais) {
+        AkibanInformationSchema prev = session.put(SESSION_AIS_KEY, ais);
+        if(prev == null) {
+            txnService.addCallback(session, TransactionService.CallbackType.END, CLEAR_SESSION_KEY_CALLBACK);
+        }
+    }
+
+
+    //
+    // Static helpers
+    //
 
     private static Tuple makePBTuple() {
         return Tuple.from(SM_PREFIX, AIS_PREFIX, AIS_PB_PREFIX);
     }
+
+    private static final TransactionService.Callback CLEAR_SESSION_KEY_CALLBACK = new TransactionService.Callback() {
+        @Override
+        public void run(Session session, long timestamp) {
+            session.remove(SESSION_AIS_KEY);
+        }
+    };
 }
