@@ -22,6 +22,8 @@ import com.akiban.ais.model.TableName;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
+
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Set;

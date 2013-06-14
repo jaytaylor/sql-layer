@@ -336,7 +336,7 @@
                         <akserver.port>${akserver.port}</akserver.port>
                         <akserver.postgres.port>${akserver.postgres.port}</akserver.postgres.port>
                     </systemPropertyVariables>
-                    <argLine>-Xmx1024m ${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
+                    <argLine>-Xmx512m ${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
                     <includes>
                         <include>**/*Test.java</include>
                         <include>**/*Test?.java</include>
@@ -355,7 +355,7 @@
                         <akserver.port>${akserver.port}</akserver.port>
                         <akserver.postgres.port>${akserver.postgres.port}</akserver.postgres.port>
                     </systemPropertyVariables>
-                    <argLine>-Xmx1024m ${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
+                    <argLine>-Xmx512m ${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
                 </configuration>
                 <executions>
                     <execution>
