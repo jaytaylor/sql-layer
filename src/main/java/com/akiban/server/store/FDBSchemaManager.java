@@ -70,7 +70,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     private static final String AIS_GENERATION_KEY = "generation";
     private static final String AIS_PB_PREFIX = "pb/";
 
-    private static final byte[] PACKGED_GENERATION_KEY = Tuple.from(SM_PREFIX, AIS_PREFIX, AIS_GENERATION_KEY).pack();
+    private static final byte[] PACKED_GENERATION_KEY = Tuple.from(SM_PREFIX, AIS_PREFIX, AIS_GENERATION_KEY).pack();
 
     // TODO: versioning?
 
@@ -248,12 +248,12 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
         // Read, increment, and write generation
         Transaction txn = txnService.getTransaction(session);
         long newGeneration = 1;
-        byte[] packedGen = txn.get(PACKGED_GENERATION_KEY).get();
+        byte[] packedGen = txn.get(PACKED_GENERATION_KEY).get();
         if(packedGen != null) {
             newGeneration += Tuple.fromBytes(packedGen).getLong(0);
         }
         packedGen = Tuple.from(newGeneration).pack();
-        txn.set(PACKGED_GENERATION_KEY, packedGen);
+        txn.set(PACKED_GENERATION_KEY, packedGen);
 
         newAIS.setGeneration(newGeneration);
         newAIS.freeze();
