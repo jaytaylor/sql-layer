@@ -30,7 +30,6 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.ais.protobuf.ProtobufReader;
 import com.akiban.ais.protobuf.ProtobufWriter;
-import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.FDBTableStatusCache;
 import com.akiban.server.collation.AkCollatorFactory;
 import com.akiban.server.error.AISTooLargeException;
@@ -53,15 +52,27 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Layout:
+ * sm/
+ * sm/trees/
+ * sm/trees/[allocated tree name] => [none]
+ * sm/ais/
+ * sm/ais/generation => [current generation number]
+ * sm/ais/pb
+ * sm/ais/pb/[schema name] => [protobuf data]
+ */
 public class FDBSchemaManager extends AbstractSchemaManager implements Service {
-    private static final String SCHEMA_MANAGER_PREFIX = "sm/";
-    private static final String AIS_KEY_PREFIX = "by/";
-    private static final String AIS_PROTOBUF_PARENT_KEY = AIS_KEY_PREFIX + "PBAIS/";
+    private static final String SM_PREFIX = "sm/";
+    private static final String AIS_TREE_PREFIX = "trees/";
+    private static final String AIS_PREFIX = "ais/";
+    private static final String AIS_GENERATION_KEY = "generation";
+    private static final String AIS_PB_PREFIX = "pb/";
 
-    // TODO: Proto version?
+    private static final byte[] PACKGED_GENERATION_KEY = Tuple.from(SM_PREFIX, AIS_PREFIX, AIS_GENERATION_KEY).pack();
+
+    // TODO: versioning?
 
     private final FDBHolder holder;
     private final FDBTransactionService txnService;
@@ -69,7 +80,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     private RowDefCache rowDefCache;
 
     // TODO: all needs to go through the DB
-    private AtomicInteger generationCounter = new AtomicInteger();
     private NameGenerator nameGenerator;
     private volatile AkibanInformationSchema curAIS;
 
@@ -97,7 +107,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     public void start() {
         super.start();
 
-        this.generationCounter = new AtomicInteger();
         this.tableStatusCache = new FDBTableStatusCache(holder.getDatabase(), txnService);
         this.rowDefCache = new RowDefCache(tableStatusCache);
 
@@ -235,21 +244,23 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
 
     private void validateAndFreeze(Session session, AkibanInformationSchema newAIS) {
         newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary(); // TODO: Often redundant, cleanup
-        int generation = generationCounter.incrementAndGet();
-        newAIS.setGeneration(generation);
+
+        // Read, increment, and write generation
+        Transaction txn = txnService.getTransaction(session);
+        long newGeneration = 1;
+        byte[] packedGen = txn.get(PACKGED_GENERATION_KEY).get();
+        if(packedGen != null) {
+            newGeneration += Tuple.fromBytes(packedGen).getLong(0);
+        }
+        packedGen = Tuple.from(newGeneration).pack();
+        txn.set(PACKGED_GENERATION_KEY, packedGen);
+
+        newAIS.setGeneration(newGeneration);
         newAIS.freeze();
-        // TODO: Something, something, transactional
     }
 
     private void checkAndSerialize(Transaction txn, GrowableByteBuffer buffer, AkibanInformationSchema newAIS, String schema) {
-        if(serializationType == SerializationType.NONE) {
-            serializationType = DEFAULT_SERIALIZATION;
-        }
-        if(serializationType == SerializationType.PROTOBUF) {
-            saveProtobuf(txn, buffer, newAIS, schema);
-        } else {
-            throw new IllegalStateException("Cannot serialize as " + serializationType);
-        }
+        saveProtobuf(txn, buffer, newAIS, schema);
     }
 
     private void saveProtobuf(Transaction txn,
@@ -278,13 +289,11 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
             selector = new ProtobufWriter.SingleSchemaSelector(schema);
         }
 
-        Tuple tuple = Tuple.from(SCHEMA_MANAGER_PREFIX, AIS_PROTOBUF_PARENT_KEY, schema);
-        byte[] packed = tuple.pack();
+        byte[] packed = makePBTuple().add(schema).pack();
         if(newAIS.getSchema(schema) != null) {
             buffer.clear();
             new ProtobufWriter(buffer, selector).save(newAIS);
             buffer.flip();
-
             byte[] newValue = Arrays.copyOfRange(buffer.array(), buffer.position(), buffer.limit());
             txn.set(packed, newValue);
         } else {
@@ -337,7 +346,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
         Transaction txn = txnService.getTransaction(session);
 
         // User tables
-        Tuple tuple = Tuple.from(SCHEMA_MANAGER_PREFIX, AIS_PROTOBUF_PARENT_KEY);
+        Tuple tuple = makePBTuple();
         Iterator<KeyValue> iterator = txn.getRangeStartsWith(tuple.pack()).iterator();
         while(iterator.hasNext()) {
             KeyValue kv = iterator.next();
@@ -345,14 +354,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
             loadProtobuf(kv, newAIS);
         }
 
-        // TODO: Memory tables
-
-        for(Map.Entry<TableName,MemoryTableFactory> entry : memoryTableFactories.entrySet()) {
-            UserTable table = newAIS.getUserTable(entry.getKey());
-            if(table != null) {
-                table.setMemoryTableFactory(entry.getValue());
-            }
-        }
+        // TODO: Merge memory tables
 
         validateAndFreeze(session, newAIS);
         return newAIS;
@@ -364,5 +366,9 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
         GrowableByteBuffer buffer = GrowableByteBuffer.wrap(storedAIS);
         reader.loadBuffer(buffer);
         reader.loadAIS();
+    }
+
+    private static Tuple makePBTuple() {
+        return Tuple.from(SM_PREFIX, AIS_PREFIX, AIS_PB_PREFIX);
     }
 }
