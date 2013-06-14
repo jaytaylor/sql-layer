@@ -132,8 +132,6 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     protected abstract NameGenerator getNameGenerator();
     /** validateAndFreeze, checkAndSerialize, buildRowDefCache */
     protected abstract void saveAISChangeWithRowDefs(Session session, AkibanInformationSchema newAIS, Collection<String> schemaNames);
-    /** saveMemoryTables */
-    protected abstract void serializeMemoryTables(Session session, AkibanInformationSchema newAIS);
     /** validateAndFreeze, serializeMemoryTables, buildRowDefCache */
     protected abstract void unSavedAISChangeWithRowDefs(Session session, AkibanInformationSchema newAIS);
     protected abstract <V> V transactionally(Session session, ThrowingCallable<V> callable);

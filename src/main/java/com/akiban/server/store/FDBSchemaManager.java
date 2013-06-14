@@ -17,6 +17,7 @@
 
 package com.akiban.server.store;
 
+import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.DefaultNameGenerator;
@@ -36,6 +37,7 @@ import com.akiban.server.error.AISTooLargeException;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.Service;
+import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
@@ -75,6 +77,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
 
     // TODO: versioning?
 
+    private final ServiceManager serviceManager;
     private final FDBHolder holder;
     private final FDBTransactionService txnService;
     private final Object AIS_LOCK = new Object();
@@ -83,14 +86,17 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     private RowDefCache rowDefCache;
     private AkibanInformationSchema curAIS;
     private NameGenerator nameGenerator;
+    private AkibanInformationSchema memoryTableAIS;
 
 
     @Inject
-    public FDBSchemaManager(ConfigurationService config,
+    public FDBSchemaManager(ServiceManager serviceManager,
+                            ConfigurationService config,
                             SessionService sessionService,
                             FDBHolder holder,
                             TransactionService txnService) {
         super(config, sessionService);
+        this.serviceManager = serviceManager;
         this.holder = holder;
         if(txnService instanceof FDBTransactionService) {
             this.txnService = (FDBTransactionService)txnService;
@@ -109,6 +115,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
         super.start();
         AkCollatorFactory.setUseKeyCoder(false);
 
+        this.memoryTableAIS = new AkibanInformationSchema();
         this.tableStatusCache = new FDBTableStatusCache(holder.getDatabase(), txnService);
         this.rowDefCache = new RowDefCache(tableStatusCache);
 
@@ -139,6 +146,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
         this.rowDefCache = null;
         this.curAIS = null;
         this.nameGenerator = null;
+        this.memoryTableAIS = null;
     }
 
     @Override
@@ -162,7 +170,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
                                             Collection<String> schemaNames) {
         GrowableByteBuffer byteBuffer = newByteBufferForSavingAIS();
         try {
-            validateAndFreeze(session, newAIS);
+            validateAndFreeze(session, newAIS, true);
             for(String schema : schemaNames) {
                 checkAndSerialize(txnService.getTransaction(session), byteBuffer, newAIS, schema);
             }
@@ -173,22 +181,27 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     }
 
     @Override
-    protected void serializeMemoryTables(Session session, AkibanInformationSchema newAIS) {
-        /*
-        GrowableByteBuffer byteBuffer = newByteBufferForSavingAIS();
-        try {
-            saveMemoryTables(txnService.getTransaction(session), byteBuffer, newAIS);
-        } catch(BufferOverflowException e) {
-            throw new AISTooLargeException(byteBuffer.getMaxBurstSize());
+    protected void unSavedAISChangeWithRowDefs(Session session, final AkibanInformationSchema newAIS) {
+        // The *after* commit callback below is safe because this method is only called during startup or shutdown and
+        // those are both single threaded. If that ever changes, that needs adjusted.
+        ServiceManager.State state = serviceManager.getState();
+        if((state != ServiceManager.State.STARTING) && (state != ServiceManager.State.STOPPING)) {
+            throw new IllegalStateException("Unexpected unSaved change: " + serviceManager.getState());
         }
-        */
-    }
 
-    @Override
-    protected void unSavedAISChangeWithRowDefs(Session session, AkibanInformationSchema newAIS) {
-        validateAndFreeze(session, newAIS);
-        serializeMemoryTables(session, newAIS);
+        // A new generation isn't needed as we evict the current copy below and, as above, single threaded startup
+        validateAndFreeze(session, newAIS, false);
         buildRowDefCache(session, newAIS);
+
+        txnService.addCallback(session, TransactionService.CallbackType.COMMIT, new TransactionService.Callback() {
+            @Override
+            public void run(Session session, long timestamp) {
+                synchronized(AIS_LOCK) {
+                    saveMemoryTables(newAIS);
+                    FDBSchemaManager.this.curAIS = null;
+                }
+            }
+        });
     }
 
     @Override
@@ -220,15 +233,15 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
         }
         long generation = getTransactionalGeneration(session);
         localAIS = curAIS;
-        if(generation != localAIS.getGeneration()) {
+        if((localAIS == null) || (generation != localAIS.getGeneration())) {
             synchronized(AIS_LOCK) {
                 // May have been waiting
-                if(generation == curAIS.getGeneration()) {
+                if((curAIS != null) && (generation == curAIS.getGeneration())) {
                     localAIS = curAIS;
                 } else {
                     localAIS = loadAISFromStorage(session);
                     buildRowDefCache(session, localAIS);
-                    if(localAIS.getGeneration() > curAIS.getGeneration()) {
+                    if((curAIS == null) || (localAIS.getGeneration() > curAIS.getGeneration())) {
                         curAIS = localAIS;
                         mergeNewAIS(curAIS);
                     }
@@ -264,17 +277,19 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
         return new GrowableByteBuffer(4096, 4096, maxSize);
     }
 
-    private void validateAndFreeze(Session session, AkibanInformationSchema newAIS) {
+    private void validateAndFreeze(Session session, AkibanInformationSchema newAIS, boolean isNewGeneration) {
         newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary(); // TODO: Often redundant, cleanup
-        // Read, increment, and write generation
+
         Transaction txn = txnService.getTransaction(session);
-        long newGeneration = 1 + getTransactionalGeneration(session);
-        byte[] packedGen = Tuple.from(newGeneration).pack();
-        txn.set(PACKED_GENERATION_KEY, packedGen);
+        long generation = getTransactionalGeneration(session);
+        if(isNewGeneration) {
+            ++generation;
+            byte[] packedGen = Tuple.from(generation).pack();
+            txn.set(PACKED_GENERATION_KEY, packedGen);
+        }
 
-        newAIS.setGeneration(newGeneration);
+        newAIS.setGeneration(generation);
         newAIS.freeze();
-
         attachToSession(session, newAIS);
     }
 
@@ -320,12 +335,12 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
         }
     }
 
-    private void saveMemoryTables(Transaction txn, GrowableByteBuffer buffer, AkibanInformationSchema newAIS) {
+    private void saveMemoryTables(AkibanInformationSchema newAIS) {
         // Want *just* non-persisted memory tables and system routines
-        final ProtobufWriter.WriteSelector selector = new ProtobufWriter.TableFilterSelector() {
+        this.memoryTableAIS = AISCloner.clone(newAIS, new ProtobufWriter.TableFilterSelector() {
             @Override
             public Columnar getSelected(Columnar columnar) {
-                if(columnar.isAISTable() && ((UserTable)columnar).hasMemoryTableFactory()) {
+                if(columnar.isTable() && ((UserTable)columnar).hasMemoryTableFactory()) {
                     return columnar;
                 }
                 return null;
@@ -347,11 +362,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
             public boolean isSelected(SQLJJar sqljJar) {
                 return false;
             }
-        };
-
-        buffer.clear();
-        new ProtobufWriter(buffer, selector).save(newAIS);
-        buffer.flip();
+        });
     }
 
     private void buildRowDefCache(Session session, AkibanInformationSchema newAIS) {
@@ -361,9 +372,11 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     }
 
     private AkibanInformationSchema loadAISFromStorage(final Session session) {
-        final AkibanInformationSchema newAIS = new AkibanInformationSchema();
-        Transaction txn = txnService.getTransaction(session);
+        // Start with existing memory tables, merge in stored ones
+        // TODO: Is this vulnerable to table ID conflicts if another node creates a persisted I_S table?
+        final AkibanInformationSchema newAIS = AISCloner.clone(memoryTableAIS);
 
+        Transaction txn = txnService.getTransaction(session);
         ProtobufReader reader = new ProtobufReader(newAIS);
         Iterator<KeyValue> iterator = txn.getRangeStartsWith(makePBTuple().pack()).iterator();
         while(iterator.hasNext()) {
@@ -374,9 +387,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
         }
         reader.loadAIS();
 
-        // TODO: Merge memory tables
-
-        validateAndFreeze(session, newAIS);
+        validateAndFreeze(session, newAIS, false);
         return newAIS;
     }
 

@@ -712,8 +712,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
         }
     }
 
-    @Override
-    protected void serializeMemoryTables(Session session, AkibanInformationSchema newAIS) {
+    private void serializeMemoryTables(Session session, AkibanInformationSchema newAIS) {
         GrowableByteBuffer byteBuffer = newByteBufferForSavingAIS();
         Exchange ex = null;
         try {
