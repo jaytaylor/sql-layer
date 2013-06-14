@@ -60,7 +60,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     private static final String SCHEMA_MANAGER_PREFIX = "sm/";
     private static final String AIS_KEY_PREFIX = "by/";
     private static final String AIS_PROTOBUF_PARENT_KEY = AIS_KEY_PREFIX + "PBAIS/";
-    private static final String AIS_MEMORY_TABLE_KEY = AIS_KEY_PREFIX + "PBMEMAIS";
+
     // TODO: Proto version?
 
     private final FDBHolder holder;
@@ -109,10 +109,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
                     new ThrowingCallable<Void>() {
                         @Override
                         public Void runAndReturn(Session session) {
-                            // Don't reload memory tables
-                            Transaction txn = txnService.getTransaction(session);
-                            Tuple tuple = Tuple.from(SCHEMA_MANAGER_PREFIX, AIS_MEMORY_TABLE_KEY);
-                            txn.clearRangeStartsWith(tuple.pack());
                             AkibanInformationSchema newAIS = loadAISFromStorage(session);
                             buildRowDefCache(session, newAIS);
                             return null;
@@ -168,12 +164,14 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
 
     @Override
     protected void serializeMemoryTables(Session session, AkibanInformationSchema newAIS) {
+        /*
         GrowableByteBuffer byteBuffer = newByteBufferForSavingAIS();
         try {
             saveMemoryTables(txnService.getTransaction(session), byteBuffer, newAIS);
         } catch(BufferOverflowException e) {
             throw new AISTooLargeException(byteBuffer.getMaxBurstSize());
         }
+        */
     }
 
     @Override
@@ -326,20 +324,12 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
         buffer.clear();
         new ProtobufWriter(buffer, selector).save(newAIS);
         buffer.flip();
-
-        Tuple tuple = Tuple.from(SCHEMA_MANAGER_PREFIX, AIS_MEMORY_TABLE_KEY);
-        byte[] packedKey = tuple.pack();
-        byte[] packedValue = Arrays.copyOfRange(buffer.array(), buffer.position(), buffer.limit());
-        txn.set(packedKey, packedValue);
     }
 
     private void buildRowDefCache(Session session, AkibanInformationSchema newAIS) {
-        //treeService.getTableStatusCache().detachAIS();
+        tableStatusCache.detachAIS();
         rowDefCache.setAIS(session, newAIS);
         curAIS = newAIS;
-        // This creates|verifies the trees exist for sequences.
-        // TODO: Why are sequences special here?
-        //sequenceTrees(newAis);
     }
 
     private AkibanInformationSchema loadAISFromStorage(final Session session) {
@@ -355,14 +345,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
             loadProtobuf(kv, newAIS);
         }
 
-        // Memory tables
-        tuple = Tuple.from(SCHEMA_MANAGER_PREFIX, AIS_MEMORY_TABLE_KEY);
-        iterator = txn.getRangeStartsWith(tuple.pack()).iterator();
-        while(iterator.hasNext()) {
-            KeyValue kv = iterator.next();
-            //checkAndSetSerialization(typeForVolume);
-            loadProtobuf(kv, newAIS);
-        }
+        // TODO: Memory tables
 
         for(Map.Entry<TableName,MemoryTableFactory> entry : memoryTableFactories.entrySet()) {
             UserTable table = newAIS.getUserTable(entry.getKey());
