@@ -410,7 +410,7 @@ public class ApiTestBase {
         final boolean original = TestConfigService.getDoCleanOnUnload();
         try {
             TestConfigService.setDoCleanOnUnload(defaultDoCleanOnUnload());
-            crashTestServices(); // TODO: WHY doesn't this work with stop?
+            stopTestServices();
         } finally {
             TestConfigService.setDoCleanOnUnload(original);
         }
