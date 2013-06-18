@@ -27,10 +27,6 @@ import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.*;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.api.dml.scan.LegacyRowWrapper;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.collation.CString;
 import com.akiban.server.collation.CStringKeyCoder;
 import com.akiban.server.error.*;
@@ -43,8 +39,6 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.text.FullTextIndexService;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.service.tree.TreeService;
-import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.Tap;
 import com.persistit.*;
 import com.persistit.Management.DisplayFilter;
 import com.persistit.encoding.CoderManager;
@@ -56,22 +50,16 @@ import java.rmi.RemoteException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.persistit.Key.EQ;
+
 public class PersistitStore extends AbstractStore<Exchange> implements Service
 {
     private static final Logger LOG = LoggerFactory.getLogger(PersistitStore.class);
-
-    private static final InOutTap UPDATE_ROW_TAP = Tap.createTimer("write: update_row");
-
-    private static final InOutTap DELETE_ROW_TAP = Tap.createTimer("write: delete_row");
-
-    private static final InOutTap TABLE_INDEX_MAINTENANCE_TAP = Tap.createTimer("index: maintain_table");
 
     private static final String WRITE_LOCK_ENABLED_CONFIG = "akserver.write_lock_enabled";
     private static final String MAINTENANCE_SCHEMA = "maintenance";
     private static final String FULL_TEXT_TABLE = "full_text";
 
-    private final static byte[] EMPTY_BYTE_ARRAY = new byte[0];
-    
     private boolean writeLockEnabled;
 
     private final ConfigurationService config;
@@ -584,153 +572,6 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     // --------------------- Implement Store interface --------------------
 
     @Override
-    public void deleteRow(Session session, RowData rowData, boolean deleteIndexes, boolean cascadeDelete)
-    {
-        deleteRow(session, rowData, deleteIndexes, cascadeDelete, null, true);
-    }
-
-    private void deleteRow(Session session, RowData rowData, boolean deleteIndexes, boolean cascadeDelete,
-                           BitSet tablesRequiringHKeyMaintenance, boolean propagateHKeyChanges)
-    {
-        RowDef rowDef = writeCheck(session, rowData);
-        Exchange hEx = null;
-        
-        DELETE_ROW_TAP.in();
-        try {
-            hEx = getExchange(session, rowDef);
-            
-            lockKeys(adapter(session), rowDef, rowData, hEx);
-            constructHKey(session, rowDef, rowData, false, hEx.getKey());
-            hEx.fetch();
-            //
-            // Verify that the row exists
-            //
-            if (!hEx.getValue().isDefined()) {
-                throw new NoSuchRowException(hEx.getKey());
-            }
-            // record the deletion of the old index row
-            if (deleteIndexes)
-                addChangeFor(session, rowDef.userTable(), hEx.getKey());
-
-            // Remove the h-row
-            hEx.remove();
-            rowDef.getTableStatus().rowDeleted(session);
-
-            // Remove the indexes, including the PK index
-
-            PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
-            if(deleteIndexes) {
-                for (Index index : rowDef.getIndexes()) {
-                    deleteIndexRow(session, index, rowData, hEx.getKey(), indexRow);
-                }
-            }
-
-            // The row being deleted might be the parent of rows that
-            // now become orphans. The hkeys
-            // of these rows need to be maintained.
-            if(propagateHKeyChanges && rowDef.userTable().hasChildren()) {
-                propagateDownGroup(session, hEx, tablesRequiringHKeyMaintenance, indexRow, deleteIndexes, cascadeDelete);
-            }
-        } catch(PersistitException e) {
-            throw PersistitAdapter.wrapPersistitException(session, e);
-        } finally {
-            DELETE_ROW_TAP.out();
-            releaseExchange(session, hEx);
-        }
-    }
-
-    @Override
-    public void updateRow(Session session,
-                          RowData oldRowData,
-                          RowData newRowData,
-                          ColumnSelector columnSelector,
-                          Index[] indexes)
-    {
-        updateRow(session, oldRowData, newRowData, columnSelector, indexes, (indexes != null), true);
-    }
-
-    private void updateRow(Session session,
-                           RowData oldRowData,
-                           RowData newRowData,
-                           ColumnSelector columnSelector,
-                           Index[] indexesToMaintain,
-                           boolean indexesAsInsert,
-                           boolean propagateHKeyChanges)
-    {
-        int rowDefId = oldRowData.getRowDefId();
-        if (newRowData.getRowDefId() != rowDefId) {
-            throw new IllegalArgumentException("RowData values have different rowDefId values: ("
-                                                       + rowDefId + "," + newRowData.getRowDefId() + ")");
-        }
-
-        // RowDefs may be different (e.g. during an ALTER)
-        // Only non-pk or grouping columns could have change in this scenario
-        RowDef rowDef = writeCheck(session, oldRowData);
-        RowDef newRowDef = rowDefFromExplicitOrId(session, newRowData);
-        PersistitAdapter adapter = adapter(session);
-        Exchange hEx = null;
-
-        UPDATE_ROW_TAP.in();
-        try {
-            hEx = getExchange(session, rowDef);
-            lockKeys(adapter, rowDef, oldRowData, hEx);
-            lockKeys(adapter, newRowDef, newRowData, hEx);
-            constructHKey(session, rowDef, oldRowData, false, hEx.getKey());
-            hEx.fetch();
-            //
-            // Verify that the row exists
-            //
-            if (!hEx.getValue().isDefined()) {
-                throw new NoSuchRowException (hEx.getKey());
-            }
-
-            // Combine current version of row with the version coming in
-            // on the update request.
-            // This is done by taking only the values of columns listed
-            // in the column selector.
-            RowData currentRow = new RowData(EMPTY_BYTE_ARRAY);
-            expandRowData(hEx, currentRow);
-            RowData mergedRowData = 
-                columnSelector == null 
-                ? newRowData
-                : mergeRows(rowDef, currentRow, newRowData, columnSelector);
-            BitSet tablesRequiringHKeyMaintenance =
-                    propagateHKeyChanges
-                    ? analyzeFieldChanges(session, rowDef, oldRowData, mergedRowData)
-                    : null;
-            if (tablesRequiringHKeyMaintenance == null) {
-                // No PK or FK fields have changed. Just update the row.
-                packRowData(hEx, mergedRowData);
-                // Store the h-row
-                hEx.store();
-                // Update the indexes (new row)
-                addChangeFor(session, newRowDef.userTable(), hEx.getKey());
-                
-                PersistitIndexRowBuffer indexRowBuffer = new PersistitIndexRowBuffer(this);
-                Index[] indexes = (indexesToMaintain == null) ? rowDef.getIndexes() : indexesToMaintain;
-                for (Index index : indexes) {
-                    if(indexesAsInsert) {
-                        writeIndexRow(session, index, mergedRowData, hEx.getKey(), indexRowBuffer);
-                    } else {
-                        updateIndex(session, index, rowDef, currentRow, mergedRowData, hEx.getKey(), indexRowBuffer);
-                    }
-                }
-            } else {
-                // A PK or FK field has changed. The row has to be deleted and reinserted, and hkeys of descendent
-                // rows maintained. tablesRequiringHKeyMaintenance contains the ordinals of the tables whose hkeys
-                // could possible be affected.
-                deleteRow(session, oldRowData, true, false, tablesRequiringHKeyMaintenance, true);
-                writeRow(session, mergedRowData, tablesRequiringHKeyMaintenance, true); // May throw DuplicateKeyException
-            }
-        } catch(PersistitException e) {
-            throw PersistitAdapter.wrapPersistitException(session, e);
-        } finally {
-            UPDATE_ROW_TAP.out();
-            releaseExchange(session, hEx);
-        }
-    }
-
-    @Override
     public void truncateGroup(final Session session, final Group group) {
         List<Index> indexes = new ArrayList<>();
         // Truncate the group tree
@@ -829,35 +670,6 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         return keyExistsInIndex;
     }
 
-    private void updateIndex(Session session,
-                             Index index,
-                             RowDef rowDef,
-                             RowData oldRowData,
-                             RowData newRowData,
-                             Key hKey,
-                             PersistitIndexRowBuffer indexRowBuffer)
-            throws PersistitException
-    {
-        checkNotGroupIndex(index);
-        IndexDef indexDef = index.indexDef();
-        if (!fieldsEqual(rowDef, oldRowData, newRowData, indexDef.getFields())) {
-            TABLE_INDEX_MAINTENANCE_TAP.in();
-            try {
-                Exchange oldExchange = getExchange(session, index);
-                deleteIndexRow(session, index, oldExchange, oldRowData, hKey, indexRowBuffer);
-                Exchange newExchange = getExchange(session, index);
-                constructIndexRow(newExchange, newRowData, index, hKey, indexRowBuffer, true);
-                checkUniqueness(index, newRowData, newExchange);
-                oldExchange.remove();
-                newExchange.store();
-                releaseExchange(session, newExchange);
-                releaseExchange(session, oldExchange);
-            } finally {
-                TABLE_INDEX_MAINTENANCE_TAP.out();
-            }
-        }
-    }
-
     private void deleteIndexRow(Session session,
                                 Index index,
                                 Exchange exchange,
@@ -928,6 +740,17 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     public void store(Session session, Exchange ex) {
         try {
             ex.store();
+        } catch(PersistitException e) {
+            throw PersistitAdapter.wrapPersistitException(session, e);
+        }
+    }
+
+    @Override
+    protected boolean fetch(Session session, Exchange ex) {
+        try {
+            // ex.isValueDefined() doesn't actually fetch the value
+            // ex.fetch() + ex.getValue().isDefined() would give false negatives (i.e. stored key with no value)
+            return ex.traverse(EQ, true, Integer.MAX_VALUE);
         } catch(PersistitException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         }
@@ -1046,7 +869,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
-    protected void preWriteRow(Session session, Exchange storeData, RowDef rowDef, RowData rowData) {
+    protected void preWrite(Session session, Exchange storeData, RowDef rowDef, RowData rowData) {
         try {
             lockKeys(adapter(session), rowDef, rowData, storeData);
         } catch(PersistitException e) {
@@ -1076,18 +899,6 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     @Override
     public void deleteSequences (Session session, Collection<? extends Sequence> sequences) {
         removeTrees(session, sequences);
-    }
-
-    private RowData mergeRows(RowDef rowDef, RowData currentRow, RowData newRowData, ColumnSelector columnSelector) {
-        NewRow mergedRow = NiceRow.fromRowData(currentRow, rowDef);
-        NewRow newRow = new LegacyRowWrapper(rowDef, newRowData);
-        int fields = rowDef.getFieldCount();
-        for (int i = 0; i < fields; i++) {
-            if (columnSelector.includesColumn(i)) {
-                mergedRow.put(i, newRow.get(i));
-            }
-        }
-        return mergedRow.toRowData();
     }
 
     public void traverse(Session session, Group group, TreeRecordVisitor visitor) throws PersistitException {

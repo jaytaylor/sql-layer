@@ -236,7 +236,7 @@ public final class COIBasicIT extends ITBase {
     }
 
     @Test
-    public void hKeyChangePropagation() {
+    public void writeRowHKeyChangePropagation() {
         final TableIds tids = createTables();
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         RowType cType = schema.userTableRowType(getUserTable(tids.c));
@@ -244,29 +244,97 @@ public final class COIBasicIT extends ITBase {
         RowType iType = schema.userTableRowType(getUserTable(tids.i));
         StoreAdapter adapter = newStoreAdapter(schema);
 
-        Object[] cCols = { 1, "c1" };
-        Object[] oCols = { 10, 1 };
-        Object[] o2Cols = { 20, 2 };
-        Object[] iCols = { 100, 10, "i100" };
-
+        Object[] o1Cols = { 10, 1 };
+        Object[] cCols = { 2, "c2" };
+        Object[] oCols = { 20, 2 };
+        Object[] iCols = { 200, 20, "i200" };
+        TestRow o1Row = new TestRow(oType, o1Cols);
         TestRow cRow = new TestRow(cType, cCols);
         TestRow oRow = new TestRow(oType, oCols);
-        TestRow o2Row = new TestRow(oType, o2Cols);
         TestRow iRow = new TestRow(iType, iCols);
 
         // Unrelated o row, to demonstrate i ordering/adoption
-        writeRow(tids.o, o2Cols);
-        compareRows( new RowBase[] { o2Row }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        writeRow(tids.o, o1Cols);
+        compareRows( new RowBase[] { o1Row }, adapter.newGroupCursor(cType.userTable().getGroup()) );
 
         // i is first due to null cid component
         writeRow(tids.i, iCols);
-        compareRows( new RowBase[] { iRow, o2Row }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        compareRows( new RowBase[] { iRow, o1Row }, adapter.newGroupCursor(cType.userTable().getGroup()) );
 
         // i should get adopted by the new o, filling in it's cid component
         writeRow(tids.o, oCols);
-        compareRows( new RowBase[] { oRow, iRow, o2Row }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        compareRows( new RowBase[] { o1Row, oRow, iRow, }, adapter.newGroupCursor(cType.userTable().getGroup()) );
 
         writeRow(tids.c, cCols);
-        compareRows( new RowBase[] { cRow, oRow, iRow, o2Row }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        compareRows( new RowBase[] { o1Row, cRow, oRow, iRow }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+    }
+
+    @Test
+    public void deleteRowHKeyChangePropagation() {
+        final TableIds tids = createTables();
+        Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
+        RowType cType = schema.userTableRowType(getUserTable(tids.c));
+        RowType oType = schema.userTableRowType(getUserTable(tids.o));
+        RowType iType = schema.userTableRowType(getUserTable(tids.i));
+        StoreAdapter adapter = newStoreAdapter(schema);
+
+        Object[] o1Cols = { 10, 1 };
+        Object[] cCols = { 2, "c2" };
+        Object[] oCols = { 20, 2 };
+        Object[] iCols = { 200, 20, "i200" };
+        TestRow o1Row = new TestRow(oType, o1Cols);
+        TestRow cRow = new TestRow(cType, cCols);
+        TestRow oRow = new TestRow(oType, oCols);
+        TestRow iRow = new TestRow(iType, iCols);
+
+        writeRow(tids.o, o1Cols);
+        writeRow(tids.c, cCols);
+        writeRow(tids.o, oCols);
+        writeRow(tids.i, iCols);
+        compareRows( new RowBase[] { o1Row, cRow, oRow, iRow }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+
+        deleteRow(tids.c, cCols);
+        compareRows( new RowBase[] { o1Row, oRow, iRow }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+
+        // Delete o => i.cid becomes null
+        deleteRow(tids.o, oCols);
+        compareRows( new RowBase[] { iRow, o1Row }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+
+        deleteRow(tids.i, iCols);
+        compareRows( new RowBase[] { o1Row }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+
+        deleteRow(tids.o, o1Cols);
+        compareRows( new RowBase[] { }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+    }
+
+    @Test
+    public void updateRowHKeyChangePropagation() {
+        final TableIds tids = createTables();
+        Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
+        RowType cType = schema.userTableRowType(getUserTable(tids.c));
+        RowType oType = schema.userTableRowType(getUserTable(tids.o));
+        RowType iType = schema.userTableRowType(getUserTable(tids.i));
+        StoreAdapter adapter = newStoreAdapter(schema);
+
+        Object[] o1Cols = { 10, 1 };
+        Object[] cCols = { 2, "c2" };
+        Object[] oOrig = { 1, 1 };
+        Object[] oUpdate = { 20, 2 };
+        Object[] iCols = { 200, 20, "i200" };
+        TestRow o1Row = new TestRow(oType, o1Cols);
+        TestRow cRow = new TestRow(cType, cCols);
+        TestRow oOrigRow = new TestRow(oType, oOrig);
+        TestRow oUpdateRow = new TestRow(oType, oUpdate);
+        TestRow iRow = new TestRow(iType, iCols);
+
+        writeRow(tids.o, o1Cols);
+        writeRow(tids.c, cCols);
+        writeRow(tids.o, oOrig);
+        writeRow(tids.i, iCols);
+        compareRows( new RowBase[] { iRow, oOrigRow, o1Row, cRow }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+
+        // updated o moves after o1 and adopts i
+        update(tids.o, oOrig).to(oUpdate);
+        compareRows( new RowBase[] { o1Row, cRow, oUpdateRow, iRow }, adapter.newGroupCursor(cType.userTable().getGroup()) );
     }
 }
