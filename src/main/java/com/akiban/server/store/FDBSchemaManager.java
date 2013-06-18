@@ -47,6 +47,8 @@ import com.foundationdb.KeyValue;
 import com.foundationdb.Transaction;
 import com.foundationdb.tuple.Tuple;
 import com.google.inject.Inject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.BufferOverflowException;
 import java.util.Arrays;
@@ -68,12 +70,15 @@ import java.util.Iterator;
  * - Since there can be exactly one change to the generation at a time, all generated names and ids will be unique
  */
 public class FDBSchemaManager extends AbstractSchemaManager implements Service {
+    private static final Logger LOG = LoggerFactory.getLogger(FDBSchemaManager.class);
+
     private static final String SM_PREFIX = "sm/";
     private static final String AIS_PREFIX = "ais/";
     private static final String AIS_GENERATION_KEY = "generation";
     private static final String AIS_PB_PREFIX = "pb/";
     private static final byte[] PACKED_GENERATION_KEY = Tuple.from(SM_PREFIX, AIS_PREFIX, AIS_GENERATION_KEY).pack();
     private static final Session.Key<AkibanInformationSchema> SESSION_AIS_KEY = Session.Key.named("AIS_KEY");
+    private static final AkibanInformationSchema SENTINEL_AIS = new AkibanInformationSchema(Integer.MIN_VALUE);
 
     // TODO: versioning?
 
@@ -134,8 +139,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
             );
         }
 
-        // nameGenerator and tableVersionMap will be set upon first getAis
-        this.nameGenerator = SynchronizedNameGenerator.wrap(new DefaultNameGenerator());
+        this.nameGenerator = SynchronizedNameGenerator.wrap(new DefaultNameGenerator(curAIS));
         mergeNewAIS(curAIS);
     }
 
@@ -198,7 +202,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
             public void run(Session session, long timestamp) {
                 synchronized(AIS_LOCK) {
                     saveMemoryTables(newAIS);
-                    FDBSchemaManager.this.curAIS = null;
+                    FDBSchemaManager.this.curAIS = SENTINEL_AIS;
                 }
             }
         });
@@ -233,15 +237,15 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
         }
         long generation = getTransactionalGeneration(session);
         localAIS = curAIS;
-        if((localAIS == null) || (generation != localAIS.getGeneration())) {
+        if(generation != localAIS.getGeneration()) {
             synchronized(AIS_LOCK) {
                 // May have been waiting
-                if((curAIS != null) && (generation == curAIS.getGeneration())) {
+                if(generation == curAIS.getGeneration()) {
                     localAIS = curAIS;
                 } else {
                     localAIS = loadAISFromStorage(session);
                     buildRowDefCache(session, localAIS);
-                    if((curAIS == null) || (localAIS.getGeneration() > curAIS.getGeneration())) {
+                    if(localAIS.getGeneration() > curAIS.getGeneration()) {
                         curAIS = localAIS;
                         mergeNewAIS(curAIS);
                     }
@@ -410,6 +414,8 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
                 Integer current = tableVersionMap.get(table.getTableId());
                 if(current == null || newValue > current) {
                     tableVersionMap.put(table.getTableId(), newValue);
+                } else if(newValue < current) {
+                    LOG.warn("Encountered new AIS generation less than current: {} vs {}", newValue, current);
                 }
             }
         } finally {

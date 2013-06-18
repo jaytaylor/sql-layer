@@ -202,7 +202,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
      */
     private static final AISAndTimestamp CACHE_SENTINEL = new AISAndTimestamp(new SharedAIS(null), Long.MAX_VALUE);
 
-    private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreSchemaManager.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreSchemaManager.class);
 
     private final TreeService treeService;
     private final TransactionService txnService;
