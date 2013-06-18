@@ -171,20 +171,16 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         INSERT_TOTAL.in();
         INSERT_MAINTENANCE.in();
         try {
-            if (!isBulkloading()) {
-                AkibanInformationSchema ais = schemaManager.getAis(session);
-                PersistitAdapter adapter = createAdapterNoSteps(ais, session);
-                UserTable uTable = ais.getUserTable(rowData.getRowDefId());
-                super.writeRow(session, rowData);
-                maintainGroupIndexes(session,
-                                     ais,
-                                     adapter,
-                                     rowData, null,
-                                     OperatorStoreGIHandler.forTable(adapter, uTable),
-                                     OperatorStoreGIHandler.Action.STORE);
-            } else {
-                super.writeRow(session, rowData);
-            }
+            AkibanInformationSchema ais = schemaManager.getAis(session);
+            PersistitAdapter adapter = createAdapterNoSteps(ais, session);
+            UserTable uTable = ais.getUserTable(rowData.getRowDefId());
+            super.writeRow(session, rowData);
+            maintainGroupIndexes(session,
+                                 ais,
+                                 adapter,
+                                 rowData, null,
+                                 OperatorStoreGIHandler.forTable(adapter, uTable),
+                                 OperatorStoreGIHandler.Action.STORE);
         } finally {
             INSERT_MAINTENANCE.out();
             INSERT_TOTAL.out();
@@ -263,8 +259,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     @Inject
     public OperatorStore(TreeService treeService, ConfigurationService config, SchemaManager schemaManager,
-                         LockService lockService, TransactionService transactionService) {
-        super(new PersistitStore(false, treeService, config, schemaManager, lockService, transactionService));
+                         LockService lockService) {
+        super(new PersistitStore(treeService, config, schemaManager, lockService));
         this.treeService = treeService;
         this.config = config;
         this.schemaManager = schemaManager;
@@ -302,7 +298,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             // the "false" at the end of constructHKey toggles whether the RowData should be modified to increment
             // the hidden PK field, if there is one. For PK-less rows, this field have already been incremented by now,
             // so we don't want to increment it again
-            getPersistitStore().constructHKey(session, hEx, userTable.rowDef(), rowData, false);
+            getPersistitStore().constructHKey(session, userTable.rowDef(), rowData, false, hEx.getKey());
             PersistitHKey persistitHKey = new PersistitHKey(adapter.createKey(), userTable.hKey());
             persistitHKey.copyFrom(hEx.getKey());
 

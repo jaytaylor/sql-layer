@@ -102,10 +102,6 @@ public abstract class StoreAdapter
         return session;
     }
 
-    public boolean isBulkloading() {
-        return getUnderlyingStore().isBulkloading();
-    }
-
     public enum AdapterType {
         STORE_ADAPTER,
         MEMORY_ADAPTER
@@ -113,15 +109,6 @@ public abstract class StoreAdapter
     
     public final ConfigurationService getConfig() {
         return config;
-    }
-
-    public void setBulkload(Session session, boolean bulkload) {
-        if (bulkload == isBulkloading())
-            return;
-        if (bulkload)
-            getUnderlyingStore().startBulkLoad(session);
-        else
-            getUnderlyingStore().finishBulkLoad(session);
     }
 
     protected abstract Store getUnderlyingStore();

@@ -44,13 +44,9 @@ public interface Store extends KeyCreator {
     RowDef getRowDef(Session session, TableName tableName);
     AkibanInformationSchema getAIS(Session session);
 
-    void writeRow(Session session, RowData rowData);
-
-    void deleteRow(Session session, RowData rowData, boolean deleteIndexes, boolean cascadeDelete);
-
-    void updateRow(Session session, RowData oldRowData,
-                   RowData newRowData,
-                   ColumnSelector columnSelector, Index[] indexes);
+    void writeRow(Session session, RowData row);
+    void deleteRow(Session session, RowData row, boolean deleteIndexes, boolean cascadeDelete);
+    void updateRow(Session session, RowData oldRow, RowData newRow, ColumnSelector selector, Index[] indexes);
 
     /**
      * Create a new RowCollector.
@@ -146,12 +142,6 @@ public interface Store extends KeyCreator {
     public PersistitStore getPersistitStore();
 
     void truncateIndexes(Session session, Collection<? extends Index> indexes);
-
-    void startBulkLoad(Session session);
-
-    void finishBulkLoad(Session session);
-
-    boolean isBulkloading();
 
     void setIndexStatistics(IndexStatisticsService indexStatistics);
 

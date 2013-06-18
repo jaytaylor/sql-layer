@@ -17,7 +17,6 @@
 
 package com.akiban.server.service.config;
 
-import com.akiban.server.AkServerUtil;
 import com.akiban.server.error.ConfigurationPropertiesLoadException;
 import com.akiban.server.service.plugins.Plugin;
 import com.akiban.server.service.plugins.PluginsFinder;
@@ -37,7 +36,6 @@ public class TestConfigService extends ConfigurationServiceImpl {
     private static int dataDirectoryCounter = 0;
     private static volatile boolean doCleanOnUnload = false;
     private final Map<String, String> extraProperties;
-    File tmpDir;
 
     private static final PluginsFinder emptyPluginsFinder = new PluginsFinder() {
         @Override
@@ -79,12 +77,6 @@ public class TestConfigService extends ConfigurationServiceImpl {
         return ret;
     }
 
-    @Override
-    protected void unloadProperties() {
-        if (doCleanOnUnload) {
-            AkServerUtil.cleanUpDirectory(tmpDir);
-        }
-    }
 
     @Override
     protected Set<String> getRequiredKeys() {
