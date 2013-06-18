@@ -69,7 +69,7 @@ public class RowDataValueCoder implements ValueDisplayer, ValueRenderer, HandleC
             throw new CorruptRowDataException("RowData is too short or too long: " + rowDataSize);
         }
 
-        if (rowDataSize > rowDataBytes.length) {
+        if (rowDataBytes == null || rowDataSize > rowDataBytes.length) {
             rowDataBytes = new byte[rowDataSize + INITIAL_BUFFER_SIZE];
             rowData.reset(rowDataBytes);
         }

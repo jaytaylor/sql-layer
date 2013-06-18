@@ -28,8 +28,14 @@ import java.util.List;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableName;
+import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.row.RowBase;
+import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.server.test.it.qp.TestRow;
 import org.junit.Test;
 
 import com.akiban.ais.model.Column;
@@ -227,5 +233,40 @@ public final class COIBasicIT extends ITBase {
         assertNull("expected no table", ais.getUserTable("coi", "o"));
         assertNull("expected no table", ais.getUserTable("coi", "i"));
         assertNull("expected no group", ais.getGroup(groupName));
+    }
+
+    @Test
+    public void hKeyChangePropagation() {
+        final TableIds tids = createTables();
+        Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
+        RowType cType = schema.userTableRowType(getUserTable(tids.c));
+        RowType oType = schema.userTableRowType(getUserTable(tids.o));
+        RowType iType = schema.userTableRowType(getUserTable(tids.i));
+        StoreAdapter adapter = newStoreAdapter(schema);
+
+        Object[] cCols = { 1, "c1" };
+        Object[] oCols = { 10, 1 };
+        Object[] o2Cols = { 20, 2 };
+        Object[] iCols = { 100, 10, "i100" };
+
+        TestRow cRow = new TestRow(cType, cCols);
+        TestRow oRow = new TestRow(oType, oCols);
+        TestRow o2Row = new TestRow(oType, o2Cols);
+        TestRow iRow = new TestRow(iType, iCols);
+
+        // Unrelated o row, to demonstrate i ordering/adoption
+        writeRow(tids.o, o2Cols);
+        compareRows( new RowBase[] { o2Row }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+
+        // i is first due to null cid component
+        writeRow(tids.i, iCols);
+        compareRows( new RowBase[] { iRow, o2Row }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+
+        // i should get adopted by the new o, filling in it's cid component
+        writeRow(tids.o, oCols);
+        compareRows( new RowBase[] { oRow, iRow, o2Row }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+
+        writeRow(tids.c, cCols);
+        compareRows( new RowBase[] { cRow, oRow, iRow, o2Row }, adapter.newGroupCursor(cType.userTable().getGroup()) );
     }
 }
