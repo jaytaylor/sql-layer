@@ -28,6 +28,7 @@ import java.util.List;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableName;
+import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
@@ -336,5 +337,15 @@ public final class COIBasicIT extends ITBase {
         // updated o moves after o1 and adopts i
         update(tids.o, oOrig).to(oUpdate);
         compareRows( new RowBase[] { o1Row, cRow, oUpdateRow, iRow }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+    }
+
+    protected void compareRows(RowBase[] expected, Cursor cursor) {
+        txnService().beginTransaction(session());
+        try {
+            super.compareRows(expected, cursor);
+            txnService().commitTransaction(session());
+        } finally {
+            txnService().rollbackTransactionIfOpen(session());
+        }
     }
 }

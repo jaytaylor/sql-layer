@@ -17,18 +17,9 @@
 
 package com.akiban.server.store;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.HKeyColumn;
-import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexToHKey;
-import com.akiban.ais.model.NopVisitor;
 import com.akiban.ais.model.Sequence;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.persistitadapter.FDBAdapter;
 import com.akiban.qp.persistitadapter.FDBGroupCursor;
@@ -36,22 +27,18 @@ import com.akiban.qp.persistitadapter.FDBGroupRow;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.TableStatistics;
-import com.akiban.server.TableStatus;
-import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.error.DuplicateKeyException;
-import com.akiban.server.error.NoSuchRowException;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.service.tree.TreeLink;
-import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.foundationdb.KeyValue;
 import com.foundationdb.RangeQuery;
 import com.foundationdb.Transaction;
@@ -60,21 +47,18 @@ import com.google.inject.Inject;
 import com.persistit.Key;
 import com.persistit.Persistit;
 import com.persistit.Value;
-import com.persistit.exception.PersistitException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class FDBStore extends AbstractStore implements KeyCreator, Service {
+public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator, Service {
     private static final Logger LOG = LoggerFactory.getLogger(FDBStore.class.getName());
 
     private final ConfigurationService configService;
@@ -84,7 +68,9 @@ public class FDBStore extends AbstractStore implements KeyCreator, Service {
     @Inject
     public FDBStore(ConfigurationService configService,
                     SchemaManager schemaManager,
-                    TransactionService txnService) {
+                    TransactionService txnService,
+                    LockService lockService) {
+        super(lockService, schemaManager);
         this.configService = configService;
         this.schemaManager = schemaManager;
         if(txnService instanceof FDBTransactionService) {
@@ -185,140 +171,156 @@ public class FDBStore extends AbstractStore implements KeyCreator, Service {
     //
 
     @Override
-    public AkibanInformationSchema getAIS(Session session) {
-        return schemaManager.getAis(session);
+    protected FDBStoreData createStoreData(Session session, TreeLink treeLink) {
+        return new FDBStoreData(treeLink, createKey());
     }
 
     @Override
-    public void writeRow(Session session, RowData rowData) {
-        final RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
+    protected void releaseStoreData(Session session, FDBStoreData storeData) {
+        // None
+    }
+
+    @Override
+    protected Key getKey(Session session, FDBStoreData storeData) {
+        return storeData.key;
+    }
+
+    @Override
+    protected void store(Session session, FDBStoreData storeData) {
         Transaction txn = txnService.getTransaction(session);
+        byte[] packedKey = packedTuple(storeData.link, storeData.key);
+        txn.set(packedKey, storeData.value);
+    }
 
-        Key hKey = createKey();
-        constructHKey(session, txn, hKey, rowDef, rowData, true);
+    @Override
+    protected boolean fetch(Session session, FDBStoreData storeData) {
+        Transaction txn = txnService.getTransaction(session);
+        byte[] packedKey = packedTuple(storeData.link, storeData.key);
+        storeData.value = txn.get(packedKey).get();
+        return (storeData.value != null);
+    }
 
-        byte[] packedKey = packedTuple(rowDef.getGroup(), hKey);
-        byte[] packedValue = Arrays.copyOfRange(rowData.getBytes(), rowData.getBufferStart(), rowData.getBufferEnd());
+    @Override
+    protected void clear(Session session, FDBStoreData storeData) {
+        Transaction txn = txnService.getTransaction(session);
+        byte[] packed = packedTuple(storeData.link, storeData.key);
+        txn.clear(packed);
+    }
 
-        // store
-        txn.set(packedKey, packedValue);
+    @Override
+    protected void expandRowData(FDBStoreData storeData, RowData rowData) {
+        rowData.reset(storeData.value);
+        rowData.prepareRow(0);
+    }
 
-        if (rowDef.isAutoIncrement()) {
-            final long location = rowDef.fieldLocation(rowData, rowDef.getAutoIncrementField());
-            if (location != 0) {
-                long autoIncrementValue = rowData.getIntegerValue((int) location, (int) (location >>> 32));
-                rowDef.getTableStatus().setAutoIncrement(session, autoIncrementValue);
+    @Override
+    protected void packRowData(FDBStoreData storeData, RowData rowData) {
+        storeData.value = Arrays.copyOfRange(rowData.getBytes(), rowData.getBufferStart(), rowData.getBufferEnd());
+    }
+
+    @Override
+    protected Iterator<Void> createDescendantIterator(Session session, final FDBStoreData storeData) {
+        Transaction txn = txnService.getTransaction(session);
+        int prevDepth = storeData.key.getDepth();
+        storeData.key.append(Key.BEFORE);
+        byte[] packedBegin = packedTuple(storeData.link, storeData.key);
+        storeData.key.to(Key.AFTER);
+        byte[] packedEnd = packedTuple(storeData.link, storeData.key);
+        storeData.key.setDepth(prevDepth);
+        storeData.it = txn.getRange(packedBegin, packedEnd).iterator();
+        return new Iterator<Void>() {
+            @Override
+            public boolean hasNext() {
+                return storeData.it.hasNext();
             }
+
+            @Override
+            public Void next() {
+                KeyValue kv = storeData.it.next();
+                Tuple tuple = Tuple.fromBytes(kv.getKey());
+
+                byte[] keyBytes = tuple.getBytes(2);
+                System.arraycopy(keyBytes, 0, storeData.key.getEncodedBytes(), 0, keyBytes.length);
+                storeData.key.setEncodedSize(keyBytes.length);
+                storeData.value = kv.getValue();
+
+                return null;
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        };
+    }
+
+    @Override
+    protected PersistitIndexRowBuffer readIndexRow(Session session,
+                                                   Index parentPKIndex,
+                                                   FDBStoreData storeData,
+                                                   RowDef childRowDef,
+                                                   RowData childRowData) {
+        Key parentPkKey = storeData.key;
+        PersistitKeyAppender keyAppender = PersistitKeyAppender.create(parentPkKey);
+        int[] fields = childRowDef.getParentJoinFields();
+        for(int field : fields) {
+            FieldDef fieldDef = childRowDef.getFieldDef(field);
+            keyAppender.append(fieldDef, childRowData);
         }
 
-        //PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
-        PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
+        Transaction txn = txnService.getTransaction(session);
+        byte[] pkValue = txn.get(packedTuple(parentPKIndex, parentPkKey)).get();
+        PersistitIndexRowBuffer indexRow = null;
+        if (pkValue != null) {
+            Value value = new Value((Persistit)null);
+            value.putByteArray(pkValue);
+            indexRow = new PersistitIndexRowBuffer(this);
+            indexRow.resetForRead(parentPKIndex, parentPkKey, value);
+        }
+        return indexRow;
+    }
+
+    @Override
+    protected void writeIndexRow(Session session,
+                                 Index index,
+                                 RowData rowData,
+                                 Key hKey,
+                                 PersistitIndexRowBuffer indexRow) {
+        Transaction txn = txnService.getTransaction(session);
         Key indexKey = createKey();
-        for(Index index : rowDef.getIndexes()) {
-            insertIntoIndex(txn, index, rowData, hKey, indexKey, indexRow);
-        }
+        constructIndexRow(indexKey, rowData, index, hKey, indexRow, true);
+        checkUniqueness(txn, index, rowData, indexKey);
 
-        // bug1112940: Bump row count *after* uniqueness checks in insertIntoIndex
-        rowDef.getTableStatus().rowsWritten(session, 1);
-
-        if (/*propagateHKeyChanges &&*/ rowDef.userTable().hasChildren()) {
-            LOG.warn("propagateHKeyChanges skipped: {}", rowDef);
-            /*
-            // The row being inserted might be the parent of orphan rows
-            // already present. The hkeys of these
-            // orphan rows need to be maintained. The hkeys of interest
-            // contain the PK from the inserted row,
-            // and nulls for other hkey fields nearer the root.
-            // TODO: optimizations
-            // - If we knew that no descendent table had an orphan (e.g.
-            // store this info in TableStatus),
-            // then this propagation could be skipped.
-            hEx.clear();
-            Key hKey = hEx.getKey();
-            PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKey);
-            UserTable table = rowDef.userTable();
-            List<Column> pkColumns = table.getPrimaryKeyIncludingInternal().getColumns();
-            List<HKeySegment> hKeySegments = table.hKey().segments();
-            int s = 0;
-            while (s < hKeySegments.size()) {
-                HKeySegment segment = hKeySegments.get(s++);
-                RowDef segmentRowDef = segment.table().rowDef();
-                hKey.append(segmentRowDef.getOrdinal());
-                List<HKeyColumn> hKeyColumns = segment.columns();
-                int c = 0;
-                while (c < hKeyColumns.size()) {
-                    HKeyColumn hKeyColumn = hKeyColumns.get(c++);
-                    Column column = hKeyColumn.column();
-                    RowDef columnTableRowDef = column.getTable().rowDef();
-                    if (pkColumns.contains(column)) {
-                        hKeyAppender.append(columnTableRowDef.getFieldDef(column.getPosition()), rowData);
-                    } else {
-                        hKey.append(null);
-                    }
-                }
-            }
-            propagateDownGroup(session, hEx, tablesRequiringHKeyMaintenance, indexRow, true, false);
-            */
-        }
+        byte[] packedKey = packedTuple(index, indexRow.getPKey());
+        byte[] packedValue = Arrays.copyOf(indexRow.getPValue().getEncodedBytes(), indexRow.getPValue().getEncodedSize());
+        txn.set(packedKey, packedValue);
     }
 
     @Override
-    public void deleteRow(Session session,
-                          RowData rowData,
-                          boolean deleteIndexes,
-                          boolean cascadeDelete) {
-        final RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
+    protected void deleteIndexRow(Session session,
+                                  Index index,
+                                  RowData rowData,
+                                  Key hKey,
+                                  PersistitIndexRowBuffer indexRowBuffer) {
         Transaction txn = txnService.getTransaction(session);
-        Key hKey = createKey();
-        constructHKey(session, txn, hKey, rowDef, rowData, false);
-
-        byte[] packedKey = packedTuple(rowDef.getGroup(), hKey);
-        byte[] fetched = txn.get(packedKey).get();
-        if(fetched == null) {
-            throw new NoSuchRowException(hKey);
-        }
-
-        // record the deletion of the old index row
-        //if (deleteIndexes)
-        //    addChangeFor(rowDef.userTable(), session, hEx.getKey());
-
-        // Remove the h-row
-        txn.clear(packedKey);
-        rowDef.getTableStatus().rowDeleted(session);
-
-        // Remove the indexes, including the PK index
-        PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
-        if(deleteIndexes) {
-            for (Index index : rowDef.getIndexes()) {
-                deleteIndex(txn, index, rowData, hKey, indexRow);
-            }
-        }
-
-        // The row being deleted might be the parent of rows that
-        // now become orphans. The hkeys
-        // of these rows need to be maintained.
-        if(/*propagateHKeyChanges && */rowDef.userTable().hasChildren()) {
-            LOG.warn("propagateHKeyChanges skipped: {}", rowDef);
-            //propagateDownGroup(session, hEx, tablesRequiringHKeyMaintenance, indexRow, deleteIndexes, cascadeDelete);
+        if (index.isUniqueAndMayContainNulls()) {
+            // TODO: Is PersistitStore's broken w.r.t indexRow.hKey()?
+            throw new UnsupportedOperationException("Can't delete unique index with nulls");
+        } else {
+            Key indexKey = createKey();
+            constructIndexRow(indexKey, rowData, index, hKey, indexRowBuffer, false);
+            txn.clear(packedTuple(index, indexKey));
         }
     }
 
     @Override
-    public void updateRow(Session session,
-                          RowData oldRowData,
-                          RowData newRowData,
-                          ColumnSelector columnSelector,
-                          Index[] indexes) {
-        if(columnSelector != null) {
-            final RowDef rowDef = rowDefFromExplicitOrId(session, oldRowData);
-            for(int i = 0; i < rowDef.getFieldCount(); ++i) {
-                if(!columnSelector.includesColumn(i)) {
-                    throw new UnsupportedOperationException("ALL COLUMN selector required");
-                }
-            }
-        }
-        deleteRow(session, oldRowData, true, false);
-        writeRow(session, newRowData);
+    protected void preWrite(Session session, FDBStoreData storeData, RowDef rowDef, RowData rowData) {
+        // None
+    }
+
+    @Override
+    protected void addChangeFor(Session session, UserTable table, Key hKey) {
+        // None
     }
 
     @Override
@@ -348,9 +350,7 @@ public class FDBStore extends AbstractStore implements KeyCreator, Service {
             groups.add(rowDef.table().getGroup());
         }
 
-        Transaction txn = txnService.getTransaction(session);
         FDBAdapter adapter = createAdapter(session, SchemaCache.globalSchema(getAIS(session)));
-        Key indexKey = createKey();
         PersistitIndexRowBuffer indexRowBuffer = new PersistitIndexRowBuffer(this);
 
         for(Group group : groups) {
@@ -364,7 +364,7 @@ public class FDBStore extends AbstractStore implements KeyCreator, Service {
                 if(userRowDef != null) {
                     for(Index index : userRowDef.getIndexes()) {
                         if(indexesToBuild.contains(index)) {
-                            insertIntoIndex(txn, index, rowData, row.hKey().key(), indexKey, indexRowBuffer);
+                            writeIndexRow(session, index, rowData, row.hKey().key(), indexRowBuffer);
                         }
                     }
                 }
@@ -394,21 +394,6 @@ public class FDBStore extends AbstractStore implements KeyCreator, Service {
     }
 
     @Override
-    public void startBulkLoad(Session session) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void finishBulkLoad(Session session) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean isBulkloading() {
-        return false;
-    }
-
-    @Override
     public FDBAdapter createAdapter(Session session, Schema schema) {
         return new FDBAdapter(this, schema, session, configService);
     }
@@ -420,7 +405,6 @@ public class FDBStore extends AbstractStore implements KeyCreator, Service {
 
     @Override
     public Key createKey() {
-        // TODO: null probably won't work for collated strings, needs persistit for class storage
         return new Key(null, 2047);
     }
 
@@ -429,92 +413,6 @@ public class FDBStore extends AbstractStore implements KeyCreator, Service {
     // Internal
     //
 
-    // TODO: Copied from PersistitStore, consolidate
-    private long constructHKey(Session session, Transaction txn, Key hKey, RowDef rowDef, RowData rowData, boolean insertingRow) {
-        // Initialize the hkey being constructed
-        long uniqueId = -1;
-        PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKey);
-        hKeyAppender.key().clear();
-        // Metadata for the row's table
-        UserTable table = rowDef.userTable();
-        FieldDef[] fieldDefs = rowDef.getFieldDefs();
-
-        // Only set if parent row is looked up
-        Key parentPKKey = null;
-        TableIndex parentPKIndex = null;
-        RowDef parentRowDef = null;
-        IndexToHKey indexToHKey = null;
-        PersistitIndexRowBuffer parentPKIndexRow = null;
-        int i2hPosition = 0;
-
-        // Nested loop over hkey metadata: All the segments of an hkey, and all
-        // the columns of a segment.
-        List<HKeySegment> hKeySegments = table.hKey().segments();
-        int s = 0;
-        while (s < hKeySegments.size()) {
-            HKeySegment hKeySegment = hKeySegments.get(s++);
-            // Write the ordinal for this segment
-            RowDef segmentRowDef = hKeySegment.table().rowDef();
-            hKeyAppender.append(segmentRowDef.table().getOrdinal());
-            // Iterate over the segment's columns
-            List<HKeyColumn> hKeyColumns = hKeySegment.columns();
-            int c = 0;
-            while (c < hKeyColumns.size()) {
-                HKeyColumn hKeyColumn = hKeyColumns.get(c++);
-                UserTable hKeyColumnTable = hKeyColumn.column().getUserTable();
-                if (hKeyColumnTable != table) {
-                    // Hkey column from row of parent table
-                    if (parentPKKey == null) {
-                        // Initialize parent metadata and state
-                        parentPKKey = createKey();
-                        parentRowDef = rowDef.getParentRowDef();
-                        parentPKIndex = parentRowDef.getPKIndex();
-                        indexToHKey = parentPKIndex.indexToHKey();
-                        parentPKIndexRow = readPKIndexRow(txn, parentPKIndex, parentPKKey, rowDef, rowData);
-                    }
-                    if(indexToHKey.isOrdinal(i2hPosition)) {
-                        assert indexToHKey.getOrdinal(i2hPosition) == segmentRowDef.table().getOrdinal() : hKeyColumn;
-                        ++i2hPosition;
-                    }
-                    if (parentPKIndexRow != null) {
-                        parentPKIndexRow.appendFieldTo(indexToHKey.getIndexRowPosition(i2hPosition), hKeyAppender.key());
-                    } else {
-                        hKeyAppender.appendNull(); // orphan row
-                    }
-                    ++i2hPosition;
-                } else {
-                    // Hkey column from rowData
-                    Column column = hKeyColumn.column();
-                    FieldDef fieldDef = fieldDefs[column.getPosition()];
-                    if (insertingRow && column.isAkibanPKColumn()) {
-                        // Must be a PK-less table. Use unique id from TableStatus.
-                        uniqueId = segmentRowDef.getTableStatus().createNewUniqueID(session);
-                        hKeyAppender.append(uniqueId);
-                        // Write rowId into the value part of the row also.
-                        rowData.updateNonNullLong(fieldDef, uniqueId);
-                    } else {
-                        hKeyAppender.append(fieldDef, rowData);
-                    }
-                }
-            }
-        }
-        return uniqueId;
-    }
-
-    private void insertIntoIndex(Transaction txn,
-                                 Index index,
-                                 RowData rowData,
-                                 Key hKey,
-                                 Key indexKey,
-                                 PersistitIndexRowBuffer indexRow)
-    {
-        constructIndexRow(indexKey, rowData, index, hKey, indexRow, true);
-        checkUniqueness(txn, index, rowData, indexKey);
-
-        txn.set(packedTuple(index, indexRow.getPKey()),
-                Arrays.copyOf(indexRow.getPValue().getEncodedBytes(), indexRow.getPValue().getEncodedSize()));
-    }
-
     private static void constructIndexRow(Key indexKey,
                                           RowData rowData,
                                           Index index,
@@ -522,7 +420,7 @@ public class FDBStore extends AbstractStore implements KeyCreator, Service {
                                           PersistitIndexRowBuffer indexRow,
                                           boolean forInsert) {
         indexKey.clear();
-        indexRow.resetForWrite(index, indexKey, new Value((Persistit)null));
+        indexRow.resetForWrite(index, indexKey, new Value((Persistit) null));
         indexRow.initialize(rowData, hKey);
         indexRow.close(forInsert);
     }
@@ -546,79 +444,33 @@ public class FDBStore extends AbstractStore implements KeyCreator, Service {
         return txn.getRangeStartsWith(packedTuple(index, key)).iterator().hasNext();
     }
 
-    private byte[] packedTuple(Index index) {
+    private static byte[] packedTuple(Index index) {
         return packedTuple(index.indexDef());
     }
 
-    private byte[] packedTuple(Index index, Key key) {
+    private static byte[] packedTuple(Index index, Key key) {
         return packedTuple(index.indexDef(), key);
     }
 
-    private byte[] packedTuple(TreeLink treeLink) {
+    private static byte[] packedTuple(TreeLink treeLink) {
         return Tuple.from(treeLink.getTreeName(), "/").pack();
     }
 
-    private byte[] packedTuple(TreeLink treeLink, Key key) {
+    private static byte[] packedTuple(TreeLink treeLink, Key key) {
         byte[] keyBytes = Arrays.copyOf(key.getEncodedBytes(), key.getEncodedSize());
         return Tuple.from(treeLink.getTreeName(), "/", keyBytes).pack();
     }
 
-    private PersistitIndexRowBuffer readPKIndexRow(Transaction txn,
-                                                   Index parentPkIndex,
-                                                   Key parentPkKey,
-                                                   RowDef childRowDef,
-                                                   RowData childRowData)
-    {
-        PersistitKeyAppender keyAppender = PersistitKeyAppender.create(parentPkKey);
-        int[] fields = childRowDef.getParentJoinFields();
-        for (int fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
-            FieldDef fieldDef = childRowDef.getFieldDef(fields[fieldIndex]);
-            keyAppender.append(fieldDef, childRowData);
-        }
-
-        byte[] pkValue = txn.get(packedTuple(parentPkIndex, parentPkKey)).get();
-        PersistitIndexRowBuffer indexRow = null;
-        if (pkValue != null) {
-            Value value = new Value((Persistit)null);
-            value.putByteArray(pkValue);
-            indexRow = new PersistitIndexRowBuffer(this);
-            indexRow.resetForRead(parentPkIndex, parentPkKey, value);
-        }
-        return indexRow;
-    }
-
-    private void deleteIndex(Transaction txn,
-                             Index index,
-                             RowData rowData,
-                             Key hkey,
-                             PersistitIndexRowBuffer indexRowBuffer) {
-        deleteIndexRow(txn, index, createKey(), rowData, hkey, indexRowBuffer);
-    }
-
-    private void deleteIndexRow(Transaction txn,
-                                Index index,
-                                Key indexKey,
-                                RowData rowData,
-                                Key hKey,
-                                PersistitIndexRowBuffer indexRowBuffer) {
-        if (index.isUniqueAndMayContainNulls()) {
-            // TODO: Is PersistitStore's broken w.r.t indexRow.hKey()?
-            throw new UnsupportedOperationException("Can't delete unique index with nulls");
-        } else {
-            constructIndexRow(indexKey, rowData, index, hKey, indexRowBuffer, false);
-            txn.clear(packedTuple(index, indexKey));
-        }
-    }
-
-    private static void print(Object... objs) {
-        for(Object o : objs) {
+    @SuppressWarnings("unused")
+    private static void print(Object... objects) {
+        for(Object o : objects) {
             if(o instanceof byte[]) {
                 byte[] packed = (byte[])o;
                 System.out.print("'");
                 for(byte b : packed) {
                     int c = 0xFF & b;
-                    if(c <= 32 || c >= 127) {
-                        System.out.printf("\\x%02d", c);
+                    if(c < 32 || c > 126) {
+                        System.out.printf("\\x%02x", c);
                     } else {
                         System.out.printf("%c", (char)c);
                     }
