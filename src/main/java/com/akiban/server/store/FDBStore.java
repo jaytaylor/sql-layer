@@ -20,6 +20,7 @@ package com.akiban.server.store;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Sequence;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.persistitadapter.FDBAdapter;
 import com.akiban.qp.persistitadapter.FDBGroupCursor;
@@ -57,6 +58,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator, Service {
     private static final Logger LOG = LoggerFactory.getLogger(FDBStore.class.getName());
@@ -123,32 +125,108 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator,
     }
 
     public long nextSequenceValue(Session session, Sequence sequence) {
-        Transaction txn = txnService.getTransaction(session);
-        byte[] packedTuple = packedTuple(sequence);
         long rawValue = 0;
-        byte[] byteValue = txn.get(packedTuple).get();
-        if(byteValue != null) {
-            Tuple tuple = Tuple.fromBytes(byteValue);
-            rawValue = tuple.getLong(0);
-        }
-        rawValue += 1;
+        rawValue = nextSequenceCache (sequence);
+        if (!sequenceCache.get(sequence.getSequenceName()).hasCachedValues()) {
+            rawValue = updateCacheFromServer(session, sequence);
+         }
+        
         long outValue = sequence.nextValueRaw(rawValue);
-        txn.set(packedTuple, Tuple.from(rawValue).pack());
         return outValue;
     }
 
-    public long curSequenceValue(Session session, Sequence sequence) {
-        Transaction txn = txnService.getTransaction(session);
+    private long nextSequenceCache (Sequence sequence) {
         long rawValue = 0;
-        byte[] byteValue = txn.get(packedTuple(sequence)).get();
-        if(byteValue != null) {
-            Tuple tuple = Tuple.fromBytes(byteValue);
-            rawValue = tuple.getLong(0);
+        sequence.cacheLock();
+        try {
+            if (sequenceCache.containsKey(sequence.getSequenceName())) {
+                if (sequenceCache.get(sequence.getSequenceName()).hasCachedValues()) {
+                    rawValue = sequenceCache.get(sequence.getSequenceName()).nextCacheValue();
+                } // else need to get new value to populate cache
+            } else {
+                sequenceCache.put(sequence.getSequenceName(),  new SequenceCache());
+                // get new value to create cache
+            }
+        } finally {
+            sequence.cacheUnlock();
+        }
+        return rawValue;
+    }
+    
+    // insert or update the sequence value from the server. If two threads 
+    // are both after the same sequence, the first will perform the DB operation
+    // and the second will wait and use the results from the (updated) cache. 
+    private long updateCacheFromServer (Session session, Sequence sequence) {
+        long rawValue = 0;
+        if (sequence.cacheLockTry()) {
+            try {
+                Transaction txn = txnService.getTransaction(session);
+                byte[] packedTuple = packedTuple(sequence);
+                byte[] byteValue = txn.get(packedTuple).get();
+                if(byteValue != null) {
+                    Tuple tuple = Tuple.fromBytes(byteValue);
+                    rawValue = tuple.getLong(0);
+                }
+                txn.set(packedTuple, Tuple.from(rawValue + sequence.getCacheSize()).pack());
+                sequenceCache.put(sequence.getSequenceName(), new SequenceCache(rawValue, sequence.getCacheSize()));
+            } finally {
+                sequence.cacheUnlock();
+            }
+        } else {
+            sequence.cacheLock();
+            rawValue = nextSequenceCache (sequence);
+        }
+        return rawValue;
+    }
+    
+    public long curSequenceValue(Session session, Sequence sequence) {
+        long rawValue = 0;
+        if (sequenceCache.containsKey(sequence.getSequenceName())) {
+            rawValue = sequenceCache.get(sequence.getSequenceName()).currentValue();
+        } else {
+            Transaction txn = txnService.getTransaction(session);
+            byte[] byteValue = txn.get(packedTuple(sequence)).get();
+            if(byteValue != null) {
+                Tuple tuple = Tuple.fromBytes(byteValue);
+                rawValue = tuple.getLong(0);
+            }
         }
         return sequence.currentValueRaw(rawValue);
     }
 
-
+    private class SequenceCache {
+        private long value; 
+        private final long cacheSize;
+        private volatile boolean isUseable = true;
+        
+        public SequenceCache() {
+            isUseable = false;
+            value = 0;
+            cacheSize = 1;
+        }
+        
+        public SequenceCache(long startValue, long cacheSize) {
+            this.value = startValue;
+            this.cacheSize = startValue + cacheSize; 
+        }
+        
+        public boolean hasCachedValues() {
+            return isUseable;
+        }
+        
+        public synchronized long nextCacheValue() {
+            assert isUseable : "Calling nextCacheValue when none available";
+            ++value;
+            if (value == cacheSize) {
+                isUseable = false;
+            }
+            return value;
+        }
+        public long currentValue() {
+            return value;
+        }
+    }
+    private final Map<TableName, SequenceCache> sequenceCache = new TreeMap<>();
     //
     // Service
     //

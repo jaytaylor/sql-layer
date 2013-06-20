@@ -17,6 +17,7 @@
 package com.akiban.ais.model;
 
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 
 import com.akiban.ais.model.validation.AISInvariants;
 import com.akiban.server.AccumulatorAdapter;
@@ -68,6 +69,8 @@ public class Sequence implements TreeLink {
         this.maxValue = maxValue;
         this.cycle = cycle;
         this.range = maxValue - minValue + 1;
+        this.cacheSize = 20;
+        this.cacheLock = new ReentrantLock(false);
     }
     
     public final TableName getSequenceName() {
@@ -102,6 +105,21 @@ public class Sequence implements TreeLink {
     public final boolean isCycle() {
         return cycle;
     }
+    public final long getCacheSize() {
+        return cacheSize;
+    }
+    
+    public boolean cacheLockTry() {
+        return cacheLock.tryLock();
+    }
+    
+    public void cacheLock() {
+        cacheLock.lock();
+    }
+    
+    public void cacheUnlock() {
+        cacheLock.unlock();
+    }
 
     // State
     protected final TableName sequenceName;
@@ -113,6 +131,9 @@ public class Sequence implements TreeLink {
     private final long minValue;
     private final long maxValue;
     private final boolean cycle;
+    private final long cacheSize;
+    private final ReentrantLock cacheLock;
+  
 
     private final long range;
     private AtomicReference<TreeCache> treeCache = new AtomicReference<>();
