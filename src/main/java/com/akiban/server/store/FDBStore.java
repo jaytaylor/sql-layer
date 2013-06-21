@@ -166,6 +166,8 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator,
                 if(byteValue != null) {
                     Tuple tuple = Tuple.fromBytes(byteValue);
                     rawValue = tuple.getLong(0);
+                } else {
+                    rawValue = 1;
                 }
                 txn.set(packedTuple, Tuple.from(rawValue + sequence.getCacheSize()).pack());
                 sequenceCache.put(sequence.getSequenceName(), new SequenceCache(rawValue, sequence.getCacheSize()));
@@ -173,8 +175,12 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator,
                 sequence.cacheUnlock();
             }
         } else {
+            // wait here for the other thread to update the cache from the server
             sequence.cacheLock();
-            rawValue = nextSequenceCache (sequence);
+            sequence.cacheUnlock();
+            // recursively call back to get the next cache value, If you're slow
+            // and the cache is small you may need to wait again. 
+            rawValue = nextSequenceValue(session, sequence);
         }
         return rawValue;
     }
@@ -469,6 +475,14 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator,
     @Override
     public void deleteSequences(Session session, Collection<? extends Sequence> sequences) {
         removeTrees(session, sequences);
+        for (Sequence sequence : sequences) {
+            sequence.cacheLock();
+            try {
+                sequenceCache.remove(sequence.getSequenceName());
+            } finally {
+                sequence.cacheUnlock();
+            }
+        }
     }
 
     @Override
