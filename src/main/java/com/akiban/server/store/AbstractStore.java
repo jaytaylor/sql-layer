@@ -29,8 +29,14 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.operator.GroupCursor;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
+import com.akiban.qp.persistitadapter.PersistitHKey;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
+import com.akiban.qp.row.AbstractRow;
+import com.akiban.qp.row.Row;
+import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.TableStatus;
 import com.akiban.server.api.dml.ColumnSelector;
@@ -59,6 +65,8 @@ import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import com.persistit.Key;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,13 +76,14 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 public abstract class AbstractStore<SDType> implements Store {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractStore.class.getName());
 
-    protected final static int MAX_ROW_SIZE = 5000000;
     private static final InOutTap WRITE_ROW_TAP = Tap.createTimer("write: write_row");
     private static final InOutTap DELETE_ROW_TAP = Tap.createTimer("write: delete_row");
     private static final InOutTap UPDATE_ROW_TAP = Tap.createTimer("write: update_row");
@@ -622,6 +631,37 @@ public abstract class AbstractStore<SDType> implements Store {
             }
         }
         indexStatisticsService.deleteIndexStatistics(session, indexes);
+    }
+
+    @Override
+    public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean deferIndexes) {
+        AkibanInformationSchema ais = schemaManager.getAis(session);
+        StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais));
+        Set<Group> groups = new HashSet<>();
+        Multimap<Integer, Index> tableIDsToBuild = ArrayListMultimap.create();
+        for(Index index : indexes) {
+            Table table = index.leafMostTable();
+            tableIDsToBuild.put(table.getTableId(), index);
+            groups.add(table.getGroup());
+        }
+        PersistitIndexRowBuffer indexRowBuffer = new PersistitIndexRowBuffer(this);
+        for(Group group : groups) {
+            GroupCursor cursor = adapter.newGroupCursor(group);
+            cursor.open();
+            try {
+                Row row;
+                while((row = cursor.next()) != null) {
+                    RowData rowData = ((AbstractRow)row).rowData();
+                    int tableId = rowData.getRowDefId();
+                    for(Index index : tableIDsToBuild.get(tableId)) {
+                        writeIndexRow(session, index, rowData, ((PersistitHKey)row.hKey()).key(), indexRowBuffer);
+                    }
+                }
+            } finally {
+                cursor.close();
+                cursor.destroy();
+            }
+        }
     }
 
     @Override

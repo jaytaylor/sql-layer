@@ -816,49 +816,6 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
-    public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean defer) {
-        Set<Group> groups = new HashSet<>();
-        Map<Integer,RowDef> userRowDefs = new HashMap<>();
-        Set<Index> indexesToBuild = new HashSet<>();
-        for(Index index : indexes) {
-            IndexDef indexDef = index.indexDef();
-            if(indexDef == null) {
-                throw new IllegalArgumentException("indexDef was null for index: " + index);
-            }
-            indexesToBuild.add(index);
-            RowDef rowDef = indexDef.getRowDef();
-            userRowDefs.put(rowDef.getRowDefId(), rowDef);
-            groups.add(rowDef.table().getGroup());
-        }
-        PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
-        for (Group group : groups) {
-            RowData rowData = new RowData(new byte[MAX_ROW_SIZE]);
-
-            int indexKeyCount = 0;
-            Exchange hEx = getExchange(session, group);
-            try {
-                hEx.clear();
-                while (hEx.next(true)) {
-                    expandRowData(hEx, rowData);
-                    int tableId = rowData.getRowDefId();
-                    RowDef userRowDef = userRowDefs.get(tableId);
-                    if (userRowDef != null) {
-                        for (Index index : userRowDef.getIndexes()) {
-                            if(indexesToBuild.contains(index)) {
-                                writeIndexRow(session, index, rowData, hEx.getKey(), indexRow);
-                                indexKeyCount++;
-                            }
-                        }
-                    }
-                }
-            } catch (PersistitException e) {
-                throw new PersistitAdapterException(e);
-            }
-            LOG.debug("Inserted {} index keys into group {}", indexKeyCount, group.getName());
-        }
-    }
-
-    @Override
     public void removeTrees(Session session, UserTable table) {
         super.removeTrees(session, table);
 

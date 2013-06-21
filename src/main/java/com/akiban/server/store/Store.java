@@ -74,34 +74,17 @@ public interface Store extends KeyCreator {
                                  RowData end,
                                  ColumnSelector endColumns,
                                  ScanLimit scanLimit);
-    /**
-     * Get the previously saved RowCollector for the specified tableId. Used in
-     * processing the ScanRowsMoreRequest message.
-     * 
-     * @param tableId
-     * @return
-     */
+
+    /** Get the previously saved RowCollector for the specified tableId. */
     RowCollector getSavedRowCollector(Session session, int tableId);
 
-
-    /**
-     * Push a RowCollector onto a stack so that it can subsequently be
-     * referenced by getSavedRowCollector.
-     * 
-     * @param rc
-     */
+    /** Push a RowCollector onto a stack so that it can subsequently be referenced by getSavedRowCollector. */
     void addSavedRowCollector(Session session, RowCollector rc);
 
-    /***
-     * Remove a previously saved RowCollector. Must the the most recently added
-     * RowCollector for a table.
-     *
-     * @param rc
-     */
+    /** Remove a previously saved RowCollector. Must the the most recently added RowCollector for a table. */
     void removeSavedRowCollector(Session session, RowCollector rc);
 
-    long getRowCount(Session session, boolean exact,
-            RowData start, RowData end, byte[] columnBitMap);
+    long getRowCount(Session session, boolean exact, RowData start, RowData end, byte[] columnBitMap);
 
     TableStatistics getTableStatistics(Session session, int tableId);
 
