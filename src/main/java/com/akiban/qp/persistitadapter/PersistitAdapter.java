@@ -26,6 +26,7 @@ import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowPool;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -103,7 +104,7 @@ public class PersistitAdapter extends StoreAdapter
     @Override
     public HKey newHKey(com.akiban.ais.model.HKey hKeyMetadata)
     {
-        return new PersistitHKey(this, hKeyMetadata);
+        return new PersistitHKey(store.createKey(), hKeyMetadata);
     }
 
     @Override
@@ -219,6 +220,15 @@ public class PersistitAdapter extends StoreAdapter
         }
         hash = keyHasher.hash(key, depth);
         return hash;
+    }
+
+
+    @Override
+    public <S> RowData rowData(RowDef rowDef, RowBase row, RowDataCreator<S> creator) {
+        if(row instanceof PersistitGroupRow) {
+            return ((PersistitGroupRow)row).rowData();
+        }
+        return super.rowData(rowDef, row, creator);
     }
 
     // PersistitAdapter interface

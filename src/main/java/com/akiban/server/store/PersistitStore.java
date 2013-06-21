@@ -21,9 +21,12 @@ import com.akiban.ais.model.*;
 import com.akiban.ais.model.Index.IndexType;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.persistitadapter.PersistitGroupRow;
 import com.akiban.qp.persistitadapter.PersistitHKey;
+import com.akiban.qp.persistitadapter.RowDataCreator;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
+import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.*;
@@ -39,6 +42,7 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.text.FullTextIndexService;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.service.tree.TreeService;
+import com.google.inject.Inject;
 import com.persistit.*;
 import com.persistit.Management.DisplayFilter;
 import com.persistit.encoding.CoderManager;
@@ -79,6 +83,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     private volatile AtomicLong uniqueChangeId = new AtomicLong(0);
 
 
+    @Inject
     public PersistitStore(TreeService treeService,
                           ConfigurationService config,
                           SchemaManager schemaManager,
@@ -757,12 +762,17 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
-    protected void clear(Session session, Exchange ex) {
+    protected boolean clear(Session session, Exchange ex) {
         try {
-            ex.remove();
+            return ex.remove();
         } catch(PersistitException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         }
+    }
+
+    @Override
+    void resetForWrite(Exchange ex, Index index, PersistitIndexRowBuffer indexRowBuffer) {
+        indexRowBuffer.resetForWrite(index, ex.getKey(), ex.getValue());
     }
 
     @Override
@@ -799,6 +809,11 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
                 throw new UnsupportedOperationException();
             }
         };
+    }
+
+    @Override
+    protected void sumAddGICount(Session session, Exchange ex, GroupIndex index, int count) {
+        AccumulatorAdapter.sumAdd(AccumulatorAdapter.AccumInfo.ROW_COUNT, ex, count);
     }
 
     @Override
@@ -871,12 +886,15 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         }
     }
 
-    public <V extends IndexVisitor<Key,Value>> V traverse(Session session, Index index, V visitor) throws PersistitException {
+    @Override
+    public <V extends IndexVisitor<Key,Value>> V traverse(Session session, Index index, V visitor) {
         Exchange exchange = getExchange(session, index).append(Key.BEFORE);
         try {
             while (exchange.next(true)) {
                 visitor.visit(exchange.getKey(), exchange.getValue());
             }
+        } catch(PersistitException e) {
+            throw PersistitAdapter.wrapPersistitException(session, e);
         } finally {
             releaseExchange(session, exchange);
         }
@@ -935,8 +953,13 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
-    public StoreAdapter createAdapter(Session session, Schema schema) {
-        return new PersistitAdapter(schema, this, treeService, session, config);
+    public PersistitAdapter createAdapter(Session session, Schema schema) {
+        return createAdapter(session, schema, true);
+    }
+
+    @Override
+    public PersistitAdapter createAdapter(Session session, Schema schema, boolean withSteps) {
+        return new PersistitAdapter(schema, this, treeService, session, config, withSteps);
     }
 
     @Override

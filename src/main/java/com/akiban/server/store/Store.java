@@ -34,6 +34,8 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.store.statistics.IndexStatisticsService;
+import com.persistit.Key;
+import com.persistit.Value;
 
 import java.util.Collection;
 
@@ -131,4 +133,8 @@ public interface Store extends KeyCreator {
     void setIndexStatistics(IndexStatisticsService indexStatistics);
 
     StoreAdapter createAdapter(Session session, Schema schema);
+    StoreAdapter createAdapter(Session session, Schema schema, boolean withSteps);
+
+    // TODO: Better abstraction
+    <V extends IndexVisitor<Key,Value>> V traverse(Session session, Index index, V visitor);
 }

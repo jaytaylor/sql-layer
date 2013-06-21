@@ -122,9 +122,7 @@ public abstract class StoreAdapter
     }
 
     public <S> RowData rowData(RowDef rowDef, RowBase row, RowDataCreator<S> creator) {
-        if(row instanceof AbstractRow) {
-            return ((AbstractRow)row).rowData();
-        }
+        // Generic conversion, subclasses should override to check for known group rows
         NewRow niceRow = newRow(rowDef);
         for(int i = 0; i < row.rowType().nFields(); ++i) {
             S source = creator.eval(row, i);
