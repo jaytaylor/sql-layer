@@ -46,6 +46,8 @@ public interface Store extends KeyCreator {
 
     void writeRow(Session session, RowData row);
     void deleteRow(Session session, RowData row, boolean deleteIndexes, boolean cascadeDelete);
+
+    /** newRow can be partial, as specified by selector, but oldRow must be fully present. */
     void updateRow(Session session, RowData oldRow, RowData newRow, ColumnSelector selector, Index[] indexes);
 
     /**

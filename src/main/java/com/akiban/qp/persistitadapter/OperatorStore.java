@@ -32,6 +32,7 @@ import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.ConstantColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.error.NoRowsUpdatedException;
 import com.akiban.server.error.TooManyRowsUpdatedException;
 import com.akiban.server.rowdata.RowData;
@@ -83,98 +84,77 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     // Store interface
 
+    private static RowData mergeRows(RowDef rowDef, RowData currentRow, RowData newRowData, ColumnSelector selector) {
+        if(selector == null) {
+            return newRowData;
+        }
+        NewRow mergedRow = NiceRow.fromRowData(currentRow, rowDef);
+        NewRow newRow = new LegacyRowWrapper(rowDef, newRowData);
+        int fields = rowDef.getFieldCount();
+        for (int i = 0; i < fields; i++) {
+            if (selector.includesColumn(i)) {
+                mergedRow.put(i, newRow.get(i));
+            }
+        }
+        return mergedRow.toRowData();
+    }
+
     @Override
     public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector, Index[] indexes)
     {
         if(indexes != null) {
             throw new IllegalStateException("Unexpected indexes: " + Arrays.toString(indexes));
         }
-        UPDATE_TOTAL.in();
+
+        AkibanInformationSchema ais = schemaManager.getAis(session);
+        UserTable userTable = ais.getUserTable(oldRowData.getRowDefId());
+        if(canSkipMaintenance(userTable)) {
+            super.updateRow(session, oldRowData, newRowData, columnSelector, indexes);
+            return;
+        }
+
+        UPDATE_MAINTENANCE.in();
         try {
-            AkibanInformationSchema ais = schemaManager.getAis(session);
-            RowDef rowDef = ais.getUserTable(oldRowData.getRowDefId()).rowDef();
-            UserTable userTable = rowDef.userTable();
+            if(columnSelector == ConstantColumnSelector.ALL_ON) {
+                columnSelector = null;
+            }
+            RowData mergedRow = mergeRows(userTable.rowDef(), oldRowData, newRowData, columnSelector);
+
+            BitSet changedColumnPositions = changedColumnPositions(userTable.rowDef(), oldRowData, mergedRow);
             PersistitAdapter adapter = createAdapterNoSteps(ais, session);
+            maintainGroupIndexes(session,
+                                 ais,
+                                 adapter,
+                                 oldRowData,
+                                 changedColumnPositions,
+                                 OperatorStoreGIHandler.forTable(adapter, userTable),
+                                 OperatorStoreGIHandler.Action.DELETE);
 
-            if(canSkipMaintenance(userTable)) {
-                // PersistitStore needs full rows and OperatorStore will look them up (unspecified behavior),
-                // so keep that behavior for the places that use it (tests only?)
-                if(columnSelector == null || columnSelector == ConstantColumnSelector.ALL_ON) {
-                    super.updateRow(session, oldRowData, newRowData, columnSelector, indexes);
-                    return;
-                }
-            } else if (columnSelector != null) {
-                throw new RuntimeException("group index maintenance won't work with partial rows");
-            }
+            super.updateRow(session, oldRowData, mergedRow, columnSelector, indexes);
 
-            BitSet changedColumnPositions = changedColumnPositions(rowDef, oldRowData, newRowData);
-            UpdateFunction updateFunction = new InternalUpdateFunction(adapter, rowDef, newRowData, columnSelector);
-
-            Group group = userTable.getGroup();
-            final TableIndex index = userTable.getPrimaryKeyIncludingInternal().getIndex();
-            assert index != null : userTable;
-            UserTableRowType tableType = adapter.schema().userTableRowType(userTable);
-            IndexRowType indexType = tableType.indexRowType(index);
-            ColumnSelector indexColumnSelector =
-                new ColumnSelector()
-                {
-                    public boolean includesColumn(int columnPosition)
-                    {
-                        return columnPosition < index.getKeyColumns().size();
-                    }
-                };
-            IndexBound bound =
-                new IndexBound(new NewRowBackedIndexRow(tableType, new LegacyRowWrapper(userTable.rowDef(), oldRowData), index),
-                               indexColumnSelector);
-            IndexKeyRange range = IndexKeyRange.bounded(indexType, bound, true, bound, true);
-
-            Operator indexScan = indexScan_Default(indexType, false, range);
-            Operator scanOp;
-            scanOp = ancestorLookup_Default(indexScan, group, indexType, Collections.singletonList(tableType), API.InputPreservationOption.DISCARD_INPUT);
-
-            // MVCC will render this useless, but for now, a limit of 1 ensures we won't see the row we just updated,
-            // and therefore scan through two rows -- once to update old -> new, then to update new -> copy of new
-            scanOp = limit_Default(scanOp, 1);
-
-            UpdatePlannable updateOp = update_Default(scanOp, updateFunction);
-
-            QueryContext context = new SimpleQueryContext(adapter);
-            UPDATE_MAINTENANCE.in();
-            try {
-                maintainGroupIndexes(session,
-                                     ais,
-                                     adapter,
-                                     oldRowData,
-                                     changedColumnPositions,
-                                     OperatorStoreGIHandler.forTable(adapter, userTable),
-                                     OperatorStoreGIHandler.Action.DELETE);
-
-                runCursor(oldRowData, rowDef, updateOp, context);
-
-                maintainGroupIndexes(session,
-                                     ais,
-                                     adapter,
-                                     newRowData,
-                                     changedColumnPositions,
-                                     OperatorStoreGIHandler.forTable(adapter, userTable),
-                                     OperatorStoreGIHandler.Action.STORE);
-            } finally {
-                UPDATE_MAINTENANCE.out();
-            }
+            maintainGroupIndexes(session,
+                                 ais,
+                                 adapter,
+                                 mergedRow,
+                                 changedColumnPositions,
+                                 OperatorStoreGIHandler.forTable(adapter, userTable),
+                                 OperatorStoreGIHandler.Action.STORE);
         } finally {
-            UPDATE_TOTAL.out();
+            UPDATE_MAINTENANCE.out();
         }
     }
 
     @Override
     public void writeRow(Session session, RowData rowData) {
-        INSERT_TOTAL.in();
+        AkibanInformationSchema ais = schemaManager.getAis(session);
+        PersistitAdapter adapter = createAdapterNoSteps(ais, session);
+
+        // Requires adapter created
+        super.writeRow(session, rowData);
+
         INSERT_MAINTENANCE.in();
         try {
-            AkibanInformationSchema ais = schemaManager.getAis(session);
-            PersistitAdapter adapter = createAdapterNoSteps(ais, session);
             UserTable uTable = ais.getUserTable(rowData.getRowDefId());
-            super.writeRow(session, rowData);
             maintainGroupIndexes(session,
                                  ais,
                                  adapter,
@@ -183,21 +163,18 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                                  OperatorStoreGIHandler.Action.STORE);
         } finally {
             INSERT_MAINTENANCE.out();
-            INSERT_TOTAL.out();
         }
     }
 
     @Override
     public void deleteRow(Session session, RowData rowData, boolean deleteIndexes, boolean cascadeDelete) {
-        DELETE_TOTAL.in();
         DELETE_MAINTENANCE.in();
         try {
             AkibanInformationSchema ais = schemaManager.getAis(session);
             PersistitAdapter adapter = createAdapterNoSteps(ais, session);
             UserTable uTable = ais.getUserTable(rowData.getRowDefId());
-
-            if (cascadeDelete) {
-                cascadeDeleteMaintainGroupIndex (session, ais, adapter, rowData);
+            if(cascadeDelete) {
+                cascadeDeleteMaintainGroupIndex(session, ais, adapter, rowData);
             } else { // one row, one update to group indexes
                 maintainGroupIndexes(session,
                                      ais,
@@ -206,12 +183,12 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                                      null,
                                      OperatorStoreGIHandler.forTable(adapter, uTable),
                                      OperatorStoreGIHandler.Action.DELETE);
-                super.deleteRow(session, rowData, deleteIndexes, cascadeDelete);
             }
         } finally {
             DELETE_MAINTENANCE.out();
-            DELETE_TOTAL.out();
         }
+
+        super.deleteRow(session, rowData, deleteIndexes, cascadeDelete);
     }
 
     @Override
@@ -393,7 +370,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         } finally {
             cursor.destroy();
         }
-        super.deleteRow(session, rowData, true, true);
     }
 
     private <S> RowData rowData (PersistitAdapter adapter, RowDef rowDef, RowBase row, RowDataCreator<S> creator) {
@@ -407,21 +383,9 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
         return niceRow.toRowData();
     }
-        
 
 
     // private static methods
-
-    private static void runCursor(RowData oldRowData, RowDef rowDef, UpdatePlannable plannable, QueryContext context)
-    {
-        final UpdateResult result  = plannable.run(context);
-        if (result.rowsModified() == 0 || result.rowsTouched() == 0) {
-            throw new NoRowsUpdatedException (oldRowData, rowDef);
-        }
-        else if(result.rowsModified() != 1 || result.rowsTouched() != 1) {
-            throw new TooManyRowsUpdatedException (oldRowData, rowDef, result);
-        }
-    }
 
     private static BitSet changedColumnPositions(RowDef rowDef, RowData a, RowData b)
     {
@@ -467,72 +431,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     // consts
 
-    private static final InOutTap INSERT_TOTAL = Tap.createTimer("write: write_total");
-    private static final InOutTap UPDATE_TOTAL = Tap.createTimer("write: update_total");
-    private static final InOutTap DELETE_TOTAL = Tap.createTimer("write: delete_total");
-    private static final InOutTap INSERT_MAINTENANCE = Tap.createTimer("write: write_maintenance");
-    private static final InOutTap UPDATE_MAINTENANCE = Tap.createTimer("write: update_maintenance");
-    private static final InOutTap DELETE_MAINTENANCE = Tap.createTimer("write: delete_maintenance");
+    private static final InOutTap INSERT_MAINTENANCE = Tap.createTimer("write: write_gi_maintenance");
+    private static final InOutTap UPDATE_MAINTENANCE = Tap.createTimer("write: update_gi_maintenance");
+    private static final InOutTap DELETE_MAINTENANCE = Tap.createTimer("write: delete_gi_maintenance");
     private static final PointTap SKIP_MAINTENANCE = Tap.createCount("write: skip_maintenance");
-
-
-    // nested classes
-
-    private static class InternalUpdateFunction implements UpdateFunction {
-        private final PersistitAdapter adapter;
-        private final RowData newRowData;
-        private final ColumnSelector columnSelector;
-        private final RowDef rowDef;
-        private final RowDataExtractor extractor;
-
-        private InternalUpdateFunction(PersistitAdapter adapter, RowDef rowDef, RowData newRowData, ColumnSelector columnSelector) {
-            this.newRowData = newRowData;
-            this.columnSelector = columnSelector;
-            this.rowDef = rowDef;
-            this.adapter = adapter;
-            this.extractor = new RowDataExtractor(newRowData, rowDef);
-        }
-
-        @Override
-        public boolean rowIsSelected(Row row) {
-            return row.rowType().typeId() == rowDef.getRowDefId();
-        }
-
-        @Override
-        public Row evaluate(Row original, QueryContext context) {
-            // TODO
-            // ideally we'd like to use an OverlayingRow, but ModifiablePersistitGroupCursor requires
-            // a PersistitGroupRow if an hkey changes
-//            OverlayingRow overlay = new OverlayingRow(original);
-//            for (int i=0; i < rowDef.getFieldCount(); ++i) {
-//                if (columnSelector == null || columnSelector.includesColumn(i)) {
-//                    overlay.overlay(i, newRowData.toObject(rowDef, i));
-//                }
-//            }
-//            return overlay;
-            // null selector means all cols, so we can skip the merging and just return the new row data
-            if (columnSelector == null) {
-                return PersistitGroupRow.newPersistitGroupRow(adapter, newRowData);
-            }
-            // Note: some encodings are untested except as necessary for mtr
-            NewRow newRow = adapter.newRow(rowDef);
-            ToObjectValueTarget target = new ToObjectValueTarget();
-            for (int i=0; i < original.rowType().nFields(); ++i) {
-                if (columnSelector.includesColumn(i)) {
-                    Object value = extractor.get(rowDef.getFieldDef(i));
-                    newRow.put(i, value);
-                }
-                else {
-                    ValueSource source = original.eval(i);
-                    newRow.put(i, target.convertFromSource(source));
-                }
-            }
-            return PersistitGroupRow.newPersistitGroupRow(adapter, newRow.toRowData());
-        }
-
-        @Override
-        public boolean usePValues() {
-            return false;
-        }
-    }
 }
