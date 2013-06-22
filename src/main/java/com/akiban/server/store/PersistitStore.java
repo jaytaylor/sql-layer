@@ -21,12 +21,9 @@ import com.akiban.ais.model.*;
 import com.akiban.ais.model.Index.IndexType;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.persistitadapter.PersistitGroupRow;
 import com.akiban.qp.persistitadapter.PersistitHKey;
-import com.akiban.qp.persistitadapter.RowDataCreator;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
-import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.*;
@@ -518,12 +515,6 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
 
     public void releaseExchange(final Session session, final Exchange exchange) {
         releaseStoreData(session, exchange);
-    }
-
-    // Promote visibility. TODO: Remove when OperatorStore goes away.
-    @Override
-    public void constructHKey(Session session, RowDef rowDef, RowData rowData, boolean isInsert, Key hKeyOut) {
-        super.constructHKey(session, rowDef, rowData, isInsert, hKeyOut);
     }
 
     private static void constructIndexRow(Exchange exchange,

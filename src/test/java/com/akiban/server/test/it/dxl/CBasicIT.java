@@ -364,8 +364,6 @@ public final class CBasicIT extends ITBase {
             old.put(1, "hello world");
             dml().updateRow(session(), old, badRow, null);
         } catch (NoSuchRowException e) {
-            // OperatorStore would throw NoRowsUpdatedException directly
-            // If we are running against PersistitStore, check that the expected row is there and then throw NRUE
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
             expectRows(request, createNewRow(tableId, 0L, "hello world"));
             throw new NoRowsUpdatedException(badRow.toRowData(), badRow.getRowDef());
