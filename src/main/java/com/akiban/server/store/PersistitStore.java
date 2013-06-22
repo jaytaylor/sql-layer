@@ -954,12 +954,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
 
     @Override
     public PersistitAdapter createAdapter(Session session, Schema schema) {
-        return createAdapter(session, schema, true);
-    }
-
-    @Override
-    public PersistitAdapter createAdapter(Session session, Schema schema, boolean withSteps) {
-        return new PersistitAdapter(schema, this, treeService, session, config, withSteps);
+        return new PersistitAdapter(schema, this, treeService, session, config);
     }
 
     @Override

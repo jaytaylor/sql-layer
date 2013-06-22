@@ -472,7 +472,7 @@ public abstract class AbstractStore<SDType> implements Store {
     @Override
     public void writeRow(Session session, RowData rowData) {
         AkibanInformationSchema ais = schemaManager.getAis(session);
-        StoreAdapter adapter = createAdapterNoSteps(session, ais);
+        StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais));
 
         // TODO: Persistit needs adapter created, have it create itself?
         writeRow(session, rowData, null, true);
@@ -496,7 +496,7 @@ public abstract class AbstractStore<SDType> implements Store {
         DELETE_ROW_GI_TAP.in();
         try {
             AkibanInformationSchema ais = schemaManager.getAis(session);
-            StoreAdapter adapter = createAdapterNoSteps(session, ais);
+            StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais));
             UserTable uTable = ais.getUserTable(rowData.getRowDefId());
             if(cascadeDelete) {
                 cascadeDeleteMaintainGroupIndex(session, ais, adapter, rowData);
@@ -528,7 +528,7 @@ public abstract class AbstractStore<SDType> implements Store {
             try {
                 RowData mergedRow = mergeRows(userTable.rowDef(), oldRow, newRow, selector);
                 BitSet changedColumnPositions = changedColumnPositions(userTable.rowDef(), oldRow, mergedRow);
-                StoreAdapter adapter = createAdapterNoSteps(session, ais);
+                StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais));
 
                 maintainGroupIndexes(session,
                                      ais,
@@ -724,7 +724,7 @@ public abstract class AbstractStore<SDType> implements Store {
             }
         }
         AkibanInformationSchema ais = schemaManager.getAis(session);
-        StoreAdapter adapter = createAdapterNoSteps(session, ais);
+        StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais));
         if(!tableIndexes.isEmpty()) {
             Set<Group> groups = new HashSet<>();
             Multimap<Integer, Index> tableIDsToBuild = ArrayListMultimap.create();
@@ -820,12 +820,6 @@ public abstract class AbstractStore<SDType> implements Store {
     //
     // Internal
     //
-
-    private StoreAdapter createAdapterNoSteps(Session session, AkibanInformationSchema ais) {
-        StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais), false);
-        session.put(StoreAdapter.STORE_ADAPTER_KEY, adapter);
-        return adapter;
-    }
 
     private void writeRowInternal(Session session,
                                   SDType storeData,

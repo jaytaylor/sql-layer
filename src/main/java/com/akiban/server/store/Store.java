@@ -133,7 +133,6 @@ public interface Store extends KeyCreator {
     void setIndexStatistics(IndexStatisticsService indexStatistics);
 
     StoreAdapter createAdapter(Session session, Schema schema);
-    StoreAdapter createAdapter(Session session, Schema schema, boolean withSteps);
 
     // TODO: Better abstraction
     <V extends IndexVisitor<Key,Value>> V traverse(Session session, Index index, V visitor);
