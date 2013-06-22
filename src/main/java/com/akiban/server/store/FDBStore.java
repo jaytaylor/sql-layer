@@ -20,6 +20,7 @@ package com.akiban.server.store;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Sequence;
+import com.akiban.ais.model.Sequence.SequenceCache;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.persistitadapter.FDBAdapter;
@@ -40,6 +41,7 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.service.tree.TreeLink;
+import com.akiban.server.util.ReadWriteMap;
 import com.foundationdb.KeyValue;
 import com.foundationdb.RangeQuery;
 import com.foundationdb.Transaction;
@@ -126,33 +128,25 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator,
 
     public long nextSequenceValue(Session session, Sequence sequence) {
         long rawValue = 0;
-        rawValue = nextSequenceCache (sequence);
-        if (!sequenceCache.get(sequence.getSequenceName()).hasCachedValues()) {
-            rawValue = updateCacheFromServer(session, sequence);
-         }
+        sequence.cacheLock();
+        try {
+            if (sequenceCache.containsKey(sequence.getSequenceName())) {
+                rawValue = sequenceCache.get(sequence.getSequenceName()).nextCacheValue();
+                if (!sequenceCache.get(sequence.getSequenceName()).hasCachedValues()) {
+                    rawValue = updateCacheFromServer(session, sequence);
+                }
+            } else {
+                sequenceCache.put(sequence.getSequenceName(),  sequence.getEmptyCache());
+                rawValue = updateCacheFromServer(session, sequence);
+            }
+        } finally {
+            sequence.cacheUnlock();
+        }
         
         long outValue = sequence.nextValueRaw(rawValue);
         return outValue;
     }
 
-    private long nextSequenceCache (Sequence sequence) {
-        long rawValue = 0;
-        sequence.cacheLock();
-        try {
-            if (sequenceCache.containsKey(sequence.getSequenceName())) {
-                if (sequenceCache.get(sequence.getSequenceName()).hasCachedValues()) {
-                    rawValue = sequenceCache.get(sequence.getSequenceName()).nextCacheValue();
-                } // else need to get new value to populate cache
-            } else {
-                sequenceCache.put(sequence.getSequenceName(),  new SequenceCache());
-                // get new value to create cache
-            }
-        } finally {
-            sequence.cacheUnlock();
-        }
-        return rawValue;
-    }
-    
     // insert or update the sequence value from the server. If two threads 
     // are both after the same sequence, the first will perform the DB operation
     // and the second will wait and use the results from the (updated) cache. 
@@ -170,7 +164,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator,
                     rawValue = 1;
                 }
                 txn.set(packedTuple, Tuple.from(rawValue + sequence.getCacheSize()).pack());
-                sequenceCache.put(sequence.getSequenceName(), new SequenceCache(rawValue, sequence.getCacheSize()));
+                sequenceCache.put(sequence.getSequenceName(), sequence.getNewCache(rawValue));
             } finally {
                 sequence.cacheUnlock();
             }
@@ -187,52 +181,26 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator,
     
     public long curSequenceValue(Session session, Sequence sequence) {
         long rawValue = 0;
-        if (sequenceCache.containsKey(sequence.getSequenceName())) {
-            rawValue = sequenceCache.get(sequence.getSequenceName()).currentValue();
-        } else {
-            Transaction txn = txnService.getTransaction(session);
-            byte[] byteValue = txn.get(packedTuple(sequence)).get();
-            if(byteValue != null) {
-                Tuple tuple = Tuple.fromBytes(byteValue);
-                rawValue = tuple.getLong(0);
+        sequence.cacheLock();
+        try {
+            if (sequenceCache.containsKey(sequence.getSequenceName())) {
+                rawValue = sequenceCache.get(sequence.getSequenceName()).currentValue();
+            } else {
+                Transaction txn = txnService.getTransaction(session);
+                byte[] byteValue = txn.get(packedTuple(sequence)).get();
+                if(byteValue != null) {
+                    Tuple tuple = Tuple.fromBytes(byteValue);
+                    rawValue = tuple.getLong(0);
+                }
             }
+        } finally {
+            sequence.cacheUnlock();
         }
         return sequence.currentValueRaw(rawValue);
     }
 
-    private class SequenceCache {
-        private long value; 
-        private final long cacheSize;
-        private volatile boolean isUseable = true;
-        
-        public SequenceCache() {
-            isUseable = false;
-            value = 0;
-            cacheSize = 1;
-        }
-        
-        public SequenceCache(long startValue, long cacheSize) {
-            this.value = startValue;
-            this.cacheSize = startValue + cacheSize; 
-        }
-        
-        public boolean hasCachedValues() {
-            return isUseable;
-        }
-        
-        public synchronized long nextCacheValue() {
-            assert isUseable : "Calling nextCacheValue when none available";
-            ++value;
-            if (value == cacheSize) {
-                isUseable = false;
-            }
-            return value;
-        }
-        public long currentValue() {
-            return value;
-        }
-    }
-    private final Map<TableName, SequenceCache> sequenceCache = new TreeMap<>();
+    private final Map<TableName, Sequence.SequenceCache> sequenceCache = 
+            ReadWriteMap.wrapFair(new TreeMap<TableName, Sequence.SequenceCache>());
     //
     // Service
     //
@@ -476,12 +444,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator,
     public void deleteSequences(Session session, Collection<? extends Sequence> sequences) {
         removeTrees(session, sequences);
         for (Sequence sequence : sequences) {
-            sequence.cacheLock();
-            try {
-                sequenceCache.remove(sequence.getSequenceName());
-            } finally {
-                sequence.cacheUnlock();
-            }
+            sequenceCache.remove(sequence.getSequenceName());
         }
     }
 

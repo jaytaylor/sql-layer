@@ -199,4 +199,51 @@ public class Sequence implements TreeLink {
         }
         return minValue + mod;
     }
+
+    public SequenceCache getNewCache (long startValue, long cacheSize) {
+        return new SequenceCache (startValue, cacheSize);
+    }
+    
+    public SequenceCache getNewCache (long startValue) {
+        return new SequenceCache (startValue, this.cacheSize);
+    }
+    
+    public SequenceCache getEmptyCache () {
+        return new SequenceCache ();
+    }
+    
+    public class SequenceCache {
+        private long value; 
+        private final long cacheSize;
+        private volatile boolean isUseable = true;
+        
+        public SequenceCache() {
+            isUseable = false;
+            value = 0;
+            cacheSize = 1;
+        }
+        
+        public SequenceCache(long startValue, long cacheSize) {
+            this.value = startValue;
+            this.cacheSize = startValue + cacheSize; 
+        }
+        
+        public boolean hasCachedValues() {
+            return isUseable;
+        }
+        
+        public synchronized long nextCacheValue() {
+            assert isUseable : "Calling nextCacheValue when none available";
+            ++value;
+            if (value == cacheSize) {
+                isUseable = false;
+            }
+            return value;
+        }
+        public long currentValue() {
+            return value;
+        }
+    }
+
+
 }
