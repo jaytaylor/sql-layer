@@ -19,10 +19,12 @@ package com.akiban.server.test.it.bugs.bug1043377;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.akiban.server.test.it.ITBase;
@@ -72,16 +74,16 @@ public final class FailureDuringIndexBuildingIT extends ITBase {
         assertNull("Index should not be present", table.getIndex(INDEX));
     }
 
-    public static class ThrowsAfterBuildIndexesStore extends OperatorStore {
+    public static class ThrowsAfterBuildIndexesStore extends PersistitStore {
         @Inject
-        public ThrowsAfterBuildIndexesStore(TreeService treeService, SchemaManager schemaManager,
-                                            LockService lockService) {
-            super(treeService, null, schemaManager, lockService);
+        public ThrowsAfterBuildIndexesStore(TreeService treeService, ConfigurationService configService,
+                                            SchemaManager schemaManager, LockService lockService) {
+            super(treeService, configService, schemaManager, lockService);
         }
 
         @Override
-        public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean deferIndexes) {
-            super.buildIndexes(session, indexes, deferIndexes);
+        public void buildIndexes(Session session, Collection<? extends Index> indexes) {
+            super.buildIndexes(session, indexes);
             throw EXPECTED_EXCEPTION;
         }
     }

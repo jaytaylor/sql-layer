@@ -33,7 +33,6 @@ public class ManageMXBeanImpl implements ManageMXBean {
     private final Store store;
     private final DXLService dxlService;
     private final SessionService sessionService;
-    public static final String BEAN_NAME = "com.akiban:type=AKSERVER";
 
     public ManageMXBeanImpl(Store store, DXLService dxlService, SessionService sessionService) {
         this.store = store;
@@ -52,11 +51,11 @@ public class ManageMXBeanImpl implements ManageMXBean {
     }
 
     @Override
-    public void buildIndexes(final String arg, final boolean deferIndexes) {
+    public void buildIndexes(final String arg) {
         Session session = createSession();
         try {
             Collection<Index> indexes = gatherIndexes(session, arg);
-            getStore().buildIndexes(session, indexes, deferIndexes);
+            getStore().buildIndexes(session, indexes);
         } catch(Exception t) {
             throw new RuntimeException(t);
         } finally {

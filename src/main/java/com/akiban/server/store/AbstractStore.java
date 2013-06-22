@@ -709,7 +709,7 @@ public abstract class AbstractStore<SDType> implements Store {
     }
 
     @Override
-    public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean defer) {
+    public void buildIndexes(Session session, Collection<? extends Index> indexes) {
         List<TableIndex> tableIndexes = new ArrayList<>();
         List<GroupIndex> groupIndexes = new ArrayList<>();
         for(Index index : indexes) {

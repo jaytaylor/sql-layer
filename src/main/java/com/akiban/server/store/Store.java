@@ -105,7 +105,7 @@ public interface Store extends KeyCreator {
     void truncateTableStatus(Session session, int rowDefId);
 
     void deleteIndexes(Session session, Collection<? extends Index> indexes);
-    void buildIndexes(Session session, Collection<? extends Index> indexes, boolean deferIndexes);
+    void buildIndexes(Session session, Collection<? extends Index> indexes);
 
     void deleteSequences (Session session, Collection<? extends Sequence> sequences);
     /**
