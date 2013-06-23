@@ -31,8 +31,6 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.PersistitKeyValueSource;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.error.*;
 import com.akiban.server.rowdata.RowData;
@@ -106,7 +104,7 @@ public class PersistitAdapter extends StoreAdapter
     @Override
     public HKey newHKey(com.akiban.ais.model.HKey hKeyMetadata)
     {
-        return new PersistitHKey(this, hKeyMetadata);
+        return new PersistitHKey(store.createKey(), hKeyMetadata);
     }
 
     @Override
@@ -224,6 +222,15 @@ public class PersistitAdapter extends StoreAdapter
         return hash;
     }
 
+
+    @Override
+    public <S> RowData rowData(RowDef rowDef, RowBase row, RowDataCreator<S> creator) {
+        if(row instanceof PersistitGroupRow) {
+            return ((PersistitGroupRow)row).rowData();
+        }
+        return super.rowData(rowDef, row, creator);
+    }
+
     // PersistitAdapter interface
 
     public PersistitStore persistit()
@@ -236,35 +243,10 @@ public class PersistitAdapter extends StoreAdapter
         return schema.ais().getUserTable(tableId).rowDef();
     }
 
-    public NewRow newRow(RowDef rowDef)
-    {
-        NiceRow row = new NiceRow(rowDef.getRowDefId(), rowDef);
-        UserTable table = rowDef.userTable();
-        PrimaryKey primaryKey = table.getPrimaryKeyIncludingInternal();
-        if (primaryKey != null && table.getPrimaryKey() == null) {
-            // Akiban-generated PK. Initialize its value to a dummy value, which will be replaced later. The
-            // important thing is that the value be non-null.
-            row.put(table.getColumnsIncludingInternal().size() - 1, -1L);
-        }
-        return row;
-    }
-
     private RowDataCreator<?> rowDataCreator(boolean usePValues) {
         return usePValues
                 ? new PValueRowDataCreator()
                 : new OldRowDataCreator();
-    }
-
-    private <S> RowData rowData (RowDef rowDef, RowBase row, RowDataCreator<S> creator) {
-        if (row instanceof PersistitGroupRow) {
-            return ((PersistitGroupRow) row).rowData();
-        }
-        NewRow niceRow = newRow(rowDef);
-        for(int i = 0; i < row.rowType().nFields(); ++i) {
-            S source = creator.eval(row, i);
-            creator.put(source, niceRow, rowDef.getFieldDef(i), i);
-        }
-        return niceRow.toRowData();
     }
 
     public PersistitGroupRow newGroupRow()

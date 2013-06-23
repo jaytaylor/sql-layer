@@ -20,6 +20,7 @@ package com.akiban.server.store;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.HKeyColumn;
 import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.Index;
@@ -29,11 +30,24 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.GroupCursor;
+import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.SimpleQueryContext;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
+import com.akiban.qp.persistitadapter.PValueRowDataCreator;
+import com.akiban.qp.persistitadapter.PersistitHKey;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
+import com.akiban.qp.row.AbstractRow;
+import com.akiban.qp.row.Row;
+import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.TableStatus;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.api.dml.ConstantColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
@@ -49,6 +63,7 @@ import com.akiban.server.error.TableChangedByDDLException;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDataPValueSource;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
@@ -57,8 +72,12 @@ import com.akiban.server.store.statistics.Histogram;
 import com.akiban.server.store.statistics.HistogramEntry;
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsService;
+import com.akiban.sql.optimizer.rule.PlanGenerator;
 import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import com.persistit.Key;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,18 +87,23 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 public abstract class AbstractStore<SDType> implements Store {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractStore.class.getName());
 
-    protected final static int MAX_ROW_SIZE = 5000000;
     private static final InOutTap WRITE_ROW_TAP = Tap.createTimer("write: write_row");
     private static final InOutTap DELETE_ROW_TAP = Tap.createTimer("write: delete_row");
     private static final InOutTap UPDATE_ROW_TAP = Tap.createTimer("write: update_row");
+    private static final InOutTap WRITE_ROW_GI_TAP = Tap.createTimer("write: write_row_gi");
+    private static final InOutTap DELETE_ROW_GI_TAP = Tap.createTimer("write: delete_row_gi");
+    private static final InOutTap UPDATE_ROW_GI_TAP = Tap.createTimer("write: update_row_gi");
     private static final InOutTap UPDATE_INDEX_TAP = Tap.createTimer("index: update_index");
     private static final InOutTap NEW_COLLECTOR_TAP = Tap.createTimer("read: new_collector");
+    private static final PointTap SKIP_GI_MAINTENANCE = Tap.createCount("write: skip_gi_maintenance");
     private static final InOutTap PROPAGATE_CHANGE_TAP = Tap.createTimer("write: propagate_hkey_change");
     private static final InOutTap PROPAGATE_REPLACE_TAP = Tap.createTimer("write: propagate_hkey_change_row_replace");
     private static final Session.MapKey<Integer,List<RowCollector>> COLLECTORS = Session.MapKey.mapNamed("collectors");
@@ -100,22 +124,24 @@ public abstract class AbstractStore<SDType> implements Store {
     //
 
     /** Create store specific data for working with the given TreeLink. */
-    protected abstract SDType createStoreData(Session session, TreeLink treeLink);
+    abstract SDType createStoreData(Session session, TreeLink treeLink);
 
     /** Release (or cache) any data created through {@link #createStoreData(Session, TreeLink)}. */
-    protected abstract void releaseStoreData(Session session, SDType storeData);
+    abstract void releaseStoreData(Session session, SDType storeData);
 
     /** Get the associated key */
-    protected abstract Key getKey(Session session, SDType storeData);
+    abstract Key getKey(Session session, SDType storeData);
 
     /** Save the current key and value. */
-    protected abstract void store(Session session, SDType storeData);
+    abstract void store(Session session, SDType storeData);
 
     /** Fetch the value for the current key. Return <code>true</code> if it existed. */
-    protected abstract boolean fetch(Session session, SDType storeData);
+    abstract boolean fetch(Session session, SDType storeData);
 
-    /** Delete the key. */
-    protected abstract void clear(Session session, SDType storeData);
+    /** Delete the key. Return <code>true</code> if it existed. */
+    abstract boolean clear(Session session, SDType storeData);
+
+    abstract void resetForWrite(SDType storeData, Index index, PersistitIndexRowBuffer indexRowBuffer);
 
     /** Fill the given <code>RowData</code> from the current value. */
     protected abstract void expandRowData(SDType storeData, RowData rowData);
@@ -125,6 +151,8 @@ public abstract class AbstractStore<SDType> implements Store {
 
     /** Create an iterator to visit all descendants of the current key. */
     protected abstract Iterator<Void> createDescendantIterator(Session session, SDType storeData);
+
+    protected abstract void sumAddGICount(Session session, SDType storeData, GroupIndex index, int count);
 
     /** Read the index row for the given RowData or null if not present. storeData has been initialized for index. */
     protected abstract PersistitIndexRowBuffer readIndexRow(Session session,
@@ -369,7 +397,14 @@ public abstract class AbstractStore<SDType> implements Store {
         DELETE_ROW_TAP.in();
         try {
             preWrite(session, storeData, rowDef, rowData);
-            deleteRowInternal(session, storeData, rowDef, rowData, deleteIndexes, cascadeDelete, tablesRequiringHKeyMaintenance, propagateHKeyChanges);
+            deleteRowInternal(session,
+                              storeData,
+                              rowDef,
+                              rowData,
+                              deleteIndexes,
+                              cascadeDelete,
+                              tablesRequiringHKeyMaintenance,
+                              propagateHKeyChanges);
         } finally {
             DELETE_ROW_TAP.out();
             releaseStoreData(session, storeData);
@@ -436,17 +471,86 @@ public abstract class AbstractStore<SDType> implements Store {
 
     @Override
     public void writeRow(Session session, RowData rowData) {
+        AkibanInformationSchema ais = schemaManager.getAis(session);
+        StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais));
+
+        // TODO: Persistit needs adapter created, have it create itself?
         writeRow(session, rowData, null, true);
+
+        WRITE_ROW_GI_TAP.in();
+        try {
+            UserTable uTable = ais.getUserTable(rowData.getRowDefId());
+            maintainGroupIndexes(session,
+                                 ais,
+                                 adapter,
+                                 rowData, null,
+                                 StoreGIHandler.forTable(this, adapter, uTable),
+                                 StoreGIHandler.Action.STORE);
+        } finally {
+            WRITE_ROW_GI_TAP.out();
+        }
     }
 
     @Override
     public void deleteRow(Session session, RowData rowData, boolean deleteIndexes, boolean cascadeDelete) {
+        DELETE_ROW_GI_TAP.in();
+        try {
+            AkibanInformationSchema ais = schemaManager.getAis(session);
+            StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais));
+            UserTable uTable = ais.getUserTable(rowData.getRowDefId());
+            if(cascadeDelete) {
+                cascadeDeleteMaintainGroupIndex(session, ais, adapter, rowData);
+            } else { // one row, one update to group indexes
+                maintainGroupIndexes(session,
+                                     ais,
+                                     adapter,
+                                     rowData,
+                                     null,
+                                     StoreGIHandler.forTable(this, adapter, uTable),
+                                     StoreGIHandler.Action.DELETE);
+            }
+        } finally {
+            DELETE_ROW_GI_TAP.out();
+        }
         deleteRow(session, rowData, deleteIndexes, cascadeDelete, null, true);
     }
 
+
     @Override
     public void updateRow(Session session, RowData oldRow, RowData newRow, ColumnSelector selector, Index[] indexes) {
-        updateRow(session, oldRow, newRow, selector, indexes, (indexes != null), true);
+        AkibanInformationSchema ais = schemaManager.getAis(session);
+        UserTable userTable = ais.getUserTable(oldRow.getRowDefId());
+
+        if(canSkipGIMaintenance(userTable)) {
+            updateRow(session, oldRow, newRow, selector, indexes, (indexes != null), true);
+        } else {
+            UPDATE_ROW_GI_TAP.in();
+            try {
+                RowData mergedRow = mergeRows(userTable.rowDef(), oldRow, newRow, selector);
+                BitSet changedColumnPositions = changedColumnPositions(userTable.rowDef(), oldRow, mergedRow);
+                StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais));
+
+                maintainGroupIndexes(session,
+                                     ais,
+                                     adapter,
+                                     oldRow,
+                                     changedColumnPositions,
+                                     StoreGIHandler.forTable(this, adapter, userTable),
+                                     StoreGIHandler.Action.DELETE);
+
+                updateRow(session, oldRow, mergedRow, null /*already merged*/, indexes, (indexes != null), true);
+
+                maintainGroupIndexes(session,
+                                     ais,
+                                     adapter,
+                                     mergedRow,
+                                     changedColumnPositions,
+                                     StoreGIHandler.forTable(this, adapter, userTable),
+                                     StoreGIHandler.Action.STORE);
+            } finally {
+                UPDATE_ROW_GI_TAP.out();
+            }
+        }
     }
 
     @Override
@@ -602,6 +706,64 @@ public abstract class AbstractStore<SDType> implements Store {
     @Override
     public void truncateTableStatus(final Session session, final int rowDefId) {
         getRowDef(session, rowDefId).getTableStatus().truncate(session);
+    }
+
+    @Override
+    public void buildIndexes(Session session, Collection<? extends Index> indexes) {
+        List<TableIndex> tableIndexes = new ArrayList<>();
+        List<GroupIndex> groupIndexes = new ArrayList<>();
+        for(Index index : indexes) {
+            if(index.isTableIndex()) {
+                tableIndexes.add((TableIndex)index);
+            }
+            else if(index.isGroupIndex()) {
+                groupIndexes.add((GroupIndex)index);
+            }
+            else {
+                throw new IllegalArgumentException("Unknown index type: " + index);
+            }
+        }
+        AkibanInformationSchema ais = schemaManager.getAis(session);
+        StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais));
+        if(!tableIndexes.isEmpty()) {
+            Set<Group> groups = new HashSet<>();
+            Multimap<Integer, Index> tableIDsToBuild = ArrayListMultimap.create();
+            for(Index index : indexes) {
+                Table table = index.leafMostTable();
+                tableIDsToBuild.put(table.getTableId(), index);
+                groups.add(table.getGroup());
+            }
+            PersistitIndexRowBuffer indexRowBuffer = new PersistitIndexRowBuffer(this);
+            for(Group group : groups) {
+                GroupCursor cursor = adapter.newGroupCursor(group);
+                cursor.open();
+                try {
+                    Row row;
+                    while((row = cursor.next()) != null) {
+                        RowData rowData = ((AbstractRow)row).rowData();
+                        int tableId = rowData.getRowDefId();
+                        for(Index index : tableIDsToBuild.get(tableId)) {
+                            writeIndexRow(session, index, rowData, ((PersistitHKey)row.hKey()).key(), indexRowBuffer);
+                        }
+                    }
+                } finally {
+                    cursor.close();
+                    cursor.destroy();
+                }
+            }
+        }
+        if(!groupIndexes.isEmpty()) {
+            QueryContext context = new SimpleQueryContext(adapter);
+            for(GroupIndex groupIndex : groupIndexes) {
+                runMaintenancePlan(
+                        context,
+                        groupIndex,
+                        StoreGIMaintenancePlans.groupIndexCreationPlan(adapter.schema(), groupIndex),
+                        StoreGIHandler.forBuilding(this, adapter),
+                        StoreGIHandler.Action.STORE
+                );
+            }
+        }
     }
 
     @Override
@@ -971,6 +1133,88 @@ public abstract class AbstractStore<SDType> implements Store {
         }
     }
 
+    private void maintainGroupIndexes(Session session,
+                                      AkibanInformationSchema ais,
+                                      StoreAdapter adapter,
+                                      RowData rowData,
+                                      BitSet columnDifferences,
+                                      StoreGIHandler handler,
+                                      StoreGIHandler.Action action)
+    {
+        UserTable userTable = ais.getUserTable(rowData.getRowDefId());
+        if(canSkipGIMaintenance(userTable)) {
+            return;
+        }
+        SDType storeData = createStoreData(session, userTable.getGroup());
+        try {
+            // the "false" at the end of constructHKey toggles whether the RowData should be modified to increment
+            // the hidden PK field, if there is one. For PK-less rows, this field have already been incremented by now,
+            // so we don't want to increment it again
+            Key hKey = getKey(session, storeData);
+            constructHKey(session, userTable.rowDef(), rowData, false, hKey);
+
+            PersistitHKey persistitHKey = new PersistitHKey(createKey(), userTable.hKey());
+            persistitHKey.copyFrom(hKey);
+
+            Collection<GroupIndex> branchIndexes = userTable.getGroupIndexes();
+            for(GroupIndex groupIndex : branchIndexes) {
+                if(columnDifferences == null || groupIndex.columnsOverlap(userTable, columnDifferences)) {
+                    StoreGIMaintenance plan = StoreGIMaintenancePlans
+                            .forAis(ais)
+                            .forRowType(groupIndex, adapter.schema().userTableRowType(userTable));
+                    plan.run(action, persistitHKey, rowData, adapter, handler);
+                } else {
+                    SKIP_GI_MAINTENANCE.hit();
+                }
+            }
+        } finally {
+            releaseStoreData(session, storeData);
+        }
+    }
+
+    /*
+     * This does the full cascading delete, updating both the group indexes for
+     * each table affected and removing the rows.
+     * It does this root to leaf order.
+     */
+    private void cascadeDeleteMaintainGroupIndex(Session session,
+                                                 AkibanInformationSchema ais,
+                                                 StoreAdapter adapter,
+                                                 RowData rowData)
+    {
+        UserTable uTable = ais.getUserTable(rowData.getRowDefId());
+        Operator plan = PlanGenerator.generateBranchPlan(ais, uTable);
+
+        QueryContext queryContext = new SimpleQueryContext(adapter);
+        Cursor cursor = API.cursor(plan, queryContext);
+
+        List<Column> lookupCols = uTable.getPrimaryKeyIncludingInternal().getColumns();
+        RowDataPValueSource pSource = new RowDataPValueSource();
+        for(int i = 0; i < lookupCols.size(); ++i) {
+            Column col = lookupCols.get(i);
+            pSource.bind(col.getFieldDef(), rowData);
+            queryContext.setPValue(i, pSource);
+        }
+        try {
+            Row row;
+            cursor.open();
+            while((row = cursor.next()) != null) {
+                UserTable table = row.rowType().userTable();
+                RowData data = adapter.rowData(table.rowDef(), row, new PValueRowDataCreator());
+                maintainGroupIndexes(session,
+                                     ais,
+                                     adapter,
+                                     data,
+                                     null,
+                                     StoreGIHandler.forTable(this, adapter, uTable),
+                                     StoreGIHandler.Action.CASCADE);
+            }
+            cursor.close();
+        } finally {
+            cursor.destroy();
+        }
+    }
+
 
     //
     // Static helpers
@@ -1004,19 +1248,51 @@ public abstract class AbstractStore<SDType> implements Store {
                           b.getBytes(), (int)bLoc, (int)(bLoc >>> 32));
     }
 
-    private static RowData mergeRows(RowDef rowDef, RowData currentRow, RowData newRowData, ColumnSelector selector) {
-        if(selector == null) {
+    private static BitSet changedColumnPositions(RowDef rowDef, RowData a, RowData b) {
+        int fields = rowDef.getFieldCount();
+        BitSet differences = new BitSet(fields);
+        for(int f = 0; f < fields; f++) {
+            differences.set(f, !fieldEqual(rowDef, a, b, f));
+        }
+        return differences;
+    }
+
+    protected static RowData mergeRows(RowDef rowDef, RowData currentRow, RowData newRowData, ColumnSelector selector) {
+        if(selector == null || selector == ConstantColumnSelector.ALL_ON) {
             return newRowData;
         }
         NewRow mergedRow = NiceRow.fromRowData(currentRow, rowDef);
         NewRow newRow = new LegacyRowWrapper(rowDef, newRowData);
         int fields = rowDef.getFieldCount();
-        for (int i = 0; i < fields; i++) {
-            if (selector.includesColumn(i)) {
+        for(int i = 0; i < fields; i++) {
+            if(selector.includesColumn(i)) {
                 mergedRow.put(i, newRow.get(i));
             }
         }
         return mergedRow.toRowData();
+    }
+
+    private static boolean canSkipGIMaintenance(UserTable table) {
+        return table.getGroupIndexes().isEmpty();
+    }
+
+    private static void runMaintenancePlan(QueryContext context,
+                                           GroupIndex groupIndex,
+                                           Operator rootOperator,
+                                           StoreGIHandler handler,
+                                           StoreGIHandler.Action action) {
+        Cursor cursor = API.cursor(rootOperator, context);
+        cursor.open();
+        try {
+            Row row;
+            while((row = cursor.next()) != null) {
+                if(row.rowType().equals(rootOperator.rowType())) {
+                    handler.handleRow(groupIndex, row, action);
+                }
+            }
+        } finally {
+            cursor.destroy();
+        }
     }
 
     private static ColumnSelector createNonNullFieldSelector(final RowData rowData) {

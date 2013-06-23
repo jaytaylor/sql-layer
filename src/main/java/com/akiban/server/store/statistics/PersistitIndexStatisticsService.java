@@ -18,7 +18,6 @@
 package com.akiban.server.store.statistics;
 
 import com.akiban.ais.model.GroupIndex;
-import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.service.config.ConfigurationService;
@@ -42,10 +41,10 @@ public class PersistitIndexStatisticsService extends AbstractIndexStatisticsServ
                                            SessionService sessionService,
                                            ConfigurationService configurationService) {
         super(store, txnService, schemaManager, sessionService, configurationService);
-        if(store instanceof OperatorStore) {
-            this.store = ((OperatorStore)store).getDelegate();
-        } else {
+        if(store instanceof PersistitStore) {
             this.store = (PersistitStore)store;
+        } else {
+            throw new IllegalStateException("Must be used with PersistitStore");
         }
     }
 

@@ -1990,7 +1990,7 @@ public final class NewGiUpdateIT extends ITBase {
     private static final String ___RIGHT_name_when__________ = "name_when_RIGHT";
     private static final String ___RIGHT_sku_instructions___ = "sku_instructions_RIGHT";
     private static final String ___RIGHT_street_name________ = "street_name_RIGHT";
-    private static final String TAP_PATTERN = "GI maintenance: (.+)|.+(skip_maintenance)";
+    private static final String TAP_PATTERN = "GI maintenance: (.+)|.+(skip_gi_maintenance)";
     private static final String TAP_HEADER = "GI TAPS:\t";
     private static boolean needTapHeaders = true;
     private static final Logger log = LoggerFactory.getLogger(NewGiUpdateIT.class);
@@ -2069,7 +2069,7 @@ public final class NewGiUpdateIT extends ITBase {
         @Override
         public GisCheckBuilder checkMaintenanceSkips(int expectedSkipMaintenance) {
             Map<String, Long> reports = reportsByName();
-            long actualSkipMaintenance = reports.get("skip_maintenance in");
+            long actualSkipMaintenance = reports.get("skip_gi_maintenance in");
             assertEquals(expectedSkipMaintenance, actualSkipMaintenance);
             return this;
         }
@@ -2127,13 +2127,7 @@ public final class NewGiUpdateIT extends ITBase {
         }
 
         private void checkIndex(final GroupIndex groupIndex, List<String> expected) {
-            final StringsIndexScanner scanner;
-            try {
-                scanner= persistitStore().traverse(session(), groupIndex, new StringsIndexScanner());
-            } catch (PersistitException e) {
-                throw new RuntimeException(e);
-            }
-
+            StringsIndexScanner scanner = persistitStore().traverse(session(), groupIndex, new StringsIndexScanner());
             AssertUtils.assertCollectionEquals(
                     "scan of " + groupIndex.getIndexName().getName(),
                     expected,

@@ -20,13 +20,22 @@ package com.akiban.qp.operator;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.persistitadapter.RowDataCreator;
 import com.akiban.qp.persistitadapter.Sorter;
+import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.collation.AkCollator;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.Store;
@@ -97,6 +106,29 @@ public abstract class StoreAdapter
 
     public final Session getSession() {
         return session;
+    }
+
+    public static NewRow newRow(RowDef rowDef)
+    {
+        NiceRow row = new NiceRow(rowDef.getRowDefId(), rowDef);
+        UserTable table = rowDef.userTable();
+        PrimaryKey primaryKey = table.getPrimaryKeyIncludingInternal();
+        if(primaryKey != null && table.getPrimaryKey() == null) {
+            // Akiban-generated PK. Initialize its value to a dummy value, which will be replaced later. The
+            // important thing is that the value be non-null.
+            row.put(table.getColumnsIncludingInternal().size() - 1, -1L);
+        }
+        return row;
+    }
+
+    public <S> RowData rowData(RowDef rowDef, RowBase row, RowDataCreator<S> creator) {
+        // Generic conversion, subclasses should override to check for known group rows
+        NewRow niceRow = newRow(rowDef);
+        for(int i = 0; i < row.rowType().nFields(); ++i) {
+            S source = creator.eval(row, i);
+            creator.put(source, niceRow, rowDef.getFieldDef(i), i);
+        }
+        return niceRow.toRowData();
     }
 
     public enum AdapterType {
