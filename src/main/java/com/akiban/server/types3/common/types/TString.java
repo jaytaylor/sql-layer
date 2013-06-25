@@ -254,14 +254,13 @@ public abstract class TString extends TClass
     @Override
     protected DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
         return new DataTypeDescriptor(
-                typeId, instance.nullability(), instance.attribute(StringAttribute.MAX_LENGTH), StringAttribute.characterTypeAttributes(instance));
+                typeId, instance.nullability(), instance.attribute(StringAttribute.MAX_LENGTH), 
+                StringAttribute.characterTypeAttributes(instance));
     }
 
     @Override
-    public TInstance instance(int charsetId, int collationId, boolean nullable) {
-        return fixedLength < 0
-                ? super.instance(charsetId, StringFactory.DEFAULT_CHARSET.ordinal(), collationId, nullable)
-                : super.instance(fixedLength, charsetId, collationId, nullable);
+    public TInstance instance (int length, int charsetId, boolean nullable) {
+        return instance (fixedLength >= 0 ? fixedLength : length, charsetId, StringFactory.DEFAULT_COLLATION_ID, nullable);
     }
 
     @Override
