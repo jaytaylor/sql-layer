@@ -693,7 +693,7 @@ public class Column implements ColumnContainer
         if (charsetAndCollation == null)
             return tClass.instance(nullable);
         StringFactory.Charset charset = StringFactory.Charset.of(charsetAndCollation.charset());
-        return tClass.instance(charset.ordinal(), -1, nullable); // TODO collation
+        return tClass.instance(0, charset.ordinal(), nullable); // TODO collation
     }
 
     // State
