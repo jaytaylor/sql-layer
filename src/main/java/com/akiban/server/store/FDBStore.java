@@ -17,6 +17,8 @@
 
 package com.akiban.server.store;
 
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.CacheValueGenerator;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
@@ -27,6 +29,7 @@ import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.error.DuplicateKeyException;
 import com.akiban.server.rowdata.FieldDef;
+import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.Service;
@@ -36,6 +39,7 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.service.tree.TreeLink;
+import com.akiban.util.FDBCounter;
 import com.foundationdb.KeyValue;
 import com.foundationdb.RangeQuery;
 import com.foundationdb.Transaction;
@@ -52,18 +56,21 @@ import java.util.Collection;
 import java.util.Iterator;
 
 public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator, Service {
-    private static final Logger LOG = LoggerFactory.getLogger(FDBStore.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(FDBStore.class);
 
+    private final FDBHolder holder;
     private final ConfigurationService configService;
     private final SchemaManager schemaManager;
     private final FDBTransactionService txnService;
 
     @Inject
-    public FDBStore(ConfigurationService configService,
+    public FDBStore(FDBHolder holder,
+                    ConfigurationService configService,
                     SchemaManager schemaManager,
                     TransactionService txnService,
                     LockService lockService) {
         super(lockService, schemaManager);
+        this.holder = holder;
         this.configService = configService;
         this.schemaManager = schemaManager;
         if(txnService instanceof FDBTransactionService) {
@@ -80,7 +87,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator,
         return txn.getRangeStartsWith(packedPrefix).iterator();
     }
 
-    // TODO: Creates range for hKey and descendents, add another API to specify
+    // TODO: Creates range for hKey and descendants, add another API to specify
     public Iterator<KeyValue> groupIterator(Session session, Group group, Key hKey) {
         Transaction txn = txnService.getTransaction(session);
         byte[] packedPrefix = packedTuple(group, hKey);
@@ -139,6 +146,17 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator,
             rawValue = tuple.getLong(0);
         }
         return sequence.currentValueRaw(rawValue);
+    }
+
+    public long getGICount(Session session, GroupIndex index) {
+        Transaction txn = txnService.getTransaction(session);
+        return cachedGICounter(session, index).getTransactional(txn);
+    }
+
+    public long getGICountApproximate(Session session, GroupIndex index) {
+        Transaction txn = txnService.getTransaction(session);
+        // Conflict free, but not faster than transactional
+        return cachedGICounter(session, index).getSnapshot(txn);
     }
 
 
@@ -203,8 +221,8 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator,
     protected boolean clear(Session session, FDBStoreData storeData) {
         Transaction txn = txnService.getTransaction(session);
         byte[] packed = packedTuple(storeData.link, storeData.key);
-        // TODO: Remove when API changes
-        boolean existed = (txn.get(packed) != null);
+        // TODO: Remove get when clear() API changes
+        boolean existed = (txn.get(packed).get() != null);
         txn.clear(packed);
         return existed;
     }
@@ -266,7 +284,9 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator,
 
     @Override
     protected void sumAddGICount(Session session, FDBStoreData storeData, GroupIndex index, int count) {
-        // TODO
+        FDBCounter counter = cachedGICounter(session, index);
+        Transaction txn = txnService.getTransaction(session);
+        counter.add(txn, count);
     }
 
     @Override
@@ -353,6 +373,14 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator,
     public void removeTree(Session session, TreeLink treeLink) {
         if(!schemaManager.treeRemovalIsDelayed()) {
             truncateTree(session, treeLink);
+            if(treeLink instanceof IndexDef) {
+                Index index = ((IndexDef)treeLink).getIndex();
+                if(index.isGroupIndex()) {
+                    FDBCounter counter = cachedGICounter(session, (GroupIndex) index);
+                    Transaction txn = txnService.getTransaction(session);
+                    counter.clearState(txn);
+                }
+            }
         }
         schemaManager.treeWasRemoved(session, treeLink.getSchemaName(), treeLink.getTreeName());
     }
@@ -360,7 +388,12 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator,
     @Override
     public void truncateIndexes(Session session, Collection<? extends Index> indexes) {
         super.truncateIndexes(session, indexes);
-        // TODO: GI row counts
+        Transaction txn = txnService.getTransaction(session);
+        for(Index index : indexes) {
+            if(index.isGroupIndex()) {
+                cachedGICounter(session, (GroupIndex) index).set(txn, 0);
+            }
+        }
     }
 
     @Override
@@ -445,6 +478,27 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator,
         return txn.getRangeStartsWith(packedTuple(index, key)).iterator().hasNext();
     }
 
+    private FDBCounter cachedGICounter(Session session, final GroupIndex index) {
+        AkibanInformationSchema ais = getAIS(session);
+        FDBCounter counter = ais.getCachedValue(index, null);
+        if(counter == null) {
+            // AIS attached is OK:
+            // Multiple instances use the same prefix and any truncate/drop touches counter + entry keys
+            counter = ais.getCachedValue(index, new CacheValueGenerator<FDBCounter>() {
+                @Override
+                public FDBCounter valueFor(AkibanInformationSchema ais) {
+                    byte[] prefix = Tuple.from(index.indexDef().getTreeName(), "counter").pack();
+                    return new FDBCounter(holder.getDatabase(), prefix, 0);
+                }
+            });
+        }
+        return counter;
+    }
+
+    //
+    // Static
+    //
+
     private static byte[] packedTuple(Index index) {
         return packedTuple(index.indexDef());
     }
@@ -460,27 +514,5 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator,
     private static byte[] packedTuple(TreeLink treeLink, Key key) {
         byte[] keyBytes = Arrays.copyOf(key.getEncodedBytes(), key.getEncodedSize());
         return Tuple.from(treeLink.getTreeName(), "/", keyBytes).pack();
-    }
-
-    @SuppressWarnings("unused")
-    private static void print(Object... objects) {
-        for(Object o : objects) {
-            if(o instanceof byte[]) {
-                byte[] packed = (byte[])o;
-                System.out.print("'");
-                for(byte b : packed) {
-                    int c = 0xFF & b;
-                    if(c < 32 || c > 126) {
-                        System.out.printf("\\x%02x", c);
-                    } else {
-                        System.out.printf("%c", (char)c);
-                    }
-                }
-                System.out.print("'");
-            } else{
-                System.out.print(o);
-            }
-        }
-        System.out.println();
     }
 }
