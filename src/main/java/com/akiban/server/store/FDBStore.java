@@ -18,18 +18,15 @@
 package com.akiban.server.store;
 
 import com.akiban.ais.model.Group;
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.persistitadapter.FDBAdapter;
-import com.akiban.qp.persistitadapter.FDBGroupCursor;
-import com.akiban.qp.persistitadapter.FDBGroupRow;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.error.DuplicateKeyException;
 import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.Service;
@@ -52,11 +49,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
 
 public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator, Service {
     private static final Logger LOG = LoggerFactory.getLogger(FDBStore.class.getName());
@@ -189,7 +182,13 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator,
     protected void store(Session session, FDBStoreData storeData) {
         Transaction txn = txnService.getTransaction(session);
         byte[] packedKey = packedTuple(storeData.link, storeData.key);
-        txn.set(packedKey, storeData.value);
+        byte[] value;
+        if(storeData.persistitValue != null) {
+            value = Arrays.copyOf(storeData.persistitValue.getEncodedBytes(), storeData.persistitValue.getEncodedSize());
+        } else {
+            value = storeData.value;
+        }
+        txn.set(packedKey, value);
     }
 
     @Override
@@ -201,10 +200,21 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator,
     }
 
     @Override
-    protected void clear(Session session, FDBStoreData storeData) {
+    protected boolean clear(Session session, FDBStoreData storeData) {
         Transaction txn = txnService.getTransaction(session);
         byte[] packed = packedTuple(storeData.link, storeData.key);
+        // TODO: Remove when API changes
+        boolean existed = (txn.get(packed) != null);
         txn.clear(packed);
+        return existed;
+    }
+
+    @Override
+    void resetForWrite(FDBStoreData storeData, Index index, PersistitIndexRowBuffer indexRowBuffer) {
+        if(storeData.persistitValue == null) {
+            storeData.persistitValue = new Value((Persistit) null);
+        }
+        indexRowBuffer.resetForWrite(index, storeData.key, storeData.persistitValue);
     }
 
     @Override
@@ -252,6 +262,11 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator,
                 throw new UnsupportedOperationException();
             }
         };
+    }
+
+    @Override
+    protected void sumAddGICount(Session session, FDBStoreData storeData, GroupIndex index, int count) {
+        // TODO
     }
 
     @Override
@@ -335,46 +350,6 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator,
     }
 
     @Override
-    public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean deferIndexes) {
-        Set<Group> groups = new HashSet<>();
-        Map<Integer,RowDef> userRowDefs = new HashMap<>();
-        Set<Index> indexesToBuild = new HashSet<>();
-        for(Index index : indexes) {
-            IndexDef indexDef = index.indexDef();
-            if(indexDef == null) {
-                throw new IllegalArgumentException("indexDef was null for index: " + index);
-            }
-            indexesToBuild.add(index);
-            RowDef rowDef = indexDef.getRowDef();
-            userRowDefs.put(rowDef.getRowDefId(), rowDef);
-            groups.add(rowDef.table().getGroup());
-        }
-
-        FDBAdapter adapter = createAdapter(session, SchemaCache.globalSchema(getAIS(session)));
-        PersistitIndexRowBuffer indexRowBuffer = new PersistitIndexRowBuffer(this);
-
-        for(Group group : groups) {
-            FDBGroupCursor cursor = adapter.newGroupCursor(group);
-            cursor.open();
-            FDBGroupRow row;
-            while((row = cursor.next()) != null) {
-                RowData rowData = row.rowData();
-                int tableId = rowData.getRowDefId();
-                RowDef userRowDef = userRowDefs.get(tableId);
-                if(userRowDef != null) {
-                    for(Index index : userRowDef.getIndexes()) {
-                        if(indexesToBuild.contains(index)) {
-                            writeIndexRow(session, index, rowData, row.hKey().key(), indexRowBuffer);
-                        }
-                    }
-                }
-            }
-            cursor.close();
-            cursor.destroy();
-        }
-    }
-
-    @Override
     public void removeTree(Session session, TreeLink treeLink) {
         if(!schemaManager.treeRemovalIsDelayed()) {
             truncateTree(session, treeLink);
@@ -396,6 +371,32 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator,
     @Override
     public FDBAdapter createAdapter(Session session, Schema schema) {
         return new FDBAdapter(this, schema, session, configService);
+    }
+
+    @Override
+    public <V extends IndexVisitor<Key, Value>> V traverse(Session session, Index index, V visitor) {
+        Key key = createKey();
+        Value value = new Value((Persistit)null);
+        Transaction txn = txnService.getTransaction(session);
+        Iterator<KeyValue> it = txn.getRangeStartsWith(packedTuple(index)).iterator();
+        while(it.hasNext()) {
+            KeyValue kv = it.next();
+
+            // Key
+            key.clear();
+            byte[] keyBytes = Tuple.fromBytes(kv.getKey()).getBytes(2);
+            System.arraycopy(keyBytes, 0, key.getEncodedBytes(), 0, keyBytes.length);
+            key.setEncodedSize(keyBytes.length);
+
+            // Value
+            value.clear();
+            byte[] valueBytes = kv.getValue();
+            System.arraycopy(valueBytes, 0, value.getEncodedBytes(), 0, valueBytes.length);
+            value.setEncodedSize(valueBytes.length);
+
+            visitor.visit(key, value);
+        }
+        return visitor;
     }
 
 

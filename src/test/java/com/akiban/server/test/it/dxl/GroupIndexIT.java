@@ -225,27 +225,33 @@ public class GroupIndexIT extends ITBase {
 
         final int[] curKey = {0};
         final String indexName = groupIndex.getIndexName().getName();
-        persistitStore().traverse(session(), groupIndex, new IndexKeyVisitor() {
-            @Override
-            public boolean groupIndex()
-            {
-                return true;
-            }
+        txnService().beginTransaction(session());
+        try {
+            store().traverse(session(), groupIndex, new IndexKeyVisitor() {
+                @Override
+                public boolean groupIndex()
+                {
+                    return true;
+                }
 
-            @Override
-            protected void visit(List<?> actual) {
-                if(!keyIt.hasNext()) {
-                    extraKeys.add(actual);
+                @Override
+                protected void visit(List<?> actual) {
+                    if(!keyIt.hasNext()) {
+                        extraKeys.add(actual);
+                    }
+                    else {
+                        List<Object> expected = Arrays.asList(keyIt.next());
+                        List<?> actualOfDeclared = actual.subList(0, declaredColumns);
+                        assertEquals(String.format("Key entry %d of index %s", curKey[0], indexName),
+                                     expected.toString(), actualOfDeclared.toString());
+                        curKey[0]++;
+                    }
                 }
-                else {
-                    List<Object> expected = Arrays.asList(keyIt.next());
-                    List<?> actualOfDeclared = actual.subList(0, declaredColumns);
-                    assertEquals(String.format("Key entry %d of index %s", curKey[0], indexName),
-                                 expected.toString(), actualOfDeclared.toString());
-                    curKey[0]++;
-                }
-            }
-        });
+            });
+            txnService().commitTransaction(session());
+        } finally {
+            txnService().rollbackTransactionIfOpen(session());
+        }
 
         if(!extraKeys.isEmpty()) {
             Assert.fail(String.format("Extra keys tree for index %s: %s", indexName, extraKeys));

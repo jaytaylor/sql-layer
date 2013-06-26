@@ -20,12 +20,14 @@ package com.akiban.server.store;
 import com.akiban.server.service.tree.TreeLink;
 import com.foundationdb.KeyValue;
 import com.persistit.Key;
+import com.persistit.Value;
 
 import java.util.Iterator;
 
 class FDBStoreData {
     final TreeLink link;
     final Key key;
+    Value persistitValue;
     byte[] value;
     Iterator<KeyValue> it;
 

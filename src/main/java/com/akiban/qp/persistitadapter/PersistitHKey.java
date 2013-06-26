@@ -20,6 +20,7 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.qp.row.HKey;
 import com.akiban.server.PersistitKeyPValueSource;
 import com.akiban.server.PersistitKeyValueSource;
+import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.TInstance;
