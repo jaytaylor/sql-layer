@@ -34,7 +34,8 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.store.statistics.IndexStatisticsService;
-import com.persistit.exception.PersistitException;
+import com.persistit.Key;
+import com.persistit.Value;
 
 import java.util.Collection;
 
@@ -47,6 +48,8 @@ public interface Store extends KeyCreator {
 
     void writeRow(Session session, RowData row);
     void deleteRow(Session session, RowData row, boolean deleteIndexes, boolean cascadeDelete);
+
+    /** newRow can be partial, as specified by selector, but oldRow must be fully present. */
     void updateRow(Session session, RowData oldRow, RowData newRow, ColumnSelector selector, Index[] indexes);
     long nextSequenceValue(Session session, Sequence sequence) throws Exception;
     long curSequenceValue(Session session, Sequence sequence) throws Exception;
@@ -75,34 +78,17 @@ public interface Store extends KeyCreator {
                                  RowData end,
                                  ColumnSelector endColumns,
                                  ScanLimit scanLimit);
-    /**
-     * Get the previously saved RowCollector for the specified tableId. Used in
-     * processing the ScanRowsMoreRequest message.
-     * 
-     * @param tableId
-     * @return
-     */
+
+    /** Get the previously saved RowCollector for the specified tableId. */
     RowCollector getSavedRowCollector(Session session, int tableId);
 
-
-    /**
-     * Push a RowCollector onto a stack so that it can subsequently be
-     * referenced by getSavedRowCollector.
-     * 
-     * @param rc
-     */
+    /** Push a RowCollector onto a stack so that it can subsequently be referenced by getSavedRowCollector. */
     void addSavedRowCollector(Session session, RowCollector rc);
 
-    /***
-     * Remove a previously saved RowCollector. Must the the most recently added
-     * RowCollector for a table.
-     *
-     * @param rc
-     */
+    /** Remove a previously saved RowCollector. Must the the most recently added RowCollector for a table. */
     void removeSavedRowCollector(Session session, RowCollector rc);
 
-    long getRowCount(Session session, boolean exact,
-            RowData start, RowData end, byte[] columnBitMap);
+    long getRowCount(Session session, boolean exact, RowData start, RowData end, byte[] columnBitMap);
 
     TableStatistics getTableStatistics(Session session, int tableId);
 
@@ -121,7 +107,7 @@ public interface Store extends KeyCreator {
     void truncateTableStatus(Session session, int rowDefId);
 
     void deleteIndexes(Session session, Collection<? extends Index> indexes);
-    void buildIndexes(Session session, Collection<? extends Index> indexes, boolean deferIndexes);
+    void buildIndexes(Session session, Collection<? extends Index> indexes);
 
     void deleteSequences (Session session, Collection<? extends Sequence> sequences);
     /**
@@ -149,4 +135,7 @@ public interface Store extends KeyCreator {
     void setIndexStatistics(IndexStatisticsService indexStatistics);
 
     StoreAdapter createAdapter(Session session, Schema schema);
+
+    // TODO: Better abstraction
+    <V extends IndexVisitor<Key,Value>> V traverse(Session session, Index index, V visitor);
 }

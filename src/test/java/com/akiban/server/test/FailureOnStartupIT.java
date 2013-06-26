@@ -17,11 +17,11 @@
 
 package com.akiban.server.test;
 
-import com.akiban.qp.persistitadapter.OperatorStore;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
-import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.google.inject.Inject;
@@ -77,11 +77,12 @@ public final class FailureOnStartupIT extends ApiTestBase {
         SUBSEQUENT
     }
 
-    public static class BadStore extends OperatorStore {
+    public static class BadStore extends PersistitStore {
 
         @Inject
-        public BadStore(TreeService treeService, SchemaManager schemaManager, LockService lockService) {
-            super(treeService, null, schemaManager, lockService);
+        public BadStore(TreeService treeService, ConfigurationService configService,
+                        SchemaManager schemaManager, LockService lockService) {
+            super(treeService, configService, schemaManager, lockService);
         }
 
         @Override

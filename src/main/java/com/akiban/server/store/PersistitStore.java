@@ -39,6 +39,7 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.text.FullTextIndexService;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.service.tree.TreeService;
+import com.google.inject.Inject;
 import com.persistit.*;
 import com.persistit.Management.DisplayFilter;
 import com.persistit.encoding.CoderManager;
@@ -80,6 +81,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     private volatile AtomicLong uniqueChangeId = new AtomicLong(0);
 
 
+    @Inject
     public PersistitStore(TreeService treeService,
                           ConfigurationService config,
                           SchemaManager schemaManager,
@@ -516,12 +518,6 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         releaseStoreData(session, exchange);
     }
 
-    // Promote visibility. TODO: Remove when OperatorStore goes away.
-    @Override
-    public void constructHKey(Session session, RowDef rowDef, RowData rowData, boolean isInsert, Key hKeyOut) {
-        super.constructHKey(session, rowDef, rowData, isInsert, hKeyOut);
-    }
-
     private static void constructIndexRow(Exchange exchange,
                                           RowData rowData,
                                           Index index,
@@ -758,12 +754,17 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
-    protected void clear(Session session, Exchange ex) {
+    protected boolean clear(Session session, Exchange ex) {
         try {
-            ex.remove();
+            return ex.remove();
         } catch(PersistitException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         }
+    }
+
+    @Override
+    void resetForWrite(Exchange ex, Index index, PersistitIndexRowBuffer indexRowBuffer) {
+        indexRowBuffer.resetForWrite(index, ex.getKey(), ex.getValue());
     }
 
     @Override
@@ -803,6 +804,11 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
+    protected void sumAddGICount(Session session, Exchange ex, GroupIndex index, int count) {
+        AccumulatorAdapter.sumAdd(AccumulatorAdapter.AccumInfo.ROW_COUNT, ex, count);
+    }
+
+    @Override
     public void expandRowData(final Exchange exchange, final RowData rowData) {
         final Value value = exchange.getValue();
         try {
@@ -814,49 +820,6 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         }
         // UNNECESSARY: Already done by value.directGet(...)
         // rowData.prepareRow(0);
-    }
-
-    @Override
-    public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean defer) {
-        Set<Group> groups = new HashSet<>();
-        Map<Integer,RowDef> userRowDefs = new HashMap<>();
-        Set<Index> indexesToBuild = new HashSet<>();
-        for(Index index : indexes) {
-            IndexDef indexDef = index.indexDef();
-            if(indexDef == null) {
-                throw new IllegalArgumentException("indexDef was null for index: " + index);
-            }
-            indexesToBuild.add(index);
-            RowDef rowDef = indexDef.getRowDef();
-            userRowDefs.put(rowDef.getRowDefId(), rowDef);
-            groups.add(rowDef.table().getGroup());
-        }
-        PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
-        for (Group group : groups) {
-            RowData rowData = new RowData(new byte[MAX_ROW_SIZE]);
-
-            int indexKeyCount = 0;
-            Exchange hEx = getExchange(session, group);
-            try {
-                hEx.clear();
-                while (hEx.next(true)) {
-                    expandRowData(hEx, rowData);
-                    int tableId = rowData.getRowDefId();
-                    RowDef userRowDef = userRowDefs.get(tableId);
-                    if (userRowDef != null) {
-                        for (Index index : userRowDef.getIndexes()) {
-                            if(indexesToBuild.contains(index)) {
-                                writeIndexRow(session, index, rowData, hEx.getKey(), indexRow);
-                                indexKeyCount++;
-                            }
-                        }
-                    }
-                }
-            } catch (PersistitException e) {
-                throw new PersistitAdapterException(e);
-            }
-            LOG.debug("Inserted {} index keys into group {}", indexKeyCount, group.getName());
-        }
     }
 
     @Override
@@ -915,12 +878,15 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         }
     }
 
-    public <V extends IndexVisitor<Key,Value>> V traverse(Session session, Index index, V visitor) throws PersistitException {
+    @Override
+    public <V extends IndexVisitor<Key,Value>> V traverse(Session session, Index index, V visitor) {
         Exchange exchange = getExchange(session, index).append(Key.BEFORE);
         try {
             while (exchange.next(true)) {
                 visitor.visit(exchange.getKey(), exchange.getValue());
             }
+        } catch(PersistitException e) {
+            throw PersistitAdapter.wrapPersistitException(session, e);
         } finally {
             releaseExchange(session, exchange);
         }
@@ -979,7 +945,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
-    public StoreAdapter createAdapter(Session session, Schema schema) {
+    public PersistitAdapter createAdapter(Session session, Schema schema) {
         return new PersistitAdapter(schema, this, treeService, session, config);
     }
 

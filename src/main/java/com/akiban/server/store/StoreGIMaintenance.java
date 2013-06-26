@@ -15,11 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.persistitadapter;
+package com.akiban.server.store;
 
-import com.akiban.ais.model.*;
-import com.akiban.qp.operator.*;
-import com.akiban.qp.persistitadapter.OperatorStoreGIHandler.Action;
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.GroupIndex;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.UserTable;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.SimpleQueryContext;
+import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.persistitadapter.PersistitHKey;
 import com.akiban.qp.row.FlattenedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.FlattenedRowType;
@@ -33,21 +42,18 @@ import com.akiban.server.types3.Types3Switch;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
-import com.persistit.exception.PersistitException;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 
-final class OperatorStoreMaintenance {
-    
-    public void run(OperatorStoreGIHandler.Action action,
+class StoreGIMaintenance {
+    public void run(StoreGIHandler.Action action,
                     PersistitHKey hKey,
                     RowData forRow,
                     StoreAdapter adapter,
-                    OperatorStoreGIHandler handler)
-        throws PersistitException
+                    StoreGIHandler handler)
     {
         if (storePlan.noMaintenanceRequired())
             return;
@@ -61,7 +67,7 @@ final class OperatorStoreMaintenance {
             QueryContext context = new SimpleQueryContext(adapter);
             List<Column> lookupCols = rowType.userTable().getPrimaryKeyIncludingInternal().getColumns();
 
-            context.setHKey(OperatorStoreMaintenance.HKEY_BINDING_POSITION, hKey);
+            context.setHKey(StoreGIMaintenance.HKEY_BINDING_POSITION, hKey);
 
             // Copy the values into the array bindings
             RowDataValueSource source = new RowDataValueSource();
@@ -71,7 +77,7 @@ final class OperatorStoreMaintenance {
                 Column col = lookupCols.get(i);
                 pSource.bind(col.getFieldDef(), forRow);
                 source.bind(col.getFieldDef(), forRow);
-                
+
                 // New types
                 if (Types3Switch.ON) context.setPValue(bindingsIndex, pSource);
                 else context.setValue(bindingsIndex, source);
@@ -133,12 +139,12 @@ final class OperatorStoreMaintenance {
         }
     }
 
-    private boolean skipCascadeRow(OperatorStoreGIHandler.Action action, Row row, OperatorStoreGIHandler handler) {
-        return action == Action.CASCADE &&
-                row.rowType().typeComposition().tables().contains(handler.getSourceTable());
+    private boolean skipCascadeRow(StoreGIHandler.Action action, Row row, StoreGIHandler handler) {
+        return action == StoreGIHandler.Action.CASCADE &&
+               row.rowType().typeComposition().tables().contains(handler.getSourceTable());
     }
-    
-    private boolean useInvertType(OperatorStoreGIHandler.Action action, QueryContext context) {
+
+    private boolean useInvertType(StoreGIHandler.Action action, QueryContext context) {
         switch (groupIndex.getJoinType()) {
         case LEFT:
             switch (action) {
@@ -174,8 +180,7 @@ final class OperatorStoreMaintenance {
         }
     }
 
-    private void doAction(OperatorStoreGIHandler.Action action, OperatorStoreGIHandler handler, Row row)
-        throws PersistitException
+    private void doAction(StoreGIHandler.Action action, StoreGIHandler handler, Row row)
     {
         InOutTap actionTap = actionTap(action);
         actionTap.in();
@@ -186,12 +191,12 @@ final class OperatorStoreMaintenance {
         }
     }
 
-    private static OperatorStoreGIHandler.Action invert(OperatorStoreGIHandler.Action action) {
+    private static StoreGIHandler.Action invert(StoreGIHandler.Action action) {
         switch (action) {
-        case STORE:     return OperatorStoreGIHandler.Action.DELETE;
-        case DELETE:    return OperatorStoreGIHandler.Action.STORE;
-        case CASCADE:   return OperatorStoreGIHandler.Action.CASCADE_STORE;
-        case CASCADE_STORE:   return OperatorStoreGIHandler.Action.CASCADE_STORE;
+        case STORE:     return StoreGIHandler.Action.DELETE;
+        case DELETE:    return StoreGIHandler.Action.STORE;
+        case CASCADE:   return StoreGIHandler.Action.CASCADE_STORE;
+        case CASCADE_STORE:   return StoreGIHandler.Action.CASCADE_STORE;
         default: throw new AssertionError(action.name());
         }
     }
@@ -200,7 +205,7 @@ final class OperatorStoreMaintenance {
         return storePlan.rootOperator;
     }
 
-    private InOutTap actionTap(OperatorStoreGIHandler.Action action) {
+    private InOutTap actionTap(StoreGIHandler.Action action) {
         if (action == null)
             return OTHER_TAP;
         switch (action) {
@@ -210,7 +215,7 @@ final class OperatorStoreMaintenance {
         }
     }
 
-    private PointTap extraTap(OperatorStoreGIHandler.Action action) {
+    private PointTap extraTap(StoreGIHandler.Action action) {
         if (action == null)
             return EXTRA_OTHER_ROW_TAP;
         switch (action) {
@@ -220,9 +225,9 @@ final class OperatorStoreMaintenance {
         }
     }
 
-    public OperatorStoreMaintenance(BranchTables branchTables,
-                                    GroupIndex groupIndex,
-                                    UserTableRowType rowType)
+    public StoreGIMaintenance(BranchTables branchTables,
+                              GroupIndex groupIndex,
+                              UserTableRowType rowType)
     {
         this.storePlan = createGroupIndexMaintenancePlan(branchTables, groupIndex, rowType);
         siblingsLookup = createSiblingsFinder(groupIndex, branchTables, rowType);
@@ -230,7 +235,7 @@ final class OperatorStoreMaintenance {
         this.groupIndex = groupIndex;
     }
 
-    private final PlanCreationStruct storePlan;
+    private final PlanCreationInfo storePlan;
     private final Operator siblingsLookup;
     private final GroupIndex groupIndex;
     private final UserTableRowType rowType;
@@ -274,10 +279,9 @@ final class OperatorStoreMaintenance {
         throw new RuntimeException(rowType + "not found in " + branchTables);
     }
 
-    private static PlanCreationStruct createGroupIndexMaintenancePlan(
-            BranchTables branchTables,
-            GroupIndex groupIndex,
-            UserTableRowType rowType)
+    private static PlanCreationInfo createGroupIndexMaintenancePlan(BranchTables branchTables,
+                                                                      GroupIndex groupIndex,
+                                                                      UserTableRowType rowType)
     {
         if (branchTables.isEmpty()) {
             throw new RuntimeException("group index has empty branch: " + groupIndex);
@@ -286,7 +290,7 @@ final class OperatorStoreMaintenance {
             throw new RuntimeException(rowType + " not in branch for " + groupIndex + ": " + branchTables);
         }
 
-        PlanCreationStruct result = new PlanCreationStruct(rowType, groupIndex);
+        PlanCreationInfo result = new PlanCreationInfo(rowType, groupIndex);
 
         Operator plan = API.groupScan_Default(
                 groupIndex.getGroup(),
@@ -461,7 +465,7 @@ final class OperatorStoreMaintenance {
         private final List<UserTableRowType> onlyBranch;
     }
 
-    static class PlanCreationStruct {
+    static class PlanCreationInfo {
 
         public boolean noMaintenanceRequired() {
             return (!incomingRowIsWithinGI) && (incomingRowType.userTable().getDepth() == 0);
@@ -472,7 +476,7 @@ final class OperatorStoreMaintenance {
             return toString;
         }
 
-        PlanCreationStruct(RowType forRow, GroupIndex forGi) {
+        PlanCreationInfo(RowType forRow, GroupIndex forGi) {
             this.toString = String.format("for %s in %s", forRow, forGi.getIndexName().getName());
             this.incomingRowType = forRow;
         }
@@ -485,7 +489,5 @@ final class OperatorStoreMaintenance {
         public RowType leftHalf;
         public RowType rightHalf;
         public boolean incomingRowIsWithinGI;
-
-
     }
 }

@@ -17,17 +17,17 @@
 
 package com.akiban.server.store;
 
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.CacheValueGenerator;
 import com.akiban.ais.model.Group;
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.persistitadapter.FDBAdapter;
-import com.akiban.qp.persistitadapter.FDBGroupCursor;
-import com.akiban.qp.persistitadapter.FDBGroupRow;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.error.DuplicateKeyException;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.IndexDef;
@@ -40,6 +40,7 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.util.ReadWriteMap;
+import com.akiban.util.FDBCounter;
 import com.foundationdb.KeyValue;
 import com.foundationdb.RangeQuery;
 import com.foundationdb.Transaction;
@@ -54,11 +55,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
@@ -66,16 +64,19 @@ import java.util.concurrent.locks.ReentrantLock;
 public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     private static final Logger LOG = LoggerFactory.getLogger(FDBStore.class.getName());
 
+    private final FDBHolder holder;
     private final ConfigurationService configService;
     private final SchemaManager schemaManager;
     private final FDBTransactionService txnService;
 
     @Inject
-    public FDBStore(ConfigurationService configService,
+    public FDBStore(FDBHolder holder,
+                    ConfigurationService configService,
                     SchemaManager schemaManager,
                     TransactionService txnService,
                     LockService lockService) {
         super(lockService, schemaManager);
+        this.holder = holder;
         this.configService = configService;
         this.schemaManager = schemaManager;
         if(txnService instanceof FDBTransactionService) {
@@ -92,7 +93,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         return txn.getRangeStartsWith(packedPrefix).iterator();
     }
 
-    // TODO: Creates range for hKey and descendents, add another API to specify
+    // TODO: Creates range for hKey and descendants, add another API to specify
     public Iterator<KeyValue> groupIterator(Session session, Group group, Key hKey) {
         Transaction txn = txnService.getTransaction(session);
         byte[] packedPrefix = packedTuple(group, hKey);
@@ -185,6 +186,18 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
 
     private final Map<TableName, SequenceCache> sequenceCache = 
             ReadWriteMap.wrapFair(new TreeMap<TableName, SequenceCache>());
+
+    public long getGICount(Session session, GroupIndex index) {
+        Transaction txn = txnService.getTransaction(session);
+        return cachedGICounter(session, index).getTransactional(txn);
+    }
+
+    public long getGICountApproximate(Session session, GroupIndex index) {
+        Transaction txn = txnService.getTransaction(session);
+        // Conflict free, but not faster than transactional
+        return cachedGICounter(session, index).getSnapshot(txn);
+    }
+
     //
     // Service
     //
@@ -225,7 +238,13 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     protected void store(Session session, FDBStoreData storeData) {
         Transaction txn = txnService.getTransaction(session);
         byte[] packedKey = packedTuple(storeData.link, storeData.key);
-        txn.set(packedKey, storeData.value);
+        byte[] value;
+        if(storeData.persistitValue != null) {
+            value = Arrays.copyOf(storeData.persistitValue.getEncodedBytes(), storeData.persistitValue.getEncodedSize());
+        } else {
+            value = storeData.value;
+        }
+        txn.set(packedKey, value);
     }
 
     @Override
@@ -237,10 +256,21 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     }
 
     @Override
-    protected void clear(Session session, FDBStoreData storeData) {
+    protected boolean clear(Session session, FDBStoreData storeData) {
         Transaction txn = txnService.getTransaction(session);
         byte[] packed = packedTuple(storeData.link, storeData.key);
+        // TODO: Remove get when clear() API changes
+        boolean existed = (txn.get(packed).get() != null);
         txn.clear(packed);
+        return existed;
+    }
+
+    @Override
+    void resetForWrite(FDBStoreData storeData, Index index, PersistitIndexRowBuffer indexRowBuffer) {
+        if(storeData.persistitValue == null) {
+            storeData.persistitValue = new Value((Persistit) null);
+        }
+        indexRowBuffer.resetForWrite(index, storeData.key, storeData.persistitValue);
     }
 
     @Override
@@ -288,6 +318,13 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
                 throw new UnsupportedOperationException();
             }
         };
+    }
+
+    @Override
+    protected void sumAddGICount(Session session, FDBStoreData storeData, GroupIndex index, int count) {
+        FDBCounter counter = cachedGICounter(session, index);
+        Transaction txn = txnService.getTransaction(session);
+        counter.add(txn, count);
     }
 
     @Override
@@ -371,49 +408,17 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     }
 
     @Override
-    public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean deferIndexes) {
-        Set<Group> groups = new HashSet<>();
-        Map<Integer,RowDef> userRowDefs = new HashMap<>();
-        Set<Index> indexesToBuild = new HashSet<>();
-        for(Index index : indexes) {
-            IndexDef indexDef = index.indexDef();
-            if(indexDef == null) {
-                throw new IllegalArgumentException("indexDef was null for index: " + index);
-            }
-            indexesToBuild.add(index);
-            RowDef rowDef = indexDef.getRowDef();
-            userRowDefs.put(rowDef.getRowDefId(), rowDef);
-            groups.add(rowDef.table().getGroup());
-        }
-
-        FDBAdapter adapter = createAdapter(session, SchemaCache.globalSchema(getAIS(session)));
-        PersistitIndexRowBuffer indexRowBuffer = new PersistitIndexRowBuffer(this);
-
-        for(Group group : groups) {
-            FDBGroupCursor cursor = adapter.newGroupCursor(group);
-            cursor.open();
-            FDBGroupRow row;
-            while((row = cursor.next()) != null) {
-                RowData rowData = row.rowData();
-                int tableId = rowData.getRowDefId();
-                RowDef userRowDef = userRowDefs.get(tableId);
-                if(userRowDef != null) {
-                    for(Index index : userRowDef.getIndexes()) {
-                        if(indexesToBuild.contains(index)) {
-                            writeIndexRow(session, index, rowData, row.hKey().key(), indexRowBuffer);
-                        }
-                    }
-                }
-            }
-            cursor.close();
-            cursor.destroy();
-        }
-    }
-
-    @Override
     public void removeTree(Session session, TreeLink treeLink) {
         if(!schemaManager.treeRemovalIsDelayed()) {
             truncateTree(session, treeLink);
+            if(treeLink instanceof IndexDef) {
+                Index index = ((IndexDef)treeLink).getIndex();
+                if(index.isGroupIndex()) {
+                    FDBCounter counter = cachedGICounter(session, (GroupIndex) index);
+                    Transaction txn = txnService.getTransaction(session);
+                    counter.clearState(txn);
+                }
+            }
         }
         schemaManager.treeWasRemoved(session, treeLink.getSchemaName(), treeLink.getTreeName());
     }
@@ -421,7 +426,12 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     @Override
     public void truncateIndexes(Session session, Collection<? extends Index> indexes) {
         super.truncateIndexes(session, indexes);
-        // TODO: GI row counts
+        Transaction txn = txnService.getTransaction(session);
+        for(Index index : indexes) {
+            if(index.isGroupIndex()) {
+                cachedGICounter(session, (GroupIndex) index).set(txn, 0);
+            }
+        }
     }
 
     @Override
@@ -435,6 +445,32 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     @Override
     public FDBAdapter createAdapter(Session session, Schema schema) {
         return new FDBAdapter(this, schema, session, configService);
+    }
+
+    @Override
+    public <V extends IndexVisitor<Key, Value>> V traverse(Session session, Index index, V visitor) {
+        Key key = createKey();
+        Value value = new Value((Persistit)null);
+        Transaction txn = txnService.getTransaction(session);
+        Iterator<KeyValue> it = txn.getRangeStartsWith(packedTuple(index)).iterator();
+        while(it.hasNext()) {
+            KeyValue kv = it.next();
+
+            // Key
+            key.clear();
+            byte[] keyBytes = Tuple.fromBytes(kv.getKey()).getBytes(2);
+            System.arraycopy(keyBytes, 0, key.getEncodedBytes(), 0, keyBytes.length);
+            key.setEncodedSize(keyBytes.length);
+
+            // Value
+            value.clear();
+            byte[] valueBytes = kv.getValue();
+            System.arraycopy(valueBytes, 0, value.getEncodedBytes(), 0, valueBytes.length);
+            value.setEncodedSize(valueBytes.length);
+
+            visitor.visit(key, value);
+        }
+        return visitor;
     }
 
 
@@ -483,6 +519,27 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         return txn.getRangeStartsWith(packedTuple(index, key)).iterator().hasNext();
     }
 
+    private FDBCounter cachedGICounter(Session session, final GroupIndex index) {
+        AkibanInformationSchema ais = getAIS(session);
+        FDBCounter counter = ais.getCachedValue(index, null);
+        if(counter == null) {
+            // AIS attached is OK:
+            // Multiple instances use the same prefix and any truncate/drop touches counter + entry keys
+            counter = ais.getCachedValue(index, new CacheValueGenerator<FDBCounter>() {
+                @Override
+                public FDBCounter valueFor(AkibanInformationSchema ais) {
+                    byte[] prefix = Tuple.from(index.indexDef().getTreeName(), "counter").pack();
+                    return new FDBCounter(holder.getDatabase(), prefix, 0);
+                }
+            });
+        }
+        return counter;
+    }
+
+    //
+    // Static
+    //
+
     private static byte[] packedTuple(Index index) {
         return packedTuple(index.indexDef());
     }
@@ -498,28 +555,6 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     private static byte[] packedTuple(TreeLink treeLink, Key key) {
         byte[] keyBytes = Arrays.copyOf(key.getEncodedBytes(), key.getEncodedSize());
         return Tuple.from(treeLink.getTreeName(), "/", keyBytes).pack();
-    }
-
-    @SuppressWarnings("unused")
-    private static void print(Object... objects) {
-        for(Object o : objects) {
-            if(o instanceof byte[]) {
-                byte[] packed = (byte[])o;
-                System.out.print("'");
-                for(byte b : packed) {
-                    int c = 0xFF & b;
-                    if(c < 32 || c > 126) {
-                        System.out.printf("\\x%02x", c);
-                    } else {
-                        System.out.printf("%c", (char)c);
-                    }
-                }
-                System.out.print("'");
-            } else{
-                System.out.print(o);
-            }
-        }
-        System.out.println();
     }
 
     private SequenceCache getEmptyCache () {

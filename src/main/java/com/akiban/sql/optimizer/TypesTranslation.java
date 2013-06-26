@@ -31,6 +31,7 @@ import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.aksql.aktypes.AkInterval;
 import com.akiban.server.types3.aksql.aktypes.AkResultSet;
 import com.akiban.server.types3.common.types.StringFactory.Charset;
+import com.akiban.server.types3.common.types.StringFactory;
 import com.akiban.server.types3.common.types.TString;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MBinary;
@@ -493,7 +494,7 @@ public final class TypesTranslation {
     private static TInstance charTInstance(DataTypeDescriptor type, TString tClass) {
         CharacterTypeAttributes typeAttributes = type.getCharacterAttributes();
         int charsetId = (typeAttributes == null)
-                ? -1
+                ? StringFactory.DEFAULT_CHARSET.ordinal()
                 : Charset.of(typeAttributes.getCharacterSet()).ordinal();
         return tClass.instance(type.getMaximumWidth(), charsetId, type.isNullable());
     }
