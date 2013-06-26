@@ -215,6 +215,17 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     }
 
     @Override
+    public long nextSequenceValue(Session session, Sequence sequence) throws Exception {
+        return super.nextSequenceValue(session, sequence);
+    }
+    
+    @Override
+    public long curSequenceValue(Session session, Sequence sequence) throws Exception {
+        return super.curSequenceValue(session, sequence);
+    }
+
+
+    @Override
     public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean defer) {
         List<TableIndex> tableIndexes = new ArrayList<>();
         List<GroupIndex> groupIndexes = new ArrayList<>();

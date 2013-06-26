@@ -94,6 +94,14 @@ public abstract class DelegatingStore<S extends Store & Service> implements Stor
     public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector, Index[] indexes) {
         delegate.updateRow(session, oldRowData, newRowData, columnSelector, indexes);
     }
+    
+    public long nextSequenceValue(Session session, Sequence sequence) throws Exception {
+        return delegate.nextSequenceValue(session, sequence);
+    }
+    
+    public long curSequenceValue(Session session, Sequence sequence) throws Exception {
+        return delegate.curSequenceValue(session, sequence);
+    }
 
     public void dropGroup(Session session, Group group) {
         delegate.dropGroup(session, group);

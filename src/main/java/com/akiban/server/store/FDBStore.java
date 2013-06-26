@@ -20,7 +20,6 @@ package com.akiban.server.store;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Sequence;
-import com.akiban.ais.model.Sequence.SequenceCache;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.persistitadapter.FDBAdapter;
@@ -39,7 +38,6 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.util.ReadWriteMap;
 import com.foundationdb.KeyValue;
@@ -50,6 +48,7 @@ import com.google.inject.Inject;
 import com.persistit.Key;
 import com.persistit.Persistit;
 import com.persistit.Value;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,8 +60,10 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 
-public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator, Service {
+public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     private static final Logger LOG = LoggerFactory.getLogger(FDBStore.class.getName());
 
     private final ConfigurationService configService;
@@ -126,81 +127,64 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator,
         return range.iterator();
     }
 
+    @Override
     public long nextSequenceValue(Session session, Sequence sequence) {
         long rawValue = 0;
-        sequence.cacheLock();
-        try {
-            if (sequenceCache.containsKey(sequence.getSequenceName())) {
-                rawValue = sequenceCache.get(sequence.getSequenceName()).nextCacheValue();
-                if (!sequenceCache.get(sequence.getSequenceName()).hasCachedValues()) {
-                    rawValue = updateCacheFromServer(session, sequence);
-                }
-            } else {
-                sequenceCache.put(sequence.getSequenceName(),  sequence.getEmptyCache());
-                rawValue = updateCacheFromServer(session, sequence);
-            }
-        } finally {
-            sequence.cacheUnlock();
+        
+        if (!sequenceCache.containsKey(sequence.getSequenceName())) {
+            sequenceCache.put(sequence.getSequenceName(),  getEmptyCache());
         }
         
+        SequenceCache cache = sequenceCache.get(sequence.getSequenceName());
+        cache.cacheLock();
+        try {
+            rawValue = cache.nextCacheValue();
+            if (!cache.hasCachedValues()) {
+                rawValue = updateCacheFromServer (session, sequence);
+            }
+        } finally {
+            cache.cacheUnlock();
+        }
         long outValue = sequence.nextValueRaw(rawValue);
         return outValue;
     }
 
-    // insert or update the sequence value from the server. If two threads 
-    // are both after the same sequence, the first will perform the DB operation
-    // and the second will wait and use the results from the (updated) cache. 
+    // insert or update the sequence value from the server.
+    // Works only under the cache lock from nextSequenceValue. 
     private long updateCacheFromServer (Session session, Sequence sequence) {
         long rawValue = 0;
-        if (sequence.cacheLockTry()) {
-            try {
-                Transaction txn = txnService.getTransaction(session);
-                byte[] packedTuple = packedTuple(sequence);
-                byte[] byteValue = txn.get(packedTuple).get();
-                if(byteValue != null) {
-                    Tuple tuple = Tuple.fromBytes(byteValue);
-                    rawValue = tuple.getLong(0);
-                } else {
-                    rawValue = 1;
-                }
-                txn.set(packedTuple, Tuple.from(rawValue + sequence.getCacheSize()).pack());
-                sequenceCache.put(sequence.getSequenceName(), sequence.getNewCache(rawValue));
-            } finally {
-                sequence.cacheUnlock();
-            }
+        Transaction txn = txnService.getTransaction(session);
+        byte[] packedTuple = packedTuple(sequence);
+        byte[] byteValue = txn.get(packedTuple).get();
+        if(byteValue != null) {
+            Tuple tuple = Tuple.fromBytes(byteValue);
+            rawValue = tuple.getLong(0);
         } else {
-            // wait here for the other thread to update the cache from the server
-            sequence.cacheLock();
-            sequence.cacheUnlock();
-            // recursively call back to get the next cache value, If you're slow
-            // and the cache is small you may need to wait again. 
-            rawValue = nextSequenceValue(session, sequence);
+            rawValue = 1;
         }
+        txn.set(packedTuple, Tuple.from(rawValue + sequence.getCacheSize()).pack());
+        sequenceCache.get(sequence.getSequenceName()).updateCache(rawValue, sequence.getCacheSize());
         return rawValue;
     }
     
+    @Override
     public long curSequenceValue(Session session, Sequence sequence) {
         long rawValue = 0;
-        sequence.cacheLock();
-        try {
-            if (sequenceCache.containsKey(sequence.getSequenceName())) {
-                rawValue = sequenceCache.get(sequence.getSequenceName()).currentValue();
-            } else {
-                Transaction txn = txnService.getTransaction(session);
-                byte[] byteValue = txn.get(packedTuple(sequence)).get();
-                if(byteValue != null) {
-                    Tuple tuple = Tuple.fromBytes(byteValue);
-                    rawValue = tuple.getLong(0);
-                }
+        if (sequenceCache.containsKey(sequence.getSequenceName())) {
+            rawValue = sequenceCache.get(sequence.getSequenceName()).currentValue();
+        } else {
+            Transaction txn = txnService.getTransaction(session);
+            byte[] byteValue = txn.get(packedTuple(sequence)).get();
+            if(byteValue != null) {
+                Tuple tuple = Tuple.fromBytes(byteValue);
+                rawValue = tuple.getLong(0);
             }
-        } finally {
-            sequence.cacheUnlock();
         }
         return sequence.currentValueRaw(rawValue);
     }
 
-    private final Map<TableName, Sequence.SequenceCache> sequenceCache = 
-            ReadWriteMap.wrapFair(new TreeMap<TableName, Sequence.SequenceCache>());
+    private final Map<TableName, SequenceCache> sequenceCache = 
+            ReadWriteMap.wrapFair(new TreeMap<TableName, SequenceCache>());
     //
     // Service
     //
@@ -442,10 +426,10 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator,
 
     @Override
     public void deleteSequences(Session session, Collection<? extends Sequence> sequences) {
-        removeTrees(session, sequences);
         for (Sequence sequence : sequences) {
             sequenceCache.remove(sequence.getSequenceName());
         }
+        removeTrees(session, sequences);
     }
 
     @Override
@@ -536,5 +520,59 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator,
             }
         }
         System.out.println();
+    }
+
+    private SequenceCache getEmptyCache () {
+        return new SequenceCache ();
+    }
+    
+    private class SequenceCache {
+        private AtomicLong value; 
+        private long cacheSize;
+        private volatile boolean isUseable = true;
+        private final ReentrantLock cacheLock;
+
+        
+        public SequenceCache() {
+            this(0, 1);
+            isUseable = false;
+        }
+        
+        public SequenceCache(long startValue, long cacheSize) {
+            this.value = new AtomicLong (startValue);
+            this.cacheSize = startValue + cacheSize; 
+            this.cacheLock = new ReentrantLock(false);
+        }
+        
+        public void updateCache (long startValue, long cacheSize) {
+            this.value.set(startValue);
+            this.cacheSize = startValue + cacheSize;
+            this.isUseable = true;
+        }
+        
+        public boolean hasCachedValues() {
+            return isUseable;
+        }
+        
+        public synchronized long nextCacheValue() {
+            if (!isUseable) return -1;
+            long val = value.incrementAndGet(); 
+            if (val == cacheSize) {
+                isUseable = false;
+                return -1;
+            }
+            return val;
+        }
+        public long currentValue() {
+            return value.get();
+        }
+        
+        public void cacheLock() {
+            cacheLock.lock();
+        }
+        
+        public void cacheUnlock() {
+            cacheLock.unlock();
+        }
     }
 }

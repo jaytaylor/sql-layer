@@ -409,20 +409,12 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
 
     @Override
     public long sequenceNextValue(TableName sequenceName) {
-        Sequence sequence = schema().ais().getSequence(sequenceName);
-        if (sequence == null) {
-            throw new NoSuchSequenceException (sequenceName);
-        }
-        return sequenceValue (sequence, false);
+        return sequenceValue (store.getAIS(getSession()).getSequence(sequenceName), false) ;
     }
 
     @Override
     public long sequenceCurrentValue(TableName sequenceName) {
-        Sequence sequence = schema().ais().getSequence(sequenceName);
-        if (sequence == null) {
-            throw new NoSuchSequenceException (sequenceName);
-        }
-        return sequenceValue (sequence, true);
+        return sequenceValue (store.getAIS(getSession()).getSequence(sequenceName), true); 
     }
 
     @Override
@@ -433,13 +425,16 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
     private long sequenceValue (Sequence sequence, boolean getCurrentValue) {
         try {
             if (getCurrentValue) {
-                return sequence.currentValue();
+                return store.curSequenceValue(getSession(), sequence);
             } else {
-                return sequence.nextValue();
+                return store.nextSequenceValue(getSession(), sequence);
             }
         } catch (PersistitException e) {
             rollbackIfNeeded(e);
             handlePersistitException(e);
+            assert false;
+            return 0;
+        } catch (Exception ex) {
             assert false;
             return 0;
         }

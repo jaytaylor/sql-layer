@@ -36,7 +36,6 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.collation.AkCollator;
-import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.config.ConfigurationService;
@@ -44,8 +43,6 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.store.FDBStore;
 import com.akiban.server.types.ValueSource;
 import com.akiban.util.tap.InOutTap;
-import com.persistit.Key;
-import com.persistit.exception.PersistitException;
 
 public class FDBAdapter extends StoreAdapter {
     private final FDBStore store;

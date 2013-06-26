@@ -17,7 +17,6 @@
 package com.akiban.ais.model;
 
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.ReentrantLock;
 
 import com.akiban.ais.model.validation.AISInvariants;
 import com.akiban.server.AccumulatorAdapter;
@@ -70,7 +69,6 @@ public class Sequence implements TreeLink {
         this.cycle = cycle;
         this.range = maxValue - minValue + 1;
         this.cacheSize = 20;
-        this.cacheLock = new ReentrantLock(false);
     }
     
     public final TableName getSequenceName() {
@@ -109,18 +107,6 @@ public class Sequence implements TreeLink {
         return cacheSize;
     }
     
-    public boolean cacheLockTry() {
-        return cacheLock.tryLock();
-    }
-    
-    public void cacheLock() {
-        cacheLock.lock();
-    }
-    
-    public void cacheUnlock() {
-        cacheLock.unlock();
-    }
-
     // State
     protected final TableName sequenceName;
     protected String treeName;
@@ -132,7 +118,6 @@ public class Sequence implements TreeLink {
     private final long maxValue;
     private final boolean cycle;
     private final long cacheSize;
-    private final ReentrantLock cacheLock;
   
 
     private final long range;
@@ -199,51 +184,4 @@ public class Sequence implements TreeLink {
         }
         return minValue + mod;
     }
-
-    public SequenceCache getNewCache (long startValue, long cacheSize) {
-        return new SequenceCache (startValue, cacheSize);
-    }
-    
-    public SequenceCache getNewCache (long startValue) {
-        return new SequenceCache (startValue, this.cacheSize);
-    }
-    
-    public SequenceCache getEmptyCache () {
-        return new SequenceCache ();
-    }
-    
-    public class SequenceCache {
-        private long value; 
-        private final long cacheSize;
-        private volatile boolean isUseable = true;
-        
-        public SequenceCache() {
-            isUseable = false;
-            value = 0;
-            cacheSize = 1;
-        }
-        
-        public SequenceCache(long startValue, long cacheSize) {
-            this.value = startValue;
-            this.cacheSize = startValue + cacheSize; 
-        }
-        
-        public boolean hasCachedValues() {
-            return isUseable;
-        }
-        
-        public synchronized long nextCacheValue() {
-            assert isUseable : "Calling nextCacheValue when none available";
-            ++value;
-            if (value == cacheSize) {
-                isUseable = false;
-            }
-            return value;
-        }
-        public long currentValue() {
-            return value;
-        }
-    }
-
-
 }

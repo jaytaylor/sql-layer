@@ -34,6 +34,7 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.store.statistics.IndexStatisticsService;
+import com.persistit.exception.PersistitException;
 
 import java.util.Collection;
 
@@ -47,6 +48,8 @@ public interface Store extends KeyCreator {
     void writeRow(Session session, RowData row);
     void deleteRow(Session session, RowData row, boolean deleteIndexes, boolean cascadeDelete);
     void updateRow(Session session, RowData oldRow, RowData newRow, ColumnSelector selector, Index[] indexes);
+    long nextSequenceValue(Session session, Sequence sequence) throws Exception;
+    long curSequenceValue(Session session, Sequence sequence) throws Exception;
 
     /**
      * Create a new RowCollector.
