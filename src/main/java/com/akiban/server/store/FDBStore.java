@@ -58,7 +58,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
@@ -575,7 +574,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     }
     
     private class SequenceCache {
-        private AtomicLong value; 
+        private long value; 
         private long cacheSize;
         private final ReentrantLock cacheLock;
 
@@ -585,28 +584,27 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         }
         
         public SequenceCache(long startValue, long cacheSize) {
-            this.value = new AtomicLong (startValue);
+            this.value = startValue;
             this.cacheSize = startValue + cacheSize; 
             this.cacheLock = new ReentrantLock(false);
         }
         
         public void updateCache (long startValue, long cacheSize) {
-            this.value.set(startValue);
+            this.value = startValue;
             this.cacheSize = startValue + cacheSize;
         }
         
         public long nextCacheValue() {
-            long val = value.incrementAndGet(); 
-            if (val == cacheSize) {
+            if (++value == cacheSize) {
                 // ensure the next call to nextCacheValue also fails
                 // and will do so until the updateCache() is called. 
-                value.decrementAndGet();
+                --value;
                 return -1;
             }
-            return val;
+            return value;
         }
         public long currentValue() {
-            return value.get();
+            return value;
         }
         
         public void cacheLock() {
