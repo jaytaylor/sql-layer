@@ -22,7 +22,7 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.util.tap.PointTap;
@@ -90,17 +90,17 @@ public abstract class IndexCursor implements Cursor
 
     // For use by subclasses
 
-    protected boolean nextInternal(boolean deep) throws PersistitException
+    protected boolean nextInternal(boolean deep)
     {
         return iterationHelper.next(deep);
     }
 
-    protected boolean prevInternal(boolean deep) throws PersistitException
+    protected boolean prevInternal(boolean deep)
     {
         return iterationHelper.prev(deep);
     }
 
-    protected boolean traverse(Direction dir, boolean deep) throws PersistitException
+    protected boolean traverse(Direction dir, boolean deep)
     {
         return iterationHelper.traverse(dir, deep);
     }
@@ -144,7 +144,7 @@ public abstract class IndexCursor implements Cursor
     protected IndexCursor(QueryContext context, IterationHelper iterationHelper)
     {
         this.context = context;
-        this.adapter = (PersistitAdapter)context.getStore();
+        this.adapter = context.getStore();
         this.iterationHelper = iterationHelper;
     }
 
@@ -156,7 +156,7 @@ public abstract class IndexCursor implements Cursor
     // Object state
 
     protected final QueryContext context;
-    protected final PersistitAdapter adapter;
+    protected final StoreAdapter adapter;
     protected final IterationHelper iterationHelper;
     private boolean idle = true;
     private boolean destroyed = false;

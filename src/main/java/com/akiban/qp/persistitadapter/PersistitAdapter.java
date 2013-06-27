@@ -20,7 +20,7 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.ais.model.*;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.*;
-import com.akiban.qp.persistitadapter.indexcursor.MemorySorter;
+import com.akiban.qp.persistitadapter.indexcursor.IterationHelper;
 import com.akiban.qp.persistitadapter.indexcursor.PersistitSorter;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowPool;
@@ -118,7 +118,7 @@ public class PersistitAdapter extends StoreAdapter
         RowData oldRowData = rowData(rowDef, oldRow, rowDataCreator(usePValues));
         int oldStep = 0;
         try {
-            // For Update row, the new row (value being inserted) does not 
+            // For Update row, the new row (value being inserted) does not
             // need the default value (including identity set)
             RowData newRowData = rowData(rowDefNewRow, newRow, rowDataCreator(usePValues));
             oldStep = enterUpdateStep();
@@ -149,7 +149,7 @@ public class PersistitAdapter extends StoreAdapter
             leaveUpdateStep(oldStep);
         }
     }
-    
+
     @Override
     public void deleteRow (Row oldRow, boolean usePValues, boolean cascadeDelete) {
         RowDef rowDef = oldRow.rowType().userTable().rowDef();
@@ -254,15 +254,22 @@ public class PersistitAdapter extends StoreAdapter
         return PersistitGroupRow.newPersistitGroupRow(this);
     }
 
+    @Override
     public PersistitIndexRow takeIndexRow(IndexRowType indexRowType)
     {
         return indexRowPool.takeIndexRow(this, indexRowType);
     }
 
+    @Override
     public void returnIndexRow(PersistitIndexRow indexRow)
     {
         assert !indexRow.isShared();
-        indexRowPool.returnIndexRow(this, (IndexRowType) indexRow.rowType(), indexRow);
+        indexRowPool.returnIndexRow(this, indexRow.rowType(), indexRow);
+    }
+
+    @Override
+    public IterationHelper createIterationHelper(IndexRowType indexRowType) {
+        return new IndexScanRowState(this, indexRowType);
     }
 
     public Exchange takeExchange(Group group) throws PersistitException
@@ -313,7 +320,7 @@ public class PersistitAdapter extends StoreAdapter
     {
         persistit.releaseExchange(getSession(), exchange);
     }
-    
+
     public Transaction transaction() {
         return treeService.getTransaction(getSession());
     }
@@ -412,7 +419,12 @@ public class PersistitAdapter extends StoreAdapter
         }
         return sequenceValue (sequence, true);
     }
-    
+
+    @Override
+    public Key createKey() {
+        return store.createKey();
+    }
+
     private long sequenceValue (Sequence sequence, boolean getCurrentValue) {
         try {
             if (getCurrentValue) {

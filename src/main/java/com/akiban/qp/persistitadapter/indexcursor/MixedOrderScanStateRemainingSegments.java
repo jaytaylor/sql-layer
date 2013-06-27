@@ -18,14 +18,13 @@
 package com.akiban.qp.persistitadapter.indexcursor;
 
 import com.persistit.Key;
-import com.persistit.exception.PersistitException;
 
 import static com.akiban.qp.persistitadapter.indexcursor.IndexCursor.INDEX_TRAVERSE;
 
 class MixedOrderScanStateRemainingSegments<S> extends MixedOrderScanState<S>
 {
     @Override
-    public boolean startScan() throws PersistitException
+    public boolean startScan()
     {
         if (subtreeRootKey == null) {
             subtreeRootKey = new Key(cursor.key());
@@ -37,7 +36,7 @@ class MixedOrderScanStateRemainingSegments<S> extends MixedOrderScanState<S>
     }
 
     @Override
-    public boolean advance() throws PersistitException
+    public boolean advance()
     {
         INDEX_TRAVERSE.hit();
         boolean more = ascending ? cursor.nextInternal(true) : cursor.prevInternal(true);
@@ -54,12 +53,12 @@ class MixedOrderScanStateRemainingSegments<S> extends MixedOrderScanState<S>
     }
 
     @Override
-    public boolean jump(S fieldValue) throws PersistitException
+    public boolean jump(S fieldValue)
     {
         return startScan();
     }
 
-    public MixedOrderScanStateRemainingSegments(IndexCursorMixedOrder indexCursor, int field) throws PersistitException
+    public MixedOrderScanStateRemainingSegments(IndexCursorMixedOrder indexCursor, int field)
     {
         super(indexCursor, field, true);
     }

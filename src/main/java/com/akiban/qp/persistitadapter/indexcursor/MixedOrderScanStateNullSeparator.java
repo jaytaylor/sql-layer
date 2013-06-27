@@ -19,14 +19,12 @@ package com.akiban.qp.persistitadapter.indexcursor;
 
 
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.persistit.Exchange;
 import com.persistit.Key;
-import com.persistit.exception.PersistitException;
 
 class MixedOrderScanStateNullSeparator<S,E> extends MixedOrderScanStateSingleSegment<S, E>
 {
     @Override
-    public boolean jump(S fieldValue) throws PersistitException
+    public boolean jump(S fieldValue)
     {
         if (!ascending) {
             cursor.key().append(Key.AFTER);
@@ -38,7 +36,6 @@ class MixedOrderScanStateNullSeparator<S,E> extends MixedOrderScanStateSingleSeg
                                             int field,
                                             boolean ascending,
                                             SortKeyAdapter<S, E> sortKeyAdapter)
-        throws PersistitException
     {
         super(cursor, field, ascending, sortKeyAdapter, MNumeric.BIGINT.instance(false));
     }

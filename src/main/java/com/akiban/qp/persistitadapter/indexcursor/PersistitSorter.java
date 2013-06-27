@@ -232,21 +232,33 @@ public class PersistitSorter implements Sorter
         }
 
         @Override
-        public boolean next(boolean deep) throws PersistitException
+        public boolean next(boolean deep)
         {
-            return exchange.next(deep);
+            try {
+                return exchange.next(deep);
+            } catch(PersistitException e) {
+                throw PersistitAdapter.wrapPersistitException(adapter.getSession(), e);
+            }
         }
 
         @Override
-        public boolean prev(boolean deep) throws PersistitException
+        public boolean prev(boolean deep)
         {
-            return exchange.previous(deep);
+            try {
+                return exchange.previous(deep);
+            } catch(PersistitException e) {
+                throw PersistitAdapter.wrapPersistitException(adapter.getSession(), e);
+            }
         }
 
         @Override
-        public boolean traverse(Direction dir, boolean deep) throws PersistitException
+        public boolean traverse(Direction dir, boolean deep)
         {
-            return exchange.traverse(dir, deep);
+            try {
+                return exchange.traverse(dir, deep);
+            } catch(PersistitException e) {
+                throw PersistitAdapter.wrapPersistitException(adapter.getSession(), e);
+            }
         }
 
         @Override

@@ -17,34 +17,31 @@
 
 package com.akiban.qp.persistitadapter.indexcursor;
 
-
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
-import com.persistit.Exchange;
 import com.persistit.Key;
-import com.persistit.exception.PersistitException;
 
 import static com.akiban.qp.persistitadapter.indexcursor.IndexCursor.INDEX_TRAVERSE;
 
 class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
 {
     @Override
-    public boolean startScan() throws PersistitException
+    public boolean startScan()
     {
         Key.Direction direction = bounded() ? startBoundedScan() : startUnboundedScan();
         return cursor.traverse(direction, false) && !pastEnd();
     }
 
     @Override
-    public boolean advance() throws PersistitException
+    public boolean advance()
     {
         return super.advance() && !pastEnd();
     }
 
     @Override
-    public boolean jump(S fieldValue) throws PersistitException
+    public boolean jump(S fieldValue)
     {
         boolean more;
         if (singleValue) {
@@ -85,7 +82,6 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
                                             boolean singleValue,
                                             boolean ascending,
                                             SortKeyAdapter<S, E> sortKeyAdapter)
-        throws PersistitException
     {
         super(cursor, field, ascending);
         assert lo != null;
@@ -121,7 +117,6 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
                                             boolean ascending,
                                             SortKeyAdapter<S, E> sortKeyAdapter,
                                             TInstance tInstance)
-    throws PersistitException
     {
         super(cursor, field, ascending);
         this.keyTarget = sortKeyAdapter.createTarget();
@@ -135,7 +130,6 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
                                             int field,
                                             boolean ascending,
                                             SortKeyAdapter<S, E> sortKeyAdapter)
-    throws PersistitException
     {
         this(cursor, field, ascending, sortKeyAdapter, cursor.tInstanceAt(field));
     }
@@ -148,7 +142,7 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
         }
     }
 
-    private Key.Direction startUnboundedScan() throws PersistitException
+    private Key.Direction startUnboundedScan()
     {
         Key.Direction direction;
         if (ascending) {
@@ -162,7 +156,7 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
         return direction;
     }
 
-    private Key.Direction startBoundedScan() throws PersistitException
+    private Key.Direction startBoundedScan()
     {
         // About null handling: See comment in IndexCursorUnidirectional.evaluateBoundaries.
         Key.Direction direction;

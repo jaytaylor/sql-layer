@@ -23,7 +23,6 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitHKey;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.util.HKeyCache;
 import com.akiban.server.PersistitKeyPValueSource;
 import com.akiban.server.PersistitKeyValueSource;
@@ -74,7 +73,7 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     }
 
     @Override
-    public final RowType rowType()
+    public final IndexRowType rowType()
     {
         return indexRowType;
     }

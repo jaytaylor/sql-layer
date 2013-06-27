@@ -38,14 +38,14 @@ public interface IterationHelper
      * @param deep  <code>true</code> if the next physical key is desired, <code>false</code> if logical is.
      * @return <code>true</code> if there was a key/value to traverse to.
      */
-    boolean next(boolean deep) throws PersistitException;
+    boolean next(boolean deep);
 
     /**
      * Advance internal state by finding the previous key.
      * @param deep  <code>true</code> if the next physical key is desired, <code>false</code> if logical is.
      * @return <code>true</code> if there was a key/value to traverse to.
      */
-    boolean prev(boolean deep) throws PersistitException;
+    boolean prev(boolean deep);
 
-    boolean traverse(Direction dir, boolean deep) throws PersistitException;
+    boolean traverse(Direction dir, boolean deep);
 }

@@ -24,15 +24,10 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.persistitadapter.IndexScanRowState;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.server.api.dml.IndexRowPrefixSelector;
-import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.geophile.SpaceLatLon;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
@@ -177,8 +172,8 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         zMinRow.value(zPosition, minPValue);
         IndexKeyRange geKeyRange = IndexKeyRange.bounded(physicalIndexRowType, zForward, true, zMax, false);
         IndexKeyRange ltKeyRange = IndexKeyRange.bounded(physicalIndexRowType, zMin, false, zBackward, false);
-        IndexScanRowState geRowState = new IndexScanRowState(adapter, keyRange.indexRowType());
-        IndexScanRowState ltRowState = new IndexScanRowState(adapter, keyRange.indexRowType());
+        IterationHelper geRowState = adapter.createIterationHelper(keyRange.indexRowType());
+        IterationHelper ltRowState = adapter.createIterationHelper(keyRange.indexRowType());
         API.Ordering upOrdering = new API.Ordering();
         API.Ordering downOrdering = new API.Ordering();
         for (int f = 0; f < physicalIndexRowType.nFields(); f++) {

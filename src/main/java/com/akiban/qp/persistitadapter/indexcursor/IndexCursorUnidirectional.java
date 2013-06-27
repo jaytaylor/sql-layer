@@ -58,6 +58,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     {
         super.next();
         Row next = null;
+        boolean success = false;
         try {
             INDEX_TRAVERSE.hit();
             if (traverse(keyComparison, true)) {
@@ -89,9 +90,11 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             } else {
                 close();
             }
-        } catch (PersistitException e) {
-            close();
-            adapter.handlePersistitException(e);
+            success = true;
+        } finally {
+            if(!success) {
+                close();
+            }
         }
         keyComparison = subsequentKeyComparison;
         return next;
@@ -407,8 +410,8 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             assert false : ordering;
         }
         this.startKey = adapter.takeIndexRow(keyRange.indexRowType());
-        this.startKeyKey = adapter.newKey();
-        this.endKeyKey = adapter.newKey();
+        this.startKeyKey = adapter.createKey();
+        this.endKeyKey = adapter.createKey();
         this.startBoundColumns = keyRange.boundColumns();
         // Set up type info, allowing for spatial indexes
         this.types = sortKeyAdapter.createAkTypes(startBoundColumns);
