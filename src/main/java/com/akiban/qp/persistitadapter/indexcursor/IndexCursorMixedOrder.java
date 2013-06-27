@@ -47,7 +47,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     public void open()
     {
         super.open();
-        exchange().clear();
+        clear();
         scanStates.clear();
         try {
             setBoundaries();
@@ -116,7 +116,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
         // Reposition cursor by delegating jump to each MixedOrderScanState. Also recompute
         // startKey so that beforeStart() works.
         assert keyRange != null; // keyRange is null when used from a Sorter
-        exchange().clear();
+        clear();
         int field = 0;
         more = true;
         try {
@@ -337,7 +337,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
         if (scanState.advance()) {
             repositionExchange(field + 1);
         } else {
-            exchange().cut();
+            key().cut();
             if (field == 0) {
                 more = false;
             } else {

@@ -31,6 +31,7 @@ import com.akiban.server.types3.Types3Switch;
 import com.akiban.util.tap.InOutTap;
 import com.persistit.Exchange;
 import com.persistit.Key;
+import com.persistit.Key.Direction;
 import com.persistit.Value;
 import com.persistit.exception.KeyTooLongException;
 import com.persistit.exception.PersistitException;
@@ -220,14 +221,37 @@ public class PersistitSorter implements Sorter
         }
 
         @Override
-        public void openIteration()
+        public Key key()
         {
+            return exchange.getKey();
         }
 
         @Override
-        public Exchange exchange()
+        public void clear() {
+            exchange.clear();
+        }
+
+        @Override
+        public boolean next(boolean deep) throws PersistitException
         {
-            return exchange;
+            return exchange.next(deep);
+        }
+
+        @Override
+        public boolean prev(boolean deep) throws PersistitException
+        {
+            return exchange.previous(deep);
+        }
+
+        @Override
+        public boolean traverse(Direction dir, boolean deep) throws PersistitException
+        {
+            return exchange.traverse(dir, deep);
+        }
+
+        @Override
+        public void openIteration()
+        {
         }
 
         SorterIterationHelper(PersistitValueSourceAdapter valueAdapter)

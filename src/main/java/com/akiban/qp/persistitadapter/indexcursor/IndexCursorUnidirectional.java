@@ -36,6 +36,7 @@ import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.persistit.Key;
+import com.persistit.Key.Direction;
 import com.persistit.exception.PersistitException;
 
 import java.util.List;
@@ -57,42 +58,40 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     {
         super.next();
         Row next = null;
-        if (exchange() != null) {
-            try {
-                INDEX_TRAVERSE.hit();
-                if (exchange().traverse(keyComparison, true)) {
-                    next = row();
-                    // Guard against bug 1046053
-                    assert next != startKey;
-                    assert next != endKey;
-                    // If we're scanning a unique key index, then the row format has the declared key in the
-                    // Persistit key, and undeclared hkey columns in the Persistit value. An index scan may actually
-                    // restrict the entire declared key and leading hkeys fields. If this happens, then the first
-                    // row found by exchange.traverse may actually not qualify -- those values may be lower than
-                    // startKey. This can happen at most once per scan. pastStart indicates whether we have gotten
-                    // past the startKey.
-                    if (!pastStart) {
-                        while (beforeStart(next)) {
-                            next = null;
-                            if (exchange().traverse(subsequentKeyComparison, true)) {
-                                next = row();
-                            } else {
-                                close();
-                            }
-                        }
-                        pastStart = true;
-                    }
-                    if (next != null && pastEnd(next)) {
+        try {
+            INDEX_TRAVERSE.hit();
+            if (traverse(keyComparison, true)) {
+                next = row();
+                // Guard against bug 1046053
+                assert next != startKey;
+                assert next != endKey;
+                // If we're scanning a unique key index, then the row format has the declared key in the
+                // Persistit key, and undeclared hkey columns in the Persistit value. An index scan may actually
+                // restrict the entire declared key and leading hkeys fields. If this happens, then the first
+                // row found by exchange.traverse may actually not qualify -- those values may be lower than
+                // startKey. This can happen at most once per scan. pastStart indicates whether we have gotten
+                // past the startKey.
+                if (!pastStart) {
+                    while (beforeStart(next)) {
                         next = null;
-                        close();
+                        if (traverse(subsequentKeyComparison, true)) {
+                            next = row();
+                        } else {
+                            close();
+                        }
                     }
-                } else {
+                    pastStart = true;
+                }
+                if (next != null && pastEnd(next)) {
+                    next = null;
                     close();
                 }
-            } catch (PersistitException e) {
+            } else {
                 close();
-                adapter.handlePersistitException(e);
             }
+        } catch (PersistitException e) {
+            close();
+            adapter.handlePersistitException(e);
         }
         keyComparison = subsequentKeyComparison;
         return next;
@@ -448,7 +447,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
 
     private void initializeForOpen()
     {
-        exchange().clear();
+        clear();
         if (startKey != null) {
             // boundColumns > 0 means that startKey has some values other than BEFORE or AFTER. start == null
             // could happen in a lexicographic scan, and indicates no lower bound (so we're starting at BEFORE or AFTER).
@@ -466,7 +465,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             // E.g., if we have a PK index for a non-root table, the index row is [childPK, parentPK], and an index
             // scan may specify a value for both. But the persistit search can only deal with the [childPK] part of
             // the traversal.
-            startKey.copyPersistitKeyTo(exchange().getKey());
+            startKey.copyPersistitKeyTo(key());
             pastStart = false;
         }
         keyComparison = initialKeyComparison;

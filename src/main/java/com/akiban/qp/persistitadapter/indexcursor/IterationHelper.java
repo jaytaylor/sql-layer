@@ -19,12 +19,33 @@ package com.akiban.qp.persistitadapter.indexcursor;
 
 import com.akiban.qp.row.Row;
 import com.persistit.Exchange;
+import com.persistit.Key;
+import com.persistit.Key.Direction;
 import com.persistit.exception.PersistitException;
 
 public interface IterationHelper
 {
-    Row row() throws PersistitException;
+    Row row();
     void openIteration();
     void closeIteration();
-    Exchange exchange();
+    Key key();
+
+    /** Clear internal state. */
+    void clear();
+
+    /**
+     * Advance internal state by finding the next key.
+     * @param deep  <code>true</code> if the next physical key is desired, <code>false</code> if logical is.
+     * @return <code>true</code> if there was a key/value to traverse to.
+     */
+    boolean next(boolean deep) throws PersistitException;
+
+    /**
+     * Advance internal state by finding the previous key.
+     * @param deep  <code>true</code> if the next physical key is desired, <code>false</code> if logical is.
+     * @return <code>true</code> if there was a key/value to traverse to.
+     */
+    boolean prev(boolean deep) throws PersistitException;
+
+    boolean traverse(Direction dir, boolean deep) throws PersistitException;
 }

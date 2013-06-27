@@ -23,12 +23,14 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.util.ShareHolder;
 import com.persistit.Exchange;
+import com.persistit.Key;
+import com.persistit.Key.Direction;
 import com.persistit.exception.PersistitException;
 
 public class IndexScanRowState implements IterationHelper
 {
     @Override
-    public Row row() throws PersistitException
+    public Row row()
     {
         unsharedRow().get().copyFromExchange(exchange);
         return row.get();
@@ -57,9 +59,33 @@ public class IndexScanRowState implements IterationHelper
     }
 
     @Override
-    public Exchange exchange()
+    public Key key()
     {
-        return exchange;
+        return exchange.getKey();
+    }
+
+    @Override
+    public void clear()
+    {
+        exchange.clear();
+    }
+
+    @Override
+    public boolean next(boolean deep) throws PersistitException
+    {
+        return exchange.next(deep);
+    }
+
+    @Override
+    public boolean prev(boolean deep) throws PersistitException
+    {
+        return exchange.previous(deep);
+    }
+
+    @Override
+    public boolean traverse(Direction dir, boolean deep) throws PersistitException
+    {
+        return exchange.traverse(dir, deep);
     }
 
     // IndexScanRowState interface
@@ -73,7 +99,7 @@ public class IndexScanRowState implements IterationHelper
 
     // For use by this class
 
-    private ShareHolder<PersistitIndexRow> unsharedRow() throws PersistitException
+    private ShareHolder<PersistitIndexRow> unsharedRow()
     {
         if (row.isEmpty() || row.isShared()) {
             row.hold(adapter.takeIndexRow(indexRowType));

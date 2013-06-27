@@ -35,7 +35,7 @@ abstract class MixedOrderScanState<S>
     public boolean advance() throws PersistitException
     {
         INDEX_TRAVERSE.hit();
-        return ascending ? cursor.exchange().next(false) : cursor.exchange().previous(false);
+        return ascending ? cursor.nextInternal(false) : cursor.prevInternal(false);
     }
 
     protected MixedOrderScanState(IndexCursorMixedOrder cursor, int field, boolean ascending) throws PersistitException

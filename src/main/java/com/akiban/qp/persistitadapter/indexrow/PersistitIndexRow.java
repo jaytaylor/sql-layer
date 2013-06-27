@@ -17,8 +17,6 @@
 
 package com.akiban.qp.persistitadapter.indexrow;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexToHKey;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
@@ -32,17 +30,13 @@ import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.util.AkibanAppender;
 import com.persistit.Exchange;
 import com.persistit.Key;
-import com.persistit.exception.PersistitException;
 
 public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
 {
@@ -111,7 +105,7 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
         throw new UnsupportedOperationException(getClass().toString());
     }
 
-    public void copyFromExchange(Exchange exchange) throws PersistitException
+    public void copyFromExchange(Exchange exchange)
     {
         copyFrom(exchange);
         constructHKeyFromIndexKey(hKeyCache.hKey(leafmostTable).key(), indexToHKey());

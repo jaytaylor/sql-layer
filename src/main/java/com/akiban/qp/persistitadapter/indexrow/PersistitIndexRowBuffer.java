@@ -353,7 +353,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         }
     }
 
-    protected void copyFrom(Exchange exchange) throws PersistitException
+    protected void copyFrom(Exchange exchange)
     {
         exchange.getKey().copyTo(pKey);
         if (index.isUnique()) {

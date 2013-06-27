@@ -28,12 +28,10 @@ class MixedOrderScanStateNullSeparator<S,E> extends MixedOrderScanStateSingleSeg
     @Override
     public boolean jump(S fieldValue) throws PersistitException
     {
-        Exchange exchange = cursor.exchange();
         if (!ascending) {
-            exchange.append(Key.AFTER);
+            cursor.key().append(Key.AFTER);
         }
-        boolean resume = exchange.traverse(ascending ? Key.Direction.GTEQ : Key.Direction.LTEQ, true);
-        return resume;
+        return cursor.traverse(ascending ? Key.Direction.GTEQ : Key.Direction.LTEQ, true);
     }
 
     public MixedOrderScanStateNullSeparator(IndexCursorMixedOrder cursor,
