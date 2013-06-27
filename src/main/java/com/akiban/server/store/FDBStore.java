@@ -28,6 +28,7 @@ import com.akiban.qp.persistitadapter.FDBAdapter;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.error.DuplicateKeyException;
+import com.akiban.server.error.FDBAdapterException;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowData;
@@ -36,13 +37,13 @@ import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.util.ReadWriteMap;
 import com.akiban.util.FDBCounter;
 import com.foundationdb.KeyValue;
 import com.foundationdb.RangeQuery;
+import com.foundationdb.Retryable;
 import com.foundationdb.Transaction;
 import com.foundationdb.tuple.Tuple;
 import com.google.inject.Inject;
@@ -56,9 +57,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -69,20 +68,17 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     private final ConfigurationService configService;
     private final SchemaManager schemaManager;
     private final FDBTransactionService txnService;
-    private final SessionService sessionService;
 
     @Inject
     public FDBStore(FDBHolder holder,
                     ConfigurationService configService,
                     SchemaManager schemaManager,
                     TransactionService txnService,
-                    LockService lockService, 
-                    SessionService sessionService) {
+                    LockService lockService) {
         super(lockService, schemaManager);
         this.holder = holder;
         this.configService = configService;
         this.schemaManager = schemaManager;
-        this.sessionService = sessionService;
         if(txnService instanceof FDBTransactionService) {
             this.txnService = (FDBTransactionService)txnService;
         } else {
@@ -158,28 +154,29 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
 
     // insert or update the sequence value from the server.
     // Works only under the cache lock from nextSequenceValue. 
-    private long updateCacheFromServer (SequenceCache cache, Sequence sequence) {
-        long rawValue = 0;
-        Session session = sessionService.createSession();
-        txnService.beginTransaction(session);
-        Transaction txn = txnService.getTransaction(session);
+    private long updateCacheFromServer (final SequenceCache cache, final Sequence sequence) {
+        final long [] rawValue = new long[1];
+        
         try {
-            byte[] packedTuple = packedTuple(sequence);
-            byte[] byteValue = txn.get(packedTuple).get();
-            if(byteValue != null) {
-                Tuple tuple = Tuple.fromBytes(byteValue);
-                rawValue = tuple.getLong(0);
-            } else {
-                rawValue = 1;
-            }
-            txn.set(packedTuple, Tuple.from(rawValue + sequence.getCacheSize()).pack());
-            txnService.commitTransaction(session);
-            cache.updateCache(rawValue, sequence.getCacheSize());
-            return rawValue;
-        } finally {
-            txnService.rollbackTransactionIfOpen(session);
-            session.close();
+            txnService.runTransaction(new Retryable (){
+                @Override 
+                public void attempt (Transaction tr) {
+                    byte[] packedTuple = packedTuple(sequence);
+                    byte[] byteValue = tr.get(packedTuple).get();
+                    if(byteValue != null) {
+                        Tuple tuple = Tuple.fromBytes(byteValue);
+                        rawValue[0] = tuple.getLong(0);
+                    } else {
+                        rawValue[0] = 1;
+                    }
+                    tr.set(packedTuple, Tuple.from(rawValue[0] + sequence.getCacheSize()).pack());
+                }
+            });
+        } catch (Throwable e) {
+            throw new FDBAdapterException(e);
         }
+        cache.updateCache(rawValue[0], sequence.getCacheSize());
+        return rawValue[0];
     }
     
     @Override
@@ -598,7 +595,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             this.cacheSize = startValue + cacheSize;
         }
         
-        public synchronized long nextCacheValue() {
+        public long nextCacheValue() {
             long val = value.incrementAndGet(); 
             if (val == cacheSize) {
                 // ensure the next call to nextCacheValue also fails
