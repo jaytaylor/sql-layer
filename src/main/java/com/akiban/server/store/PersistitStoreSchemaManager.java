@@ -202,7 +202,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
      */
     private static final AISAndTimestamp CACHE_SENTINEL = new AISAndTimestamp(new SharedAIS(null), Long.MAX_VALUE);
 
-    private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreSchemaManager.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreSchemaManager.class);
 
     private final TreeService treeService;
     private final TransactionService txnService;
@@ -357,7 +357,6 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
 
         this.nameGenerator = SynchronizedNameGenerator.wrap(new DefaultNameGenerator(newAIS));
         this.delayedTreeIDGenerator = new AtomicLong();
-        this.tableVersionMap = ReadWriteMap.wrapNonFair(new HashMap<Integer,Integer>());
         for(UserTable table : newAIS.getUserTables().values()) {
             // Note: table.getVersion may be null (pre-1.4.3 volumes)
             tableVersionMap.put(table.getTableId(), table.getVersion());
@@ -713,8 +712,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
         }
     }
 
-    @Override
-    protected void serializeMemoryTables(Session session, AkibanInformationSchema newAIS) {
+    private void serializeMemoryTables(Session session, AkibanInformationSchema newAIS) {
         GrowableByteBuffer byteBuffer = newByteBufferForSavingAIS();
         Exchange ex = null;
         try {

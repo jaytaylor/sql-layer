@@ -179,7 +179,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             enablePopulateWorker();
         }
         catch (UnsupportedOperationException ex) {
-            logger.warn("Full text will be disabled", ex);
+            logger.warn("Full text will be disabled");
         }
     }
 

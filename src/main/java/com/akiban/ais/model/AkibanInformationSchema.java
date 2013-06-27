@@ -54,6 +54,11 @@ public class AkibanInformationSchema implements Traversable
         charsetAndCollation = CharsetAndCollation.intern(defaultCharset, defaultCollation);
     }
 
+    public AkibanInformationSchema(int generation) {
+        this();
+        this.generation = generation;
+    }
+
 
     // AkibanInformationSchema interface
 
