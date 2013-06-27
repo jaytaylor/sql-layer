@@ -601,6 +601,9 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         public synchronized long nextCacheValue() {
             long val = value.incrementAndGet(); 
             if (val == cacheSize) {
+                // ensure the next call to nextCacheValue also fails
+                // and will do so until the updateCache() is called. 
+                value.decrementAndGet();
                 return -1;
             }
             return val;
