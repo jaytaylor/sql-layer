@@ -28,6 +28,7 @@ import com.akiban.qp.persistitadapter.FDBAdapter;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.error.DuplicateKeyException;
+import com.akiban.server.error.FDBAdapterException;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowData;
@@ -37,26 +38,30 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.service.tree.TreeLink;
+import com.akiban.server.util.ReadWriteMap;
 import com.akiban.util.FDBCounter;
 import com.foundationdb.KeyValue;
 import com.foundationdb.RangeQuery;
+import com.foundationdb.Retryable;
 import com.foundationdb.Transaction;
 import com.foundationdb.tuple.Tuple;
 import com.google.inject.Inject;
 import com.persistit.Key;
 import com.persistit.Persistit;
 import com.persistit.Value;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.TreeMap;
+import java.util.concurrent.locks.ReentrantLock;
 
-public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator, Service {
-    private static final Logger LOG = LoggerFactory.getLogger(FDBStore.class);
+public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
+    private static final Logger LOG = LoggerFactory.getLogger(FDBStore.class.getName());
 
     private final FDBHolder holder;
     private final ConfigurationService configService;
@@ -122,31 +127,77 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator,
         return range.iterator();
     }
 
+    @Override
     public long nextSequenceValue(Session session, Sequence sequence) {
-        Transaction txn = txnService.getTransaction(session);
-        byte[] packedTuple = packedTuple(sequence);
         long rawValue = 0;
-        byte[] byteValue = txn.get(packedTuple).get();
-        if(byteValue != null) {
-            Tuple tuple = Tuple.fromBytes(byteValue);
-            rawValue = tuple.getLong(0);
+
+        SequenceCache cache = sequenceCache.getOrCreateAndPut (sequence.getTreeName(), 
+                new ReadWriteMap.ValueCreator<String, SequenceCache> (){
+                    public SequenceCache createValueForKey (String treeName) {
+                        return getEmptyCache();
+                    }
+                });
+       
+        cache.cacheLock();
+        try {
+            rawValue = cache.nextCacheValue();
+            if (rawValue < 0) {
+                rawValue = updateCacheFromServer (cache, sequence);
+            }
+        } finally {
+            cache.cacheUnlock();
         }
-        rawValue += 1;
         long outValue = sequence.nextValueRaw(rawValue);
-        txn.set(packedTuple, Tuple.from(rawValue).pack());
         return outValue;
     }
 
+    // insert or update the sequence value from the server.
+    // Works only under the cache lock from nextSequenceValue. 
+    private long updateCacheFromServer (final SequenceCache cache, final Sequence sequence) {
+        final long [] rawValue = new long[1];
+        
+        try {
+            txnService.runTransaction(new Retryable (){
+                @Override 
+                public void attempt (Transaction tr) {
+                    byte[] packedTuple = packedTuple(sequence);
+                    byte[] byteValue = tr.get(packedTuple).get();
+                    if(byteValue != null) {
+                        Tuple tuple = Tuple.fromBytes(byteValue);
+                        rawValue[0] = tuple.getLong(0);
+                    } else {
+                        rawValue[0] = 1;
+                    }
+                    tr.set(packedTuple, Tuple.from(rawValue[0] + sequence.getCacheSize()).pack());
+                }
+            });
+        } catch (Throwable e) {
+            throw new FDBAdapterException(e);
+        }
+        cache.updateCache(rawValue[0], sequence.getCacheSize());
+        return rawValue[0];
+    }
+    
+    @Override
     public long curSequenceValue(Session session, Sequence sequence) {
-        Transaction txn = txnService.getTransaction(session);
         long rawValue = 0;
-        byte[] byteValue = txn.get(packedTuple(sequence)).get();
-        if(byteValue != null) {
-            Tuple tuple = Tuple.fromBytes(byteValue);
-            rawValue = tuple.getLong(0);
+        
+        SequenceCache cache = sequenceCache.get(sequence.getTreeName());
+        if (cache != null) {
+            rawValue = cache.currentValue();
+        } else {
+            Transaction txn = txnService.getTransaction(session);
+            byte[] byteValue = txn.get(packedTuple(sequence)).get();
+            if(byteValue != null) {
+                Tuple tuple = Tuple.fromBytes(byteValue);
+                rawValue = tuple.getLong(0);
+            }
         }
         return sequence.currentValueRaw(rawValue);
     }
+
+    private final ReadWriteMap<String, SequenceCache> sequenceCache = 
+            ReadWriteMap.wrapFair(new TreeMap<String, SequenceCache>());
 
     public long getGICount(Session session, GroupIndex index) {
         Transaction txn = txnService.getTransaction(session);
@@ -158,7 +209,6 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator,
         // Conflict free, but not faster than transactional
         return cachedGICounter(session, index).getSnapshot(txn);
     }
-
 
     //
     // Service
@@ -398,6 +448,9 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator,
 
     @Override
     public void deleteSequences(Session session, Collection<? extends Sequence> sequences) {
+        for (Sequence sequence : sequences) {
+            sequenceCache.remove(sequence.getTreeName());
+        }
         removeTrees(session, sequences);
     }
 
@@ -514,5 +567,52 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements KeyCreator,
     private static byte[] packedTuple(TreeLink treeLink, Key key) {
         byte[] keyBytes = Arrays.copyOf(key.getEncodedBytes(), key.getEncodedSize());
         return Tuple.from(treeLink.getTreeName(), "/", keyBytes).pack();
+    }
+
+    private SequenceCache getEmptyCache () {
+        return new SequenceCache ();
+    }
+    
+    private class SequenceCache {
+        private long value; 
+        private long cacheSize;
+        private final ReentrantLock cacheLock;
+
+        
+        public SequenceCache() {
+            this(0L, 1L);
+        }
+        
+        public SequenceCache(long startValue, long cacheSize) {
+            this.value = startValue;
+            this.cacheSize = startValue + cacheSize; 
+            this.cacheLock = new ReentrantLock(false);
+        }
+        
+        public void updateCache (long startValue, long cacheSize) {
+            this.value = startValue;
+            this.cacheSize = startValue + cacheSize;
+        }
+        
+        public long nextCacheValue() {
+            if (++value == cacheSize) {
+                // ensure the next call to nextCacheValue also fails
+                // and will do so until the updateCache() is called. 
+                --value;
+                return -1;
+            }
+            return value;
+        }
+        public long currentValue() {
+            return value;
+        }
+        
+        public void cacheLock() {
+            cacheLock.lock();
+        }
+        
+        public void cacheUnlock() {
+            cacheLock.unlock();
+        }
     }
 }

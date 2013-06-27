@@ -68,6 +68,7 @@ public class Sequence implements TreeLink {
         this.maxValue = maxValue;
         this.cycle = cycle;
         this.range = maxValue - minValue + 1;
+        this.cacheSize = 20;
     }
     
     public final TableName getSequenceName() {
@@ -102,7 +103,10 @@ public class Sequence implements TreeLink {
     public final boolean isCycle() {
         return cycle;
     }
-
+    public final long getCacheSize() {
+        return cacheSize;
+    }
+    
     // State
     protected final TableName sequenceName;
     protected String treeName;
@@ -113,6 +117,8 @@ public class Sequence implements TreeLink {
     private final long minValue;
     private final long maxValue;
     private final boolean cycle;
+    private final long cacheSize;
+  
 
     private final long range;
     private AtomicReference<TreeCache> treeCache = new AtomicReference<>();

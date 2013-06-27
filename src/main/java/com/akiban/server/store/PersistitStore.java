@@ -44,6 +44,7 @@ import com.persistit.*;
 import com.persistit.Management.DisplayFilter;
 import com.persistit.encoding.CoderManager;
 import com.persistit.exception.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -974,4 +975,15 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
             throw PersistitAdapter.wrapPersistitException(session, e);
         }
     }
+
+    @Override
+    public long nextSequenceValue(Session session, Sequence sequence) throws PersistitException {
+        return sequence.nextValue();
+    }
+    
+    @Override 
+    public long curSequenceValue(Session session, Sequence sequence) throws PersistitException {
+        return sequence.currentValue();
+    }
+ 
 }

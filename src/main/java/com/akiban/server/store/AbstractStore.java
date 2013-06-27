@@ -26,6 +26,7 @@ import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexToHKey;
 import com.akiban.ais.model.NopVisitor;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
@@ -182,7 +183,7 @@ public abstract class AbstractStore<SDType> implements Store {
     /** The hKey of the given table is changing. */
     protected abstract void addChangeFor(Session session, UserTable table, Key hKey);
 
-
+       
     //
     // AbstractStore
     //

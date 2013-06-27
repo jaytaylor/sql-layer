@@ -20,6 +20,7 @@ package com.akiban.server.store;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.util.MultipleCauseException;
+import com.foundationdb.Retryable;
 import com.foundationdb.Transaction;
 import com.google.inject.Inject;
 
@@ -222,6 +223,10 @@ public class FDBTransactionService implements TransactionService {
     }
 
 
+    public void runTransaction (Retryable retryable) throws Throwable {
+        fdbHolder.getDatabase().run(retryable);
+    }
+    
     //
     // Helpers
     //
