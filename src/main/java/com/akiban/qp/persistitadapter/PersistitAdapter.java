@@ -417,8 +417,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
             assert false;
             return 0;
         } catch (Exception ex) {
-            assert false;
-            return 0;
+            throw new PersistitAdapterException(ex);
         }
     }
 
