@@ -19,7 +19,7 @@ package com.akiban.qp.persistitadapter.indexrow;
 
 import com.akiban.ais.model.IndexToHKey;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitHKey;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -118,10 +118,10 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
 
     // For use by subclasses
 
-    protected PersistitIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
+    protected PersistitIndexRow(StoreAdapter adapter, IndexRowType indexRowType)
     {
-        super(adapter.getUnderlyingStore());
-        this.keyState = adapter.persistit().createKey();
+        super(adapter);
+        this.keyState = adapter.createKey();
         resetForWrite(indexRowType.index(), keyState);
         this.indexRowType = indexRowType;
         this.leafmostTable = (UserTable) index.leafMostTable();

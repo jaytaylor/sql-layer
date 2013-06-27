@@ -51,7 +51,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InterruptedIOException;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class PersistitAdapter extends StoreAdapter
 {
@@ -353,10 +352,6 @@ public class PersistitAdapter extends StoreAdapter
         }
     }
 
-    public long id() {
-        return id;
-    }
-
     public PersistitAdapter(Schema schema,
                             Store store,
                             TreeService treeService,
@@ -442,12 +437,10 @@ public class PersistitAdapter extends StoreAdapter
 
     // Class state
 
-    private static final AtomicLong idCounter = new AtomicLong(0);
     private static PersistitIndexRowPool indexRowPool = new PersistitIndexRowPool();
 
     // Object state
 
-    private final long id = idCounter.getAndIncrement();
     private final TreeService treeService;
     private final Store store;
     private final PersistitStore persistit;

@@ -46,6 +46,8 @@ import com.akiban.server.store.Store;
 import com.akiban.server.types.ValueSource;
 import com.akiban.util.tap.InOutTap;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 public abstract class StoreAdapter implements KeyCreator
 {
     public abstract GroupCursor newGroupCursor(Group group);
@@ -141,6 +143,10 @@ public abstract class StoreAdapter implements KeyCreator
 
     public abstract IterationHelper createIterationHelper(IndexRowType indexRowType);
 
+    public long id() {
+        return id;
+    }
+
     public enum AdapterType {
         STORE_ADAPTER,
         MEMORY_ADAPTER
@@ -164,11 +170,12 @@ public abstract class StoreAdapter implements KeyCreator
     // Class state
 
     public static final Session.Key<StoreAdapter> STORE_ADAPTER_KEY = Session.Key.named("STORE_ADAPTER");
+    private static final AtomicLong idCounter = new AtomicLong(0);
 
     // Object state
 
     protected final Schema schema;
     private final Session session;
     private final ConfigurationService config;
-
+    private final long id = idCounter.incrementAndGet();
 }
