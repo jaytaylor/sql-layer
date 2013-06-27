@@ -269,7 +269,7 @@ public class PersistitAdapter extends StoreAdapter
 
     @Override
     public IterationHelper createIterationHelper(IndexRowType indexRowType) {
-        return new IndexScanRowState(this, indexRowType);
+        return new PersistitIterationHelper(this, indexRowType);
     }
 
     public Exchange takeExchange(Group group) throws PersistitException

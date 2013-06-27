@@ -27,7 +27,7 @@ import com.persistit.Key;
 import com.persistit.Key.Direction;
 import com.persistit.exception.PersistitException;
 
-public class IndexScanRowState implements IterationHelper
+public class PersistitIterationHelper implements IterationHelper
 {
     @Override
     public Row row()
@@ -100,9 +100,9 @@ public class IndexScanRowState implements IterationHelper
         }
     }
 
-    // IndexScanRowState interface
+    // PersistitIterationHelper interface
 
-    public IndexScanRowState(PersistitAdapter adapter, IndexRowType indexRowType)
+    public PersistitIterationHelper(PersistitAdapter adapter, IndexRowType indexRowType)
     {
         this.adapter = adapter;
         this.indexRowType = indexRowType.physicalRowType(); // In case we have a spatial index
