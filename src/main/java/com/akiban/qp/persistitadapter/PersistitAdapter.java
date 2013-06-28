@@ -74,19 +74,12 @@ public class PersistitAdapter extends StoreAdapter
     public Cursor newIndexCursor(QueryContext context, Index index, IndexKeyRange keyRange, API.Ordering ordering,
                                  IndexScanSelector selector, boolean usePValues)
     {
-        Cursor cursor;
-        try {
-            cursor = new PersistitIndexCursor(context,
-                                              schema.indexRowType(index),
-                                              keyRange,
-                                              ordering,
-                                              selector,
-                                              usePValues);
-        } catch (PersistitException e) {
-            handlePersistitException(e);
-            throw new AssertionError();
-        }
-        return cursor;
+        return new PersistitIndexCursor(context,
+                                        schema.indexRowType(index),
+                                        keyRange,
+                                        ordering,
+                                        selector,
+                                        usePValues);
     }
 
     @Override

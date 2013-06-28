@@ -111,7 +111,6 @@ class PersistitIndexCursor implements Cursor
                          API.Ordering ordering,
                          IndexScanSelector selector,
                          boolean usePValues)
-        throws PersistitException
     {
         this.keyRange = keyRange;
         this.ordering = ordering;
