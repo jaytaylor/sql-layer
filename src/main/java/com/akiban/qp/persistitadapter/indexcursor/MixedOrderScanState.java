@@ -17,28 +17,26 @@
 
 package com.akiban.qp.persistitadapter.indexcursor;
 
-import com.persistit.exception.PersistitException;
-
 import static com.akiban.qp.persistitadapter.indexcursor.IndexCursor.INDEX_TRAVERSE;
 
 abstract class MixedOrderScanState<S>
 {
-    public abstract boolean startScan() throws PersistitException;
+    public abstract boolean startScan();
 
-    public abstract boolean jump(S fieldValue) throws PersistitException;
+    public abstract boolean jump(S fieldValue);
 
     public final int field()
     {
         return field;
     }
 
-    public boolean advance() throws PersistitException
+    public boolean advance()
     {
         INDEX_TRAVERSE.hit();
-        return ascending ? cursor.exchange().next(false) : cursor.exchange().previous(false);
+        return ascending ? cursor.nextInternal(false) : cursor.prevInternal(false);
     }
 
-    protected MixedOrderScanState(IndexCursorMixedOrder cursor, int field, boolean ascending) throws PersistitException
+    protected MixedOrderScanState(IndexCursorMixedOrder cursor, int field, boolean ascending)
     {
         this.cursor = cursor;
         this.field = field;
