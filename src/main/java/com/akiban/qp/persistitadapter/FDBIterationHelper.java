@@ -168,13 +168,16 @@ public class FDBIterationHelper implements IterationHelper
             if(matches) {
                 int originalSize = key.getEncodedSize();
                 int nextIndex = KeyShim.nextElementIndex(key, parentIndex);
-                // Note: Proper emulation would require looking up this (possibly fake) key. Server doesn't use that.
-                if(nextIndex != originalSize) {
-                    key.setEncodedSize(nextIndex);
-                    lastKV = null;
-                    value.clear();
+                if(nextIndex > 0) {
+                    // Note: Proper emulation would require looking up this (possibly fake) key. Server doesn't need it.
+                    if(nextIndex != originalSize) {
+                        key.setEncodedSize(nextIndex);
+                        lastKV = null;
+                        value.clear();
+                    }
+                    return true;
                 }
-                return true;
+                // else we found a non-matching prefix (e.g. iterated from child to orphan cousin
             }
         }
         // No match, restore original key
