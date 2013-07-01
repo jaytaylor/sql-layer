@@ -184,12 +184,10 @@ public class FDBIterationHelper implements IterationHelper
 
     /** Check current iterator matches direction and recreate if not. */
     private void checkIterator(Direction dir, boolean deep) {
-        if(itDir == dir && lastKeyGen != key.getGeneration()) {
-            System.out.println("Same dir, wrong gen");
-        }
-        if(itDir != dir) {
+        final boolean keyGenMatches = (lastKeyGen == key.getGeneration());
+        if((itDir != dir) || !keyGenMatches) {
             // If the last key we returned hasn't changed and moving in the same direction, new iterator isn't needed.
-            if(lastKeyGen == key.getGeneration()) {
+            if(keyGenMatches) {
                 if((itDir == GTEQ && dir == GT) || (itDir == LTEQ && dir == LT)) {
                     itDir = dir;
                     return;
@@ -198,17 +196,29 @@ public class FDBIterationHelper implements IterationHelper
             final int saveSize = key.getEncodedSize();
             final boolean exact = dir == EQ || dir == GTEQ || dir == LTEQ;
             final boolean reverse = (dir == LT) || (dir == LTEQ);
-            if(!exact && !KeyShim.isSpecial(key)) {
-                if(reverse) {
-                    KeyShim.nudgeLeft(key);
-                } else {
-                    if(deep) {
-                        KeyShim.nudgeDeeper(key);
-                    } else {
+            if(!KeyShim.isSpecial(key)) {
+                if(exact) {
+                    if(reverse && !deep) {
+                        // exact, reverse, logical: want to see current key or a child
+                        // Note: child won't be returned, but current key will be synthesized by advanceLogical()
                         KeyShim.nudgeRight(key);
+                    }
+                } else {
+                    if(reverse) {
+                        // Non-exact, reverse: do not want to see current key
+                        KeyShim.nudgeLeft(key);
+                    } else {
+                        if(deep) {
+                            // Non-exact, forward, deep: do not want to see current key
+                            KeyShim.nudgeDeeper(key);
+                        } else {
+                            // Non-exact, forward, logical: do not want to see current key or any children
+                            KeyShim.nudgeRight(key);
+                        }
                     }
                 }
             }
+
             it = adapter.getUnderlyingStore().indexIterator(adapter.getSession(), rowType.index(), key, exact, reverse);
             key.setEncodedSize(saveSize);
             itDir = dir;
