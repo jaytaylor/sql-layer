@@ -111,7 +111,6 @@ class PersistitIndexCursor implements Cursor
                          API.Ordering ordering,
                          IndexScanSelector selector,
                          boolean usePValues)
-        throws PersistitException
     {
         this.keyRange = keyRange;
         this.ordering = ordering;
@@ -121,7 +120,7 @@ class PersistitIndexCursor implements Cursor
         this.usePValues = usePValues;
         this.selector = selector;
         this.idle = true;
-        this.rowState = new IndexScanRowState((PersistitAdapter)context.getStore(), indexRowType);
+        this.rowState = context.getStore().createIterationHelper(indexRowType);
         this.indexCursor = IndexCursor.create(context, keyRange, ordering, rowState, usePValues);
     }
 

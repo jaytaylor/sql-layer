@@ -95,7 +95,7 @@ public final class BasicKeyUpdateIT extends ITBase {
     }
 
     @Test
-    public void oldKeysAreRemoved_2Rows_Full_IndexChanged() throws InvalidOperationException {
+    public void oldKeysAreRemoved_2Rows_IndexChanged() throws InvalidOperationException {
         int tableId = table();
         runTest(
                 tableId,
@@ -124,7 +124,7 @@ public final class BasicKeyUpdateIT extends ITBase {
     }
 
     @Test
-    public void oldKeysAreRemoved_2Rows_Partial_IndexAndPKMovesBackward() throws InvalidOperationException {
+    public void oldKeysAreRemoved_2Rows_IndexAndPKMovesBackward() throws InvalidOperationException {
         int tableId = table();
         runTest(
                 tableId,
@@ -137,7 +137,7 @@ public final class BasicKeyUpdateIT extends ITBase {
                         createNewRow(tableId, 2L, "c")
                 ),
 
-                createNewRow(tableId, 2L, UNDEF),
+                createNewRow(tableId, 2L, "c"),
                 createNewRow(tableId, 0L, "a"),
                 set(0, 1),
 
@@ -153,7 +153,7 @@ public final class BasicKeyUpdateIT extends ITBase {
     }
 
     @Test
-    public void oldKeysAreRemoved_2Rows_Partial_IndexAndPKMovesForward() throws InvalidOperationException {
+    public void oldKeysAreRemoved_2Rows_IndexAndPKMovesForward() throws InvalidOperationException {
         int tableId = table();
         runTest(
                 tableId,
@@ -166,7 +166,7 @@ public final class BasicKeyUpdateIT extends ITBase {
                         createNewRow(tableId, 2L, "c")
                 ),
 
-                createNewRow(tableId, 2L, UNDEF),
+                createNewRow(tableId, 2L, "c"),
                 createNewRow(tableId, 3L, "a"),
                 set(0, 1),
 

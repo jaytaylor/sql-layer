@@ -17,34 +17,31 @@
 
 package com.akiban.qp.persistitadapter.indexcursor;
 
-
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
-import com.persistit.Exchange;
 import com.persistit.Key;
-import com.persistit.exception.PersistitException;
 
 import static com.akiban.qp.persistitadapter.indexcursor.IndexCursor.INDEX_TRAVERSE;
 
 class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
 {
     @Override
-    public boolean startScan() throws PersistitException
+    public boolean startScan()
     {
         Key.Direction direction = bounded() ? startBoundedScan() : startUnboundedScan();
-        return cursor.exchange().traverse(direction, false) && !pastEnd();
+        return cursor.traverse(direction, false) && !pastEnd();
     }
 
     @Override
-    public boolean advance() throws PersistitException
+    public boolean advance()
     {
         return super.advance() && !pastEnd();
     }
 
     @Override
-    public boolean jump(S fieldValue) throws PersistitException
+    public boolean jump(S fieldValue)
     {
         boolean more;
         if (singleValue) {
@@ -62,16 +59,15 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
         }
         if (more) {
             keyTarget.append(fieldValue, collator, fieldTInstance);
-            Exchange exchange = cursor.exchange();
-            more = exchange.traverse(ascending ? Key.Direction.GTEQ : Key.Direction.LTEQ, false) && !pastEnd();
+            more = cursor.traverse(ascending ? Key.Direction.GTEQ : Key.Direction.LTEQ, false) && !pastEnd();
             if (!more) {
                 // Go back to a key prefix known to exist.
-                exchange.getKey().cut();
+                cursor.key().cut();
                 // Go to the beginning or end of the range of keys, depending on direction.
                 // Want to do a deep traverse here, not shallow as previously.
-                exchange.append(ascending ? Key.BEFORE : Key.AFTER);
-                boolean resume = exchange.traverse(ascending ? Key.Direction.GTEQ : Key.Direction.LTEQ, true);
-                assert resume : exchange;
+                cursor.key().append(ascending ? Key.BEFORE : Key.AFTER);
+                boolean resume = cursor.traverse(ascending ? Key.Direction.GTEQ : Key.Direction.LTEQ, true);
+                assert resume : cursor;
             }
         }
         return more;
@@ -86,7 +82,6 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
                                             boolean singleValue,
                                             boolean ascending,
                                             SortKeyAdapter<S, E> sortKeyAdapter)
-        throws PersistitException
     {
         super(cursor, field, ascending);
         assert lo != null;
@@ -95,7 +90,7 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
         this.collator = cursor.collatorAt(field);
         this.fieldTInstance = cursor.tInstanceAt(field);
         this.keyTarget = sortKeyAdapter.createTarget();
-        this.keyTarget.attach(cursor.exchange().getKey());
+        this.keyTarget.attach(cursor.key());
         this.keySource = sortKeyAdapter.createSource(fieldTInstance);
         this.sortKeyAdapter = sortKeyAdapter;
         boolean loNull = sortKeyAdapter.isNull(lo);
@@ -122,11 +117,10 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
                                             boolean ascending,
                                             SortKeyAdapter<S, E> sortKeyAdapter,
                                             TInstance tInstance)
-    throws PersistitException
     {
         super(cursor, field, ascending);
         this.keyTarget = sortKeyAdapter.createTarget();
-        this.keyTarget.attach(cursor.exchange().getKey());
+        this.keyTarget.attach(cursor.key());
         this.keySource = sortKeyAdapter.createSource(tInstance);
         this.sortKeyAdapter = sortKeyAdapter;
         this.fieldTInstance = tInstance;
@@ -136,7 +130,6 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
                                             int field,
                                             boolean ascending,
                                             SortKeyAdapter<S, E> sortKeyAdapter)
-    throws PersistitException
     {
         this(cursor, field, ascending, sortKeyAdapter, cursor.tInstanceAt(field));
     }
@@ -144,32 +137,32 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
     private void setupEndComparison(Comparison comparison, S bound)
     {
         if (endComparison == null) {
-            keySource.attach(cursor.exchange().getKey(), -1, fieldType, fieldTInstance); // depth unimportant, will be set later
+            keySource.attach(cursor.key(), -1, fieldType, fieldTInstance); // depth unimportant, will be set later
             endComparison = sortKeyAdapter.createComparison(fieldTInstance, collator, keySource.asSource(), comparison, bound);
         }
     }
 
-    private Key.Direction startUnboundedScan() throws PersistitException
+    private Key.Direction startUnboundedScan()
     {
         Key.Direction direction;
         if (ascending) {
-            cursor.exchange().append(Key.BEFORE);
+            cursor.key().append(Key.BEFORE);
             direction = Key.GT;
         } else {
-            cursor.exchange().append(Key.AFTER);
+            cursor.key().append(Key.AFTER);
             direction = Key.LT;
         }
         INDEX_TRAVERSE.hit();
         return direction;
     }
 
-    private Key.Direction startBoundedScan() throws PersistitException
+    private Key.Direction startBoundedScan()
     {
         // About null handling: See comment in IndexCursorUnidirectional.evaluateBoundaries.
         Key.Direction direction;
         if (ascending) {
             if (sortKeyAdapter.isNull(loSource)) {
-                cursor.exchange().append(null);
+                cursor.key().append(null);
                 direction = Key.GT;
             } else {
                 keyTarget.append(loSource, fieldType, fieldTInstance, collator);
@@ -182,9 +175,9 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
         } else {
             if (sortKeyAdapter.isNull(hiSource)) {
                 if (sortKeyAdapter.isNull(loSource)) {
-                    cursor.exchange().append(null);
+                    cursor.key().append(null);
                 } else {
-                    cursor.exchange().append(Key.AFTER);
+                    cursor.key().append(Key.AFTER);
                 }
                 direction = Key.LT;
             } else {
@@ -206,7 +199,7 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
             pastEnd = false;
         } else {
             // hiComparisonExpression depends on exchange's key, but we need to compare the correct key segment.
-            Key key = cursor.exchange().getKey();
+            Key key = cursor.key();
             int keySize = key.getEncodedSize();
             keySource.attach(key, field, fieldType, fieldTInstance);
             if (sortKeyAdapter.isNull(keySource.asSource())) {

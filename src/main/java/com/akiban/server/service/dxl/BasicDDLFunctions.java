@@ -27,7 +27,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
@@ -42,7 +41,6 @@ import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.SQLJJar;
 import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
@@ -65,8 +63,6 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowChecker;
 import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.AccumulatorAdapter;
-import com.akiban.server.AccumulatorAdapter.AccumInfo;
 import com.akiban.server.error.AlterMadeNoChangeException;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidAlterException;
@@ -99,7 +95,6 @@ import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeLink;
-import com.akiban.server.store.PersistitStore;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TCast;
@@ -129,7 +124,6 @@ import static com.akiban.util.Exceptions.throwAlways;
 class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     private final static Logger logger = LoggerFactory.getLogger(BasicDDLFunctions.class);
 
-    private final static boolean DEFER_INDEX_BUILDING = false;
     private static final boolean ALTER_AUTO_INDEX_CHANGES = true;
 
     private final IndexStatisticsService indexStatisticsService;
@@ -295,8 +289,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             final AkibanInformationSchema origAIS = getAIS(session);
             final Schema oldSchema = SchemaCache.globalSchema(origAIS);
             final RowType oldSourceType = oldSchema.userTableRowType(origTable);
-            // Explicitly skip OperatorStore for now
-            final StoreAdapter adapter = store().getPersistitStore().createAdapter(session, oldSchema);
+            final StoreAdapter adapter = store().createAdapter(session, oldSchema);
             final QueryContext queryContext = new ShimContext(adapter, context);
 
             Operator plan = filter_Default(
@@ -327,7 +320,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         schemaManager().alterTableDefinitions(session, changedTables);
         UserTable newTable = getUserTable(session, newDefinition.getName());
         List<Index> indexes = helper.findNewIndexesToBuild(newTable);
-        store().buildIndexes(session, indexes, DEFER_INDEX_BUILDING);
+        store().buildIndexes(session, indexes);
         helper.createAffectedGroupIndexes(session, this, origTable, newTable, false);
     }
 
@@ -350,8 +343,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         schemaManager().alterTableDefinitions(session, changedTables);
 
         // Build transformation
-        // Explicitly skip OperatorStore for now
-        final StoreAdapter adapter = store().getPersistitStore().createAdapter(session, origSchema);
+        final StoreAdapter adapter = store().createAdapter(session, origSchema);
         final QueryContext queryContext = new ShimContext(adapter, context);
 
         final AkibanInformationSchema newAIS = getAIS(session);
@@ -1003,7 +995,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         for(Index index : newIndexes) {
             checkCursorsForDDLModification(session, index.leafMostTable());
         }
-        store().buildIndexes(session, newIndexes, DEFER_INDEX_BUILDING);
+        store().buildIndexes(session, newIndexes);
         return newIndexes;
     }
 

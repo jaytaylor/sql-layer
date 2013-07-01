@@ -19,12 +19,53 @@ package com.akiban.qp.persistitadapter.indexcursor;
 
 import com.akiban.qp.row.Row;
 import com.persistit.Exchange;
+import com.persistit.Key;
+import com.persistit.Key.Direction;
 import com.persistit.exception.PersistitException;
 
 public interface IterationHelper
 {
-    Row row() throws PersistitException;
+    /** Get the (stateful) key associated with this helper. */
+    Key key();
+
+    /** Clear internal state, including the {@link #key()}. */
+    void clear();
+
+    /** Begin a new iteration. */
     void openIteration();
+
+    /** Close the current iteration. */
     void closeIteration();
-    Exchange exchange();
+
+    /**
+     * Get the row for that last advancement.
+     * <p/>
+     * <i>
+     *     Note: {@link #next(boolean)}, {@link #prev(boolean)}, or {@link #traverse(Direction, boolean)} must
+     *     be called prior to this method.
+     * </i>
+     */
+    Row row();
+
+    /**
+     * Advance internal state by finding the next key.
+     * @param deep  <code>true</code> if the next physical key is desired, <code>false</code> if logical is.
+     * @return <code>true</code> if there was a key/value to traverse to.
+     */
+    boolean next(boolean deep);
+
+    /**
+     * Advance internal state by finding the previous key.
+     * @param deep  <code>true</code> if the next physical key is desired, <code>false</code> if logical is.
+     * @return <code>true</code> if there was a key/value to traverse to.
+     */
+    boolean prev(boolean deep);
+
+    /**
+     * Advance internal state.
+     * @param dir The direction to advance in.
+     * @param deep <code>true</code> if the next physical key is desired, <code>false</code> if logical is.
+     * @return <code>true</code> if there was a key/value to traverse to.
+     */
+    boolean traverse(Direction dir, boolean deep);
 }

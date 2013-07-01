@@ -23,13 +23,11 @@ import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.persistitadapter.IndexScanRowState;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.util.MultiCursor;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.IndexRowPrefixSelector;
-import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.geophile.BoxLatLon;
 import com.akiban.server.geophile.Space;
 import com.akiban.server.geophile.SpaceLatLon;
@@ -113,7 +111,7 @@ class IndexCursorSpatial_InBox extends IndexCursor
         // The index column selector needs to select all the columns before the z column, and the z column itself.
         this.indexColumnSelector = new IndexRowPrefixSelector(this.latColumn + 1);
         for (IndexKeyRange zKeyRange : zKeyRanges(context, keyRange)) {
-            IndexScanRowState rowState = new IndexScanRowState(adapter, keyRange.indexRowType());
+            IterationHelper rowState = adapter.createIterationHelper(keyRange.indexRowType());
             if (Types3Switch.ON) {
                 IndexCursorUnidirectional<PValueSource> zIntervalCursor =
                     new IndexCursorUnidirectional<>(context,

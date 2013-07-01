@@ -62,7 +62,7 @@ public enum StringAttribute implements Attribute
 
     public static String charsetName(TInstance tInstance) {
         int charsetId = tInstance.attribute(CHARSET);
-        return StringFactory.Charset.values()[charsetId].name();
+        return StringFactory.Charset.of(charsetId);
     }
 
     public static TInstance copyWithCollation(TInstance tInstance, CharacterTypeAttributes cattrs) {
