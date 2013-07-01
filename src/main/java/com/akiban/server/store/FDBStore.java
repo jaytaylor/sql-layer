@@ -41,10 +41,12 @@ import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.util.ReadWriteMap;
 import com.akiban.util.FDBCounter;
+import com.foundationdb.KeySelector;
 import com.foundationdb.KeyValue;
 import com.foundationdb.RangeQuery;
 import com.foundationdb.Retryable;
 import com.foundationdb.Transaction;
+import com.foundationdb.tuple.ArrayUtil;
 import com.foundationdb.tuple.Tuple;
 import com.google.inject.Inject;
 import com.persistit.Key;
@@ -107,8 +109,44 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     public Iterator<KeyValue> indexIterator(Session session, Index index, boolean reverse) {
         Transaction txn = txnService.getTransaction(session);
         byte[] packedPrefix = packedTuple(index);
-        //print("Index scan: ", packedPrefix, "reverse: ", reverse);
+        //print("    begin: ", packedPrefix);
+        //print("  reverse: ", reverse);
         RangeQuery range = txn.getRangeStartsWith(packedPrefix);
+        if(reverse) {
+            range = range.reverse();
+        }
+        return range.iterator();
+    }
+
+    public Iterator<KeyValue> indexIterator(Session session, Index index, Key startsWith, boolean inclusive, boolean reverse) {
+        Transaction txn = txnService.getTransaction(session);
+        byte[] packedIndex = packedTuple(index);
+        byte[] packedStart = packedTuple(index, startsWith);
+
+        final KeySelector begin, end;
+        if(inclusive) {
+            if(reverse) {
+                begin = KeySelector.firstGreaterThan(packedIndex);
+                end = KeySelector.firstGreaterThan(packedStart);
+            } else {
+                begin = KeySelector.firstGreaterOrEqual(packedStart);
+                end = KeySelector.firstGreaterThan(ArrayUtil.strinc(packedIndex));
+            }
+        } else {
+            if(reverse) {
+                begin = KeySelector.firstGreaterThan(packedIndex);
+                end = KeySelector.firstGreaterOrEqual(packedStart);
+            } else {
+                begin = KeySelector.firstGreaterThan(packedStart);
+                end = KeySelector.firstGreaterThan(ArrayUtil.strinc(packedIndex));
+            }
+        }
+
+        //print("    begin: ", begin.getKey());
+        //print("      end: ", end.getKey());
+        //print("  reverse:", reverse);
+        //print("inclusive:", inclusive);
+        RangeQuery range = txn.getRange(begin, end);
         if(reverse) {
             range = range.reverse();
         }
@@ -119,7 +157,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         Transaction txn = txnService.getTransaction(session);
         byte[] packedStart = packedTuple(index, start);
         byte[] packedEnd = packedTuple(index, end);
-        //print("Index scan: [", packedStart, ",", packedEnd, ")", " reverse:", reverse);
+        print("Index scan: [", packedStart, packedEnd, ") reverse: ", reverse);
         RangeQuery range = txn.getRange(packedStart, packedEnd);
         if(reverse) {
             range = range.reverse();
@@ -131,12 +169,14 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     public long nextSequenceValue(Session session, Sequence sequence) {
         long rawValue = 0;
 
-        SequenceCache cache = sequenceCache.getOrCreateAndPut (sequence.getTreeName(), 
-                new ReadWriteMap.ValueCreator<String, SequenceCache> (){
-                    public SequenceCache createValueForKey (String treeName) {
-                        return getEmptyCache();
-                    }
-                });
+        SequenceCache cache = sequenceCache.getOrCreateAndPut(
+                sequence.getTreeName(), new ReadWriteMap.ValueCreator<String, SequenceCache>()
+        {
+            public SequenceCache createValueForKey(String treeName) {
+                return getEmptyCache();
+            }
+        }
+        );
        
         cache.cacheLock();
         try {
@@ -377,7 +417,10 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         checkUniqueness(txn, index, rowData, indexKey);
 
         byte[] packedKey = packedTuple(index, indexRow.getPKey());
-        byte[] packedValue = Arrays.copyOf(indexRow.getPValue().getEncodedBytes(), indexRow.getPValue().getEncodedSize());
+        byte[] packedValue = Arrays.copyOf(
+                indexRow.getPValue().getEncodedBytes(),
+                indexRow.getPValue().getEncodedSize()
+        );
         txn.set(packedKey, packedValue);
     }
 
@@ -565,8 +608,12 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     }
 
     private static byte[] packedTuple(TreeLink treeLink, Key key) {
-        byte[] keyBytes = Arrays.copyOf(key.getEncodedBytes(), key.getEncodedSize());
-        return Tuple.from(treeLink.getTreeName(), "/", keyBytes).pack();
+        if(key.getEncodedSize() == 0) {
+            return Tuple.from(treeLink.getTreeName(), "/").pack();
+        } else {
+            byte[] keyBytes = Arrays.copyOf(key.getEncodedBytes(), key.getEncodedSize());
+            return Tuple.from(treeLink.getTreeName(), "/", keyBytes).pack();
+        }
     }
 
     private SequenceCache getEmptyCache () {
@@ -614,5 +661,31 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         public void cacheUnlock() {
             cacheLock.unlock();
         }
+    }
+
+    @SuppressWarnings("unused")
+    private void print(Object... objects) {
+        for(Object o : objects) {
+            if(o instanceof byte[]) {
+                Tuple t = Tuple.fromBytes((byte[])o);
+                boolean f2 = true;
+                System.out.print('(');
+                for(Object v : t) {
+                    if(!f2) {
+                        System.out.print(", ");
+                    }
+                    f2 = false;
+                    if(v instanceof byte[]) {
+                        System.out.print(ArrayUtil.printable((byte[])v));
+                    } else {
+                        System.out.print(v);
+                    }
+                }
+                System.out.print(')');
+            } else {
+                System.out.print(o);
+            }
+        }
+        System.out.println();
     }
 }

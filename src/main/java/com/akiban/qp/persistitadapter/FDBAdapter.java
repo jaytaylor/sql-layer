@@ -63,12 +63,16 @@ public class FDBAdapter extends StoreAdapter {
                                  API.Ordering ordering,
                                  IndexScanSelector scanSelector,
                                  boolean usePValues) {
-        return new FDBIndexCursor(this,
-                                  context,
-                                  schema.indexRowType(index),
-                                  keyRange,
-                                  ordering,
-                                  scanSelector);
+        if(false) {
+            return new FDBIndexCursor(this, context, schema.indexRowType(index), keyRange, ordering, scanSelector);
+        } else {
+        return new PersistitIndexCursor(context,
+                                        schema.indexRowType(index),
+                                        keyRange,
+                                        ordering,
+                                        scanSelector,
+                                        usePValues);
+        }
     }
 
     @Override
