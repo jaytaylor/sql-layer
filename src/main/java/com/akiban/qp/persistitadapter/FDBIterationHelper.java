@@ -221,6 +221,7 @@ public class FDBIterationHelper implements IterationHelper
 
             it = adapter.getUnderlyingStore().indexIterator(adapter.getSession(), rowType.index(), key, exact, reverse);
             key.setEncodedSize(saveSize);
+            lastKeyGen = key.getGeneration();
             itDir = dir;
         }
     }
@@ -229,7 +230,6 @@ public class FDBIterationHelper implements IterationHelper
         byte[] keyBytes = Tuple.fromBytes(lastKV.getKey()).getBytes(2);
         System.arraycopy(keyBytes, 0, key.getEncodedBytes(), 0, keyBytes.length);
         key.setEncodedSize(keyBytes.length);
-        lastKeyGen = key.getGeneration();
     }
 
     private void updateValue() {
