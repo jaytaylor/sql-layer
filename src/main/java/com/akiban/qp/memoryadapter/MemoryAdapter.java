@@ -31,8 +31,11 @@ import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.operator.API.Ordering;
 import com.akiban.qp.operator.API.SortOption;
 import com.akiban.qp.persistitadapter.Sorter;
+import com.akiban.qp.persistitadapter.indexcursor.IterationHelper;
+import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.collation.AkCollator;
@@ -41,6 +44,7 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.store.Store;
 import com.akiban.server.types.ValueSource;
 import com.akiban.util.tap.InOutTap;
+import com.persistit.Key;
 
 public class MemoryAdapter extends StoreAdapter {
 
@@ -133,22 +137,22 @@ public class MemoryAdapter extends StoreAdapter {
     }
 
     @Override
-    public int enterUpdateStep() {
+    public PersistitIndexRow takeIndexRow(IndexRowType indexRowType) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public int enterUpdateStep(boolean evenIfZero) {
+    public void returnIndexRow(PersistitIndexRow indexRow) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void leaveUpdateStep(int step) {
+    public IterationHelper createIterationHelper(IndexRowType indexRowType) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void withStepChanging(boolean withStepChanging) {
+    public Key createKey() {
         throw new UnsupportedOperationException();
     }
 }

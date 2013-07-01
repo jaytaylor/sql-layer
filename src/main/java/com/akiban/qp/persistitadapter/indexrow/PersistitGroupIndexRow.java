@@ -19,12 +19,11 @@ package com.akiban.qp.persistitadapter.indexrow;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.IndexToHKey;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitHKey;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.persistit.Exchange;
-import com.persistit.exception.PersistitException;
 
 public class PersistitGroupIndexRow extends PersistitIndexRow
 {
@@ -58,9 +57,9 @@ public class PersistitGroupIndexRow extends PersistitIndexRow
 
     // PersistitGroupIndexRow interface
 
-    public PersistitGroupIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
+    public PersistitGroupIndexRow(StoreAdapter adapter, IndexRowType indexRowType)
     {
-        super(adapter, adapter, indexRowType);
+        super(adapter, indexRowType);
         this.index = (GroupIndex) indexRowType.index();
     }
 

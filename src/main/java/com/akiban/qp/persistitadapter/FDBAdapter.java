@@ -26,8 +26,11 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.IndexScanSelector;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.persistitadapter.indexcursor.IterationHelper;
 import com.akiban.qp.persistitadapter.indexcursor.MemorySorter;
+import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.collation.AkCollator;
@@ -38,6 +41,7 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.store.FDBStore;
 import com.akiban.server.types.ValueSource;
 import com.akiban.util.tap.InOutTap;
+import com.persistit.Key;
 
 public class FDBAdapter extends StoreAdapter {
     private final FDBStore store;
@@ -150,7 +154,30 @@ public class FDBAdapter extends StoreAdapter {
     }
 
     @Override
+    public PersistitIndexRow takeIndexRow(IndexRowType indexRowType) {
+        // TODO
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void returnIndexRow(PersistitIndexRow indexRow) {
+        // TODO
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public IterationHelper createIterationHelper(IndexRowType indexRowType) {
+        // TODO
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     protected FDBStore getUnderlyingStore() {
         return store;
+    }
+
+    @Override
+    public Key createKey() {
+        return store.createKey();
     }
 }

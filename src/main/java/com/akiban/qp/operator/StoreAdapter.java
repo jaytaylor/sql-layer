@@ -26,9 +26,12 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.persistitadapter.RowDataCreator;
 import com.akiban.qp.persistitadapter.Sorter;
+import com.akiban.qp.persistitadapter.indexcursor.IterationHelper;
+import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -38,11 +41,14 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.store.Store;
 import com.akiban.server.types.ValueSource;
 import com.akiban.util.tap.InOutTap;
 
-public abstract class StoreAdapter
+import java.util.concurrent.atomic.AtomicLong;
+
+public abstract class StoreAdapter implements KeyCreator
 {
     public abstract GroupCursor newGroupCursor(Group group);
 
@@ -134,6 +140,16 @@ public abstract class StoreAdapter
         return niceRow.toRowData();
     }
 
+    public abstract PersistitIndexRow takeIndexRow(IndexRowType indexRowType);
+
+    public abstract void returnIndexRow(PersistitIndexRow indexRow);
+
+    public abstract IterationHelper createIterationHelper(IndexRowType indexRowType);
+
+    public long id() {
+        return id;
+    }
+
     public enum AdapterType {
         STORE_ADAPTER,
         MEMORY_ADAPTER
@@ -157,11 +173,12 @@ public abstract class StoreAdapter
     // Class state
 
     public static final Session.Key<StoreAdapter> STORE_ADAPTER_KEY = Session.Key.named("STORE_ADAPTER");
+    private static final AtomicLong idCounter = new AtomicLong(0);
 
     // Object state
 
     protected final Schema schema;
     private final Session session;
     private final ConfigurationService config;
-
+    private final long id = idCounter.incrementAndGet();
 }

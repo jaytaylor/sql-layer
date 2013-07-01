@@ -20,11 +20,9 @@ import com.akiban.ais.model.IndexToHKey;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitHKey;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.server.service.tree.KeyCreator;
 
 public class PersistitTableIndexRow extends PersistitIndexRow
 {
@@ -55,9 +53,9 @@ public class PersistitTableIndexRow extends PersistitIndexRow
 
     // PersistitTableIndexRow interface
 
-    public PersistitTableIndexRow(KeyCreator keyCreator, StoreAdapter adapter, IndexRowType indexRowType)
+    public PersistitTableIndexRow(StoreAdapter adapter, IndexRowType indexRowType)
     {
-        super(keyCreator, adapter, indexRowType);
+        super(adapter, indexRowType);
         this.index = (TableIndex) indexRowType.index();
     }
 

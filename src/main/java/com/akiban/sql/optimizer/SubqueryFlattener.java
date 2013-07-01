@@ -82,12 +82,12 @@ public class SubqueryFlattener
         if (resultSet.getNodeType() == NodeTypes.SELECT_NODE) {
             selectStack = new Stack<>();
             currentSelectNode = null;
-            selectNode((SelectNode)resultSet);
+            selectNode((SelectNode)resultSet, stmt);
         }
         return stmt;
     }
 
-    protected void selectNode(SelectNode selectNode) throws StandardException {
+    protected void selectNode(SelectNode selectNode, QueryTreeNode parentNode) throws StandardException {
         selectStack.push(currentSelectNode);
         currentSelectNode = selectNode;
 
@@ -115,7 +115,7 @@ public class SubqueryFlattener
             // Update column bindings.
             FromSubqueryBindingVisitor visitor =
                 new FromSubqueryBindingVisitor(flattenSubqueries);
-            selectNode.accept(visitor);
+            parentNode.accept(visitor);
         }
 
         // After CFN, only possibilities are AND and nothing.
@@ -180,7 +180,7 @@ public class SubqueryFlattener
 
         SelectNode selectNode = (SelectNode)resultSet;
         // Process sub-subqueries first.
-        selectNode(selectNode);
+        selectNode(selectNode, subqueryNode);
 
         // And if any of those survive, give up.
         HasNodeVisitor visitor = new HasNodeVisitor(SubqueryNode.class);

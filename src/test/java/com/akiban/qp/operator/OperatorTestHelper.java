@@ -22,8 +22,11 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.persistitadapter.Sorter;
+import com.akiban.qp.persistitadapter.indexcursor.IterationHelper;
+import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.collation.AkCollator;
@@ -37,6 +40,7 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.util.Strings;
 import com.akiban.util.tap.InOutTap;
+import com.persistit.Key;
 import org.junit.Assert;
 
 import java.util.ArrayList;
@@ -249,28 +253,33 @@ public final class OperatorTestHelper {
         }
 
         @Override
+        public long sequenceNextValue(TableName sequenceName) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public long sequenceCurrentValue(TableName sequenceName) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public long hash(ValueSource valueSource, AkCollator collator)
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public int enterUpdateStep() {
+        public PersistitIndexRow takeIndexRow(IndexRowType indexRowType) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public int enterUpdateStep(boolean evenIfZero) {
+        public void returnIndexRow(PersistitIndexRow indexRow) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void leaveUpdateStep(int step) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void withStepChanging(boolean withStepChanging) {
+        public IterationHelper createIterationHelper(IndexRowType indexRowType) {
             throw new UnsupportedOperationException();
         }
 
@@ -280,12 +289,7 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public long sequenceNextValue(TableName sequenceName) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public long sequenceCurrentValue(TableName sequenceName) {
+        public Key createKey() {
             throw new UnsupportedOperationException();
         }
     }

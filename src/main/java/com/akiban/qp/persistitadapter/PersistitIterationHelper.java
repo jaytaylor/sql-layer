@@ -23,12 +23,14 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.util.ShareHolder;
 import com.persistit.Exchange;
+import com.persistit.Key;
+import com.persistit.Key.Direction;
 import com.persistit.exception.PersistitException;
 
-public class IndexScanRowState implements IterationHelper
+public class PersistitIterationHelper implements IterationHelper
 {
     @Override
-    public Row row() throws PersistitException
+    public Row row()
     {
         unsharedRow().get().copyFromExchange(exchange);
         return row.get();
@@ -57,14 +59,50 @@ public class IndexScanRowState implements IterationHelper
     }
 
     @Override
-    public Exchange exchange()
+    public Key key()
     {
-        return exchange;
+        return exchange.getKey();
     }
 
-    // IndexScanRowState interface
+    @Override
+    public void clear()
+    {
+        exchange.clear();
+    }
 
-    public IndexScanRowState(PersistitAdapter adapter, IndexRowType indexRowType)
+    @Override
+    public boolean next(boolean deep)
+    {
+        try {
+            return exchange.next(deep);
+        } catch(PersistitException e) {
+            throw PersistitAdapter.wrapPersistitException(adapter.getSession(), e);
+        }
+    }
+
+    @Override
+    public boolean prev(boolean deep)
+    {
+        try {
+            return exchange.previous(deep);
+        } catch(PersistitException e) {
+            throw PersistitAdapter.wrapPersistitException(adapter.getSession(), e);
+        }
+    }
+
+    @Override
+    public boolean traverse(Direction dir, boolean deep)
+    {
+        try {
+            return exchange.traverse(dir, deep);
+        } catch(PersistitException e) {
+            throw PersistitAdapter.wrapPersistitException(adapter.getSession(), e);
+        }
+    }
+
+    // PersistitIterationHelper interface
+
+    public PersistitIterationHelper(PersistitAdapter adapter, IndexRowType indexRowType)
     {
         this.adapter = adapter;
         this.indexRowType = indexRowType.physicalRowType(); // In case we have a spatial index
@@ -73,7 +111,7 @@ public class IndexScanRowState implements IterationHelper
 
     // For use by this class
 
-    private ShareHolder<PersistitIndexRow> unsharedRow() throws PersistitException
+    private ShareHolder<PersistitIndexRow> unsharedRow()
     {
         if (row.isEmpty() || row.isShared()) {
             row.hold(adapter.takeIndexRow(indexRowType));

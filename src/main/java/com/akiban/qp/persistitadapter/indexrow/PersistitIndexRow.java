@@ -17,16 +17,12 @@
 
 package com.akiban.qp.persistitadapter.indexrow;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexToHKey;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitHKey;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.util.HKeyCache;
 import com.akiban.server.PersistitKeyPValueSource;
 import com.akiban.server.PersistitKeyValueSource;
@@ -34,18 +30,14 @@ import com.akiban.server.collation.AkCollator;
 import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.util.AkibanAppender;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Value;
-import com.persistit.exception.PersistitException;
 
 public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
 {
@@ -83,7 +75,7 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     }
 
     @Override
-    public final RowType rowType()
+    public final IndexRowType rowType()
     {
         return indexRowType;
     }
@@ -133,14 +125,14 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
 
     // For use by subclasses
 
-    protected PersistitIndexRow(KeyCreator keyCreator, StoreAdapter storeAdapter, IndexRowType indexRowType)
+    protected PersistitIndexRow(StoreAdapter adapter, IndexRowType indexRowType)
     {
-        super(keyCreator);
-        this.keyState = keyCreator.createKey();
+        super(adapter);
+        this.keyState = adapter.createKey();
         resetForWrite(indexRowType.index(), keyState);
         this.indexRowType = indexRowType;
         this.leafmostTable = (UserTable) index.leafMostTable();
-        this.hKeyCache = new HKeyCache<>(storeAdapter);
+        this.hKeyCache = new HKeyCache<>(adapter);
 
         this.tInstances = index.tInstances();
         this.akTypes = null;

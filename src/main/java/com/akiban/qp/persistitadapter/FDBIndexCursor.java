@@ -96,8 +96,8 @@ class FDBIndexCursor implements Cursor
         int endBoundColumns = startBoundColumns;
         TInstance[] tInstances = keyAdapter.createTInstances(startBoundColumns);
         AkCollator[] collators = keyAdapter.createAkCollators(startBoundColumns);
-        PersistitIndexRow startKey = new PersistitTableIndexRow(adapter.getUnderlyingStore(), adapter, indexRowType);
-        PersistitIndexRow endKey = new PersistitTableIndexRow(adapter.getUnderlyingStore(), adapter, indexRowType);
+        PersistitIndexRow startKey = new PersistitTableIndexRow(adapter, indexRowType);
+        PersistitIndexRow endKey = new PersistitTableIndexRow(adapter, indexRowType);
         boolean startInclusive = keyRange.loInclusive();
         boolean endInclusive = keyRange.hiInclusive();
 
@@ -211,7 +211,7 @@ class FDBIndexCursor implements Cursor
             Value value = new Value((Persistit)null);
             value.putByteArray(valueBytes);
 
-            row = new PersistitTableIndexRow(adapter.getUnderlyingStore(), adapter, indexRowType);
+            row = new PersistitTableIndexRow(adapter, indexRowType);
             row.copyFromKeyValue(key, value);
         } else {
             close();

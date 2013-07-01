@@ -17,10 +17,8 @@
 
 package com.akiban.qp.persistitadapter.indexrow;
 
-import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.rowtype.IndexRowType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -28,16 +26,13 @@ public class PersistitIndexRowPool
 {
     // PersistitIndexRowPool interface
 
-    public PersistitIndexRow takeIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
+    public PersistitIndexRow takeIndexRow(StoreAdapter adapter, IndexRowType indexRowType)
     {
-        PersistitIndexRow persistitIndexRow = adapterPool(adapter).takeIndexRow(indexRowType);
-        // new RuntimeException("take " + persistitIndexRow.hashCode()).printStackTrace();
-        return persistitIndexRow;
+        return adapterPool(adapter).takeIndexRow(indexRowType);
     }
 
-    public void returnIndexRow(PersistitAdapter adapter, IndexRowType indexRowType, PersistitIndexRow indexRow)
+    public void returnIndexRow(StoreAdapter adapter, IndexRowType indexRowType, PersistitIndexRow indexRow)
     {
-        // new RuntimeException("return " + indexRow.hashCode()).printStackTrace();
         adapterPool(adapter).returnIndexRow(indexRowType, indexRow);
     }
 
@@ -47,7 +42,7 @@ public class PersistitIndexRowPool
 
     // For use by this class
 
-    private AdapterPool adapterPool(PersistitAdapter adapter)
+    private AdapterPool adapterPool(StoreAdapter adapter)
     {
         LinkedHashMap<Long, AdapterPool> adapterPool = threadAdapterPools.get();
         AdapterPool pool = adapterPool.get(adapter.id());
@@ -58,11 +53,11 @@ public class PersistitIndexRowPool
         return pool;
     }
 
-    private static PersistitIndexRow newIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
+    private static PersistitIndexRow newIndexRow(StoreAdapter adapter, IndexRowType indexRowType)
     {
         return
             indexRowType.index().isTableIndex()
-            ? new PersistitTableIndexRow(adapter, adapter, indexRowType)
+            ? new PersistitTableIndexRow(adapter, indexRowType)
             : new PersistitGroupIndexRow(adapter, indexRowType);
     }
 
@@ -119,13 +114,12 @@ public class PersistitIndexRowPool
             indexRows.addLast(indexRow);
         }
 
-        public AdapterPool(PersistitAdapter adapter)
+        public AdapterPool(StoreAdapter adapter)
         {
             this.adapter = adapter;
         }
 
-        private final PersistitAdapter adapter;
-        private final Map<IndexRowType, Deque<PersistitIndexRow>> indexRowCache =
-            new HashMap<>();
+        private final StoreAdapter adapter;
+        private final Map<IndexRowType, Deque<PersistitIndexRow>> indexRowCache = new HashMap<>();
     }
 }

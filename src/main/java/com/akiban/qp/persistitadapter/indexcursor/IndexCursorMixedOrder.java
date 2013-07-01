@@ -47,17 +47,20 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     public void open()
     {
         super.open();
-        exchange().clear();
+        clear();
         scanStates.clear();
+        boolean success = false;
         try {
             setBoundaries();
             initializeScanStates();
             repositionExchange(0);
             justOpened = true;
             pastStart = false;
-        } catch (PersistitException e) {
-            close();
-            adapter.handlePersistitException(e);
+            success = true;
+        } finally {
+            if(!success) {
+                close();
+            }
         }
     }
 
@@ -66,6 +69,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     {
         super.next();
         Row next = null;
+        boolean success = false;
         try {
             if (justOpened) {
                 // Exchange is already positioned
@@ -103,9 +107,11 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             } else {
                 close();
             }
-        } catch (PersistitException e) {
-            close();
-            adapter.handlePersistitException(e);
+            success = true;
+        } finally {
+            if(!success) {
+                close();
+            }
         }
         return next;
     }
@@ -116,7 +122,8 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
         // Reposition cursor by delegating jump to each MixedOrderScanState. Also recompute
         // startKey so that beforeStart() works.
         assert keyRange != null; // keyRange is null when used from a Sorter
-        exchange().clear();
+        clear();
+        boolean success = false;
         int field = 0;
         more = true;
         try {
@@ -148,9 +155,11 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             }
             loInclusive = true;
             justOpened = true;
-        } catch (PersistitException e) {
-            close();
-            adapter.handlePersistitException(e);
+            success = true;
+        } finally {
+            if(!success) {
+                close();
+            }
         }
     }
 
@@ -179,7 +188,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
         return new IndexCursorMixedOrder<>(context, iterationHelper, keyRange, ordering, sortKeyAdapter);
     }
 
-    public void initializeScanStates() throws PersistitException
+    public void initializeScanStates()
     {
         int f = 0;
         // Use maxSegments to limit MixedOrderScanStates to just those corresponding to the columns
@@ -331,13 +340,13 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
 
     // For use by this class
 
-    private void advance(int field) throws PersistitException
+    private void advance(int field)
     {
         MixedOrderScanState scanState = scanStates.get(field);
         if (scanState.advance()) {
             repositionExchange(field + 1);
         } else {
-            exchange().cut();
+            key().cut();
             if (field == 0) {
                 more = false;
             } else {
@@ -346,7 +355,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
         }
     }
 
-    private void repositionExchange(int field) throws PersistitException
+    private void repositionExchange(int field)
     {
         more = true;
         for (int f = field; more && f < scanStates.size(); f++) {
@@ -392,7 +401,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     private void clear(PersistitIndexRowBuffer bound)
     {
         assert bound == startKey || bound == endKey;
-        bound.resetForWrite(index(), adapter.newKey(), null); // TODO: Reuse the existing key
+        bound.resetForWrite(index(), adapter.createKey(), null); // TODO: Reuse the existing key
     }
 
     private boolean beforeStart(Row row)

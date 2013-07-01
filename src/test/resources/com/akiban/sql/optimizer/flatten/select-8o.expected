@@ -1,0 +1,1 @@
+SELECT test.parent.name AS pname, test.child.name AS cname FROM test.parent, test.child WHERE (test.parent.name = 'foo') AND ((test.parent.id = test.child.pid) AND TRUE) ORDER BY test.child.name
