@@ -41,7 +41,7 @@ import java.util.*;
 
 public class API
 {
-    private static final boolean USE_PVALUES = Types3Switch.ON;
+    private static final boolean USE_PVALUES = Types3Switch.DEFAULT;
 
     // Aggregate
 

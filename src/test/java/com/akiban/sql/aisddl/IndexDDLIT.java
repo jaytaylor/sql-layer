@@ -45,6 +45,8 @@ import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.text.FullTextIndexService;
 import com.akiban.server.service.text.FullTextIndexServiceImpl;
 
+import java.util.Map;
+
 public class IndexDDLIT extends AISDDLITBase {
 
     @Override
@@ -53,6 +55,10 @@ public class IndexDDLIT extends AISDDLITBase {
                 .bindAndRequire(FullTextIndexService.class, FullTextIndexServiceImpl.class);
     }
 
+    @Override
+    protected Map<String, String> startupConfigProperties() {
+        return uniqueStartupConfigProperties(TableDDLIT.class);
+    }
 
     @Test
     public void createKey() throws Exception {
