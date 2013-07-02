@@ -1242,8 +1242,13 @@ public abstract class AbstractStore<SDType> implements Store {
     }
 
     protected static boolean fieldEqual(RowDef rowDef, RowData a, RowData b, int fieldPosition) {
-        long aLoc = rowDef.fieldLocation(a, fieldPosition);
-        long bLoc = rowDef.fieldLocation(b, fieldPosition);
+        long aLoc = a.getExplicitRowDef() != null ? 
+                a.getExplicitRowDef().fieldLocation(a, fieldPosition) :
+                rowDef.fieldLocation(a, fieldPosition);
+        long bLoc = b.getExplicitRowDef() != null ? 
+                b.getExplicitRowDef().fieldLocation(b, fieldPosition) :
+                rowDef.fieldLocation(b, fieldPosition);
+        
         return bytesEqual(a.getBytes(), (int)aLoc, (int)(aLoc >>> 32),
                           b.getBytes(), (int)bLoc, (int)(bLoc >>> 32));
     }
