@@ -25,9 +25,14 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+
 public class WaitFunctionHelpers
 {
-    /** Blocks until all `works` have finished */
+    /**
+     * Blocks until all `works` have finished
+     * @param works
+     * @throws InterruptedException 
+     */
     public static void waitOn(Collection<? extends BackgroundWork> works) throws InterruptedException
     {
         if (works != null)

@@ -693,7 +693,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
             // no trees to drop
             if (index.getIndexType() == IndexType.FULL_TEXT)
             {
-                fullTextService.dropIndex(session, (FullTextIndex) index);
+                fullTextService.dropIndex(session, (FullTextIndex)index);
             }
         }
     }

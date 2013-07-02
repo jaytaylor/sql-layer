@@ -43,9 +43,7 @@ import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 
 public class FullTextIndexServiceBug1172013IT extends ITBase {
-    private static final String SCHEMA = "test";
-    private static final String FT_INDEX_NAME = "idx3_o";
-
+    public static final String SCHEMA = "test";
     protected FullTextIndexService fullText;
     protected Schema schema;
     protected PersistitAdapter adapter;
@@ -57,8 +55,6 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
     private static final Logger logger = LoggerFactory.getLogger(FullTextIndexServiceBug1172013IT.class);
     private final Object lock = new Object();
     private FullTextIndexServiceImpl fullTextImpl = null;
-
-    
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
@@ -120,20 +116,24 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
     public void testDelete1 () throws InterruptedException, PersistitException {
         logger.debug("Running test delete 1");
 
-        createFullTextIndex(SCHEMA, "o", FT_INDEX_NAME, "oid", "c1", "c2", "c3", "c4");
+        createFullTextIndex(serviceManager(),
+                SCHEMA, "o", "idx3_o",
+                "oid", "c1", "c2", "c3", "c4");
 
         Thread t = new Thread(new DropIndex());
         t.start();
 
         try {
-            createFullTextIndex(SCHEMA, "o", FT_INDEX_NAME, "oid", "c1", "c2", "c3", "c4");
+            createFullTextIndex(serviceManager(),
+                    SCHEMA, "o", "idx3_o",
+                    "oid", "c1", "c2", "c3", "c4");
         } catch(DuplicateIndexException e) {
             // Possible outcome
         }
 
         t.join();
 
-        if(getUserTable(SCHEMA, "o").getFullTextIndex(FT_INDEX_NAME) != null) {
+        if(getUserTable(SCHEMA, "o").getFullTextIndex("idx3_o") != null) {
             new DropIndex().run();
         }
 
@@ -144,7 +144,9 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
     @Test
     public void testDelete2() throws InterruptedException, PersistitException {
         logger.debug("Running test delete 2");
-        createFullTextIndex(SCHEMA, "o", FT_INDEX_NAME, "oid", "c1", "c2", "c3", "c4");
+        createFullTextIndex(serviceManager(),
+                SCHEMA, "o", "idx3_o",
+                "oid", "c1", "c2", "c3", "c4");
         fullTextImpl.POPULATE_BACKGROUND.forceExecution();
         WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
         
@@ -156,7 +158,9 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
         }
         
         try {
-            createFullTextIndex(SCHEMA, "o", FT_INDEX_NAME, "oid", "c1", "c2", "c3", "c4");
+            createFullTextIndex(serviceManager(),
+                    SCHEMA, "o", "idx3_o",
+                    "oid", "c1", "c2", "c3", "c4");
         } catch (DuplicateIndexException ex) {
             logger.debug("Got Duplicate Index");
             // an expected possible outcome.
@@ -164,7 +168,7 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
 
         t.join();
 
-        if(getUserTable(SCHEMA, "o").getFullTextIndex(FT_INDEX_NAME) != null) {
+        if(getUserTable(SCHEMA, "o").getFullTextIndex("idx3_o") != null) {
             new DropIndex().run();
         }
 
@@ -175,7 +179,9 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
     @Test
     public void testDelete3() throws InterruptedException, PersistitException {
         logger.debug("Running test delete 3");
-        createFullTextIndex(SCHEMA, "o", FT_INDEX_NAME, "oid", "c1", "c2", "c3", "c4");
+        createFullTextIndex(serviceManager(),
+                SCHEMA, "o", "idx3_o",
+                "oid", "c1", "c2", "c3", "c4");
 
         // Prevents potential rollback for deterministic test
         WaitFunctionHelpers.waitOn(Collections.singleton(fullTextImpl.POPULATE_BACKGROUND));
@@ -189,7 +195,9 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
         logger.debug("Running test drop update 1");
 
         // create the index, let it complete
-        createFullTextIndex(SCHEMA, "o", FT_INDEX_NAME, "oid", "c1", "c2", "c3", "c4");
+        createFullTextIndex(serviceManager(),
+                SCHEMA, "o", "idx3_o",
+                "oid", "c1", "c2", "c3", "c4");
         fullTextImpl.POPULATE_BACKGROUND.forceExecution();
         WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
         
@@ -222,7 +230,7 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
             synchronized (lock) {
                 lock.notify();
             }
-            ddl().dropTableIndexes(session, tableName, Collections.singletonList(FT_INDEX_NAME));
+            ddl().dropTableIndexes(session, tableName, Collections.singletonList("idx3_o"));
         }
     }
 
@@ -249,7 +257,8 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
 
     }
     
-    private static void traverse(Session session, FullTextIndexServiceImpl serv, Visitor visitor) throws PersistitException
+    private static void traverse(Session session, FullTextIndexServiceImpl serv,
+            Visitor visitor) throws PersistitException
     {
         try
         {

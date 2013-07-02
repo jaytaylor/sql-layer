@@ -136,9 +136,10 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     
     @Override
     public void dropIndex(Session session, FullTextIndex idx) {
-        logger.trace("Delete {}", idx.getIndexName());
 
-        // This makes sure if we're dropping a newly created index
+        logger.trace("Delete {}", idx.getIndexName());
+        
+        // This makes sure if we're dropping a newly created index 
         // the populate thread is stopped, and won't be restarting 
         // on the index we're dropping. 
         Session populatingSession = populating.putIfAbsent(idx.getIndexName(), session);
@@ -192,7 +193,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     @Override
     public List<? extends BackgroundWork> getBackgroundWorks()
     {
-        return backgroundWorks;
+        return Arrays.asList(POPULATE_BACKGROUND, UPDATE_BACKGROUND);
     }
     
     /* Service */
@@ -401,10 +402,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         }
     };
 
-    private final List<? extends BackgroundWork> backgroundWorks
-        = Collections.unmodifiableList(Arrays.asList(POPULATE_BACKGROUND, UPDATE_BACKGROUND)
-    );
-
     private volatile boolean populateRunning = false;
     private class DefaultPopulateWorker extends TimerTask
     {
@@ -583,6 +580,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
      * up and do its job immediately.
      * 
      * If the worker is disabled, return false and do nothing.
+     * @return 
      */
     private boolean forcePopulate()
     {

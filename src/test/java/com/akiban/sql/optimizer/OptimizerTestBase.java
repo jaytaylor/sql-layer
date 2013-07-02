@@ -88,7 +88,7 @@ public class OptimizerTestBase extends ASTTransformTestBase
             ddlBuilder.append(fileContents(ddl));
         String sql = ddlBuilder.toString();
         SchemaFactory schemaFactory = new SchemaFactory(DEFAULT_SCHEMA);
-        AkibanInformationSchema ret = schemaFactory.ais(sql);
+        AkibanInformationSchema ret = schemaFactory.ais(serviceManager(), sql);
         return ret;
     }
 
