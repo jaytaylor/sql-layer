@@ -42,7 +42,6 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
-import com.akiban.server.service.session.SessionServiceImpl;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.PersistitStore;
