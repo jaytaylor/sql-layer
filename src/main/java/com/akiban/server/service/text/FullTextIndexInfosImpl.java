@@ -34,7 +34,7 @@ import java.util.Map;
 
 public abstract class FullTextIndexInfosImpl implements FullTextIndexInfos
 {
-    protected Map<IndexName,FullTextIndexShared> indexes = new HashMap<>();
+    protected final Map<IndexName,FullTextIndexShared> indexes = new HashMap<>();
     
     @Override
     public Query parseQuery(QueryContext context, IndexName name, 

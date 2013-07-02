@@ -938,10 +938,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     @Override
     public void createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
-        logger.trace("creating indexes {}", indexesToAdd);
         if (indexesToAdd.isEmpty() == true) {
             return;
         }
+        logger.debug("creating indexes {}", indexesToAdd);
 
         List<Integer> tableIDs = new ArrayList<>(indexesToAdd.size());
         txnService.beginTransaction(session);
@@ -950,8 +950,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             // Cannot use Index.getAllTableIDs(), stub AIS only has to be name-correct
             for(Index index : indexesToAdd) {
                 switch(index.getIndexType()) {
-                    case TABLE:
                     case FULL_TEXT: // TODO: More IDs?
+                    case TABLE:
                         UserTable table = ais.getUserTable(index.getIndexName().getFullTableName());
                         if(table != null) {
                             tableIDs.add(table.getTableId());

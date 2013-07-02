@@ -8,14 +8,19 @@
 ---
 - Statement: create index idx1 on t (full_text(name));
 ---
-- Statement: SELECT SLEEP(7000);
+- Statement: SELECT fulltext_maintenance_wait();
+- output: [[0]]
 ---
 - Statement: SELECT id FROM t where full_text_search(name = 'foo1');
 - output: [[1]]
 ---
 - Statement: UPDATE t SET id = 3 where id = 1;
 ---
-- Statement: SELECT SLEEP(7000);
+- Statement: SELECT fulltext_maintenance_wait();
+- output: [[0]]
+---
+- Statement: SELECT fulltext_maintenance_wait();
+- output: [[0]]
 ---
 - Statement: SELECT id FROM t where full_text_search(name = 'foo1');
 - output: [[3]]

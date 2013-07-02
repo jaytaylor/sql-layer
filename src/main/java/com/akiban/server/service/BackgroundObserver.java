@@ -17,11 +17,8 @@
 
 package com.akiban.server.service;
 
-import java.util.Observer;
-
-
-public interface BackgroundObserver<T extends BackgroundWork>
+public interface BackgroundObserver
 {
-    public void update(T event);
+    public void update(BackgroundWork event);
     public boolean backgroundFinished();
 }

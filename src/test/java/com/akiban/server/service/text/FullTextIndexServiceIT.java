@@ -39,6 +39,9 @@ import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import static org.junit.Assert.*;
 
 public class FullTextIndexServiceIT extends ITBase
@@ -48,6 +51,8 @@ public class FullTextIndexServiceIT extends ITBase
     protected Schema schema;
     protected StoreAdapter adapter;
     protected QueryContext queryContext;
+    private static final Logger logger = LoggerFactory.getLogger(FullTextIndexServiceIT.class);
+
 
     private int c;
     private int o;
@@ -245,7 +250,7 @@ public class FullTextIndexServiceIT extends ITBase
          {
              Exchange ex = serv.getPopulateExchange(session);
              IndexName toPopulate;
-             while ((toPopulate = serv.nextInQueue(ex)) != null)
+             while ((toPopulate = serv.nextInQueue(session, ex, true)) != null)
                  visitor.visit(toPopulate);
              visitor.endOfTree();
          }
@@ -321,7 +326,7 @@ public class FullTextIndexServiceIT extends ITBase
         writeRow(c, 8, "Flintstone Hudson");
         writeRow(c, 9, "Jim Flintstone");
         
-        // The worker has been disabled, waitOn should return immidately
+        // The worker has been disabled, waitOn should return immediately
         WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
         
         // confirm that new rows are not found (ie., expected2 still works)

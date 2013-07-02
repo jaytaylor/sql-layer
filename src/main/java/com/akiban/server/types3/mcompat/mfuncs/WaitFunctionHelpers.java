@@ -20,6 +20,8 @@ package com.akiban.server.types3.mcompat.mfuncs;
 import com.akiban.server.service.BackgroundObserver;
 import com.akiban.server.service.BackgroundObserverImpl;
 import com.akiban.server.service.BackgroundWork;
+
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -31,7 +33,7 @@ public class WaitFunctionHelpers
      * @param works
      * @throws InterruptedException 
      */
-    public static void waitOn(List<? extends BackgroundWork> works) throws InterruptedException
+    public static void waitOn(Collection<? extends BackgroundWork> works) throws InterruptedException
     {
         if (works != null)
         {
@@ -69,7 +71,7 @@ public class WaitFunctionHelpers
             // clean up
             for (BackgroundWork wk : works)
             {
-                wk.removeObsevers(waiters);
+                wk.removeObservers(waiters);
             }
         }
     }

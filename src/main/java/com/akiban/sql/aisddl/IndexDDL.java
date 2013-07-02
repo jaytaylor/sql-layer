@@ -36,8 +36,6 @@ import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.service.session.Session;
 
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.text.FullTextIndexService;
 
 /** DDL operations on Indices */
 public class IndexDDL
@@ -150,18 +148,17 @@ public class IndexDDL
     public static void createIndex(DDLFunctions ddlFunctions,
                                    Session session,
                                    String defaultSchemaName,
-                                   CreateIndexNode createIndex,
-                                   ServiceManager sm)  {
+                                   CreateIndexNode createIndex)  {
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
         
         Collection<Index> indexesToAdd = new LinkedList<>();
 
-        indexesToAdd.add(buildIndex(ais, defaultSchemaName, createIndex, sm));
+        indexesToAdd.add(buildIndex(ais, defaultSchemaName, createIndex));
         
         ddlFunctions.createIndexes(session, indexesToAdd);
     }
     
-    protected static Index buildIndex (AkibanInformationSchema ais, String defaultSchemaName, CreateIndexNode index, ServiceManager sm) {
+    protected static Index buildIndex (AkibanInformationSchema ais, String defaultSchemaName, CreateIndexNode index){
         final String schemaName = index.getObjectName().getSchemaName() != null ? index.getObjectName().getSchemaName() : defaultSchemaName;
         final String indexName = index.getObjectName().getTableName();
 
@@ -176,7 +173,7 @@ public class IndexDDL
         
         if (index.getColumnList().functionType() == IndexColumnList.FunctionType.FULL_TEXT) {
             logger.debug ("Building Full text index on table {}", tableName) ;
-            tableIndex = buildFullTextIndex (builder, tableName, indexName, index, sm);
+            tableIndex = buildFullTextIndex (builder, tableName, indexName, index);
         } else if (checkIndexType (index, tableName) == Index.IndexType.TABLE) {
             logger.debug ("Building Table index on table {}", tableName) ;
             tableIndex = buildTableIndex (builder, tableName, indexName, index);
@@ -331,9 +328,8 @@ public class IndexDDL
         return builder.akibanInformationSchema().getGroup(groupName).getIndex(indexName);
     }
 
-    protected static Index buildFullTextIndex (AISBuilder builder, TableName tableName, String indexName, IndexDefinition index, ServiceManager sm) {
+    protected static Index buildFullTextIndex (AISBuilder builder, TableName tableName, String indexName, IndexDefinition index) {
         UserTable table = builder.akibanInformationSchema().getUserTable(tableName);
-        FullTextIndexService fullTextService = sm.getServiceByClass(FullTextIndexService.class);
         
         if (index.getJoinType() != null) {
             throw new TableIndexJoinTypeException();
@@ -367,8 +363,6 @@ public class IndexDDL
             }
             
             builder.fullTextIndexColumn(tableName, indexName, schemaName, columnTable.getTableName(), columnName, i);
-            // populate index
-            fullTextService.schedulePopulate(schemaName, tableName.getTableName(), indexName);
             i++;
         }
         return builder.akibanInformationSchema().getUserTable(tableName).getFullTextIndex(indexName);

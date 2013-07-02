@@ -33,11 +33,27 @@ import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.DuplicateSequenceNameException;
 import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.service.servicemanager.GuicedServiceManager;
+import com.akiban.server.service.text.FullTextIndexService;
+import com.akiban.server.service.text.FullTextIndexServiceImpl;
+
+import java.util.Map;
 
 public class TableDDLIT extends AISDDLITBase {
 
     private static final String DROP_T1 = "DROP TABLE test.t1";
     private static final String DROP_T2 = "DROP TABLE test.t2";
+
+    @Override
+    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
+        return super.serviceBindingsProvider()
+                .bindAndRequire(FullTextIndexService.class, FullTextIndexServiceImpl.class);
+    }
+
+    @Override
+    protected Map<String, String> startupConfigProperties() {
+        return uniqueStartupConfigProperties(TableDDLIT.class);
+    }
     
     @Test (expected=NoSuchTableException.class)
     public void testDropFail() throws Exception {
@@ -56,8 +72,8 @@ public class TableDDLIT extends AISDDLITBase {
 
         assertNull (ais().getUserTable("test", "t1"));
     }
-    
-    @Test 
+
+    @Test
     public void testCreateIndexes() throws Exception {
         String sql = "CREATE TABLE test.t1 (c1 integer not null primary key, " + 
             "c2 integer not null, " +
