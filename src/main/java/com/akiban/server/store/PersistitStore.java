@@ -103,9 +103,11 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
      // --- for tracking changes 
-    private Exchange createChangeExchange(Session session) throws PersistitException
-    {   
-        return treeService.getExchange(session, treeService.treeLink(MAINTENANCE_SCHEMA, FULL_TEXT_TABLE));
+    private Exchange getChangeExchange(Session session) throws PersistitException
+    {
+        return treeService.getExchange(session,
+                                       treeService.treeLink(MAINTENANCE_SCHEMA,
+                                                            FULL_TEXT_TABLE));
     }
 
     private void addChange(Session session,
@@ -116,11 +118,15 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
                            Key rowHKey)
     {
         try {
-            Exchange ex = createChangeExchange(session);
+            Exchange ex = getChangeExchange(session);
+
             // KEY: schema | table | indexName | indexId | unique_num
             ex.clear().append(schema).append(table).append(index).append(indexId).append(uniqueChangeId.getAndIncrement());
-            // VALUE: rowHKey's bytes
-            ex.getValue().clear().putByteArray(rowHKey.getEncodedBytes(), 0, rowHKey.getEncodedSize());
+
+            // VALUE: rowHKey's bytes | indexId
+            ex.getValue().clear().putByteArray(rowHKey.getEncodedBytes(),
+                                               0,
+                                               rowHKey.getEncodedSize());
             ex.store();
         } catch(PersistitException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
@@ -153,7 +159,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
      */
     public HKeyBytesStream getChangedRows(Session session) throws PersistitException
     {
-        Exchange ex = createChangeExchange(session);
+        Exchange ex = getChangeExchange(session);
         ex.append(Key.BEFORE);
         return new HKeyBytesStream(ex, session);
     }
@@ -176,7 +182,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         // 'private' because this should not be constructed
         // anywhere other than PersistitStore.getChangedRows()
         // The class itself, however, is public, as it can be used anywhere
-        private HKeyBytesStream(Exchange ex, Session session) throws PersistitException
+        private HKeyBytesStream (Exchange ex, Session session) throws PersistitException
         {
             this.ex = ex;
             this.session = session;
@@ -221,34 +227,41 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
 
         private class StreamIterator implements Iterator<byte[]>
         {
-            private boolean hasNext;
+            private Boolean hasNext;
 
             private StreamIterator(boolean hasNext) {
                 this.hasNext = hasNext;
             }
 
+            private void advance()
+            {
+                try {
+                    hasNext = ex.next(filter);
+                } catch(PersistitException e) {
+                    throw PersistitAdapter.wrapPersistitException(session, e);
+                }
+            }
+
             @Override
             public boolean hasNext()
             {
+                if(hasNext == null) {
+                    advance();
+                }
                 return hasNext;
             }
 
             @Override
             public byte[] next()
             {
+                if(hasNext == null) {
+                    advance();
+                }
                 if(!hasNext) {
                     throw new NoSuchElementException();
                 }
-                try {
-                    if(!ex.next(filter)) {
-                        throw new IllegalStateException("Expected next");
-                    }
-                    hasNext = ex.hasNext(filter);
-                    return ex.getValue().getByteArray();
-                }
-                catch(PersistitException e) {
-                    throw PersistitAdapter.wrapPersistitException(session, e);
-                }
+                hasNext = null;
+                return ex.getValue().getByteArray();
             }
 
             @Override

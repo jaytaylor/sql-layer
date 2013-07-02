@@ -116,11 +116,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
 
     /* FullTextIndexService */
 
-    private long createIndex(Session session, IndexName name) throws IOException {
-        FullTextIndexInfo index = getIndex(session, name, null);
-        return populateIndex(session, index);
-    }
-
     void deleteFromTree(Session session, IndexName name)
     {
         try
@@ -141,6 +136,8 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     
     @Override
     public void dropIndex(Session session, FullTextIndex idx) {
+        logger.trace("Delete {}", idx.getIndexName());
+
         // This makes sure if we're dropping a newly created index
         // the populate thread is stopped, and won't be restarting 
         // on the index we're dropping. 
@@ -195,7 +192,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     @Override
     public List<? extends BackgroundWork> getBackgroundWorks()
     {
-        return BACKGROUND_WORKS;
+        return backgroundWorks;
     }
     
     /* Service */
@@ -246,7 +243,8 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         return dxlService.ddlFunctions().getAIS(session);
     }
 
-    protected long populateIndex(Session session, FullTextIndexInfo index) throws IOException {
+    protected long populateIndex(Session session, FullTextIndexInfo index)
+            throws IOException {
         Indexer indexer = index.getIndexer();
         Operator plan = index.fullScan();
         StoreAdapter adapter = session.get(StoreAdapter.STORE_ADAPTER_KEY);
@@ -266,6 +264,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         }
         finally {
             if(cursor != null) {
+                cursor.close();
                 cursor.destroy();
             }
             if(!success) {
@@ -308,6 +307,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             finally
             {
                 if(cursor != null) {
+                    cursor.close();
                     cursor.destroy();
                 }
                 if(!success) {
@@ -401,8 +401,8 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         }
     };
 
-    private final List<? extends BackgroundWork> BACKGROUND_WORKS = Collections.unmodifiableList(
-            Arrays.asList(POPULATE_BACKGROUND, UPDATE_BACKGROUND)
+    private final List<? extends BackgroundWork> backgroundWorks
+        = Collections.unmodifiableList(Arrays.asList(POPULATE_BACKGROUND, UPDATE_BACKGROUND)
     );
 
     private volatile boolean populateRunning = false;
@@ -473,7 +473,8 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             
             toPopulate = nextInQueue(session, ex, false);
             if (toPopulate != null && stillExists (session, toPopulate)) {
-                createIndex(session, toPopulate);
+                FullTextIndexInfo index = getIndex(session, toPopulate, null);
+                populateIndex(session, index);
                 ex.remove();
                 transactionService.commitTransaction(session);
                 populating.remove(toPopulate);
@@ -538,6 +539,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         Session session = sessionService.createSession();
         try
         {
+            // Consume and commit updates to each index in distinct blocks to keep r/w window small-ish
             for(;;) {
                 transactionService.beginTransaction(session);
                 HKeyBytesStream rows = persistitStore.getChangedRows(session);
