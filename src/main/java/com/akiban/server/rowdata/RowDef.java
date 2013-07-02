@@ -164,7 +164,7 @@ public class RowDef {
                                                            table.getTableId(),
                                                            table.getName(),
                                                            getPkTreeName()));
-        sb.append("fieldCount ").append(getFieldCount()).append(' ');
+        sb.append(" fieldCount ").append(getFieldCount()).append(' ');
 
         for (int i = 0; i < fieldDefs.length; i++) {
             sb.append(i == 0 ? "[" : ",");
