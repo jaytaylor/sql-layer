@@ -28,6 +28,7 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitHKey;
 import com.akiban.qp.row.HKeyRow;
 import com.akiban.qp.rowtype.HKeyRowType;
@@ -62,6 +63,7 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -76,10 +78,9 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     private static final String POPULATE_SCHEMA = "populate";
     private static final String FULL_TEXT_TABLE = "full_text_populate";
     
-    private final SessionService sessionService = new SessionServiceImpl();
-
 
     private final ConfigurationService configService;
+    private final SessionService sessionService;
     private final DXLService dxlService;
     private final Store store;
     private final TransactionService transactionService;
@@ -100,10 +101,13 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
 
     @Inject
     public FullTextIndexServiceImpl(ConfigurationService configService,
-                                    DXLService dxlService, Store store,
+                                    SessionService sessionService,
+                                    DXLService dxlService,
+                                    Store store,
                                     TransactionService transactionService,
                                     TreeService treeService) {
         this.configService = configService;
+        this.sessionService = sessionService;
         this.dxlService = dxlService;
         this.store = store;
         this.transactionService = transactionService;
@@ -138,10 +142,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     
     @Override
     public void dropIndex(Session session, FullTextIndex idx) {
-
-        logger.trace("Delete {}", idx.getIndexName());
-        
-        // This makes sure if we're dropping a newly created index 
+        // This makes sure if we're dropping a newly created index
         // the populate thread is stopped, and won't be restarting 
         // on the index we're dropping. 
         Session populatingSession = populating.putIfAbsent(idx.getIndexName(), session);
@@ -150,14 +151,13 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             populatingSession.cancelCurrentQuery(true);
             // wait for the thread to complete 
             try {
-                WaitFunctionHelpers.waitOn(Collections.singletonList(getBackgroundWorks().get(0)));
+                WaitFunctionHelpers.waitOn(Collections.singleton(POPULATE_BACKGROUND));
             } catch (InterruptedException e) {
-                ;// TODO: do nothing
+                logger.error("waitOn populate during dropIndex failed", e);
             }
         } else {
             // delete 'promise' for population, if any
             deleteFromTree(session, idx.getIndexName());
-
         }
         
         // This deals with the update thread. If the update
@@ -166,9 +166,9 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         // no good way to tell if our index is being updated. 
         if (updateRunning) {
             try {
-                WaitFunctionHelpers.waitOn(Collections.singletonList(getBackgroundWorks().get(1)));
+                WaitFunctionHelpers.waitOn(Collections.singleton(UPDATE_BACKGROUND));
             } catch (InterruptedException e) {
-                ;//TODO: do nothing
+                logger.error("waitOn update during dropIndex failed", e);
             }
         }
         
@@ -196,7 +196,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     @Override
     public List<? extends BackgroundWork> getBackgroundWorks()
     {
-        return backgroundWorks;
+        return BACKGROUND_WORKS;
     }
     
     /* Service */
@@ -234,7 +234,10 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     protected synchronized File getIndexPath() {
         if (indexPath == null) {
             indexPath = new File(configService.getProperty(INDEX_PATH_PROPERTY));
-            indexPath.mkdirs();
+            boolean success = indexPath.mkdirs();
+            if (!success && !indexPath.exists()) {
+                throw new AkibanInternalException("Could not create indexPath directories: " + indexPath);
+            }
         }
         return indexPath;
     }
@@ -244,8 +247,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         return dxlService.ddlFunctions().getAIS(session);
     }
 
-    protected long populateIndex(Session session, FullTextIndexInfo index)
-            throws IOException {
+    protected long populateIndex(Session session, FullTextIndexInfo index) throws IOException {
         Indexer indexer = index.getIndexer();
         Operator plan = index.fullScan();
         StoreAdapter adapter = session.get(StoreAdapter.STORE_ADAPTER_KEY);
@@ -253,30 +255,22 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             adapter = store.createAdapter(session, index.getSchema());
         QueryContext queryContext = new SimpleQueryContext(adapter);
         IndexWriter writer = indexer.getWriter();
-        RowIndexer rowIndexer = new RowIndexer(index, writer, false);
+
         Cursor cursor = null;
         boolean success = false;
-        try {
-            writer.deleteAll();
+        try(RowIndexer rowIndexer = new RowIndexer(index, writer, false)) {
             cursor = API.cursor(plan, queryContext);
             long count = rowIndexer.indexRows(cursor);
+            writer.commit();
             success = true;
             return count;
         }
         finally {
-            if (cursor != null)
+            if(cursor != null) {
                 cursor.destroy();
-            try {
-                rowIndexer.close();
-                if (success) {
-                    writer.commit();
-                }
-                else {
-                    writer.rollback();
-                }
             }
-            catch (IOException ex) {
-                throw new AkibanInternalException("Error closing indexer", ex);
+            if(!success) {
+                writer.rollback();
             }
         }
     }
@@ -293,39 +287,32 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             QueryContext queryContext = new SimpleQueryContext(adapter);
             HKeyCache<com.akiban.qp.row.HKey> cache = new HKeyCache<>(adapter);
             IndexWriter writer = indexInfo.getIndexer().getWriter();
-            RowIndexer rowIndexer = new RowIndexer(indexInfo, writer, true);
+
             Cursor cursor = null;
             boolean success = false;
-            try
+            try(RowIndexer rowIndexer = new RowIndexer(indexInfo, writer, true))
             {
                 Operator operator = indexInfo.getOperator();
-                int n = 0;
-                for (byte row[] : rows)
-                {
-                    HKeyRow hkeyRow = toHKeyRow(row, indexInfo.getHKeyRowType(),
-                                                adapter, cache);
+                Iterator<byte[]> it = rows.iterator();
+                while(it.hasNext()) {
+                    byte[] row = it.next();
+                    HKeyRow hkeyRow = toHKeyRow(row, indexInfo.getHKeyRowType(), adapter, cache);
                     queryContext.setRow(0, hkeyRow);
                     cursor = API.cursor(operator, queryContext);
                     rowIndexer.updateDocument(cursor, row);
+                    it.remove();
                 }
+                writer.commit();
                 success = true;
+
             }
             finally
             {
-                rowIndexer.close();
-                if (cursor != null)
+                if(cursor != null) {
                     cursor.destroy();
-
-                try
-                {
-                    if (success)
-                        writer.commit();
-                    else
-                        writer.rollback();
                 }
-                catch (IOException ex)
-                {
-                    throw new AkibanInternalException("Error commit writer", ex);
+                if(!success) {
+                    writer.rollback();
                 }
             }
         }
@@ -343,7 +330,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         {
             runUpdate();
         }
-    }; 
+    }
     
  
     @Override
@@ -368,56 +355,57 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             throw new AkibanInternalException("Error while scheduling index population", ex);
         }
     }
-    
-    private final List<? extends BackgroundWork> backgroundWorks
-        = Collections.unmodifiableList(Arrays.asList(new BackgroundWorkBase()
-                                                     {
-                                                         @Override
-                                                         public boolean forceExecution()
-                                                         {
-                                                             return forcePopulate();
-                                                         }
 
-                                                         @Override
-                                                         public long getMinimumWaitTime()
-                                                         {
-                                                             return populateEnabled && hasScheduled
-                                                                      ? populateDelayInterval
-                                                                      : 0;
-                                                         }
-                                                        
-                                                         @Override
-                                                         public String toString()
-                                                         {
-                                                             return "POPULATE";
-                                                         }
-                                                     },
-                                                     new BackgroundWorkBase()
-                                                     {
-                                                         @Override
-                                                         public boolean forceExecution()
-                                                         {
-                                                             return forceUpdate();
-                                                         }
+    final BackgroundWork POPULATE_BACKGROUND = new BackgroundWorkBase()
+    {
+        @Override
+        public boolean forceExecution()
+        {
+            return forcePopulate();
+        }
 
-                                                         @Override
-                                                         public long getMinimumWaitTime()
-                                                         {
-                                                             return updateWorker == null
-                                                                        ? 0 // worker is disabled. 
-                                                                        : maintenanceInterval;
-                                                         }
-                                                         
-                                                         @Override
-                                                         public String toString()
-                                                         {
-                                                             return "UPDATE";
-                                                         }
-                                                     }));
+        @Override
+        public long getMinimumWaitTime()
+        {
+            return populateEnabled && hasScheduled
+                    ? populateDelayInterval
+                    : 0;
+        }
 
-    private static final int populateWork = 0;
-    private static final int updateWork = 1;
-    
+        @Override
+        public String toString()
+        {
+            return "POPULATE";
+        }
+    };
+
+    final BackgroundWork UPDATE_BACKGROUND = new BackgroundWorkBase()
+    {
+        @Override
+        public boolean forceExecution()
+        {
+            return forceUpdate();
+        }
+
+        @Override
+        public long getMinimumWaitTime()
+        {
+            return updateWorker == null
+                    ? 0 // worker is disabled.
+                    : maintenanceInterval;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "UPDATE";
+        }
+    };
+
+    private final List<? extends BackgroundWork> BACKGROUND_WORKS = Collections.unmodifiableList(
+            Arrays.asList(POPULATE_BACKGROUND, UPDATE_BACKGROUND)
+    );
+
     private volatile boolean populateRunning = false;
     private class DefaultPopulateWorker extends TimerTask
     {
@@ -426,7 +414,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         {
             runPopulate();
         }
-    };
+    }
 
     // ---------- mostly for testing ---------------
     void disableUpdateWorker()
@@ -520,17 +508,21 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         Session session = sessionService.createSession();
         try
         {
-            while (populateNextIndex(session)) {}
+            boolean more = true;
+            while(more) {
+                more = populateNextIndex(session);
+            }
         }
         catch (PersistitException ex1)
         {
-            throw new AkibanInternalException("Error while populating full_text indices", ex1);
+            throw PersistitAdapter.wrapPersistitException(session, ex1);
         }
         finally
         {
             hasScheduled = false;
-            backgroundWorks.get(populateWork).notifyObservers();
+            POPULATE_BACKGROUND.notifyObservers();
             populateRunning = false;
+            session.close();
         }
     }
     
@@ -547,33 +539,27 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         Session session = sessionService.createSession();
         try
         {
-
-            transactionService.beginTransaction(session);
-            HKeyBytesStream rows = persistitStore.getChangedRows(session);
-            if (rows != null) // if tree is not empty
-            {
-                do
-                {
-                    if (populating.get(rows.getIndexName()) == null) {
-                        updateIndex(session,
-                                    rows.getIndexName(),
-                                    rows);
-                        rows.remove();
-                    }
+            for(;;) {
+                transactionService.beginTransaction(session);
+                HKeyBytesStream rows = persistitStore.getChangedRows(session);
+                if(!rows.hasStream()) {
+                    break;
                 }
-                while (rows.nextIndex());
+                if (populating.get(rows.getIndexName()) == null) {
+                    updateIndex(session, rows.getIndexName(), rows);
+                }
+                transactionService.commitTransaction(session);
             }
-            transactionService.commitTransaction(session);
         }
         catch(PersistitException e)
         {
-            throw new AkibanInternalException("Error while maintaning full_text indices");
+            throw new AkibanInternalException("Error while maintaining full_text indices");
         }
         finally
         {
             transactionService.rollbackTransactionIfOpen(session);
             session.close();
-            backgroundWorks.get(updateWork).notifyObservers();
+            UPDATE_BACKGROUND.notifyObservers();
             updateRunning = false;
         }
     }
@@ -596,7 +582,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
      * up and do its job immediately.
      * 
      * If the worker is disabled, return false and do nothing.
-     * @return 
      */
     private boolean forcePopulate()
     {
@@ -690,7 +675,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     private HKeyRow toHKeyRow(byte rowBytes[], HKeyRowType hKeyRowType,
                               StoreAdapter store, HKeyCache<com.akiban.qp.row.HKey> cache)
     {
-        PersistitHKey hkey = (PersistitHKey)store.newHKey(hKeyRowType.hKey());
+        PersistitHKey hkey = store.newHKey(hKeyRowType.hKey());
         Key key = hkey.key();
         key.setEncodedSize(rowBytes.length);
         System.arraycopy(rowBytes, 0, key.getEncodedBytes(), 0, rowBytes.length);

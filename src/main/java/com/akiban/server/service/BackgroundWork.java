@@ -20,21 +20,16 @@ package com.akiban.server.service;
 import java.util.Collection;
 
 
-public interface BackgroundWork<O extends BackgroundObserver, W extends BackgroundWork>
+public interface BackgroundWork
 {
-    public void addObserver(O observer);
+    public void addObserver(BackgroundObserver observer);
 
-    public void removeObserver(O observer);
-    
-    public void removeObsevers(Collection<O> os);
-    
-    public void removeAllObservers();
+    public void removeObservers(Collection<BackgroundObserver> os);
     
     public void notifyObservers();
 
     /**
-     * 
-     * @return the minium time interval that one has to wait to be guaranteed that
+     * @return the minimum time interval that one has to wait to be guaranteed that
      * the work has been executed at least once.
      */
     public abstract long getMinimumWaitTime();

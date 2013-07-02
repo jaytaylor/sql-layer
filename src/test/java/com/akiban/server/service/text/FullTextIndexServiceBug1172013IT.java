@@ -44,7 +44,7 @@ import com.akiban.sql.embedded.EmbeddedJDBCServiceImpl;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 
-public class FullTextIndexServiceBug1172013IT extends ITBase {
+    public class FullTextIndexServiceBug1172013IT extends ITBase {
     public static final String SCHEMA = "test";
     protected FullTextIndexService fullText;
     protected Schema schema;
@@ -119,21 +119,14 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
 
         // disable the populate worker (so it doesn't read all the entries
         // out before we get a chance to look at the tree.
-        createFullTextIndex(serviceManager(),
-                SCHEMA, "o", "idx3_o",
-                "oid", "c1", "c2", "c3", "c4");
+        createFullTextIndex(SCHEMA, "o", "idx3_o", "oid", "c1", "c2", "c3", "c4");
         new Thread(new DropIndex()).start();
         
         try {
-            createFullTextIndex(serviceManager(),
-                    SCHEMA, "o", "idx3_o",
-                    "oid", "c1", "c2", "c3", "c4");
+            createFullTextIndex(SCHEMA, "o", "idx3_o", "oid", "c1", "c2", "c3", "c4");
         } catch (DuplicateIndexException ex) {
             logger.debug("Got Duplicate Index");
-            ; // an expected possible outcome. 
-        } catch (DuplicateIndexColumnException ex) {
-            logger.debug("Got Duplicate Column");
-            ; // an expected possible outcome
+            // an expected possible outcome.
         }
         verifyClean(fullTextImpl);
     }
@@ -141,10 +134,8 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
     @Test
     public void testDelete2() throws InterruptedException, PersistitException {
         logger.debug("Running test delete 2");
-        createFullTextIndex(serviceManager(),
-                SCHEMA, "o", "idx3_o",
-                "oid", "c1", "c2", "c3", "c4");
-        fullTextImpl.getBackgroundWorks().get(0).forceExecution();
+        createFullTextIndex(SCHEMA, "o", "idx3_o", "oid", "c1", "c2", "c3", "c4");
+        fullTextImpl.POPULATE_BACKGROUND.forceExecution();
         WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
         
         new Thread(new DropIndex()).start();
@@ -154,15 +145,10 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
         }
         
         try {
-            createFullTextIndex(serviceManager(),
-                    SCHEMA, "o", "idx3_o",
-                    "oid", "c1", "c2", "c3", "c4");
+            createFullTextIndex(SCHEMA, "o", "idx3_o", "oid", "c1", "c2", "c3", "c4");
         } catch (DuplicateIndexException ex) {
-            logger.error("Got Duplicate Index");
-            ; // an expected possible outcome. 
-        } catch (DuplicateIndexColumnException ex) {
-            logger.error("Got Duplicate Column");
-            ; // an expected possible outcome
+            logger.debug("Got Duplicate Index");
+            // an expected possible outcome.
         }
 
         verifyClean(fullTextImpl);
@@ -171,11 +157,9 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
     @Test
     public void testDelete3() throws InterruptedException, PersistitException {
         logger.debug("Running test delete 3");
-        createFullTextIndex(serviceManager(),
-                SCHEMA, "o", "idx3_o",
-                "oid", "c1", "c2", "c3", "c4");
-        fullTextImpl.getBackgroundWorks().get(0).forceExecution();
-        deleteFullTextIndex(serviceManager(), new IndexName(new TableName(SCHEMA, "o"), "idx3_o"));
+        createFullTextIndex(SCHEMA, "o", "idx3_o", "oid", "c1", "c2", "c3", "c4");
+        fullTextImpl.POPULATE_BACKGROUND.forceExecution();
+        deleteFullTextIndex(new IndexName(new TableName(SCHEMA, "o"), "idx3_o"));
         
         verifyClean(fullTextImpl);
     }
@@ -186,10 +170,8 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
         logger.debug("Running test drop update 1");
 
         // create the index, let it complete
-        createFullTextIndex(serviceManager(),
-                SCHEMA, "o", "idx3_o",
-                "oid", "c1", "c2", "c3", "c4");
-        fullTextImpl.getBackgroundWorks().get(0).forceExecution();
+        createFullTextIndex(SCHEMA, "o", "idx3_o", "oid", "c1", "c2", "c3", "c4");
+        fullTextImpl.POPULATE_BACKGROUND.forceExecution();
         WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
         
         writeRow(o, 103, 1, "c1", "c2", "c3", "c4", "2012-12-12");
@@ -202,9 +184,7 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
         }
         
         // kick start the background updater
-        fullTextImpl.getBackgroundWorks().get(1).forceExecution();
-        // delete the index
-
+        fullTextImpl.UPDATE_BACKGROUND.forceExecution();
     }
     
     private static interface Visitor
@@ -227,12 +207,12 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
            
             ddl().dropTableIndexes(session, tableName, Collections.singletonList(index));
         }
-    }; 
-
+    }
 
     private void verifyClean(FullTextIndexServiceImpl fullTextImpl) throws InterruptedException, PersistitException { 
         WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
-        traverse(fullTextImpl,
+        traverse(createNewSession(),
+                fullTextImpl,
                 new Visitor()
                 {
                     int n = 0;
@@ -252,11 +232,8 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
 
     }
     
-    private static void traverse(FullTextIndexServiceImpl serv,
-            Visitor visitor) throws PersistitException
+    private static void traverse(Session session, FullTextIndexServiceImpl serv, Visitor visitor) throws PersistitException
     {
-        Session session = new SessionServiceImpl().createSession();
-
         try
         {
             Exchange ex = serv.getPopulateExchange(session);

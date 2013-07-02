@@ -119,21 +119,16 @@ public class FullTextIndexServiceIT extends ITBase
         // create 3 indices
         final FullTextIndex expecteds[] = new FullTextIndex[]
         {
-            createFullTextIndex(serviceManager(),
-                                SCHEMA, "c", "idx1_c",
-                                "name"),
+            createFullTextIndex(SCHEMA, "c", "idx1_c", "name"),
         
-            createFullTextIndex(serviceManager(),
-                                SCHEMA, "c", "idx2_c",
-                                "i.sku"),
-            createFullTextIndex(serviceManager(),
-                                SCHEMA, "c", "idx3_c",
-                                "name", "i.sku")
+            createFullTextIndex(SCHEMA, "c", "idx2_c", "i.sku"),
+            createFullTextIndex(SCHEMA, "c", "idx3_c", "name", "i.sku")
         };
 
         
         // read the entries out
-        traverse(fullTextImpl,
+        traverse(createNewSession(),
+                 fullTextImpl,
                  new Visitor()
                  {
                     int n = 0;
@@ -155,7 +150,8 @@ public class FullTextIndexServiceIT extends ITBase
         fullTextImpl.enablePopulateWorker();
         WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
 
-        traverse(fullTextImpl,
+        traverse(createNewSession(),
+                 fullTextImpl,
                  new Visitor()
                  {
                      int n = 0;
@@ -190,25 +186,20 @@ public class FullTextIndexServiceIT extends ITBase
          // create 3 indices
         final FullTextIndex expecteds[] = new FullTextIndex[]
         {
-            createFullTextIndex(serviceManager(),
-                                SCHEMA, "c", "idx4_c",
-                                "a.state"),
+            createFullTextIndex(SCHEMA, "c", "idx4_c", "a.state"),
         
-            createFullTextIndex(serviceManager(),
-                                SCHEMA, "c", "idx5_c",
-                                "i.sku", "a.state"),
-            createFullTextIndex(serviceManager(),
-                                SCHEMA, "c", "idx6_c",
-                                "name", "i.sku")
+            createFullTextIndex(SCHEMA, "c", "idx5_c", "i.sku", "a.state"),
+            createFullTextIndex(SCHEMA, "c", "idx6_c", "name", "i.sku")
         };
 
         // <3> delete 2 of them
-        Session session = new SessionServiceImpl().createSession();
-        deleteFullTextIndex(serviceManager(), expecteds[0].getIndexName());
-        deleteFullTextIndex(serviceManager(), expecteds[1].getIndexName());
+        Session session = createNewSession();
+        deleteFullTextIndex(expecteds[0].getIndexName());
+        deleteFullTextIndex(expecteds[1].getIndexName());
 
         // <4> check that the tree only has one entry now (ie., epxecteds2[2]
-        traverse(fullTextImpl,
+        traverse(createNewSession(),
+                 fullTextImpl,
                  new Visitor()
                  {
                      int n = 0;
@@ -241,11 +232,8 @@ public class FullTextIndexServiceIT extends ITBase
     }
     
     
-    private static void traverse(FullTextIndexServiceImpl serv,
-                                 Visitor visitor) throws PersistitException
+    private static void traverse(Session session, FullTextIndexServiceImpl serv, Visitor visitor) throws PersistitException
     {
-         Session session = new SessionServiceImpl().createSession();
-
          try
          {
              Exchange ex = serv.getPopulateExchange(session);
@@ -281,9 +269,7 @@ public class FullTextIndexServiceIT extends ITBase
         //CREATE INDEX cust_ft ON customers(FULL_TEXT(name, addresses.state, items.sku))
 
         // part 1
-        FullTextIndex index = createFullTextIndex(serviceManager(),
-                                                  SCHEMA, "c", "idx_c", 
-                                                  "name", "i.sku", "a.state");
+        FullTextIndex index = createFullTextIndex(SCHEMA, "c", "idx_c",  "name", "i.sku", "a.state");
 
         WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
         RowType rowType = rowType("c");
@@ -354,9 +340,7 @@ public class FullTextIndexServiceIT extends ITBase
 
     @Test
     public void cDown() throws InterruptedException {
-        FullTextIndex index = createFullTextIndex(serviceManager(),
-                                                  SCHEMA, "c", "idx_c", 
-                                                  "name", "i.sku", "a.state");
+        FullTextIndex index = createFullTextIndex(SCHEMA, "c", "idx_c", "name", "i.sku", "a.state");
         WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
         RowType rowType = rowType("c");
         RowBase[] expected = new RowBase[] {
@@ -374,9 +358,7 @@ public class FullTextIndexServiceIT extends ITBase
 
     @Test
     public void oUpDown() throws InterruptedException {
-        FullTextIndex index = createFullTextIndex(serviceManager(),
-                                                  SCHEMA, "o", "idx_o",
-                                                  "c.name", "i.sku");
+        FullTextIndex index = createFullTextIndex(SCHEMA, "o", "idx_o", "c.name", "i.sku");
         WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
         RowType rowType = rowType("o");
         RowBase[] expected = new RowBase[] {

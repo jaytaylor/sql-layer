@@ -541,9 +541,9 @@ public class ApiTestBase {
         );
     }
 
-    protected AkibanInformationSchema createFromDDL(ServiceManager sm, String schema, String ddl) {
+    protected AkibanInformationSchema createFromDDL(String schema, String ddl) {
         SchemaFactory schemaFactory = new SchemaFactory(schema);
-        return schemaFactory.ais(sm, ddl().getAIS(session()), ddl);
+        return schemaFactory.ais(ddl().getAIS(session()), ddl);
     }
 
     protected static final class SimpleColumn {
@@ -616,7 +616,7 @@ public class ApiTestBase {
 
     protected final int createTable(String schema, String table, String definition) throws InvalidOperationException {
         String ddl = String.format("CREATE TABLE \"%s\" (%s)", table, definition);
-        AkibanInformationSchema tempAIS = createFromDDL(serviceManager(), schema, ddl);
+        AkibanInformationSchema tempAIS = createFromDDL(schema, ddl);
         UserTable tempTable = tempAIS.getUserTable(schema, table);
         ddl().createTable(session(), tempTable);
         updateAISGeneration();
@@ -635,7 +635,7 @@ public class ApiTestBase {
     
     protected final void createSequence (String schema, String name, String definition) {
         String ddl = String.format("CREATE SEQUENCE %s %s", name, definition);
-        AkibanInformationSchema tempAIS = createFromDDL(serviceManager(), schema, ddl);
+        AkibanInformationSchema tempAIS = createFromDDL(schema, ddl);
         Sequence sequence = tempAIS.getSequence(new TableName(schema, name));
         ddl().createSequence(session(), sequence);
         updateAISGeneration();
@@ -643,7 +643,7 @@ public class ApiTestBase {
 
     protected final void createView(String schema, String name, String definition) {
         String ddl = String.format("CREATE VIEW %s AS %s", name, definition);
-        AkibanInformationSchema tempAIS = createFromDDL(serviceManager(), schema, ddl);
+        AkibanInformationSchema tempAIS = createFromDDL(schema, ddl);
         View view = tempAIS.getView(new TableName(schema, name));
         ddl().createView(session(), view);
         updateAISGeneration();
@@ -678,7 +678,7 @@ public class ApiTestBase {
                                    schema,
                                    table,
                                    Strings.join(Arrays.asList(indexCols), ","));
-        return createFromDDL(serviceManager(), schema, ddl);
+        return createFromDDL(schema, ddl);
     }
 
     protected final TableIndex createIndex(String schema, String table, String indexName, String... indexCols) {
@@ -781,13 +781,13 @@ public class ApiTestBase {
         return ddl().getAIS(session()).getGroup(groupName).getIndex(indexName);
     }
 
-    protected final void deleteFullTextIndex(ServiceManager sm, IndexName name)
+    protected final void deleteFullTextIndex(IndexName name)
     {
         ddl().dropTableIndexes(session(), name.getFullTableName(), Arrays.asList(name.getName()));
         updateAISGeneration();
     }
     
-    protected final FullTextIndex createFullTextIndex(ServiceManager sm, String schema, String table, String indexName, String... indexCols) {
+    protected final FullTextIndex createFullTextIndex(String schema, String table, String indexName, String... indexCols) {
         AkibanInformationSchema tempAIS = createIndexInternal(schema, table, indexName, "FULL_TEXT(" + Strings.join(Arrays.asList(indexCols), ",") + ")");
         Index tempIndex = tempAIS.getUserTable(schema, table).getFullTextIndex(indexName);
         ddl().createIndexes(session(), Collections.singleton(tempIndex));
@@ -799,10 +799,10 @@ public class ApiTestBase {
         SchemaFactory schemaFactory = new SchemaFactory(schema);
         
         // Insert DDL into the System 
-        AkibanInformationSchema ais = schemaFactory.ais(serviceManager(), ddl(), session(), ddl);
+        AkibanInformationSchema ais = schemaFactory.ais(ddl(), session(), ddl);
         
         // sort DDL to find first root table of the user schema
-        ais = schemaFactory.ais (serviceManager(), ddl);
+        ais = schemaFactory.ais(ddl);
         List<UserTable> tables = new ArrayList<>(ais.getUserTables().values());
         Collections.sort(tables, new Comparator<UserTable>() {
             @Override

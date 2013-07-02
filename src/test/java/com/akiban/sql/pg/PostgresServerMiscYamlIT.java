@@ -87,12 +87,7 @@ public class PostgresServerMiscYamlIT extends PostgresServerYamlITBase {
 
     @Override
     protected Map<String, String> startupConfigProperties() {
-        // TODO: Remove whenever test-seq-fixup-routines.yaml no longer exists
-        Map<String, String> props = new HashMap();
-        props.put("akserver.dxl.use_global_lock", "true");
-        props.putAll(uniqueStartupConfigProperties(getClass()));
-        return props;
-        //return uniqueStartupConfigProperties(getClass());
+        return uniqueStartupConfigProperties(getClass());
     }
 
     @Test
