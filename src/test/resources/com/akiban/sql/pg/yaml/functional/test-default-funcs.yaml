@@ -8,5 +8,5 @@
 - Statement: INSERT INTO test_defaults(s) VALUES('hello')
 ---
 - Statement: SELECT * FROM test_defaults
-- output: [[1, 'hello', 'auser', !datetime ]]
+- output: [[1, 'hello', !select-engine { it: 'auser', all: 'test' }, !datetime ]]
 ...
