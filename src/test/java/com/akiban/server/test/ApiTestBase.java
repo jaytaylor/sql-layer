@@ -956,7 +956,7 @@ public class ApiTestBase {
         return dml().openCursor(session(), aisGeneration(), request);
     }
 
-    protected static <T> Set<T> set(T... items) {
+    protected static Set<Integer> set(Integer... items) {
         return new HashSet<>(Arrays.asList(items));
     }
 
