@@ -18,7 +18,6 @@
 package com.akiban.server.test;
 
 import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
@@ -960,12 +959,18 @@ public class ApiTestBase {
         return new HashSet<>(Arrays.asList(items));
     }
 
+    @SafeVarargs
     protected static <T> T[] array(Class<T> ofClass, T... items) {
         if (ofClass == null) {
             throw new IllegalArgumentException(
                     "T[] of null class; you probably meant the array(Object...) overload "
                             +"with a null for the first element. Use array(Object.class, null, ...) instead"
             );
+        }
+        for(T t : items) {
+            if(t != null && !ofClass.isInstance(t)) {
+                throw new IllegalArgumentException("Mismatched class: " + t.getClass());
+            }
         }
         return items;
     }
