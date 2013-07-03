@@ -116,7 +116,7 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
     public void testDelete1 () throws InterruptedException, PersistitException {
         logger.debug("Running test delete 1");
 
-        createFullTextIndex(serviceManager(),
+        createFullTextIndex(
                 SCHEMA, "o", "idx3_o",
                 "oid", "c1", "c2", "c3", "c4");
 
@@ -124,7 +124,7 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
         t.start();
 
         try {
-            createFullTextIndex(serviceManager(),
+            createFullTextIndex(
                     SCHEMA, "o", "idx3_o",
                     "oid", "c1", "c2", "c3", "c4");
         } catch(DuplicateIndexException e) {
@@ -144,7 +144,7 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
     @Test
     public void testDelete2() throws InterruptedException, PersistitException {
         logger.debug("Running test delete 2");
-        createFullTextIndex(serviceManager(),
+        createFullTextIndex(
                 SCHEMA, "o", "idx3_o",
                 "oid", "c1", "c2", "c3", "c4");
         fullTextImpl.POPULATE_BACKGROUND.forceExecution();
@@ -158,7 +158,7 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
         }
         
         try {
-            createFullTextIndex(serviceManager(),
+            createFullTextIndex(
                     SCHEMA, "o", "idx3_o",
                     "oid", "c1", "c2", "c3", "c4");
         } catch (DuplicateIndexException ex) {
@@ -179,7 +179,7 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
     @Test
     public void testDelete3() throws InterruptedException, PersistitException {
         logger.debug("Running test delete 3");
-        createFullTextIndex(serviceManager(),
+        createFullTextIndex(
                 SCHEMA, "o", "idx3_o",
                 "oid", "c1", "c2", "c3", "c4");
 
@@ -195,7 +195,7 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
         logger.debug("Running test drop update 1");
 
         // create the index, let it complete
-        createFullTextIndex(serviceManager(),
+        createFullTextIndex(
                 SCHEMA, "o", "idx3_o",
                 "oid", "c1", "c2", "c3", "c4");
         fullTextImpl.POPULATE_BACKGROUND.forceExecution();
