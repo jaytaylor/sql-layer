@@ -795,11 +795,11 @@ public class ApiTestBase {
     protected int createTablesAndIndexesFromDDL(String schema, String ddl) {
         SchemaFactory schemaFactory = new SchemaFactory(schema);
         
-        // Insert DDL into the System 
-        AkibanInformationSchema ais = schemaFactory.ais(ddl(), session(), ddl);
-        
-        // sort DDL to find first root table of the user schema
-        ais = schemaFactory.ais(ddl);
+        // Insert DDL into the System. Returns the full system AIS.
+        schemaFactory.ais(ddl(), session(), ddl);
+
+        // Construct AIS again to get just newly created objects. Sort to find first root table of the user schema.
+        AkibanInformationSchema ais = schemaFactory.ais(ddl);
         List<UserTable> tables = new ArrayList<>(ais.getUserTables().values());
         Collections.sort(tables, new Comparator<UserTable>() {
             @Override
