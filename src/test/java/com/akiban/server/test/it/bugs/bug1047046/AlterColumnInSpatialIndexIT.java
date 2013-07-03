@@ -67,9 +67,18 @@ public class AlterColumnInSpatialIndexIT extends AlterTableITBase {
     }
 
     @Test
-    public void dropColumn() {
+    public void dropColumn2() {
         createAndLoadTable();
         runAlter("ALTER TABLE t1 DROP COLUMN c2");
+        final int tid = tableId(SCHEMA, TABLE);
+        assertEquals("row count", ROW_COUNT, scanAll(scanAllRequest(tid)).size());
+        assertEquals("Index exists", false, getUserTable(tid).getIndex(INDEX_NAME) != null);
+    }
+    
+    @Test
+    public void dropColumn1() {
+        createAndLoadTable();
+        runAlter("ALTER TABLE t1 DROP COLUMN c1");
         final int tid = tableId(SCHEMA, TABLE);
         assertEquals("row count", ROW_COUNT, scanAll(scanAllRequest(tid)).size());
         assertEquals("Index exists", false, getUserTable(tid).getIndex(INDEX_NAME) != null);
