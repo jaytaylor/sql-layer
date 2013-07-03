@@ -1279,18 +1279,6 @@ public class ApiTestBase {
         assertEquals("indexes in " + table.getName(), expectedIndexesSet, actualIndexes);
     }
 
-    protected void expectIndexColumns(int tableId, String indexName, String... expectedColumns) {
-        UserTable table = getUserTable(tableId);
-        List<String> expectedColumnsList = Arrays.asList(expectedColumns);
-        Index index = table.getIndex(indexName);
-        assertNotNull(indexName + " was null", index);
-        List<String> actualColumns = new ArrayList<>();
-        for (IndexColumn indexColumn : index.getKeyColumns()) {
-            actualColumns.add(indexColumn.getColumn().getName());
-        }
-        assertEquals(indexName + " columns", actualColumns, expectedColumnsList);
-    }
-
     public interface RowUpdater {
         void to(Object... values);
         void to(NewRow newRow);
