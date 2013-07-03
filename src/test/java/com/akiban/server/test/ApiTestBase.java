@@ -347,14 +347,14 @@ public class ApiTestBase {
         return TestConfigService.dataDirectory().getFreeSpace() < MIN_FREE_SPACE;
     }
 
-    private static void beforeStopServices(boolean crash) throws Exception {
+    private static void beforeStopServices() throws Exception {
         for (Callable<Void> callable : beforeStopServices) {
             callable.call();
         }
     }
 
     public final void stopTestServices() throws Exception {
-        beforeStopServices(false);
+        beforeStopServices();
         ServiceManagerImpl.setServiceManager(null);
         if (lastStartupConfigProperties == null) {
             return;
@@ -364,7 +364,7 @@ public class ApiTestBase {
     }
     
     public final void crashTestServices() throws Exception {
-        beforeStopServices(true);
+        beforeStopServices();
         sm.crashServices();
         sm = null;
         session = null;
