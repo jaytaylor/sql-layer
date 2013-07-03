@@ -22,11 +22,9 @@ import com.akiban.sql.compiler.ASTTransformTestBase;
 import com.akiban.sql.compiler.BooleanNormalizer;
 import com.akiban.sql.compiler.TypeComputer;
 import com.akiban.sql.parser.SQLParser;
-import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.config.TestConfigService;
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
 
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
@@ -37,9 +35,7 @@ import org.junit.Ignore;
 
 import java.io.File;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Ignore
 public class OptimizerTestBase extends ASTTransformTestBase
@@ -56,9 +52,7 @@ public class OptimizerTestBase extends ASTTransformTestBase
     public static final String DEFAULT_SCHEMA = "test";
 
     protected static ServiceManager sm = prepareServices();
-    protected static int populateDelayInterval = 1000;
-    protected static int updateInterval = 3000;
-    
+
     // Base class has all possible transformers for convenience.
     protected AISBinder binder;
     protected TypeComputer typeComputer;
