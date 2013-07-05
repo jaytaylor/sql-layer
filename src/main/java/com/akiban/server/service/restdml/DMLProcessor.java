@@ -24,7 +24,9 @@ import com.akiban.ais.model.CacheValueGenerator;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.SparseArrayQueryBindings;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.SchemaCache;
@@ -59,7 +61,7 @@ public abstract class DMLProcessor {
         return column;
     }
 
-    protected void setValue (QueryContext queryContext, Column column, String value) {
+    protected void setValue (QueryBindings queryBindings, Column column, String value) {
         PValue pvalue = null;
         if (value == null) {
             pvalue = new PValue(MString.varchar());
@@ -67,7 +69,7 @@ public abstract class DMLProcessor {
         } else {
             pvalue = new PValue(MString.varcharFor(value), value);
         }
-        queryContext.setPValue(column.getPosition(), pvalue);
+        queryBindings.setPValue(column.getPosition(), pvalue);
         
     }
 
@@ -81,6 +83,7 @@ public abstract class DMLProcessor {
         public TableName tableName;
         public UserTable table;
         public QueryContext queryContext;
+        public QueryBindings queryBindings;
         public Session session;
         public Map<Column, PValueSource> pkValues;
         public Map<Column, String> allValues;
@@ -94,18 +97,14 @@ public abstract class DMLProcessor {
             this.session = session;
             this.schema = SchemaCache.globalSchema(ais);
             this.table = getTable();
-            this.queryContext = newQueryContext(); 
+            this.queryContext = new RestQueryContext(getAdapter());
+            this.queryBindings = new SparseArrayQueryBindings();
             allValues = new HashMap<>();
+            setColumnsNull (queryBindings, table);
         }
      
         protected AkibanInformationSchema ais() {
             return ais;
-        }
-        
-        private QueryContext newQueryContext () {
-            QueryContext queryContext = new RestQueryContext(getAdapter());
-            setColumnsNull (queryContext, table);
-            return queryContext;
         }
         
         private StoreAdapter getAdapter() {
@@ -127,11 +126,11 @@ public abstract class DMLProcessor {
             }
             return table;
         }
-        protected void setColumnsNull (QueryContext queryContext, UserTable table) {
+        protected void setColumnsNull (QueryBindings queryBindings, UserTable table) {
             for (Column column : table.getColumns()) {
                 PValue pvalue = new PValue (column.tInstance());
                 pvalue.putNull();
-                queryContext.setPValue(column.getPosition(), pvalue);
+                queryBindings.setPValue(column.getPosition(), pvalue);
             }
         }
     }

@@ -20,6 +20,7 @@ package com.akiban.sql.embedded;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.sql.optimizer.plan.CostEstimate;
 
 class ExecutableQueryOperatorStatement extends ExecutableOperatorStatement
@@ -35,10 +36,10 @@ class ExecutableQueryOperatorStatement extends ExecutableOperatorStatement
     }
     
     @Override
-    public ExecuteResults execute(EmbeddedQueryContext context) {
+    public ExecuteResults execute(EmbeddedQueryContext context, QueryBindings bindings) {
         Cursor cursor = null;
         try {
-            cursor = API.cursor(resultOperator, context);
+            cursor = API.cursor(resultOperator, context, bindings);
             cursor.open();
             ExecuteResults result = new ExecuteResults(cursor);
             cursor = null;

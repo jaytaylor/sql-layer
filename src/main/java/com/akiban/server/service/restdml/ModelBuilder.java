@@ -27,8 +27,10 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
+import com.akiban.qp.operator.SparseArrayQueryBindings;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -130,14 +132,15 @@ public class ModelBuilder {
             List<List<String>> keys = PrimaryKeyParser.parsePrimaryKeys(identifiers, table.getPrimaryKey().getIndex());
             Operator plan = PlanGenerator.generateBranchPlan(ais, table);
             QueryContext context = queryContext(session, ais);
-            Cursor cursor = API.cursor(plan, context);
+            QueryBindings bindings = new SparseArrayQueryBindings();
+            Cursor cursor = API.cursor(plan, context, bindings);
             boolean first = true;
             writer.append('[');
             for(List<String> pk : keys) {
                 for(int i = 0; i < pk.size(); i++) {
                     PValue pvalue = new PValue(MString.varchar());
                     pvalue.putString(pk.get(i), null);
-                    context.setPValue(i, pvalue);
+                    bindings.setPValue(i, pvalue);
                 }
                 first = scanCursor(writer, cursor, first);
             }
@@ -307,7 +310,8 @@ public class ModelBuilder {
         );
         StoreAdapter adapter = store.createAdapter(session, schema);
         QueryContext queryContext = new SimpleQueryContext(adapter);
-        Cursor cursor = API.cursor(plan, queryContext);
+        QueryBindings queryBindings = new SparseArrayQueryBindings();
+        Cursor cursor = API.cursor(plan, queryContext, queryBindings);
         cursor.open();
         try {
             return cursor.next();
@@ -324,7 +328,9 @@ public class ModelBuilder {
     private Cursor groupScanCursor(Session session, TableName tableName) {
         UserTable table = ddlFunctions.getUserTable(session, tableName);
         Operator plan = PlanGenerator.generateScanPlan(table.getAIS(), table);
-        return API.cursor(plan, queryContext(session, table.getAIS()));
+        QueryContext queryContext = queryContext(session, table.getAIS());
+        QueryBindings queryBindings = new SparseArrayQueryBindings();
+        return API.cursor(plan, queryContext, queryBindings);
     }
 
     private boolean scanCursor(PrintWriter writer, Cursor cursor, boolean first) throws IOException {

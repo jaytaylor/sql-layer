@@ -17,6 +17,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -29,6 +30,10 @@ public abstract class AbstractNoArgExpressionEvaluation extends ExpressionEvalua
 
     @Override
     public void of(QueryContext context) {
+    }
+
+    @Override
+    public void of(QueryBindings bindings) {
     }
 
     @Override

@@ -20,6 +20,7 @@ package com.akiban.sql.pg;
 import com.akiban.sql.server.ServerCallContextStack;
 import com.akiban.sql.server.ServerCallInvocation;
 
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectCursor;
@@ -113,7 +114,8 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
         DirectObjectCursor cursor = null;
         PostgresOutputter<List<?>> outputter = null;
         PostgresDirectObjectCopier copier = null;
-        context = PostgresLoadablePlan.setParameters(context, invocation, usesPValues());
+        QueryBindings bindings = context.getBindings();
+        bindings = PostgresLoadablePlan.setParameters(bindings, invocation, usesPValues());
         ServerCallContextStack.push(context, invocation);
         boolean suspended = false;
         try {

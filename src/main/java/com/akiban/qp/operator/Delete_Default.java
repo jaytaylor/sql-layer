@@ -117,8 +117,8 @@ class Delete_Default implements UpdatePlannable {
     }
 
     @Override
-    public UpdateResult run(QueryContext context) {
-        return new Execution(context, inputOperator.cursor(context)).run();
+    public UpdateResult run(QueryContext context, QueryBindings bindings) {
+        return new Execution(context, bindings, inputOperator.cursor(context, bindings)).run();
     }
 
     @Override
@@ -174,9 +174,9 @@ class Delete_Default implements UpdatePlannable {
             return new StandardUpdateResult(seen, modified);
         }
 
-        protected Execution(QueryContext queryContext, Cursor input)
+        protected Execution(QueryContext queryContext, QueryBindings bindings, Cursor input)
         {
-            super(queryContext);
+            super(queryContext, bindings);
             this.input = input;
         }
 

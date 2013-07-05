@@ -50,9 +50,11 @@ import com.akiban.ais.util.TableChangeValidator;
 import com.akiban.ais.util.TableChangeValidatorException;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.QueryContextBase;
 import com.akiban.qp.operator.SimpleQueryContext;
+import com.akiban.qp.operator.SparseArrayQueryBindings;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.ProjectedRow;
@@ -291,12 +293,13 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             final RowType oldSourceType = oldSchema.userTableRowType(origTable);
             final StoreAdapter adapter = store().createAdapter(session, oldSchema);
             final QueryContext queryContext = new ShimContext(adapter, context);
+            final QueryBindings queryBindings = new SparseArrayQueryBindings();
 
             Operator plan = filter_Default(
                     groupScan_Default(origTable.getGroup()),
                     Collections.singleton(oldSourceType)
             );
-            com.akiban.qp.operator.Cursor cursor = API.cursor(plan, queryContext);
+            com.akiban.qp.operator.Cursor cursor = API.cursor(plan, queryContext, queryBindings);
 
             cursor.open();
             try {
@@ -345,6 +348,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         // Build transformation
         final StoreAdapter adapter = store().createAdapter(session, origSchema);
         final QueryContext queryContext = new ShimContext(adapter, context);
+        final QueryBindings queryBindings = new SparseArrayQueryBindings();
 
         final AkibanInformationSchema newAIS = getAIS(session);
         final UserTable newTable = newAIS.getUserTable(newDefinition.getName());
@@ -370,7 +374,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                         TExecutionContext executionContext = new TExecutionContext(
                                 Collections.singletonList(defInstance),
                                 newInst,
-                                queryContext
+                                queryContext, queryBindings
                         );
                         PValue defaultSource = new PValue(MString.varcharFor(defaultValue), defaultValue);
                         newInst.typeClass().fromObject(executionContext, defaultSource, defaultPValue);
@@ -383,7 +387,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     TPreparedExpression pExp = new TPreparedField(oldInst, oldPosition);
                     if(!oldInst.equalsExcludingNullable(newInst)) {
                         TCast cast = t3Registry.getCastsResolver().cast(oldInst.typeClass(), newInst.typeClass());
-                        pExp = new TCastExpression(pExp, cast, newInst, queryContext);
+                        pExp = new TCastExpression(pExp, cast, newInst, queryContext, queryBindings);
                     }
                     pProjections.add(pExp);
                 }
@@ -442,7 +446,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 groupScan_Default(origTable.getGroup()),
                 filteredTypes
         );
-        com.akiban.qp.operator.Cursor cursor = API.cursor(plan, queryContext);
+        com.akiban.qp.operator.Cursor cursor = API.cursor(plan, queryContext, queryBindings);
 
 
         int step = adapter.enterUpdateStep(true);
@@ -455,6 +459,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     Row newRow = new ProjectedRow(newTableType,
                                                   oldRow,
                                                   queryContext,
+                                                  queryBindings,
                                                   projections,
                                                   ProjectedRow.createTEvaluatableExpressions(pProjections),
                                                   TInstance.createTInstances(pProjections));

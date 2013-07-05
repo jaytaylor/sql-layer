@@ -21,6 +21,7 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.row.ImmutableRow;
 import com.akiban.qp.row.ProjectedRow;
 import com.akiban.qp.row.Row;
@@ -51,7 +52,7 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
     }
     
     @Override
-    public ExecuteResults execute(EmbeddedQueryContext context) {
+    public ExecuteResults execute(EmbeddedQueryContext context, QueryBindings bindings) {
         int updateCount = 0;
         SpoolCursor  returningRows = null;
         if (resultSetMetaData != null)
@@ -63,7 +64,7 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
         Cursor cursor = null;
         RuntimeException runtimeException = null;
         try {
-            cursor = API.cursor(resultOperator, context);
+            cursor = API.cursor(resultOperator, context, bindings);
             cursor.open();
             Row row;
             while ((row = cursor.next()) != null) {

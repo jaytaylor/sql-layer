@@ -116,9 +116,9 @@ class IfEmpty_Default extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(QueryContext context)
+    protected Cursor cursor(QueryContext context, QueryBindings bindings)
     {
-        return new Execution(context);
+        return new Execution(context, bindings);
     }
 
     @Override
@@ -318,10 +318,10 @@ class IfEmpty_Default extends Operator
 
         // Execution interface
 
-        Execution(QueryContext context)
+        Execution(QueryContext context, QueryBindings bindings)
         {
-            super(context);
-            this.input = inputOperator.cursor(context);
+            super(context, bindings);
+            this.input = inputOperator.cursor(context, bindings);
             if (pExpressions != null) {
                 this.oEvaluations = null;
                 this.pEvaluations = new ArrayList<>(pExpressions.size());

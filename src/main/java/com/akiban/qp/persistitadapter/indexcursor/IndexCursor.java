@@ -21,6 +21,7 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.CursorLifecycle;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.Row;
@@ -118,6 +119,7 @@ public abstract class IndexCursor implements Cursor
     // IndexCursor interface
 
     public static IndexCursor create(QueryContext context,
+                                     QueryBindings bindings,
                                      IndexKeyRange keyRange,
                                      API.Ordering ordering,
                                      IterationHelper iterationHelper,
@@ -130,20 +132,21 @@ public abstract class IndexCursor implements Cursor
         return
             keyRange != null && keyRange.spatial()
             ? keyRange.hi() == null
-                ? IndexCursorSpatial_NearPoint.create(context, iterationHelper, keyRange)
-                : IndexCursorSpatial_InBox.create(context, iterationHelper, keyRange)
+                ? IndexCursorSpatial_NearPoint.create(context, bindings, iterationHelper, keyRange)
+                : IndexCursorSpatial_InBox.create(context, bindings, iterationHelper, keyRange)
             : ordering.allAscending() || ordering.allDescending()
                 ? (keyRange != null && keyRange.lexicographic()
-                    ? IndexCursorUnidirectionalLexicographic.create(context, iterationHelper, keyRange, ordering, adapter)
-                    : IndexCursorUnidirectional.create(context, iterationHelper, keyRange, ordering, adapter))
-                : IndexCursorMixedOrder.create(context, iterationHelper, keyRange, ordering, adapter);
+                    ? IndexCursorUnidirectionalLexicographic.create(context, bindings, iterationHelper, keyRange, ordering, adapter)
+                    : IndexCursorUnidirectional.create(context, bindings, iterationHelper, keyRange, ordering, adapter))
+                : IndexCursorMixedOrder.create(context, bindings, iterationHelper, keyRange, ordering, adapter);
     }
 
     // For use by subclasses
 
-    protected IndexCursor(QueryContext context, IterationHelper iterationHelper)
+    protected IndexCursor(QueryContext context, QueryBindings bindings, IterationHelper iterationHelper)
     {
         this.context = context;
+        this.bindings = bindings;
         this.adapter = context.getStore();
         this.iterationHelper = iterationHelper;
     }
@@ -156,6 +159,7 @@ public abstract class IndexCursor implements Cursor
     // Object state
 
     protected final QueryContext context;
+    protected final QueryBindings bindings;
     protected final StoreAdapter adapter;
     protected final IterationHelper iterationHelper;
     private boolean idle = true;

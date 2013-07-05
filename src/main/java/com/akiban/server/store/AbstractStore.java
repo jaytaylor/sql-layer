@@ -34,8 +34,10 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.GroupCursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
+import com.akiban.qp.operator.SparseArrayQueryBindings;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
 import com.akiban.qp.persistitadapter.PValueRowDataCreator;
@@ -754,9 +756,10 @@ public abstract class AbstractStore<SDType> implements Store {
         }
         if(!groupIndexes.isEmpty()) {
             QueryContext context = new SimpleQueryContext(adapter);
+            QueryBindings bindings = new SparseArrayQueryBindings();
             for(GroupIndex groupIndex : groupIndexes) {
                 runMaintenancePlan(
-                        context,
+                        context, bindings,
                         groupIndex,
                         StoreGIMaintenancePlans.groupIndexCreationPlan(adapter.schema(), groupIndex),
                         StoreGIHandler.forBuilding(this, adapter),
@@ -1191,14 +1194,15 @@ public abstract class AbstractStore<SDType> implements Store {
         Operator plan = PlanGenerator.generateBranchPlan(ais, uTable);
 
         QueryContext queryContext = new SimpleQueryContext(adapter);
-        Cursor cursor = API.cursor(plan, queryContext);
+        QueryBindings queryBindings = new SparseArrayQueryBindings();
+        Cursor cursor = API.cursor(plan, queryContext, queryBindings);
 
         List<Column> lookupCols = uTable.getPrimaryKeyIncludingInternal().getColumns();
         RowDataPValueSource pSource = new RowDataPValueSource();
         for(int i = 0; i < lookupCols.size(); ++i) {
             Column col = lookupCols.get(i);
             pSource.bind(col.getFieldDef(), rowData);
-            queryContext.setPValue(i, pSource);
+            queryBindings.setPValue(i, pSource);
         }
         try {
             Row row;
@@ -1287,11 +1291,12 @@ public abstract class AbstractStore<SDType> implements Store {
     }
 
     private static void runMaintenancePlan(QueryContext context,
+                                           QueryBindings bindings,
                                            GroupIndex groupIndex,
                                            Operator rootOperator,
                                            StoreGIHandler handler,
                                            StoreGIHandler.Action action) {
-        Cursor cursor = API.cursor(rootOperator, context);
+        Cursor cursor = API.cursor(rootOperator, context, bindings);
         cursor.open();
         try {
             Row row;

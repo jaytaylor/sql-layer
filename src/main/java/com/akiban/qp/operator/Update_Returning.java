@@ -94,8 +94,8 @@ public class Update_Returning extends Operator {
     }
 
     @Override
-    protected Cursor cursor(QueryContext context) {
-        return new Execution(context, inputOperator.cursor(context));
+    protected Cursor cursor(QueryContext context, QueryBindings bindings) {
+        return new Execution(context, bindings, inputOperator.cursor(context, bindings));
     }
     
     public Update_Returning (Operator inputOperator, UpdateFunction updateFunction, boolean usePvals) {
@@ -208,9 +208,9 @@ public class Update_Returning extends Operator {
     
         // Execution interface
     
-        Execution(QueryContext context, Cursor input)
+        Execution(QueryContext context, QueryBindings bindings, Cursor input)
         {
-            super(context);
+            super(context, bindings);
             this.input = input;
         }
     

@@ -83,7 +83,7 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
 
     @Override
     public Cursor openCursor(PostgresQueryContext context) {
-        Cursor cursor = API.cursor(resultOperator, context);
+        Cursor cursor = API.cursor(resultOperator, context, context.getBindings());
         cursor.open();
         return cursor;
     }

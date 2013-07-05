@@ -24,6 +24,7 @@ import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.ValueNode;
 
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
@@ -48,14 +49,15 @@ public class PostgresExecuteStatement extends PostgresBaseCursorStatement
     }
 
     public void setParameters(PostgresBoundQueryContext context) {
+        QueryBindings bindings = context.getBindings();
         if (paramPValues != null) {
             for (int i = 0; i < paramPValues.size(); i++) {
-                context.setPValue(i, paramPValues.get(i).value());
+                bindings.setPValue(i, paramPValues.get(i).value());
             }
         }
         else {
             for (int i = 0; i < paramValues.size(); i++) {
-                context.setValue(i, paramValues.get(i));
+                bindings.setValue(i, paramValues.get(i));
             }
         }
     }

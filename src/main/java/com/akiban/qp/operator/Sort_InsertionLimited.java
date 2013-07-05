@@ -104,9 +104,9 @@ class Sort_InsertionLimited extends Operator
     }
 
     @Override
-    protected Cursor cursor(QueryContext context)
+    protected Cursor cursor(QueryContext context, QueryBindings bindings)
     {
-        return new Execution(context, inputOperator.cursor(context));
+        return new Execution(context, bindings, inputOperator.cursor(context, bindings));
     }
 
     @Override
@@ -333,9 +333,9 @@ class Sort_InsertionLimited extends Operator
 
         // Execution interface
 
-        Execution(QueryContext context, Cursor input)
+        Execution(QueryContext context, QueryBindings bindings, Cursor input)
         {
-            super(context);
+            super(context, bindings);
             this.input = input;
             int nsort = ordering.sortColumns();
             tEvaluations = new ArrayList<>(nsort);

@@ -17,6 +17,8 @@
 
 package com.akiban.sql.embedded;
 
+import com.akiban.qp.operator.QueryBindings;
+import com.akiban.qp.operator.SparseArrayQueryBindings;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.TInstance;
@@ -35,6 +37,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
 {
     protected ExecutableStatement executableStatement;
     protected EmbeddedQueryContext context;
+    protected final QueryBindings bindings = new SparseArrayQueryBindings();
     protected final Values values = new Values();
 
     protected JDBCPreparedStatement(JDBCConnection connection, 
@@ -57,22 +60,22 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
 
         @Override
         protected ValueSource getValue(int index) {
-            return context.getValue(index);
+            return bindings.getValue(index);
         }
 
         @Override
         protected void setValue(int index, ValueSource source, AkType akType) {
-            context.setValue(index, source, akType);
+            bindings.setValue(index, source, akType);
         }
 
         @Override
         protected PValueSource getPValue(int index) {
-            return context.getPValue(index);
+            return bindings.getPValue(index);
         }
 
         @Override
         protected void setPValue(int index, PValueSource source) {
-            context.setPValue(index, source);
+            bindings.setPValue(index, source);
         }
 
         @Override
@@ -105,12 +108,12 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
 
     @Override
     public ResultSet executeQuery() throws SQLException {
-        return executeQueryInternal(executableStatement, context);
+        return executeQueryInternal(executableStatement, context, bindings);
     }
 
     @Override
     public int executeUpdate() throws SQLException {
-        return executeUpdateInternal(executableStatement, context);
+        return executeUpdateInternal(executableStatement, context, bindings);
     }
 
     @Override
@@ -294,7 +297,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
 
     @Override
     public void clearParameters() throws SQLException {
-        context.clear();
+        bindings.clear();
     }
 
     @Override
@@ -314,7 +317,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
 
     @Override
     public boolean execute() throws SQLException {
-        return executeInternal(executableStatement, context);
+        return executeInternal(executableStatement, context, bindings);
     }
 
     @Override

@@ -87,8 +87,8 @@ final class Limit_Default extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(QueryContext context) {
-        return new Execution(context, inputOperator.cursor(context));
+    protected Cursor cursor(QueryContext context, QueryBindings bindings) {
+        return new Execution(context, bindings, inputOperator.cursor(context, bindings));
     }
 
     // Plannable interface
@@ -199,12 +199,12 @@ final class Limit_Default extends Operator
                 closed = false;
                 if (isSkipBinding()) {
                     if (usePVals) {
-                        PValueSource value = context.getPValue(skip());
+                        PValueSource value = bindings.getPValue(skip());
                         if (!value.isNull())
                             this.skipLeft = value.getInt32();
                     }
                     else {
-                        ValueSource value = context.getValue(skip());
+                        ValueSource value = bindings.getValue(skip());
                         if (!value.isNull())
                             this.skipLeft = (int)Extractors.getLongExtractor(AkType.LONG).getLong(value);
                     }
@@ -216,7 +216,7 @@ final class Limit_Default extends Operator
                     throw new NegativeLimitException("OFFSET", skipLeft);
                 if (isLimitBinding()) {
                     if (usePVals) {
-                        PValueSource value = context.getPValue(limit());
+                        PValueSource value = bindings.getPValue(limit());
                         if (value.isNull())
                             this.limitLeft = Integer.MAX_VALUE;
                         else {
@@ -229,7 +229,7 @@ final class Limit_Default extends Operator
                         }
                     }
                     else {
-                        ValueSource value = context.getValue(limit());
+                        ValueSource value = bindings.getValue(limit());
                         if (value.isNull())
                             this.limitLeft = Integer.MAX_VALUE;
                         else
@@ -326,8 +326,8 @@ final class Limit_Default extends Operator
         }
 
         // Execution interface
-        Execution(QueryContext context, Cursor input) {
-            super(context, input);
+        Execution(QueryContext context, QueryBindings bindings, Cursor input) {
+            super(context, bindings, input);
         }
 
         // object state

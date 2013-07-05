@@ -19,7 +19,9 @@ package com.akiban.sql.server;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContextBase;
+import com.akiban.qp.operator.SparseArrayQueryBindings;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.QueryCanceledException;
@@ -131,6 +133,10 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
 
     public void unlock(DXLFunction operationType) {
         DXLReadWriteLockHook.only().unlock(getSession(), operationType);
+    }
+
+    public QueryBindings getBindings() {
+        return new SparseArrayQueryBindings(); // Initially empty.
     }
 
 }

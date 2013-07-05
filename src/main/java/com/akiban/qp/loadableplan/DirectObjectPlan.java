@@ -17,12 +17,13 @@
 
 package com.akiban.qp.loadableplan;
 
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 
 /** A plan that uses a {@link DirectObjectCursor}. */
 public abstract class DirectObjectPlan
 {
-    public abstract DirectObjectCursor cursor(QueryContext context);
+    public abstract DirectObjectCursor cursor(QueryContext context, QueryBindings bindings);
 
     public enum OutputMode { TABLE, COPY_WITH_NEWLINE, COPY };
 

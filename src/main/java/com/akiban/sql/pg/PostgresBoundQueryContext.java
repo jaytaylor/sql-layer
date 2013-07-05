@@ -18,12 +18,15 @@
 package com.akiban.sql.pg;
 
 import com.akiban.qp.operator.CursorBase;
+import com.akiban.qp.operator.QueryBindings;
+import com.akiban.qp.operator.SparseArrayQueryBindings;
 import com.akiban.server.types.AkType;
 import com.akiban.server.service.monitor.CursorMonitor;
 
 public class PostgresBoundQueryContext extends PostgresQueryContext 
                                        implements CursorMonitor
 {
+    private QueryBindings bindings = new SparseArrayQueryBindings();
     private static enum State { NORMAL, UNOPENED, SUSPENDED, EXHAUSTED };
     private boolean reportSuspended;
     private State state;
@@ -45,6 +48,11 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
         this.state = canSuspend ? State.UNOPENED : State.NORMAL;
         this.reportSuspended = reportSuspended;
         this.creationTime = System.currentTimeMillis();
+    }
+
+    @Override
+    public QueryBindings getBindings() {
+        return bindings;
     }
 
     public PostgresPreparedStatement getStatement() {

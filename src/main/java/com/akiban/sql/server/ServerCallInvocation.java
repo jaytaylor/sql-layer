@@ -26,6 +26,7 @@ import com.akiban.sql.parser.ValueNode;
 
 import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.TableName;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.types.AkType;
@@ -140,7 +141,7 @@ public class ServerCallInvocation extends ServerRoutineInvocation
         return true;
     }
 
-    public void copyParameters(ServerQueryContext source, ServerQueryContext target,
+    public void copyParameters(QueryBindings source, QueryBindings target,
                                boolean usePVals) {
         if (usePVals) {
             for (int i = 0; i < parameterArgs.length; i++) {
@@ -186,14 +187,16 @@ public class ServerCallInvocation extends ServerRoutineInvocation
     }
 
     @Override
-    public ServerJavaValues asValues(ServerQueryContext parameters) {
-        return new Values(parameters);
+    public ServerJavaValues asValues(ServerQueryContext context, QueryBindings parameters) {
+        return new Values(context, parameters);
     }
 
     protected class Values extends ServerJavaValues {
-        private ServerQueryContext parameters;
+        private ServerQueryContext context;
+        private QueryBindings parameters;
 
-        protected Values(ServerQueryContext parameters) {
+        protected Values(ServerQueryContext context, QueryBindings parameters) {
+            this.context = context;
             this.parameters = parameters;
         }
 
@@ -204,7 +207,7 @@ public class ServerCallInvocation extends ServerRoutineInvocation
 
         @Override
         protected ServerQueryContext getContext() {
-            return parameters;
+            return context;
         }
 
         @Override
@@ -236,7 +239,7 @@ public class ServerCallInvocation extends ServerRoutineInvocation
             PValue pvalue = new PValue(tinstance);
             TExecutionContext executionContext = 
                 new TExecutionContext(null, null, tinstance,
-                                      parameters, null, null, null);
+                                      context, parameters, null, null, null);
             tclass.fromObject(executionContext, source, pvalue);
             return pvalue;
         }

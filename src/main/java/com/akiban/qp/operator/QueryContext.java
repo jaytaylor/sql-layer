@@ -32,7 +32,7 @@ import java.util.Date;
  * The context is global for the whole query; it does not change for
  * different iteration values at different places in the query.
  */
-public interface QueryContext extends QueryBindings
+public interface QueryContext
 {
     /**
      * Get the store associated with this query.

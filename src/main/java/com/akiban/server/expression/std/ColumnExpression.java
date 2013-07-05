@@ -19,6 +19,7 @@ package com.akiban.server.expression.std;
 
 import com.akiban.ais.model.Column;
 import com.akiban.qp.exec.Plannable;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.explain.CompoundExplainer;
@@ -113,6 +114,10 @@ public final class ColumnExpression implements Expression {
 
         @Override
         public void of(QueryContext context) {
+        }
+
+        @Override
+        public void of(QueryBindings bindings) {
         }
 
         @Override

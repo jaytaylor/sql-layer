@@ -825,9 +825,9 @@ public class PostgresServerConnection extends ServerSessionBase
                 if ((paramsBinary != null) && (i < paramsBinary.length))
                     binary = paramsBinary[i];
                 if (usePValues)
-                    valueDecoder.decodePValue(params[i], pgType, binary, bound, i);
+                    valueDecoder.decodePValue(params[i], pgType, binary, bound.getBindings(), i);
                 else
-                    valueDecoder.decodeValue(params[i], pgType, binary, bound, i);
+                    valueDecoder.decodeValue(params[i], pgType, binary, bound.getBindings(), i);
             }
         }
         bound.setColumnBinary(resultsBinary, defaultResultsBinary);

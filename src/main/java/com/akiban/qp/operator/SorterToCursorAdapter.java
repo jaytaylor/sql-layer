@@ -35,7 +35,7 @@ class SorterToCursorAdapter implements Cursor
     public void open()
     {
         CursorLifecycle.checkIdle(this);
-        sorter = adapter.createSorter(context, input, rowType, ordering, sortOption, loadTap);
+        sorter = adapter.createSorter(context, bindings, input, rowType, ordering, sortOption, loadTap);
         cursor = sorter.sort();
         cursor.open();
     }
@@ -98,6 +98,7 @@ class SorterToCursorAdapter implements Cursor
 
     public SorterToCursorAdapter(StoreAdapter adapter,
                                  QueryContext context,
+                                 QueryBindings bindings,
                                  Cursor input,
                                  RowType rowType,
                                  API.Ordering ordering,
@@ -106,6 +107,7 @@ class SorterToCursorAdapter implements Cursor
     {
         this.adapter = adapter;
         this.context = context;
+        this.bindings = bindings;
         this.input = input;
         this.rowType = rowType;
         this.ordering = ordering;
@@ -115,6 +117,7 @@ class SorterToCursorAdapter implements Cursor
 
     private final StoreAdapter adapter;
     private final QueryContext context;
+    private final QueryBindings bindings;
     private final Cursor input;
     private final RowType rowType;
     private final API.Ordering ordering;

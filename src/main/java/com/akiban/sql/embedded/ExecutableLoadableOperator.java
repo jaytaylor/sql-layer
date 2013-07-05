@@ -21,6 +21,8 @@ import com.akiban.sql.embedded.JDBCResultSetMetaData.ResultColumn;
 
 import com.akiban.qp.loadableplan.LoadableOperator;
 import com.akiban.qp.loadableplan.LoadablePlan;
+import com.akiban.qp.operator.QueryBindings;
+import com.akiban.qp.operator.SparseArrayQueryBindings;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
@@ -61,11 +63,11 @@ class ExecutableLoadableOperator extends ExecutableQueryOperatorStatement
     }
     
     @Override
-    public ExecuteResults execute(EmbeddedQueryContext context) {
-        context = setParameters(context, invocation);
+    public ExecuteResults execute(EmbeddedQueryContext context, QueryBindings bindings) {
+        bindings = setParameters(bindings, invocation);
         ServerCallContextStack.push(context, invocation);
         try {
-            return super.execute(context);
+            return super.execute(context, bindings);
         }
         finally {
             ServerCallContextStack.pop(context, invocation);
@@ -88,19 +90,18 @@ class ExecutableLoadableOperator extends ExecutableQueryOperatorStatement
         return new JDBCResultSetMetaData(columns);
     }
 
-    protected static EmbeddedQueryContext setParameters(EmbeddedQueryContext context, ServerCallInvocation invocation) {
+    protected static QueryBindings setParameters(QueryBindings bindings, ServerCallInvocation invocation) {
         if (!invocation.parametersInOrder()) {
             if (invocation.hasParameters()) {
-                EmbeddedQueryContext calleeContext = 
-                    new EmbeddedQueryContext(context.getServer());
-                invocation.copyParameters(context, calleeContext, Types3Switch.ON);
-                context = calleeContext;
+                QueryBindings calleeBindings = new SparseArrayQueryBindings();
+                invocation.copyParameters(bindings, calleeBindings, Types3Switch.ON);
+                bindings = calleeBindings;
             }
             else {
-                invocation.copyParameters(null, context, Types3Switch.ON);
+                invocation.copyParameters(null, bindings, Types3Switch.ON);
             }
         }
-        return context;
+        return bindings;
     }
 
 }

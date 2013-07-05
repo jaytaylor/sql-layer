@@ -85,8 +85,8 @@ class Insert_Default implements UpdatePlannable {
     }
 
     @Override
-    public UpdateResult run(QueryContext context) {
-        return new Execution(context, inputOperator.cursor(context)).run();
+    public UpdateResult run(QueryContext context, QueryBindings bindings) {
+        return new Execution(context, bindings, inputOperator.cursor(context, bindings)).run();
     }
 
     @Override
@@ -163,9 +163,9 @@ class Insert_Default implements UpdatePlannable {
             return new StandardUpdateResult(seen, modified);
         }
 
-        protected Execution(QueryContext queryContext, Cursor input)
+        protected Execution(QueryContext queryContext, QueryBindings queryBindings, Cursor input)
         {
-            super(queryContext);
+            super(queryContext, queryBindings);
             this.input = input;
         }
 
