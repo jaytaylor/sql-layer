@@ -19,98 +19,21 @@ package com.akiban.qp.operator;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.util.BloomFilter;
 
 import java.util.Date;
 
-public interface QueryContext 
+/** The context for the execution of a query.
+ * Associated the query with the running environment.
+ * The context is global for the whole query; it does not change for
+ * different iteration values at different places in the query.
+ */
+public interface QueryContext extends QueryBindings
 {
-    public PValueSource getPValue(int index);
-
-    public void setPValue(int index, PValueSource value);
-
-    /**
-     * Gets the value bound to the given index.
-     * @param index the index to look up
-     * @return the value at that index
-     * @throws BindingNotSetException if the given index wasn't set
-     */
-    public ValueSource getValue(int index);
-
-    /**
-     * Bind a value to the given index.
-     * @param index the index to set
-     * @param value the value to assign
-     */
-    public void setValue(int index, ValueSource value);
-
-    /**
-     * Bind a value to the given index.
-     * @param index the index to set
-     * @param value the value to assign
-     * @param type the type to convert the value to for binding
-     */
-    public void setValue(int index, ValueSource value, AkType type);
-
-    /**
-     * Gets the row bound to the given index.
-     * @param index the index to look up
-     * @return the row at that index
-     * @throws BindingNotSetException if the given index wasn't set
-     */
-    public Row getRow(int index);
-
-    /**
-     * Bind a row to the given index.
-     * @param index the index to set
-     * @param row the row to assign
-     */
-    public void setRow(int index, Row row);
-
-    /**
-     * Gets the hKey bound to the given index.
-     * @param index the index to look up
-     * @return the hKey at that index
-     * @throws BindingNotSetException if the given index wasn't set
-     */
-    public HKey getHKey(int index);
-
-    /**
-     * Bind an hkey to the given index.
-     * @param index the index to set
-     * @param hKey the hKey to assign
-     */
-    public void setHKey(int index, HKey hKey);
-
-    /**
-     * Gets the bloom filter bound to the given index.
-     * @param index the index to look up
-     * @return the bloom filter at that index
-     * @throws BindingNotSetException if the given index wasn't set
-     */
-    public BloomFilter getBloomFilter(int index);
-
-    /**
-     * Bind a bloom filter to the given index.
-     * @param index the index to set
-     * @param filter the bloom filter to assign
-     */
-    public void setBloomFilter(int index, BloomFilter filter);
-
-    /**
-     * Clear all bindings.
-     */
-    public void clear();
-
     /**
      * Get the store associated with this query.
      */
