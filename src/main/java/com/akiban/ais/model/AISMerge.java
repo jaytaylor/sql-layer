@@ -182,6 +182,14 @@ public class AISMerge {
                 newTable.setTableId(oldTable.getTableId());
             }
 
+            // If we're changing table rows *at all*, generate new group tree(s)
+            if(desc.isPKAffected() || desc.isTableAffected()) {
+                groupsToClear.add(oldTable.getGroup().getName());
+                if(newTable != null && newTable.getGroup() != null) {
+                    groupsToClear.add(newTable.getGroup().getName());
+                }
+            }
+
             switch(desc.getParentChange()) {
                 case NONE:
                     // None: Handled by cloning process
@@ -212,13 +220,6 @@ public class AISMerge {
                 } break;
                 default:
                     throw new IllegalStateException("Unhandled GroupChange: " + desc.getParentChange());
-            }
-
-            if(desc.isNewGroup() || desc.isTableAffected()) {
-                groupsToClear.add(oldTable.getGroup().getName());
-                if(newTable != null && newTable.getGroup() != null) {
-                    groupsToClear.add(newTable.getGroup().getName());
-                }
             }
 
             UserTable indexSearchTable = newTable;

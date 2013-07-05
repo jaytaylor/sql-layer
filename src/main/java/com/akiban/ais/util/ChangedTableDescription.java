@@ -51,6 +51,7 @@ public class ChangedTableDescription {
     private final Collection<TableName> droppedSequences;
     private final Collection<String> identityAdded;
     private final boolean isTableAffected;
+    private final boolean isPKAffected;
 
     /**
      * @param tableName Current name of the table being changed.
@@ -60,7 +61,8 @@ public class ChangedTableDescription {
     public ChangedTableDescription(TableName tableName, UserTable newDefinition, Map<String,String> colNames,
                                    ParentChange parentChange, TableName parentName, Map<String,String> parentColNames,
                                    Map<String, String> preserveIndexes, Collection<TableName> droppedSequences,
-                                   Collection<String> identityAdded, boolean isTableAffected) {
+                                   Collection<String> identityAdded,
+                                   boolean isTableAffected, boolean isPKAffected) {
         ArgumentValidation.notNull("tableName", tableName);
         ArgumentValidation.notNull("preserveIndexes", preserveIndexes);
         this.tableName = tableName;
@@ -73,6 +75,7 @@ public class ChangedTableDescription {
         this.droppedSequences = droppedSequences;
         this.identityAdded = identityAdded;
         this.isTableAffected = isTableAffected;
+        this.isPKAffected = isPKAffected;
     }
 
     public TableName getOldName() {
@@ -117,6 +120,10 @@ public class ChangedTableDescription {
 
     public boolean isTableAffected() {
         return isTableAffected;
+    }
+
+    public boolean isPKAffected() {
+        return isPKAffected;
     }
 
     public boolean isNewGroup() {
