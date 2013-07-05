@@ -448,7 +448,8 @@ public class TableChangeValidator {
         changedTables.add(new ChangedTableDescription(oldTable.getName(), newTable, renamedColumns,
                                                       parentChange, parentName, EMPTY_STRING_MAP, preserveIndexes,
                                                       droppedSequences, addedIdentity,
-                                                      !columnChanges.isEmpty(), isParentChanged() || primaryKeyChanged));
+                                                      finalChangeLevel == ChangeLevel.TABLE,
+                                                      isParentChanged() || primaryKeyChanged));
 
         if(!isParentChanged() && !primaryKeyChanged) {
             for(Index index : newTable.getIndexesIncludingInternal()) {
