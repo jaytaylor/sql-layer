@@ -525,6 +525,9 @@ public abstract class AbstractStore<SDType> implements Store {
         AkibanInformationSchema ais = schemaManager.getAis(session);
         UserTable userTable = ais.getUserTable(oldRow.getRowDefId());
 
+        // TODO: PersistitStore requires adapter, have it create it?
+        StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais));
+
         if(canSkipGIMaintenance(userTable)) {
             updateRow(session, oldRow, newRow, selector, indexes, (indexes != null), true);
         } else {
@@ -532,7 +535,6 @@ public abstract class AbstractStore<SDType> implements Store {
             try {
                 RowData mergedRow = mergeRows(userTable.rowDef(), oldRow, newRow, selector);
                 BitSet changedColumnPositions = changedColumnPositions(userTable.rowDef(), oldRow, mergedRow);
-                StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais));
 
                 maintainGroupIndexes(session,
                                      ais,
