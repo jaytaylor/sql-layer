@@ -161,35 +161,6 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public void alterRow(Row oldRow, Row newRow, Index[] indexes, boolean hKeyChanged, boolean usePValues) {
-        RowDef rowDef = oldRow.rowType().userTable().rowDef();
-        RowDef rowDefNewRow = newRow.rowType().userTable().rowDef();
-        RowData oldRowData = rowData(rowDef, oldRow, rowDataCreator(usePValues));
-
-        int oldStep = 0;
-        try {
-            // Altered row does not need defaults from newRowData()
-            RowData newRowData = rowData(rowDefNewRow, newRow, rowDataCreator(usePValues));
-            oldRowData.setExplicitRowDef(rowDef);
-            newRowData.setExplicitRowDef(rowDefNewRow);
-            if(hKeyChanged) {
-                store.deleteRow(getSession(), oldRowData, false, false);
-                oldStep = enterUpdateStep();
-                store.writeRow(getSession(), newRowData, null);
-            } else {
-                oldStep = enterUpdateStep();
-                store.updateRow(getSession(), oldRowData, newRowData, null, indexes);
-            }
-        } catch (InvalidOperationException e) {
-            rollbackIfNeeded(e);
-            throw e;
-        }
-        finally {
-            leaveUpdateStep(oldStep);
-        }
-    }
-
-    @Override
     public long rowCount(Session session, RowType tableType) {
         RowDef rowDef = tableType.userTable().rowDef();
         return rowDef.getTableStatus().getRowCount(session);

@@ -114,11 +114,6 @@ public class MemoryAdapter extends StoreAdapter {
     }
 
     @Override
-    public void alterRow(Row oldRow, Row newRow, Index[] indexesToMaintain, boolean hKeyChanged, boolean usePValues) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public long sequenceNextValue(TableName sequenceName) {
         throw new UnsupportedOperationException();
     }

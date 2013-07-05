@@ -76,8 +76,6 @@ public abstract class StoreAdapter implements KeyCreator
     
     public abstract void deleteRow (Row oldRow, boolean usePValues, boolean cascadeDelete);
 
-    public abstract void alterRow(Row oldRow, Row newRow, Index[] indexesToMaintain, boolean hKeyChanged, boolean usePValues);
-
     public abstract Sorter createSorter(QueryContext context,
                                         Cursor input,
                                         RowType rowType,
