@@ -46,7 +46,7 @@ public interface Store extends KeyCreator {
     RowDef getRowDef(Session session, TableName tableName);
     AkibanInformationSchema getAIS(Session session);
 
-    void writeRow(Session session, RowData row);
+    void writeRow(Session session, RowData row, Index[] indexes);
     void deleteRow(Session session, RowData row, boolean deleteIndexes, boolean cascadeDelete);
 
     /** newRow can be partial, as specified by selector, but oldRow must be fully present. */

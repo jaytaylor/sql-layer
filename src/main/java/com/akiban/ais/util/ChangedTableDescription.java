@@ -50,6 +50,7 @@ public class ChangedTableDescription {
     private final Map<String,String> preserveIndexes;
     private final Collection<TableName> droppedSequences;
     private final Collection<String> identityAdded;
+    private final boolean isTableAffected;
 
     /**
      * @param tableName Current name of the table being changed.
@@ -59,7 +60,7 @@ public class ChangedTableDescription {
     public ChangedTableDescription(TableName tableName, UserTable newDefinition, Map<String,String> colNames,
                                    ParentChange parentChange, TableName parentName, Map<String,String> parentColNames,
                                    Map<String, String> preserveIndexes, Collection<TableName> droppedSequences,
-                                   Collection<String> identityAdded) {
+                                   Collection<String> identityAdded, boolean isTableAffected) {
         ArgumentValidation.notNull("tableName", tableName);
         ArgumentValidation.notNull("preserveIndexes", preserveIndexes);
         this.tableName = tableName;
@@ -71,6 +72,7 @@ public class ChangedTableDescription {
         this.preserveIndexes = preserveIndexes;
         this.droppedSequences = droppedSequences;
         this.identityAdded = identityAdded;
+        this.isTableAffected = isTableAffected;
     }
 
     public TableName getOldName() {
@@ -111,6 +113,10 @@ public class ChangedTableDescription {
 
     public Collection<String> getIdentityAdded() {
         return identityAdded;
+    }
+
+    public boolean isTableAffected() {
+        return isTableAffected;
     }
 
     public boolean isNewGroup() {

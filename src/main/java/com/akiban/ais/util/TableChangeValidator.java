@@ -436,7 +436,7 @@ public class TableChangeValidator {
         TableName parentName = (newTable.getParentJoin() != null) ? newTable.getParentJoin().getParent().getName() : null;
         changedTables.add(new ChangedTableDescription(oldTable.getName(), newTable, renamedColumns,
                                                       parentChange, parentName, EMPTY_STRING_MAP, preserveIndexes,
-                                                      droppedSequences, addedIdentity));
+                                                      droppedSequences, addedIdentity, !columnChanges.isEmpty()));
 
         if(!isParentChanged() && !primaryKeyChanged) {
             for(Index index : newTable.getIndexesIncludingInternal()) {
@@ -518,7 +518,7 @@ public class TableChangeValidator {
         parentRenames = (parentRenames != null) ? parentRenames : EMPTY_STRING_MAP;
         changedTables.add(new ChangedTableDescription(table.getName(), null, EMPTY_STRING_MAP,
                                                       parentChange, parentName, parentRenames, preserved,
-                                                      EMPTY_TABLE_NAME_LIST, Collections.<String>emptyList()));
+                                                      EMPTY_TABLE_NAME_LIST, Collections.<String>emptyList(), false));
     }
 
     private static boolean containsOldOrNew(List<TableChange> changes, String name) {

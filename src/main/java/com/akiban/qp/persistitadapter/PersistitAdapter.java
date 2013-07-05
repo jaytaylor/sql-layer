@@ -126,13 +126,14 @@ public class PersistitAdapter extends StoreAdapter
         }
     }
     @Override
-    public void writeRow (Row newRow, boolean usePValues) {
+    public void writeRow (Row newRow, Index[] indexes, boolean usePValues) {
         RowDef rowDef = newRow.rowType().userTable().rowDef();
         int oldStep = 0;
         try {
             RowData newRowData = rowData (rowDef, newRow, rowDataCreator(usePValues));
+            newRowData.setExplicitRowDef(rowDef);
             oldStep = enterUpdateStep();
-            store.writeRow(getSession(), newRowData);
+            store.writeRow(getSession(), newRowData, indexes);
         } catch (InvalidOperationException e) {
             rollbackIfNeeded(e);
             throw e;
@@ -174,7 +175,7 @@ public class PersistitAdapter extends StoreAdapter
             if(hKeyChanged) {
                 store.deleteRow(getSession(), oldRowData, false, false);
                 oldStep = enterUpdateStep();
-                store.writeRow(getSession(), newRowData);
+                store.writeRow(getSession(), newRowData, null);
             } else {
                 oldStep = enterUpdateStep();
                 store.updateRow(getSession(), oldRowData, newRowData, null, indexes);

@@ -39,7 +39,7 @@ public class TestStore
     public void writeRow(Session session, TestRow row)
         throws Exception
     {
-        mainDelegate.writeRow(session, row.toRowData());
+        mainDelegate.writeRow(session, row.toRowData(), null);
         map.put(row.hKey(), row);
     }
 

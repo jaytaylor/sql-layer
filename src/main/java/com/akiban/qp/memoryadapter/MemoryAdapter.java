@@ -104,7 +104,7 @@ public class MemoryAdapter extends StoreAdapter {
     }
 
     @Override
-    public void writeRow(Row newRow, boolean usePValues) {
+    public void writeRow(Row newRow, Index[] indexes, boolean usePValues) {
         throw new UnsupportedOperationException();
     }
 

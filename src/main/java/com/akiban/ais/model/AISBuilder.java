@@ -667,6 +667,9 @@ public class AISBuilder {
         // Hook up root tables
         for(Group group : ais.getGroups().values()) {
             setRootIfNeeded(group);
+            if(group.getTreeName() == null) {
+                group.setTreeName(nameGenerator.generateGroupTreeName(group.getSchemaName(), group.getName().getTableName()));
+            }
         }
         // Create hidden PKs if needed. Needs group hooked up before it can be called (to generate index id).
         for (UserTable userTable : ais.getUserTables().values()) {

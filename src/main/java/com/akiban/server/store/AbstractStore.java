@@ -370,6 +370,7 @@ public abstract class AbstractStore<SDType> implements Store {
 
     protected void writeRow(Session session,
                             RowData rowData,
+                            Index[] indexes,
                             BitSet tablesRequiringHKeyMaintenance,
                             boolean propagateHKeyChanges)
     {
@@ -378,7 +379,10 @@ public abstract class AbstractStore<SDType> implements Store {
         WRITE_ROW_TAP.in();
         try {
             preWrite(session, storeData, rowDef, rowData);
-            writeRowInternal(session, storeData, rowDef, rowData, tablesRequiringHKeyMaintenance, propagateHKeyChanges);
+            if(indexes == null) {
+                indexes = rowDef.getIndexes();
+            }
+            writeRowInternal(session, storeData, rowDef, rowData, indexes, tablesRequiringHKeyMaintenance, propagateHKeyChanges);
         } finally {
             WRITE_ROW_TAP.out();
             releaseStoreData(session, storeData);
@@ -470,12 +474,12 @@ public abstract class AbstractStore<SDType> implements Store {
     }
 
     @Override
-    public void writeRow(Session session, RowData rowData) {
+    public void writeRow(Session session, RowData rowData, Index[] indexes) {
         AkibanInformationSchema ais = schemaManager.getAis(session);
         StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais));
 
         // TODO: Persistit needs adapter created, have it create itself?
-        writeRow(session, rowData, null, true);
+        writeRow(session, rowData, indexes, null, true);
 
         WRITE_ROW_GI_TAP.in();
         try {
@@ -825,6 +829,7 @@ public abstract class AbstractStore<SDType> implements Store {
                                   SDType storeData,
                                   RowDef rowDef,
                                   RowData rowData,
+                                  Index[] indexes,
                                   BitSet tablesRequiringHKeyMaintenance,
                                   boolean propagateHKeyChanges) {
         Key hKey = getKey(session, storeData);
@@ -853,7 +858,7 @@ public abstract class AbstractStore<SDType> implements Store {
 
         addChangeFor(session, rowDef.userTable(), hKey);
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
-        for(Index index : rowDef.getIndexes()) {
+        for(Index index : indexes) {
             writeIndexRow(session, index, rowData, hKey, indexRow);
         }
 
@@ -976,7 +981,7 @@ public abstract class AbstractStore<SDType> implements Store {
             // A PK or FK field has changed. Process the update by delete and insert.
             // tablesRequiringHKeyMaintenance contains the ordinals of the tables whose hKey could have been affected.
             deleteRow(session, oldRow, true, false, tablesRequiringHKeyMaintenance, true);
-            writeRow(session, mergedRow, tablesRequiringHKeyMaintenance, true); // May throw DuplicateKeyException
+            writeRow(session, mergedRow, null, tablesRequiringHKeyMaintenance, true); // May throw DuplicateKeyException
         }
     }
 
@@ -1038,7 +1043,7 @@ public abstract class AbstractStore<SDType> implements Store {
                         }
                         if(!cascadeDelete) {
                             // Reinsert it, recomputing the hKey and maintaining indexes
-                            writeRow(session, rowData, tablesRequiringHKeyMaintenance, false);
+                            writeRow(session, rowData, null, tablesRequiringHKeyMaintenance, false);
                         }
                     } finally {
                         PROPAGATE_REPLACE_TAP.out();

@@ -979,7 +979,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         builder.column(SCHEMA, C_TABLE, "c1", 1, "int", null, null, false, false, null, null);
         builder.index(SCHEMA, C_TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn(SCHEMA, C_TABLE, Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, null);
-        builder.index(SCHEMA, C_TABLE, "c2", true, Index.KEY_CONSTRAINT);
+        builder.index(SCHEMA, C_TABLE, "c2", false, Index.KEY_CONSTRAINT);
         builder.indexColumn(SCHEMA, C_TABLE, "c2", "c2", 0, true, null);
         builder.basicSchemaIsComplete();
         builder.createGroup(C_TABLE, SCHEMA);
