@@ -19,6 +19,7 @@ package com.akiban.sql.server;
 
 import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.explain.CompoundExplainer;
@@ -270,6 +271,13 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
             }
             invocation = new TEvaluatableValueRoutineInvocation(routine, inputs);
             javaRoutine = javaRoutine((ServerQueryContext)context, invocation);
+        }
+
+        @Override
+        public void with(QueryBindings bindings) {
+            for (TEvaluatableExpression input : inputs) {
+                input.with(bindings);
+            }
         }
 
         @Override

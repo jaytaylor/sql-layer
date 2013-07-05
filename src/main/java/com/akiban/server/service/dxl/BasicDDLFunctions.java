@@ -374,7 +374,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                         TExecutionContext executionContext = new TExecutionContext(
                                 Collections.singletonList(defInstance),
                                 newInst,
-                                queryContext, queryBindings
+                                queryContext
                         );
                         PValue defaultSource = new PValue(MString.varcharFor(defaultValue), defaultValue);
                         newInst.typeClass().fromObject(executionContext, defaultSource, defaultPValue);
@@ -387,7 +387,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     TPreparedExpression pExp = new TPreparedField(oldInst, oldPosition);
                     if(!oldInst.equalsExcludingNullable(newInst)) {
                         TCast cast = t3Registry.getCastsResolver().cast(oldInst.typeClass(), newInst.typeClass());
-                        pExp = new TCastExpression(pExp, cast, newInst, queryContext, queryBindings);
+                        pExp = new TCastExpression(pExp, cast, newInst, queryContext);
                     }
                     pProjections.add(pExp);
                 }

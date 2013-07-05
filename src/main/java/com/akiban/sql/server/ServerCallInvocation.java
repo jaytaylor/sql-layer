@@ -239,7 +239,7 @@ public class ServerCallInvocation extends ServerRoutineInvocation
             PValue pvalue = new PValue(tinstance);
             TExecutionContext executionContext = 
                 new TExecutionContext(null, null, tinstance,
-                                      context, parameters, null, null, null);
+                                      context, null, null, null);
             tclass.fromObject(executionContext, source, pvalue);
             return pvalue;
         }
