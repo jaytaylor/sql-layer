@@ -1,6 +1,6 @@
 # test drop full_text index
 ---
-- CreateTable: t(id int, name varchar(224));
+- CreateTable: t (id int, name varchar(224));
 ---
 - Statement: CREATE INDEX idx on t(full_text(name));
 ---
@@ -15,9 +15,9 @@
 ---
 - Statement: DROP INDEX t.idx;
 ---
-- DropTable: t;
+- DropTable: t
 ---
-- CreateTable: t2(id int, name varchar(32));
+- CreateTable: t2 (id int, name varchar(32));
 ---
 - Statement: INSERT INTO t2 VALUES (1, 'John'), (2, 'Sally');
 ---
@@ -28,9 +28,9 @@
 - Statement: SELECT * FROM t2 WHERE FULL_TEXT_SEARCH(name, 'Jo*');
 - row_count: 0
 ---
-- DropTable: t2;
+- DropTable: t2
 ---
-- CreateTable: t2(id INT NOT NULL PRIMARY KEY, name VARCHAR(32) COLLATE en_ci);
+- CreateTable: t2 (id INT NOT NULL PRIMARY KEY, name VARCHAR(32) COLLATE en_ci);
 ---
 - Statement: INSERT INTO t2 VALUES (1, 'John'), (2, 'Sally');
 ---
@@ -41,5 +41,5 @@
 - Statement: SELECT * FROM t2 WHERE FULL_TEXT_SEARCH(name, 'Jo*');
 - output: [[1, 'John']]
 ---
-- DropTable: t2;
+- DropTable: t2
 ...
