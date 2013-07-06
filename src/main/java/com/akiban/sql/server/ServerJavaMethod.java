@@ -18,6 +18,7 @@
 package com.akiban.sql.server;
 
 import com.akiban.ais.model.Parameter;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.server.error.ExternalRoutineInvocationException;
 import com.akiban.server.explain.Attributes;
 import com.akiban.server.explain.CompoundExplainer;
@@ -41,9 +42,10 @@ public class ServerJavaMethod extends ServerJavaRoutine
     private Object methodResult;
     
     public ServerJavaMethod(ServerQueryContext context,
+                            QueryBindings bindings,
                             ServerRoutineInvocation invocation,
                             Method method) {
-        super(context, invocation);
+        super(context, bindings, invocation);
         this.method = method;
         parameterTypes = method.getParameterTypes();
     }

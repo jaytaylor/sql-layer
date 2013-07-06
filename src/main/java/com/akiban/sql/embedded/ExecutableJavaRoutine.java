@@ -35,12 +35,12 @@ abstract class ExecutableJavaRoutine extends ExecutableCallStatement
         super(invocation, parameterMetaData);
     }
 
-    protected abstract ServerJavaRoutine javaRoutine(EmbeddedQueryContext context);
+    protected abstract ServerJavaRoutine javaRoutine(EmbeddedQueryContext context, QueryBindings bindings);
 
     @Override
     public ExecuteResults execute(EmbeddedQueryContext context, QueryBindings bindings) {
         Queue<ResultSet> resultSets = null;
-        ServerJavaRoutine call = javaRoutine(context);
+        ServerJavaRoutine call = javaRoutine(context, bindings);
         call.push();
         boolean success = false;
         try {

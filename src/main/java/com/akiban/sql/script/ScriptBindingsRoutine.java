@@ -18,6 +18,7 @@
 package com.akiban.sql.script;
 
 import com.akiban.ais.model.Parameter;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.server.error.ExternalRoutineInvocationException;
 import com.akiban.sql.server.ServerCallExplainer;
 import com.akiban.sql.server.ServerJavaRoutine;
@@ -53,10 +54,11 @@ public class ScriptBindingsRoutine extends ServerJavaRoutine
     private Bindings bindings;
     private Object evalResult;
 
-    public ScriptBindingsRoutine(ServerQueryContext context,
+    public ScriptBindingsRoutine(ServerQueryContext context, 
+                                 QueryBindings queryBindings,
                                  ServerRoutineInvocation invocation,
                                  ScriptPool<ScriptEvaluator> pool) {
-        super(context, invocation);
+        super(context, queryBindings, invocation);
         this.pool = pool;
     }
 

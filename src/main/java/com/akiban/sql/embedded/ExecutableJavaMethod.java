@@ -21,6 +21,8 @@ import com.akiban.sql.server.ServerCallInvocation;
 import com.akiban.sql.server.ServerJavaMethod;
 import com.akiban.sql.server.ServerJavaRoutine;
 
+import com.akiban.qp.operator.QueryBindings;
+
 import java.lang.reflect.Method;
 
 class ExecutableJavaMethod extends ExecutableJavaRoutine
@@ -44,8 +46,8 @@ class ExecutableJavaMethod extends ExecutableJavaRoutine
     }
 
     @Override
-    protected ServerJavaRoutine javaRoutine(EmbeddedQueryContext context) {
-        return new ServerJavaMethod(context, invocation, method);
+    protected ServerJavaRoutine javaRoutine(EmbeddedQueryContext context, QueryBindings bindings) {
+        return new ServerJavaMethod(context, bindings, invocation, method);
     }
     
 }

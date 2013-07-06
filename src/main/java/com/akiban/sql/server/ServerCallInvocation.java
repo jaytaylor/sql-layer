@@ -187,17 +187,17 @@ public class ServerCallInvocation extends ServerRoutineInvocation
     }
 
     @Override
-    public ServerJavaValues asValues(ServerQueryContext context, QueryBindings parameters) {
-        return new Values(context, parameters);
+    public ServerJavaValues asValues(ServerQueryContext context, QueryBindings bindings) {
+        return new Values(context, bindings);
     }
 
     protected class Values extends ServerJavaValues {
         private ServerQueryContext context;
-        private QueryBindings parameters;
+        private QueryBindings bindings;
 
-        protected Values(ServerQueryContext context, QueryBindings parameters) {
+        protected Values(ServerQueryContext context, QueryBindings bindings) {
             this.context = context;
-            this.parameters = parameters;
+            this.bindings = bindings;
         }
 
         @Override
@@ -216,7 +216,7 @@ public class ServerCallInvocation extends ServerRoutineInvocation
                 return new FromObjectValueSource().setReflectively(constantArgs[index]);
             }
             else {
-                return parameters.getValue(parameterArgs[index]);
+                return bindings.getValue(parameterArgs[index]);
             }
         }
 
@@ -232,7 +232,7 @@ public class ServerCallInvocation extends ServerRoutineInvocation
                     return source; // Literal value matches.
             }
             else {
-                source = parameters.getPValue(parameterArgs[index]);
+                source = bindings.getPValue(parameterArgs[index]);
             }
             // Constants passed or parameters bound may not be of the
             // type specified in the signature.
@@ -260,7 +260,7 @@ public class ServerCallInvocation extends ServerRoutineInvocation
                 // An INOUT passed as a constant; do not overwrite it.
             }
             else {
-                parameters.setValue(parameterArgs[index], source, akType);
+                bindings.setValue(parameterArgs[index], source, akType);
             }
         }
 
@@ -270,7 +270,7 @@ public class ServerCallInvocation extends ServerRoutineInvocation
                 // An INOUT passed as a constant; do not overwrite it.
             }
             else {
-                parameters.setPValue(parameterArgs[index], source);
+                bindings.setPValue(parameterArgs[index], source);
             }
         }
 

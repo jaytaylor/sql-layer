@@ -19,6 +19,7 @@ package com.akiban.sql.server;
 
 import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.std.AbstractCompositeExpressionEvaluation;
 import com.akiban.server.types.AkType;
@@ -47,7 +48,7 @@ public abstract class ServerJavaRoutineExpressionEvaluation extends AbstractComp
         if (javaRoutine == null) {
             valueHolder().expectType(routine.getReturnValue().getType().akType());
             RoutineInvocation invocation = new RoutineInvocation(routine, children(), valueHolder());
-            javaRoutine = javaRoutine((ServerQueryContext)queryContext(), invocation);
+            javaRoutine = javaRoutine((ServerQueryContext)queryContext(), queryBindings(), invocation);
         }
         javaRoutine.push();
         boolean success = false;
@@ -64,6 +65,7 @@ public abstract class ServerJavaRoutineExpressionEvaluation extends AbstractComp
     }
 
     protected abstract ServerJavaRoutine javaRoutine(ServerQueryContext context,
+                                                     QueryBindings bindings,
                                                      ServerRoutineInvocation invocation);
 
     static class RoutineInvocation extends ServerRoutineInvocation {
@@ -79,8 +81,8 @@ public abstract class ServerJavaRoutineExpressionEvaluation extends AbstractComp
         }
 
         @Override
-        public ServerJavaValues asValues(ServerQueryContext context) {
-            return new InvocationValues(getRoutine(), inputs, returnValue, context);
+        public ServerJavaValues asValues(ServerQueryContext context, QueryBindings bindings) {
+            return new InvocationValues(getRoutine(), inputs, returnValue, context, bindings);
         }
     }
 
@@ -89,15 +91,18 @@ public abstract class ServerJavaRoutineExpressionEvaluation extends AbstractComp
         private List<? extends ExpressionEvaluation> inputs;
         private ValueHolder returnValue;
         private ServerQueryContext context;
+        private QueryBindings bindings;
 
         protected InvocationValues(Routine routine,
                                    List<? extends ExpressionEvaluation> inputs,
                                    ValueHolder returnValue,
-                                   ServerQueryContext context) {
+                                   ServerQueryContext context,
+                                   QueryBindings bindings) {
             this.routine = routine;
             this.inputs = inputs;
             this.returnValue = returnValue;
             this.context = context;
+            this.bindings = bindings;
         }
 
         @Override
