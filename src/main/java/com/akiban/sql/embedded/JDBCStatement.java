@@ -51,7 +51,7 @@ public class JDBCStatement implements Statement
             context = new EmbeddedQueryContext(this);
         }
         if (bindings == null) {
-            bindings = context.getBindings();
+            bindings = context.createBindings();
         }
         boolean hasResultSet = false;
         connection.beforeExecuteStatement(stmt);

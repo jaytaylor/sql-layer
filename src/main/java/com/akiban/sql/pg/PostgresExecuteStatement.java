@@ -48,8 +48,7 @@ public class PostgresExecuteStatement extends PostgresBaseCursorStatement
         return name;
     }
 
-    public void setParameters(PostgresBoundQueryContext context) {
-        QueryBindings bindings = context.getBindings();
+    public void setParameters(QueryBindings bindings) {
         if (paramPValues != null) {
             for (int i = 0; i < paramPValues.size(); i++) {
                 bindings.setPValue(i, paramPValues.get(i).value());
@@ -101,7 +100,7 @@ public class PostgresExecuteStatement extends PostgresBaseCursorStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         return server.executePreparedStatement(this, maxrows);
     }

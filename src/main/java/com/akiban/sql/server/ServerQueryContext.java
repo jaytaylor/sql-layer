@@ -135,8 +135,8 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
         DXLReadWriteLockHook.only().unlock(getSession(), operationType);
     }
 
-    public QueryBindings getBindings() {
-        return new SparseArrayQueryBindings(); // Initially empty.
+    public QueryBindings createBindings() {
+        return new SparseArrayQueryBindings();
     }
 
 }

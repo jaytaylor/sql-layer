@@ -26,6 +26,7 @@ import com.akiban.sql.server.ServerTransaction;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.UnsupportedSQLException;
@@ -130,7 +131,7 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         Session session = server.getSession();
         ExternalDataService externalData = server.getExternalDataService();

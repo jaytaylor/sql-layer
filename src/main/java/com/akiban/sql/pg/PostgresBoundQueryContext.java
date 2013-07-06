@@ -19,14 +19,13 @@ package com.akiban.sql.pg;
 
 import com.akiban.qp.operator.CursorBase;
 import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.SparseArrayQueryBindings;
 import com.akiban.server.types.AkType;
 import com.akiban.server.service.monitor.CursorMonitor;
 
 public class PostgresBoundQueryContext extends PostgresQueryContext 
                                        implements CursorMonitor
 {
-    private QueryBindings bindings = new SparseArrayQueryBindings();
+    private QueryBindings bindings;
     private static enum State { NORMAL, UNOPENED, SUSPENDED, EXHAUSTED };
     private boolean reportSuspended;
     private State state;
@@ -50,9 +49,12 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
         this.creationTime = System.currentTimeMillis();
     }
 
-    @Override
     public QueryBindings getBindings() {
         return bindings;
+    }
+
+    protected void setBindings(QueryBindings bindings) {
+        this.bindings = bindings;
     }
 
     public PostgresPreparedStatement getStatement() {
@@ -73,12 +75,12 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
     }
 
     @Override
-    public <T extends CursorBase> T startCursor(PostgresCursorGenerator<T> generator) {
+    public <T extends CursorBase> T startCursor(PostgresCursorGenerator<T> generator, QueryBindings bindings) {
         switch (state) {
         case NORMAL:
         case UNOPENED:
         default:
-            return super.startCursor(generator);
+            return super.startCursor(generator, bindings);
         case SUSPENDED:
             return (T)cursor;
         case EXHAUSTED:
