@@ -68,10 +68,6 @@ public abstract class StoreAdapter implements KeyCreator
 
     public abstract void updateRow(Row oldRow, Row newRow, boolean usePValues);
 
-    public void writeRow (Row newRow, boolean usePValues) {
-        writeRow(newRow, null, usePValues);
-    }
-
     public abstract void writeRow (Row newRow, Index[] indexes, boolean usePValues);
     
     public abstract void deleteRow (Row oldRow, boolean usePValues, boolean cascadeDelete);
