@@ -647,8 +647,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     doIndexChange(session, origTable, newDefinition, changedTables, helper);
                 break;
 
-                // TODO: DUP PK TREE ACCUM STATE
-
                 case TABLE:
                     doTableChange(session, context, tableName, newDefinition, changedTables, helper, false);
                 break;
