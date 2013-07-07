@@ -579,7 +579,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         ChangeLevel changeLevel;
         boolean success = false;
-        boolean oldWasRootAndIsNewGroup = false;
+        boolean removeOldGroupTree = false;
+        boolean removeNewParentOldGroupTree = true;
         List<Index> indexesToDrop = new ArrayList<>();
         List<Sequence> sequencesToDrop = new ArrayList<>();
         List<IndexName> newIndexTrees = new ArrayList<>();
@@ -648,16 +649,13 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 break;
 
                 case TABLE:
+                    removeOldGroupTree = true;
                     doTableChange(session, context, tableName, newDefinition, changedTables, helper, false);
                 break;
 
                 case GROUP:
-                    for(ChangedTableDescription desc : validator.getAllChangedTables()) {
-                        UserTable oldTable = origAIS.getUserTable(desc.getOldName());
-                        if((oldTable == origTable) && oldTable.isRoot() && desc.isNewGroup()) {
-                            oldWasRootAndIsNewGroup = true;
-                        }
-                    }
+                    removeOldGroupTree = true;
+                    removeNewParentOldGroupTree = true;
                     doTableChange(session, context, tableName, newDefinition, changedTables, helper, true);
                 break;
 
@@ -679,10 +677,18 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             if(!success && (origAIS != curAIS)) {
                 // Be extra careful with null checks.. In a failure state, don't know what was created.
                 List<TreeLink> links = new ArrayList<>();
-                if(oldWasRootAndIsNewGroup) {
+                if(removeOldGroupTree) {
                     UserTable newTable = curAIS.getUserTable(newDefinition.getName());
                     if(newTable != null) {
                         links.add(newTable.getGroup());
+                    }
+                }
+
+                if(removeNewParentOldGroupTree && origTable.getParentJoin() != null) {
+                    UserTable oldParent = origTable.getParentJoin().getParent();
+                    UserTable newOldParent = curAIS.getUserTable(oldParent.getName());
+                    if(newOldParent != null) {
+                        links.add(newOldParent.getGroup());
                     }
                 }
 
@@ -703,8 +709,15 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         // Complete: we can now get rid of any trees that shouldn't be here
         store().deleteIndexes(session, indexesToDrop);
         store().deleteSequences(session, sequencesToDrop);
-        if(oldWasRootAndIsNewGroup) {
-            store().removeTrees(session, Collections.singleton(origTable.getGroup()));
+        if(removeOldGroupTree) {
+            store().removeTree(session, origTable.getGroup());
+        }
+        if(removeNewParentOldGroupTree) {
+            List<Join> newParent = newDefinition.getCandidateParentJoins();
+            if(!newParent.isEmpty()) {
+                UserTable newParentOldTable = origAIS.getUserTable(newParent.get(0).getParent().getName());
+                store().removeTree(session, newParentOldTable.getGroup());
+            }
         }
         return changeLevel;
     }
