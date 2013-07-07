@@ -116,7 +116,7 @@ public class PersistitAdapter extends StoreAdapter
             oldStep = enterUpdateStep();
             oldRowData.setExplicitRowDef(rowDef);
             newRowData.setExplicitRowDef(rowDefNewRow);
-            store.updateRow(getSession(), oldRowData, newRowData, null, null);
+            store.updateRow(getSession(), oldRowData, newRowData, null);
         } catch (InvalidOperationException e) {
             rollbackIfNeeded(e);
             throw e;

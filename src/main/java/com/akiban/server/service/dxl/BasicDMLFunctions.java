@@ -621,7 +621,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                 tableId
         );
 
-        store().updateRow(session, oldData, newData, columnSelector, null);
+        store().updateRow(session, oldData, newData, columnSelector);
     }
 
     private void checkForModifiedCursors(

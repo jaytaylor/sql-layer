@@ -419,8 +419,6 @@ public abstract class AbstractStore<SDType> implements Store {
                            RowData oldRow,
                            RowData newRow,
                            ColumnSelector selector,
-                           Index[] indexes,
-                           boolean indexesAsInsert,
                            boolean propagateHKeyChanges)
     {
         int oldID = oldRow.getRowDefId();
@@ -439,7 +437,7 @@ public abstract class AbstractStore<SDType> implements Store {
         try {
             preWrite(session, storeData, oldRowDef, oldRow);
             preWrite(session, storeData, newRowDef, newRow);
-            updateRowInternal(session, storeData, oldRowDef, oldRow, newRowDef, newRow, selector, indexes, indexesAsInsert, propagateHKeyChanges);
+            updateRowInternal(session, storeData, oldRowDef, oldRow, newRowDef, newRow, selector, propagateHKeyChanges);
         } finally {
             UPDATE_ROW_TAP.out();
             releaseStoreData(session, storeData);
@@ -521,7 +519,7 @@ public abstract class AbstractStore<SDType> implements Store {
 
 
     @Override
-    public void updateRow(Session session, RowData oldRow, RowData newRow, ColumnSelector selector, Index[] indexes) {
+    public void updateRow(Session session, RowData oldRow, RowData newRow, ColumnSelector selector) {
         AkibanInformationSchema ais = schemaManager.getAis(session);
         UserTable userTable = ais.getUserTable(oldRow.getRowDefId());
 
@@ -529,7 +527,7 @@ public abstract class AbstractStore<SDType> implements Store {
         StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais));
 
         if(canSkipGIMaintenance(userTable)) {
-            updateRow(session, oldRow, newRow, selector, indexes, (indexes != null), true);
+            updateRow(session, oldRow, newRow, selector, true);
         } else {
             UPDATE_ROW_GI_TAP.in();
             try {
@@ -544,7 +542,7 @@ public abstract class AbstractStore<SDType> implements Store {
                                      StoreGIHandler.forTable(this, adapter, userTable),
                                      StoreGIHandler.Action.DELETE);
 
-                updateRow(session, oldRow, mergedRow, null /*already merged*/, indexes, (indexes != null), true);
+                updateRow(session, oldRow, mergedRow, null /*already merged*/, true);
 
                 maintainGroupIndexes(session,
                                      ais,
@@ -938,8 +936,6 @@ public abstract class AbstractStore<SDType> implements Store {
                                    RowDef newRowDef,
                                    RowData newRow,
                                    ColumnSelector selector,
-                                   Index[] indexes,
-                                   boolean indexesAsInsert,
                                    boolean propagateHKeyChanges)
     {
         Key hKey = getKey(session, storeData);
@@ -971,13 +967,8 @@ public abstract class AbstractStore<SDType> implements Store {
             addChangeFor(session, newRowDef.userTable(), hKey);
 
             PersistitIndexRowBuffer indexRowBuffer = new PersistitIndexRowBuffer(this);
-            Index[] indexesToMaintain = (indexes == null) ? oldRowDef.getIndexes() : indexes;
-            for(Index index : indexesToMaintain) {
-                if(indexesAsInsert) {
-                    writeIndexRow(session, index, mergedRow, hKey, indexRowBuffer);
-                } else {
-                    updateIndex(session, index, oldRowDef, currentRow, mergedRow, hKey, indexRowBuffer);
-                }
+            for(Index index : oldRowDef.getIndexes()) {
+                updateIndex(session, index, oldRowDef, currentRow, mergedRow, hKey, indexRowBuffer);
             }
         } else {
             // A PK or FK field has changed. Process the update by delete and insert.
