@@ -949,7 +949,12 @@ public abstract class AbstractStore<SDType> implements Store {
         RowData mergedRow = mergeRows(oldRowDef, currentRow, newRow, selector);
 
         BitSet tablesRequiringHKeyMaintenance = null;
-        if(propagateHKeyChanges) {
+        
+        // This occurs when doing alter table adding or dropping a column,
+        // don't be tricky here, drop and insert. 
+        if (!oldRowDef.equals(newRowDef)) {
+            tablesRequiringHKeyMaintenance = hKeyDependentTableOrdinals(session, oldRow.getRowDefId());
+        } else if (propagateHKeyChanges) {
             tablesRequiringHKeyMaintenance = analyzeFieldChanges(session, oldRowDef, oldRow, mergedRow);
         }
 
@@ -1241,10 +1246,15 @@ public abstract class AbstractStore<SDType> implements Store {
         }
         return true;
     }
-
+    
     protected static boolean fieldEqual(RowDef rowDef, RowData a, RowData b, int fieldPosition) {
-        long aLoc = rowDef.fieldLocation(a, fieldPosition);
-        long bLoc = rowDef.fieldLocation(b, fieldPosition);
+        long aLoc = a.getExplicitRowDef() != null ? 
+                a.getExplicitRowDef().fieldLocation(a, fieldPosition) :
+                rowDef.fieldLocation(a, fieldPosition);
+        long bLoc = b.getExplicitRowDef() != null ? 
+                b.getExplicitRowDef().fieldLocation(b, fieldPosition) :
+                rowDef.fieldLocation(b, fieldPosition);
+        
         return bytesEqual(a.getBytes(), (int)aLoc, (int)(aLoc >>> 32),
                           b.getBytes(), (int)bLoc, (int)(bLoc >>> 32));
     }

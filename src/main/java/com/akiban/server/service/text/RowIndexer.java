@@ -17,24 +17,19 @@
 
 package com.akiban.server.service.text;
 
-import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.persistitadapter.PersistitHKey;
-import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.qp.util.PersistitKey;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.ShareHolder;
 import com.persistit.Key;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.StoredField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.util.BytesRef;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,8 +39,6 @@ import java.util.*;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.StringField;
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexReader;
 
 /** Given <code>Row</code>s in hkey order, create <code>Document</code>s. */
 public class RowIndexer implements Closeable
@@ -57,10 +50,9 @@ public class RowIndexer implements Closeable
     private IndexWriter writer;
     private Document currentDocument;
     private long documentCount;
-    //private BytesRef keyBytes;
     private String keyEncodedString;
     private boolean updating;
-    
+
     private static final Logger logger = LoggerFactory.getLogger(RowIndexer.class);
 
     public RowIndexer(FullTextIndexInfo index, IndexWriter writer, boolean updating) {
@@ -74,9 +66,9 @@ public class RowIndexer implements Closeable
         for (RowType rowType : rowTypes) {
             if ((rowType == indexedRowType) ||
                 rowType.ancestorOf(indexedRowType)) {
-                Integer ancestorDepth = ((UserTableRowType)rowType).userTable().getDepth();
+                Integer ancestorDepth = rowType.userTable().getDepth();
                 ancestorRowTypes.put(rowType, ancestorDepth);
-                ancestors[ancestorDepth] = new ShareHolder<Row>();
+                ancestors[ancestorDepth] = new ShareHolder<>();
             }
             else if (indexedRowType.ancestorOf(rowType)) {
                 descendantRowTypes.add(rowType);

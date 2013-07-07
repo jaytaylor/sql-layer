@@ -41,8 +41,24 @@ import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.ProtectedIndexException;
 import com.akiban.server.error.TableIndexJoinTypeException;
 import com.akiban.server.error.UnsupportedUniqueGroupIndexException;
+import com.akiban.server.service.servicemanager.GuicedServiceManager;
+import com.akiban.server.service.text.FullTextIndexService;
+import com.akiban.server.service.text.FullTextIndexServiceImpl;
+
+import java.util.Map;
 
 public class IndexDDLIT extends AISDDLITBase {
+
+    @Override
+    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
+        return super.serviceBindingsProvider()
+                .bindAndRequire(FullTextIndexService.class, FullTextIndexServiceImpl.class);
+    }
+
+    @Override
+    protected Map<String, String> startupConfigProperties() {
+        return uniqueStartupConfigProperties(TableDDLIT.class);
+    }
 
     @Test
     public void createKey() throws Exception {
@@ -257,7 +273,8 @@ public class IndexDDLIT extends AISDDLITBase {
         
         executeDDL(sql);
         
-        executeDDL("SET SCHEMA test; DROP INDEX t1.test115");
+        executeDDL("SET SCHEMA test");
+        executeDDL("DROP INDEX t1.test115");
         executeDDL("DROP INDEX t1.test115");
         UserTable table = ais().getUserTable("test", "t1");
         assertNotNull (table);
@@ -359,7 +376,7 @@ public class IndexDDLIT extends AISDDLITBase {
         
     }
     
-    @Test 
+    @Test
     public void createFullTextIndex() throws Exception {
         String sql = "CREATE TABLE test.t17 (c1 varchar(1000))";
         executeDDL(sql);

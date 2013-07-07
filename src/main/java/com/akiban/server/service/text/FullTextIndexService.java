@@ -35,7 +35,7 @@ public interface FullTextIndexService extends FullTextIndexInfos {
      * created.
      * @param name 
      */
-    public void schedulePopulate(String schema, String table, String index);
+    public void schedulePopulate(Session session, IndexName name);
 
     /**
      * Update the given index based on the changedRow 
