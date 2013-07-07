@@ -467,10 +467,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                             }
                             indexes = indexesToBuild.toArray(new Index[indexesToBuild.size()]);
                             typeMap.put(oldType, new RowTypeAndIndexes(newType, indexes));
-
-                            // Adjust old count as the entire table will be written
-                            TableStatus status = oldType.userTable().rowDef().getTableStatus();
-                            status.rowsWritten(session, -status.getRowCount(session));
                         }
                     }
             );

@@ -860,10 +860,13 @@ public abstract class AbstractStore<SDType> implements Store {
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
         for(Index index : indexes) {
             writeIndexRow(session, index, rowData, hKey, indexRow);
-        }
 
-        // Bump row count *after* uniqueness checks. Avoids drift of TableStatus#getApproximateRowCount. See bug1112940.
-        rowDef.getTableStatus().rowsWritten(session, 1);
+            // Only bump row count if PK row is written (may not be written during an ALTER)
+            // Bump row count *after* uniqueness checks. Avoids drift of TableStatus#getApproximateRowCount. See bug1112940.
+            if(index.isPrimaryKey()) {
+                rowDef.getTableStatus().rowsWritten(session, 1);
+            }
+        }
 
         if(propagateHKeyChanges && rowDef.userTable().hasChildren()) {
             /*
