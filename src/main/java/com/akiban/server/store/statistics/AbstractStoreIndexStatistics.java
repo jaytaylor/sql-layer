@@ -154,7 +154,7 @@ public abstract class AbstractStoreIndexStatistics<S extends Store> {
                 indexStatistics.getRowCount(),
                 indexStatistics.getSampledCount()
         });
-        store.writeRow(session, rowData);
+        store.writeRow(session, rowData, null);
 
         // Multi-column
         for(int prefixColumns = 1; prefixColumns <= index.getKeyColumns().size(); prefixColumns++) {
@@ -207,7 +207,7 @@ public abstract class AbstractStoreIndexStatistics<S extends Store> {
                     entry.getLessCount(),
                     entry.getDistinctCount()
                 });
-                store.writeRow(session, rowData);
+                store.writeRow(session, rowData, null);
             }
         }
     }

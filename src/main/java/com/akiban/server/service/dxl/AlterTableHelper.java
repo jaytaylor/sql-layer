@@ -27,6 +27,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.TableChange;
+import com.akiban.ais.util.TableChange.ChangeType;
 import com.akiban.server.service.session.Session;
 
 import java.util.ArrayList;
