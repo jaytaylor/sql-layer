@@ -979,7 +979,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         builder.column(SCHEMA, C_TABLE, "c1", 1, "int", null, null, false, false, null, null);
         builder.index(SCHEMA, C_TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn(SCHEMA, C_TABLE, Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, null);
-        builder.index(SCHEMA, C_TABLE, "c2", true, Index.KEY_CONSTRAINT);
+        builder.index(SCHEMA, C_TABLE, "c2", false, Index.KEY_CONSTRAINT);
         builder.indexColumn(SCHEMA, C_TABLE, "c2", "c2", 0, true, null);
         builder.basicSchemaIsComplete();
         builder.createGroup(C_TABLE, SCHEMA);
@@ -1190,5 +1190,43 @@ public class AlterTableBasicIT extends AlterTableITBase {
         assertEquals("Sequence name prefix",
                      true,
                      seq.getSequenceName().getTableName().startsWith(DefaultNameGenerator.IDENTITY_SEQUENCE_PREFIX));
+    }
+
+    @Test
+    public void alterNoPKAddGroupingFK() {
+        int cid = createTable(SCHEMA, C_TABLE, "id INT NOT NULL PRIMARY KEY, a CHAR(5)");
+        int oid = createTable(SCHEMA, O_TABLE, "b CHAR(5), cid INT");
+
+        writeRows(createNewRow(cid, 1L, "a"),
+                  createNewRow(cid, 2L, "b"),
+                  createNewRow(cid, 3L, "c"),
+                  createNewRow(cid, 4L, "d"));
+
+        writeRows(createNewRow(oid, "aa", 1L),
+                  createNewRow(oid, "bb", 2L),
+                  createNewRow(oid, "cc", 3L));
+
+        runAlter(ChangeLevel.GROUP, "ALTER TABLE o ADD GROUPING FOREIGN KEY(cid) REFERENCES c(id)");
+
+        // Check for a hidden PK generator in a bad state (e.g. reproducing old values)
+        writeRows(createNewRow(oid, "dd", 4L));
+
+        Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
+        RowType cType = schema.userTableRowType(getUserTable(SCHEMA, C_TABLE));
+        RowType oType = schema.userTableRowType(getUserTable(SCHEMA, O_TABLE));
+        StoreAdapter adapter = newStoreAdapter(schema);
+        compareRows(
+                new RowBase[] {
+                        testRow(cType, 1L, "a"),
+                            testRow(oType, "aa", 1L, 1L),
+                        testRow(cType, 2L, "b"),
+                            testRow(oType, "bb", 2L, 2L),
+                        testRow(cType, 3L, "c"),
+                            testRow(oType, "cc", 3L, 3L),
+                        testRow(cType, 4L, "d"),
+                            testRow(oType, "dd", 4L, 4L),
+                },
+                adapter.newGroupCursor(cType.userTable().getGroup())
+        );
     }
 }

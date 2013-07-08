@@ -116,7 +116,7 @@ public class PersistitAdapter extends StoreAdapter
             oldStep = enterUpdateStep();
             oldRowData.setExplicitRowDef(rowDef);
             newRowData.setExplicitRowDef(rowDefNewRow);
-            store.updateRow(getSession(), oldRowData, newRowData, null, null);
+            store.updateRow(getSession(), oldRowData, newRowData, null);
         } catch (InvalidOperationException e) {
             rollbackIfNeeded(e);
             throw e;
@@ -126,13 +126,14 @@ public class PersistitAdapter extends StoreAdapter
         }
     }
     @Override
-    public void writeRow (Row newRow, boolean usePValues) {
+    public void writeRow (Row newRow, Index[] indexes, boolean usePValues) {
         RowDef rowDef = newRow.rowType().userTable().rowDef();
         int oldStep = 0;
         try {
             RowData newRowData = rowData (rowDef, newRow, rowDataCreator(usePValues));
+            newRowData.setExplicitRowDef(rowDef);
             oldStep = enterUpdateStep();
-            store.writeRow(getSession(), newRowData);
+            store.writeRow(getSession(), newRowData, indexes);
         } catch (InvalidOperationException e) {
             rollbackIfNeeded(e);
             throw e;
@@ -150,35 +151,6 @@ public class PersistitAdapter extends StoreAdapter
         int oldStep = enterUpdateStep();
         try {
             store.deleteRow(getSession(), oldRowData, true, cascadeDelete);
-        } catch (InvalidOperationException e) {
-            rollbackIfNeeded(e);
-            throw e;
-        }
-        finally {
-            leaveUpdateStep(oldStep);
-        }
-    }
-
-    @Override
-    public void alterRow(Row oldRow, Row newRow, Index[] indexes, boolean hKeyChanged, boolean usePValues) {
-        RowDef rowDef = oldRow.rowType().userTable().rowDef();
-        RowDef rowDefNewRow = newRow.rowType().userTable().rowDef();
-        RowData oldRowData = rowData(rowDef, oldRow, rowDataCreator(usePValues));
-
-        int oldStep = 0;
-        try {
-            // Altered row does not need defaults from newRowData()
-            RowData newRowData = rowData(rowDefNewRow, newRow, rowDataCreator(usePValues));
-            oldRowData.setExplicitRowDef(rowDef);
-            newRowData.setExplicitRowDef(rowDefNewRow);
-            if(hKeyChanged) {
-                store.deleteRow(getSession(), oldRowData, false, false);
-                oldStep = enterUpdateStep();
-                store.writeRow(getSession(), newRowData);
-            } else {
-                oldStep = enterUpdateStep();
-                store.updateRow(getSession(), oldRowData, newRowData, null, indexes);
-            }
         } catch (InvalidOperationException e) {
             rollbackIfNeeded(e);
             throw e;
