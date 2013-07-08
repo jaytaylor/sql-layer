@@ -110,16 +110,17 @@ public class AISMerge {
     private final List<JoinChange> changedJoins;
     private final Map<IndexName,IndexInfo> indexesToFix;
     private final List<IdentityInfo> identityToFix;
+    private final Set<TableName> groupsToClear;
 
 
     /** Legacy test constructor. Creates an AISMerge for adding a table with a new {@link DefaultNameGenerator}. */
     AISMerge(AkibanInformationSchema sourceAIS, UserTable newTable) {
-        this(new DefaultNameGenerator(sourceAIS), copyAISForAdd(sourceAIS), newTable, MergeType.ADD_TABLE, null, null, null);
+        this(new DefaultNameGenerator(sourceAIS), copyAISForAdd(sourceAIS), newTable, MergeType.ADD_TABLE, null, null, null, null);
     }
 
     /** Create a new AISMerge to be used for adding a new table. */
     public static AISMerge newForAddTable(NameGenerator generator, AkibanInformationSchema sourceAIS, UserTable newTable) {
-        return new AISMerge(generator, copyAISForAdd(sourceAIS), newTable, MergeType.ADD_TABLE, null, null, null);
+        return new AISMerge(generator, copyAISForAdd(sourceAIS), newTable, MergeType.ADD_TABLE, null, null, null, null);
     }
 
     /** Create a new AISMerge to be used for modifying a table. */
@@ -128,22 +129,23 @@ public class AISMerge {
         List<JoinChange> changedJoins = new ArrayList<>();
         Map<IndexName,IndexInfo> indexesToFix = new HashMap<>();
         List<IdentityInfo> identityToFix = new ArrayList<>();
-        AkibanInformationSchema targetAIS = copyAISForModify(sourceAIS, indexesToFix, changedJoins, identityToFix, alteredTables);
-        return new AISMerge(generator, targetAIS, null, MergeType.MODIFY_TABLE, changedJoins, indexesToFix, identityToFix);
+        Set<TableName> groupsToClear = new HashSet<>();
+        AkibanInformationSchema targetAIS = copyAISForModify(sourceAIS, indexesToFix, changedJoins, identityToFix, alteredTables, groupsToClear);
+        return new AISMerge(generator, targetAIS, null, MergeType.MODIFY_TABLE, changedJoins, indexesToFix, identityToFix, groupsToClear);
     }
 
     /** Create a new AISMerge to be used for adding one, or more, index to a table. Also see {@link #mergeIndex(Index)}. */
     public static AISMerge newForAddIndex(NameGenerator generator, AkibanInformationSchema sourceAIS) {
-        return new AISMerge(generator, copyAISForAdd(sourceAIS), null, MergeType.ADD_INDEX, null, null, null);
+        return new AISMerge(generator, copyAISForAdd(sourceAIS), null, MergeType.ADD_INDEX, null, null, null, null);
     }
 
     public static AISMerge newForOther(NameGenerator generator, AkibanInformationSchema sourceAIS) {
-        return new AISMerge(generator, copyAISForAdd(sourceAIS), null, MergeType.OTHER, null, null, null);
+        return new AISMerge(generator, copyAISForAdd(sourceAIS), null, MergeType.OTHER, null, null, null, null);
     }
 
     private AISMerge(NameGenerator nameGenerator, AkibanInformationSchema targetAIS, UserTable sourceTable,
                      MergeType mergeType, List<JoinChange> changedJoins, Map<IndexName,IndexInfo> indexesToFix,
-                     List<IdentityInfo> identityToFix) {
+                     List<IdentityInfo> identityToFix, Set<TableName> groupsToClear) {
         this.nameGenerator = nameGenerator;
         this.targetAIS = targetAIS;
         this.sourceTable = sourceTable;
@@ -151,6 +153,7 @@ public class AISMerge {
         this.changedJoins = changedJoins;
         this.indexesToFix = indexesToFix;
         this.identityToFix = identityToFix;
+        this.groupsToClear = groupsToClear;
     }
 
 
@@ -162,7 +165,8 @@ public class AISMerge {
                                                             Map<IndexName,IndexInfo> indexesToFix,
                                                             final List<JoinChange> joinsToFix,
                                                             List<IdentityInfo> identityToFix,
-                                                            Collection<ChangedTableDescription> changedTables)
+                                                            Collection<ChangedTableDescription> changedTables,
+                                                            Set<TableName> groupsToClear)
     {
         final Set<Sequence> excludedSequences = new HashSet<>();
         final Set<Group> excludedGroups = new HashSet<>();
@@ -176,7 +180,14 @@ public class AISMerge {
             if((newTable != null) && (newTable.getGroup() != null)) {
                 newTable.setOrdinal(oldTable.getOrdinal());
                 newTable.setTableId(oldTable.getTableId());
-                newTable.getGroup().setTreeName(oldTable.getGroup().getTreeName());
+            }
+
+            // If we're changing table rows *at all*, generate new group tree(s)
+            if(desc.isPKAffected() || desc.isTableAffected()) {
+                groupsToClear.add(oldTable.getGroup().getName());
+                if(newTable != null && newTable.getGroup() != null) {
+                    groupsToClear.add(newTable.getGroup().getName());
+                }
             }
 
             switch(desc.getParentChange()) {
@@ -218,15 +229,7 @@ public class AISMerge {
                 filteredTables.put(desc.getOldName(), newTable);
             }
 
-            // Primary key trees must always be preserved (accum state cannot be duped)
-            Index oldPrimary = oldTable.getPrimaryKeyIncludingInternal().getIndex();
-            Integer oldID = desc.isNewGroup() ? null : oldPrimary.getIndexId();
-            indexesToFix.put(new IndexName(desc.getNewName(), Index.PRIMARY_KEY_CONSTRAINT), new IndexInfo(oldID, oldPrimary.getTreeName()));
-
             for(Index newIndex : indexSearchTable.getIndexesIncludingInternal()) {
-                if(newIndex.isPrimaryKey()) {
-                    continue;
-                }
                 String oldName = desc.getPreserveIndexes().get(newIndex.getIndexName().getName());
                 Index oldIndex = (oldName != null) ? oldTable.getIndexIncludingInternal(oldName) : null;
                 if(oldIndex != null) {
@@ -492,6 +495,13 @@ public class AISMerge {
                 addNewGroup(builder, table);
             } else if(tnj.newParentName != null) {
                 addJoin(builder, tnj.newParentName, tnj.parentCols, tnj.join, tnj.childCols, table);
+            }
+        }
+
+        for(TableName name : groupsToClear) {
+            Group group = targetAIS.getGroup(name);
+            if(group != null) {
+                group.setTreeName(null);
             }
         }
 

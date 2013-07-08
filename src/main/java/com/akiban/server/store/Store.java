@@ -46,11 +46,14 @@ public interface Store extends KeyCreator {
     RowDef getRowDef(Session session, TableName tableName);
     AkibanInformationSchema getAIS(Session session);
 
-    void writeRow(Session session, RowData row);
+    /**  @param indexes Which indexes to maintain. <code>null</code> implies all. Non-null during an ALTER. */
+    void writeRow(Session session, RowData row, Index[] indexes);
+
     void deleteRow(Session session, RowData row, boolean deleteIndexes, boolean cascadeDelete);
 
     /** newRow can be partial, as specified by selector, but oldRow must be fully present. */
-    void updateRow(Session session, RowData oldRow, RowData newRow, ColumnSelector selector, Index[] indexes);
+    void updateRow(Session session, RowData oldRow, RowData newRow, ColumnSelector selector);
+
     long nextSequenceValue(Session session, Sequence sequence) throws Exception;
     long curSequenceValue(Session session, Sequence sequence) throws Exception;
 

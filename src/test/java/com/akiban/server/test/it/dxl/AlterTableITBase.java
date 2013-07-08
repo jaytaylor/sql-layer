@@ -31,6 +31,7 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.service.tree.TreeServiceImpl;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.test.it.qp.TestRow;
 import org.junit.After;
@@ -83,20 +84,25 @@ public class AlterTableITBase extends ITBase {
     // Added after bug1047977
     @After
     public void lookForDanglingTrees() throws Exception {
-        // Collect all trees Persistit currently has
-        Set<String> storageTrees = new TreeSet<>();
-        storageTrees.addAll(Arrays.asList(treeService().getDb().getVolume(EXPECTED_VOLUME_NAME).getTreeNames()));
+        // TODO: Generalize
+        try {
+            // Collect all trees Persistit currently has
+            Set<String> storageTrees = new TreeSet<>();
+            storageTrees.addAll(Arrays.asList(treeService().getDb().getVolume(EXPECTED_VOLUME_NAME).getTreeNames()));
 
-        // Collect all trees in AIS
-        Set<String> knownTrees = serviceManager().getSchemaManager().getTreeNames();
-        knownTrees.add(TreeService.SCHEMA_TREE_NAME); // Used by SchemaManager
+            // Collect all trees in AIS
+            Set<String> knownTrees = serviceManager().getSchemaManager().getTreeNames();
+            knownTrees.add(TreeService.SCHEMA_TREE_NAME); // Used by SchemaManager
 
-        // Subtract knownTrees from storage trees instead of requiring exact. There may be allocated trees that
-        // weren't materialized (yet), for example.
-        Set<String> difference = new TreeSet<>(storageTrees);
-        difference.removeAll(knownTrees);
+            // Subtract knownTrees from storage trees instead of requiring exact. There may be allocated trees that
+            // weren't materialized (yet), for example.
+            Set<String> difference = new TreeSet<>(storageTrees);
+            difference.removeAll(knownTrees);
 
-        assertEquals("Found orphaned trees", "[]", difference.toString());
+            assertEquals("Found orphaned trees", "[]", difference.toString());
+        } catch(UnsupportedOperationException e) {
+            // Ignore
+        }
     }
 
     protected void checkIndexesInstead(TableName name, String... indexNames) {

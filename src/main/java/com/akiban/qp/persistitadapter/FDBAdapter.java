@@ -83,14 +83,14 @@ public class FDBAdapter extends StoreAdapter {
         RowData newRowData = rowData(rowDef, newRow, new PValueRowDataCreator());
         oldRowData.setExplicitRowDef(rowDef);
         newRowData.setExplicitRowDef(rowDef);
-        store.updateRow(getSession(), oldRowData, newRowData, null, null);
+        store.updateRow(getSession(), oldRowData, newRowData, null);
     }
 
     @Override
-    public void writeRow(Row newRow, boolean usePValues) {
+    public void writeRow(Row newRow, Index[] indexes, boolean usePValues) {
         RowDef rowDef = newRow.rowType().userTable().rowDef();
         RowData newRowData = rowData(rowDef, newRow, new PValueRowDataCreator());
-        store.writeRow(getSession(), newRowData);
+        store.writeRow(getSession(), newRowData, indexes);
     }
 
     @Override
@@ -98,11 +98,6 @@ public class FDBAdapter extends StoreAdapter {
         RowDef rowDef = oldRow.rowType().userTable().rowDef();
         RowData oldRowData = rowData(rowDef, oldRow, new PValueRowDataCreator());
         store.deleteRow(getSession(), oldRowData, true, cascadeDelete);
-    }
-
-    @Override
-    public void alterRow(Row oldRow, Row newRow, Index[] indexesToMaintain, boolean hKeyChanged, boolean usePValues) {
-        throw new UnsupportedOperationException();
     }
 
     @Override

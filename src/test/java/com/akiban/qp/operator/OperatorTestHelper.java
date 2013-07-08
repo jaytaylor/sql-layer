@@ -213,7 +213,7 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public void writeRow(Row newRow, boolean usePValues)
+        public void writeRow(Row newRow, Index[] indexes, boolean usePValues)
         {
             throw new UnsupportedOperationException();
         }
@@ -221,11 +221,6 @@ public final class OperatorTestHelper {
         @Override
         public void deleteRow(Row oldRow, boolean usePValues, boolean cascadeDefault)
         {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void alterRow(Row oldRow, Row newRow, Index[] indexesToMaintain, boolean hKeyChanged, boolean usePValues) {
             throw new UnsupportedOperationException();
         }
 

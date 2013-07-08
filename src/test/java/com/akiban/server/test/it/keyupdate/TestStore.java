@@ -39,7 +39,7 @@ public class TestStore
     public void writeRow(Session session, TestRow row)
         throws Exception
     {
-        mainDelegate.writeRow(session, row.toRowData());
+        mainDelegate.writeRow(session, row.toRowData(), null);
         map.put(row.hKey(), row);
     }
 
@@ -51,13 +51,11 @@ public class TestStore
     }
 
     public void updateRow(Session session, TestRow oldRow, TestRow newRow, ColumnSelector columnSelector)
-        throws Exception
     {
         mainDelegate.updateRow(session,
-                           oldRow.toRowData(),
-                           newRow.toRowData(), // Not mergedRow. Rely on delegate to merge existing and new.
-                           columnSelector,
-                           null);
+                               oldRow.toRowData(),
+                               newRow.toRowData(), // Not mergedRow. Rely on delegate to merge existing and new.
+                               null);
         TestRow currentRow = map.remove(oldRow.hKey());
         TestRow mergedRow = mergeRows(currentRow, newRow, columnSelector);
         map.put(mergedRow.hKey(), mergedRow);

@@ -578,14 +578,14 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     {
         logger.trace("writing a row");
         final RowData rowData = niceRowToRowData(row);
-        store().writeRow(session, rowData);
+        store().writeRow(session, rowData, null);
     }
 
     @Override
     public void writeRows(Session session, List<RowData> rows) {
         logger.trace("writing {} rows", rows.size());
         for(RowData rowData : rows) {
-            store().writeRow(session, rowData);
+            store().writeRow(session, rowData, null);
         }
     }
 
@@ -621,7 +621,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                 tableId
         );
 
-        store().updateRow(session, oldData, newData, columnSelector, null);
+        store().updateRow(session, oldData, newData, columnSelector);
     }
 
     private void checkForModifiedCursors(
