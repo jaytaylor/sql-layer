@@ -52,6 +52,7 @@ public class ScalarSubqueryTExpression extends SubqueryTExpression
                 TEvaluatableExpression eval = expression.build();
                 
                 eval.with(queryContext());
+                eval.with(queryBindings());
                 eval.with(row);
 
                 // evaluate the result

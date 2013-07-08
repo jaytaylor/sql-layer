@@ -98,6 +98,10 @@ public abstract class SubqueryExpressionEvaluation extends ExpressionEvaluation.
         return context;
     }
 
+    protected QueryBindings queryBindings() {
+        return bindings;
+    }
+
     protected Row next() {
         Row row = cursor.next();
         if ((row != null) &&
