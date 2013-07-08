@@ -1154,9 +1154,8 @@ public class PostgresServerConnection extends ServerSessionBase
         PostgresPreparedStatement pstmt = preparedStatements.get(estmt.getName());
         if (pstmt == null)
             throw new NoSuchPreparedStatementException(estmt.getName());
-        PostgresBoundQueryContext context = 
-            new PostgresBoundQueryContext(this, pstmt, null, false, false);
-        QueryBindings bindings = context.getBindings();
+        PostgresQueryContext context = new PostgresQueryContext(this);
+        QueryBindings bindings = context.createBindings();
         estmt.setParameters(bindings);
         sessionMonitor.startStatement(pstmt.getSQL(), pstmt.getName());
         pstmt.getStatement().sendDescription(context, false, false);
@@ -1210,10 +1209,11 @@ public class PostgresServerConnection extends ServerSessionBase
         }
         PostgresBoundQueryContext bound =
             new PostgresBoundQueryContext(this, ppstmt, name, true, false);
-        QueryBindings bindings = bound.getBindings();
+        QueryBindings bindings = bound.createBindings();
         if (estmt != null) {
             estmt.setParameters(bindings);
         }
+        bound.setBindings(bindings);
         PostgresBoundQueryContext prev;
         synchronized (boundPortals) {
             prev = boundPortals.put(name, bound);
