@@ -18,7 +18,6 @@
 package com.akiban.sql.embedded;
 
 import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.SparseArrayQueryBindings;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.TInstance;
@@ -35,9 +34,9 @@ import java.util.*;
 
 public class JDBCPreparedStatement extends JDBCStatement implements PreparedStatement
 {
-    protected ExecutableStatement executableStatement;
-    protected EmbeddedQueryContext context;
-    protected final QueryBindings bindings = new SparseArrayQueryBindings();
+    protected final ExecutableStatement executableStatement;
+    protected final EmbeddedQueryContext context;
+    protected final QueryBindings bindings;
     protected final Values values = new Values();
 
     protected JDBCPreparedStatement(JDBCConnection connection, 
@@ -45,6 +44,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
         super(connection);
         this.executableStatement = executableStatement;
         context = new EmbeddedQueryContext(this);
+        bindings = context.createBindings();
     }
 
     protected class Values extends ServerJavaValues {

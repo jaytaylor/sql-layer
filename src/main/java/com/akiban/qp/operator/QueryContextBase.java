@@ -76,4 +76,9 @@ public abstract class QueryContextBase implements QueryContext
     public void checkConstraints(Row row, boolean usePValues) throws InvalidOperationException {
         row.rowType().constraintChecker().checkConstraints(row, usePValues);
     }
+
+    @Override
+    public QueryBindings createBindings() {
+        return new SparseArrayQueryBindings();
+    }
 }

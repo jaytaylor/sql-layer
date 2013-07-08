@@ -28,7 +28,6 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
-import com.akiban.qp.operator.SparseArrayQueryBindings;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitHKey;
 import com.akiban.qp.row.FlattenedRow;
@@ -67,7 +66,7 @@ class StoreGIMaintenance {
             if (planOperator == null)
                 return;
             QueryContext context = new SimpleQueryContext(adapter);
-            QueryBindings bindings = new SparseArrayQueryBindings();
+            QueryBindings bindings = context.createBindings();
             List<Column> lookupCols = rowType.userTable().getPrimaryKeyIncludingInternal().getColumns();
 
             bindings.setHKey(StoreGIMaintenance.HKEY_BINDING_POSITION, hKey);

@@ -30,7 +30,6 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
-import com.akiban.qp.operator.SparseArrayQueryBindings;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -132,7 +131,7 @@ public class ModelBuilder {
             List<List<String>> keys = PrimaryKeyParser.parsePrimaryKeys(identifiers, table.getPrimaryKey().getIndex());
             Operator plan = PlanGenerator.generateBranchPlan(ais, table);
             QueryContext context = queryContext(session, ais);
-            QueryBindings bindings = new SparseArrayQueryBindings();
+            QueryBindings bindings = context.createBindings();
             Cursor cursor = API.cursor(plan, context, bindings);
             boolean first = true;
             writer.append('[');
@@ -310,7 +309,7 @@ public class ModelBuilder {
         );
         StoreAdapter adapter = store.createAdapter(session, schema);
         QueryContext queryContext = new SimpleQueryContext(adapter);
-        QueryBindings queryBindings = new SparseArrayQueryBindings();
+        QueryBindings queryBindings = queryContext.createBindings();
         Cursor cursor = API.cursor(plan, queryContext, queryBindings);
         cursor.open();
         try {
@@ -329,7 +328,7 @@ public class ModelBuilder {
         UserTable table = ddlFunctions.getUserTable(session, tableName);
         Operator plan = PlanGenerator.generateScanPlan(table.getAIS(), table);
         QueryContext queryContext = queryContext(session, table.getAIS());
-        QueryBindings queryBindings = new SparseArrayQueryBindings();
+        QueryBindings queryBindings = queryContext.createBindings();
         return API.cursor(plan, queryContext, queryBindings);
     }
 

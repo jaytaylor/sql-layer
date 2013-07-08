@@ -54,7 +54,6 @@ import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.QueryContextBase;
 import com.akiban.qp.operator.SimpleQueryContext;
-import com.akiban.qp.operator.SparseArrayQueryBindings;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.ProjectedRow;
@@ -294,7 +293,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             final RowType oldSourceType = oldSchema.userTableRowType(origTable);
             final StoreAdapter adapter = store().createAdapter(session, oldSchema);
             final QueryContext queryContext = new ShimContext(adapter, context);
-            final QueryBindings queryBindings = new SparseArrayQueryBindings();
+            final QueryBindings queryBindings = queryContext.createBindings();
 
             Operator plan = filter_Default(
                     groupScan_Default(origTable.getGroup()),
@@ -372,7 +371,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         // Build transformation
         final StoreAdapter adapter = store().createAdapter(session, origSchema);
         final QueryContext queryContext = new ShimContext(adapter, context);
-        final QueryBindings queryBindings = new SparseArrayQueryBindings();
+        final QueryBindings queryBindings = queryContext.createBindings();
 
         final AkibanInformationSchema newAIS = getAIS(session);
         final UserTable newTable = newAIS.getUserTable(newDefinition.getName());

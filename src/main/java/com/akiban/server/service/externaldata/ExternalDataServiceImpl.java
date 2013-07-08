@@ -28,7 +28,6 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
-import com.akiban.qp.operator.SparseArrayQueryBindings;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -120,7 +119,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                     return serviceManager;
                 }
             };
-        QueryBindings queryBindings = new SparseArrayQueryBindings();
+        QueryBindings queryBindings = queryContext.createBindings();
         JsonRowWriter json = new JsonRowWriter(new TableRowTracker(table, depth));
         WriteTableRow rowWriter = new WriteTableRow();
         AkibanAppender appender = AkibanAppender.of(writer);

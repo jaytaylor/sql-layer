@@ -28,7 +28,6 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
-import com.akiban.qp.operator.SparseArrayQueryBindings;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitHKey;
@@ -254,7 +253,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         if (adapter == null)
             adapter = store.createAdapter(session, index.getSchema());
         QueryContext queryContext = new SimpleQueryContext(adapter);
-        QueryBindings queryBindings = new SparseArrayQueryBindings();
+        QueryBindings queryBindings = queryContext.createBindings();
         IndexWriter writer = indexer.getWriter();
 
         Cursor cursor = null;
@@ -287,7 +286,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             if (adapter == null)
                 adapter = store.createAdapter(session, indexInfo.getSchema());
             QueryContext queryContext = new SimpleQueryContext(adapter);
-            QueryBindings queryBindings = new SparseArrayQueryBindings();
+            QueryBindings queryBindings = queryContext.createBindings();
             HKeyCache<com.akiban.qp.row.HKey> cache = new HKeyCache<>(adapter);
             IndexWriter writer = indexInfo.getIndexer().getWriter();
 

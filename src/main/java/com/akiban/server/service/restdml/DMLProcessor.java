@@ -26,7 +26,6 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.SparseArrayQueryBindings;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.SchemaCache;
@@ -98,7 +97,7 @@ public abstract class DMLProcessor {
             this.schema = SchemaCache.globalSchema(ais);
             this.table = getTable();
             this.queryContext = new RestQueryContext(getAdapter());
-            this.queryBindings = new SparseArrayQueryBindings();
+            this.queryBindings = queryContext.createBindings();
             allValues = new HashMap<>();
             setColumnsNull (queryBindings, table);
         }

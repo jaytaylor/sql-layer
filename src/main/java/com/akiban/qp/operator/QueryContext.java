@@ -126,4 +126,9 @@ public interface QueryContext
      * @throws NoSuchSequenceException if the name does not exist in the system.  
      */
     public long sequenceCurrentValue(TableName sequence); 
+
+    /**
+     * Create a new empty set of bindings.
+     */
+    public QueryBindings createBindings();
 }

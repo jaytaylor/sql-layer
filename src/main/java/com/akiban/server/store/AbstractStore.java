@@ -37,7 +37,6 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
-import com.akiban.qp.operator.SparseArrayQueryBindings;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
 import com.akiban.qp.persistitadapter.PValueRowDataCreator;
@@ -760,7 +759,7 @@ public abstract class AbstractStore<SDType> implements Store {
         }
         if(!groupIndexes.isEmpty()) {
             QueryContext context = new SimpleQueryContext(adapter);
-            QueryBindings bindings = new SparseArrayQueryBindings();
+            QueryBindings bindings = context.createBindings();
             for(GroupIndex groupIndex : groupIndexes) {
                 runMaintenancePlan(
                         context, bindings,
@@ -1195,7 +1194,7 @@ public abstract class AbstractStore<SDType> implements Store {
         Operator plan = PlanGenerator.generateBranchPlan(ais, uTable);
 
         QueryContext queryContext = new SimpleQueryContext(adapter);
-        QueryBindings queryBindings = new SparseArrayQueryBindings();
+        QueryBindings queryBindings = queryContext.createBindings();
         Cursor cursor = API.cursor(plan, queryContext, queryBindings);
 
         List<Column> lookupCols = uTable.getPrimaryKeyIncludingInternal().getColumns();
