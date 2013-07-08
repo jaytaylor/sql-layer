@@ -135,7 +135,7 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         // The index column selector needs to select all the columns before the z column, and the z column itself.
         IndexRowPrefixSelector indexColumnSelector = new IndexRowPrefixSelector(latColumn + 1);
         IndexBound loBound = keyRange.lo();
-        BoundExpressions loExpressions = loBound.boundExpressions(context);
+        BoundExpressions loExpressions = loBound.boundExpressions(context, bindings);
         // Compute z-value at beginning of forward and backward scans
         TInstance latInstance = index.getAllColumns().get(latColumn).getColumn().tInstance();
         TInstance lonInstance = index.getAllColumns().get(lonColumn).getColumn().tInstance();

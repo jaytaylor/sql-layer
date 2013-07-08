@@ -173,7 +173,7 @@ class Update_Default implements UpdatePlannable {
                     checkQueryCancelation();
                     ++seen;
                     if (updateFunction.rowIsSelected(oldRow)) {
-                        Row newRow = updateFunction.evaluate(oldRow, context);
+                        Row newRow = updateFunction.evaluate(oldRow, context, bindings);
                         context.checkConstraints(newRow, usePValues);
                         adapter().updateRow(oldRow, newRow, usePValues);
                         if (LOG_EXECUTION && LOG.isDebugEnabled()) {

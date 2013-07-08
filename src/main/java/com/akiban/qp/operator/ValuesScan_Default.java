@@ -145,7 +145,7 @@ public class ValuesScan_Default extends Operator
                 }
                 Row output;
                 if (iter != null && iter.hasNext()) {
-                    output = iter.next().bind(context);
+                    output = iter.next().bind(context, bindings);
                 } else {
                     close();
                     output = null;

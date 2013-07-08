@@ -349,6 +349,7 @@ class IfEmpty_Default extends Operator
                 for (int i = 0; i < nFields; i++) {
                     TEvaluatableExpression outerJoinRowColumnEvaluation = pEvaluations.get(i);
                     outerJoinRowColumnEvaluation.with(context);
+                    outerJoinRowColumnEvaluation.with(bindings);
                     outerJoinRowColumnEvaluation.evaluate();
                     PValueTargets.copyFrom(
                             outerJoinRowColumnEvaluation.resultValue(),
@@ -359,6 +360,7 @@ class IfEmpty_Default extends Operator
                 for (int i = 0; i < nFields; i++) {
                     ExpressionEvaluation outerJoinRowColumnEvaluation = oEvaluations.get(i);
                     outerJoinRowColumnEvaluation.of(context);
+                    outerJoinRowColumnEvaluation.of(bindings);
                     valuesHolderRow.holderAt(i).copyFrom(outerJoinRowColumnEvaluation.eval());
                 }
             }

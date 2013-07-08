@@ -141,8 +141,8 @@ class IndexCursorSpatial_InBox extends IndexCursor
         Index index = keyRange.indexRowType().index();
         IndexBound loBound = keyRange.lo();
         IndexBound hiBound = keyRange.hi();
-        BoundExpressions loExpressions = loBound.boundExpressions(context);
-        BoundExpressions hiExpressions = hiBound.boundExpressions(context);
+        BoundExpressions loExpressions = loBound.boundExpressions(context, bindings);
+        BoundExpressions hiExpressions = hiBound.boundExpressions(context, bindings);
         // Only 2d, lat/lon supported for now
         BigDecimal xLo, xHi, yLo, yHi;
         if (Types3Switch.ON) {

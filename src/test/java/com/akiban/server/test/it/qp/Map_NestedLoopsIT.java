@@ -303,7 +303,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
             expressions = Arrays.asList((Expression) new LiteralExpression(AkType.INT, x));
             pExpressions = null;
         }
-        return new ExpressionRow(rowType, queryContext, expressions, pExpressions);
+        return new ExpressionRow(rowType, queryContext, queryBindings, expressions, pExpressions);
     }
 
     private Collection<? extends BindableRow> bindableExpressions(Row... rows) {

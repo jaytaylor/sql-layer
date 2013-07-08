@@ -40,6 +40,9 @@ abstract class SubqueryTEvaluateble implements TEvaluatableExpression {
     @Override
     public void evaluate() {
         bindings.setRow(bindingPosition, outerRow);
+        if (cursor == null) {
+            cursor = API.cursor(subquery, context, bindings);
+        }
         cursor.open();
         try {
             doEval(pvalue);
@@ -61,12 +64,13 @@ abstract class SubqueryTEvaluateble implements TEvaluatableExpression {
     @Override
     public void with(QueryContext context) {
         this.context = context;
+        cursor = null;
     }
 
     @Override
     public void with(QueryBindings bindings) {
         this.bindings = bindings;
-        this.cursor = API.cursor(subquery, context, bindings);
+        cursor = null;
     }
 
     protected abstract void doEval(PValueTarget out);

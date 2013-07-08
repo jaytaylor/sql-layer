@@ -23,6 +23,7 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.row.OverlayingRow;
@@ -61,7 +62,7 @@ public class UpdateIT extends OperatorITBase
             }
 
             @Override
-            public Row evaluate(Row original, QueryContext context) {
+            public Row evaluate(Row original, QueryContext context, QueryBindings bindings) {
                 String name;
                 if (usePValues()) {
                     name = original.pvalue(1).getString();
@@ -129,7 +130,7 @@ public class UpdateIT extends OperatorITBase
                 }
 
                 @Override
-                public Row evaluate(Row original, QueryContext context) { 
+                public Row evaluate(Row original, QueryContext context, QueryBindings bindings) { 
                     long id;
                     if (usePValues()) {
                         id = original.pvalue(0).getInt64();
@@ -188,7 +189,7 @@ public class UpdateIT extends OperatorITBase
                 }
 
                 @Override
-                public Row evaluate(Row original, QueryContext context) {
+                public Row evaluate(Row original, QueryContext context, QueryBindings bindings) {
                     long id;
                     if (usePValues()) {
                         id = original.pvalue(0).getInt64();
@@ -294,7 +295,7 @@ public class UpdateIT extends OperatorITBase
             }
 
             @Override
-            public Row evaluate(Row original, QueryContext context) {
+            public Row evaluate(Row original, QueryContext context, QueryBindings bindings) {
                 return row(customerRowType, 2L, "zzz");
             }
 

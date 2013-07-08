@@ -20,6 +20,7 @@ package com.akiban.server.test.pt.qp;
 import com.akiban.ais.model.Group;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.row.OverlayingRow;
@@ -158,7 +159,7 @@ public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
                                }
 
                                @Override
-                               public Row evaluate(Row original, QueryContext context)
+                               public Row evaluate(Row original, QueryContext context, QueryBindings bindings)
                                {
                                    OverlayingRow updatedRow = new OverlayingRow(original);
                                    long i;

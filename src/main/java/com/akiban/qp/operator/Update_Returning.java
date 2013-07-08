@@ -153,7 +153,7 @@ public class Update_Returning extends Operator {
                 Row inputRow;
                 Row newRow = null;
                 if ((inputRow = input.next()) != null) {
-                    newRow = updateFunction.evaluate(inputRow, context);
+                    newRow = updateFunction.evaluate(inputRow, context, bindings);
                     context.checkConstraints(newRow, usePValues);
                     adapter().updateRow(inputRow, newRow, usePValues);
                 }

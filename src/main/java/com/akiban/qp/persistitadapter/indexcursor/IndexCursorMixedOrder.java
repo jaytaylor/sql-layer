@@ -200,8 +200,8 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             keyRange == null /* sorting */ ? Integer.MAX_VALUE :
             index().isUnique() ? index().getKeyColumns().size() : index().getAllColumns().size();
         while (f < min(loBoundColumns, maxSegments)) {
-            BoundExpressions lo = keyRange.lo().boundExpressions(context);
-            BoundExpressions hi = keyRange.hi().boundExpressions(context);
+            BoundExpressions lo = keyRange.lo().boundExpressions(context, bindings);
+            BoundExpressions hi = keyRange.hi().boundExpressions(context, bindings);
             S loSource = sortKeyAdapter.get(lo, f);
             S hiSource = sortKeyAdapter.get(hi, f);
             /*
@@ -378,8 +378,8 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             assert endKey != null : index();
             IndexBound lo = keyRange.lo();
             IndexBound hi = keyRange.hi();
-            BoundExpressions loExpressions = lo.boundExpressions(context);
-            BoundExpressions hiExpressions = hi.boundExpressions(context);
+            BoundExpressions loExpressions = lo.boundExpressions(context, bindings);
+            BoundExpressions hiExpressions = hi.boundExpressions(context, bindings);
             int nColumns = keyRange.boundColumns();
             clear(startKey);
             clear(endKey);

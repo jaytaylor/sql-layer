@@ -59,7 +59,7 @@ class IndexCursorUnidirectionalLexicographic<S> extends IndexCursorUnidirectiona
         if (startBoundColumns == 0 || start == null) {
             startKey.append(startBoundary);
         } else {
-            startExpressions = start.boundExpressions(context);
+            startExpressions = start.boundExpressions(context, bindings);
             clearStart();
             for (int f = 0; f < startBoundColumns; f++) {
                 if (start.columnSelector().includesColumn(f)) {
@@ -72,7 +72,7 @@ class IndexCursorUnidirectionalLexicographic<S> extends IndexCursorUnidirectiona
         if (endBoundColumns == 0 || end == null) {
             endKey = null;
         } else {
-            endExpressions = end.boundExpressions(context);
+            endExpressions = end.boundExpressions(context, bindings);
             clearEnd();
             for (int f = 0; f < endBoundColumns; f++) {
                 if (end.columnSelector().includesColumn(f)) {

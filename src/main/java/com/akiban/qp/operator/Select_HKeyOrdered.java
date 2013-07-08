@@ -188,10 +188,14 @@ class Select_HKeyOrdered extends Operator
             try {
                 CursorLifecycle.checkIdle(this);
                 input.open();
-                if (evaluation == null)
+                if (evaluation == null) {
                     pEvaluation.with(context);
-                else
+                    pEvaluation.with(bindings);
+                }
+                else {
                     evaluation.of(context);
+                    evaluation.of(bindings);
+                }
                 idle = false;
             } finally {
                 TAP_OPEN.out();

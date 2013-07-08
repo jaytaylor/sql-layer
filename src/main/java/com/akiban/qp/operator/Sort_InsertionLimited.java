@@ -185,8 +185,10 @@ class Sort_InsertionLimited extends Operator
                 CursorLifecycle.checkIdle(this);
                 input.open();
                 state = State.FILLING;
-                for (TEvaluatableExpression eval : tEvaluations)
+                for (TEvaluatableExpression eval : tEvaluations) {
                     eval.with(context);
+                    eval.with(bindings);
+                }
                 sorted = new TreeSet<>();
             } finally {
                 TAP_OPEN.out();

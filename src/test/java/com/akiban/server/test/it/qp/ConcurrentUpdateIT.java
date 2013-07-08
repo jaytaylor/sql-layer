@@ -19,6 +19,7 @@ package com.akiban.server.test.it.qp;
 
 import com.akiban.ais.model.Group;
 import com.akiban.qp.exec.UpdatePlannable;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.operator.UpdateFunction;
@@ -123,7 +124,7 @@ public class ConcurrentUpdateIT extends OperatorITBase
             }
 
             @Override
-            public Row evaluate(Row original, QueryContext context)
+            public Row evaluate(Row original, QueryContext context, QueryBindings bindings)
             {
                 long ax;
                 if (usePValues()) {
@@ -152,7 +153,7 @@ public class ConcurrentUpdateIT extends OperatorITBase
             }
 
             @Override
-            public Row evaluate(Row original, QueryContext context)
+            public Row evaluate(Row original, QueryContext context, QueryBindings bindings)
             {
                 long bx;
                 if (usePValues()) {

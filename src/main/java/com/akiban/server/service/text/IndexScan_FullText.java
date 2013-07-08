@@ -54,7 +54,7 @@ public class IndexScan_FullText extends Operator
 
     @Override
     protected Cursor cursor(QueryContext context, QueryBindings bindings) {
-        Query query = queryExpression.getQuery(context);
+        Query query = queryExpression.getQuery(context, bindings);
         FullTextIndexService service = context.getServiceManager().getServiceByClass(FullTextIndexService.class);
         return service.searchIndex(context, index, query, limit);
     }

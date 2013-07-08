@@ -32,12 +32,13 @@ public abstract class SubqueryExpressionEvaluation extends ExpressionEvaluation.
     @Override
     public void of(QueryContext context) {
         this.context = context;
+        cursor = null;
     }
 
     @Override
     public void of(QueryBindings bindings) {
         this.bindings = bindings;
-        this.cursor = API.cursor(subquery, context, bindings);
+        cursor = null;
     }
 
     @Override
@@ -52,6 +53,9 @@ public abstract class SubqueryExpressionEvaluation extends ExpressionEvaluation.
     @Override
     public final ValueSource eval() {
         bindings.setRow(bindingPosition, outerRow);
+        if (cursor == null) {
+            cursor = API.cursor(subquery, context, bindings);
+        }
         cursor.open();
         try {
             return doEval();
