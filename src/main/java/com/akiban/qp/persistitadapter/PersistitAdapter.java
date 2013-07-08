@@ -71,7 +71,7 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public Cursor newIndexCursor(QueryContext context, QueryBindings bindings, Index index, IndexKeyRange keyRange, API.Ordering ordering,
+    public RowCursor newIndexCursor(QueryContext context, QueryBindings bindings, Index index, IndexKeyRange keyRange, API.Ordering ordering,
                                  IndexScanSelector selector, boolean usePValues)
     {
         return new PersistitIndexCursor(context,

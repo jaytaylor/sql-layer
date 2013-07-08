@@ -88,9 +88,9 @@ class Project_Default extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(QueryContext context, QueryBindings bindings)
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, bindings, inputOperator.cursor(context, bindings));
+        return new Execution(context, inputOperator.cursor(context, bindingsCursor));
     }
 
     @Override
@@ -294,11 +294,27 @@ class Project_Default extends Operator
             return input == null;
         }
 
+        @Override
+        public void openBindings() {
+            input.openBindings();
+        }
+
+        @Override
+        public QueryBindings nextBindings() {
+            bindings = input.nextBindings();
+            return bindings;
+        }
+
+        @Override
+        public void closeBindings() {
+            input.closeBindings();
+        }
+
         // Execution interface
 
-        Execution(QueryContext context, QueryBindings bindings, Cursor input)
+        Execution(QueryContext context, Cursor input)
         {
-            super(context, bindings);
+            super(context);
             this.input = input;
             // one list of evaluatables per execution    
             if (pExpressions != null)
@@ -311,5 +327,6 @@ class Project_Default extends Operator
         private Cursor input; // input = null indicates destroyed.
         private boolean idle = true;
         private List<TEvaluatableExpression> pEvalExpr = null;
+        private QueryBindings bindings;
     }
 }

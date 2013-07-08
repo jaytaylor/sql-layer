@@ -88,9 +88,9 @@ class GroupScan_Default extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(QueryContext context, QueryBindings bindings)
+    protected RowCursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, bindings, cursorCreator);
+        return new Execution(context, bindingsCursor, cursorCreator);
     }
 
     // GroupScan_Default interface
@@ -126,7 +126,7 @@ class GroupScan_Default extends Operator
 
     // Inner classes
 
-    private static class Execution extends OperatorExecutionBase implements Cursor
+    private static class Execution extends LeafCursor
     {
 
         // Cursor interface
@@ -196,22 +196,30 @@ class GroupScan_Default extends Operator
             return cursor.isDestroyed();
         }
 
+        @Override
+        public QueryBindings nextBindings() {
+            QueryBindings bindings = super.nextBindings();
+            if (cursor instanceof BindingsAwareCursor)
+                ((BindingsAwareCursor)cursors).rebind(bindings);
+            return bindings;
+        }
+
         // Execution interface
 
-        Execution(QueryContext context, QueryBindings bindings, GroupCursorCreator cursorCreator)
+        Execution(QueryContext context, QueryBindingsCursor bindingsCursor, GroupCursorCreator cursorCreator)
         {
-            super(context, bindings);
-            this.cursor = cursorCreator.cursor(context, bindings);
+            super(context, bindingsCursor);
+            this.cursor = cursorCreator.cursor(context);
         }
 
         // Object state
 
-        private final Cursor cursor;
+        private final RowCursor cursor;
     }
 
     static interface GroupCursorCreator
     {
-        Cursor cursor(QueryContext context, QueryBindings bindings);
+        RowCursor cursor(QueryContext context);
 
         Group group();
         
@@ -254,7 +262,7 @@ class GroupScan_Default extends Operator
         // GroupCursorCreator interface
 
         @Override
-        public Cursor cursor(QueryContext context, QueryBindings bindings)
+        public RowCursor cursor(QueryContext context)
         {
             return context.getStore(group().getRoot()).newGroupCursor(group());
         }
@@ -281,7 +289,7 @@ class GroupScan_Default extends Operator
         // GroupCursorCreator interface
 
         @Override
-        public Cursor cursor(QueryContext context, QueryBindings bindings)
+        public RowCursor cursor(QueryContext context)
         {
             return new HKeyBoundCursor(context, bindings,
                     context.getStore(group().getRoot()).newGroupCursor(group()),
@@ -329,7 +337,7 @@ class GroupScan_Default extends Operator
         private final UserTable hKeyType;
     }
 
-    private static class HKeyBoundCursor extends ChainedCursor
+    private static class HKeyBoundCursor extends ChainedCursor implements BindingsAwareCursor
     {
 
         @Override
@@ -366,15 +374,19 @@ class GroupScan_Default extends Operator
             return next();
         }
 
+        @Override
+        public void rebind(QueryBindings bindings) {
+            this.bindings = bindings;
+        }
+
         HKeyBoundCursor(QueryContext context,
-                        QueryBindings bindings,
                         GroupCursor input,
                         int hKeyBindingPosition,
                         boolean deep,
                         UserTable hKeyType,
                         UserTable shortenUntil)
         {
-            super(context, bindings, input);
+            super(context, input);
             this.input = input;
             this.hKeyBindingPosition = hKeyBindingPosition;
             this.deep = deep;
@@ -392,5 +404,6 @@ class GroupScan_Default extends Operator
         private UserTable atTable;
         private final UserTable stopSearchTable;
         private boolean sawOne = false;
+        private QueryBindings bindings;
     }
 }

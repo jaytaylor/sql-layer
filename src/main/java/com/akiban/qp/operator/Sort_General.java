@@ -92,9 +92,9 @@ class Sort_General extends Operator
     }
 
     @Override
-    protected Cursor cursor(QueryContext context, QueryBindings bindings)
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, bindings, inputOperator.cursor(context, bindings));
+        return new Execution(context, inputOperator.cursor(context, bindingsCursor));
     }
 
     @Override
@@ -241,11 +241,27 @@ class Sort_General extends Operator
             return destroyed;
         }
 
+        @Override
+        public void openBindings() {
+            input.openBindings();
+        }
+
+        @Override
+        public QueryBindings nextBindings() {
+            bindings = input.nextBindings();
+            return bindings;
+        }
+
+        @Override
+        public void closeBindings() {
+            input.closeBindings();
+        }
+
         // Execution interface
 
-        Execution(QueryContext context, QueryBindings bindings, Cursor input)
+        Execution(QueryContext context, Cursor input)
         {
-            super(context, bindings);
+            super(context);
             this.input = input;
         }
 
@@ -254,5 +270,6 @@ class Sort_General extends Operator
         private final Cursor input;
         private Cursor output;
         private boolean destroyed = false;
+        private QueryBindings bindings;
     }
 }

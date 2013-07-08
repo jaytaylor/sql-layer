@@ -104,9 +104,9 @@ class Sort_InsertionLimited extends Operator
     }
 
     @Override
-    protected Cursor cursor(QueryContext context, QueryBindings bindings)
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, bindings, inputOperator.cursor(context, bindings));
+        return new Execution(context, inputOperator.cursor(context, bindingsCursor));
     }
 
     @Override
@@ -327,6 +327,22 @@ class Sort_InsertionLimited extends Operator
             return state == State.DESTROYED;
         }
         
+        @Override
+        public void openBindings() {
+            input.openBindings();
+        }
+
+        @Override
+        public QueryBindings nextBindings() {
+            bindings = input.nextBindings();
+            return bindings;
+        }
+
+        @Override
+        public void closeBindings() {
+            input.closeBindings();
+        }
+
         // private methods
         
         private boolean usingPValues() {
@@ -335,9 +351,9 @@ class Sort_InsertionLimited extends Operator
 
         // Execution interface
 
-        Execution(QueryContext context, QueryBindings bindings, Cursor input)
+        Execution(QueryContext context, Cursor input)
         {
-            super(context, bindings);
+            super(context);
             this.input = input;
             int nsort = ordering.sortColumns();
             tEvaluations = new ArrayList<>(nsort);
@@ -354,6 +370,7 @@ class Sort_InsertionLimited extends Operator
         private State state = State.CLOSED;
         private SortedSet<Holder> sorted;
         private Iterator<Holder> iterator;
+        private QueryBindings bindings;
     }
 
     // Sortable row holder.

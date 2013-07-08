@@ -101,12 +101,12 @@ class Select_BloomFilter extends Operator
     }
 
     @Override
-    protected Cursor cursor(QueryContext context, QueryBindings bindings)
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
         if (tFields == null)
-            return new Execution<>(context, bindings, fields, oldExpressionsAdapater);
+            return new Execution<>(context, bindingsCursor, fields, oldExpressionsAdapater);
         else
-            return new Execution<>(context, bindings, tFields, newExpressionsAdapter);
+            return new Execution<>(context, bindingsCursor, tFields, newExpressionsAdapter);
     }
 
     @Override
@@ -324,12 +324,12 @@ class Select_BloomFilter extends Operator
 
         // Execution interface
 
-        <EXPR> Execution(QueryContext context, QueryBindings bindings,
+        <EXPR> Execution(QueryContext context, QueryBindingsCursor bindingsCursor,
                               List<? extends EXPR> expressions, ExpressionAdapter<EXPR,E> adapter)
         {
-            super(context, bindings);
-            this.inputCursor = input.cursor(context, bindings);
-            this.onPositiveCursor = onPositive.cursor(context, bindings);
+            super(context);
+            this.inputCursor = input.cursor(context, bindingsCursorbindings);
+            this.onPositiveCursor = onPositive.cursor(context, bindingsCursor);
             this.adapter = adapter;
             for (EXPR field : expressions) {
                 E eval = adapter.evaluate(field, context);

@@ -36,14 +36,12 @@ public abstract class ExecutionBase
         context.checkQueryCancelation();
     }
 
-    public ExecutionBase(QueryContext context, QueryBindings bindings)
+    public ExecutionBase(QueryContext context)
     {
         this.context = context;
-        this.bindings = bindings;
     }
 
     protected QueryContext context;
-    protected QueryBindings bindings;
 
     protected static final boolean LOG_EXECUTION = false;
     protected static final boolean TAP_NEXT_ENABLED = false;

@@ -85,9 +85,9 @@ class Map_NestedLoops extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(QueryContext context, QueryBindings bindings)
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, bindings);
+        return new Execution(context, bindingsCursor);
     }
 
     @Override
@@ -244,11 +244,11 @@ class Map_NestedLoops extends Operator
 
         // Execution interface
 
-        Execution(QueryContext context, QueryBindings bindings)
+        Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
-            super(context, bindings);
-            this.outerInput = outerInputOperator.cursor(context, bindings);
-            this.innerInput = innerInputOperator.cursor(context, bindings);
+            super(context);
+            this.outerInput = outerInputOperator.cursor(context, bindingsCursor);
+            this.innerInput = innerInputOperator.cursor(context, bindingsCursor);
         }
 
         // For use by this class

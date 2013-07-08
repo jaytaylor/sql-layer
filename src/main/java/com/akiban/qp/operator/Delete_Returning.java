@@ -84,8 +84,8 @@ public class Delete_Returning extends Operator {
 
 
     @Override
-    protected Cursor cursor(QueryContext context, QueryBindings bindings) {
-        return new Execution(context, bindings, inputOperator.cursor(context, bindings));
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor) {
+        return new Execution(context, inputOperator.cursor(context, bindingsCursor));
     }
 
     @Override
@@ -208,11 +208,26 @@ public class Delete_Returning extends Operator {
             return input == null;
         }
     
+        @Override
+        public void openBindings() {
+            input.openBindings();
+        }
+
+        @Override
+        public QueryBindings nextBindings() {
+            return input.nextBindings();
+        }
+
+        @Override
+        public void closeBindings() {
+            input.closeBindings();
+        }
+
         // Execution interface
     
-        Execution(QueryContext context, QueryBindings bindings, Cursor input)
+        Execution(QueryContext context, Cursor input)
         {
-            super(context, bindings);
+            super(context);
             this.input = input;
         }
     

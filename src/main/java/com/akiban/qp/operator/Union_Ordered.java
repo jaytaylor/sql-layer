@@ -95,9 +95,9 @@ class Union_Ordered extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(QueryContext context, QueryBindings bindings)
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, bindings);
+        return new Execution(context, bindingsCursor);
     }
 
     @Override
@@ -311,11 +311,11 @@ class Union_Ordered extends Operator
 
         // Execution interface
 
-        Execution(QueryContext context, QueryBindings bindings)
+        Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
             super(context, bindings);
-            leftInput = left.cursor(context, bindings);
-            rightInput = right.cursor(context, bindings);
+            leftInput = left.cursor(context, bindingsCursor);
+            rightInput = right.cursor(context, bindingsCursor);
         }
         
         // For use by this class

@@ -116,9 +116,9 @@ class IfEmpty_Default extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(QueryContext context, QueryBindings bindings)
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, bindings);
+        return new Execution(context, bindingsCursor);
     }
 
     @Override
@@ -316,12 +316,28 @@ class IfEmpty_Default extends Operator
             return input.isDestroyed();
         }
 
+        @Override
+        public void openBindings() {
+            input.openBindings();
+        }
+
+        @Override
+        public QueryBindings nextBindings() {
+            bindings = input.nextBindings();
+            return bindings;
+        }
+
+        @Override
+        public void closeBindings() {
+            input.closeBindings();
+        }
+
         // Execution interface
 
-        Execution(QueryContext context, QueryBindings bindings)
+        Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
-            super(context, bindings);
-            this.input = inputOperator.cursor(context, bindings);
+            super(context);
+            this.input = inputOperator.cursor(context, bindingsCursor);
             if (pExpressions != null) {
                 this.oEvaluations = null;
                 this.pEvaluations = new ArrayList<>(pExpressions.size());
@@ -384,5 +400,6 @@ class IfEmpty_Default extends Operator
         private final ShareHolder<ValuesHolderRow> emptySubstitute = new ShareHolder<>();
         private boolean closed = true;
         private InputState inputState;
+        private QueryBindings bindings;
     }
 }

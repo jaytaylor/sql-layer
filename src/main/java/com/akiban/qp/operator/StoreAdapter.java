@@ -52,13 +52,13 @@ public abstract class StoreAdapter implements KeyCreator
 {
     public abstract GroupCursor newGroupCursor(Group group);
 
-    public abstract Cursor newIndexCursor(QueryContext context,
-                                          QueryBindings bindings,
-                                          Index index,
-                                          IndexKeyRange keyRange,
-                                          API.Ordering ordering,
-                                          IndexScanSelector scanSelector,
-                                          boolean usePValues);
+    public abstract RowCursor newIndexCursor(QueryContext context,
+                                             QueryBindings bindings,
+                                             Index index,
+                                             IndexKeyRange keyRange,
+                                             API.Ordering ordering,
+                                             IndexScanSelector scanSelector,
+                                             boolean usePValues);
 
     public abstract <HKEY extends com.akiban.qp.row.HKey> HKEY newHKey(HKey hKeyMetadata);
 

@@ -28,6 +28,7 @@ import com.akiban.qp.operator.GroupCursor;
 import com.akiban.qp.operator.IndexScanSelector;
 import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.operator.API.Ordering;
 import com.akiban.qp.operator.API.SortOption;
@@ -72,7 +73,7 @@ public class MemoryAdapter extends StoreAdapter {
     }
 
     @Override
-    public Cursor newIndexCursor(QueryContext context, QueryBindings bindings, Index index,
+    public RowCursor newIndexCursor(QueryContext context, QueryBindings bindings, Index index,
             IndexKeyRange keyRange, Ordering ordering,
             IndexScanSelector scanSelector, boolean usePValues) {
         

@@ -163,9 +163,9 @@ class IndexScan_Default extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(QueryContext context, QueryBindings bindings)
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, bindings);
+        return new Execution(context, bindingsCursor);
     }
 
     // IndexScan_Default interface
@@ -277,7 +277,7 @@ class IndexScan_Default extends Operator
 
     // Inner classes
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends LeafCursor
     {
         // Cursor interface
 
@@ -351,17 +351,25 @@ class IndexScan_Default extends Operator
             return cursor.isDestroyed();
         }
 
+        @Override
+        public QueryBindings nextBindings() {
+            QueryBindings bindings = super.nextBindings();
+            if (cursor instanceof BindingsAwareCursor)
+                ((BindingsAwareCursor)cursor).rebind(bindings);
+            return bindings;
+        }
+
         // Execution interface
 
-        Execution(QueryContext context, QueryBindings bindings)
+        Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
             super(context, bindings);
             UserTable table = (UserTable)index.rootMostTable();
-            this.cursor = adapter(table).newIndexCursor(context, bindings, index, indexKeyRange, ordering, scanSelector, usePValues);
+            this.cursor = adapter(table).newIndexCursor(context, index, indexKeyRange, ordering, scanSelector, usePValues);
         }
 
         // Object state
 
-        private final Cursor cursor;
+        private final RowCursor cursor;
     }
 }

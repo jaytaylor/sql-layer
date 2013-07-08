@@ -23,9 +23,10 @@ import com.akiban.server.api.dml.ColumnSelector;
 public class ChainedCursor extends OperatorExecutionBase implements Cursor
 {
     protected final Cursor input;
+    protected QueryBindings bindings;
 
-    protected ChainedCursor(QueryContext context, QueryBindings bindings, Cursor input) {
-        super(context, bindings);
+    protected ChainedCursor(QueryContext context, Cursor input) {
+        super(context);
         this.input = input;
     }
 
@@ -73,5 +74,21 @@ public class ChainedCursor extends OperatorExecutionBase implements Cursor
     public boolean isDestroyed()
     {
         return input.isDestroyed();
+    }
+
+    @Override
+    public void openBindings() {
+        input.openBindings();
+    }
+
+    @Override
+    public QueryBindings nextBindings() {
+        bindings = input.nextBindings();
+        return bindings;
+    }
+
+    @Override
+    public void closeBindings() {
+        input.closeBindings();
     }
 }

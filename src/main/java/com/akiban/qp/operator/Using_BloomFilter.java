@@ -95,9 +95,9 @@ class Using_BloomFilter extends Operator
     }
 
     @Override
-    protected Cursor cursor(QueryContext context, QueryBindings bindings)
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, bindings, streamInput.cursor(context, bindings));
+        return new Execution(context, streamInput.cursor(context, bindingsCursor));
     }
 
     @Override
@@ -242,11 +242,27 @@ class Using_BloomFilter extends Operator
             return input.isDestroyed();
         }
 
+        @Override
+        public void openBindings() {
+            input.openBindings();
+        }
+
+        @Override
+        public QueryBindings nextBindings() {
+            bindings = input.nextBindings();
+            return bindings;
+        }
+
+        @Override
+        public void closeBindings() {
+            input.closeBindings();
+        }
+
         // Execution interface
 
-        Execution(QueryContext context, QueryBindings bindings, Cursor input)
+        Execution(QueryContext context, Cursor input)
         {
-            super(context, bindings);
+            super(context);
             this.input = input;
         }
 
@@ -293,5 +309,6 @@ class Using_BloomFilter extends Operator
         // Object state
 
         private final Cursor input;
+        private QueryBindings bindings;
     }
 }
