@@ -113,6 +113,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
         };
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         use(db);
         for (NewRow row : db)
         {

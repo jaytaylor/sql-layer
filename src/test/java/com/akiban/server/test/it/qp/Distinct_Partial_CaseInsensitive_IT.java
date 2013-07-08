@@ -56,6 +56,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
         tRowType = schema.userTableRowType(userTable(t));
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         group = group(t);
         caseSensitiveCollator = tRowType.userTable().getColumn("cs").getCollator();
         caseInsensitiveCollator = tRowType.userTable().getColumn("ci").getCollator();

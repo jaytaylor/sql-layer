@@ -76,6 +76,7 @@ public class Intersect_OrderedIT extends OperatorITBase
         coi = group(parent);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         db = new NewRow[]{
             // 0x: Both index scans empty
             // 1x: Left empty

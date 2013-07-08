@@ -69,6 +69,7 @@ public class Select_BloomFilterIT extends OperatorITBase
         fabIndexRowType = indexType(f, "a", "b");
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         db = new NewRow[]{
             // Test 0: No d or f rows
             // Test 1: No f rows

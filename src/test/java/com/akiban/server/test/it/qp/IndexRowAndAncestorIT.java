@@ -100,6 +100,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
         group = group(c);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         loadDatabase();
     }
 

@@ -73,6 +73,7 @@ public class IndexScanInvolvingUndeclaredColumnsIT extends OperatorITBase
         };
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         use(db);
     }
 

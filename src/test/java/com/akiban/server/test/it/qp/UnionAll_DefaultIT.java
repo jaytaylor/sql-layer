@@ -56,6 +56,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
         groupTable = group(t);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         db = new NewRow[]{
             createNewRow(t, 1000L, 8L),
             createNewRow(t, 1001L, 9L),

@@ -71,6 +71,7 @@ public class Intersect_OrderedByteArrayComparisonIT extends OperatorITBase
         coi = group(t);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         db = new NewRow[]{
             // 1: Comparisons need only examine k1 on a mismatch.
             createNewRow(t, 1000, 1, 500, "x", 999, 501, "x", 999),

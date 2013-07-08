@@ -90,6 +90,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
         space = SpaceLatLon.create();
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
     }
 
     @Test

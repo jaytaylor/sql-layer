@@ -56,6 +56,7 @@ public class Union_OrderedIT extends OperatorITBase
         coi = group(t);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         db = new NewRow[] {
             createNewRow(t, 1000L, 1L),
             createNewRow(t, 1001L, 1L),

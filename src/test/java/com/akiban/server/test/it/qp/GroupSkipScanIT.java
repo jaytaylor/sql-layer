@@ -70,6 +70,7 @@ public class GroupSkipScanIT extends OperatorITBase
         c2NIndexRowType = indexType(c2, "cn");
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         db = new NewRow[] {
             createNewRow(p, 1L, 1L),
             createNewRow(c1, 101L, 1L, 100L),

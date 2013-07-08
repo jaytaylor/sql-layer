@@ -81,6 +81,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         fabIndexRowType = indexType(f, "a", "b");
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         ciCollator = dRowType.userTable().getColumn("a").getCollator();
         db = new NewRow[]{
             // Test 0: No d or f rows

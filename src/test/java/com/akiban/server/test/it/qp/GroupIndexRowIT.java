@@ -74,6 +74,7 @@ public class GroupIndexRowIT extends OperatorITBase
         group = group(user);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         db = new NewRow[] {
             createNewRow(user, 1L),
             createNewRow(memberInfo, 1L, 20120424),

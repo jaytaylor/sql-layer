@@ -58,6 +58,7 @@ public class OrphanResolutionIT extends OperatorITBase
         group = group(parent);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         db = new NewRow[] {
             createNewRow(child, 1L, 100L),
             createNewRow(child, 1L, 101L),

@@ -88,6 +88,7 @@ public class UniqueIndexScanJumpUnboundedIT extends OperatorITBase
         };
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         use(db);
         for (NewRow row : db) {
             indexRowMap.put((Long) row.get(0),

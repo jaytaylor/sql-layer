@@ -75,6 +75,7 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
         coi = group(p);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         db = new NewRow[]{
             // 0x: Both sides empty
             // 1x: C empty

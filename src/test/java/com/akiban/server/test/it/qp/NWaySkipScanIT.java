@@ -64,6 +64,7 @@ public class NWaySkipScanIT extends OperatorITBase
         tZIndexRowType = indexType(t, "z");
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         db = new NewRow[] {
             createNewRow(t, 1000L, 71L, 81L, 91L),
             createNewRow(t, 1001L, 71L, 81L, 92L),

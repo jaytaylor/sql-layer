@@ -67,6 +67,7 @@ public class SkipScanPerformanceIT extends OperatorITBase
         tZIndexRowType = indexType(t, "z");
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
     }
 
     private static final IntersectOption LEFT = IntersectOption.OUTPUT_LEFT;
