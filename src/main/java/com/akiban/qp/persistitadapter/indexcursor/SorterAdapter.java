@@ -18,6 +18,7 @@ package com.akiban.qp.persistitadapter.indexcursor;
 
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.API.Ordering;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
@@ -38,7 +39,7 @@ abstract class SorterAdapter<S,E,V> {
         keyTarget = sortKeyAdapter.createTarget();
     }
     
-    public void init(RowType rowType, Ordering ordering, Key key, Value value, QueryContext context,
+    public void init(RowType rowType, Ordering ordering, Key key, Value value, QueryContext context, QueryBindings bindings,
                      API.SortOption sortOption)
     {
         
@@ -69,7 +70,7 @@ abstract class SorterAdapter<S,E,V> {
         for (int i = 0; i < nsort; i++) {
             initTypes(ordering, i, oOrderingTypes, tOrderingTypes);
             orderingCollators[i] = ordering.collator(i);
-            V evaluation = evaluation(ordering, context, i);
+            V evaluation = evaluation(ordering, context, bindings, i);
             evaluations.add(evaluation);
         }
     }
@@ -100,7 +101,7 @@ abstract class SorterAdapter<S,E,V> {
     
     protected abstract void initTypes(RowType rowType, AkType[] ofFieldTypes, TInstance[] tFieldTypes, int i);
     protected abstract void initTypes(Ordering ordering, int i, AkType[] akTypes, TInstance[] tInstances);
-    protected abstract V evaluation(Ordering ordering, QueryContext context, int i);
+    protected abstract V evaluation(Ordering ordering, QueryContext context, QueryBindings bindings, int i);
     protected abstract S evaluateRow(V evaluation, Row row);
     protected abstract void attachValueTarget(Value value);
 

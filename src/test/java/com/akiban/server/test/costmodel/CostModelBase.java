@@ -18,6 +18,7 @@
 package com.akiban.server.test.costmodel;
 
 import com.akiban.ais.model.*;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.RowBase;
@@ -110,4 +111,5 @@ public class CostModelBase extends ApiTestBase
     protected Schema schema;
     protected StoreAdapter adapter;
     protected QueryContext queryContext;
+    protected QueryBindings queryBindings;
 }

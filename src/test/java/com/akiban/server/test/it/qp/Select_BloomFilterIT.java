@@ -146,7 +146,7 @@ public class Select_BloomFilterIT extends OperatorITBase
         Operator plan = plan(0);
         RowBase[] expected = new RowBase[] {
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -155,7 +155,7 @@ public class Select_BloomFilterIT extends OperatorITBase
         Operator plan = plan(1);
         RowBase[] expected = new RowBase[] {
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -164,7 +164,7 @@ public class Select_BloomFilterIT extends OperatorITBase
         Operator plan = plan(2);
         RowBase[] expected = new RowBase[] {
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -173,7 +173,7 @@ public class Select_BloomFilterIT extends OperatorITBase
         Operator plan = plan(3);
         RowBase[] expected = new RowBase[] {
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -183,7 +183,7 @@ public class Select_BloomFilterIT extends OperatorITBase
         RowBase[] expected = new RowBase[] {
             row(outputRowType, 4L, 40L, 400L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -192,7 +192,7 @@ public class Select_BloomFilterIT extends OperatorITBase
         Operator plan = plan(5);
         RowBase[] expected = new RowBase[] {
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -203,7 +203,7 @@ public class Select_BloomFilterIT extends OperatorITBase
             row(outputRowType, 6L, 61L, 601L),
             row(outputRowType, 6L, 62L, 602L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -212,7 +212,7 @@ public class Select_BloomFilterIT extends OperatorITBase
         Operator plan = plan(7);
         RowBase[] expected = new RowBase[] {
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -221,7 +221,7 @@ public class Select_BloomFilterIT extends OperatorITBase
         Operator plan = plan(8);
         RowBase[] expected = new RowBase[] {
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test

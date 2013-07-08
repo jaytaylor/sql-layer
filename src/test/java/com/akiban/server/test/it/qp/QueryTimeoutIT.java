@@ -49,7 +49,7 @@ public class QueryTimeoutIT extends OperatorITBase
     public void noExitWithDefaultTimeout() throws InterruptedException
     {
         final Operator plan = new DoNothingForever();
-        final Cursor cursor = cursor(plan, queryContext);
+        final Cursor cursor = cursor(plan, queryContext, queryBindings);
         final AtomicBoolean exited = new AtomicBoolean(false);
         Thread queryThread = new Thread(
             new Runnable()
@@ -79,7 +79,7 @@ public class QueryTimeoutIT extends OperatorITBase
         int timeoutMilli = 3000;
         configService().queryTimeoutMilli(timeoutMilli);
         final Operator plan = new DoNothingForever();
-        final Cursor cursor = cursor(plan, queryContext);
+        final Cursor cursor = cursor(plan, queryContext, queryBindings);
         final AtomicBoolean exited = new AtomicBoolean(false);
         Thread queryThread = new Thread(
             new Runnable()
@@ -114,7 +114,7 @@ public class QueryTimeoutIT extends OperatorITBase
         AkServer akServer = (AkServer) akServer();
         configService().queryTimeoutMilli(INITIAL_TIMEOUT_MILLI);
         final Operator plan = new DoNothingForever();
-        final Cursor cursor = cursor(plan, queryContext);
+        final Cursor cursor = cursor(plan, queryContext, queryBindings);
         final AtomicBoolean exited = new AtomicBoolean(false);
         Thread queryThread = new Thread(
             new Runnable()
@@ -152,7 +152,7 @@ public class QueryTimeoutIT extends OperatorITBase
         AkServer akServer = (AkServer) akServer();
         configService().queryTimeoutMilli(INITIAL_TIMEOUT_MILLI);
         final Operator plan = new DoNothingForever();
-        final Cursor cursor = cursor(plan, queryContext);
+        final Cursor cursor = cursor(plan, queryContext, queryBindings);
         final AtomicBoolean exited = new AtomicBoolean(false);
         Thread queryThread = new Thread(
             new Runnable()
@@ -201,9 +201,9 @@ public class QueryTimeoutIT extends OperatorITBase
         // Operator interface
 
         @Override
-        protected Cursor cursor(QueryContext context)
+        protected Cursor cursor(QueryContext context, QueryBindings bindings)
         {
-            return new Execution(context);
+            return new Execution(context, bindings);
         }
 
         @Override
@@ -240,9 +240,9 @@ public class QueryTimeoutIT extends OperatorITBase
 
             // Execution interface
 
-            Execution(QueryContext context)
+            Execution(QueryContext context, QueryBindings bindings)
             {
-                super(context);
+                super(context, bindings);
             }
         }
     }

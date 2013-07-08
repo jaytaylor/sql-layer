@@ -99,7 +99,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
                                   1010, 1011, 1012, 1013,
                                   1020, 1021, 1022, 1023,
                                   1030, 1031, 1032, 1033);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         cursor.open();
         testJump(cursor, idOrdering, 0);
         testJump(cursor, idOrdering, -1);
@@ -114,7 +114,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
                                   1010, 1011, 1012, 1013,
                                   1020, 1021, 1022, 1023,
                                   1030, 1031, 1032, 1033);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         cursor.open();
         testJump(cursor, idOrdering, 0);
         testJump(cursor, idOrdering, 1);
@@ -129,7 +129,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
                                   1011, 1010, 1013, 1012,
                                   1021, 1020, 1023, 1022,
                                   1031, 1030, 1033, 1032);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         cursor.open();
         testJump(cursor, idOrdering, 0);
         testJump(cursor, idOrdering, -1);
@@ -144,7 +144,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
                                   1011, 1010, 1013, 1012,
                                   1021, 1020, 1023, 1022,
                                   1031, 1030, 1033, 1032);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         cursor.open();
         testJump(cursor, idOrdering, 0);
         testJump(cursor, idOrdering, 1);
@@ -159,7 +159,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
                                   1012, 1013, 1010, 1011,
                                   1022, 1023, 1020, 1021,
                                   1032, 1033, 1030, 1031);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         cursor.open();
         testJump(cursor, idOrdering, 0);
         testJump(cursor, idOrdering, -1);
@@ -174,7 +174,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
                                   1012, 1013, 1010, 1011,
                                   1022, 1023, 1020, 1021,
                                   1032, 1033, 1030, 1031);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         cursor.open();
         testJump(cursor, idOrdering, 0);
         testJump(cursor, idOrdering, 1);
@@ -189,7 +189,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
                                   1013, 1012, 1011, 1010,
                                   1023, 1022, 1021, 1020,
                                   1033, 1032, 1031, 1030);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         cursor.open();
         testJump(cursor, idOrdering, 0);
         testJump(cursor, idOrdering, -1);
@@ -204,7 +204,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
                                   1013, 1012, 1011, 1010,
                                   1023, 1022, 1021, 1020,
                                   1033, 1032, 1031, 1030);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         cursor.open();
         testJump(cursor, idOrdering, 0);
         testJump(cursor, idOrdering, 1);
@@ -219,7 +219,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
                                   1020, 1021, 1022, 1023,
                                   1010, 1011, 1012, 1013,
                                   1000, 1001, 1002, 1003);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         cursor.open();
         testJump(cursor, idOrdering, 0);
         testJump(cursor, idOrdering, -1);
@@ -234,7 +234,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
                                   1020, 1021, 1022, 1023,
                                   1010, 1011, 1012, 1013,
                                   1000, 1001, 1002, 1003);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         cursor.open();
         testJump(cursor, idOrdering, 0);
         testJump(cursor, idOrdering, 1);
@@ -249,7 +249,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
                                   1021, 1020, 1023, 1022,
                                   1011, 1010, 1013, 1012,
                                   1001, 1000, 1003, 1002);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         cursor.open();
         testJump(cursor, idOrdering, 0);
         testJump(cursor, idOrdering, -1);
@@ -264,7 +264,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
                                   1021, 1020, 1023, 1022,
                                   1011, 1010, 1013, 1012,
                                   1001, 1000, 1003, 1002);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         cursor.open();
         testJump(cursor, idOrdering, 0);
         testJump(cursor, idOrdering, 1);
@@ -279,7 +279,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
                                   1022, 1023, 1020, 1021,
                                   1012, 1013, 1010, 1011,
                                   1002, 1003, 1000, 1001);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         cursor.open();
         testJump(cursor, idOrdering, 0);
         testJump(cursor, idOrdering, -1);
@@ -294,7 +294,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
                                   1022, 1023, 1020, 1021,
                                   1012, 1013, 1010, 1011,
                                   1002, 1003, 1000, 1001);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         cursor.open();
         testJump(cursor, idOrdering, 0);
         testJump(cursor, idOrdering, 1);
@@ -309,7 +309,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
                                   1023, 1022, 1021, 1020,
                                   1013, 1012, 1011, 1010,
                                   1003, 1002, 1001, 1000);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         cursor.open();
         testJump(cursor, idOrdering, 0);
         testJump(cursor, idOrdering, -1);
@@ -324,7 +324,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
                                   1023, 1022, 1021, 1020,
                                   1013, 1012, 1011, 1010,
                                   1003, 1002, 1001, 1000);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         cursor.open();
         testJump(cursor, idOrdering, 0);
         testJump(cursor, idOrdering, 1);

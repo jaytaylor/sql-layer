@@ -93,7 +93,7 @@ public class Sort_General_RandomIT extends OperatorITBase
                     tRowType,
                     ordering(field(tRowType, 0), aAsc, field(tRowType, 1), bAsc, field(tRowType, 2), cAsc, field(tRowType, 3), dAsc),
                     SortOption.PRESERVE_DUPLICATES);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             compareRows(expected(aAsc, bAsc, cAsc, dAsc), cursor);
         }
     }

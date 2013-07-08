@@ -82,6 +82,7 @@ public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
         group = group(grandparent);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         // The following is adapter from super.setUpProfiling. Leave taps disabled, they'll be enabled after loading
         // and warmup
         beforeProfiling();
@@ -191,7 +192,7 @@ public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
                             Tap.setEnabled(".*propagate.*", true);
                             start = System.nanoTime();
                         }
-                        updatePlan.run(queryContext);
+                        updatePlan.run(queryContext, queryBindings);
                         return start;
                     }
                 });

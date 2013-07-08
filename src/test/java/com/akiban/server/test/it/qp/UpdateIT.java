@@ -81,11 +81,11 @@ public class UpdateIT extends OperatorITBase
 
         Operator groupScan = groupScan_Default(coi);
         UpdatePlannable updateOperator = update_Default(groupScan, updateFunction);
-        UpdateResult result = updateOperator.run(queryContext);
+        UpdateResult result = updateOperator.run(queryContext, queryBindings);
         assertEquals("rows modified", 2, result.rowsModified());
         assertEquals("rows touched", db.length, result.rowsTouched());
 
-        Cursor executable = cursor(groupScan, queryContext);
+        Cursor executable = cursor(groupScan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "XYZXYZ"),
                                            row(orderRowType, 11L, 1L, "ori"),
                                            row(itemRowType, 111L, 11L),
@@ -143,11 +143,11 @@ public class UpdateIT extends OperatorITBase
             };
 
         UpdatePlannable updateOperator = update_Default(scan, updateFunction);
-        UpdateResult result = updateOperator.run(queryContext);
+        UpdateResult result = updateOperator.run(queryContext, queryBindings);
         assertEquals("rows touched", 8, result.rowsTouched());
         assertEquals("rows modified", 8, result.rowsModified());
 
-        Cursor executable = cursor(scan, queryContext);
+        Cursor executable = cursor(scan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[] { 
             row(itemRowType, 11L, 11L),
             row(itemRowType, 12L, 11L),
@@ -201,13 +201,13 @@ public class UpdateIT extends OperatorITBase
             };
 
         UpdatePlannable updateOperator = update_Default(scan, updateFunction);
-        UpdateResult result = updateOperator.run(queryContext);
+        UpdateResult result = updateOperator.run(queryContext, queryBindings);
         assertEquals("rows touched", 8, result.rowsTouched());
         assertEquals("rows modified", 8, result.rowsModified());
 
         adapter.enterUpdateStep(); // Make changes visible.
 
-        Cursor executable = cursor(scan, queryContext);
+        Cursor executable = cursor(scan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[] { 
             row(itemRowType, 1111L, 11L),
             row(itemRowType, 1112L, 11L),
@@ -235,7 +235,7 @@ public class UpdateIT extends OperatorITBase
                         filter_Default(
                                 groupScan_Default(coi),
                                 Collections.singleton(customerRowType)),
-                        queryContext
+                        queryContext, queryBindings
                 )
         );
     }
@@ -254,7 +254,7 @@ public class UpdateIT extends OperatorITBase
                                 customerNameIndexRowType,
                                 IndexKeyRange.unbounded(customerNameIndexRowType),
                                 new API.Ordering()),
-                        queryContext
+                        queryContext, queryBindings
                 ));
     }
 
@@ -279,7 +279,7 @@ public class UpdateIT extends OperatorITBase
                                 IndexKeyRange.unbounded(customerNameItemOidIndexRowType),
                                 new API.Ordering(),
                                 customerRowType),
-                        queryContext
+                        queryContext, queryBindings
                 ));
     }
 
@@ -304,7 +304,7 @@ public class UpdateIT extends OperatorITBase
             }
         };
         UpdatePlannable insertPlan = update_Default(rowsToValueScan(rows), updateFunction);
-        UpdateResult result = insertPlan.run(queryContext);
+        UpdateResult result = insertPlan.run(queryContext, queryBindings);
         assertEquals("rows touched", rows.length, result.rowsTouched());
         assertEquals("rows modified", rows.length, result.rowsModified());
     }

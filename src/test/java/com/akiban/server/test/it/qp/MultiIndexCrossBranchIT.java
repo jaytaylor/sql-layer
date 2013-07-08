@@ -104,11 +104,11 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
         Operator plan = intersectCyDz(0, OUTPUT_LEFT);
         RowBase[] expected = new RowBase[]{
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectCyDz(0, OUTPUT_RIGHT);
         expected = new RowBase[]{
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -117,11 +117,11 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
         Operator plan = intersectCyDz(1, OUTPUT_LEFT);
         RowBase[] expected = new RowBase[]{
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectCyDz(1, OUTPUT_RIGHT);
         expected = new RowBase[]{
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -130,11 +130,11 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
         Operator plan = intersectCyDz(2, OUTPUT_LEFT);
         RowBase[] expected = new RowBase[]{
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectCyDz(2, OUTPUT_RIGHT);
         expected = new RowBase[]{
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -146,13 +146,13 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
             row(cRowType, 3L, 30L, 3801L),
             row(cRowType, 3L, 30L, 3802L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectCyDz(3, OUTPUT_RIGHT);
         expected = new RowBase[]{
             row(dRowType, 3L, 30L, 3900L),
             row(dRowType, 3L, 30L, 3901L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -161,7 +161,7 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
         Operator plan = unionCyDz(0);
         String[] expected = new String[]{
         };
-        compareRenderedHKeys(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -171,7 +171,7 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
         String[] expected = new String[]{
             pKey(10L),
         };
-        compareRenderedHKeys(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -181,7 +181,7 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
         String[] expected = new String[]{
             pKey(20L),
         };
-        compareRenderedHKeys(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -191,7 +191,7 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
         String[] expected = new String[]{
             pKey(30L),
         };
-        compareRenderedHKeys(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext, queryBindings));
     }
 
     private Operator intersectCyDz(int key, IntersectOption side)

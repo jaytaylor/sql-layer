@@ -83,19 +83,19 @@ public class UniqueIndexScanIT extends OperatorITBase
             Operator indexScan = indexScan_Default(xIndexRowType);
             compareRenderedHKeys(
                 hkeys(9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7, 8),
-                cursor(indexScan, queryContext));
+                cursor(indexScan, queryContext, queryBindings));
         }
         {
             Operator indexScan = indexScan_Default(yIndexRowType);
             compareRenderedHKeys(
                 hkeys(7, 8, 11, 12, 1, 2, 3, 4, 5, 6, 9, 10),
-                cursor(indexScan, queryContext));
+                cursor(indexScan, queryContext, queryBindings));
         }
         {
             Operator indexScan = indexScan_Default(xyIndexRowType);
             compareRenderedHKeys(
                 hkeys(11, 12, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8),
-                cursor(indexScan, queryContext));
+                cursor(indexScan, queryContext, queryBindings));
         }
     }
 
@@ -103,7 +103,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testExactMatchAbsent()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, false, keyRange(xIndexRowType, 5, true, 5, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(hkeys(), cursor);
     }
 
@@ -111,7 +111,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testExactMatchPresent()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, false, keyRange(xIndexRowType, 10, true, 10, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(hkeys(1), cursor);
     }
 
@@ -119,7 +119,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testEmptyRange()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, false, keyRange(xIndexRowType, 11, true, 12, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(hkeys(), cursor);
     }
 
@@ -128,12 +128,12 @@ public class UniqueIndexScanIT extends OperatorITBase
     {
         {
             Operator indexScan = indexScan_Default(xIndexRowType, false, startAtNull(xIndexRowType, true, 60, true));
-            Cursor cursor = cursor(indexScan, queryContext);
+            Cursor cursor = cursor(indexScan, queryContext, queryBindings);
             compareRenderedHKeys(hkeys(9, 10, 11, 12, 1, 2, 3, 4, 5, 6), cursor);
         }
         {
             Operator indexScan = indexScan_Default(yIndexRowType, false, startAtNull(xIndexRowType, true, 60, true));
-            Cursor cursor = cursor(indexScan, queryContext);
+            Cursor cursor = cursor(indexScan, queryContext, queryBindings);
             compareRenderedHKeys(hkeys(7, 8, 11, 12, 1, 2, 3, 4, 5, 6), cursor);
         }
     }
@@ -143,12 +143,12 @@ public class UniqueIndexScanIT extends OperatorITBase
     {
         {
             Operator indexScan = indexScan_Default(xIndexRowType, false, startAtNull(xIndexRowType, false, 60, true));
-            Cursor cursor = cursor(indexScan, queryContext);
+            Cursor cursor = cursor(indexScan, queryContext, queryBindings);
             compareRenderedHKeys(hkeys(1, 2, 3, 4, 5, 6), cursor);
         }
         {
             Operator indexScan = indexScan_Default(yIndexRowType, false, startAtNull(xIndexRowType, false, 60, true));
-            Cursor cursor = cursor(indexScan, queryContext);
+            Cursor cursor = cursor(indexScan, queryContext, queryBindings);
             compareRenderedHKeys(hkeys(1, 2, 3, 4, 5, 6), cursor);
         }
     }
@@ -164,7 +164,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoInclusiveMatchHiInclusiveMatch()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, false, keyRange(xIndexRowType, 20, true, 40, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(hkeys(2, 3, 4), cursor);
     }
 
@@ -172,7 +172,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoInclusiveMatchHiInclusiveMiss()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, false, keyRange(xIndexRowType, 20, true, 45, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(hkeys(2, 3, 4), cursor);
     }
 
@@ -180,7 +180,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoInclusiveMatchHiExclusiveMatch()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, false, keyRange(xIndexRowType, 20, true, 50, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(hkeys(2, 3, 4), cursor);
     }
 
@@ -188,7 +188,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoInclusiveMatchHiExclusiveMiss()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, false, keyRange(xIndexRowType, 20, true, 45, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(hkeys(2, 3, 4), cursor);
     }
 
@@ -196,7 +196,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoInclusiveMissHiInclusiveMatch()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, false, keyRange(xIndexRowType, 5, true, 50, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(hkeys(1, 2, 3, 4, 5), cursor);
     }
 
@@ -204,7 +204,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoInclusiveMissHiInclusiveMiss()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, false, keyRange(xIndexRowType, 5, true, 55, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(hkeys(1, 2, 3, 4, 5), cursor);
     }
 
@@ -212,7 +212,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoInclusiveMissHiExclusiveMatch()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, false, keyRange(xIndexRowType, 5, true, 60, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(hkeys(1, 2, 3, 4, 5), cursor);
     }
 
@@ -220,7 +220,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoInclusiveMissHiExclusiveMiss()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, false, keyRange(xIndexRowType, 5, true, 55, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(hkeys(1, 2, 3, 4, 5), cursor);
     }
 
@@ -228,7 +228,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoExclusiveMatchHiInclusiveMatch()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, false, keyRange(xIndexRowType, 60, false, 70, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(hkeys(7), cursor);
     }
 
@@ -236,7 +236,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoExclusiveMatchHiInclusiveMiss()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, false, keyRange(xIndexRowType, 60, false, 75, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(hkeys(7), cursor);
     }
 
@@ -244,7 +244,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoExclusiveMatchHiExclusiveMatch()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, false, keyRange(xIndexRowType, 60, false, 80, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(hkeys(7), cursor);
     }
 
@@ -252,7 +252,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoExclusiveMatchHiExclusiveMiss()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, false, keyRange(xIndexRowType, 60, false, 75, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(hkeys(7), cursor);
     }
 
@@ -260,7 +260,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoExclusiveMissHiInclusiveMatch()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, false, keyRange(xIndexRowType, 45, false, 60, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(hkeys(5, 6), cursor);
     }
 
@@ -268,7 +268,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoExclusiveMissHiInclusiveMiss()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, false, keyRange(xIndexRowType, 45, false, 65, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(hkeys(5, 6), cursor);
     }
 
@@ -276,7 +276,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoExclusiveMissHiExclusiveMatch()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, false, keyRange(xIndexRowType, 45, false, 70, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(hkeys(5, 6), cursor);
     }
 
@@ -284,7 +284,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoExclusiveMissHiExclusiveMiss()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, false, keyRange(xIndexRowType, 45, false, 65, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(hkeys(5, 6), cursor);
     }
 
@@ -297,19 +297,19 @@ public class UniqueIndexScanIT extends OperatorITBase
             Operator indexScan = indexScan_Default(xIndexRowType, true);
             compareRenderedHKeys(
                 reverse(hkeys(9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7, 8)),
-                cursor(indexScan, queryContext));
+                cursor(indexScan, queryContext, queryBindings));
         }
         {
             Operator indexScan = indexScan_Default(yIndexRowType, true);
             compareRenderedHKeys(
                 reverse(hkeys(7, 8, 11, 12, 1, 2, 3, 4, 5, 6, 9, 10)),
-                cursor(indexScan, queryContext));
+                cursor(indexScan, queryContext, queryBindings));
         }
         {
             Operator indexScan = indexScan_Default(xyIndexRowType, true);
             compareRenderedHKeys(
                 reverse(hkeys(11, 12, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8)),
-                cursor(indexScan, queryContext));
+                cursor(indexScan, queryContext, queryBindings));
         }
     }
 
@@ -317,7 +317,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testExactMatchAbsentReverse()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, true, keyRange(xIndexRowType, 5, true, 5, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(reverse(hkeys()), cursor);
     }
 
@@ -325,7 +325,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testExactMatchPresentReverse()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, true, keyRange(xIndexRowType, 10, true, 10, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(reverse(hkeys(1)), cursor);
     }
 
@@ -333,7 +333,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testEmptyRangeReverse()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, true, keyRange(xIndexRowType, 11, true, 12, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(reverse(hkeys()), cursor);
     }
 
@@ -342,12 +342,12 @@ public class UniqueIndexScanIT extends OperatorITBase
     {
         {
             Operator indexScan = indexScan_Default(xIndexRowType, true, startAtNull(xIndexRowType, true, 60, true));
-            Cursor cursor = cursor(indexScan, queryContext);
+            Cursor cursor = cursor(indexScan, queryContext, queryBindings);
             compareRenderedHKeys(reverse(hkeys(9, 10, 11, 12, 1, 2, 3, 4, 5, 6)), cursor);
         }
         {
             Operator indexScan = indexScan_Default(yIndexRowType, true, startAtNull(yIndexRowType, true, 60, true));
-            Cursor cursor = cursor(indexScan, queryContext);
+            Cursor cursor = cursor(indexScan, queryContext, queryBindings);
             compareRenderedHKeys(reverse(hkeys(7, 8, 11, 12, 1, 2, 3, 4, 5, 6)), cursor);
         }
     }
@@ -357,12 +357,12 @@ public class UniqueIndexScanIT extends OperatorITBase
     {
         {
             Operator indexScan = indexScan_Default(xIndexRowType, true, startAtNull(xIndexRowType, false, 60, true));
-            Cursor cursor = cursor(indexScan, queryContext);
+            Cursor cursor = cursor(indexScan, queryContext, queryBindings);
             compareRenderedHKeys(reverse(hkeys(1, 2, 3, 4, 5, 6)), cursor);
         }
         {
             Operator indexScan = indexScan_Default(yIndexRowType, true, startAtNull(yIndexRowType, false, 60, true));
-            Cursor cursor = cursor(indexScan, queryContext);
+            Cursor cursor = cursor(indexScan, queryContext, queryBindings);
             compareRenderedHKeys(reverse(hkeys(1, 2, 3, 4, 5, 6)), cursor);
         }
     }
@@ -378,7 +378,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoInclusiveMatchHiInclusiveMatchReverse()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, true, keyRange(xIndexRowType, 20, true, 40, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(reverse(hkeys(2, 3, 4)), cursor);
     }
 
@@ -386,7 +386,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoInclusiveMatchHiInclusiveMissReverse()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, true, keyRange(xIndexRowType, 20, true, 45, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(reverse(hkeys(2, 3, 4)), cursor);
     }
 
@@ -394,7 +394,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoInclusiveMatchHiExclusiveMatchReverse()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, true, keyRange(xIndexRowType, 20, true, 50, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(reverse(hkeys(2, 3, 4)), cursor);
     }
 
@@ -402,7 +402,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoInclusiveMatchHiExclusiveMissReverse()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, true, keyRange(xIndexRowType, 20, true, 45, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(reverse(hkeys(2, 3, 4)), cursor);
     }
 
@@ -410,7 +410,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoInclusiveMissHiInclusiveMatchReverse()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, true, keyRange(xIndexRowType, 5, true, 50, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(reverse(hkeys(1, 2, 3, 4, 5)), cursor);
     }
 
@@ -418,7 +418,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoInclusiveMissHiInclusiveMissReverse()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, true, keyRange(xIndexRowType, 5, true, 55, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(reverse(hkeys(1, 2, 3, 4, 5)), cursor);
     }
 
@@ -426,7 +426,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoInclusiveMissHiExclusiveMatchReverse()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, true, keyRange(xIndexRowType, 5, true, 60, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(reverse(hkeys(1, 2, 3, 4, 5)), cursor);
     }
 
@@ -434,7 +434,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoInclusiveMissHiExclusiveMissReverse()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, true, keyRange(xIndexRowType, 5, true, 55, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(reverse(hkeys(1, 2, 3, 4, 5)), cursor);
     }
 
@@ -442,7 +442,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoExclusiveMatchHiInclusiveMatchReverse()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, true, keyRange(xIndexRowType, 60, false, 70, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(reverse(hkeys(7)), cursor);
     }
 
@@ -450,7 +450,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoExclusiveMatchHiInclusiveMissReverse()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, true, keyRange(xIndexRowType, 60, false, 75, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(reverse(hkeys(7)), cursor);
     }
 
@@ -458,7 +458,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoExclusiveMatchHiExclusiveMatchReverse()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, true, keyRange(xIndexRowType, 60, false, 80, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(reverse(hkeys(7)), cursor);
     }
 
@@ -466,7 +466,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoExclusiveMatchHiExclusiveMissReverse()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, true, keyRange(xIndexRowType, 60, false, 75, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(reverse(hkeys(7)), cursor);
     }
 
@@ -474,7 +474,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoExclusiveMissHiInclusiveMatchReverse()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, true, keyRange(xIndexRowType, 45, false, 60, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(reverse(hkeys(5, 6)), cursor);
     }
 
@@ -482,7 +482,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoExclusiveMissHiInclusiveMissReverse()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, true, keyRange(xIndexRowType, 45, false, 65, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(reverse(hkeys(5, 6)), cursor);
     }
 
@@ -490,7 +490,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoExclusiveMissHiExclusiveMatchReverse()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, true, keyRange(xIndexRowType, 45, false, 70, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(reverse(hkeys(5, 6)), cursor);
     }
 
@@ -498,7 +498,7 @@ public class UniqueIndexScanIT extends OperatorITBase
     public void testLoExclusiveMissHiExclusiveMissReverse()
     {
         Operator indexScan = indexScan_Default(xIndexRowType, true, keyRange(xIndexRowType, 45, false, 65, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         compareRenderedHKeys(reverse(hkeys(5, 6)), cursor);
     }
 

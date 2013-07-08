@@ -63,7 +63,7 @@ public class UniqueIndexUpdateIT extends OperatorITBase
         dml().writeRow(session(), createNewRow(t, 3000L, 3L, null));
         dml().writeRow(session(), createNewRow(t, 4000L, 4L, null));
         Operator plan = indexScan_Default(xyIndexRowType);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         cursor.open();
         Row row;
         // Need to examine PIRBs to see null separators
@@ -97,7 +97,7 @@ public class UniqueIndexUpdateIT extends OperatorITBase
         dml().writeRow(session(), createNewRow(t, 3000L, 3L, null));
         dml().writeRow(session(), createNewRow(t, 4000L, 4L, null));
         // Change nulls to some other value. Scan backwards to avoid halloween issues.
-        Cursor cursor = cursor(indexScan_Default(xyIndexRowType, true), queryContext);
+        Cursor cursor = cursor(indexScan_Default(xyIndexRowType, true), queryContext, queryBindings);
         cursor.open();
         Row row;
         final long NEW_Y_VALUE = 99;
@@ -114,7 +114,7 @@ public class UniqueIndexUpdateIT extends OperatorITBase
         }
         cursor.close();
         // Check final state
-        cursor = cursor(indexScan_Default(xyIndexRowType), queryContext);
+        cursor = cursor(indexScan_Default(xyIndexRowType), queryContext, queryBindings);
         cursor.open();
         // Need to examine PIRBs to see null separators
         int count = 0;
@@ -163,7 +163,7 @@ public class UniqueIndexUpdateIT extends OperatorITBase
 
     private void checkIndex(long ... expectedIds)
     {
-        Cursor cursor = cursor(indexScan_Default(xyIndexRowType), queryContext);
+        Cursor cursor = cursor(indexScan_Default(xyIndexRowType), queryContext, queryBindings);
         cursor.open();
         Row row;
         int count = 0;
@@ -187,7 +187,7 @@ public class UniqueIndexUpdateIT extends OperatorITBase
         NewRow oldRow = createNewRow(t, 1L, null, null);
         NewRow newRow = createNewRow(t, 1L, 10L, 10L);
         dml().updateRow(session(), oldRow, newRow, null);
-        Cursor cursor = cursor(indexScan_Default(xyIndexRowType), queryContext);
+        Cursor cursor = cursor(indexScan_Default(xyIndexRowType), queryContext, queryBindings);
         cursor.open();
         Row row = cursor.next();
         assertEquals(Long.valueOf(10), getLong(row, 0));

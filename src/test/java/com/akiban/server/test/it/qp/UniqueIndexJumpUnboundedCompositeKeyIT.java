@@ -2851,7 +2851,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
                         long expected[][])
     {
         Operator plan = indexScan_Default(idxRowType, range, ordering);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         cursor.open();
 
 

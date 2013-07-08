@@ -112,7 +112,7 @@ public class GroupIndexRowIT extends OperatorITBase
             row(userRowType, 1L),
             row(memberInfoRowType, 1L, 20120424L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
 

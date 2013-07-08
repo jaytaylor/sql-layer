@@ -67,6 +67,7 @@ public class MapCT extends CostModelBase
         group = group(p);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
     }
 
     protected void populateDB()
@@ -85,7 +86,7 @@ public class MapCT extends CostModelBase
         Operator plan = map_NestedLoops(timeSetupOuter, timeSetupInner, 0);
         long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             while (cursor.next() != null);
         }

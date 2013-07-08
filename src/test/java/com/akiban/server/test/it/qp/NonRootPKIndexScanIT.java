@@ -90,7 +90,7 @@ public class NonRootPKIndexScanIT extends OperatorITBase
                 RowBase[] expected = new RowBase[] {
                     row(childRowType, childPK, parentPK, parentPK),
                 };
-                compareRows(expected, cursor(plan, queryContext));
+                compareRows(expected, cursor(plan, queryContext, queryBindings));
             }
         }
     }
@@ -110,7 +110,7 @@ public class NonRootPKIndexScanIT extends OperatorITBase
                 Operator plan = indexScan_Default(childPKRowType, range, ordering(orderingMask));
                 RowBase[] expected = new RowBase[] {
                 };
-                compareRows(expected, cursor(plan, queryContext));
+                compareRows(expected, cursor(plan, queryContext, queryBindings));
             }
             // Empty due to pid2
             for (long childPK : childPKs) {
@@ -121,7 +121,7 @@ public class NonRootPKIndexScanIT extends OperatorITBase
                 Operator plan = indexScan_Default(childPKRowType, range, ordering(orderingMask));
                 RowBase[] expected = new RowBase[] {
                 };
-                compareRows(expected, cursor(plan, queryContext));
+                compareRows(expected, cursor(plan, queryContext, queryBindings));
             }
             // Non-empty
             for (long childPK : childPKs) {
@@ -133,7 +133,7 @@ public class NonRootPKIndexScanIT extends OperatorITBase
                 RowBase[] expected = new RowBase[] {
                     row(childRowType, childPK, parentPK, parentPK),
                 };
-                compareRows(expected, cursor(plan, queryContext));
+                compareRows(expected, cursor(plan, queryContext, queryBindings));
             }
         }
     }
@@ -153,7 +153,7 @@ public class NonRootPKIndexScanIT extends OperatorITBase
                 RowBase[] expected = new RowBase[] {
                     row(childRowType, childPK, parentPK, parentPK),
                 };
-                compareRows(expected, cursor(plan, queryContext));
+                compareRows(expected, cursor(plan, queryContext, queryBindings));
             }
         }
     }
@@ -171,7 +171,7 @@ public class NonRootPKIndexScanIT extends OperatorITBase
                 RowBase[] expected = new RowBase[] {
                     row(childRowType, childPK, parentPK, parentPK),
                 };
-                compareRows(expected, cursor(plan, queryContext));
+                compareRows(expected, cursor(plan, queryContext, queryBindings));
             }
         }
     }
@@ -190,7 +190,7 @@ public class NonRootPKIndexScanIT extends OperatorITBase
                 Operator plan = indexScan_Default(childPKRowType, range, ordering(orderingMask));
                 RowBase[] expected = new RowBase[] {
                 };
-                compareRows(expected, cursor(plan, queryContext));
+                compareRows(expected, cursor(plan, queryContext, queryBindings));
             }
             // Empty due to pid2
             for (long childPK : childPKs) {
@@ -201,7 +201,7 @@ public class NonRootPKIndexScanIT extends OperatorITBase
                 Operator plan = indexScan_Default(childPKRowType, range, ordering(orderingMask));
                 RowBase[] expected = new RowBase[] {
                 };
-                compareRows(expected, cursor(plan, queryContext));
+                compareRows(expected, cursor(plan, queryContext, queryBindings));
             }
                 // Non-empty
             for (long childPK : childPKs) {
@@ -213,7 +213,7 @@ public class NonRootPKIndexScanIT extends OperatorITBase
                 RowBase[] expected = new RowBase[] {
                     row(childRowType, childPK, parentPK, parentPK),
                 };
-                compareRows(expected, cursor(plan, queryContext));
+                compareRows(expected, cursor(plan, queryContext, queryBindings));
             }
         }
     }
@@ -232,7 +232,7 @@ public class NonRootPKIndexScanIT extends OperatorITBase
                 RowBase[] expected = new RowBase[] {
                     row(childRowType, childPK, parentPK, parentPK),
                 };
-                compareRows(expected, cursor(plan, queryContext));
+                compareRows(expected, cursor(plan, queryContext, queryBindings));
             }
         }
     }

@@ -93,7 +93,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                 int id = entry.getValue();
                 expected[r++] = new long[]{z, id};
             }
-            compareRows(rows(latLonIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext));
+            compareRows(rows(latLonIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
         }
         {
             // Check (before, lat, lon) index
@@ -105,7 +105,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                 int id = entry.getValue();
                 expected[r++] = new long[]{before(id), z, id};
             }
-            compareRows(rows(beforeLatLonIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext));
+            compareRows(rows(beforeLatLonIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
         }
         {
             // Check (lat, lon, after) index
@@ -117,7 +117,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                 int id = entry.getValue();
                 expected[r++] = new long[]{z, after(id), id};
             }
-            compareRows(rows(latLonAfterIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext));
+            compareRows(rows(latLonAfterIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
         }
         {
             // Check (before, lat, lon, after) index
@@ -129,7 +129,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                 int id = entry.getValue();
                 expected[r++] = new long[]{before(id), z, after(id), id};
             }
-            compareRows(rows(beforeLatLonAfterIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext));
+            compareRows(rows(beforeLatLonAfterIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
         }
     }
 
@@ -168,7 +168,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                     expected[r++] = new long[]{z, id};
                 }
             }
-            compareRows(rows(latLonIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext));
+            compareRows(rows(latLonIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
         }
         {
             // Check (before, lat, lon) index
@@ -187,7 +187,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                     expected[r++] = new long[]{before(id), z, id};
                 }
             }
-            compareRows(rows(beforeLatLonIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext));
+            compareRows(rows(beforeLatLonIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
         }
         {
             // Check (lat, lon, after) index
@@ -206,7 +206,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                     expected[r++] = new long[]{z, after(id), id};
                 }
             }
-            compareRows(rows(latLonAfterIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext));
+            compareRows(rows(latLonAfterIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
         }
         {
             // Check (before, lat, lon, after) index
@@ -225,7 +225,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                     expected[r++] = new long[]{before(id), z, after(id), id};
                 }
             }
-            compareRows(rows(beforeLatLonAfterIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext));
+            compareRows(rows(beforeLatLonAfterIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
         }
     }
 
@@ -257,7 +257,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                 int id = entry.getValue();
                 expected[r++] = new long[]{z, id};
             }
-            compareRows(rows(latLonIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext));
+            compareRows(rows(latLonIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
         }
         {
             // Check (before, lat, lon) index
@@ -269,7 +269,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                 int id = entry.getValue();
                 expected[r++] = new long[]{before(id), z, id};
             }
-            compareRows(rows(beforeLatLonIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext));
+            compareRows(rows(beforeLatLonIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
         }
         {
             // Check (lat, lon, after) index
@@ -281,7 +281,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                 int id = entry.getValue();
                 expected[r++] = new long[]{z, after(id), id};
             }
-            compareRows(rows(latLonAfterIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext));
+            compareRows(rows(latLonAfterIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
         }
         {
             // Check (before, lat, lon, after) index
@@ -293,7 +293,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                 int id = entry.getValue();
                 expected[r++] = new long[]{before(id), z, after(id), id};
             }
-            compareRows(rows(beforeLatLonAfterIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext));
+            compareRows(rows(beforeLatLonAfterIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
         }
     }
 
@@ -341,7 +341,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                                                    new SetColumnSelector(0, 1));
             IndexKeyRange box = IndexKeyRange.spatial(latLonIndexRowType, lowerLeft, upperRight);
             Operator plan = indexScan_Default(latLonIndexRowType, false, box);
-            Cursor cursor = API.cursor(plan, queryContext);
+            Cursor cursor = API.cursor(plan, queryContext, queryBindings);
             cursor.open();
             Row row;
             while ((row = cursor.next()) != null) {
@@ -404,7 +404,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                                                    new SetColumnSelector(0, 1));
             IndexKeyRange box = IndexKeyRange.spatial(latLonIndexRowType, lowerLeft, upperRight);
             Operator plan = indexScan_Default(latLonIndexRowType, false, box);
-            Cursor cursor = API.cursor(plan, queryContext);
+            Cursor cursor = API.cursor(plan, queryContext, queryBindings);
             cursor.open();
             Row row;
             while ((row = cursor.next()) != null) {
@@ -469,7 +469,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                                                        new SetColumnSelector(0, 1, 2));
                 IndexKeyRange box = IndexKeyRange.spatial(beforeLatLonIndexRowType, lowerLeft, upperRight);
                 Operator plan = indexScan_Default(beforeLatLonIndexRowType, false, box);
-                Cursor cursor = API.cursor(plan, queryContext);
+                Cursor cursor = API.cursor(plan, queryContext, queryBindings);
                 cursor.open();
                 Row row;
                 while ((row = cursor.next()) != null) {
@@ -503,7 +503,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                                                     new SetColumnSelector(0, 1));
             IndexKeyRange zStartRange = IndexKeyRange.around(latLonIndexRowType, zStartBound);
             Operator plan = indexScan_Default(latLonIndexRowType, false, zStartRange);
-            Cursor cursor = API.cursor(plan, queryContext);
+            Cursor cursor = API.cursor(plan, queryContext, queryBindings);
             cursor.open();
             Row row;
             long previousDistance = Long.MIN_VALUE;
@@ -558,7 +558,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                                    new SetColumnSelector(0, 1, 2));
                 IndexKeyRange zStartRange = IndexKeyRange.around(beforeLatLonIndexRowType, zStartBound);
                 Operator plan = indexScan_Default(beforeLatLonIndexRowType, false, zStartRange);
-                Cursor cursor = API.cursor(plan, queryContext);
+                Cursor cursor = API.cursor(plan, queryContext, queryBindings);
                 cursor.open();
                 Row row;
                 long previousDistance = Long.MIN_VALUE;
@@ -700,7 +700,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                                                new SetColumnSelector(0, 1));
         IndexKeyRange box = IndexKeyRange.spatial(latLonIndexRowType, lowerLeft, upperRight);
         Operator plan = indexScan_Default(latLonIndexRowType, false, box);
-        Cursor cursor = API.cursor(plan, queryContext);
+        Cursor cursor = API.cursor(plan, queryContext, queryBindings);
         cursor.open();
         Row row;
         while ((row = cursor.next()) != null) {
@@ -745,7 +745,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                                                new SetColumnSelector(0, 1));
         IndexKeyRange box = IndexKeyRange.spatial(latLonIndexRowType, lowerLeft, upperRight);
         Operator plan = indexScan_Default(latLonIndexRowType, false, box);
-        Cursor cursor = API.cursor(plan, queryContext);
+        Cursor cursor = API.cursor(plan, queryContext, queryBindings);
         cursor.open();
         Row row;
         while ((row = cursor.next()) != null) {

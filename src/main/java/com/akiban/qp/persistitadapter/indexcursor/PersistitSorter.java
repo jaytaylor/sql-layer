@@ -88,7 +88,7 @@ public class PersistitSorter implements Sorter
         sorterAdapter = usePValues
                 ? new PValueSorterAdapter()
                 : new OldSorterAdapter();
-        sorterAdapter.init(this.rowType, this.ordering, key, value, this.context, sortOption);
+        sorterAdapter.init(this.rowType, this.ordering, key, value, this.context, this.bindings, sortOption);
         iterationHelper = new SorterIterationHelper(sorterAdapter.createValueAdapter());
         this.loadTap = loadTap;
 

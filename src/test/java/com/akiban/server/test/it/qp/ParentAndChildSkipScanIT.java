@@ -90,10 +90,10 @@ public class ParentAndChildSkipScanIT extends OperatorITBase
         RowBase[] expected = new RowBase[] {
             row(childRowType, 2L, 80L, 8000L)
         };
-        compareRows(expected, cursor(intersectPxUnionCy(1, 2, 3, JoinType.INNER_JOIN, true, false), queryContext));
-        compareRows(expected, cursor(intersectPxUnionCy(1, 2, 3, JoinType.INNER_JOIN, true, true), queryContext));
-        compareRows(expected, cursor(intersectPxUnionCy(1, 2, 3, JoinType.INNER_JOIN, false, false), queryContext));
-        compareRows(expected, cursor(intersectPxUnionCy(1, 2, 3, JoinType.INNER_JOIN, false, true), queryContext));
+        compareRows(expected, cursor(intersectPxUnionCy(1, 2, 3, JoinType.INNER_JOIN, true, false), queryContext, queryBindings));
+        compareRows(expected, cursor(intersectPxUnionCy(1, 2, 3, JoinType.INNER_JOIN, true, true), queryContext, queryBindings));
+        compareRows(expected, cursor(intersectPxUnionCy(1, 2, 3, JoinType.INNER_JOIN, false, false), queryContext, queryBindings));
+        compareRows(expected, cursor(intersectPxUnionCy(1, 2, 3, JoinType.INNER_JOIN, false, true), queryContext, queryBindings));
     }
 
     private Operator intersectPxUnionCy(int x, int y1, int y2, JoinType joinType, boolean ascending, boolean skipScan)

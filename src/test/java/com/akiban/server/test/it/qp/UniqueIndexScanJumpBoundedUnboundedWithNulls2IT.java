@@ -1633,7 +1633,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
                        long expected[])
     {
         Operator plan = indexScan_Default(idxRowType, range, ordering);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         cursor.open();
 
         cursor.jump(indexRowWithId(targetId), INDEX_ROW_SELECTOR);

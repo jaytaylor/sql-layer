@@ -205,7 +205,7 @@ public class IndexScanNullIT extends OperatorITBase
             int id = expectedIds[i];
             expected[i] = dbRow(id);
         }
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     private void dump(IndexKeyRange keyRange, API.Ordering ordering, int ... expectedIds)

@@ -86,7 +86,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         long[] idOrdering = longs(1010, 1011, 1012, 1013, 1014, 1015);
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, -1);
@@ -94,7 +94,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), -1);
@@ -102,7 +102,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), -1);
@@ -110,7 +110,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), -1);
@@ -125,7 +125,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         long[] idOrdering = longs(1010, 1011, 1012, 1013, 1014, 1015);
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, 1);
@@ -133,7 +133,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), 1);
@@ -141,7 +141,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), 1);
@@ -149,7 +149,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), 1);
@@ -164,7 +164,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         long[] idOrdering = longs(1011, 1010, 1013, 1012, 1015, 1014);
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, -1);
@@ -172,7 +172,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), -1);
@@ -180,7 +180,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), -1);
@@ -188,7 +188,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), -1);
@@ -203,7 +203,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         long[] idOrdering = longs(1011, 1010, 1013, 1012, 1015, 1014);
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, 1);
@@ -211,7 +211,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), 1);
@@ -219,7 +219,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), 1);
@@ -227,7 +227,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), 1);
@@ -243,7 +243,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         long[] idOrdering = longs(1014, 1015, 1012, 1013, 1010, 1011);
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, -1);
@@ -251,7 +251,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), -1);
@@ -259,7 +259,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), -1);
@@ -267,7 +267,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), -1);
@@ -282,7 +282,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         long[] idOrdering = longs(1014, 1015, 1012, 1013, 1010, 1011);
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, 1);
@@ -290,7 +290,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), 1);
@@ -298,7 +298,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), 1);
@@ -306,7 +306,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), 1);
@@ -322,7 +322,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         long[] idOrdering = longs(1015, 1014, 1013, 1012, 1011, 1010);
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, -1);
@@ -330,7 +330,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), -1);
@@ -338,7 +338,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), -1);
@@ -346,7 +346,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), -1);
@@ -361,7 +361,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         long[] idOrdering = longs(1015, 1014, 1013, 1012, 1011, 1010);
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, 1);
@@ -369,7 +369,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), 1);
@@ -377,7 +377,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), 1);
@@ -385,7 +385,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), 1);
@@ -400,7 +400,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         long[] idOrdering = longs(1010, 1011, 1012, 1013, 1014, 1015);
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, -1);
@@ -408,7 +408,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), -1);
@@ -416,7 +416,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), -1);
@@ -424,7 +424,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), -1);
@@ -439,7 +439,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         long[] idOrdering = longs(1010, 1011, 1012, 1013, 1014, 1015);
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, 1);
@@ -447,7 +447,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), 1);
@@ -455,7 +455,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), 1);
@@ -463,7 +463,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), 1);
@@ -478,7 +478,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         long[] idOrdering = longs(1011, 1010, 1013, 1012, 1015, 1014);
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, -1);
@@ -486,7 +486,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), -1);
@@ -494,7 +494,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), -1);
@@ -502,7 +502,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), -1);
@@ -517,7 +517,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         long[] idOrdering = longs(1011, 1010, 1013, 1012, 1015, 1014);
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, 1);
@@ -525,7 +525,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), 1);
@@ -533,7 +533,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), 1);
@@ -541,7 +541,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), 1);
@@ -557,7 +557,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         long[] idOrdering = longs(1014, 1015, 1012, 1013, 1010, 1011);
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, -1);
@@ -565,7 +565,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), -1);
@@ -573,7 +573,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), -1);
@@ -581,7 +581,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), -1);
@@ -596,7 +596,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         long[] idOrdering = longs(1014, 1015, 1012, 1013, 1010, 1011);
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, 1);
@@ -604,7 +604,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), 1);
@@ -612,7 +612,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), 1);
@@ -620,7 +620,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), 1);
@@ -694,7 +694,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         long[] idOrdering = longs(1015, 1014, 1013, 1012, 1011, 1010);
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, -1);
@@ -702,7 +702,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), -1);
@@ -710,7 +710,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), -1);
@@ -718,7 +718,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), -1);
@@ -792,7 +792,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         long[] idOrdering = longs(1015, 1014, 1013, 1012, 1011, 1010);
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, 1);
@@ -800,7 +800,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), 1);
@@ -808,7 +808,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), 1);
@@ -816,7 +816,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), 1);
@@ -958,7 +958,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
                            long expectedArs[][])
     {
         Operator plan = indexScan_Default(idxRowType, bounded(1, lo, loInclusive, hi, hiInclusive), ordering);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         cursor.open();
         testJump(cursor,
                  idOrdering,

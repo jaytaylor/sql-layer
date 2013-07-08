@@ -90,7 +90,7 @@ public class SelectIT extends OperatorITBase
         Operator plan =
             select_HKeyOrdered(
                 groupScan_Default(coi), customerRowType, customerNameEQ("northbridge"));
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(orderRowType, 11L, 1L, "ori"),
@@ -112,7 +112,7 @@ public class SelectIT extends OperatorITBase
         Operator plan =
             select_HKeyOrdered(
                 groupScan_Default(coi), orderRowType, orderSalesmanEQ("tom"));
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(addressRowType, 1001L, 1L, "111 1111 st"),
@@ -137,7 +137,7 @@ public class SelectIT extends OperatorITBase
         Operator plan =
             select_HKeyOrdered(
                 groupScan_Default(coi), itemRowType, itemOidEQ(12L));
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(orderRowType, 11L, 1L, "ori"),

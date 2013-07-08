@@ -193,8 +193,8 @@ public class ConcurrentUpdateIT extends OperatorITBase
                 StoreAdapter adapter = newStoreAdapter(session, schema);
                 QueryContext queryContext = queryContext(adapter);
                 try(TransactionService.CloseableTransaction txn = txnService().beginCloseableTransaction(session)) {
-                    plan.run(queryContext);
-                    dump(cursor(groupScan_Default(group), queryContext));
+                    plan.run(queryContext, queryBindings);
+                    dump(cursor(groupScan_Default(group), queryContext, queryBindings));
                     txn.commit();
                 } catch (Throwable e) {
                     hadAnyFailure.set(true);

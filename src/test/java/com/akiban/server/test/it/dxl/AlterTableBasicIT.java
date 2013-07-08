@@ -32,6 +32,8 @@ import com.akiban.ais.util.TableChange;
 
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.QueryBindings;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.RowBase;
@@ -104,11 +106,13 @@ public class AlterTableBasicIT extends AlterTableITBase {
     private void scanAndCheckIndex(IndexRowType type, RowBase... expectedRows) {
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         StoreAdapter adapter = newStoreAdapter(schema);
+        QueryContext queryContext = new SimpleQueryContext(adapter);
+        QueryBindings queryBindings = queryContext.createBindings();
         compareRows(
                 expectedRows,
                 API.cursor(
                         API.indexScan_Default(type, false, IndexKeyRange.unbounded(type)),
-                        new SimpleQueryContext(adapter)
+                        queryContext, queryBindings
                 )
         );
     }
@@ -415,6 +419,8 @@ public class AlterTableBasicIT extends AlterTableITBase {
         IndexRowType indexRowType = schema.indexRowType(index);
 
         StoreAdapter adapter = newStoreAdapter(schema);
+        QueryContext queryContext = new SimpleQueryContext(adapter);
+        QueryBindings queryBindings = queryContext.createBindings();
         compareRows(
                 new RowBase[] {
                         testRow(indexRowType, "a", 110L, 1L, 10L, 100L),
@@ -423,7 +429,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
                 },
                 API.cursor(
                         API.indexScan_Default(indexRowType, false, IndexKeyRange.unbounded(indexRowType)),
-                        new SimpleQueryContext(adapter)
+                        queryContext, queryBindings
                 )
         );
     }

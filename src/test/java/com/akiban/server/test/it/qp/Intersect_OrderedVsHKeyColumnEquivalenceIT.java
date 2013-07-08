@@ -128,7 +128,7 @@ public class Intersect_OrderedVsHKeyColumnEquivalenceIT extends OperatorITBase
             row(giNoValueItemValueState, 1L, 100L, 1L, 1L, 100L, 1L, 222L, 222L),
             row(giNoValueItemValueState, 1L, 100L, 1L, 1L, 100L, 1L, 333L, 333L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     private Operator intersectPlan()

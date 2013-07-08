@@ -461,7 +461,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
             row(hRowType, 6L, 60009999L),
             row(hRowType, 7L, 70009999L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -492,7 +492,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
             row(iRowType, 6L, 6009999L),
             row(hRowType, 6L, 60009999L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -522,7 +522,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
             row(iRowType, 6L, 6009999L),
             row(hRowType, 6L, 60009999L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -553,7 +553,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
             row(iRowType, 5L, 5009999L),
             row(hRowType, 5L, 50009999L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -583,7 +583,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
             row(iRowType, 5L, 5009999L),
             row(hRowType, 5L, 50009999L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -612,7 +612,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
             row(iRowType, 4L, 4009999L),
             row(hRowType, 4L, 40009999L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -642,7 +642,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
             row(iRowType, 4L, 4009999L),
             row(hRowType, 4L, 40009999L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     private int c;
