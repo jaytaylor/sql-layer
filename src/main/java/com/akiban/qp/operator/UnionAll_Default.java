@@ -213,6 +213,8 @@ final class UnionAll_Default extends Operator {
             try {
                 CursorLifecycle.checkIdle(this);
                 idle = false;
+                // TODO: Have a mode where all the cursors get opened
+                // so that they can start in parallel.
             } finally {
                 TAP_OPEN.out();
             }
@@ -299,10 +301,41 @@ final class UnionAll_Default extends Operator {
             return destroyed;
         }
 
+        @Override
+        public void openBindings() {
+            bindingsCursor.openBindings();
+            for (int i = 0; i < cursors.length; i++) {
+                cursors[i].openBindings();
+            }
+        }
+
+        @Override
+        public QueryBindings nextBindings() {
+            QueryBindings bindings = bindingsCursor.nextBindings();
+            for (int i = 0; i < cursors.length; i++) {
+                QueryBindings other = cursors[i].nextBindings();
+                assert (bindings == other);
+            }
+            return bindings;
+        }
+
+        @Override
+        public void closeBindings() {
+            bindingsCursor.closeBindings();
+            for (int i = 0; i < cursors.length; i++) {
+                cursors[i].closeBindings();
+            }
+        }
+
         private Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
             super(context);
+            MultipleQueryBindingsCursor multiple = new MultipleQueryBindingsCursor(bindingsCursor);
+            this.bindingsCursor = multiple;
             cursors = new Cursor[inputs.size()];
+            for (int i = 0; i < cursors.length; i++) {
+                cursors[i] = inputs.get(i).cursor(context, multiple.newCursor());
+            }
         }
 
         /**
@@ -313,7 +346,7 @@ final class UnionAll_Default extends Operator {
          */
         private Row nextCursorFirstRow() {
             while (++inputOperatorsIndex < inputs.size()) {
-                Cursor nextCursor = cursor(inputOperatorsIndex);
+                Cursor nextCursor = cursors[inputOperatorsIndex];
                 nextCursor.open();
                 Row nextRow = nextCursor.next();
                 if (nextRow == null) {
@@ -350,15 +383,8 @@ final class UnionAll_Default extends Operator {
             return row;
         }
 
-        private Cursor cursor(int i)
-        {
-            if (cursors[i] == null) {
-                cursors[i] = inputs.get(i).cursor(context, bindings);
-            }
-            return cursors[i];
-        }
-
         private final ShareHolder<MasqueradingRow> rowHolder = new ShareHolder<>();
+        private final QueryBindingsCursor bindingsCursor;
         private int inputOperatorsIndex = -1; // right before the first operator
         private Cursor[] cursors;
         private Cursor currentCursor;
