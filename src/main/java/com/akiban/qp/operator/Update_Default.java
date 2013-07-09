@@ -109,7 +109,8 @@ class Update_Default implements UpdatePlannable {
     // UpdatePlannable interface
 
     @Override
-    public UpdateResult run(QueryContext context, QueryBindingsCursor bindingsCursor) {
+    public UpdateResult run(QueryContext context, QueryBindings bindings) {
+        QueryBindingsCursor bindingsCursor = new SingletonQueryBindingsCursor(bindings);
         return new Execution(context, inputOperator.cursor(context, bindingsCursor)).run();
     }
 

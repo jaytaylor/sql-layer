@@ -94,7 +94,7 @@ public class MemoryAdapter extends StoreAdapter {
     }
 
     @Override
-    public Sorter createSorter(QueryContext context, QueryBindings bindings, Cursor input, RowType rowType,
+    public Sorter createSorter(QueryContext context, QueryBindings bindings, RowCursor input, RowType rowType,
                                Ordering ordering, SortOption sortOption, InOutTap loadTap) {
         throw new UnsupportedOperationException();
     }

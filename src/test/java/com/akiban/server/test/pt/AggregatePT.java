@@ -27,9 +27,11 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.LeafCursor;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.OperatorExecutionBase;
+import com.akiban.qp.operator.OperatorCursor;
 import com.akiban.qp.operator.QueryBindings;
+import com.akiban.qp.operator.QueryBindingsCursor;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
@@ -264,8 +266,8 @@ public class AggregatePT extends ApiTestBase {
         }
 
         @Override
-        protected Cursor cursor(QueryContext context, QueryBindings bindings) {
-            return new BespokeCursor(context, bindings, API.cursor(inputOperator, context, bindings), outputType);
+        protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor) {
+            return new BespokeCursor(context, API.cursor(inputOperator, context, bindingsCursor), outputType);
         }
 
         @Override
@@ -290,14 +292,14 @@ public class AggregatePT extends ApiTestBase {
         }
     }
 
-    static class BespokeCursor extends OperatorExecutionBase implements Cursor {
+    static class BespokeCursor extends OperatorCursor {
         private Cursor inputCursor;
         private RowType outputType;
         private ValuesHolderRow outputRow;
         private BespokeAggregator aggregator;
 
-        public BespokeCursor(QueryContext context, QueryBindings bindings, Cursor inputCursor, RowType outputType) {
-            super(context, bindings);
+        public BespokeCursor(QueryContext context, Cursor inputCursor, RowType outputType) {
+            super(context);
             this.inputCursor = inputCursor;
             this.outputType = outputType;
         }
@@ -355,6 +357,21 @@ public class AggregatePT extends ApiTestBase {
                     return outputRow;
                 }
             }
+        }
+
+        @Override
+        public void openBindings() {
+            inputCursor.openBindings();
+        }
+
+        @Override
+        public QueryBindings nextBindings() {
+            return inputCursor.nextBindings();
+        }
+
+        @Override
+        public void closeBindings() {
+            inputCursor.closeBindings();
         }
     }
 
@@ -648,8 +665,8 @@ public class AggregatePT extends ApiTestBase {
         }
 
         @Override
-        protected Cursor cursor(QueryContext context, QueryBindings bindings) {
-            return new ParallelCursor(context, bindings, inputOperator, valuesType, valuesRows, bindingPosition);
+        protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor) {
+            return new ParallelCursor(context, bindingsCursor, inputOperator, valuesType, valuesRows, bindingPosition);
         }
 
         @Override
@@ -701,20 +718,19 @@ public class AggregatePT extends ApiTestBase {
         }
     }
 
-    class ParallelCursor extends OperatorExecutionBase implements Cursor {
+    class ParallelCursor extends LeafCursor {
         private RowQueue queue;
         private List<WorkerThread> threads;
         private int nrunning;
         private Row heldRow;
 
-        public ParallelCursor(QueryContext context, QueryBindings bindings, Operator inputOperator, ValuesRowType valuesType, List<ValuesRow> valuesRows, int bindingPosition) {
-            super(context, bindings);
-            this.context = context;
+        public ParallelCursor(QueryContext context, QueryBindingsCursor bindingsCursor, Operator inputOperator, ValuesRowType valuesType, List<ValuesRow> valuesRows, int bindingPosition) {
+            super(context, bindingsCursor);
             int nthreads = valuesRows.size();
             queue = new RowQueue(Thread.currentThread());
             threads = new ArrayList<>(nthreads);
             for (ValuesRow valuesRow : valuesRows) {
-                threads.add(new WorkerThread(context, inputOperator, valuesType, valuesRow, bindingPosition, queue));
+                threads.add(new WorkerThread(inputOperator, valuesType, valuesRow, bindingPosition, queue));
             }
         }
 
@@ -789,7 +805,6 @@ public class AggregatePT extends ApiTestBase {
             }
             return null;
         }
-        
     }
 
     class WorkerThread implements Runnable {
@@ -802,10 +817,11 @@ public class AggregatePT extends ApiTestBase {
         private Thread thread;
         private volatile boolean open;
         
-        public WorkerThread(QueryContext context, Operator inputOperator, ValuesRowType valuesType, ValuesRow valuesRow, int bindingPosition, RowQueue queue) {
+        public WorkerThread(Operator inputOperator, ValuesRowType valuesType, ValuesRow valuesRow, int bindingPosition, RowQueue queue) {
             session = createNewSession();
             adapter = newStoreAdapter(session, (Schema)valuesType.schema());
             context = queryContext(adapter);
+            bindings = context.createBindings();
             bindings.setRow(bindingPosition, valuesRow);
             inputCursor = API.cursor(inputOperator, context, bindings);
             this.queue = queue;

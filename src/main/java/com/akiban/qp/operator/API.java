@@ -738,7 +738,7 @@ public class API
 
     // Execution interface
 
-    private static Cursor cursor(Operator root, QueryContext context, QueryBindingsCursor bindingsCursor)
+    public static Cursor cursor(Operator root, QueryContext context, QueryBindingsCursor bindingsCursor)
     {
         return new ChainedCursor(context, root.cursor(context, bindingsCursor));
     }

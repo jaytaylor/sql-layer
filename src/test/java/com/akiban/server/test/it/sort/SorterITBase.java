@@ -21,6 +21,7 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.operator.RowsBuilder;
 import com.akiban.qp.operator.TestOperator;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
@@ -153,7 +154,7 @@ public abstract class SorterITBase extends ITBase {
         }
 
         Sorter sorter = createSorter(context, bindings, inputCursor, inputOperator.rowType(), ordering, sortOption, TEST_TAP);
-        Cursor sortedCursor = sorter.sort();
+        RowCursor sortedCursor = sorter.sort();
 
         Row[] expectedRows = createBuilder(expected).rows().toArray(new Row[expected.size()]);
         compareRows(expectedRows, sortedCursor);

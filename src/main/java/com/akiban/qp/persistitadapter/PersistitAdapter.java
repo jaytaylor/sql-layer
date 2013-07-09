@@ -85,7 +85,7 @@ public class PersistitAdapter extends StoreAdapter
     @Override
     public Sorter createSorter(QueryContext context,
                                QueryBindings bindings,
-                               Cursor input,
+                               RowCursor input,
                                RowType rowType,
                                API.Ordering ordering,
                                API.SortOption sortOption,

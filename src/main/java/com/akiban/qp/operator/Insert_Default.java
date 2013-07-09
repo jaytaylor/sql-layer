@@ -85,7 +85,8 @@ class Insert_Default implements UpdatePlannable {
     }
 
     @Override
-    public UpdateResult run(QueryContext context, QueryBindingsCursor bindingsCursor) {
+    public UpdateResult run(QueryContext context, QueryBindings bindings) {
+        QueryBindingsCursor bindingsCursor = new SingletonQueryBindingsCursor(bindings);
         return new Execution(context, inputOperator.cursor(context, bindingsCursor)).run();
     }
 

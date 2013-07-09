@@ -29,7 +29,7 @@ import com.akiban.util.tap.InOutTap;
  */
 class SorterToCursorAdapter implements RowCursor
 {
-    // Cursor interface
+    // RowCursor interface
 
     @Override
     public void open()
@@ -99,7 +99,7 @@ class SorterToCursorAdapter implements RowCursor
     public SorterToCursorAdapter(StoreAdapter adapter,
                                  QueryContext context,
                                  QueryBindings bindings,
-                                 Cursor input,
+                                 RowCursor input,
                                  RowType rowType,
                                  API.Ordering ordering,
                                  API.SortOption sortOption,
@@ -118,7 +118,7 @@ class SorterToCursorAdapter implements RowCursor
     private final StoreAdapter adapter;
     private final QueryContext context;
     private final QueryBindings bindings;
-    private final Cursor input;
+    private final RowCursor input;
     private final RowType rowType;
     private final API.Ordering ordering;
     private final API.SortOption sortOption;

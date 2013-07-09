@@ -201,9 +201,9 @@ public class QueryTimeoutIT extends OperatorITBase
         // Operator interface
 
         @Override
-        protected Cursor cursor(QueryContext context, QueryBindings bindings)
+        protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
-            return new Execution(context, bindings);
+            return new Execution(context, bindingsCursor);
         }
 
         @Override
@@ -212,14 +212,9 @@ public class QueryTimeoutIT extends OperatorITBase
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
-        private class Execution extends OperatorExecutionBase implements Cursor
+        private class Execution extends LeafCursor
         {
             // Cursor interface
-
-            @Override
-            public void open()
-            {
-            }
 
             @Override
             public Row next()
@@ -233,16 +228,11 @@ public class QueryTimeoutIT extends OperatorITBase
                 return null;
             }
 
-            @Override
-            public void close()
-            {
-            }
-
             // Execution interface
 
-            Execution(QueryContext context, QueryBindings bindings)
+            Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
             {
-                super(context, bindings);
+                super(context, bindingsCursor);
             }
         }
     }
