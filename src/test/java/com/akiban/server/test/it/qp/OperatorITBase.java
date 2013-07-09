@@ -184,9 +184,9 @@ public class OperatorITBase extends ITBase
         // Check active during iteration
         testCase.firstSetup();
         if (testCase.hKeyComparison()) {
-            compareRenderedHKeys(testCase.firstExpectedHKeys(), cursor);
+            compareRenderedHKeys(testCase.firstExpectedHKeys(), cursor, false);
         } else {
-            compareRows(testCase.firstExpectedRows(), cursor, collators);
+            compareRows(testCase.firstExpectedRows(), cursor, false, collators);
         }
         assertTrue(cursor.isIdle());
         // Check close during iteration.
@@ -203,9 +203,9 @@ public class OperatorITBase extends ITBase
         // Check that a second execution works
         testCase.secondSetup();
         if (testCase.hKeyComparison()) {
-            compareRenderedHKeys(testCase.secondExpectedHKeys(), cursor);
+            compareRenderedHKeys(testCase.secondExpectedHKeys(), cursor, false);
         } else {
-            compareRows(testCase.secondExpectedRows(), cursor, collators);
+            compareRows(testCase.secondExpectedRows(), cursor, false, collators);
         }
         assertTrue(cursor.isIdle());
         // Check close of idle cursor is permitted
@@ -457,9 +457,17 @@ public class OperatorITBase extends ITBase
 
     protected void compareRenderedHKeys(String[] expected, Cursor cursor)
     {
+        compareRenderedHKeys(expected, cursor, true);
+    }
+
+    protected void compareRenderedHKeys(String[] expected, Cursor cursor, boolean topLevel)
+    {
         int count;
         try {
-            cursor.openTopLevel();
+            if (topLevel)
+                cursor.openTopLevel();
+            else
+                cursor.open();
             count = 0;
             List<RowBase> actualRows = new ArrayList<>(); // So that result is viewable in debugger
             RowBase actualRow;
@@ -469,7 +477,10 @@ public class OperatorITBase extends ITBase
                 actualRows.add(actualRow);
             }
         } finally {
-            cursor.closeTopLevel();
+            if (topLevel)
+                cursor.closeTopLevel();
+            else
+                cursor.close();
         }
         assertEquals(expected.length, count);
     }

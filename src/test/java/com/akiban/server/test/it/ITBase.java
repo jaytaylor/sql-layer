@@ -54,14 +54,19 @@ public abstract class ITBase extends ApiTestBase {
 
     protected void compareRows(RowBase[] expected, RowCursor cursor)
     {
-        compareRows(expected, cursor, null);
+        compareRows(expected, cursor, (cursor instanceof Cursor), null);
     }
 
     protected void compareRows(RowBase[] expected, RowCursor cursor, AkCollator ... collators)
     {
+        compareRows(expected, cursor, (cursor instanceof Cursor), collators);
+    }
+
+    protected void compareRows(RowBase[] expected, RowCursor cursor, boolean topLevel, AkCollator ... collators)
+    {
         List<ShareHolder<Row>> actualRows = new ArrayList<>(); // So that result is viewable in debugger
         try {
-            if (cursor instanceof Cursor)
+            if (topLevel)
                 ((Cursor)cursor).openTopLevel();
             else
                 cursor.open();
@@ -84,7 +89,7 @@ public abstract class ITBase extends ApiTestBase {
                 actualRows.add(new ShareHolder<>((Row) actualRow));
             }
         } finally {
-            if (cursor instanceof Cursor)
+            if (topLevel)
                 ((Cursor)cursor).closeTopLevel();
             else
                 cursor.close();
