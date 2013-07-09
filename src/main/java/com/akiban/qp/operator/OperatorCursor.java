@@ -24,11 +24,12 @@ public abstract class OperatorCursor extends OperatorExecutionBase implements Cu
     }
 
     @Override
-    public void openTopLevel() {
+    public QueryBindings openTopLevel() {
         openBindings();
         QueryBindings bindings = nextBindings();
         assert (bindings != null);
         open();
+        return bindings;
     }
 
     @Override

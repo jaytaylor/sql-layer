@@ -152,7 +152,7 @@ class Delete_Default implements UpdatePlannable {
                 DELETE_TAP.in();
             }
             try {
-                input.open();
+                input.openTopLevel();
                 Row oldRow;
                 while ((oldRow = input.next()) != null) {
                     checkQueryCancelation();
@@ -165,7 +165,7 @@ class Delete_Default implements UpdatePlannable {
                 }
             } finally {
                 if (input != null) {
-                    input.close();
+                    input.destroy();
                 }
                 if (TAP_NEXT_ENABLED) {
                     DELETE_TAP.out();

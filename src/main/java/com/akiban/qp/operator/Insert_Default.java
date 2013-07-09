@@ -139,7 +139,7 @@ class Insert_Default implements UpdatePlannable {
                 INSERT_TAP.in();
             }
             try {
-                input.open();
+                input.openTopLevel();
                 Row row;
                 while ((row = input.next()) != null) {
                     // LOG.warn("About to insert {}: {}", row.rowType().userTable(), row);
@@ -154,7 +154,7 @@ class Insert_Default implements UpdatePlannable {
                 }
             } finally {
                 if (input != null) {
-                    input.close();
+                    input.destroy();
                 }
                 if (TAP_NEXT_ENABLED) {
                     INSERT_TAP.out();

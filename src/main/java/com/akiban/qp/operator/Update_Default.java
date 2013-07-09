@@ -167,7 +167,7 @@ class Update_Default implements UpdatePlannable {
                 UPDATE_TAP.in();
             }
             try {
-                input.open();
+                QueryBindings bindings = input.openTopLevel();
                 Row oldRow;
                 while ((oldRow = input.next()) != null) {
                     checkQueryCancelation();
@@ -184,7 +184,7 @@ class Update_Default implements UpdatePlannable {
                 }
             } finally {
                 if (input != null) {
-                    input.close();
+                    input.destroy();
                 }
                 if (TAP_NEXT_ENABLED) {
                     UPDATE_TAP.out();
