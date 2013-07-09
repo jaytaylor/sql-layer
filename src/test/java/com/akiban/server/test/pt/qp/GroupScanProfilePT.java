@@ -107,10 +107,10 @@ public class GroupScanProfilePT extends QPProfilePTBase
         Operator plan = groupScan_Default(coi);
         for (int s = 0; s < SCANS; s++) {
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             while (cursor.next() != null) {
             }
-            cursor.close();
+            cursor.closeTopLevel();
         }
         long end = System.nanoTime();
         double sec = (end - start) / (1000.0 * 1000 * 1000);

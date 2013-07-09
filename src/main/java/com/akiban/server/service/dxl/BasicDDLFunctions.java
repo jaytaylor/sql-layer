@@ -301,14 +301,14 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             );
             com.akiban.qp.operator.Cursor cursor = API.cursor(plan, queryContext, queryBindings);
 
-            cursor.open();
+            cursor.openTopLevel();
             try {
                 Row oldRow;
                 while((oldRow = cursor.next()) != null) {
                     checker.checkConstraints(oldRow, Types3Switch.ON);
                 }
             } finally {
-                cursor.close();
+                cursor.closeTopLevel();
             }
         }
         schemaManager().alterTableDefinitions(session, changedTables);
@@ -478,7 +478,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         for(UserTable root : roots) {
             Operator plan = groupScan_Default(root.getGroup());
             com.akiban.qp.operator.Cursor cursor = API.cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             try {
                 Row oldRow;
                 while((oldRow = cursor.next()) != null) {
@@ -503,7 +503,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     adapter.writeRow(newRow, indexes, usePValues);
                 }
             } finally {
-                cursor.close();
+                cursor.closeTopLevel();
             }
         }
 

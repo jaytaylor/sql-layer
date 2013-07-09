@@ -43,12 +43,12 @@ abstract class SubqueryTEvaluateble implements TEvaluatableExpression {
         if (cursor == null) {
             cursor = API.cursor(subquery, context, bindings);
         }
-        cursor.open();
+        cursor.openTopLevel();
         try {
             doEval(pvalue);
         }
         finally {
-            cursor.close();
+            cursor.closeTopLevel();
         }
     }
 

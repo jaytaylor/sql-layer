@@ -146,7 +146,7 @@ public abstract class SorterITBase extends ITBase {
         QueryContext context = queryContext(adapter);
         QueryBindings bindings = context.createBindings();
         Cursor inputCursor = API.cursor(inputOperator, context, bindings);
-        inputCursor.open();
+        inputCursor.openTopLevel();
 
         API.Ordering ordering = API.ordering();
         for(int i = 0; i < fieldOrdering.length; ++i) {

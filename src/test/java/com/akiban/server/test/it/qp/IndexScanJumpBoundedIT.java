@@ -88,34 +88,34 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
     }
 
@@ -127,34 +127,34 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
     }
 
@@ -166,34 +166,34 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
     }
 
@@ -205,34 +205,34 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
 
     }
@@ -245,34 +245,34 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
     }
 
@@ -284,34 +284,34 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
 
     }
@@ -324,34 +324,34 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
     }
 
@@ -363,34 +363,34 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
     }
 
@@ -402,34 +402,34 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
     }
 
@@ -441,34 +441,34 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
     }
 
@@ -480,34 +480,34 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
     }
 
@@ -519,34 +519,34 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
 
     }
@@ -559,34 +559,34 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
     }
 
@@ -598,34 +598,34 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
 
     }
@@ -696,34 +696,34 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), -1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
     }
 
@@ -794,34 +794,34 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, idOrdering, 0);
             testJump(cursor, idOrdering, 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, true, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, last4(idOrdering), 0);
             testJump(cursor, last4(idOrdering), 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, true), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, first4(idOrdering), 0);
             testJump(cursor, first4(idOrdering), 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
         {
             Operator plan = indexScan_Default(idxRowType, bounded(1, 11, false, 13, false), ordering);
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             testJump(cursor, middle2(idOrdering), 0);
             testJump(cursor, middle2(idOrdering), 1);
-            cursor.close();
+            cursor.closeTopLevel();
         }
     }
 
@@ -960,12 +960,12 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
     {
         Operator plan = indexScan_Default(idxRowType, bounded(1, lo, loInclusive, hi, hiInclusive), ordering);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        cursor.open();
+        cursor.openTopLevel();
         testJump(cursor,
                  idOrdering,
                  nudge,
                  expectedArs);
-        cursor.close();
+        cursor.closeTopLevel();
     }
 
     private void testJump(Cursor cursor, long idOrdering[], int nudge, long expectedsAr[][])

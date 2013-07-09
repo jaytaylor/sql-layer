@@ -343,7 +343,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
             IndexKeyRange box = IndexKeyRange.spatial(latLonIndexRowType, lowerLeft, upperRight);
             Operator plan = indexScan_Default(latLonIndexRowType, false, box);
             Cursor cursor = API.cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             Row row;
             while ((row = cursor.next()) != null) {
                 assertSame(latLonIndexRowType.physicalRowType(), row.rowType());
@@ -406,7 +406,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
             IndexKeyRange box = IndexKeyRange.spatial(latLonIndexRowType, lowerLeft, upperRight);
             Operator plan = indexScan_Default(latLonIndexRowType, false, box);
             Cursor cursor = API.cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             Row row;
             while ((row = cursor.next()) != null) {
                 assertSame(latLonIndexRowType.physicalRowType(), row.rowType());
@@ -471,7 +471,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                 IndexKeyRange box = IndexKeyRange.spatial(beforeLatLonIndexRowType, lowerLeft, upperRight);
                 Operator plan = indexScan_Default(beforeLatLonIndexRowType, false, box);
                 Cursor cursor = API.cursor(plan, queryContext, queryBindings);
-                cursor.open();
+                cursor.openTopLevel();
                 Row row;
                 while ((row = cursor.next()) != null) {
                     assertSame(beforeLatLonIndexRowType.physicalRowType(), row.rowType());
@@ -505,7 +505,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
             IndexKeyRange zStartRange = IndexKeyRange.around(latLonIndexRowType, zStartBound);
             Operator plan = indexScan_Default(latLonIndexRowType, false, zStartRange);
             Cursor cursor = API.cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             Row row;
             long previousDistance = Long.MIN_VALUE;
             int count = 0;
@@ -560,7 +560,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                 IndexKeyRange zStartRange = IndexKeyRange.around(beforeLatLonIndexRowType, zStartBound);
                 Operator plan = indexScan_Default(beforeLatLonIndexRowType, false, zStartRange);
                 Cursor cursor = API.cursor(plan, queryContext, queryBindings);
-                cursor.open();
+                cursor.openTopLevel();
                 Row row;
                 long previousDistance = Long.MIN_VALUE;
                 Collection<Integer> actualIdByDistance = new ArrayList<>();
@@ -702,7 +702,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
         IndexKeyRange box = IndexKeyRange.spatial(latLonIndexRowType, lowerLeft, upperRight);
         Operator plan = indexScan_Default(latLonIndexRowType, false, box);
         Cursor cursor = API.cursor(plan, queryContext, queryBindings);
-        cursor.open();
+        cursor.openTopLevel();
         Row row;
         while ((row = cursor.next()) != null) {
             assertSame(latLonIndexRowType.physicalRowType(), row.rowType());
@@ -747,7 +747,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
         IndexKeyRange box = IndexKeyRange.spatial(latLonIndexRowType, lowerLeft, upperRight);
         Operator plan = indexScan_Default(latLonIndexRowType, false, box);
         Cursor cursor = API.cursor(plan, queryContext, queryBindings);
-        cursor.open();
+        cursor.openTopLevel();
         Row row;
         while ((row = cursor.next()) != null) {
             assertSame(latLonIndexRowType.physicalRowType(), row.rowType());

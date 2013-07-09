@@ -112,10 +112,10 @@ public class SortPT extends QPProfilePTBase
                 ordering, 
                 SortOption.PRESERVE_DUPLICATES);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        cursor.open();
+        cursor.openTopLevel();
         while (cursor.next() != null) {
         }
-        cursor.close();
+        cursor.closeTopLevel();
         if (print) {
             System.out.println("---------------------------------------------------------------------");
             System.out.println(String.format("Sort %s on field %s", n, field == 0 ? "id" : "rand"));

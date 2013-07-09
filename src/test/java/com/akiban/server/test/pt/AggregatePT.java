@@ -143,13 +143,13 @@ public class AggregatePT extends ApiTestBase {
         for (int i = 0; i < WARMUPS+REPEATS; i++) {
             long start = System.nanoTime();
             Cursor cursor = API.cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             while (true) {
                 Row row = cursor.next();
                 if (row == null) break;
                 if (i == 0) System.out.println(row);
             }
-            cursor.close();
+            cursor.closeTopLevel();
             long end = System.nanoTime();
             if (i >= WARMUPS)
                 time += (end - start) / 1.0e6;
@@ -219,13 +219,13 @@ public class AggregatePT extends ApiTestBase {
         for (int i = 0; i < WARMUPS+REPEATS; i++) {
             long start = System.nanoTime();
             Cursor cursor = API.cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             while (true) {
                 Row row = cursor.next();
                 if (row == null) break;
                 if (i == 0) System.out.println(row);
             }
-            cursor.close();
+            cursor.closeTopLevel();
             long end = System.nanoTime();
             if (i >= WARMUPS)
                 time += (end - start) / 1.0e6;
@@ -579,13 +579,13 @@ public class AggregatePT extends ApiTestBase {
         for (int i = 0; i < WARMUPS+REPEATS; i++) {
             long start = System.nanoTime();
             Cursor cursor = API.cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             while (true) {
                 Row row = cursor.next();
                 if (row == null) break;
                 if (i == 0) System.out.println(row);
             }
-            cursor.close();
+            cursor.closeTopLevel();
             long end = System.nanoTime();
             if (i >= WARMUPS)
                 time += (end - start) / 1.0e6;
@@ -635,13 +635,13 @@ public class AggregatePT extends ApiTestBase {
         for (int i = 0; i < WARMUPS+REPEATS; i++) {
             long start = System.nanoTime();
             Cursor cursor = API.cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             while (true) {
                 Row row = cursor.next();
                 if (row == null) break;
                 if (i == 0) System.out.println(row);
             }
-            cursor.close();
+            cursor.closeTopLevel();
             long end = System.nanoTime();
             if (i >= WARMUPS)
                 time += (end - start) / 1.0e6;
@@ -850,7 +850,7 @@ public class AggregatePT extends ApiTestBase {
 
         @Override
         public void run() {
-            inputCursor.open();
+            inputCursor.openTopLevel();
             open = true;
             txnService().beginTransaction(session);
             try {
@@ -868,7 +868,7 @@ public class AggregatePT extends ApiTestBase {
                 throw new QueryCanceledException(context.getSession());
             }
             finally {
-                inputCursor.close();
+                inputCursor.closeTopLevel();
                 txnService().commitTransaction(session);
             }
         }

@@ -292,7 +292,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
             IndexKeyRange box = IndexKeyRange.spatial(pSpatialIndexRowType, lowerLeft, upperRight);
             Operator plan = indexScan_Default(pSpatialIndexRowType, false, box);
             Cursor cursor = API.cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             Row row;
             while ((row = cursor.next()) != null) {
                 assertSame(pSpatialIndexRowType.physicalRowType(), row.rowType());
@@ -371,7 +371,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
             IndexKeyRange box = IndexKeyRange.spatial(cSpatialIndexRowType, lowerLeft, upperRight);
             Operator plan = indexScan_Default(cSpatialIndexRowType, false, box);
             Cursor cursor = API.cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             Row row;
             while ((row = cursor.next()) != null) {
                 assertSame(cSpatialIndexRowType.physicalRowType(), row.rowType());
@@ -426,7 +426,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                 IndexKeyRange zStartRange = IndexKeyRange.around(cSpatialIndexRowType, zStartBound);
                 Operator plan = indexScan_Default(cSpatialIndexRowType, false, zStartRange);
                 Cursor cursor = API.cursor(plan, queryContext, queryBindings);
-                cursor.open();
+                cursor.openTopLevel();
                 Row row;
                 long previousDistance = Long.MIN_VALUE;
                 Collection<Integer> actualIdByDistance = new ArrayList<>();

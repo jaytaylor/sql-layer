@@ -247,7 +247,7 @@ public class NWaySkipScanIT extends OperatorITBase
     private void testTwoIntersects(long key, Operator plan)
     {
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        cursor.open();
+        cursor.openTopLevel();
         RowBase row = cursor.next();
         assertEquals(Long.valueOf(key), getLong(row, 0));
         assertNull(cursor.next());

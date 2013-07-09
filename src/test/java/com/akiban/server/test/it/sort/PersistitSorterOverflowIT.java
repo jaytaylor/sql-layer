@@ -118,7 +118,7 @@ public class PersistitSorterOverflowIT extends ITBase {
                 context, bindings
         );
 
-        inputCursor.open();
+        inputCursor.openTopLevel();
         try {
             PersistitSorter sorter = new PersistitSorter(context, bindings, inputCursor, rowType, ordering, API.SortOption.PRESERVE_DUPLICATES, tap);
             RowCursor sortedCursor = sorter.sort();
@@ -131,7 +131,7 @@ public class PersistitSorterOverflowIT extends ITBase {
                 sortedCursor.close();
             }
         } finally {
-            inputCursor.close();
+            inputCursor.closeTopLevel();
         }
     }
 }

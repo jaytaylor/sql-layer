@@ -165,6 +165,8 @@ public class OperatorITBase extends ITBase
     protected void testCursorLifecycle(Operator scan, CursorLifecycleTestCase testCase, AkCollator ... collators)
     {
         Cursor cursor = cursor(scan, queryContext, queryBindings);
+        cursor.openBindings();
+        cursor.nextBindings();
         // Check idle following creation
         assertTrue(cursor.isIdle());
         // Check active following open
@@ -403,13 +405,13 @@ public class OperatorITBase extends ITBase
     {
         List<RowBase> actualRows = new ArrayList<>(); // So that result is viewable in debugger
         try {
-            cursor.open();
+            cursor.openTopLevel();
             RowBase actualRow;
             while ((actualRow = cursor.next()) != null) {
                 actualRows.add(actualRow);
             }
         } finally {
-            cursor.close();
+            cursor.closeTopLevel();
         }
     }
 
@@ -418,7 +420,7 @@ public class OperatorITBase extends ITBase
     {
         List<String> strings = new ArrayList<>();
         try {
-            cursor.open();
+            cursor.openTopLevel();
             Row row;
             while ((row = cursor.next()) != null) {
                 strings.add(String.valueOf(row));
@@ -426,7 +428,7 @@ public class OperatorITBase extends ITBase
         } catch (Throwable t) {
             t.printStackTrace();
         } finally {
-            cursor.close();
+            cursor.closeTopLevel();
         }
         strings.add(0, strings.size() == 1 ? "1 string:" : strings.size() + " strings:");
         throw new AssertionError(Strings.join(strings));
@@ -440,12 +442,12 @@ public class OperatorITBase extends ITBase
 
     protected void dump(Cursor cursor)
     {
-        cursor.open();
+        cursor.openTopLevel();
         Row row;
         while ((row = cursor.next()) != null) {
             LOG.debug("{}", String.valueOf(row));
         }
-        cursor.close();
+        cursor.closeTopLevel();
     }
     
     protected void dump(Operator plan)
@@ -457,7 +459,7 @@ public class OperatorITBase extends ITBase
     {
         int count;
         try {
-            cursor.open();
+            cursor.openTopLevel();
             count = 0;
             List<RowBase> actualRows = new ArrayList<>(); // So that result is viewable in debugger
             RowBase actualRow;
@@ -467,7 +469,7 @@ public class OperatorITBase extends ITBase
                 actualRows.add(actualRow);
             }
         } finally {
-            cursor.close();
+            cursor.closeTopLevel();
         }
         assertEquals(expected.length, count);
     }

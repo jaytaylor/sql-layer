@@ -56,12 +56,12 @@ public abstract class SubqueryExpressionEvaluation extends ExpressionEvaluation.
         if (cursor == null) {
             cursor = API.cursor(subquery, context, bindings);
         }
-        cursor.open();
+        cursor.openTopLevel();
         try {
             return doEval();
         }
         finally {
-            cursor.close();
+            cursor.closeTopLevel();
         }
     }
 

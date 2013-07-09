@@ -550,7 +550,7 @@ public class IndexScanIT extends OperatorITBase
     {
         Operator indexScan = indexScan_Default(itemOidIidIndexRowType, false, null);
         Cursor cursor = cursor(indexScan, queryContext, queryBindings);
-        cursor.open();
+        cursor.openTopLevel();
         Row row = cursor.next();
         if (usingPValues()) {
             // Get and checking each field should work

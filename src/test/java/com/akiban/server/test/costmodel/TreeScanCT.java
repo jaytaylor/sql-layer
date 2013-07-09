@@ -135,7 +135,7 @@ public class TreeScanCT extends CostModelBase
         long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             for (int s = 0; s < sequentialAccessesPerRandom; s++) {
                 Row row = cursor.next();
                 assert row != null;
@@ -170,10 +170,10 @@ public class TreeScanCT extends CostModelBase
                 } else {
                     valueHolder.putString((String) key);
                 }
-                cursor.open();
+                cursor.openTopLevel();
                 Row row = cursor.next();
                 assert row != null;
-                cursor.close();
+                cursor.closeTopLevel();
             }
         }
         long endTime = System.nanoTime();
