@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class MultiCursor implements Cursor
+public class MultiCursor implements BindingsAwareCursor
 {
     // Cursor interface
 
@@ -91,6 +91,16 @@ public class MultiCursor implements Cursor
     public boolean isDestroyed()
     {
         return cursorIterator == null;
+    }
+
+    @Override
+    public void rebind(QueryBindings bindings)
+    {
+        for (Cursor cursor : cursors) {
+            if (cursor instanceof BindingsAwareCursor) {
+                ((BindingsAwareCursor)cursor).rebind(bindings);
+            }
+        }
     }
 
     // MultiCursor interface

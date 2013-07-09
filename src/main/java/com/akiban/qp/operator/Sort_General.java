@@ -153,7 +153,7 @@ class Sort_General extends Operator
 
     // Inner classes
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends ChainedCursor
     {
         // Cursor interface
 
@@ -241,35 +241,16 @@ class Sort_General extends Operator
             return destroyed;
         }
 
-        @Override
-        public void openBindings() {
-            input.openBindings();
-        }
-
-        @Override
-        public QueryBindings nextBindings() {
-            bindings = input.nextBindings();
-            return bindings;
-        }
-
-        @Override
-        public void closeBindings() {
-            input.closeBindings();
-        }
-
         // Execution interface
 
         Execution(QueryContext context, Cursor input)
         {
-            super(context);
-            this.input = input;
+            super(context, input);
         }
 
         // Object state
 
-        private final Cursor input;
         private Cursor output;
         private boolean destroyed = false;
-        private QueryBindings bindings;
     }
 }

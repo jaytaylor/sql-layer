@@ -24,7 +24,6 @@ import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
@@ -181,13 +180,12 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     // IndexCursorMixedOrder interface
 
     public static <S, E> IndexCursorMixedOrder<S, E> create(QueryContext context,
-                                              QueryBindings bindings,
                                               IterationHelper iterationHelper,
                                               IndexKeyRange keyRange,
                                               API.Ordering ordering,
                                               SortKeyAdapter<S, E> sortKeyAdapter)
     {
-        return new IndexCursorMixedOrder<>(context, bindings, iterationHelper, keyRange, ordering, sortKeyAdapter);
+        return new IndexCursorMixedOrder<>(context, iterationHelper, keyRange, ordering, sortKeyAdapter);
     }
 
     public void initializeScanStates()
@@ -277,13 +275,12 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     // For use by subclasses
 
     protected IndexCursorMixedOrder(QueryContext context,
-                                    QueryBindings bindings,
                                     IterationHelper iterationHelper,
                                     IndexKeyRange keyRange,
                                     API.Ordering ordering,
                                     SortKeyAdapter<S, E> sortKeyAdapter)
     {
-        super(context, bindings, iterationHelper);
+        super(context, iterationHelper);
         this.keyRange = keyRange;
         this.ordering = ordering;
         this.ascending = new boolean[ordering.sortColumns()];

@@ -242,6 +242,21 @@ class Map_NestedLoops extends Operator
             return outerInput.isDestroyed();
         }
 
+        @Override
+        public void openBindings() {
+            outerInput.openBindings();
+        }
+
+        @Override
+        public QueryBindings nextBindings() {
+            return outerInput.nextBindings();
+        }
+
+        @Override
+        public void closeBindings() {
+            outerInput.closeBindings();
+        }
+
         // Execution interface
 
         Execution(QueryContext context, QueryBindingsCursor bindingsCursor)

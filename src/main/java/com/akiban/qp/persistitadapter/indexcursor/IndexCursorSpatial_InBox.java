@@ -82,19 +82,25 @@ class IndexCursorSpatial_InBox extends IndexCursor
         multiCursor.destroy();
     }
 
+    @Override
+    public void rebind(QueryBindings bindings)
+    {
+        super.rebind(bindings);
+        multiCursor.rebind(bindings);
+    }
+
     // IndexCursorSpatial_InBox interface
 
     public static IndexCursorSpatial_InBox create(QueryContext context,
-                                                  QueryBindings bindings,
                                                   IterationHelper iterationHelper,
                                                   IndexKeyRange keyRange)
     {
-        return  new IndexCursorSpatial_InBox(context, bindings, iterationHelper, keyRange);
+        return  new IndexCursorSpatial_InBox(context, iterationHelper, keyRange);
     }
 
     // For use by this class
 
-    private IndexCursorSpatial_InBox(QueryContext context, QueryBindings bindings, IterationHelper iterationHelper, IndexKeyRange keyRange)
+    private IndexCursorSpatial_InBox(QueryContext context, IterationHelper iterationHelper, IndexKeyRange keyRange)
     {
         super(context, bindings, iterationHelper);
         assert keyRange.spatial();

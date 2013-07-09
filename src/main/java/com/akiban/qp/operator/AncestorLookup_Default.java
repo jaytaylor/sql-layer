@@ -252,7 +252,7 @@ class AncestorLookup_Default extends Operator
 
     // Inner classes
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends ChainedCursor
     {
         // Cursor interface
 
@@ -313,45 +313,11 @@ class AncestorLookup_Default extends Operator
             input.destroy();
         }
 
-        @Override
-        public boolean isIdle()
-        {
-            return input.isIdle();
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return input.isActive();
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            return input.isDestroyed();
-        }
-
-        @Override
-        public void openBindings() {
-            input.openBindings();
-        }
-
-        @Override
-        public QueryBindings nextBindings() {
-            return input.nextBindings();
-        }
-
-        @Override
-        public void closeBindings() {
-            input.closeBindings();
-        }
-
         // Execution interface
 
         Execution(QueryContext context, Cursor input)
         {
-            super(context);
-            this.input = input;
+            super(context, input);
             // Why + 1: Because the input row (whose ancestors get discovered) also goes into pending.
             this.pending = new PendingRows(ancestors.size() + 1);
             this.ancestorCursor = adapter().newGroupCursor(group);
@@ -406,7 +372,6 @@ class AncestorLookup_Default extends Operator
 
         // Object state
 
-        private final Cursor input;
         private final ShareHolder<Row> inputRow = new ShareHolder<>();
         private final GroupCursor ancestorCursor;
         private final ShareHolder<Row> ancestorRow = new ShareHolder<>();

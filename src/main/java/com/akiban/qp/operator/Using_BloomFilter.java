@@ -174,7 +174,7 @@ class Using_BloomFilter extends Operator
 
     // Inner classes
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends ChainedCursor
     {
         // Cursor interface
 
@@ -211,12 +211,6 @@ class Using_BloomFilter extends Operator
         }
 
         @Override
-        public void close()
-        {
-            input.close();
-        }
-
-        @Override
         public void destroy()
         {
             close();
@@ -224,46 +218,11 @@ class Using_BloomFilter extends Operator
             bindings.setBloomFilter(filterBindingPosition, null);
         }
 
-        @Override
-        public boolean isIdle()
-        {
-            return input.isIdle();
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return input.isActive();
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            return input.isDestroyed();
-        }
-
-        @Override
-        public void openBindings() {
-            input.openBindings();
-        }
-
-        @Override
-        public QueryBindings nextBindings() {
-            bindings = input.nextBindings();
-            return bindings;
-        }
-
-        @Override
-        public void closeBindings() {
-            input.closeBindings();
-        }
-
         // Execution interface
 
         Execution(QueryContext context, Cursor input)
         {
-            super(context);
-            this.input = input;
+            super(context, input);
         }
 
         // For use by this class
@@ -306,9 +265,5 @@ class Using_BloomFilter extends Operator
             return rows;
         }
 
-        // Object state
-
-        private final Cursor input;
-        private QueryBindings bindings;
     }
 }

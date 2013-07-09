@@ -292,7 +292,7 @@ class Flatten_HKeyOrdered extends Operator
 
     // Inner classes
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends ChainedCursor
     {
         // Cursor interface
 
@@ -402,33 +402,11 @@ class Flatten_HKeyOrdered extends Operator
             return !idle;
         }
 
-        @Override
-        public boolean isDestroyed()
-        {
-            return input.isDestroyed();
-        }
-
-        @Override
-        public void openBindings() {
-            input.openBindings();
-        }
-
-        @Override
-        public QueryBindings nextBindings() {
-            return input.nextBindings();
-        }
-
-        @Override
-        public void closeBindings() {
-            input.closeBindings();
-        }
-
         // Execution interface
 
         Execution(QueryContext context, Cursor input)
         {
-            super(context);
-            this.input = input;
+            super(context, input);
             this.leftJoinHKey = adapter().newHKey(childType.hKey());
         }
 
@@ -518,7 +496,6 @@ class Flatten_HKeyOrdered extends Operator
 
         // Object state
 
-        private final Cursor input;
         private final ShareHolder<Row> parent = new ShareHolder<>();
         private final PendingRows pending = new PendingRows(MAX_PENDING);
         private final HKey leftJoinHKey;

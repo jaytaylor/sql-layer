@@ -204,7 +204,7 @@ class Project_Default extends Operator
 
     // Inner classes
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends ChainedCursor
     {
         // Cursor interface
         
@@ -294,28 +294,11 @@ class Project_Default extends Operator
             return input == null;
         }
 
-        @Override
-        public void openBindings() {
-            input.openBindings();
-        }
-
-        @Override
-        public QueryBindings nextBindings() {
-            bindings = input.nextBindings();
-            return bindings;
-        }
-
-        @Override
-        public void closeBindings() {
-            input.closeBindings();
-        }
-
         // Execution interface
 
         Execution(QueryContext context, Cursor input)
         {
-            super(context);
-            this.input = input;
+            super(context, input);
             // one list of evaluatables per execution    
             if (pExpressions != null)
                     pEvalExpr = ProjectedRow.createTEvaluatableExpressions(pExpressions);

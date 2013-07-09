@@ -300,7 +300,7 @@ public class BranchLookup_Default extends Operator
         return new LookUpOperatorExplainer(getName(), atts, inputRowType, keepInput, inputOperator, context);
     }
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends ChainedCursor
     {
         // Cursor interface
 
@@ -310,7 +310,7 @@ public class BranchLookup_Default extends Operator
             TAP_OPEN.in();
             try {
                 CursorLifecycle.checkIdle(this);
-                inputCursor.open();
+                input.open();
                 advanceInput();
                 idle = false;
             } finally {
@@ -371,7 +371,7 @@ public class BranchLookup_Default extends Operator
         {
             CursorLifecycle.checkIdleOrActive(this);
             if (!idle) {
-                inputCursor.close();
+                input.close();
                 inputRow.release();
                 lookupCursor.close();
                 lookupRow.release();
@@ -383,7 +383,7 @@ public class BranchLookup_Default extends Operator
         public void destroy()
         {
             close();
-            inputCursor.destroy();
+            input.destroy();
             lookupCursor.destroy();
         }
 
@@ -402,30 +402,14 @@ public class BranchLookup_Default extends Operator
         @Override
         public boolean isDestroyed()
         {
-            return inputCursor.isDestroyed();
-        }
-
-        @Override
-        public void openBindings() {
-            input.openBindings();
-        }
-
-        @Override
-        public QueryBindings nextBindings() {
-            return input.nextBindings();
-        }
-
-        @Override
-        public void closeBindings() {
-            input.closeBindings();
+            return input.isDestroyed();
         }
 
         // Execution interface
 
         Execution(QueryContext context, Cursor input)
         {
-            super(context);
-            this.inputCursor = input;
+            super(context, input);
             this.lookupCursor = adapter().newGroupCursor(group);
             this.lookupRowHKey = adapter().newHKey(outputRowType.hKey());
         }
@@ -454,7 +438,7 @@ public class BranchLookup_Default extends Operator
             lookupState = LookupState.BEFORE;
             lookupRow.release();
             lookupCursor.close();
-            Row currentInputRow = inputCursor.next();
+            Row currentInputRow = input.next();
             if (currentInputRow != null) {
                 if (currentInputRow.rowType() == inputRowType) {
                     lookupRow.release();
@@ -479,7 +463,6 @@ public class BranchLookup_Default extends Operator
 
         // Object state
 
-        private final Cursor inputCursor;
         private final ShareHolder<Row> inputRow = new ShareHolder<>();
         private final GroupCursor lookupCursor;
         private final ShareHolder<Row> lookupRow = new ShareHolder<>();

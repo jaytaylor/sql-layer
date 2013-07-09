@@ -32,7 +32,7 @@ import com.persistit.Key;
 import com.persistit.Key.Direction;
 import com.persistit.exception.PersistitException;
 
-public abstract class IndexCursor implements Cursor
+public abstract class IndexCursor implements BindingsAwareCursor
 {
     // Cursor interface
 
@@ -89,6 +89,12 @@ public abstract class IndexCursor implements Cursor
         return destroyed;
     }
 
+    @Override
+    public void rebind(QueryBindings bindings)
+    {
+        this.bindings = bindings;
+    }
+    
     // For use by subclasses
 
     protected boolean nextInternal(boolean deep)
@@ -119,7 +125,6 @@ public abstract class IndexCursor implements Cursor
     // IndexCursor interface
 
     public static IndexCursor create(QueryContext context,
-                                     QueryBindings bindings,
                                      IndexKeyRange keyRange,
                                      API.Ordering ordering,
                                      IterationHelper iterationHelper,
@@ -132,21 +137,20 @@ public abstract class IndexCursor implements Cursor
         return
             keyRange != null && keyRange.spatial()
             ? keyRange.hi() == null
-                ? IndexCursorSpatial_NearPoint.create(context, bindings, iterationHelper, keyRange)
-                : IndexCursorSpatial_InBox.create(context, bindings, iterationHelper, keyRange)
+                ? IndexCursorSpatial_NearPoint.create(context, iterationHelper, keyRange)
+                : IndexCursorSpatial_InBox.create(context, iterationHelper, keyRange)
             : ordering.allAscending() || ordering.allDescending()
                 ? (keyRange != null && keyRange.lexicographic()
-                    ? IndexCursorUnidirectionalLexicographic.create(context, bindings, iterationHelper, keyRange, ordering, adapter)
-                    : IndexCursorUnidirectional.create(context, bindings, iterationHelper, keyRange, ordering, adapter))
-                : IndexCursorMixedOrder.create(context, bindings, iterationHelper, keyRange, ordering, adapter);
+                    ? IndexCursorUnidirectionalLexicographic.create(context, iterationHelper, keyRange, ordering, adapter)
+                    : IndexCursorUnidirectional.create(context, iterationHelper, keyRange, ordering, adapter))
+                : IndexCursorMixedOrder.create(context, iterationHelper, keyRange, ordering, adapter);
     }
 
     // For use by subclasses
 
-    protected IndexCursor(QueryContext context, QueryBindings bindings, IterationHelper iterationHelper)
+    protected IndexCursor(QueryContext context, IterationHelper iterationHelper)
     {
         this.context = context;
-        this.bindings = bindings;
         this.adapter = context.getStore();
         this.iterationHelper = iterationHelper;
     }
@@ -159,9 +163,9 @@ public abstract class IndexCursor implements Cursor
     // Object state
 
     protected final QueryContext context;
-    protected final QueryBindings bindings;
     protected final StoreAdapter adapter;
     protected final IterationHelper iterationHelper;
+    protected QueryBindings bindings;
     private boolean idle = true;
     private boolean destroyed = false;
 

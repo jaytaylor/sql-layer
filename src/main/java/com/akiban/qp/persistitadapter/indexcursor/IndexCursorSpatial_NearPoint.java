@@ -110,21 +110,28 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         }
     }
 
+    @Override
+    public void rebind(QueryBindings bindings)
+    {
+        super.rebind(bindings);
+        geCursor.rebind(bindings);
+        ltCursor.rebind(bindings);
+    }
+
     // IndexCursorSpatial_InBox interface
 
     public static IndexCursorSpatial_NearPoint create(QueryContext context,
-                                                      QueryBindings bindings,
                                                       IterationHelper iterationHelper,
                                                       IndexKeyRange keyRange)
     {
-        return new IndexCursorSpatial_NearPoint(context, bindings, iterationHelper, keyRange);
+        return new IndexCursorSpatial_NearPoint(context, iterationHelper, keyRange);
     }
 
     // For use by this class
 
-    private IndexCursorSpatial_NearPoint(QueryContext context, QueryBindings bindings, IterationHelper iterationHelper, IndexKeyRange keyRange)
+    private IndexCursorSpatial_NearPoint(QueryContext context, IterationHelper iterationHelper, IndexKeyRange keyRange)
     {
-        super(context, bindings, iterationHelper);
+        super(context, iterationHelper);
         assert keyRange.spatial();
         this.iterationHelper = iterationHelper;
         IndexRowType physicalIndexRowType = keyRange.indexRowType().physicalRowType();
@@ -183,12 +190,12 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
             upOrdering.append((TPreparedExpression)null, true);
             downOrdering.append((TPreparedExpression)null, false);
         }
-        geCursor = new IndexCursorUnidirectional<>(context, bindings,
+        geCursor = new IndexCursorUnidirectional<>(context, 
                                                                geRowState,
                                                                geKeyRange,
                                                                upOrdering,
                                                                PValueSortKeyAdapter.INSTANCE);
-        ltCursor = new IndexCursorUnidirectional<>(context, bindings,
+        ltCursor = new IndexCursorUnidirectional<>(context, 
                                                                ltRowState,
                                                                ltKeyRange,
                                                                downOrdering,

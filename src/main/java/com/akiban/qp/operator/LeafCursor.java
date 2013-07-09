@@ -17,45 +17,29 @@
 
 package com.akiban.qp.operator;
 
-/**
- * A single {@link QueryBindings} stream.
- */
-public class SingletonQueryBindingsCursor implements QueryBindingsCursor
+public class LeafCursor extends OperatorExecutionBase implements Cursor
 {
-    enum State { CLOSED, PENDING, EXHAUSTED };
-    private QueryBindings bindings;
-    private State state;
+    protected final QueryBindingsCursor bindingsCursor;
+    protected QueryBindings bindings;
 
-    public SingletonQueryBindingsCursor(QueryBindings bindings) {
-        reset(bindings);
+    protected ChainedCursor(QueryContext context, QueryBindingsCursor bindingsCursor) {
+        super(context);
+        this.bindingsCursor = bindingsCursor;
     }
 
     @Override
     public void openBindings() {
-        state = State.PENDING;
+        bindingsCursor.openBindings();
     }
 
     @Override
     public QueryBindings nextBindings() {
-        switch (state) {
-        case CLOSED:
-            throw new IllegalStateException("Bindings cursor not open");
-        case PENDING:
-            state = State.EXHAUSTED;
-            return bindings;
-        case EXHAUSTED:
-        default:
-            return null;
-        }
+        bindings = bindingsCursor.nextBindings();
+        return bindings;
     }
 
     @Override
     public void closeBindings() {
-        state = State.CLOSED;
-    }
-
-    public void reset(QueryBindings bindings) {
-        this.bindings = bindings;
-        this.state = State.CLOSED;
+        bindingsCursor.closeBindings();
     }
 }

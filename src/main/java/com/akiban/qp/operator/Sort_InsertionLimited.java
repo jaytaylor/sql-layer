@@ -173,7 +173,7 @@ class Sort_InsertionLimited extends Operator
 
     private enum State { CLOSED, FILLING, EMPTYING, DESTROYED }
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends ChainedCursor
     {
         // Cursor interface
 
@@ -326,22 +326,6 @@ class Sort_InsertionLimited extends Operator
         {
             return state == State.DESTROYED;
         }
-        
-        @Override
-        public void openBindings() {
-            input.openBindings();
-        }
-
-        @Override
-        public QueryBindings nextBindings() {
-            bindings = input.nextBindings();
-            return bindings;
-        }
-
-        @Override
-        public void closeBindings() {
-            input.closeBindings();
-        }
 
         // private methods
         
@@ -353,8 +337,7 @@ class Sort_InsertionLimited extends Operator
 
         Execution(QueryContext context, Cursor input)
         {
-            super(context);
-            this.input = input;
+            super(context, input);
             int nsort = ordering.sortColumns();
             tEvaluations = new ArrayList<>(nsort);
             for (int i = 0; i < nsort; ++i) {
@@ -365,12 +348,10 @@ class Sort_InsertionLimited extends Operator
 
         // Object state
 
-        private final Cursor input;
         private final List<TEvaluatableExpression> tEvaluations;
         private State state = State.CLOSED;
         private SortedSet<Holder> sorted;
         private Iterator<Holder> iterator;
-        private QueryBindings bindings;
     }
 
     // Sortable row holder.

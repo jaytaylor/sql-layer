@@ -213,7 +213,7 @@ class IfEmpty_Default extends Operator
         UNKNOWN, DONE, ECHO_INPUT
     }
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends ChainedCursor
     {
         // Cursor interface
 
@@ -310,34 +310,11 @@ class IfEmpty_Default extends Operator
             return !closed;
         }
 
-        @Override
-        public boolean isDestroyed()
-        {
-            return input.isDestroyed();
-        }
-
-        @Override
-        public void openBindings() {
-            input.openBindings();
-        }
-
-        @Override
-        public QueryBindings nextBindings() {
-            bindings = input.nextBindings();
-            return bindings;
-        }
-
-        @Override
-        public void closeBindings() {
-            input.closeBindings();
-        }
-
         // Execution interface
 
         Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
-            super(context);
-            this.input = inputOperator.cursor(context, bindingsCursor);
+            super(context, inputOperator.cursor(context, bindingsCursor));
             if (pExpressions != null) {
                 this.oEvaluations = null;
                 this.pEvaluations = new ArrayList<>(pExpressions.size());
@@ -394,12 +371,10 @@ class IfEmpty_Default extends Operator
 
         // Object state
 
-        private final Cursor input;
         private final List<ExpressionEvaluation> oEvaluations;
         private final List<TEvaluatableExpression> pEvaluations;
         private final ShareHolder<ValuesHolderRow> emptySubstitute = new ShareHolder<>();
         private boolean closed = true;
         private InputState inputState;
-        private QueryBindings bindings;
     }
 }
