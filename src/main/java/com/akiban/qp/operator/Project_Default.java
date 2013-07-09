@@ -268,30 +268,27 @@ class Project_Default extends Operator
         @Override
         public void destroy()
         {
-            if (input != null) {
-                close();
-                input.destroy();
-                input = null;
-                pEvalExpr = null;
-            }
+            close();
+            input.destroy();
+            pEvalExpr = null;
         }
 
         @Override
         public boolean isIdle()
         {
-            return input != null && idle;
+            return !input.isDestroyed() && idle;
         }
 
         @Override
         public boolean isActive()
         {
-            return input != null && !idle;
+            return !input.isDestroyed() && !idle;
         }
 
         @Override
         public boolean isDestroyed()
         {
-            return input == null;
+            return input.isDestroyed();
         }
 
         // Execution interface
@@ -301,13 +298,12 @@ class Project_Default extends Operator
             super(context, input);
             // one list of evaluatables per execution    
             if (pExpressions != null)
-                    pEvalExpr = ProjectedRow.createTEvaluatableExpressions(pExpressions);
+                pEvalExpr = ProjectedRow.createTEvaluatableExpressions(pExpressions);
             else
                 pEvalExpr = null;
         }
 
         // Object state
-        private Cursor input; // input = null indicates destroyed.
         private boolean idle = true;
         private List<TEvaluatableExpression> pEvalExpr = null;
         private QueryBindings bindings;
