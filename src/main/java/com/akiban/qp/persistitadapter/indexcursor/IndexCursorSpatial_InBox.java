@@ -102,7 +102,7 @@ class IndexCursorSpatial_InBox extends IndexCursor
 
     private IndexCursorSpatial_InBox(QueryContext context, IterationHelper iterationHelper, IndexKeyRange keyRange)
     {
-        super(context, bindings, iterationHelper);
+        super(context, iterationHelper);
         assert keyRange.spatial();
         this.multiCursor = new MultiCursor();
         this.iterationHelper = iterationHelper;
@@ -122,7 +122,7 @@ class IndexCursorSpatial_InBox extends IndexCursor
             IterationHelper rowState = adapter.createIterationHelper(keyRange.indexRowType());
             if (Types3Switch.ON) {
                 IndexCursorUnidirectional<PValueSource> zIntervalCursor =
-                    new IndexCursorUnidirectional<>(context, bindings,
+                    new IndexCursorUnidirectional<>(context,
                                                                 rowState,
                                                                 zKeyRange,
                                                                 zOrdering,
@@ -131,7 +131,7 @@ class IndexCursorSpatial_InBox extends IndexCursor
             }
             else {
                 IndexCursorUnidirectional<ValueSource> zIntervalCursor =
-                    new IndexCursorUnidirectional<>(context, bindings,
+                    new IndexCursorUnidirectional<>(context,
                                                                rowState,
                                                                zKeyRange,
                                                                zOrdering,

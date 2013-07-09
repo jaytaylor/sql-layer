@@ -17,10 +17,10 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.RowCursor;
 import com.persistit.exception.PersistitException;
 
 public interface Sorter {
-    Cursor sort();
+    RowCursor sort();
     void close();
 }

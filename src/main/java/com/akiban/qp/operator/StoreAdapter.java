@@ -53,7 +53,6 @@ public abstract class StoreAdapter implements KeyCreator
     public abstract GroupCursor newGroupCursor(Group group);
 
     public abstract RowCursor newIndexCursor(QueryContext context,
-                                             QueryBindings bindings,
                                              Index index,
                                              IndexKeyRange keyRange,
                                              API.Ordering ordering,

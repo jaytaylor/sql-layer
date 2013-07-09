@@ -205,7 +205,7 @@ final class UnionAll_Default extends Operator {
         return new CompoundExplainer(Type.UNION, att);
     }
 
-    private class Execution extends OperatorExecutionBase implements Cursor {
+    private class Execution extends OperatorCursor {
 
         @Override
         public void open() {

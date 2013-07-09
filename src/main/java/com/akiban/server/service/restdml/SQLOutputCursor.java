@@ -17,7 +17,7 @@
 
 package com.akiban.server.service.restdml;
 
-import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.row.DelegateRow;
 import com.akiban.qp.row.Row;
 import com.akiban.server.api.dml.ColumnSelector;
@@ -32,7 +32,7 @@ import java.sql.SQLException;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-public class SQLOutputCursor extends GenericRowTracker implements Cursor, JsonRowWriter.WriteRow {
+public class SQLOutputCursor extends GenericRowTracker implements RowCursor, JsonRowWriter.WriteRow {
     private final Deque<ResultSetHolder> holderStack = new ArrayDeque<>();
     private ResultSetHolder currentHolder;
 

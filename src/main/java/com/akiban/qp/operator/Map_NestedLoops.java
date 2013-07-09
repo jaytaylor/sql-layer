@@ -150,7 +150,7 @@ class Map_NestedLoops extends Operator
 
     // Inner classes
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends OperatorCursor
     {
         // Cursor interface
 

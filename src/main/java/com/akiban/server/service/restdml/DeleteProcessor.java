@@ -68,28 +68,24 @@ public class DeleteProcessor extends DMLProcessor {
 
         try {
             Operator delete = deleteGenerator.get(tableName);
-            cursor = API.cursor(delete, context.queryContext, context.queryBindingsCursor);
-            cursor.openBindings();
-            QueryBindings queryBindings = cursor.nextBindings();
+            cursor = API.cursor(delete, context.queryContext, context.queryBindings);
 
             for (List<String> key : pks) {
                 for (int i = 0; i < key.size(); i++) {
                     String akey = key.get(i);
                     pvalue.putString(akey, null);
-                    queryBindings.setPValue(i, pvalue);
+                    context.queryBindings.setPValue(i, pvalue);
                 }
     
-                cursor.open();
+                cursor.openTopLevel();
                 Row row;
                 while ((row = cursor.next()) != null) {
                     // Do Nothing - the act of reading the cursor 
                     // does the delete row processing.
                     // TODO: Check that we got 1 row through.
                 }
-                cursor.close();
+                cursor.closeTopLevel();
             }
-
-            cursor.closeBindings();
         } finally {
             if (cursor != null)
                 cursor.destroy();

@@ -243,8 +243,9 @@ class Using_BloomFilter extends Operator
         {
             int fields = filterRowType.nFields();
             int rows = 0;
-            Cursor loadCursor = filterInput.cursor(context, bindings);
-            loadCursor.open();
+            QueryBindingsCursor bindingsCursor = new SingletonQueryBindingsCursor(bindings);
+            Cursor loadCursor = filterInput.cursor(context, bindingsCursor);
+            loadCursor.openTopLevel();
             Row row;
             while ((row = loadCursor.next()) != null) {
                 int h = 0;

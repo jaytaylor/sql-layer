@@ -27,7 +27,7 @@ import com.akiban.util.tap.InOutTap;
  * Cursors are reusable but Sorters are not.
  * This class creates a new Sorter each time a new cursor scan is started.
  */
-class SorterToCursorAdapter implements Cursor
+class SorterToCursorAdapter implements RowCursor
 {
     // Cursor interface
 
@@ -124,6 +124,6 @@ class SorterToCursorAdapter implements Cursor
     private final API.SortOption sortOption;
     private final InOutTap loadTap;
     private Sorter sorter;
-    private Cursor cursor;
+    private RowCursor cursor;
     private boolean destroyed = false;
 }

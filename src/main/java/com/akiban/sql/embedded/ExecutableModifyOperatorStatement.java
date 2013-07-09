@@ -18,7 +18,7 @@
 package com.akiban.sql.embedded;
 
 import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryBindings;
@@ -61,7 +61,7 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
             // does not read all of the generated keys.
             returningRows = new SpoolCursor();
         context.lock(DXLFunction.UNSPECIFIED_DML_WRITE);
-        Cursor cursor = null;
+        RowCursor cursor = null;
         RuntimeException runtimeException = null;
         try {
             cursor = API.cursor(resultOperator, context, bindings);
@@ -116,7 +116,7 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
         return AISGenerationMode.NOT_ALLOWED;
     }
 
-    static class SpoolCursor implements Cursor {
+    static class SpoolCursor implements RowCursor {
         private List<ShareHolder<Row>> rows = new ArrayList<>();
         private Iterator<ShareHolder<Row>> iterator;
         private enum State { CLOSED, FILLING, EMPTYING, DESTROYED }

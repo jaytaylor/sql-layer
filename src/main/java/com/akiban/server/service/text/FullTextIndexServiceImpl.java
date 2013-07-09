@@ -27,6 +27,7 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
@@ -180,7 +181,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     }
 
     @Override
-    public Cursor searchIndex(QueryContext context, IndexName name, Query query, int limit) {
+    public RowCursor searchIndex(QueryContext context, IndexName name, Query query, int limit) {
         FullTextIndexInfo index = getIndex(context.getSession(), name, null);
         try {
             return index.getSearcher().search(context, index.getHKeyRowType(), 
@@ -267,7 +268,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         }
         finally {
             if(cursor != null) {
-                cursor.close();
                 cursor.destroy();
             }
             if(!success) {
@@ -311,7 +311,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             finally
             {
                 if(cursor != null) {
-                    cursor.close();
                     cursor.destroy();
                 }
                 if(!success) {

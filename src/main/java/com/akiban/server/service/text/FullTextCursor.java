@@ -17,7 +17,7 @@
 
 package com.akiban.server.service.text;
 
-import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitHKey;
@@ -45,7 +45,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-public class FullTextCursor implements Cursor
+public class FullTextCursor implements RowCursor
 {
     private final QueryContext context;
     private final HKeyRowType rowType;

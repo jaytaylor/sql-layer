@@ -369,7 +369,7 @@ final class Aggregate_Partial extends Operator
 
     // nested classes
 
-    private class AggregateCursor extends OperatorExecutionBase implements Cursor
+    private class AggregateCursor extends OperatorCursor
     {
 
         // Cursor interface

@@ -17,7 +17,7 @@
 
 package com.akiban.qp.operator;
 
-public class LeafCursor extends OperatorExecutionBase implements Cursor
+public class LeafCursor extends OperatorCursor
 {
     protected final QueryBindingsCursor bindingsCursor;
     protected QueryBindings bindings;

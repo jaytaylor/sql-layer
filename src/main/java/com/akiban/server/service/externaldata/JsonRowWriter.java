@@ -19,7 +19,7 @@ package com.akiban.server.service.externaldata;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.row.Row;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.AkibanAppender;
@@ -41,7 +41,7 @@ public class JsonRowWriter
         this.tracker = tracker;
     }
 
-    public boolean writeRows(Cursor cursor, AkibanAppender appender, String prefix, WriteRow rowWriter) {
+    public boolean writeRows(RowCursor cursor, AkibanAppender appender, String prefix, WriteRow rowWriter) {
         cursor.open();
         tracker.reset();
         final int minDepth = tracker.getMinDepth();

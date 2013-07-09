@@ -81,9 +81,4 @@ public abstract class QueryContextBase implements QueryContext
     public QueryBindings createBindings() {
         return new SparseArrayQueryBindings();
     }
-
-    @Override
-    public QueryBindingsCursor createBindingsCursor() {
-        return new SingletonQueryBindingsCursor(createBindings());
-    }
 }

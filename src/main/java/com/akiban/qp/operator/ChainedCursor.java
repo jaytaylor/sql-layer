@@ -20,7 +20,7 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.Row;
 import com.akiban.server.api.dml.ColumnSelector;
 
-public class ChainedCursor extends OperatorExecutionBase implements Cursor
+public class ChainedCursor extends OperatorCursor
 {
     protected final Cursor input;
     protected QueryBindings bindings;

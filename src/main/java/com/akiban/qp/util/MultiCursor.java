@@ -18,8 +18,8 @@
 package com.akiban.qp.util;
 
 import com.akiban.qp.operator.BindingsAwareCursor;
-import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.QueryBindings;
+import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.row.Row;
 import com.akiban.server.api.dml.ColumnSelector;
 
@@ -98,7 +98,7 @@ public class MultiCursor implements BindingsAwareCursor
     @Override
     public void rebind(QueryBindings bindings)
     {
-        for (Cursor cursor : cursors) {
+        for (RowCursor cursor : cursors) {
             if (cursor instanceof BindingsAwareCursor) {
                 ((BindingsAwareCursor)cursor).rebind(bindings);
             }
@@ -107,7 +107,7 @@ public class MultiCursor implements BindingsAwareCursor
 
     // MultiCursor interface
 
-    public void addCursor(Cursor cursor)
+    public void addCursor(RowCursor cursor)
     {
         if (sealed) {
             throw new IllegalStateException();
@@ -132,9 +132,9 @@ public class MultiCursor implements BindingsAwareCursor
 
     // Object state
 
-    private final List<Cursor> cursors = new ArrayList<>();
+    private final List<RowCursor> cursors = new ArrayList<>();
     private boolean sealed = false;
-    private Iterator<Cursor> cursorIterator;
-    private Cursor current;
+    private Iterator<RowCursor> cursorIterator;
+    private RowCursor current;
 
 }

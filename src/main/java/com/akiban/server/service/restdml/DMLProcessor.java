@@ -25,9 +25,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryBindingsCursor;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.SingletonQueryBindingsCursor;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.SchemaCache;
@@ -85,7 +83,6 @@ public abstract class DMLProcessor {
         public UserTable table;
         public QueryContext queryContext;
         public QueryBindings queryBindings;
-        public QueryBindingsCursor queryBindingsCursor;
         public Session session;
         public Map<Column, PValueSource> pkValues;
         public Map<Column, String> allValues;
@@ -101,7 +98,6 @@ public abstract class DMLProcessor {
             this.table = getTable();
             this.queryContext = new RestQueryContext(getAdapter());
             this.queryBindings = queryContext.createBindings();
-            this.queryBindingsCursor = new SingletonQueryBindingsCursor(queryBindings);
             allValues = new HashMap<>();
             setColumnsNull (queryBindings, table);
         }

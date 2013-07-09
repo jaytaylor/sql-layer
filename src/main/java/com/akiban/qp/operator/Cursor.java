@@ -19,4 +19,6 @@ package com.akiban.qp.operator;
 
 public interface Cursor extends RowCursor, QueryBindingsCursor
 {
+    public void openTopLevel();
+    public void closeTopLevel();
 }

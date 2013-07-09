@@ -19,10 +19,14 @@ package com.akiban.server.service.text;
 
 import com.akiban.ais.model.IndexName;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.LeafCursor;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.QueryBindings;
+import com.akiban.qp.operator.QueryBindingsCursor;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.RowCursor;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.explain.*;
 
 import org.apache.lucene.search.Query;
@@ -53,12 +57,71 @@ public class IndexScan_FullText extends Operator
     }
 
     @Override
-    protected Cursor cursor(QueryContext context, QueryBindings bindings) {
-        Query query = queryExpression.getQuery(context, bindings);
-        FullTextIndexService service = context.getServiceManager().getServiceByClass(FullTextIndexService.class);
-        return service.searchIndex(context, index, query, limit);
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor) {
+        return new Execution(context, bindingsCursor);
     }
     
+    protected class Execution extends LeafCursor {
+        private final FullTextIndexService service;
+        private RowCursor cursor;
+
+        public Execution(QueryContext context, QueryBindingsCursor bindingsCursor) {
+            super(context, bindingsCursor);
+            service = context.getServiceManager().getServiceByClass(FullTextIndexService.class);
+        }
+
+        @Override
+        public void open()
+        {
+            Query query = queryExpression.getQuery(context, bindings);
+            cursor = service.searchIndex(context, index, query, limit);
+            cursor.open();
+        }
+
+        @Override
+        public Row next()
+        {
+            checkQueryCancelation();
+            return cursor.next();
+        }
+
+        @Override
+        public void jump(Row row, ColumnSelector columnSelector)
+        {
+            cursor.jump(row, columnSelector);
+        }
+
+        @Override
+        public void close()
+        {
+            cursor.close();
+        }
+
+        @Override
+        public void destroy()
+        {
+            cursor.destroy();
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return cursor.isIdle();
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return cursor.isActive();
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return cursor.isDestroyed();
+        }
+    }
+
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
     {

@@ -233,7 +233,7 @@ class Select_BloomFilter extends Operator
         }
     };
 
-    private class Execution<E> extends OperatorExecutionBase implements Cursor
+    private class Execution<E> extends OperatorCursor
     {
         // Cursor interface
 
@@ -328,7 +328,7 @@ class Select_BloomFilter extends Operator
                               List<? extends EXPR> expressions, ExpressionAdapter<EXPR,E> adapter)
         {
             super(context);
-            this.inputCursor = input.cursor(context, bindingsCursorbindings);
+            this.inputCursor = input.cursor(context, bindingsCursor);
             this.onPositiveCursor = onPositive.cursor(context, bindingsCursor);
             this.adapter = adapter;
             for (EXPR field : expressions) {

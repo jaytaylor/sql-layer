@@ -250,7 +250,7 @@ class Sort_General extends Operator
 
         // Object state
 
-        private Cursor output;
+        private RowCursor output;
         private boolean destroyed = false;
     }
 }

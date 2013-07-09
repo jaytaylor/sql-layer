@@ -484,7 +484,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                                       API.Ordering ordering,
                                       SortKeyAdapter<S, ?> sortKeyAdapter)
     {
-        super(context, bindings, iterationHelper);
+        super(context, iterationHelper);
         this.keyRange = null;
         this.ordering = ordering;
         if (ordering.allAscending()) {

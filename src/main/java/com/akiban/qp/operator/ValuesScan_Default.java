@@ -124,7 +124,7 @@ public class ValuesScan_Default extends Operator
         private boolean destroyed = false;
 
         public Execution (QueryContext context, QueryBindingsCursor bindingsCursor, Collection<? extends BindableRow> rows) {
-            super(context, bindings);
+            super(context, bindingsCursor);
             this.rows = rows;
         }
 

@@ -73,7 +73,7 @@ public class MemoryAdapter extends StoreAdapter {
     }
 
     @Override
-    public RowCursor newIndexCursor(QueryContext context, QueryBindings bindings, Index index,
+    public RowCursor newIndexCursor(QueryContext context, Index index,
             IndexKeyRange keyRange, Ordering ordering,
             IndexScanSelector scanSelector, boolean usePValues) {
         

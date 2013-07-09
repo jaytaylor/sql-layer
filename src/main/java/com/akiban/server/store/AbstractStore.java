@@ -760,10 +760,10 @@ public abstract class AbstractStore<SDType> implements Store {
         }
         if(!groupIndexes.isEmpty()) {
             QueryContext context = new SimpleQueryContext(adapter);
-            QueryBindingsCursor bindingsCursor = context.createBindingsCursor();
+            QueryBindings bindings = context.createBindings();
             for(GroupIndex groupIndex : groupIndexes) {
                 runMaintenancePlan(
-                        context, bindingsCursor,
+                        context, bindings,
                         groupIndex,
                         StoreGIMaintenancePlans.groupIndexCreationPlan(adapter.schema(), groupIndex),
                         StoreGIHandler.forBuilding(this, adapter),
@@ -1195,10 +1195,8 @@ public abstract class AbstractStore<SDType> implements Store {
         Operator plan = PlanGenerator.generateBranchPlan(ais, uTable);
 
         QueryContext queryContext = new SimpleQueryContext(adapter);
-        QueryBindingsCursor queryBindingsCursor = queryContext.createBindingsCursor();
-        Cursor cursor = API.cursor(plan, queryContext, queryBindingsCursor);
-        cursor.openBindings();
-        QueryBindings queryBindings = cursor.nextBindings();
+        QueryBindings queryBindings = queryContext.createBindings();
+        Cursor cursor = API.cursor(plan, queryContext, queryBindings);
 
         List<Column> lookupCols = uTable.getPrimaryKeyIncludingInternal().getColumns();
         RowDataPValueSource pSource = new RowDataPValueSource();
@@ -1209,7 +1207,7 @@ public abstract class AbstractStore<SDType> implements Store {
         }
         try {
             Row row;
-            cursor.open();
+            cursor.openTopLevel();
             while((row = cursor.next()) != null) {
                 UserTable table = row.rowType().userTable();
                 RowData data = adapter.rowData(table.rowDef(), row, new PValueRowDataCreator());
@@ -1221,8 +1219,7 @@ public abstract class AbstractStore<SDType> implements Store {
                                      StoreGIHandler.forTable(this, adapter, uTable),
                                      StoreGIHandler.Action.CASCADE);
             }
-            cursor.close();
-            cursor.closeBindings();
+            cursor.closeTopLevel();
         } finally {
             cursor.destroy();
         }
@@ -1295,14 +1292,13 @@ public abstract class AbstractStore<SDType> implements Store {
     }
 
     private static void runMaintenancePlan(QueryContext context,
-                                           QueryBindingsCursor bindingsCursor,
+                                           QueryBindings bindings,
                                            GroupIndex groupIndex,
                                            Operator rootOperator,
                                            StoreGIHandler handler,
                                            StoreGIHandler.Action action) {
-        Cursor cursor = API.cursor(rootOperator, context, bindingsCursor);
-        cursor.openBindings();
-        cursor.open();
+        Cursor cursor = API.cursor(rootOperator, context, bindings);
+        cursor.openTopLevel();
         try {
             Row row;
             while((row = cursor.next()) != null) {
@@ -1310,7 +1306,7 @@ public abstract class AbstractStore<SDType> implements Store {
                     handler.handleRow(groupIndex, row, action);
                 }
             }
-            cursor.closeBindings();
+            cursor.closeTopLevel();
         } finally {
             cursor.destroy();
         }
