@@ -22,7 +22,7 @@ public class LeafCursor extends OperatorExecutionBase implements Cursor
     protected final QueryBindingsCursor bindingsCursor;
     protected QueryBindings bindings;
 
-    protected ChainedCursor(QueryContext context, QueryBindingsCursor bindingsCursor) {
+    protected LeafCursor(QueryContext context, QueryBindingsCursor bindingsCursor) {
         super(context);
         this.bindingsCursor = bindingsCursor;
     }

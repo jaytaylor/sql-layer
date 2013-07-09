@@ -131,4 +131,9 @@ public interface QueryContext
      * Create a new empty set of bindings.
      */
     public QueryBindings createBindings();
+
+    /**
+     * Create a cursor over a new set of bindings.
+     */
+    public QueryBindingsCursor createBindingsCursor();
 }

@@ -28,6 +28,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.Store;
@@ -67,13 +68,15 @@ public class DeleteProcessor extends DMLProcessor {
 
         try {
             Operator delete = deleteGenerator.get(tableName);
-            cursor = API.cursor(delete, context.queryContext, context.queryBindings);
+            cursor = API.cursor(delete, context.queryContext, context.queryBindingsCursor);
+            cursor.openBindings();
+            QueryBindings queryBindings = cursor.nextBindings();
 
             for (List<String> key : pks) {
                 for (int i = 0; i < key.size(); i++) {
                     String akey = key.get(i);
                     pvalue.putString(akey, null);
-                    context.queryBindings.setPValue(i, pvalue);
+                    queryBindings.setPValue(i, pvalue);
                 }
     
                 cursor.open();
@@ -85,6 +88,8 @@ public class DeleteProcessor extends DMLProcessor {
                 }
                 cursor.close();
             }
+
+            cursor.closeBindings();
         } finally {
             if (cursor != null)
                 cursor.destroy();

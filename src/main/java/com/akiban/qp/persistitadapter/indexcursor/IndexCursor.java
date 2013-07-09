@@ -19,7 +19,7 @@ package com.akiban.qp.persistitadapter.indexcursor;
 
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.BindingsAwareCursor;
 import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;

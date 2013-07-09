@@ -480,7 +480,6 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     }
 
     private IndexCursorUnidirectional(QueryContext context,
-                                      QueryBindings bindings,
                                       IterationHelper iterationHelper,
                                       API.Ordering ordering,
                                       SortKeyAdapter<S, ?> sortKeyAdapter)

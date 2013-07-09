@@ -17,7 +17,9 @@
 
 package com.akiban.qp.util;
 
+import com.akiban.qp.operator.BindingsAwareCursor;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.server.api.dml.ColumnSelector;
 

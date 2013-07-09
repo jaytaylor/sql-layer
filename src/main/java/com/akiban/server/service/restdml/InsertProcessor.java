@@ -172,7 +172,7 @@ public class InsertProcessor extends DMLProcessor {
                 }
             }
         }
-        Cursor cursor = API.cursor(insert, context.queryContext, context.queryBindings);
+        Cursor cursor = API.cursor(insert, context.queryContext, context.queryBindingsCursor);
         JsonRowWriter writer = new JsonRowWriter(new TableRowTracker(context.table, 0));
         WriteCapturePKRow rowWriter = new WriteCapturePKRow();
         writer.writeRows(cursor, appender, context.anyUpdates ? "\n" : "", rowWriter);
