@@ -64,17 +64,25 @@ public class IndexScan_FullText extends Operator
     protected class Execution extends LeafCursor {
         private final FullTextIndexService service;
         private RowCursor cursor;
+        private boolean destroyed;
 
         public Execution(QueryContext context, QueryBindingsCursor bindingsCursor) {
             super(context, bindingsCursor);
             service = context.getServiceManager().getServiceByClass(FullTextIndexService.class);
+            if (!queryExpression.needsBindings()) {
+                // Can reuse cursor if it doesn't need bindings at open() time.
+                Query query = queryExpression.getQuery(context, null);
+                cursor = service.searchIndex(context, index, query, limit);
+            }
         }
 
         @Override
         public void open()
         {
-            Query query = queryExpression.getQuery(context, bindings);
-            cursor = service.searchIndex(context, index, query, limit);
+            if (queryExpression.needsBindings()) {
+                Query query = queryExpression.getQuery(context, bindings);
+                cursor = service.searchIndex(context, index, query, limit);
+            }
             cursor.open();
         }
 
@@ -94,31 +102,43 @@ public class IndexScan_FullText extends Operator
         @Override
         public void close()
         {
-            cursor.close();
+            if (cursor != null) {
+                if (queryExpression.needsBindings()) {
+                    cursor.destroy();
+                    cursor = null;
+                }
+                else {
+                    cursor.close();
+                }
+            }
         }
 
         @Override
         public void destroy()
         {
-            cursor.destroy();
+            if (cursor != null) {
+                cursor.destroy();
+                cursor = null;
+            }
+            destroyed = true;
         }
 
         @Override
         public boolean isIdle()
         {
-            return cursor.isIdle();
+            return (cursor == null) ? !destroyed : cursor.isIdle();
         }
 
         @Override
         public boolean isActive()
         {
-            return cursor.isActive();
+            return (cursor != null) && cursor.isActive();
         }
 
         @Override
         public boolean isDestroyed()
         {
-            return cursor.isDestroyed();
+            return destroyed;
         }
     }
 

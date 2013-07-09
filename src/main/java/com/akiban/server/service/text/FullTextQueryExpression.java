@@ -27,5 +27,6 @@ import org.apache.lucene.search.Query;
  * parsed from a string, or built up from expressions.
  */
 public interface FullTextQueryExpression extends Explainable {
+    public boolean needsBindings();
     public Query getQuery(QueryContext context, QueryBindings bindings);
 }
