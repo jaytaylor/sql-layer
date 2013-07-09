@@ -306,6 +306,5 @@ class Project_Default extends Operator
         // Object state
         private boolean idle = true;
         private List<TEvaluatableExpression> pEvalExpr = null;
-        private QueryBindings bindings;
     }
 }
