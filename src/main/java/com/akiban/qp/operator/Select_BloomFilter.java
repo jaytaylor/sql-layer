@@ -322,6 +322,22 @@ class Select_BloomFilter extends Operator
             return destroyed;
         }
 
+        @Override
+        public void openBindings() {
+            inputCursor.openBindings();
+        }
+
+        @Override
+        public QueryBindings nextBindings() {
+            bindings = inputCursor.nextBindings();
+            return bindings;
+        }
+
+        @Override
+        public void closeBindings() {
+            inputCursor.closeBindings();
+        }
+
         // Execution interface
 
         <EXPR> Execution(QueryContext context, QueryBindingsCursor bindingsCursor,
@@ -329,7 +345,8 @@ class Select_BloomFilter extends Operator
         {
             super(context);
             this.inputCursor = input.cursor(context, bindingsCursor);
-            this.onPositiveCursor = onPositive.cursor(context, bindingsCursor);
+            this.onPositiveBindingsCursor = new SingletonQueryBindingsCursor(null);
+            this.onPositiveCursor = onPositive.cursor(context, onPositiveBindingsCursor);
             this.adapter = adapter;
             for (EXPR field : expressions) {
                 E eval = adapter.evaluate(field, context);
@@ -360,11 +377,12 @@ class Select_BloomFilter extends Operator
             TAP_CHECK.in();
             try {
                 bindings.setRow(bindingPosition, row);
-                onPositiveCursor.open();
+                onPositiveBindingsCursor.reset(bindings);
+                onPositiveCursor.openTopLevel();
                 try {
                     return onPositiveCursor.next() != null;
                 } finally {
-                    onPositiveCursor.close();
+                    onPositiveCursor.closeTopLevel();
                     bindings.setRow(bindingPosition, null);
                 }
             } finally {
@@ -376,6 +394,8 @@ class Select_BloomFilter extends Operator
 
         private final Cursor inputCursor;
         private final Cursor onPositiveCursor;
+        private final SingletonQueryBindingsCursor onPositiveBindingsCursor;
+        private QueryBindings bindings;
         private BloomFilter filter;
         private final List<E> fieldEvals = new ArrayList<>();
         private final ExpressionAdapter<?, E> adapter;

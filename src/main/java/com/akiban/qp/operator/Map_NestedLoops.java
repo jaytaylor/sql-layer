@@ -249,7 +249,8 @@ class Map_NestedLoops extends Operator
 
         @Override
         public QueryBindings nextBindings() {
-            return outerInput.nextBindings();
+            outerBindings = outerInput.nextBindings();
+            return outerBindings;
         }
 
         @Override
@@ -263,7 +264,9 @@ class Map_NestedLoops extends Operator
         {
             super(context);
             this.outerInput = outerInputOperator.cursor(context, bindingsCursor);
-            this.innerInput = innerInputOperator.cursor(context, bindingsCursor);
+            // For now, the inside sees whatever bindings the outside currently has.
+            this.innerBindingsCursor = new SingletonQueryBindingsCursor(null);
+            this.innerInput = innerInputOperator.cursor(context, innerBindingsCursor);
         }
 
         // For use by this class
@@ -291,8 +294,9 @@ class Map_NestedLoops extends Operator
         private void startNewInnerLoop(Row row)
         {
             innerInput.close();
-            bindings.setRow(inputBindingPosition, row);
-            innerInput.open();
+            outerBindings.setRow(inputBindingPosition, row);
+            innerBindingsCursor.reset(outerBindings);
+            innerInput.openTopLevel();
         }
 
         // Object state
@@ -301,5 +305,7 @@ class Map_NestedLoops extends Operator
         private final Cursor innerInput;
         private final ShareHolder<Row> outerRow = new ShareHolder<>();
         private boolean closed = true;
+        private QueryBindings outerBindings;
+        private final SingletonQueryBindingsCursor innerBindingsCursor;
     }
 }
