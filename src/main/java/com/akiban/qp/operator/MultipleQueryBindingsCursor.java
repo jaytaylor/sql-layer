@@ -69,7 +69,7 @@ public class MultipleQueryBindingsCursor implements QueryBindingsCursor
         int minIndex = cursors.get(0).index;
         for (int i = 1; i < cursors.size(); i++) {
             SubCursor cursor = cursors.get(i);
-            if (cursor.open) continue;
+            if (!cursor.open) continue;
             if (minIndex > cursor.index) {
                 minIndex = cursor.index;
             }
@@ -86,6 +86,7 @@ public class MultipleQueryBindingsCursor implements QueryBindingsCursor
 
         @Override
         public void openBindings() {
+            assert (offset == 0);
             open = true;
             index = 0;
         }

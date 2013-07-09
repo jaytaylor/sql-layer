@@ -22,7 +22,12 @@ package com.akiban.qp.operator;
  */
 public interface QueryBindingsCursor
 {
+    /** Open stream of bindings. */
     public void openBindings();
+
+    /** Get (and make current for <code>open</code>) the next set of bindings. */
     public QueryBindings nextBindings();
+
+    /** Close stream of bindings. */
     public void closeBindings();
 }
