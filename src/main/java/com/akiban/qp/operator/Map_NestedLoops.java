@@ -20,6 +20,7 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.explain.*;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.explain.std.NestedLoopsExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
@@ -89,7 +90,14 @@ class Map_NestedLoops extends Operator
     @Override
     protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, bindingsCursor);
+        if (false)
+            return new Execution(context, bindingsCursor); // Old-style
+        else {
+            Cursor outerCursor = outerInputOperator.cursor(context, bindingsCursor);
+            QueryBindingsCursor toBindings = new RowToBindingsCursor(outerCursor, inputBindingPosition, depth);
+            Cursor innerCursor = innerInputOperator.cursor(context, toBindings);
+            return new CollapseBindingsCursor(context, innerCursor, depth);
+        }
     }
 
     @Override
@@ -156,6 +164,182 @@ class Map_NestedLoops extends Operator
 
     // Inner classes
 
+    // Pipeline execution: turn outer loop row stream into binding stream for inner loop.
+    protected static class RowToBindingsCursor implements QueryBindingsCursor
+    {
+        private final Cursor input;
+        private final int depth, bindingPosition;
+        private QueryBindings baseBindings;
+
+        public RowToBindingsCursor(Cursor input, int bindingPosition, int depth) {
+            this.input = input;
+            this.bindingPosition = bindingPosition;
+            this.depth = depth;
+        }
+
+        @Override
+        public void openBindings() {
+            input.openBindings();
+            baseBindings = null;
+        }
+
+        @Override
+        public QueryBindings nextBindings() {
+            if (baseBindings != null) {
+                Row row = input.next();
+                if (row != null) {
+                    QueryBindings bindings = baseBindings.createBindings();
+                    assert (bindings.getDepth() == depth);
+                    bindings.setRow(bindingPosition, row);
+                    return bindings;
+                }
+                baseBindings = null;
+                input.close();
+            }
+            QueryBindings bindings = input.nextBindings();
+            if ((bindings != null) && (bindings.getDepth() == depth - 1)) {
+                // Outer context: start outer loop.
+                baseBindings = bindings;
+                input.open();
+            }
+            return bindings;
+        }
+
+        @Override
+        public void closeBindings() {
+            if (baseBindings != null) {
+                baseBindings = null;
+                input.close();
+            }
+            input.closeBindings();
+        }
+    }
+
+    // Other end of pipeline: remove the extra binding levels that we
+    // introduced, collapsing rowsets in between into one for the
+    // entire outer rowset.
+    protected static class CollapseBindingsCursor extends OperatorCursor
+    {
+        private final Cursor input;
+        private final int depth;
+        private QueryBindings pendingBindings;
+        private boolean open, inputOpen;
+        
+        public CollapseBindingsCursor(QueryContext context, Cursor input, int depth) {
+            super(context);
+            this.input = input;
+            this.depth = depth;
+        }
+
+        @Override
+        public void open() {
+            CursorLifecycle.checkIdle(this);
+            open = true;
+            inputOpen = false;
+        }
+
+        @Override
+        public Row next() {
+            if (TAP_NEXT_ENABLED) {
+                TAP_NEXT.in();
+            }
+            try {
+                if (CURSOR_LIFECYCLE_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
+                checkQueryCancelation();
+                Row row = null;
+                while (true) {
+                    if (inputOpen) {
+                        row = input.next();
+                        if (row != null) break;
+                        input.close();
+                        inputOpen = false;
+                    }
+                    QueryBindings bindings = input.nextBindings();
+                    if (bindings == null) break;
+                    if (bindings.getDepth() == depth) {
+                        input.open();
+                        inputOpen = true;
+                    }
+                    else if (bindings.getDepth() < depth) {
+                        // End of this binding's rowset. Arrange for this to be next one.
+                        pendingBindings = bindings;
+                        break;
+                    }
+                    else {
+                        assert false : "bindings too deep";
+                    }
+                }
+                if (LOG_EXECUTION) {
+                    LOG.debug("Map_NestedLoops: yield {}", row);
+                }
+                return row;
+            } 
+            finally {
+                if (TAP_NEXT_ENABLED) {
+                    TAP_NEXT.out();
+                }
+            }
+        }
+
+        @Override
+        public void jump(Row row, ColumnSelector columnSelector) {
+            throw new UnsupportedOperationException(getClass().getName());
+        }
+
+        @Override
+        public void close() {
+            CursorLifecycle.checkIdleOrActive(this);
+            open = false;
+        }
+
+        @Override
+        public void destroy() {
+            close();
+            input.destroy();
+        }
+
+        @Override
+        public boolean isIdle() {
+            return !input.isDestroyed() && !open;
+        }
+
+        @Override
+        public boolean isActive() {
+            return open;
+        }
+
+        @Override
+        public boolean isDestroyed() {
+            return input.isDestroyed();
+        }
+
+        @Override
+        public void openBindings() {
+            input.openBindings();
+        }
+
+        @Override
+        public QueryBindings nextBindings() {
+            QueryBindings bindings = pendingBindings;
+            if (bindings != null) {
+                pendingBindings = null;
+                return bindings;
+            }
+            bindings = input.nextBindings();
+            assert ((bindings == null) || (bindings.getDepth() < depth));
+            return bindings;
+        }
+
+        @Override
+        public void closeBindings() {
+            input.closeBindings();
+        }
+    }
+
+    // Old-style execution: bind outer row into existing context and
+    // open inner loop afresh.
     private class Execution extends OperatorCursor
     {
         // Cursor interface

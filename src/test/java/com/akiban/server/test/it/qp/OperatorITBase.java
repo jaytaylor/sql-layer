@@ -203,9 +203,9 @@ public class OperatorITBase extends ITBase
         // Check that a second execution works
         testCase.secondSetup();
         if (testCase.hKeyComparison()) {
-            compareRenderedHKeys(testCase.secondExpectedHKeys(), cursor, false);
+            compareRenderedHKeys(testCase.secondExpectedHKeys(), cursor, testCase.secondTopLevel());
         } else {
-            compareRows(testCase.secondExpectedRows(), cursor, false, collators);
+            compareRows(testCase.secondExpectedRows(), cursor, testCase.secondTopLevel(), collators);
         }
         assertTrue(cursor.isIdle());
         // Check close of idle cursor is permitted
@@ -572,6 +572,10 @@ public class OperatorITBase extends ITBase
         public String[] secondExpectedHKeys()
         {
             return firstExpectedHKeys();
+        }
+
+        public boolean secondTopLevel() {
+            return false;
         }
     }
 }

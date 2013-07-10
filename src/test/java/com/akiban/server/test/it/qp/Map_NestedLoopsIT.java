@@ -257,6 +257,13 @@ public class Map_NestedLoopsIT extends OperatorITBase
                     row(itemRowType, 4011L, 401L),
                 };
             }
+
+            @Override
+            public boolean secondTopLevel() {
+                // You cannot just re-open() a pipelined Map_NestedLoops, but you can
+                // openTopLevel() it again.
+                return true;
+            }
         };
         testCursorLifecycle(plan, testCase);
     }
