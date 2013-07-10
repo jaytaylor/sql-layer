@@ -257,7 +257,10 @@ class Map_NestedLoops extends Operator
                         inputOpen = false;
                     }
                     QueryBindings bindings = input.nextBindings();
-                    if (bindings == null) break;
+                    if (bindings == null) {
+                        open = false;
+                        break;
+                    }
                     if (bindings.getDepth() == depth) {
                         input.open();
                         inputOpen = true;
@@ -265,6 +268,7 @@ class Map_NestedLoops extends Operator
                     else if (bindings.getDepth() < depth) {
                         // End of this binding's rowset. Arrange for this to be next one.
                         pendingBindings = bindings;
+                        open = false;
                         break;
                     }
                     else {
