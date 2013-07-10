@@ -93,6 +93,8 @@ import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.error.UnsupportedDropException;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.listener.ListenerService;
+import com.akiban.server.service.listener.TableListener;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
@@ -129,10 +131,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     private static final boolean ALTER_AUTO_INDEX_CHANGES = true;
 
     private final IndexStatisticsService indexStatisticsService;
-    private final ConfigurationService configService;
     private final T3RegistryService t3Registry;
     private final LockService lockService;
     private final TransactionService txnService;
+    private final ListenerService listenerService;
     
 
     private static class ShimContext extends QueryContextBase {
@@ -210,7 +212,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     public void createTable(Session session, UserTable table)
     {
         TableName tableName = schemaManager().createTableDefinition(session, table);
-        checkCursorsForDDLModification(session, getAIS(session).getTable(tableName));
+        UserTable newTable = getAIS(session).getUserTable(tableName);
+        checkCursorsForDDLModification(session, newTable);
+        for(TableListener listener : listenerService.getTableListeners()) {
+            listener.onCreate(session, newTable);
+        }
     }
 
     @Override
@@ -273,6 +279,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 Collection<Sequence> sequences = Collections.singleton(table.getIdentityColumn().getIdentityGenerator());
                 store().deleteSequences(session, sequences);
             }
+        }
+        for(TableListener listener : listenerService.getTableListeners()) {
+            listener.onDrop(session, table);
         }
         schemaManager().dropTableDefinition(session, tableName.getSchemaName(), tableName.getTableName(),
                                             SchemaManager.DropBehavior.RESTRICT);
@@ -891,13 +900,21 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
     }
 
-    private void dropGroupInternal(Session session, TableName groupName) {
+    private void dropGroupInternal(final Session session, TableName groupName) {
         final Group group = getAIS(session).getGroup(groupName);
         if(group == null) {
             return;
         }
         store().dropGroup(session, group);
         final UserTable root = group.getRoot();
+        root.traverseTableAndDescendants(new NopVisitor() {
+            @Override
+            public void visitUserTable(UserTable table) {
+                for(TableListener listener : listenerService.getTableListeners()) {
+                    listener.onDrop(session, table);
+                }
+            }
+        });
         schemaManager().dropTableDefinition(session, root.getName().getSchemaName(), root.getName().getTableName(),
                                             SchemaManager.DropBehavior.CASCADE);
         checkCursorsForDDLModification(session, root);
@@ -1039,6 +1056,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             checkCursorsForDDLModification(session, index.leafMostTable());
         }
         store().buildIndexes(session, newIndexes);
+        for(TableListener listener : listenerService.getTableListeners()) {
+            listener.onCreateIndex(session, newIndexes);
+        }
         return newIndexes;
     }
 
@@ -1078,6 +1098,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             }
             schemaManager().dropIndexes(session, indexes);
             store().deleteIndexes(session, indexes);
+            for(TableListener listener : listenerService.getTableListeners()) {
+                listener.onDropIndex(session, indexes);
+            }
             checkCursorsForDDLModification(session, table);
             txnService.commitTransaction(session);
         } finally {
@@ -1290,13 +1313,13 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     BasicDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store,
-                      IndexStatisticsService indexStatisticsService, ConfigurationService configService,
-                      T3RegistryService t3Registry, LockService lockService, TransactionService txnService) {
+                      IndexStatisticsService indexStatisticsService, T3RegistryService t3Registry,
+                      LockService lockService, TransactionService txnService, ListenerService listenerService) {
         super(middleman, schemaManager, store);
         this.indexStatisticsService = indexStatisticsService;
-        this.configService = configService;
         this.t3Registry = t3Registry;
         this.lockService = lockService;
         this.txnService = txnService;
+        this.listenerService = listenerService;
     }
 }

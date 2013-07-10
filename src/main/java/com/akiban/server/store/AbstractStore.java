@@ -66,6 +66,8 @@ import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDataPValueSource;
 import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.service.listener.ListenerService;
+import com.akiban.server.service.listener.RowListener;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeLink;
@@ -111,12 +113,14 @@ public abstract class AbstractStore<SDType> implements Store {
 
     protected final LockService lockService;
     protected final SchemaManager schemaManager;
+    protected final ListenerService listenerService;
     protected IndexStatisticsService indexStatisticsService;
 
 
-    protected AbstractStore(LockService lockService, SchemaManager schemaManager) {
+    protected AbstractStore(LockService lockService, SchemaManager schemaManager, ListenerService listenerService) {
         this.lockService = lockService;
         this.schemaManager = schemaManager;
+        this.listenerService = listenerService;
     }
 
 
@@ -178,10 +182,6 @@ public abstract class AbstractStore<SDType> implements Store {
 
     /** Called prior to executing write, update, or delete row. For store specific needs only (i.e. can no-op). */
     protected abstract void preWrite(Session session, SDType storeData, RowDef rowDef, RowData rowData);
-
-    // TODO: Pull FullText out of Store
-    /** The hKey of the given table is changing. */
-    protected abstract void addChangeFor(Session session, UserTable table, Key hKey);
 
 
     //
@@ -718,14 +718,18 @@ public abstract class AbstractStore<SDType> implements Store {
         List<TableIndex> tableIndexes = new ArrayList<>();
         List<GroupIndex> groupIndexes = new ArrayList<>();
         for(Index index : indexes) {
-            if(index.isTableIndex()) {
-                tableIndexes.add((TableIndex)index);
-            }
-            else if(index.isGroupIndex()) {
-                groupIndexes.add((GroupIndex)index);
-            }
-            else {
-                throw new IllegalArgumentException("Unknown index type: " + index);
+            switch(index.getIndexType()) {
+                case TABLE:
+                    tableIndexes.add((TableIndex)index);
+                break;
+                case GROUP:
+                   groupIndexes.add((GroupIndex)index);
+                break;
+                case FULL_TEXT:
+                    // Not managed by Store
+                break;
+                default:
+                    throw new IllegalArgumentException("Unknown index type: " + index);
             }
         }
         AkibanInformationSchema ais = schemaManager.getAis(session);
@@ -858,7 +862,10 @@ public abstract class AbstractStore<SDType> implements Store {
             }
         }
 
-        addChangeFor(session, rowDef.userTable(), hKey);
+        for(RowListener listener : listenerService.getRowListeners()) {
+            listener.onWrite(session, rowDef.userTable(), hKey, rowData);
+        }
+
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
         for(Index index : indexes) {
             writeIndexRow(session, index, rowData, hKey, indexRow);
@@ -921,8 +928,9 @@ public abstract class AbstractStore<SDType> implements Store {
         // Remove all indexes
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
         if(deleteIndexes) {
-            addChangeFor(session, rowDef.userTable(), hKey);
-
+            for(RowListener listener : listenerService.getRowListeners()) {
+                listener.onDelete(session, rowDef.userTable(), hKey, rowData);
+            }
             for(Index index : rowDef.getIndexes()) {
                 deleteIndexRow(session, index, rowData, hKey, indexRow);
             }
@@ -969,8 +977,9 @@ public abstract class AbstractStore<SDType> implements Store {
         if(tablesRequiringHKeyMaintenance == null) {
             packRowData(storeData, mergedRow);
             store(session, storeData);
-            addChangeFor(session, newRowDef.userTable(), hKey);
-
+            for(RowListener listener : listenerService.getRowListeners()) {
+                listener.onUpdate(session, oldRowDef.userTable(), hKey, oldRow, newRow);
+            }
             PersistitIndexRowBuffer indexRowBuffer = new PersistitIndexRowBuffer(this);
             for(Index index : oldRowDef.getIndexes()) {
                 updateIndex(session, index, oldRowDef, currentRow, mergedRow, hKey, indexRowBuffer);
@@ -1030,7 +1039,9 @@ public abstract class AbstractStore<SDType> implements Store {
                 if(tablesRequiringHKeyMaintenance == null || tablesRequiringHKeyMaintenance.get(ordinal)) {
                     PROPAGATE_REPLACE_TAP.in();
                     try {
-                        addChangeFor(session, rowDef.userTable(), hKey);
+                        for(RowListener listener : listenerService.getRowListeners()) {
+                            listener.onDelete(session, rowDef.userTable(), hKey, rowData);
+                        }
                         // Don't call deleteRow as the hKey does not need recomputed.
                         clear(session, storeData);
                         rowDef.getTableStatus().rowDeleted(session);
