@@ -20,6 +20,7 @@ package com.akiban.server.test.it.bugs.bug1043377;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.listener.ListenerService;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.session.Session;
@@ -77,8 +78,8 @@ public final class FailureDuringIndexBuildingIT extends ITBase {
     public static class ThrowsAfterBuildIndexesStore extends PersistitStore {
         @Inject
         public ThrowsAfterBuildIndexesStore(TreeService treeService, ConfigurationService configService,
-                                            SchemaManager schemaManager, LockService lockService) {
-            super(treeService, configService, schemaManager, lockService);
+                                            SchemaManager schemaManager, LockService lockService, ListenerService listenerService) {
+            super(treeService, configService, schemaManager, lockService, listenerService);
         }
 
         @Override

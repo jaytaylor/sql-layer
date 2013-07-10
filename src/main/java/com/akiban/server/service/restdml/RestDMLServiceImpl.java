@@ -677,7 +677,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         ENTITY_TEXT.in();
         FullTextQueryBuilder builder = new FullTextQueryBuilder(indexName, 
                                                                 fullTextService);
-        try (Session session = sessionService.createSession()) {
+        try (Session session = sessionService.createSession();
+             CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
             extDataService.dumpBranchAsJson(session,
                                             writer,
                                             indexName.getSchemaName(),
@@ -685,7 +686,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                                             builder.scanOperator(query, realLimit),
                                             fullTextService.searchRowType(session, indexName),
                                             realDepth,
-                                            true);
+                                            false);
+            txn.commit();
         } finally {
             ENTITY_TEXT.out();
         }

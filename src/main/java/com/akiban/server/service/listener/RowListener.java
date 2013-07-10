@@ -19,10 +19,12 @@ package com.akiban.server.service.listener;
 
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.rowdata.RowData;
+import com.akiban.server.service.session.Session;
+import com.persistit.Key;
 
 public interface RowListener
 {
-    void onWrite(UserTable table, RowData row);
-    void onUpdate(UserTable table, RowData oldRow, RowData newRow);
-    void onDelete(UserTable table, RowData row);
+    void onWrite(Session session, UserTable table, Key hKey, RowData row);
+    void onUpdate(Session session, UserTable table, Key hKey, RowData oldRow, RowData newRow);
+    void onDelete(Session session, UserTable table, Key hKey, RowData row);
 }
