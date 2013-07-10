@@ -54,7 +54,7 @@ public class LimitIT extends OperatorITBase
     {
         Operator plan = limit_Default(groupScan_Default(coi),
                                               3);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(customerRowType, 2L, "foundation"),
@@ -68,7 +68,7 @@ public class LimitIT extends OperatorITBase
     {
         Operator plan = limit_Default(groupScan_Default(coi),
                                               2, false, Integer.MAX_VALUE, false);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 4L, "highland"),
             row(customerRowType, 5L, "matrix"),
@@ -83,7 +83,7 @@ public class LimitIT extends OperatorITBase
     {
         Operator plan = limit_Default(groupScan_Default(coi),
                                               2, false, 2, false);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 4L, "highland"),
             row(customerRowType, 5L, "matrix"),
@@ -96,7 +96,7 @@ public class LimitIT extends OperatorITBase
     {
         Operator plan = limit_Default(groupScan_Default(coi),
                                               10, false, 1, false);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
         };
         compareRows(expected, cursor);
@@ -107,11 +107,11 @@ public class LimitIT extends OperatorITBase
     {
         Operator plan = limit_Default(groupScan_Default(coi),
                                               0, false, 0, true);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         if (Types3Switch.ON)
-            queryContext.setPValue(0, new PValue(MNumeric.INT.instance(false), 2));
+            queryBindings.setPValue(0, new PValue(MNumeric.INT.instance(false), 2));
         else
-            queryContext.setValue(0, new FromObjectValueSource().setReflectively(2L));
+            queryBindings.setValue(0, new FromObjectValueSource().setReflectively(2L));
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(customerRowType, 2L, "foundation"),
@@ -124,11 +124,11 @@ public class LimitIT extends OperatorITBase
     {
         Operator plan = limit_Default(groupScan_Default(coi),
                                               0, false, 0, true);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         if (Types3Switch.ON)
-            queryContext.setPValue(0, new PValue(MNumeric.INT.instance(false), -1));
+            queryBindings.setPValue(0, new PValue(MNumeric.INT.instance(false), -1));
         else
-            queryContext.setValue(0, new FromObjectValueSource().setReflectively(-1L));
+            queryBindings.setValue(0, new FromObjectValueSource().setReflectively(-1L));
         RowBase[] expected = new RowBase[]{
         };
         compareRows(expected, cursor);

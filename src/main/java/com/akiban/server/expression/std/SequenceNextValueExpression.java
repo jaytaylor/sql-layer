@@ -18,6 +18,7 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.ais.model.TableName;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.expression.Expression;
@@ -95,6 +96,12 @@ public final class SequenceNextValueExpression extends AbstractBinaryExpression 
         @Override
         public void of(QueryContext context) {
             super.of(context);
+            needAnother = true;
+        }
+
+        @Override
+        public void of(QueryBindings bindings) {
+            super.of(bindings);
             needAnother = true;
         }
 

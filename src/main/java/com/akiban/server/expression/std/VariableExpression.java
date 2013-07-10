@@ -18,6 +18,7 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.qp.exec.Plannable;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.explain.CompoundExplainer;
@@ -106,12 +107,16 @@ public final class VariableExpression implements Expression {
 
         @Override
         public void of(QueryContext context) {
-            this.context = context;
+        }
+
+        @Override
+        public void of(QueryBindings bindings) {
+            this.bindings = bindings;
         }
 
         @Override
         public ValueSource eval() {
-            return context.getValue(position);
+            return bindings.getValue(position);
         }
 
         @Override
@@ -137,7 +142,7 @@ public final class VariableExpression implements Expression {
 
         private final AkType type;
         private final int position;
-        private QueryContext context;
+        private QueryBindings bindings;
         private int ownedBy = 0;
     }
 }

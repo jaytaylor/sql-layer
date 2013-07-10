@@ -17,6 +17,8 @@
 
 package com.akiban.sql.embedded;
 
+import com.akiban.qp.operator.QueryBindings;
+
 import com.akiban.sql.aisddl.AISDDL;
 import com.akiban.sql.parser.DDLStatementNode;
 import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
@@ -32,7 +34,7 @@ class ExecutableDDLStatement extends ExecutableStatement
     }
 
     @Override
-    public ExecuteResults execute(EmbeddedQueryContext context) {
+    public ExecuteResults execute(EmbeddedQueryContext context, QueryBindings bindings) {
         context.lock(DXLFunction.UNSPECIFIED_DDL_WRITE);
         try {
             AISDDL.execute(ddl, sql, context);

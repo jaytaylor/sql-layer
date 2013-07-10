@@ -67,6 +67,7 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
         coi = group(parent);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         db = new NewRow[]{
             // 0x: Both index scans empty
             // 1x: Left empty
@@ -277,7 +278,7 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
         Operator plan = unionPxPy(0);
         String[] expected = new String[]{
         };
-        compareRenderedHKeys(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -289,7 +290,7 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
             pKey(1001L),
             pKey(1002L),
         };
-        compareRenderedHKeys(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -301,7 +302,7 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
             pKey(2001L),
             pKey(2002L),
         };
-        compareRenderedHKeys(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -313,14 +314,14 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
             pKey(3001L),
             pKey(3002L),
         };
-        compareRenderedHKeys(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext, queryBindings));
         plan = unionPxPy(32);
         expected = new String[]{
             pKey(3003L),
             pKey(3004L),
             pKey(3005L),
         };
-        compareRenderedHKeys(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -333,7 +334,7 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
             pKey(4002L),
             pKey(4003L),
         };
-        compareRenderedHKeys(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -346,7 +347,7 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
             pKey(5002L),
             pKey(5003L),
         };
-        compareRenderedHKeys(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -361,7 +362,7 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
             pKey(6004L),
             pKey(6005L),
         };
-        compareRenderedHKeys(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -371,7 +372,7 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
         String[] expected = new String[]{
             pKey(7000L),
         };
-        compareRenderedHKeys(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -383,7 +384,7 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
             pKey(8001L),
             pKey(8002L),
         };
-        compareRenderedHKeys(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -393,7 +394,7 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
         String[] expected = new String[]{
             pKey(9000L),
         };
-        compareRenderedHKeys(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -403,7 +404,7 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
         String[] expected = new String[]{
             pKey(null),
         };
-        compareRenderedHKeys(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test

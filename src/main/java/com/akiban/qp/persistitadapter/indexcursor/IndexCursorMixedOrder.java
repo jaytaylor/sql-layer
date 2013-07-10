@@ -24,6 +24,7 @@ import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
@@ -180,12 +181,13 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     // IndexCursorMixedOrder interface
 
     public static <S, E> IndexCursorMixedOrder<S, E> create(QueryContext context,
+                                              QueryBindings bindings,
                                               IterationHelper iterationHelper,
                                               IndexKeyRange keyRange,
                                               API.Ordering ordering,
                                               SortKeyAdapter<S, E> sortKeyAdapter)
     {
-        return new IndexCursorMixedOrder<>(context, iterationHelper, keyRange, ordering, sortKeyAdapter);
+        return new IndexCursorMixedOrder<>(context, bindings, iterationHelper, keyRange, ordering, sortKeyAdapter);
     }
 
     public void initializeScanStates()
@@ -198,8 +200,8 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             keyRange == null /* sorting */ ? Integer.MAX_VALUE :
             index().isUnique() ? index().getKeyColumns().size() : index().getAllColumns().size();
         while (f < min(loBoundColumns, maxSegments)) {
-            BoundExpressions lo = keyRange.lo().boundExpressions(context);
-            BoundExpressions hi = keyRange.hi().boundExpressions(context);
+            BoundExpressions lo = keyRange.lo().boundExpressions(context, bindings);
+            BoundExpressions hi = keyRange.hi().boundExpressions(context, bindings);
             S loSource = sortKeyAdapter.get(lo, f);
             S hiSource = sortKeyAdapter.get(hi, f);
             /*
@@ -275,12 +277,13 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     // For use by subclasses
 
     protected IndexCursorMixedOrder(QueryContext context,
+                                    QueryBindings bindings,
                                     IterationHelper iterationHelper,
                                     IndexKeyRange keyRange,
                                     API.Ordering ordering,
                                     SortKeyAdapter<S, E> sortKeyAdapter)
     {
-        super(context, iterationHelper);
+        super(context, bindings, iterationHelper);
         this.keyRange = keyRange;
         this.ordering = ordering;
         this.ascending = new boolean[ordering.sortColumns()];
@@ -375,8 +378,8 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             assert endKey != null : index();
             IndexBound lo = keyRange.lo();
             IndexBound hi = keyRange.hi();
-            BoundExpressions loExpressions = lo.boundExpressions(context);
-            BoundExpressions hiExpressions = hi.boundExpressions(context);
+            BoundExpressions loExpressions = lo.boundExpressions(context, bindings);
+            BoundExpressions hiExpressions = hi.boundExpressions(context, bindings);
             int nColumns = keyRange.boundColumns();
             clear(startKey);
             clear(endKey);

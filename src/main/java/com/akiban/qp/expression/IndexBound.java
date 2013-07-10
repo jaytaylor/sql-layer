@@ -17,6 +17,7 @@
 
 package com.akiban.qp.expression;
 
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.explain.ExplainContext;
@@ -29,9 +30,9 @@ public class IndexBound
         return String.valueOf(unboundExpressions);
     }
 
-    public BoundExpressions boundExpressions(QueryContext context)
+    public BoundExpressions boundExpressions(QueryContext context, QueryBindings bindings)
     {
-        return unboundExpressions.get(context);
+        return unboundExpressions.get(context, bindings);
     }
 
     public ColumnSelector columnSelector()
@@ -64,7 +65,7 @@ public class IndexBound
     private static class PreBoundExpressions implements UnboundExpressions {
 
         @Override
-        public BoundExpressions get(QueryContext context) {
+        public BoundExpressions get(QueryContext context, QueryBindings bindings) {
             return expressions;
         }
 

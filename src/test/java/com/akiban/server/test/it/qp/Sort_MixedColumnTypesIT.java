@@ -23,6 +23,7 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.RowsBuilder;
 import com.akiban.qp.operator.SimpleQueryContext;
@@ -129,7 +130,8 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
     private Cursor cursor(Operator plan) {
         StoreAdapter adapter = newStoreAdapter(schema);
         QueryContext context = new SimpleQueryContext(adapter);
-        return API.cursor(plan, context);
+        QueryBindings bindings = context.createBindings();
+        return API.cursor(plan, context, bindings);
     }
 
     private void orderBy(Ordering ordering, int fieldPos, boolean ascending) {

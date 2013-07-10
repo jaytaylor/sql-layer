@@ -80,6 +80,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
         };
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         use(db);
     }
 
@@ -111,7 +112,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
             row(idxRowType, 3L, 4L, null, 2001L),
             row(idxRowType, 3L, 4L, 5L, 2000L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -136,7 +137,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
             row(idxRowType, 3L, 4L, null, 2001L),
             row(idxRowType, 3L, 4L, 5L, 2000L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -161,7 +162,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
             row(idxRowType, 3L, 4L, null, 2001L),
             row(idxRowType, 3L, 4L, 5L, 2000L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -186,7 +187,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
             row(idxRowType, 3L, 4L, null, 2001L),
             row(idxRowType, 3L, 4L, 5L, 2000L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -211,7 +212,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
             row(idxRowType, null, null, 5L, 2006L),
             row(idxRowType, null, null, null, 2007L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -236,7 +237,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
             row(idxRowType, null, null, 5L, 2006L),
             row(idxRowType, null, null, null, 2007L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -263,7 +264,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
             row(idxRowType, null, null, 5L, 2006L),
             row(idxRowType, null, null, null, 2007L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -290,7 +291,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
             row(idxRowType, null, null, 5L, 2006L),
             row(idxRowType, null, null, null, 2007L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -315,7 +316,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
             row(idxRowType, 3L, 4L, 5L, 2000L),
             row(idxRowType, 3L, 4L, null, 2001L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -340,7 +341,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
             row(idxRowType, 3L, 4L, 5L, 2000L),
             row(idxRowType, 3L, 4L, null, 2001L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -365,7 +366,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
             row(idxRowType, 3L, null, null, 2003L),
             row(idxRowType, 3L, null, 5L, 2002L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -390,7 +391,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
             row(idxRowType, 3L, null, null, 2003L),
             row(idxRowType, 3L, null, 5L, 2002L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -415,7 +416,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
             row(idxRowType, 3L, null, null, 2003L),
             row(idxRowType, 3L, null, 5L, 2002L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -440,7 +441,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
             row(idxRowType, 3L, null, 5L, 2002L),
             row(idxRowType, 3L, null, null, 2003L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -465,7 +466,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
             row(idxRowType, 3L, null, 5L, 2002L),
             row(idxRowType, 3L, null, null, 2003L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -490,7 +491,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
             row(idxRowType, null, 4L, null, 2005L),
             row(idxRowType, null, 4L, 5L, 2004L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -515,7 +516,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
             row(idxRowType, null, 4L, null, 2005L),
             row(idxRowType, null, 4L, 5L, 2004L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -540,7 +541,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
             row(idxRowType, null, 4L, null, 2005L),
             row(idxRowType, null, 4L, 5L, 2004L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -565,7 +566,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
             row(idxRowType, null, 4L, 5L, 2004L),
             row(idxRowType, null, 4L, null, 2005L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -590,7 +591,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
             row(idxRowType, null, 4L, 5L, 2004L),
             row(idxRowType, null, 4L, null, 2005L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -615,7 +616,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
             row(idxRowType, null, null, null, 2007L),
             row(idxRowType, null, null, 5L, 2006L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -640,7 +641,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
             row(idxRowType, null, null, null, 2007L),
             row(idxRowType, null, null, 5L, 2006L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -665,7 +666,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
             row(idxRowType, null, null, 5L, 2006L),
             row(idxRowType, null, null, null, 2007L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     // For use by this class

@@ -22,6 +22,7 @@ import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
@@ -296,6 +297,11 @@ public final class ExpressionGenerators {
                             @Override
                             public void with(QueryContext context) {
                                 eval.with(context);
+                            }
+
+                            @Override
+                            public void with(QueryBindings bindings) {
+                                eval.with(bindings);
                             }
 
                             private final PValue pValue = new PValue(MString.VARCHAR.instance(255, true));

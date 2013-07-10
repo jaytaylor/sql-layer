@@ -75,6 +75,7 @@ public class IndexScanBoundedIT extends OperatorITBase
         };
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         use(db);
     }
 
@@ -1652,7 +1653,7 @@ public class IndexScanBoundedIT extends OperatorITBase
             int id = expectedIds[i];
             expected[i] = dbRow(id);
         }
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     private void dump(IndexKeyRange keyRange, API.Ordering ordering, int ... expectedIds)

@@ -17,6 +17,7 @@
 
 package com.akiban.server.expression;
 
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.types.ValueSource;
@@ -74,9 +75,15 @@ public interface ExpressionEvaluation extends Shareable {
 
     /**
      * Binds this evaluation to a query context
-     * @param context the query context to use to access storage and bindings
+     * @param context the query context to use to access storage and state
      */
     void of(QueryContext context);
+
+    /**
+     * Binds this evaluation to a query bindings
+     * @param bindings the query binding to use to access bound values
+     */
+    void of(QueryBindings bindings);
 
     /**
      * Gets a ValueSource that represents this evaluation. The returned ValueSource is mutable, and may change

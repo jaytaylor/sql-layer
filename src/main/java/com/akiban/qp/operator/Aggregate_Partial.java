@@ -165,7 +165,7 @@ final class Aggregate_Partial extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(QueryContext context) {
+    protected Cursor cursor(QueryContext context, QueryBindings bindings) {
         final List<Aggregator> aggregators;
         if (aggregatorFactories != null) {
             aggregators = new ArrayList<>();
@@ -182,7 +182,7 @@ final class Aggregate_Partial extends Operator
             aggregators = null;
         }
         return new AggregateCursor(
-                context,
+                context, bindings,
                 aggregators
         );
     }
@@ -641,10 +641,10 @@ final class Aggregate_Partial extends Operator
 
         // AggregateCursor interface
 
-        private AggregateCursor(QueryContext context,
+        private AggregateCursor(QueryContext context, QueryBindings bindings,
                                 List<Aggregator> aggregators) {
-            super(context);
-            this.inputCursor = inputOperator.cursor(context);
+            super(context, bindings);
+            this.inputCursor = inputOperator.cursor(context, bindings);
             this.aggregators = aggregators;
             if (aggregators != null) {
                 keyValues = new ArrayList<>();

@@ -70,6 +70,7 @@ public class FlattenCT extends CostModelBase
         group = group(parent);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
     }
 
     protected void populateDB()
@@ -105,7 +106,7 @@ public class FlattenCT extends CostModelBase
                 joinType);
         long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             while (cursor.next() != null);
         }

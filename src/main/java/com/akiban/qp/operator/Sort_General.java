@@ -92,9 +92,9 @@ class Sort_General extends Operator
     }
 
     @Override
-    protected Cursor cursor(QueryContext context)
+    protected Cursor cursor(QueryContext context, QueryBindings bindings)
     {
-        return new Execution(context, inputOperator.cursor(context));
+        return new Execution(context, bindings, inputOperator.cursor(context, bindings));
     }
 
     @Override
@@ -164,7 +164,7 @@ class Sort_General extends Operator
             try {
                 CursorLifecycle.checkIdle(this);
                 input.open();
-                output = new SorterToCursorAdapter(adapter(), context, input, sortType, ordering, sortOption, TAP_LOAD);
+                output = new SorterToCursorAdapter(adapter(), context, bindings, input, sortType, ordering, sortOption, TAP_LOAD);
                 output.open();
             } finally {
                 TAP_OPEN.out();
@@ -243,9 +243,9 @@ class Sort_General extends Operator
 
         // Execution interface
 
-        Execution(QueryContext context, Cursor input)
+        Execution(QueryContext context, QueryBindings bindings, Cursor input)
         {
-            super(context);
+            super(context, bindings);
             this.input = input;
         }
 

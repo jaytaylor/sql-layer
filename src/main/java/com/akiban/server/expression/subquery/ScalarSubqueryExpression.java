@@ -76,6 +76,7 @@ public final class ScalarSubqueryExpression extends SubqueryExpression {
             if (row == null)
                 return NullValueSource.only();
             expressionEvaluation.of(queryContext());
+            expressionEvaluation.of(queryBindings());
             expressionEvaluation.of(row);
             // Make a copy of the value evaluated right now, rather
             // than holding on to the row from the subquery cursor

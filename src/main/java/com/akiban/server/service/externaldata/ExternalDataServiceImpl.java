@@ -25,10 +25,11 @@ import com.akiban.qp.memoryadapter.MemoryAdapter;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.DMLFunctions;
@@ -118,6 +119,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                     return serviceManager;
                 }
             };
+        QueryBindings queryBindings = queryContext.createBindings();
         JsonRowWriter json = new JsonRowWriter(new TableRowTracker(table, depth));
         WriteTableRow rowWriter = new WriteTableRow();
         AkibanAppender appender = AkibanAppender.of(writer);
@@ -128,7 +130,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                 transactionService.beginTransaction(session);
                 transaction = true;
             }
-            cursor = API.cursor(plan, queryContext);
+            cursor = API.cursor(plan, queryContext, queryBindings);
             appender.append("[");
             boolean begun = false;
 
@@ -140,7 +142,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                     for (int i = 0; i < key.size(); i++) {
                         String akey = key.get(i);
                         pvalue.putString(akey, null);
-                        queryContext.setPValue(i, pvalue);
+                        queryBindings.setPValue(i, pvalue);
                     }
                     if (json.writeRows(cursor, appender, begun ? ",\n" : "\n", rowWriter))
                         begun = true;

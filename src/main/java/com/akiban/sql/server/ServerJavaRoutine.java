@@ -26,17 +26,21 @@ import com.akiban.ais.model.Parameter;
 import com.akiban.direct.Direct;
 import com.akiban.direct.DirectClassLoader;
 import com.akiban.direct.DirectContextImpl;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.server.explain.Explainable;
 
 /** A Routine that uses Java native data types in its invocation API. */
 public abstract class ServerJavaRoutine implements Explainable
 {
     private ServerQueryContext context;
+    private QueryBindings bindings;
     private ServerRoutineInvocation invocation;
 
     protected ServerJavaRoutine(ServerQueryContext context,
+                                QueryBindings bindings,
                                 ServerRoutineInvocation invocation) {
         this.context = context;
+        this.bindings = bindings;
         this.invocation = invocation;
     }
 
@@ -66,7 +70,7 @@ public abstract class ServerJavaRoutine implements Explainable
 
     public void setInputs() {
         int nargs = invocation.size();
-        ServerJavaValues values = invocation.asValues(context);
+        ServerJavaValues values = invocation.asValues(context, bindings);
         for (int i = 0; i < nargs; i++) {
             Parameter parameter = invocation.getRoutineParameter(i);
             switch (parameter.getDirection()) {
@@ -80,7 +84,7 @@ public abstract class ServerJavaRoutine implements Explainable
 
     public void getOutputs() {
         int nargs = invocation.size();
-        ServerJavaValues values = invocation.asValues(context);
+        ServerJavaValues values = invocation.asValues(context, bindings);
         for (int i = 0; i < nargs; i++) {
             Parameter parameter = invocation.getRoutineParameter(i);
             switch (parameter.getDirection()) {

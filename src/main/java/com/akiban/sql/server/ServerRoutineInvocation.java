@@ -20,6 +20,7 @@ package com.akiban.sql.server;
 import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.TableName;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 
@@ -62,6 +63,6 @@ public abstract class ServerRoutineInvocation
         return getRoutineParameter(index).tInstance();
     }
 
-    public abstract ServerJavaValues asValues(ServerQueryContext queryContext);
+    public abstract ServerJavaValues asValues(ServerQueryContext queryContext, QueryBindings bindings);
     
 }

@@ -20,6 +20,7 @@ package com.akiban.qp.persistitadapter.indexcursor;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.CursorLifecycle;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.Sorter;
 import com.akiban.qp.row.Row;
@@ -73,6 +74,7 @@ public class MemorySorter implements Sorter
     private final List<Integer> orderChanges;
 
     private final QueryContext context;
+    private final QueryBindings bindings;
     private final Cursor input;
     private final API.Ordering ordering;
     private final Key key;
@@ -80,6 +82,7 @@ public class MemorySorter implements Sorter
     private final SorterAdapter<?, ?, ?> sorterAdapter;
 
     public MemorySorter(QueryContext context,
+                        QueryBindings bindings,
                         Cursor input,
                         RowType rowType,
                         API.Ordering ordering,
@@ -88,13 +91,14 @@ public class MemorySorter implements Sorter
                         Key key)
     {
         this.context = context;
+        this.bindings = bindings;
         this.input = input;
         this.ordering = ordering.copy();
         this.key = key;
         this.loadTap = loadTap;
         this.sorterAdapter = new PValueSorterAdapter();
         // Note: init may change this.ordering
-        sorterAdapter.init(rowType, this.ordering, this.key, null, this.context, sortOption);
+        sorterAdapter.init(rowType, this.ordering, this.key, null, this.context, this.bindings, sortOption);
         // Explicitly use input ordering to avoid appended field
         this.orderChanges = new ArrayList<>();
         List<Comparator<KeyState>> comparators = new ArrayList<>();

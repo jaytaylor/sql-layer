@@ -20,6 +20,7 @@ package com.akiban.server.service.text;
 import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.IndexName;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import static com.akiban.qp.operator.API.cursor;
 
@@ -51,6 +52,7 @@ public class FullTextIndexServiceIT extends ITBase
     protected Schema schema;
     protected StoreAdapter adapter;
     protected QueryContext queryContext;
+    protected QueryBindings queryBindings;
     private static final Logger logger = LoggerFactory.getLogger(FullTextIndexServiceIT.class);
 
 
@@ -103,6 +105,7 @@ public class FullTextIndexServiceIT extends ITBase
         schema = SchemaCache.globalSchema(ais());
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
     }
 
     @Test
@@ -294,10 +297,10 @@ public class FullTextIndexServiceIT extends ITBase
         };
         FullTextQueryBuilder builder = new FullTextQueryBuilder(index, ais(), queryContext);
         Operator plan = builder.scanOperator("flintstone", 15);
-        compareRows(expected1, cursor(plan, queryContext));
+        compareRows(expected1, cursor(plan, queryContext, queryBindings));
 
         plan = builder.scanOperator("state:MA", 15);
-        compareRows(expected1, cursor(plan, queryContext));
+        compareRows(expected1, cursor(plan, queryContext, queryBindings));
         
         
         // part 2
@@ -318,7 +321,7 @@ public class FullTextIndexServiceIT extends ITBase
 
         // confirm new changes
         plan = builder.scanOperator("flintstone", 15);
-        compareRows(expected2, cursor(plan, queryContext));
+        compareRows(expected2, cursor(plan, queryContext, queryBindings));
         
         // part 3
         ((FullTextIndexServiceImpl)fullText).disableUpdateWorker();
@@ -331,7 +334,7 @@ public class FullTextIndexServiceIT extends ITBase
         
         // confirm that new rows are not found (ie., expected2 still works)
         plan = builder.scanOperator("flintstone", 15);
-        compareRows(expected2, cursor(plan, queryContext));
+        compareRows(expected2, cursor(plan, queryContext, queryBindings));
         
         ((FullTextIndexServiceImpl)fullText).enableUpdateWorker();
         WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
@@ -349,7 +352,7 @@ public class FullTextIndexServiceIT extends ITBase
         };
 
         plan = builder.scanOperator("flintstone", 15);
-        compareRows(expected3, cursor(plan, queryContext));
+        compareRows(expected3, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -365,10 +368,10 @@ public class FullTextIndexServiceIT extends ITBase
         };
         FullTextQueryBuilder builder = new FullTextQueryBuilder(index, ais(), queryContext);
         Operator plan = builder.scanOperator("flintstone", 10);
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
 
         plan = builder.scanOperator("state:MA", 10);
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
         
     }
 
@@ -384,7 +387,7 @@ public class FullTextIndexServiceIT extends ITBase
         };
         FullTextQueryBuilder builder = new FullTextQueryBuilder(index, ais(), queryContext);
         Operator plan = builder.scanOperator("name:Flintstone AND sku:1234", 10);
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     protected RowType rowType(String tableName) {

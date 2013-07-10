@@ -56,6 +56,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
         tRowType = schema.userTableRowType(userTable(t));
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         group = group(t);
         caseSensitiveCollator = tRowType.userTable().getColumn("cs").getCollator();
         caseInsensitiveCollator = tRowType.userTable().getColumn("ci").getCollator();
@@ -104,7 +105,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
             row(projectRowType, "bb_cs"),
             row(projectRowType, "x"),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -132,7 +133,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
             row(projectRowType, "BB_CI"),
             row(projectRowType, "X"),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -154,7 +155,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
         RowBase[] expected = new RowBase[] {
             row(projectRowType, 0L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -195,7 +196,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
             row(projectRowType, "bb_cs", "BB_CI", 0),
             row(projectRowType, "x", "X", 0),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -226,7 +227,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
             row(projectRowType, "bb_cs"),
             row(projectRowType, "x"),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -256,7 +257,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
             row(projectRowType, "BB_CI"),
             row(projectRowType, "X"),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -279,7 +280,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
         RowBase[] expected = new RowBase[] {
             row(projectRowType, 0L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -321,7 +322,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
             row(projectRowType, "bb_cs", "BB_CI", 0),
             row(projectRowType, "x", "X", 0),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -356,7 +357,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
             row(projectRowType, "bb_cs"),
             row(projectRowType, "x"),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -389,7 +390,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
             row(projectRowType, "BB_CI"),
             row(projectRowType, "X"),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -415,7 +416,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
         RowBase[] expected = new RowBase[] {
             row(projectRowType, 0L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -460,7 +461,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
             row(projectRowType, "bb_cs", "BB_CI", 0),
             row(projectRowType, "x", "X", 0),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     private int t;

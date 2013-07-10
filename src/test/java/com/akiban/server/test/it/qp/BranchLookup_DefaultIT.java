@@ -146,7 +146,7 @@ public class BranchLookup_DefaultIT extends OperatorITBase
     public void testCustomerIndexToMissingCustomer()
     {
         Operator plan = customerNameToCustomerPlan("matrix");
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{};
         compareRows(expected, cursor);
     }
@@ -155,7 +155,7 @@ public class BranchLookup_DefaultIT extends OperatorITBase
     public void testCustomerIndexToCustomer()
     {
         Operator plan = customerNameToCustomerPlan("northbridge");
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(orderRowType, 11L, 1L, "ori"),
@@ -174,7 +174,7 @@ public class BranchLookup_DefaultIT extends OperatorITBase
     public void testCustomerIndexToCustomerWithNoOrders()
     {
         Operator plan = customerNameToCustomerPlan("highland");
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 4L, "highland"),
             row(addressRowType, 4001L, 4L, "444 1111 st"),
@@ -189,7 +189,7 @@ public class BranchLookup_DefaultIT extends OperatorITBase
     public void testAddressIndexToMissingCustomer()
     {
         Operator plan = addressAddressToCustomerPlan("555 1111 st");
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(addressRowType, 5001L, 5L, "555 1111 st"),
         };
@@ -200,7 +200,7 @@ public class BranchLookup_DefaultIT extends OperatorITBase
     public void testAddressIndexToCustomer()
     {
         Operator plan = addressAddressToCustomerPlan("222 2222 st");
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 2L, "foundation"),
             row(orderRowType, 21L, 2L, "tom"),
@@ -221,7 +221,7 @@ public class BranchLookup_DefaultIT extends OperatorITBase
     public void testAddressToMissingCustomer()
     {
         Operator plan = addressToCustomerPlan("555 1111 st");
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(addressRowType, 5001L, 5L, "555 1111 st"),
         };
@@ -232,7 +232,7 @@ public class BranchLookup_DefaultIT extends OperatorITBase
     public void testAddressToCustomer()
     {
         Operator plan = addressToCustomerPlan("222 2222 st");
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 2L, "foundation"),
             row(orderRowType, 21L, 2L, "tom"),
@@ -253,7 +253,7 @@ public class BranchLookup_DefaultIT extends OperatorITBase
     public void testAddressToOrder()
     {
         Operator plan = addressToOrderPlan("222 2222 st", false);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(orderRowType, 21L, 2L, "tom"),
             row(itemRowType, 211L, 21L),
@@ -269,7 +269,7 @@ public class BranchLookup_DefaultIT extends OperatorITBase
     public void testAddressToMissingOrder()
     {
         Operator plan = addressToOrderPlan("444 2222 st", false);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
         };
         compareRows(expected, cursor);
@@ -281,7 +281,7 @@ public class BranchLookup_DefaultIT extends OperatorITBase
     public void testAddressToOrderAndAddress()
     {
         Operator plan = addressToOrderPlan("222 2222 st", true);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(orderRowType, 21L, 2L, "tom"),
             row(itemRowType, 211L, 21L),
@@ -298,7 +298,7 @@ public class BranchLookup_DefaultIT extends OperatorITBase
     public void testOrderToOrderAndAddress()
     {
         Operator plan = orderToAddressPlan("tom", true);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(orderRowType, 21L, 2L, "tom"),
             row(addressRowType, 2001L, 2L, "222 1111 st"),
@@ -311,7 +311,7 @@ public class BranchLookup_DefaultIT extends OperatorITBase
     public void testItemToItemAndAddress()
     {
         Operator plan = itemToAddressPlan(111L, true);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(itemRowType, 111L, 11L),
             row(addressRowType, 1001L, 1L, "111 1111 st"),
@@ -340,7 +340,7 @@ public class BranchLookup_DefaultIT extends OperatorITBase
                 orderOrItem.rowType(),
                 addressRowType,
                 InputPreservationOption.DISCARD_INPUT);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(addressRowType, 1001L, 1L, "111 1111 st"),
             row(addressRowType, 1002L, 1L, "111 2222 st"),
@@ -387,7 +387,7 @@ public class BranchLookup_DefaultIT extends OperatorITBase
                         indexType(order, "oid"),
                         orderRowType,
                         InputPreservationOption.DISCARD_INPUT);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
                 row(orderRowType, 11L, 1L, "ori"),
                 row(itemRowType, 111L, 11L),

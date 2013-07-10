@@ -17,6 +17,7 @@
 
 package com.akiban.qp.row;
 
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.rowtype.ProjectedRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -96,8 +97,9 @@ public class ProjectedRow extends AbstractRow
     public PValueSource pvalue(int index) {
         TEvaluatableExpression evaluatableExpression = pEvaluatableExpressions.get(index);
         if (!evaluated[index]) {
-            evaluatableExpression.with(row);
             evaluatableExpression.with(context);
+            evaluatableExpression.with(bindings);
+            evaluatableExpression.with(row);
             evaluatableExpression.evaluate();
             evaluated[index] = true;
         }
@@ -129,14 +131,16 @@ public class ProjectedRow extends AbstractRow
     public ProjectedRow(ProjectedRowType rowType,
                         Row row,
                         QueryContext context,
+                        QueryBindings bindings,
                         List<? extends Expression> expressions,
                         List<TEvaluatableExpression> pEvaluatableExprs,
                         List<? extends TInstance> tInstances)
     {
         this.context = context;
+        this.bindings = bindings;
         this.rowType = rowType;
         this.row = row;
-        this.evaluations = createEvaluations(expressions, row, context);
+        this.evaluations = createEvaluations(expressions, row, context, bindings);
         this.pEvaluatableExpressions = pEvaluatableExprs;
         if (pEvaluatableExpressions == null)
             evaluated = null;
@@ -176,7 +180,7 @@ public class ProjectedRow extends AbstractRow
     // For use by this class
 
     private List<ExpressionEvaluation> createEvaluations(List<? extends Expression> expressions,
-                                                         Row row, QueryContext context)
+                                                         Row row, QueryContext context, QueryBindings bindings)
     {
         if (expressions == null)
             return null;
@@ -185,6 +189,7 @@ public class ProjectedRow extends AbstractRow
         for (int i = 0; i < n; i++) {
             ExpressionEvaluation evaluation = expressions.get(i).evaluation();
             evaluation.of(context);
+            evaluation.of(bindings);
             evaluation.of(row);
             result.add(evaluation);
         }
@@ -209,6 +214,7 @@ public class ProjectedRow extends AbstractRow
     // Object state
 
     private final QueryContext context;
+    private final QueryBindings bindings;
     private final ProjectedRowType rowType;
     private final Row row;
     private final List<ExpressionEvaluation> evaluations;

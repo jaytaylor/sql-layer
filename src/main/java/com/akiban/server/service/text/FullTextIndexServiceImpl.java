@@ -25,6 +25,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
@@ -252,12 +253,13 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         if (adapter == null)
             adapter = store.createAdapter(session, index.getSchema());
         QueryContext queryContext = new SimpleQueryContext(adapter);
+        QueryBindings queryBindings = queryContext.createBindings();
         IndexWriter writer = indexer.getWriter();
 
         Cursor cursor = null;
         boolean success = false;
         try(RowIndexer rowIndexer = new RowIndexer(index, writer, false)) {
-            cursor = API.cursor(plan, queryContext);
+            cursor = API.cursor(plan, queryContext, queryBindings);
             long count = rowIndexer.indexRows(cursor);
             writer.commit();
             success = true;
@@ -284,6 +286,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             if (adapter == null)
                 adapter = store.createAdapter(session, indexInfo.getSchema());
             QueryContext queryContext = new SimpleQueryContext(adapter);
+            QueryBindings queryBindings = queryContext.createBindings();
             HKeyCache<com.akiban.qp.row.HKey> cache = new HKeyCache<>(adapter);
             IndexWriter writer = indexInfo.getIndexer().getWriter();
 
@@ -296,8 +299,8 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                 while(it.hasNext()) {
                     byte[] row = it.next();
                     HKeyRow hkeyRow = toHKeyRow(row, indexInfo.getHKeyRowType(), adapter, cache);
-                    queryContext.setRow(0, hkeyRow);
-                    cursor = API.cursor(operator, queryContext);
+                    queryBindings.setRow(0, hkeyRow);
+                    cursor = API.cursor(operator, queryContext, queryBindings);
                     rowIndexer.updateDocument(cursor, row);
                     it.remove();
                 }

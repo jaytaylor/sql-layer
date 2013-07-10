@@ -71,10 +71,11 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public Cursor newIndexCursor(QueryContext context, Index index, IndexKeyRange keyRange, API.Ordering ordering,
+    public Cursor newIndexCursor(QueryContext context, QueryBindings bindings, Index index, IndexKeyRange keyRange, API.Ordering ordering,
                                  IndexScanSelector selector, boolean usePValues)
     {
         return new PersistitIndexCursor(context,
+                                        bindings,
                                         schema.indexRowType(index),
                                         keyRange,
                                         ordering,
@@ -84,13 +85,14 @@ public class PersistitAdapter extends StoreAdapter
 
     @Override
     public Sorter createSorter(QueryContext context,
+                               QueryBindings bindings,
                                Cursor input,
                                RowType rowType,
                                API.Ordering ordering,
                                API.SortOption sortOption,
                                InOutTap loadTap)
     {
-        return new PersistitSorter(context, input, rowType, ordering, sortOption, loadTap);
+        return new PersistitSorter(context, bindings, input, rowType, ordering, sortOption, loadTap);
     }
 
     @Override

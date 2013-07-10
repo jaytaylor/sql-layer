@@ -20,6 +20,7 @@ package com.akiban.qp.persistitadapter.indexcursor;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.persistit.Key;
 
@@ -30,23 +31,25 @@ class IndexCursorUnidirectionalLexicographic<S> extends IndexCursorUnidirectiona
     // IndexCursorUnidirectional interface
 
     public static <S> IndexCursorUnidirectionalLexicographic<S> create(QueryContext context,
+                                                               QueryBindings bindings,
                                                                IterationHelper iterationHelper,
                                                                IndexKeyRange keyRange,
                                                                API.Ordering ordering,
                                                                SortKeyAdapter<S, ?> sortKeyAdapter)
     {
-        return new IndexCursorUnidirectionalLexicographic<>(context, iterationHelper, keyRange, ordering, sortKeyAdapter);
+        return new IndexCursorUnidirectionalLexicographic<>(context, bindings, iterationHelper, keyRange, ordering, sortKeyAdapter);
     }
 
     // For use by this class
 
     private IndexCursorUnidirectionalLexicographic(QueryContext context,
+                                                   QueryBindings bindings,
                                                    IterationHelper iterationHelper,
                                                    IndexKeyRange keyRange,
                                                    API.Ordering ordering,
                                                    SortKeyAdapter<S, ?> sortKeyAdapter)
     {
-        super(context, iterationHelper, keyRange, ordering, sortKeyAdapter);
+        super(context, bindings, iterationHelper, keyRange, ordering, sortKeyAdapter);
     }
 
     @Override
@@ -56,7 +59,7 @@ class IndexCursorUnidirectionalLexicographic<S> extends IndexCursorUnidirectiona
         if (startBoundColumns == 0 || start == null) {
             startKey.append(startBoundary);
         } else {
-            startExpressions = start.boundExpressions(context);
+            startExpressions = start.boundExpressions(context, bindings);
             clearStart();
             for (int f = 0; f < startBoundColumns; f++) {
                 if (start.columnSelector().includesColumn(f)) {
@@ -69,7 +72,7 @@ class IndexCursorUnidirectionalLexicographic<S> extends IndexCursorUnidirectiona
         if (endBoundColumns == 0 || end == null) {
             endKey = null;
         } else {
-            endExpressions = end.boundExpressions(context);
+            endExpressions = end.boundExpressions(context, bindings);
             clearEnd();
             for (int f = 0; f < endBoundColumns; f++) {
                 if (end.columnSelector().includesColumn(f)) {

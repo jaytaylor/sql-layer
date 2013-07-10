@@ -25,6 +25,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
@@ -65,9 +66,10 @@ class StoreGIMaintenance {
             if (planOperator == null)
                 return;
             QueryContext context = new SimpleQueryContext(adapter);
+            QueryBindings bindings = context.createBindings();
             List<Column> lookupCols = rowType.userTable().getPrimaryKeyIncludingInternal().getColumns();
 
-            context.setHKey(StoreGIMaintenance.HKEY_BINDING_POSITION, hKey);
+            bindings.setHKey(StoreGIMaintenance.HKEY_BINDING_POSITION, hKey);
 
             // Copy the values into the array bindings
             RowDataValueSource source = new RowDataValueSource();
@@ -79,10 +81,10 @@ class StoreGIMaintenance {
                 source.bind(col.getFieldDef(), forRow);
 
                 // New types
-                if (Types3Switch.ON) context.setPValue(bindingsIndex, pSource);
-                else context.setValue(bindingsIndex, source);
+                if (Types3Switch.ON) bindings.setPValue(bindingsIndex, pSource);
+                else bindings.setValue(bindingsIndex, source);
             }
-            cursor = API.cursor(planOperator, context);
+            cursor = API.cursor(planOperator, context, bindings);
             RUN_TAP.in();
             runTapEntered = true;
             cursor.open();
@@ -98,7 +100,7 @@ class StoreGIMaintenance {
                     Index.JoinType giJoin = groupIndex.getJoinType();
                     switch (giJoin) {
                     case LEFT:
-                        if (row.rowType().equals(storePlan.leftHalf) && useInvertType(action, context) &&
+                        if (row.rowType().equals(storePlan.leftHalf) && useInvertType(action, context, bindings) &&
                                 !skipCascadeRow(action, row, handler)) {
                             Row outerRow = new FlattenedRow(storePlan.topLevelFlattenType, row, null, row.hKey());
                             doAction(invert(action), handler, outerRow);
@@ -106,7 +108,7 @@ class StoreGIMaintenance {
                         }
                         break;
                     case RIGHT:
-                        if (row.rowType().equals(storePlan.rightHalf) && useInvertType(action, context) &&
+                        if (row.rowType().equals(storePlan.rightHalf) && useInvertType(action, context, bindings) &&
                                 !skipCascadeRow(action, row, handler)) {
                             Row outerRow = new FlattenedRow(storePlan.topLevelFlattenType, null, row, row.hKey());
                             doAction(invert(action), handler, outerRow);
@@ -144,7 +146,7 @@ class StoreGIMaintenance {
                row.rowType().typeComposition().tables().contains(handler.getSourceTable());
     }
 
-    private boolean useInvertType(StoreGIHandler.Action action, QueryContext context) {
+    private boolean useInvertType(StoreGIHandler.Action action, QueryContext context, QueryBindings bindings) {
         switch (groupIndex.getJoinType()) {
         case LEFT:
             switch (action) {
@@ -155,7 +157,7 @@ class StoreGIMaintenance {
             case DELETE:
                 if (siblingsLookup == null)
                     return false;
-                Cursor siblingsCounter = API.cursor(siblingsLookup, context);
+                Cursor siblingsCounter = API.cursor(siblingsLookup, context, bindings);
                 SIBLING_ALL_TAP.in();
                 try {
                     siblingsCounter.open();

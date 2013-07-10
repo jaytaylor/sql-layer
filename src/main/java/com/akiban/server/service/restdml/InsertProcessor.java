@@ -143,9 +143,9 @@ public class InsertProcessor extends DMLProcessor {
     private void setValue (String field, JsonNode node, ProcessContext context) {
         Column column = getColumn (context.table, field);
         if (node.isNull()) {
-            setValue (context.queryContext, column, null);
+            setValue (context.queryBindings, column, null);
         } else {
-            setValue (context.queryContext, column, node.asText());
+            setValue (context.queryBindings, column, node.asText());
         }
     }
 
@@ -162,17 +162,17 @@ public class InsertProcessor extends DMLProcessor {
                 int pos = join.getMatchingChild(entry.getKey()).getPosition();
                 PValue fkValue = getFKPvalue (entry.getValue());
                 
-                if (context.queryContext.getPValue(pos).isNull()) {
-                    context.queryContext.setPValue(join.getMatchingChild(entry.getKey()).getPosition(), fkValue);
-                } else if (TClass.compare (context.queryContext.getPValue(pos).tInstance(), 
-                                context.queryContext.getPValue(pos),
+                if (context.queryBindings.getPValue(pos).isNull()) {
+                    context.queryBindings.setPValue(join.getMatchingChild(entry.getKey()).getPosition(), fkValue);
+                } else if (TClass.compare (context.queryBindings.getPValue(pos).tInstance(), 
+                                context.queryBindings.getPValue(pos),
                                 fkValue.tInstance(),
                                 fkValue) != 0) {
                     throw new FKValueMismatchException (join.getMatchingChild(entry.getKey()).getName());
                 }
             }
         }
-        Cursor cursor = API.cursor(insert, context.queryContext);
+        Cursor cursor = API.cursor(insert, context.queryContext, context.queryBindings);
         JsonRowWriter writer = new JsonRowWriter(new TableRowTracker(context.table, 0));
         WriteCapturePKRow rowWriter = new WriteCapturePKRow();
         writer.writeRows(cursor, appender, context.anyUpdates ? "\n" : "", rowWriter);

@@ -20,6 +20,7 @@ package com.akiban.server.test.it.sort;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.TempVolume;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
@@ -110,14 +111,15 @@ public class PersistitSorterOverflowIT extends ITBase {
         ordering.append(ExpressionGenerators.field(rowType, 1), true);
 
         QueryContext context = queryContext(adapter);
+        QueryBindings bindings = context.createBindings();
         Cursor inputCursor = API.cursor(
                 API.groupScan_Default(userTable.getGroup()),
-                context
+                context, bindings
         );
 
         inputCursor.open();
         try {
-            PersistitSorter sorter = new PersistitSorter(context, inputCursor, rowType, ordering, API.SortOption.PRESERVE_DUPLICATES, tap);
+            PersistitSorter sorter = new PersistitSorter(context, bindings, inputCursor, rowType, ordering, API.SortOption.PRESERVE_DUPLICATES, tap);
             Cursor sortedCursor = sorter.sort();
             sortedCursor.open();
             try {

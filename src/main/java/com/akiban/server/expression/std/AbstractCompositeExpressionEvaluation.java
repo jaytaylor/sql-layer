@@ -17,6 +17,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -45,6 +46,15 @@ public abstract class AbstractCompositeExpressionEvaluation extends ExpressionEv
             children.get(i).of(context);
         }
         this.context = context;
+    }
+
+    @Override
+    public void of(QueryBindings bindings)
+    {
+        for (int i = 0; i < nChildren; i++) {
+            children.get(i).of(bindings);
+        }
+        this.bindings = bindings;
     }
 
     @Override
@@ -105,10 +115,15 @@ public abstract class AbstractCompositeExpressionEvaluation extends ExpressionEv
         return context;
     }
     
+    protected QueryBindings queryBindings() {
+        return bindings;
+    }
+    
     // object state
 
     private final List<? extends ExpressionEvaluation> children;
     private final int nChildren;
     private ValueHolder valueHolder;
     private QueryContext context;
+    private QueryBindings bindings;
 }

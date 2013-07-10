@@ -20,6 +20,7 @@ package com.akiban.server.types3.texpressions;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
@@ -39,8 +40,8 @@ public class ResultSetSubqueryTExpression extends SubqueryTExpression
 
         @Override
         public void evaluate() {
-            context.setRow(bindingPosition, outerRow);
-            Cursor cursor = API.cursor(subquery, context);
+            bindings.setRow(bindingPosition, outerRow);
+            Cursor cursor = API.cursor(subquery, context, bindings);
             cursor.open();
             pvalue.putObject(cursor);
         }
@@ -59,6 +60,11 @@ public class ResultSetSubqueryTExpression extends SubqueryTExpression
             this.context = context;
         }
 
+        @Override
+        public void with(QueryBindings bindings) {
+            this.bindings = bindings;
+        }
+
         InnerEvaluation(Operator subquery, RowType outerRowType, int bindingPosition)
         {
             this.subquery = subquery;
@@ -72,6 +78,7 @@ public class ResultSetSubqueryTExpression extends SubqueryTExpression
         private final int bindingPosition;
         private final PValue pvalue;
         private QueryContext context;
+        private QueryBindings bindings;
         private Row outerRow;
     }
 

@@ -86,9 +86,9 @@ class HKeyUnion_Ordered extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(QueryContext context)
+    protected Cursor cursor(QueryContext context, QueryBindings bindings)
     {
-        return new Execution(context);
+        return new Execution(context, bindings);
     }
 
     @Override
@@ -310,11 +310,11 @@ class HKeyUnion_Ordered extends Operator
 
         // Execution interface
 
-        Execution(QueryContext context)
+        Execution(QueryContext context, QueryBindings bindings)
         {
-            super(context);
-            leftInput = left.cursor(context);
-            rightInput = right.cursor(context);
+            super(context, bindings);
+            leftInput = left.cursor(context, bindings);
+            rightInput = right.cursor(context, bindings);
             hKeyCache = new HKeyCache<>(context.getStore());
         }
         

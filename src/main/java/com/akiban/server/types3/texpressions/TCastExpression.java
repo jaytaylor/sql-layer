@@ -17,6 +17,7 @@
 
 package com.akiban.server.types3.texpressions;
 
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.explain.*;
@@ -123,6 +124,11 @@ public final class TCastExpression implements TPreparedExpression {
         public void with(QueryContext context) {
             inputEval.with(context);
             this.executionContext.setQueryContext(context);
+        }
+
+        @Override
+        public void with(QueryBindings bindings) {
+            inputEval.with(bindings);
         }
 
         private CastEvaluation(TEvaluatableExpression inputEval, TCast cast,

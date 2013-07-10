@@ -95,6 +95,7 @@ public final class GroupIndexScanIT extends ITBase {
         schema = new Schema(ddl().getAIS(session()));
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         giRowType = schema.indexRowType(gi);
 
         writeRows(
@@ -131,7 +132,7 @@ public final class GroupIndexScanIT extends ITBase {
 
     private List<List<?>> planToList(Operator plan) {
         List<List<?>> actualResults = new ArrayList<>();
-        Cursor cursor =  API.cursor(plan, queryContext);
+        Cursor cursor =  API.cursor(plan, queryContext, queryBindings);
         cursor.open();
         try {
             ToObjectValueTarget target = new ToObjectValueTarget();
@@ -178,6 +179,7 @@ public final class GroupIndexScanIT extends ITBase {
     private Schema schema;
     private StoreAdapter adapter;
     private QueryContext queryContext;
+    private QueryBindings queryBindings;
     private IndexRowType giRowType;
 
     private final static String SCHEMA = "schema";

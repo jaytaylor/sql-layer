@@ -20,6 +20,8 @@ package com.akiban.sql.pg;
 import com.akiban.sql.aisddl.AISDDL;
 import com.akiban.sql.parser.DDLStatementNode;
 
+import com.akiban.qp.operator.QueryBindings;
+
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
@@ -88,7 +90,7 @@ public class PostgresDDLStatement extends PostgresBaseStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         boolean lockSuccess = false;

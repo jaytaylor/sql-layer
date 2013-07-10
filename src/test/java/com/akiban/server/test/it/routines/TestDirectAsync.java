@@ -20,6 +20,7 @@ package com.akiban.server.test.it.routines;
 import com.akiban.qp.loadableplan.DirectObjectCursor;
 import com.akiban.qp.loadableplan.DirectObjectPlan;
 import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.BindingNotSetException;
 import com.akiban.server.error.AkibanInternalException;
@@ -46,8 +47,8 @@ public class TestDirectAsync extends LoadableDirectObjectPlan
     {
         return new DirectObjectPlan() {
                 @Override
-                public DirectObjectCursor cursor(QueryContext context) {
-                    return new TestDirectObjectCursor(context);
+                public DirectObjectCursor cursor(QueryContext context, QueryBindings bindings) {
+                    return new TestDirectObjectCursor(context, bindings);
                 }
 
                 @Override
@@ -59,11 +60,13 @@ public class TestDirectAsync extends LoadableDirectObjectPlan
 
     public static class TestDirectObjectCursor extends DirectObjectCursor {
         QueryContext context;
+        QueryBindings bindings;
         Process process;
         BlockingQueue<String> output;
 
-        public TestDirectObjectCursor(QueryContext context) {
+        public TestDirectObjectCursor(QueryContext context, QueryBindings bindings) {
             this.context = context;
+            this.bindings = bindings;
         }
 
         @Override
@@ -72,7 +75,7 @@ public class TestDirectAsync extends LoadableDirectObjectPlan
             for (int i = 0; i < 100; i++) {
                 String carg;
                 try {
-                    carg = context.getValue(i).getString();
+                    carg = bindings.getValue(i).getString();
                 }
                 catch (BindingNotSetException ex) {
                     break;

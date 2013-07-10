@@ -20,6 +20,7 @@ package com.akiban.server.test.pt.qp;
 import com.akiban.ais.model.*;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Limit;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
@@ -168,4 +169,5 @@ public class QPProfilePTBase extends PTBase
     protected Schema schema;
     protected PersistitAdapter adapter;
     protected QueryContext queryContext;
+    protected QueryBindings queryBindings;
 }

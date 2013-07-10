@@ -70,6 +70,7 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
         coi = group(parent);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         db = new NewRow[]{
             // 0x: Both index scans empty
             // 1x: Left empty
@@ -155,18 +156,18 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
     {
         RowBase[] expectedX = new RowBase[]{
         };
-        compareRows(expectedX, cursor(intersectPxPy(0, true, true, false), queryContext));
-        compareRows(expectedX, cursor(intersectPxPy(0, true, true, true), queryContext));
+        compareRows(expectedX, cursor(intersectPxPy(0, true, true, false), queryContext, queryBindings));
+        compareRows(expectedX, cursor(intersectPxPy(0, true, true, true), queryContext, queryBindings));
         reverse(expectedX);
-        compareRows(expectedX, cursor(intersectPxPy(0, true, false, false), queryContext));
-        compareRows(expectedX, cursor(intersectPxPy(0, true, false, true), queryContext));
+        compareRows(expectedX, cursor(intersectPxPy(0, true, false, false), queryContext, queryBindings));
+        compareRows(expectedX, cursor(intersectPxPy(0, true, false, true), queryContext, queryBindings));
         RowBase[] expectedY = new RowBase[]{
         };
-        compareRows(expectedY, cursor(intersectPxPy(0, false, true, false), queryContext));
-        compareRows(expectedY, cursor(intersectPxPy(0, false, true, true), queryContext));
+        compareRows(expectedY, cursor(intersectPxPy(0, false, true, false), queryContext, queryBindings));
+        compareRows(expectedY, cursor(intersectPxPy(0, false, true, true), queryContext, queryBindings));
         reverse(expectedY);
-        compareRows(expectedY, cursor(intersectPxPy(0, false, false, false), queryContext));
-        compareRows(expectedY, cursor(intersectPxPy(0, false, false, true), queryContext));
+        compareRows(expectedY, cursor(intersectPxPy(0, false, false, false), queryContext, queryBindings));
+        compareRows(expectedY, cursor(intersectPxPy(0, false, false, true), queryContext, queryBindings));
     }
 
     @Test
@@ -174,18 +175,18 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
     {
         RowBase[] expectedX = new RowBase[]{
         };
-        compareRows(expectedX, cursor(intersectPxPy(11, true, true, false), queryContext));
-        compareRows(expectedX, cursor(intersectPxPy(11, true, true, true), queryContext));
+        compareRows(expectedX, cursor(intersectPxPy(11, true, true, false), queryContext, queryBindings));
+        compareRows(expectedX, cursor(intersectPxPy(11, true, true, true), queryContext, queryBindings));
         reverse(expectedX);
-        compareRows(expectedX, cursor(intersectPxPy(11, true, false, false), queryContext));
-        compareRows(expectedX, cursor(intersectPxPy(11, true, false, true), queryContext));
+        compareRows(expectedX, cursor(intersectPxPy(11, true, false, false), queryContext, queryBindings));
+        compareRows(expectedX, cursor(intersectPxPy(11, true, false, true), queryContext, queryBindings));
         RowBase[] expectedY = new RowBase[]{
         };
-        compareRows(expectedY, cursor(intersectPxPy(11, false, true, false), queryContext));
-        compareRows(expectedY, cursor(intersectPxPy(11, false, true, true), queryContext));
+        compareRows(expectedY, cursor(intersectPxPy(11, false, true, false), queryContext, queryBindings));
+        compareRows(expectedY, cursor(intersectPxPy(11, false, true, true), queryContext, queryBindings));
         reverse(expectedY);
-        compareRows(expectedY, cursor(intersectPxPy(11, false, false, false), queryContext));
-        compareRows(expectedY, cursor(intersectPxPy(11, false, false, true), queryContext));
+        compareRows(expectedY, cursor(intersectPxPy(11, false, false, false), queryContext, queryBindings));
+        compareRows(expectedY, cursor(intersectPxPy(11, false, false, true), queryContext, queryBindings));
     }
 
     @Test
@@ -193,18 +194,18 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
     {
         RowBase[] expectedX = new RowBase[]{
         };
-        compareRows(expectedX, cursor(intersectPxPy(22, true, true, false), queryContext));
-        compareRows(expectedX, cursor(intersectPxPy(22, true, true, true), queryContext));
+        compareRows(expectedX, cursor(intersectPxPy(22, true, true, false), queryContext, queryBindings));
+        compareRows(expectedX, cursor(intersectPxPy(22, true, true, true), queryContext, queryBindings));
         reverse(expectedX);
-        compareRows(expectedX, cursor(intersectPxPy(22, true, false, false), queryContext));
-        compareRows(expectedX, cursor(intersectPxPy(22, true, false, true), queryContext));
+        compareRows(expectedX, cursor(intersectPxPy(22, true, false, false), queryContext, queryBindings));
+        compareRows(expectedX, cursor(intersectPxPy(22, true, false, true), queryContext, queryBindings));
         RowBase[] expectedY = new RowBase[]{
         };
-        compareRows(expectedY, cursor(intersectPxPy(22, false, true, false), queryContext));
-        compareRows(expectedY, cursor(intersectPxPy(22, false, true, true), queryContext));
+        compareRows(expectedY, cursor(intersectPxPy(22, false, true, false), queryContext, queryBindings));
+        compareRows(expectedY, cursor(intersectPxPy(22, false, true, true), queryContext, queryBindings));
         reverse(expectedY);
-        compareRows(expectedY, cursor(intersectPxPy(22, false, false, false), queryContext));
-        compareRows(expectedY, cursor(intersectPxPy(22, false, false, true), queryContext));
+        compareRows(expectedY, cursor(intersectPxPy(22, false, false, false), queryContext, queryBindings));
+        compareRows(expectedY, cursor(intersectPxPy(22, false, false, true), queryContext, queryBindings));
     }
 
     @Test
@@ -212,26 +213,26 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
     {
         RowBase[] expectedX = new RowBase[]{
         };
-        compareRows(expectedX, cursor(intersectPxPy(31, true, true, false), queryContext));
-        compareRows(expectedX, cursor(intersectPxPy(31, true, true, true), queryContext));
-        compareRows(expectedX, cursor(intersectPxPy(32, true, true, false), queryContext));
-        compareRows(expectedX, cursor(intersectPxPy(32, true, true, true), queryContext));
+        compareRows(expectedX, cursor(intersectPxPy(31, true, true, false), queryContext, queryBindings));
+        compareRows(expectedX, cursor(intersectPxPy(31, true, true, true), queryContext, queryBindings));
+        compareRows(expectedX, cursor(intersectPxPy(32, true, true, false), queryContext, queryBindings));
+        compareRows(expectedX, cursor(intersectPxPy(32, true, true, true), queryContext, queryBindings));
         reverse(expectedX);
-        compareRows(expectedX, cursor(intersectPxPy(31, true, false, false), queryContext));
-        compareRows(expectedX, cursor(intersectPxPy(31, true, false, true), queryContext));
-        compareRows(expectedX, cursor(intersectPxPy(32, true, false, false), queryContext));
-        compareRows(expectedX, cursor(intersectPxPy(32, true, false, true), queryContext));
+        compareRows(expectedX, cursor(intersectPxPy(31, true, false, false), queryContext, queryBindings));
+        compareRows(expectedX, cursor(intersectPxPy(31, true, false, true), queryContext, queryBindings));
+        compareRows(expectedX, cursor(intersectPxPy(32, true, false, false), queryContext, queryBindings));
+        compareRows(expectedX, cursor(intersectPxPy(32, true, false, true), queryContext, queryBindings));
         RowBase[] expectedY = new RowBase[]{
         };
-        compareRows(expectedY, cursor(intersectPxPy(31, false, true, false), queryContext));
-        compareRows(expectedY, cursor(intersectPxPy(31, false, true, true), queryContext));
-        compareRows(expectedY, cursor(intersectPxPy(32, false, true, false), queryContext));
-        compareRows(expectedY, cursor(intersectPxPy(32, false, true, true), queryContext));
+        compareRows(expectedY, cursor(intersectPxPy(31, false, true, false), queryContext, queryBindings));
+        compareRows(expectedY, cursor(intersectPxPy(31, false, true, true), queryContext, queryBindings));
+        compareRows(expectedY, cursor(intersectPxPy(32, false, true, false), queryContext, queryBindings));
+        compareRows(expectedY, cursor(intersectPxPy(32, false, true, true), queryContext, queryBindings));
         reverse(expectedY);
-        compareRows(expectedY, cursor(intersectPxPy(31, false, false, false), queryContext));
-        compareRows(expectedY, cursor(intersectPxPy(31, false, false, true), queryContext));
-        compareRows(expectedY, cursor(intersectPxPy(32, false, false, false), queryContext));
-        compareRows(expectedY, cursor(intersectPxPy(32, false, false, true), queryContext));
+        compareRows(expectedY, cursor(intersectPxPy(31, false, false, false), queryContext, queryBindings));
+        compareRows(expectedY, cursor(intersectPxPy(31, false, false, true), queryContext, queryBindings));
+        compareRows(expectedY, cursor(intersectPxPy(32, false, false, false), queryContext, queryBindings));
+        compareRows(expectedY, cursor(intersectPxPy(32, false, false, true), queryContext, queryBindings));
     }
 
     @Test
@@ -241,20 +242,20 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
             row(parentXIndexRowType, 44L, 44L, 4001L),
             row(parentXIndexRowType, 44L, 44L, 4002L),
         };
-        compareRows(expectedX, cursor(intersectPxPy(44, true, true, false), queryContext));
-        compareRows(expectedX, cursor(intersectPxPy(44, true, true, true), queryContext));
+        compareRows(expectedX, cursor(intersectPxPy(44, true, true, false), queryContext, queryBindings));
+        compareRows(expectedX, cursor(intersectPxPy(44, true, true, true), queryContext, queryBindings));
         reverse(expectedX);
-        compareRows(expectedX, cursor(intersectPxPy(44, true, false, false), queryContext));
-        compareRows(expectedX, cursor(intersectPxPy(44, true, false, true), queryContext));
+        compareRows(expectedX, cursor(intersectPxPy(44, true, false, false), queryContext, queryBindings));
+        compareRows(expectedX, cursor(intersectPxPy(44, true, false, true), queryContext, queryBindings));
         RowBase[] expectedY = new RowBase[]{
             row(parentYIndexRowType, 44L, 4001L),
             row(parentYIndexRowType, 44L, 4002L),
         };
-        compareRows(expectedY, cursor(intersectPxPy(44, false, true, false), queryContext));
-        compareRows(expectedY, cursor(intersectPxPy(44, false, true, true), queryContext));
+        compareRows(expectedY, cursor(intersectPxPy(44, false, true, false), queryContext, queryBindings));
+        compareRows(expectedY, cursor(intersectPxPy(44, false, true, true), queryContext, queryBindings));
         reverse(expectedY);
-        compareRows(expectedY, cursor(intersectPxPy(44, false, false, false), queryContext));
-        compareRows(expectedY, cursor(intersectPxPy(44, false, false, true), queryContext));
+        compareRows(expectedY, cursor(intersectPxPy(44, false, false, false), queryContext, queryBindings));
+        compareRows(expectedY, cursor(intersectPxPy(44, false, false, true), queryContext, queryBindings));
     }
 
     @Test
@@ -264,20 +265,20 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
             row(parentXIndexRowType, 55L, 55L, 5001L),
             row(parentXIndexRowType, 55L, 55L, 5002L),
         };
-        compareRows(expectedX, cursor(intersectPxPy(55, true, true, false), queryContext));
-        compareRows(expectedX, cursor(intersectPxPy(55, true, true, true), queryContext));
+        compareRows(expectedX, cursor(intersectPxPy(55, true, true, false), queryContext, queryBindings));
+        compareRows(expectedX, cursor(intersectPxPy(55, true, true, true), queryContext, queryBindings));
         reverse(expectedX);
-        compareRows(expectedX, cursor(intersectPxPy(55, true, false, false), queryContext));
-        compareRows(expectedX, cursor(intersectPxPy(55, true, false, true), queryContext));
+        compareRows(expectedX, cursor(intersectPxPy(55, true, false, false), queryContext, queryBindings));
+        compareRows(expectedX, cursor(intersectPxPy(55, true, false, true), queryContext, queryBindings));
         RowBase[] expectedY = new RowBase[]{
             row(parentYIndexRowType, 55L, 5001L),
             row(parentYIndexRowType, 55L, 5002L),
         };
-        compareRows(expectedY, cursor(intersectPxPy(55, false, true, false), queryContext));
-        compareRows(expectedY, cursor(intersectPxPy(55, false, true, true), queryContext));
+        compareRows(expectedY, cursor(intersectPxPy(55, false, true, false), queryContext, queryBindings));
+        compareRows(expectedY, cursor(intersectPxPy(55, false, true, true), queryContext, queryBindings));
         reverse(expectedY);
-        compareRows(expectedY, cursor(intersectPxPy(55, false, false, false), queryContext));
-        compareRows(expectedY, cursor(intersectPxPy(55, false, false, true), queryContext));
+        compareRows(expectedY, cursor(intersectPxPy(55, false, false, false), queryContext, queryBindings));
+        compareRows(expectedY, cursor(intersectPxPy(55, false, false, true), queryContext, queryBindings));
     }
 
     @Test
@@ -287,20 +288,20 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
             row(parentXIndexRowType, 66L, 66L, 6002L),
             row(parentXIndexRowType, 66L, 66L, 6003L),
         };
-        compareRows(expectedX, cursor(intersectPxPy(66, true, true, false), queryContext));
-        compareRows(expectedX, cursor(intersectPxPy(66, true, true, true), queryContext));
+        compareRows(expectedX, cursor(intersectPxPy(66, true, true, false), queryContext, queryBindings));
+        compareRows(expectedX, cursor(intersectPxPy(66, true, true, true), queryContext, queryBindings));
         reverse(expectedX);
-        compareRows(expectedX, cursor(intersectPxPy(66, true, false, false), queryContext));
-        compareRows(expectedX, cursor(intersectPxPy(66, true, false, true), queryContext));
+        compareRows(expectedX, cursor(intersectPxPy(66, true, false, false), queryContext, queryBindings));
+        compareRows(expectedX, cursor(intersectPxPy(66, true, false, true), queryContext, queryBindings));
         RowBase[] expectedY = new RowBase[]{
             row(parentYIndexRowType, 66L, 6002L),
             row(parentYIndexRowType, 66L, 6003L),
         };
-        compareRows(expectedY, cursor(intersectPxPy(66, false, true, false), queryContext));
-        compareRows(expectedY, cursor(intersectPxPy(66, false, true, true), queryContext));
+        compareRows(expectedY, cursor(intersectPxPy(66, false, true, false), queryContext, queryBindings));
+        compareRows(expectedY, cursor(intersectPxPy(66, false, true, true), queryContext, queryBindings));
         reverse(expectedY);
-        compareRows(expectedY, cursor(intersectPxPy(66, false, false, false), queryContext));
-        compareRows(expectedY, cursor(intersectPxPy(66, false, false, true), queryContext));
+        compareRows(expectedY, cursor(intersectPxPy(66, false, false, false), queryContext, queryBindings));
+        compareRows(expectedY, cursor(intersectPxPy(66, false, false, true), queryContext, queryBindings));
     }
 
     @Test
@@ -308,11 +309,11 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
     {
         RowBase[] expected = new RowBase[]{
         };
-        compareRows(expected, cursor(intersectPxCz(70, JoinType.INNER_JOIN, true, false), queryContext));
-        compareRows(expected, cursor(intersectPxCz(70, JoinType.INNER_JOIN, true, true), queryContext));
+        compareRows(expected, cursor(intersectPxCz(70, JoinType.INNER_JOIN, true, false), queryContext, queryBindings));
+        compareRows(expected, cursor(intersectPxCz(70, JoinType.INNER_JOIN, true, true), queryContext, queryBindings));
         reverse(expected);
-        compareRows(expected, cursor(intersectPxCz(70, JoinType.INNER_JOIN, false, false), queryContext));
-        compareRows(expected, cursor(intersectPxCz(70, JoinType.INNER_JOIN, false, true), queryContext));
+        compareRows(expected, cursor(intersectPxCz(70, JoinType.INNER_JOIN, false, false), queryContext, queryBindings));
+        compareRows(expected, cursor(intersectPxCz(70, JoinType.INNER_JOIN, false, true), queryContext, queryBindings));
     }
 
     @Test
@@ -326,11 +327,11 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
             row(childRowType, 88L, 8002L, 800201L),
             row(childRowType, 88L, 8002L, 800202L),
         };
-        compareRows(expected, cursor(intersectPxCz(88, JoinType.INNER_JOIN, true, false), queryContext));
-        compareRows(expected, cursor(intersectPxCz(88, JoinType.INNER_JOIN, true, true), queryContext));
+        compareRows(expected, cursor(intersectPxCz(88, JoinType.INNER_JOIN, true, false), queryContext, queryBindings));
+        compareRows(expected, cursor(intersectPxCz(88, JoinType.INNER_JOIN, true, true), queryContext, queryBindings));
         reverse(expected);
-        compareRows(expected, cursor(intersectPxCz(88, JoinType.INNER_JOIN, false, false), queryContext));
-        compareRows(expected, cursor(intersectPxCz(88, JoinType.INNER_JOIN, false, true), queryContext));
+        compareRows(expected, cursor(intersectPxCz(88, JoinType.INNER_JOIN, false, false), queryContext, queryBindings));
+        compareRows(expected, cursor(intersectPxCz(88, JoinType.INNER_JOIN, false, true), queryContext, queryBindings));
     }
 
     @Test
@@ -338,11 +339,11 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
     {
         RowBase[] expected = new RowBase[]{
         };
-        compareRows(expected, cursor(intersectPxCz(99, JoinType.INNER_JOIN, true, false), queryContext));
-        compareRows(expected, cursor(intersectPxCz(99, JoinType.INNER_JOIN, true, true), queryContext));
+        compareRows(expected, cursor(intersectPxCz(99, JoinType.INNER_JOIN, true, false), queryContext, queryBindings));
+        compareRows(expected, cursor(intersectPxCz(99, JoinType.INNER_JOIN, true, true), queryContext, queryBindings));
         reverse(expected);
-        compareRows(expected, cursor(intersectPxCz(99, JoinType.INNER_JOIN, false, false), queryContext));
-        compareRows(expected, cursor(intersectPxCz(99, JoinType.INNER_JOIN, false, true), queryContext));
+        compareRows(expected, cursor(intersectPxCz(99, JoinType.INNER_JOIN, false, false), queryContext, queryBindings));
+        compareRows(expected, cursor(intersectPxCz(99, JoinType.INNER_JOIN, false, true), queryContext, queryBindings));
     }
 
     @Test
@@ -351,11 +352,11 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
         RowBase[] expected = new RowBase[]{
             row(childRowType, 12L, null, 1200000L),
         };
-        compareRows(expected, cursor(intersectPxCz(12, JoinType.RIGHT_JOIN, true, false), queryContext));
-        compareRows(expected, cursor(intersectPxCz(12, JoinType.RIGHT_JOIN, true, true), queryContext));
+        compareRows(expected, cursor(intersectPxCz(12, JoinType.RIGHT_JOIN, true, false), queryContext, queryBindings));
+        compareRows(expected, cursor(intersectPxCz(12, JoinType.RIGHT_JOIN, true, true), queryContext, queryBindings));
         reverse(expected);
-        compareRows(expected, cursor(intersectPxCz(12, JoinType.RIGHT_JOIN, false, false), queryContext));
-        compareRows(expected, cursor(intersectPxCz(12, JoinType.RIGHT_JOIN, false, true), queryContext));
+        compareRows(expected, cursor(intersectPxCz(12, JoinType.RIGHT_JOIN, false, false), queryContext, queryBindings));
+        compareRows(expected, cursor(intersectPxCz(12, JoinType.RIGHT_JOIN, false, true), queryContext, queryBindings));
     }
 
     @Test
@@ -368,11 +369,11 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
             row(parentXIndexRowType, 13L, 13L, 13011L),
             row(parentXIndexRowType, 13L, 13L, 13012L),
         };
-        compareRows(expectedX, cursor(intersectPxPy(13, true, true, false), queryContext));
-        compareRows(expectedX, cursor(intersectPxPy(13, true, true, true), queryContext));
+        compareRows(expectedX, cursor(intersectPxPy(13, true, true, false), queryContext, queryBindings));
+        compareRows(expectedX, cursor(intersectPxPy(13, true, true, true), queryContext, queryBindings));
         reverse(expectedX);
-        compareRows(expectedX, cursor(intersectPxPy(13, true, false, false), queryContext));
-        compareRows(expectedX, cursor(intersectPxPy(13, true, false, true), queryContext));
+        compareRows(expectedX, cursor(intersectPxPy(13, true, false, false), queryContext, queryBindings));
+        compareRows(expectedX, cursor(intersectPxPy(13, true, false, true), queryContext, queryBindings));
         RowBase[] expectedY = new RowBase[]{
             row(parentYIndexRowType, 13L, 13002L),
             row(parentYIndexRowType, 13L, 13005L),
@@ -380,11 +381,11 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
             row(parentYIndexRowType, 13L, 13011L),
             row(parentYIndexRowType, 13L, 13012L),
         };
-        compareRows(expectedY, cursor(intersectPxPy(13, false, true, false), queryContext));
-        compareRows(expectedY, cursor(intersectPxPy(13, false, true, true), queryContext));
+        compareRows(expectedY, cursor(intersectPxPy(13, false, true, false), queryContext, queryBindings));
+        compareRows(expectedY, cursor(intersectPxPy(13, false, true, true), queryContext, queryBindings));
         reverse(expectedY);
-        compareRows(expectedY, cursor(intersectPxPy(13, false, false, false), queryContext));
-        compareRows(expectedY, cursor(intersectPxPy(13, false, false, true), queryContext));
+        compareRows(expectedY, cursor(intersectPxPy(13, false, false, false), queryContext, queryBindings));
+        compareRows(expectedY, cursor(intersectPxPy(13, false, false, true), queryContext, queryBindings));
     }
 
     private Operator intersectPxPy(int key, boolean leftOutput, boolean ascending, boolean skipScan)

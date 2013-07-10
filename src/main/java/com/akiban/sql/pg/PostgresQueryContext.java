@@ -20,6 +20,7 @@ package com.akiban.sql.pg;
 import com.akiban.sql.server.ServerQueryContext;
 
 import com.akiban.qp.operator.CursorBase;
+import com.akiban.qp.operator.QueryBindings;
 
 public class PostgresQueryContext extends ServerQueryContext<PostgresServerSession>
 {
@@ -31,8 +32,8 @@ public class PostgresQueryContext extends ServerQueryContext<PostgresServerSessi
         return false;
     }
 
-    public <T extends CursorBase> T startCursor(PostgresCursorGenerator<T> generator) {
-        return generator.openCursor(this);
+    public <T extends CursorBase> T startCursor(PostgresCursorGenerator<T> generator, QueryBindings bindings) {
+        return generator.openCursor(this, bindings);
     }
 
     public <T extends CursorBase> boolean finishCursor(PostgresCursorGenerator<T> generator, T cursor, int nrows, boolean suspended) {

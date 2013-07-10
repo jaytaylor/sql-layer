@@ -58,7 +58,7 @@ public class InsertIT extends OperatorITBase {
                         filter_Default(
                                 groupScan_Default(coi),
                                 Collections.singleton(customerRowType)),
-                        queryContext
+                        queryContext, queryBindings
                 )
         );
     }
@@ -80,7 +80,7 @@ public class InsertIT extends OperatorITBase {
                         customerNameIndexRowType,
                         IndexKeyRange.unbounded(customerNameIndexRowType),
                         new API.Ordering()),
-                queryContext
+                queryContext, queryBindings
         ));
     }
 
@@ -108,7 +108,7 @@ public class InsertIT extends OperatorITBase {
                         IndexKeyRange.unbounded(customerNameItemOidIndexRowType),
                         new API.Ordering(),
                         customerRowType),
-                queryContext
+                queryContext, queryBindings
         ));
     }
 
@@ -119,7 +119,7 @@ public class InsertIT extends OperatorITBase {
                 row(customerRowType, new Object[]{5, "ooo"}, new AkType[]{AkType.INT, AkType.VARCHAR})
         };
         UpdatePlannable insertPlan = insert_Default(rowsToValueScan(rows));
-        UpdateResult result = insertPlan.run(queryContext);
+        UpdateResult result = insertPlan.run(queryContext, queryBindings);
         assertEquals("rows touched", rows.length, result.rowsTouched());
         assertEquals("rows modified", rows.length, result.rowsModified());
     }

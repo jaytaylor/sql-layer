@@ -92,9 +92,9 @@ class EmitBoundRow_Nested extends Operator
     }
 
     @Override
-    protected Cursor cursor(QueryContext context)
+    protected Cursor cursor(QueryContext context, QueryBindings bindings)
     {
-        return new Execution(context, inputOperator.cursor(context));
+        return new Execution(context, bindings, inputOperator.cursor(context, bindings));
     }
 
     @Override
@@ -199,7 +199,7 @@ class EmitBoundRow_Nested extends Operator
                 }
                 else  {
                     assert (row.rowType() == inputRowType);
-                    Row rowFromBindings = context.getRow(bindingPosition);
+                    Row rowFromBindings = bindings.getRow(bindingPosition);
                     assert (rowFromBindings.rowType() == boundRowType);
                     if (boundRowType == outputRowType) {
                         row = rowFromBindings;
@@ -256,9 +256,9 @@ class EmitBoundRow_Nested extends Operator
 
         // Execution interface
 
-        Execution(QueryContext context, Cursor input)
+        Execution(QueryContext context, QueryBindings bindings, Cursor input)
         {
-            super(context);
+            super(context, bindings);
             this.input = input;
         }
 
