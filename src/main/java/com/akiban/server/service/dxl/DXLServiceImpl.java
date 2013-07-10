@@ -88,7 +88,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     }
 
     DDLFunctions createDDLFunctions(BasicDXLMiddleman middleman) {
-        return new BasicDDLFunctions(middleman, schemaManager, store, indexStatisticsService, configService,
+        return new BasicDDLFunctions(middleman, schemaManager, store, indexStatisticsService,
                                      t3Registry, lockService, txnService, listenerService);
     }
 
@@ -139,8 +139,9 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     @Inject
     public DXLServiceImpl(SchemaManager schemaManager, Store store, SessionService sessionService,
-                          IndexStatisticsService indexStatisticsService, ConfigurationService configService, T3RegistryService t3Registry,
-                          TransactionService txnService, LockService lockService, ListenerService listenerService) {
+                          IndexStatisticsService indexStatisticsService, ConfigurationService configService,
+                          T3RegistryService t3Registry, TransactionService txnService, LockService lockService,
+                          ListenerService listenerService) {
         this.schemaManager = schemaManager;
         this.store = store;
         this.sessionService = sessionService;
@@ -164,10 +165,6 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     protected final IndexStatisticsService indexStatisticsService() {
         return indexStatisticsService;
-    }
-
-    protected final ConfigurationService configService() {
-        return configService;
     }
 
     protected final T3RegistryService t3Registry() {

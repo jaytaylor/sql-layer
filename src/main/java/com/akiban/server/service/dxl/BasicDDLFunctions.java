@@ -1301,9 +1301,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     BasicDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store,
-                      IndexStatisticsService indexStatisticsService, ConfigurationService configService,
-                      T3RegistryService t3Registry, LockService lockService, TransactionService txnService,
-                      ListenerService listenerService) {
+                      IndexStatisticsService indexStatisticsService, T3RegistryService t3Registry,
+                      LockService lockService, TransactionService txnService, ListenerService listenerService) {
         super(middleman, schemaManager, store);
         this.indexStatisticsService = indexStatisticsService;
         this.t3Registry = t3Registry;

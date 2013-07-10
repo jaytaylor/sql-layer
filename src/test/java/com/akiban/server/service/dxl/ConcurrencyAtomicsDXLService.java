@@ -83,7 +83,7 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
     @Override
     DDLFunctions createDDLFunctions(BasicDXLMiddleman middleman) {
         return new ConcurrencyAtomicsDDLFunctions(middleman, schemaManager(), store(), indexStatisticsService(),
-                                                  configService(), t3Registry(), lockService(), txnService(), listenerService());
+                                                  t3Registry(), lockService(), txnService(), listenerService());
     }
 
     public static ScanHooks installScanHook(Session session, ScanHooks hook) {
@@ -212,10 +212,10 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
         }
 
         private ConcurrencyAtomicsDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store,
-                                               IndexStatisticsService indexStatisticsService, ConfigurationService configService,
-                                               T3RegistryService t3Registry, LockService lockService, TransactionService txnService,
-                                               ListenerService listenerService) {
-            super(middleman, schemaManager, store, indexStatisticsService, configService, t3Registry, lockService, txnService, listenerService);
+                                               IndexStatisticsService indexStatisticsService,
+                                               T3RegistryService t3Registry, LockService lockService,
+                                               TransactionService txnService, ListenerService listenerService) {
+            super(middleman, schemaManager, store, indexStatisticsService, t3Registry, lockService, txnService, listenerService);
         }
     }
 }
