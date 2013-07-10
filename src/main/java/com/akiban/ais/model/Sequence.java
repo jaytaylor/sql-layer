@@ -19,13 +19,9 @@ package com.akiban.ais.model;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.ais.model.validation.AISInvariants;
-import com.akiban.server.AccumulatorAdapter;
-import com.akiban.server.AccumulatorAdapter.AccumInfo;
 import com.akiban.server.error.SequenceLimitExceededException;
 import com.akiban.server.service.tree.TreeCache;
 import com.akiban.server.service.tree.TreeLink;
-import com.persistit.Tree;
-import com.persistit.exception.PersistitException;
 
 public class Sequence implements TreeLink {
 
@@ -134,11 +130,7 @@ public class Sequence implements TreeLink {
         return treeCache.get();
     }
 
-    public long nextValue() throws PersistitException {
-        // Note: Ever increasing, always incremented by 1, rollbacks will leave gaps. See bug1167045 for discussion.
-        AccumulatorAdapter accum = getAdapter();
-        long rawSequence = accum.seqAllocate();
-
+    public long nextValueRaw(long rawSequence) {
         long nextValue = notCycled(rawSequence);
         if (nextValue > maxValue || nextValue < minValue) {
             if(!cycle) {
@@ -149,14 +141,8 @@ public class Sequence implements TreeLink {
         return nextValue;
     }
 
-    public long currentValue() throws PersistitException {
-        AccumulatorAdapter accum = getAdapter();
-        return cycled(notCycled(accum.getSnapshot()));
-    }
-
-    private AccumulatorAdapter getAdapter() throws PersistitException {
-        Tree tree = getTreeCache().getTree();
-        return new AccumulatorAdapter(AccumInfo.SEQUENCE, tree);
+    public long currentValueRaw(long rawSequence) {
+        return cycled(notCycled(rawSequence));
     }
 
     private long notCycled(long rawSequence) {
