@@ -90,8 +90,6 @@ public interface Store extends KeyCreator {
 
     long getRowCount(Session session, boolean exact, RowData start, RowData end, byte[] columnBitMap);
 
-    TableStatistics getTableStatistics(Session session, int tableId);
-
     /**
      * Delete all data associated with the group. This includes
      * all indexes from all tables, group indexes, and the group itself.
@@ -131,8 +129,6 @@ public interface Store extends KeyCreator {
     public PersistitStore getPersistitStore();
 
     void truncateIndexes(Session session, Collection<? extends Index> indexes);
-
-    void setIndexStatistics(IndexStatisticsService indexStatistics);
 
     StoreAdapter createAdapter(Session session, Schema schema);
 

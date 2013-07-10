@@ -27,14 +27,22 @@ import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.util.SchemaCache;
+import com.akiban.server.TableStatistics;
+import com.akiban.server.TableStatus;
+import com.akiban.server.rowdata.IndexDef;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
+import com.akiban.server.service.listener.ListenerService;
+import com.akiban.server.service.listener.TableListener;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
+import com.persistit.Key;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +52,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -54,7 +63,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
 
-public abstract class AbstractIndexStatisticsService implements IndexStatisticsService, Service, JmxManageable {
+public abstract class AbstractIndexStatisticsService implements IndexStatisticsService, Service, JmxManageable, TableListener
+{
     private static final Logger log = LoggerFactory.getLogger(AbstractIndexStatisticsService.class);
 
     private static final int INDEX_STATISTICS_TABLE_VERSION = 1;
@@ -66,6 +76,7 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
     private final SchemaManager schemaManager;
     private final SessionService sessionService;
     private final ConfigurationService configurationService;
+    private final ListenerService listenerService;
 
     private AbstractStoreIndexStatistics storeStats;
     private Map<Index,IndexStatistics> cache;
@@ -75,12 +86,14 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
                                              TransactionService txnService,
                                              SchemaManager schemaManager,
                                              SessionService sessionService,
-                                             ConfigurationService configurationService) {
+                                             ConfigurationService configurationService,
+                                             ListenerService listenerService) {
         this.store = store;
         this.txnService = txnService;
         this.schemaManager = schemaManager;
         this.sessionService = sessionService;
         this.configurationService = configurationService;
+        this.listenerService = listenerService;
     }
 
     protected abstract AbstractStoreIndexStatistics createStoreIndexStatistics();
@@ -94,15 +107,16 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
 
     @Override
     public void start() {
-        store.setIndexStatistics(this);
         cache = Collections.synchronizedMap(new WeakHashMap<Index,IndexStatistics>());
         storeStats = createStoreIndexStatistics();
         bucketCount = Integer.parseInt(configurationService.getProperty(BUCKET_COUNT_PROPERTY));
         registerStatsTables();
+        listenerService.registerTableListener(this);
     }
 
     @Override
     public void stop() {
+        listenerService.deregisterTableListener(this);
         cache = null;
         storeStats = null;
         bucketCount = 0;
@@ -183,6 +197,28 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
         result.setAnalysisTimestamp(-1);
         cache.put(index, result);
         return null;
+    }
+
+    @Override
+    public TableStatistics getTableStatistics(Session session, UserTable table) {
+        final RowDef rowDef = table.rowDef();
+        final TableStatistics ts = new TableStatistics(table.getTableId());
+        final TableStatus status = rowDef.getTableStatus();
+        ts.setAutoIncrementValue(status.getAutoIncrement(session));
+        ts.setRowCount(status.getRowCount(session));
+        // TODO - get correct values
+        ts.setMeanRecordLength(100);
+        ts.setBlockSize(8192);
+        for(Index index : rowDef.getIndexes()) {
+            if(index.isSpatial()) {
+                continue;
+            }
+            TableStatistics.Histogram histogram = indexStatisticsToHistogram(session, index, store.createKey());
+            if(histogram != null) {
+                ts.addHistogram(histogram);
+            }
+        }
+        return ts;
     }
 
     @Override
@@ -363,8 +399,83 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
 
 
     //
+    // TableListener
+    //
+
+    @Override
+    public void onCreate(Session session, UserTable table) {
+        // None
+    }
+
+    @Override
+    public void onDrop(Session session, UserTable table) {
+        deleteIndexStatistics(session, table.getIndexesIncludingInternal());
+        deleteIndexStatistics(session, table.getGroupIndexes());
+    }
+
+    @Override
+    public void onTruncate(Session session, UserTable table, boolean isFast) {
+        onDrop(session, table);
+    }
+
+    @Override
+    public void onCreateIndex(Session session, Collection<? extends Index> indexes) {
+        // None
+    }
+
+    @Override
+    public void onDropIndex(Session session, Collection<? extends Index> indexes) {
+        deleteIndexStatistics(session, indexes);
+    }
+
+
+    //
     // Internal
     //
+
+    /** Convert from new-format histogram to old for adapter. */
+    protected TableStatistics.Histogram indexStatisticsToHistogram(Session session, Index index, Key key) {
+        IndexStatistics stats = getIndexStatistics(session, index);
+        if (stats == null) {
+            return null;
+        }
+        Histogram fromHistogram = stats.getHistogram(0, index.getKeyColumns().size());
+        if (fromHistogram == null) {
+            return null;
+        }
+        IndexDef indexDef = index.indexDef();
+        RowDef indexRowDef = indexDef.getRowDef();
+        TableStatistics.Histogram toHistogram = new TableStatistics.Histogram(index.getIndexId());
+        RowData indexRowData = new RowData(new byte[4096]);
+        Object[] indexValues = new Object[indexRowDef.getFieldCount()];
+        long count = 0;
+        for (HistogramEntry entry : fromHistogram.getEntries()) {
+            // Decode the key.
+            int keylen = entry.getKeyBytes().length;
+            System.arraycopy(entry.getKeyBytes(), 0, key.getEncodedBytes(), 0, keylen);
+            key.setEncodedSize(keylen);
+            key.indexTo(0);
+            int depth = key.getDepth();
+            // Copy key fields to index row.
+            for (int field : indexDef.getFields()) {
+                if (--depth >= 0) {
+                    indexValues[field] = key.decode();
+                } else {
+                    indexValues[field] = null;
+                }
+            }
+            indexRowData.createRow(indexRowDef, indexValues);
+            // Partial counts to running total less than key.
+            count += entry.getLessCount();
+            toHistogram.addSample(new TableStatistics.HistogramSample(indexRowData.copy(), count));
+            count += entry.getEqualCount();
+        }
+        // Add final entry with all nulls.
+        Arrays.fill(indexValues, null);
+        indexRowData.createRow(indexRowDef, indexValues);
+        toHistogram.addSample(new TableStatistics.HistogramSample(indexRowData.copy(), count));
+        return toHistogram;
+    }
 
     private static AkibanInformationSchema createStatsTables() {
         NewAISBuilder builder = AISBBasedBuilder.create(INDEX_STATISTICS_TABLE_NAME.getSchemaName());
