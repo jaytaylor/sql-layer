@@ -204,7 +204,7 @@ public class AncestorLookup_NestedIT extends OperatorITBase
                 map_NestedLoops(
                     indexScan_Default(aValueIndexRowType),
                     ancestorLookup_Nested(rabc, aValueIndexRowType, Arrays.asList(aRowType), 0),
-                    0, 2),
+                    0, 1),
                 ancestorLookup_Nested(rabc, aRowType, Arrays.asList(rRowType), 1),
                 1, 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);

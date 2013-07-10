@@ -272,7 +272,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
                         groupScan_Default(rabc),
                         Collections.singleton(aRowType)),
                     branchLookup_Nested(rabc, aRowType, bRowType, InputPreservationOption.DISCARD_INPUT, 0),
-                    0, 2),
+                    0, 1),
                 branchLookup_Nested(rabc, bRowType, cRowType, InputPreservationOption.KEEP_INPUT, 1),
                 1, 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
