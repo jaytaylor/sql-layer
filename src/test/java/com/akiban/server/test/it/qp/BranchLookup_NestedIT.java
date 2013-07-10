@@ -385,9 +385,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
             }
 
             @Override
-            public boolean secondTopLevel() {
-                // You cannot just re-open() a pipelined Map_NestedLoops, but you can
-                // openTopLevel() it again.
+            public boolean reopenTopLevel() {
                 return true;
             }
         };

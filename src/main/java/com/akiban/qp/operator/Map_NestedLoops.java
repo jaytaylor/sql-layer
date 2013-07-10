@@ -295,7 +295,21 @@ class Map_NestedLoops extends Operator
         @Override
         public void close() {
             CursorLifecycle.checkIdleOrActive(this);
-            open = false;
+            if (open) {
+                if (inputOpen) {
+                    input.close();
+                    inputOpen = false;
+                }
+                // Advance bindings to where stream would have ended.
+                while (pendingBindings == null) {
+                    QueryBindings bindings = input.nextBindings();
+                    if (bindings == null) break;
+                    if (bindings.getDepth() < depth) {
+                        pendingBindings = bindings;
+                    }
+                }
+                open = false;
+            }
         }
 
         @Override
@@ -321,6 +335,7 @@ class Map_NestedLoops extends Operator
 
         @Override
         public void openBindings() {
+            pendingBindings = null;
             input.openBindings();
         }
 

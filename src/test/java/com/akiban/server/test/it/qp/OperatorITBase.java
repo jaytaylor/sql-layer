@@ -184,9 +184,9 @@ public class OperatorITBase extends ITBase
         // Check active during iteration
         testCase.firstSetup();
         if (testCase.hKeyComparison()) {
-            compareRenderedHKeys(testCase.firstExpectedHKeys(), cursor, false);
+            compareRenderedHKeys(testCase.firstExpectedHKeys(), cursor, testCase.reopenTopLevel());
         } else {
-            compareRows(testCase.firstExpectedRows(), cursor, false, collators);
+            compareRows(testCase.firstExpectedRows(), cursor, testCase.reopenTopLevel(), collators);
         }
         assertTrue(cursor.isIdle());
         // Check close during iteration.
@@ -194,7 +194,10 @@ public class OperatorITBase extends ITBase
             ? testCase.firstExpectedHKeys().length > 1
             : testCase.firstExpectedRows().length > 1) {
             testCase.firstSetup();
-            cursor.open();
+            if (testCase.reopenTopLevel())
+                cursor.openTopLevel();
+            else
+                cursor.open();
             cursor.next();
             assertTrue(cursor.isActive());
             cursor.close();
@@ -203,9 +206,9 @@ public class OperatorITBase extends ITBase
         // Check that a second execution works
         testCase.secondSetup();
         if (testCase.hKeyComparison()) {
-            compareRenderedHKeys(testCase.secondExpectedHKeys(), cursor, testCase.secondTopLevel());
+            compareRenderedHKeys(testCase.secondExpectedHKeys(), cursor, testCase.reopenTopLevel());
         } else {
-            compareRows(testCase.secondExpectedRows(), cursor, testCase.secondTopLevel(), collators);
+            compareRows(testCase.secondExpectedRows(), cursor, testCase.reopenTopLevel(), collators);
         }
         assertTrue(cursor.isIdle());
         // Check close of idle cursor is permitted
@@ -574,7 +577,7 @@ public class OperatorITBase extends ITBase
             return firstExpectedHKeys();
         }
 
-        public boolean secondTopLevel() {
+        public boolean reopenTopLevel() {
             return false;
         }
     }
