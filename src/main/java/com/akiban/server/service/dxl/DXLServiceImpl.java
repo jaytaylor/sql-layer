@@ -24,6 +24,7 @@ import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
+import com.akiban.server.service.listener.ListenerService;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
@@ -55,6 +56,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     private final T3RegistryService t3Registry;
     private final TransactionService txnService;
     private final LockService lockService;
+    private final ListenerService listenerService;
 
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
@@ -87,7 +89,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     DDLFunctions createDDLFunctions(BasicDXLMiddleman middleman) {
         return new BasicDDLFunctions(middleman, schemaManager, store, indexStatisticsService, configService,
-                                     t3Registry, lockService, txnService);
+                                     t3Registry, lockService, txnService, listenerService);
     }
 
     @Override
@@ -138,7 +140,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     @Inject
     public DXLServiceImpl(SchemaManager schemaManager, Store store, SessionService sessionService,
                           IndexStatisticsService indexStatisticsService, ConfigurationService configService, T3RegistryService t3Registry,
-                          TransactionService txnService, LockService lockService) {
+                          TransactionService txnService, LockService lockService, ListenerService listenerService) {
         this.schemaManager = schemaManager;
         this.store = store;
         this.sessionService = sessionService;
@@ -147,6 +149,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
         this.t3Registry = t3Registry;
         this.txnService = txnService;
         this.lockService = lockService;
+        this.listenerService = listenerService;
     }
 
     // for use by subclasses
@@ -177,6 +180,10 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     protected final LockService lockService() {
         return lockService;
+    }
+
+    protected final ListenerService listenerService() {
+        return listenerService;
     }
 
     protected final Session session() {

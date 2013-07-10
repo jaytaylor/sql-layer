@@ -19,13 +19,15 @@ package com.akiban.server.service.listener;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.service.session.Session;
+
+import java.util.Collection;
 
 public interface TableListener
 {
-    void onCreate(UserTable table);
-    void onDrop(UserTable table);
-    void onTruncate(UserTable table);
+    void onCreate(Session session, UserTable table);
+    void onDrop(Session session, UserTable table);
 
-    void onCreateIndex(UserTable table, Index index);
-    void onDropIndex(UserTable table, Index index);
+    void onCreateIndex(Session session, Collection<? extends Index> indexes);
+    void onDropIndex(Session session, Collection<? extends Index> indexes);
 }
