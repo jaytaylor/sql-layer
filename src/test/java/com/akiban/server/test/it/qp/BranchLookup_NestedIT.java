@@ -383,6 +383,13 @@ public class BranchLookup_NestedIT extends OperatorITBase
                     row(aRowType, 24L, 2L, "a24"),
                 };
             }
+
+            @Override
+            public boolean secondTopLevel() {
+                // You cannot just re-open() a pipelined Map_NestedLoops, but you can
+                // openTopLevel() it again.
+                return true;
+            }
         };
         testCursorLifecycle(plan, testCase);
     }
