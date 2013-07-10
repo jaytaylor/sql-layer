@@ -96,6 +96,7 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
         };
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         use(db);
         for (NewRow row : db) {
             indexRowMap.put((Long) row.get(0),
@@ -242,7 +243,7 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
                                long expected[])
     {
         Operator plan = indexScan_Default(idxRowType, bounded(1, bLo, lowInclusive, bHi, hiInclusive), ordering);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         cursor.open();
         cursor.jump(indexRow(targetId), INDEX_ROW_SELECTOR);
 

@@ -54,8 +54,8 @@ public interface Store extends KeyCreator {
     /** newRow can be partial, as specified by selector, but oldRow must be fully present. */
     void updateRow(Session session, RowData oldRow, RowData newRow, ColumnSelector selector);
 
-    long nextSequenceValue(Session session, Sequence sequence) throws Exception;
-    long curSequenceValue(Session session, Sequence sequence) throws Exception;
+    long nextSequenceValue(Session session, Sequence sequence);
+    long curSequenceValue(Session session, Sequence sequence);
 
     /**
      * Create a new RowCollector.

@@ -21,6 +21,7 @@ import com.akiban.sql.optimizer.plan.CostEstimate;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
@@ -124,8 +125,8 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
     }
 
     @Override
-    public Cursor openCursor(PostgresQueryContext context) {
-        Cursor cursor = API.cursor(resultOperator, context);
+    public Cursor openCursor(PostgresQueryContext context, QueryBindings bindings) {
+        Cursor cursor = API.cursor(resultOperator, context, bindings);
         cursor.open();
         return cursor;
     }
@@ -138,7 +139,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
     }
     
     @Override
-    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         boolean lockSuccess = false;
@@ -149,7 +150,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
             try {
                 lock(context, DXLFunction.UNSPECIFIED_DML_WRITE);
                 lockSuccess = true;
-                cursor = openCursor(context);
+                cursor = openCursor(context, bindings);
                 PostgresOutputter<Row> outputter = null;
                 if (outputResult) {
                     outputter = getRowOutputter(context);

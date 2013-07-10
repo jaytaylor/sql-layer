@@ -21,6 +21,8 @@ import com.akiban.sql.server.ServerCallInvocation;
 import com.akiban.sql.server.ServerJavaRoutine;
 import com.akiban.sql.server.ServerCallContextStack;
 
+import com.akiban.qp.operator.QueryBindings;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Queue;
@@ -33,12 +35,12 @@ abstract class ExecutableJavaRoutine extends ExecutableCallStatement
         super(invocation, parameterMetaData);
     }
 
-    protected abstract ServerJavaRoutine javaRoutine(EmbeddedQueryContext context);
+    protected abstract ServerJavaRoutine javaRoutine(EmbeddedQueryContext context, QueryBindings bindings);
 
     @Override
-    public ExecuteResults execute(EmbeddedQueryContext context) {
+    public ExecuteResults execute(EmbeddedQueryContext context, QueryBindings bindings) {
         Queue<ResultSet> resultSets = null;
-        ServerJavaRoutine call = javaRoutine(context);
+        ServerJavaRoutine call = javaRoutine(context, bindings);
         call.push();
         boolean success = false;
         try {

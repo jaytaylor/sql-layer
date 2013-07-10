@@ -17,6 +17,7 @@
 
 package com.akiban.sql.embedded;
 
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.server.service.routines.ScriptInvoker;
 import com.akiban.server.service.routines.ScriptPool;
 import com.akiban.sql.script.ScriptFunctionJavaRoutine;
@@ -45,8 +46,8 @@ class ExecutableScriptFunctionJavaRoutine extends ExecutableJavaRoutine
     }
 
     @Override
-    protected ServerJavaRoutine javaRoutine(EmbeddedQueryContext context) {
-        return new ScriptFunctionJavaRoutine(context, invocation, pool);
+    protected ServerJavaRoutine javaRoutine(EmbeddedQueryContext context, QueryBindings bindings) {
+        return new ScriptFunctionJavaRoutine(context, bindings, invocation, pool);
     }
     
 }

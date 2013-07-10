@@ -19,6 +19,7 @@ package com.akiban.qp.persistitadapter.indexcursor;
 
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.Sorter;
@@ -65,6 +66,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class PersistitSorter implements Sorter
 {
     public PersistitSorter(QueryContext context,
+                           QueryBindings bindings,
                            Cursor input,
                            RowType rowType,
                            API.Ordering ordering,
@@ -73,6 +75,7 @@ public class PersistitSorter implements Sorter
     {
         this.usePValues = Types3Switch.ON;
         this.context = context;
+        this.bindings = bindings;
         this.adapter = (PersistitAdapter)context.getStore();
         this.input = input;
         this.rowType = rowType;
@@ -85,7 +88,7 @@ public class PersistitSorter implements Sorter
         sorterAdapter = usePValues
                 ? new PValueSorterAdapter()
                 : new OldSorterAdapter();
-        sorterAdapter.init(this.rowType, this.ordering, key, value, this.context, sortOption);
+        sorterAdapter.init(this.rowType, this.ordering, key, value, this.context, this.bindings, sortOption);
         iterationHelper = new SorterIterationHelper(sorterAdapter.createValueAdapter());
         this.loadTap = loadTap;
 
@@ -144,7 +147,7 @@ public class PersistitSorter implements Sorter
     private Cursor cursor()
     {
         exchange.clear();
-        return IndexCursor.create(context, null, ordering, iterationHelper, usePValues);
+        return IndexCursor.create(context, bindings, null, ordering, iterationHelper, usePValues);
     }
 
     private void createKey(Row row)
@@ -189,6 +192,7 @@ public class PersistitSorter implements Sorter
     final RowType rowType;
     final API.Ordering ordering;
     final QueryContext context;
+    final QueryBindings bindings;
     final Key key;
     final Value value;
     final int rowFields;

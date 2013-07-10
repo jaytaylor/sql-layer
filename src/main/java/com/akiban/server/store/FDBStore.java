@@ -35,6 +35,7 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.listener.ListenerService;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
@@ -75,8 +76,9 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
                     ConfigurationService configService,
                     SchemaManager schemaManager,
                     TransactionService txnService,
-                    LockService lockService) {
-        super(lockService, schemaManager);
+                    LockService lockService,
+                    ListenerService listenerService) {
+        super(lockService, schemaManager, listenerService);
         this.holder = holder;
         this.configService = configService;
         this.schemaManager = schemaManager;
@@ -420,11 +422,6 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
 
     @Override
     protected void preWrite(Session session, FDBStoreData storeData, RowDef rowDef, RowData rowData) {
-        // None
-    }
-
-    @Override
-    protected void addChangeFor(Session session, UserTable table, Key hKey) {
         // None
     }
 

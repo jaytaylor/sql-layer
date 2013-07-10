@@ -23,6 +23,7 @@ import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.StatementNode;
 
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
@@ -77,9 +78,9 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         if (toFile == null)
-            return super.execute(context, maxrows);
+            return super.execute(context, bindings, maxrows);
 
         PostgresServerSession server = context.getServer();
         int nrows = 0;
@@ -89,7 +90,7 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
         try {
             lock(context, DXLFunction.UNSPECIFIED_DML_READ);
             lockSuccess = true;
-            cursor = context.startCursor(this);
+            cursor = context.startCursor(this, bindings);
             outputStream = new FileOutputStream(toFile);
             int ncols = getColumnTypes().size();
             PostgresCopyCsvOutputter outputter = 

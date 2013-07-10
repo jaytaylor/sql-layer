@@ -161,7 +161,7 @@ public class Product_NestedLoopsIT extends OperatorITBase
         Operator plan = product_NestedLoops(flattenCO, flattenCA, flattenCO.rowType(), flattenCA.rowType(), 0);
         RowType coaRowType = plan.rowType();
         checkRowTypeFields(coaRowType, INT, VARCHAR, INT, INT, VARCHAR, INT, INT, VARCHAR);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(coaRowType, 2L, "foundation", 200L, 2L, "david", 2000L, 2L, "222 2000 st"),
             row(coaRowType, 2L, "foundation", 201L, 2L, "david", 2000L, 2L, "222 2000 st"),
@@ -198,7 +198,7 @@ public class Product_NestedLoopsIT extends OperatorITBase
         Operator plan = product_NestedLoops(flattenCO, flattenCA, flattenCO.rowType(), flattenCA.rowType(), 0);
         RowType coaRowType = plan.rowType();
         checkRowTypeFields(coaRowType, INT, VARCHAR, INT, INT, VARCHAR, INT, INT, VARCHAR);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(coaRowType, 2L, "foundation", 200L, 2L, "david", 2000L, 2L, "222 2000 st"),
             row(coaRowType, 2L, "foundation", 201L, 2L, "david", 2000L, 2L, "222 2000 st"),
@@ -262,7 +262,7 @@ public class Product_NestedLoopsIT extends OperatorITBase
             row(productRowType, 5L, "highland", 5001L, 5L, "555 5001 st", 5001, 5L, "555 5001 st"),
             row(productRowType, 6L, "flybridge", null, null, null, null, null, null),
         };
-        compareRows(expected, cursor(product, queryContext));
+        compareRows(expected, cursor(product, queryContext, queryBindings));
     }
 
     @Test

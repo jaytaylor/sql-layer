@@ -67,13 +67,13 @@ public class DeleteProcessor extends DMLProcessor {
 
         try {
             Operator delete = deleteGenerator.get(tableName);
-            cursor = API.cursor(delete, context.queryContext);
+            cursor = API.cursor(delete, context.queryContext, context.queryBindings);
 
             for (List<String> key : pks) {
                 for (int i = 0; i < key.size(); i++) {
                     String akey = key.get(i);
                     pvalue.putString(akey, null);
-                    context.queryContext.setPValue(i, pvalue);
+                    context.queryBindings.setPValue(i, pvalue);
                 }
     
                 cursor.open();

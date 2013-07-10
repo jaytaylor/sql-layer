@@ -21,6 +21,8 @@ import com.akiban.sql.parser.FetchStatementNode;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.StatementNode;
 
+import com.akiban.qp.operator.QueryBindings;
+
 import java.util.List;
 import java.io.IOException;
 
@@ -55,7 +57,7 @@ public class PostgresFetchStatement extends PostgresBaseCursorStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         return server.fetchStatement(name, count);
     }

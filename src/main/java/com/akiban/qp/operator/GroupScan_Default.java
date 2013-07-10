@@ -88,9 +88,9 @@ class GroupScan_Default extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(QueryContext context)
+    protected Cursor cursor(QueryContext context, QueryBindings bindings)
     {
-        return new Execution(context, cursorCreator);
+        return new Execution(context, bindings, cursorCreator);
     }
 
     // GroupScan_Default interface
@@ -198,10 +198,10 @@ class GroupScan_Default extends Operator
 
         // Execution interface
 
-        Execution(QueryContext context, GroupCursorCreator cursorCreator)
+        Execution(QueryContext context, QueryBindings bindings, GroupCursorCreator cursorCreator)
         {
-            super(context);
-            this.cursor = cursorCreator.cursor(context);
+            super(context, bindings);
+            this.cursor = cursorCreator.cursor(context, bindings);
         }
 
         // Object state
@@ -211,7 +211,7 @@ class GroupScan_Default extends Operator
 
     static interface GroupCursorCreator
     {
-        Cursor cursor(QueryContext context);
+        Cursor cursor(QueryContext context, QueryBindings bindings);
 
         Group group();
         
@@ -254,7 +254,7 @@ class GroupScan_Default extends Operator
         // GroupCursorCreator interface
 
         @Override
-        public Cursor cursor(QueryContext context)
+        public Cursor cursor(QueryContext context, QueryBindings bindings)
         {
             return context.getStore(group().getRoot()).newGroupCursor(group());
         }
@@ -281,9 +281,9 @@ class GroupScan_Default extends Operator
         // GroupCursorCreator interface
 
         @Override
-        public Cursor cursor(QueryContext context)
+        public Cursor cursor(QueryContext context, QueryBindings bindings)
         {
-            return new HKeyBoundCursor(context, 
+            return new HKeyBoundCursor(context, bindings,
                     context.getStore(group().getRoot()).newGroupCursor(group()),
                     hKeyBindingPosition, 
                     deep, 
@@ -367,13 +367,14 @@ class GroupScan_Default extends Operator
         }
 
         HKeyBoundCursor(QueryContext context,
+                        QueryBindings bindings,
                         GroupCursor input,
                         int hKeyBindingPosition,
                         boolean deep,
                         UserTable hKeyType,
                         UserTable shortenUntil)
         {
-            super(context, input);
+            super(context, bindings, input);
             this.input = input;
             this.hKeyBindingPosition = hKeyBindingPosition;
             this.deep = deep;
@@ -382,7 +383,7 @@ class GroupScan_Default extends Operator
         }
 
         private HKey getHKeyFromBindings() {
-            return context.getHKey(hKeyBindingPosition);
+            return bindings.getHKey(hKeyBindingPosition);
         }
 
         private final GroupCursor input;

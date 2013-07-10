@@ -18,6 +18,7 @@
 package com.akiban.sql.script;
 
 import com.akiban.ais.model.Routine;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.server.service.routines.ScriptEvaluator;
 import com.akiban.server.service.routines.ScriptPool;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
@@ -36,10 +37,11 @@ public class ScriptBindingsRoutineTExpression extends ServerJavaRoutineTExpressi
 
     @Override
     protected ServerJavaRoutine javaRoutine(ServerQueryContext context,
+                                            QueryBindings bindings,
                                             ServerRoutineInvocation invocation) {
         ScriptPool<ScriptEvaluator> pool = context.getServer().getRoutineLoader().
             getScriptEvaluator(context.getSession(), routine.getName());
-        return new ScriptBindingsRoutine(context, invocation, pool);
+        return new ScriptBindingsRoutine(context, bindings, invocation, pool);
     }
 
 }

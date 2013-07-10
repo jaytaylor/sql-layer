@@ -19,7 +19,9 @@ package com.akiban.server.service.text;
 
 import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.IndexName;
+import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import static com.akiban.qp.operator.API.cursor;
 
@@ -31,12 +33,11 @@ import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionServiceImpl;
+import com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.test.it.qp.TestRow;
 
 import com.akiban.server.types3.mcompat.mfuncs.WaitFunctionHelpers;
-import com.persistit.Exchange;
-import com.persistit.exception.PersistitException;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -51,6 +52,7 @@ public class FullTextIndexServiceIT extends ITBase
     protected Schema schema;
     protected StoreAdapter adapter;
     protected QueryContext queryContext;
+    protected QueryBindings queryBindings;
     private static final Logger logger = LoggerFactory.getLogger(FullTextIndexServiceIT.class);
 
 
@@ -103,10 +105,11 @@ public class FullTextIndexServiceIT extends ITBase
         schema = SchemaCache.globalSchema(ais());
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
     }
 
     @Test
-    public void testPopulateScheduling() throws InterruptedException, PersistitException
+    public void testPopulateScheduling() throws InterruptedException
     {
         // This test is specifically for FullTextIndexServiceImpl.java
         assertEquals(FullTextIndexServiceImpl.class, fullText.getClass());
@@ -139,8 +142,7 @@ public class FullTextIndexServiceIT extends ITBase
                     int n = 0;
                     public void visit(IndexName idx)
                     {
-                        assertEquals("entry[" + n + "]", expecteds[n++].getIndexName(),
-                                                         idx);
+                        assertEquals("entry[" + n + "]", expecteds[n++].getIndexName(), idx);
                     }
 
                     public void endOfTree()
@@ -176,7 +178,7 @@ public class FullTextIndexServiceIT extends ITBase
 
 
     @Test
-    public void testDeleteIndex() throws PersistitException, InterruptedException
+    public void testDeleteIndex() throws InterruptedException
     {
      
         // This test is specifically for FullTextIndexServiceImpl.java
@@ -239,25 +241,25 @@ public class FullTextIndexServiceIT extends ITBase
         void visit(IndexName idx);
         void endOfTree();
     }
-    
-    
-    private static void traverse(FullTextIndexServiceImpl serv,
-                                 Visitor visitor) throws PersistitException
-    {
-         Session session = new SessionServiceImpl().createSession();
 
-         try
-         {
-             Exchange ex = serv.getPopulateExchange(session);
-             IndexName toPopulate;
-             while ((toPopulate = serv.nextInQueue(session, ex, true)) != null)
-                 visitor.visit(toPopulate);
-             visitor.endOfTree();
-         }
-         finally
-         {
-             session.close();
-         }
+    private void traverse(FullTextIndexServiceImpl serv, Visitor visitor)
+    {
+        Cursor cursor = null;
+        try(Session session = createNewSession();
+            CloseableTransaction txn = txnService().beginCloseableTransaction(session)) {
+            cursor = serv.populateTableCursor(session);
+            cursor.open();
+            IndexName toPopulate;
+            while((toPopulate = serv.nextInQueue(session, cursor, true)) != null) {
+                visitor.visit(toPopulate);
+            }
+            visitor.endOfTree();
+            txn.commit();
+        } finally {
+            if(cursor != null) {
+                cursor.close();
+            }
+        }
     }
 
     @Test
@@ -293,13 +295,9 @@ public class FullTextIndexServiceIT extends ITBase
             row(rowType, 3L)
         };
         FullTextQueryBuilder builder = new FullTextQueryBuilder(index, ais(), queryContext);
-        Operator plan = builder.scanOperator("flintstone", 15);
-        compareRows(expected1, cursor(plan, queryContext));
+        ftScanAndCompare(builder, "flintstone", 15, expected1);
+        ftScanAndCompare(builder, "state:MA", 15, expected1);
 
-        plan = builder.scanOperator("state:MA", 15);
-        compareRows(expected1, cursor(plan, queryContext));
-        
-        
         // part 2
         // write new rows
         writeRow(c, 4, "John Watson");
@@ -317,9 +315,8 @@ public class FullTextIndexServiceIT extends ITBase
         };
 
         // confirm new changes
-        plan = builder.scanOperator("flintstone", 15);
-        compareRows(expected2, cursor(plan, queryContext));
-        
+        ftScanAndCompare(builder, "flintstone", 15, expected2);
+
         // part 3
         ((FullTextIndexServiceImpl)fullText).disableUpdateWorker();
         
@@ -330,9 +327,8 @@ public class FullTextIndexServiceIT extends ITBase
         WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
         
         // confirm that new rows are not found (ie., expected2 still works)
-        plan = builder.scanOperator("flintstone", 15);
-        compareRows(expected2, cursor(plan, queryContext));
-        
+        ftScanAndCompare(builder, "flintstone", 15, expected2);
+
         ((FullTextIndexServiceImpl)fullText).enableUpdateWorker();
         WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
         
@@ -348,8 +344,7 @@ public class FullTextIndexServiceIT extends ITBase
             row(rowType, 9L)
         };
 
-        plan = builder.scanOperator("flintstone", 15);
-        compareRows(expected3, cursor(plan, queryContext));
+        ftScanAndCompare(builder, "flintstone", 15, expected3);
     }
 
     @Test
@@ -364,12 +359,8 @@ public class FullTextIndexServiceIT extends ITBase
             row(rowType, 3L)
         };
         FullTextQueryBuilder builder = new FullTextQueryBuilder(index, ais(), queryContext);
-        Operator plan = builder.scanOperator("flintstone", 10);
-        compareRows(expected, cursor(plan, queryContext));
-
-        plan = builder.scanOperator("state:MA", 10);
-        compareRows(expected, cursor(plan, queryContext));
-        
+        ftScanAndCompare(builder, "flintstone", 10, expected);
+        ftScanAndCompare(builder, "state:MA", 10, expected);
     }
 
     @Test
@@ -383,8 +374,7 @@ public class FullTextIndexServiceIT extends ITBase
             row(rowType, 1L, 101L)
         };
         FullTextQueryBuilder builder = new FullTextQueryBuilder(index, ais(), queryContext);
-        Operator plan = builder.scanOperator("name:Flintstone AND sku:1234", 10);
-        compareRows(expected, cursor(plan, queryContext));
+        ftScanAndCompare(builder, "name:Flintstone AND sku:1234", 10, expected);
     }
 
     protected RowType rowType(String tableName) {
@@ -395,4 +385,11 @@ public class FullTextIndexServiceIT extends ITBase
         return new TestRow(rowType, fields);
     }
 
+    private void ftScanAndCompare(FullTextQueryBuilder builder, String query, int limit, RowBase[] expected) {
+        try(CloseableTransaction txn = txnService().beginCloseableTransaction(session())) {
+            Operator plan = builder.scanOperator(query, limit);
+            compareRows(expected, cursor(plan, queryContext, queryBindings));
+            txn.commit();
+        }
+    }
 }

@@ -101,8 +101,8 @@ final class UnionAll_Default extends Operator {
     }
 
     @Override
-    protected Cursor cursor(QueryContext context) {
-        return new Execution(context);
+    protected Cursor cursor(QueryContext context, QueryBindings bindings) {
+        return new Execution(context, bindings);
     }
 
     UnionAll_Default(Operator input1, RowType input1Type, Operator input2, RowType input2Type, boolean usePValues) {
@@ -299,9 +299,9 @@ final class UnionAll_Default extends Operator {
             return destroyed;
         }
 
-        private Execution(QueryContext context)
+        private Execution(QueryContext context, QueryBindings bindings)
         {
-            super(context);
+            super(context, bindings);
             cursors = new Cursor[inputs.size()];
         }
 
@@ -353,7 +353,7 @@ final class UnionAll_Default extends Operator {
         private Cursor cursor(int i)
         {
             if (cursors[i] == null) {
-                cursors[i] = inputs.get(i).cursor(context);
+                cursors[i] = inputs.get(i).cursor(context, bindings);
             }
             return cursors[i];
         }

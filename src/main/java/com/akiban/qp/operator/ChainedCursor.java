@@ -24,8 +24,8 @@ public class ChainedCursor extends OperatorExecutionBase implements Cursor
 {
     protected final Cursor input;
 
-    protected ChainedCursor(QueryContext context, Cursor input) {
-        super(context);
+    protected ChainedCursor(QueryContext context, QueryBindings bindings, Cursor input) {
+        super(context, bindings);
         this.input = input;
     }
 

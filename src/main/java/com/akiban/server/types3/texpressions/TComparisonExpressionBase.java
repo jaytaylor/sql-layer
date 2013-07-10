@@ -17,6 +17,7 @@
 
 package com.akiban.server.types3.texpressions;
 
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.explain.*;
@@ -170,6 +171,12 @@ public abstract class TComparisonExpressionBase implements TPreparedExpression {
         public void with(QueryContext context) {
             left.with(context);
             right.with(context);
+        }
+
+        @Override
+        public void with(QueryBindings bindings) {
+            left.with(bindings);
+            right.with(bindings);
         }
 
         private CompareEvaluation(TInstance leftInstance, TEvaluatableExpression left,

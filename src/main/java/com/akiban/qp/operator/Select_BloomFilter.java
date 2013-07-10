@@ -101,12 +101,12 @@ class Select_BloomFilter extends Operator
     }
 
     @Override
-    protected Cursor cursor(QueryContext context)
+    protected Cursor cursor(QueryContext context, QueryBindings bindings)
     {
         if (tFields == null)
-            return new Execution<>(context, fields, oldExpressionsAdapater);
+            return new Execution<>(context, bindings, fields, oldExpressionsAdapater);
         else
-            return new Execution<>(context, tFields, newExpressionsAdapter);
+            return new Execution<>(context, bindings, tFields, newExpressionsAdapter);
     }
 
     @Override
@@ -243,8 +243,8 @@ class Select_BloomFilter extends Operator
             TAP_OPEN.in();
             try {
                 CursorLifecycle.checkIdle(this);
-                filter = context.getBloomFilter(bindingPosition);
-                context.setBloomFilter(bindingPosition, null);
+                filter = bindings.getBloomFilter(bindingPosition);
+                bindings.setBloomFilter(bindingPosition, null);
                 inputCursor.open();
                 idle = false;
             } finally {
@@ -324,12 +324,12 @@ class Select_BloomFilter extends Operator
 
         // Execution interface
 
-        <EXPR> Execution(QueryContext context,
+        <EXPR> Execution(QueryContext context, QueryBindings bindings,
                               List<? extends EXPR> expressions, ExpressionAdapter<EXPR,E> adapter)
         {
-            super(context);
-            this.inputCursor = input.cursor(context);
-            this.onPositiveCursor = onPositive.cursor(context);
+            super(context, bindings);
+            this.inputCursor = input.cursor(context, bindings);
+            this.onPositiveCursor = onPositive.cursor(context, bindings);
             this.adapter = adapter;
             for (EXPR field : expressions) {
                 E eval = adapter.evaluate(field, context);
@@ -359,13 +359,13 @@ class Select_BloomFilter extends Operator
             // occurs during next().
             TAP_CHECK.in();
             try {
-                context.setRow(bindingPosition, row);
+                bindings.setRow(bindingPosition, row);
                 onPositiveCursor.open();
                 try {
                     return onPositiveCursor.next() != null;
                 } finally {
                     onPositiveCursor.close();
-                    context.setRow(bindingPosition, null);
+                    bindings.setRow(bindingPosition, null);
                 }
             } finally {
                 TAP_CHECK.out();

@@ -17,8 +17,9 @@
 
 package com.akiban.qp.exec;
 
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 
 public interface UpdatePlannable extends Plannable {
-    UpdateResult run(QueryContext context);
+    UpdateResult run(QueryContext context, QueryBindings bindings);
 }

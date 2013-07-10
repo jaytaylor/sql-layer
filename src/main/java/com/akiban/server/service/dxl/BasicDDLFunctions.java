@@ -50,6 +50,7 @@ import com.akiban.ais.util.TableChangeValidator;
 import com.akiban.ais.util.TableChangeValidatorException;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.QueryContextBase;
 import com.akiban.qp.operator.SimpleQueryContext;
@@ -92,6 +93,8 @@ import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.error.UnsupportedDropException;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.listener.ListenerService;
+import com.akiban.server.service.listener.TableListener;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
@@ -128,10 +131,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     private static final boolean ALTER_AUTO_INDEX_CHANGES = true;
 
     private final IndexStatisticsService indexStatisticsService;
-    private final ConfigurationService configService;
     private final T3RegistryService t3Registry;
     private final LockService lockService;
     private final TransactionService txnService;
+    private final ListenerService listenerService;
     
 
     private static class ShimContext extends QueryContextBase {
@@ -209,7 +212,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     public void createTable(Session session, UserTable table)
     {
         TableName tableName = schemaManager().createTableDefinition(session, table);
-        checkCursorsForDDLModification(session, getAIS(session).getTable(tableName));
+        UserTable newTable = getAIS(session).getUserTable(tableName);
+        checkCursorsForDDLModification(session, newTable);
+        for(TableListener listener : listenerService.getTableListeners()) {
+            listener.onCreate(session, newTable);
+        }
     }
 
     @Override
@@ -273,6 +280,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 store().deleteSequences(session, sequences);
             }
         }
+        for(TableListener listener : listenerService.getTableListeners()) {
+            listener.onDrop(session, table);
+        }
         schemaManager().dropTableDefinition(session, tableName.getSchemaName(), tableName.getTableName(),
                                             SchemaManager.DropBehavior.RESTRICT);
         checkCursorsForDDLModification(session, table);
@@ -292,12 +302,13 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             final RowType oldSourceType = oldSchema.userTableRowType(origTable);
             final StoreAdapter adapter = store().createAdapter(session, oldSchema);
             final QueryContext queryContext = new ShimContext(adapter, context);
+            final QueryBindings queryBindings = queryContext.createBindings();
 
             Operator plan = filter_Default(
                     groupScan_Default(origTable.getGroup()),
                     Collections.singleton(oldSourceType)
             );
-            com.akiban.qp.operator.Cursor cursor = API.cursor(plan, queryContext);
+            com.akiban.qp.operator.Cursor cursor = API.cursor(plan, queryContext, queryBindings);
 
             cursor.open();
             try {
@@ -369,6 +380,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         // Build transformation
         final StoreAdapter adapter = store().createAdapter(session, origSchema);
         final QueryContext queryContext = new ShimContext(adapter, context);
+        final QueryBindings queryBindings = queryContext.createBindings();
 
         final AkibanInformationSchema newAIS = getAIS(session);
         final UserTable newTable = newAIS.getUserTable(newDefinition.getName());
@@ -474,7 +486,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         for(UserTable root : roots) {
             Operator plan = groupScan_Default(root.getGroup());
-            com.akiban.qp.operator.Cursor cursor = API.cursor(plan, queryContext);
+            com.akiban.qp.operator.Cursor cursor = API.cursor(plan, queryContext, queryBindings);
             cursor.open();
             try {
                 Row oldRow;
@@ -486,6 +498,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                         newRow = new ProjectedRow(newTableType,
                                                   oldRow,
                                                   queryContext,
+                                                  queryBindings,
                                                   projections,
                                                   ProjectedRow.createTEvaluatableExpressions(pProjections),
                                                   TInstance.createTInstances(pProjections));
@@ -887,13 +900,21 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
     }
 
-    private void dropGroupInternal(Session session, TableName groupName) {
+    private void dropGroupInternal(final Session session, TableName groupName) {
         final Group group = getAIS(session).getGroup(groupName);
         if(group == null) {
             return;
         }
         store().dropGroup(session, group);
         final UserTable root = group.getRoot();
+        root.traverseTableAndDescendants(new NopVisitor() {
+            @Override
+            public void visitUserTable(UserTable table) {
+                for(TableListener listener : listenerService.getTableListeners()) {
+                    listener.onDrop(session, table);
+                }
+            }
+        });
         schemaManager().dropTableDefinition(session, root.getName().getSchemaName(), root.getName().getTableName(),
                                             SchemaManager.DropBehavior.CASCADE);
         checkCursorsForDDLModification(session, root);
@@ -1035,6 +1056,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             checkCursorsForDDLModification(session, index.leafMostTable());
         }
         store().buildIndexes(session, newIndexes);
+        for(TableListener listener : listenerService.getTableListeners()) {
+            listener.onCreateIndex(session, newIndexes);
+        }
         return newIndexes;
     }
 
@@ -1074,6 +1098,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             }
             schemaManager().dropIndexes(session, indexes);
             store().deleteIndexes(session, indexes);
+            for(TableListener listener : listenerService.getTableListeners()) {
+                listener.onDropIndex(session, indexes);
+            }
             checkCursorsForDDLModification(session, table);
             txnService.commitTransaction(session);
         } finally {
@@ -1286,13 +1313,13 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     BasicDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store,
-                      IndexStatisticsService indexStatisticsService, ConfigurationService configService,
-                      T3RegistryService t3Registry, LockService lockService, TransactionService txnService) {
+                      IndexStatisticsService indexStatisticsService, T3RegistryService t3Registry,
+                      LockService lockService, TransactionService txnService, ListenerService listenerService) {
         super(middleman, schemaManager, store);
         this.indexStatisticsService = indexStatisticsService;
-        this.configService = configService;
         this.t3Registry = t3Registry;
         this.lockService = lockService;
         this.txnService = txnService;
+        this.listenerService = listenerService;
     }
 }

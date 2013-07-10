@@ -24,6 +24,7 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.IndexScanSelector;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.indexcursor.IterationHelper;
@@ -45,7 +46,7 @@ import com.akiban.util.tap.InOutTap;
 import com.persistit.Key;
 
 public class FDBAdapter extends StoreAdapter {
-    private static PersistitIndexRowPool indexRowPool = new PersistitIndexRowPool();
+    private static final PersistitIndexRowPool indexRowPool = new PersistitIndexRowPool();
 
     private final FDBStore store;
 
@@ -61,12 +62,14 @@ public class FDBAdapter extends StoreAdapter {
 
     @Override
     public Cursor newIndexCursor(QueryContext context,
+                                 QueryBindings bindings,
                                  Index index,
                                  IndexKeyRange keyRange,
                                  API.Ordering ordering,
                                  IndexScanSelector scanSelector,
                                  boolean usePValues) {
         return new PersistitIndexCursor(context,
+                                        bindings,
                                         schema.indexRowType(index),
                                         keyRange,
                                         ordering,
@@ -105,13 +108,13 @@ public class FDBAdapter extends StoreAdapter {
 
     @Override
     public Sorter createSorter(QueryContext context,
+                               QueryBindings bindings,
                                Cursor input,
                                RowType rowType,
                                API.Ordering ordering,
                                API.SortOption sortOption,
                                InOutTap loadTap) {
-        return new MemorySorter(context, input, rowType, ordering, sortOption, loadTap,
-                                store.createKey());
+        return new MemorySorter(context, bindings, input, rowType, ordering, sortOption, loadTap, store.createKey());
     }
 
     @Override

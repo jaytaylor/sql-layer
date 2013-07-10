@@ -22,6 +22,8 @@ import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.server.ServerStatement;
 
+import com.akiban.qp.operator.QueryBindings;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -42,7 +44,7 @@ public interface PostgresStatement extends ServerStatement
                                 boolean always, boolean params) throws IOException;
 
     /** Execute statement and output results. Return number of rows processed. */
-    public int execute(PostgresQueryContext context, int maxrows) throws IOException;
+    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException;
 
     /** Whether or not the generation has been set */
     public boolean hasAISGeneration();

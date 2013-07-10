@@ -17,11 +17,12 @@
 
 package com.akiban.sql.embedded;
 
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.sql.server.ServerStatement;
 
 abstract class ExecutableStatement implements ServerStatement
 {
-    public abstract ExecuteResults execute(EmbeddedQueryContext context);
+    public abstract ExecuteResults execute(EmbeddedQueryContext context, QueryBindings bindings);
 
     public JDBCResultSetMetaData getResultSetMetaData() {
         return null;

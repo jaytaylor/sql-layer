@@ -101,6 +101,7 @@ public class Product3WayIT extends OperatorITBase
         };
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         use(db);
     }
 
@@ -153,7 +154,7 @@ public class Product3WayIT extends OperatorITBase
                 INNER_JOIN);
         Operator RAB = product_NestedLoops(RA, RB, RA.rowType(), RB.rowType(), 0);
         Operator RABC = product_NestedLoops(RAB, RC, RAB.rowType(), RC.rowType(), 0);
-        Cursor cursor = cursor(RABC, queryContext);
+        Cursor cursor = cursor(RABC, queryContext, queryBindings);
         RowType rabcRowType = RABC.rowType();
         RowBase[] expected = new RowBase[]{
             row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 15L, 1L, "b15", 17L, 1L, "c17"),
@@ -215,7 +216,7 @@ public class Product3WayIT extends OperatorITBase
                 INNER_JOIN);
         Operator RAC = product_NestedLoops(RA, RC, RA.rowType(), RC.rowType(), 0);
         Operator RACB = product_NestedLoops(RAC, RB, RAC.rowType(), RB.rowType(), 0);
-        Cursor cursor = cursor(RACB, queryContext);
+        Cursor cursor = cursor(RACB, queryContext, queryBindings);
         RowType racbRowType = RACB.rowType();
         RowBase[] expected = new RowBase[]{
             row(racbRowType, 1L, "r1", 13L, 1L, "a13", 17L, 1L, "c17", 15L, 1L, "b15"),
@@ -284,7 +285,7 @@ public class Product3WayIT extends OperatorITBase
         Operator RA = product_NestedLoops(rScan, flattenRA, rRowType, flattenRA.rowType(), 0);
         Operator RAB = product_NestedLoops(RA, flattenRB, RA.rowType(), flattenRB.rowType(), 0);
         Operator RABC = product_NestedLoops(RAB, flattenRC, RAB.rowType(), flattenRC.rowType(), 0);
-        Cursor cursor = cursor(RABC, queryContext);
+        Cursor cursor = cursor(RABC, queryContext, queryBindings);
         RowType rabcRowType = RABC.rowType();
         RowBase[] expected = new RowBase[]{
             row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 15L, 1L, "b15", 17L, 1L, "c17"),

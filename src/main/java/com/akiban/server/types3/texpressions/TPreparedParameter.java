@@ -17,6 +17,7 @@
 
 package com.akiban.server.types3.texpressions;
 
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.explain.*;
@@ -78,7 +79,7 @@ public final class TPreparedParameter implements TPreparedExpression {
         public void evaluate() {
             if (!pValue.hasAnyValue()) { // only need to compute this once
                 TClass tClass = tInstance.typeClass();
-                PValueSource inSource = context.getPValue(position);
+                PValueSource inSource = bindings.getPValue(position);
                 // TODO need a better execution context thinger
                 TExecutionContext executionContext = new TExecutionContext(
                         null,
@@ -102,6 +103,11 @@ public final class TPreparedParameter implements TPreparedExpression {
             this.context = context;
         }
 
+        @Override
+        public void with(QueryBindings bindings) {
+            this.bindings = bindings;
+        }
+
         private InnerEvaluation(int position, TInstance tInstance) {
             this.position = position;
             this.tInstance = tInstance;
@@ -111,6 +117,7 @@ public final class TPreparedParameter implements TPreparedExpression {
         private final int position;
         private final PValue pValue;
         private QueryContext context;
+        private QueryBindings bindings;
         private final TInstance tInstance;
     }
 }

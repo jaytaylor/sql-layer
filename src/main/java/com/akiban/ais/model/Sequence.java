@@ -118,8 +118,6 @@ public class Sequence implements TreeLink {
     private final long maxValue;
     private final boolean cycle;
     private final long cacheSize;
-  
-
     private final long range;
     private AtomicReference<TreeCache> treeCache = new AtomicReference<>();
     
@@ -140,13 +138,6 @@ public class Sequence implements TreeLink {
         return treeCache.get();
     }
 
-    public long nextValue() throws PersistitException {
-        // Note: Ever increasing, always incremented by 1, rollbacks will leave gaps. See bug1167045 for discussion.
-        AccumulatorAdapter accum = getAdapter();
-        long rawSequence = accum.seqAllocate();
-        return nextValueRaw(rawSequence);
-    }
-
     public long nextValueRaw(long rawSequence) {
         long nextValue = notCycled(rawSequence);
         if (nextValue > maxValue || nextValue < minValue) {
@@ -158,18 +149,8 @@ public class Sequence implements TreeLink {
         return nextValue;
     }
 
-    public long currentValue() throws PersistitException {
-        AccumulatorAdapter accum = getAdapter();
-        return currentValueRaw(accum.getSnapshot());
-    }
-
     public long currentValueRaw(long rawSequence) {
         return cycled(notCycled(rawSequence));
-    }
-
-    private AccumulatorAdapter getAdapter() throws PersistitException {
-        Tree tree = getTreeCache().getTree();
-        return new AccumulatorAdapter(AccumInfo.SEQUENCE, tree);
     }
 
     private long notCycled(long rawSequence) {

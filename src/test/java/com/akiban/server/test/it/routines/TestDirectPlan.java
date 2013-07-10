@@ -20,6 +20,7 @@ package com.akiban.server.test.it.routines;
 import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectCursor;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 
 import java.sql.Types;
@@ -41,24 +42,26 @@ public class TestDirectPlan extends LoadableDirectObjectPlan
     {
         return new DirectObjectPlan() {
                 @Override
-                public DirectObjectCursor cursor(QueryContext context) {
-                    return new TestDirectObjectCursor(context);
+                public DirectObjectCursor cursor(QueryContext context, QueryBindings bindings) {
+                    return new TestDirectObjectCursor(context, bindings);
                 }
             };
     }
 
     public static class TestDirectObjectCursor extends DirectObjectCursor {
         private QueryContext context;
+        private QueryBindings bindings;
         private long i, n;
 
-        public TestDirectObjectCursor(QueryContext context) {
+        public TestDirectObjectCursor(QueryContext context, QueryBindings bindings) {
             this.context = context;
+            this.bindings = bindings;
         }
 
         @Override
         public void open() {
             i = 0;
-            n = context.getValue(0).getLong();
+            n = bindings.getValue(0).getLong();
         }
 
         @Override

@@ -90,6 +90,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
         space = SpaceLatLon.create();
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
     }
 
     @Test
@@ -106,7 +107,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                 int pid = pid(cid);
                 expected[r++] = new long[]{before(pid), z, after(cid), pid, cid};
             }
-            compareRows(rows(cSpatialIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext));
+            compareRows(rows(cSpatialIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
         }
         {
             Operator plan = indexScan_Default(pSpatialIndexRowType);
@@ -120,7 +121,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                     expected[r++] = new long[]{before(pid), z, after(cid), pid, cid};
                 }
             }
-            compareRows(rows(pSpatialIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext));
+            compareRows(rows(pSpatialIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
         }
     }
 
@@ -158,7 +159,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                 long z = space.shuffle(clat, clon);
                 expected[r++] = new long[]{before(pid), z, after, pid, cid};
             }
-            compareRows(rows(cSpatialIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext));
+            compareRows(rows(cSpatialIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
         }
         {
             Operator plan = indexScan_Default(pSpatialIndexRowType);
@@ -173,7 +174,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                 long z = space.shuffle(plat, plon);
                 expected[r++] = new long[]{before(pid), z, after, pid, cid};
             }
-            compareRows(rows(pSpatialIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext));
+            compareRows(rows(pSpatialIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
         }
     }
 
@@ -216,7 +217,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                 int pid = pid(cid);
                 expected[r++] = new long[]{before(pid), z, after(cid), pid, cid};
             }
-            compareRows(rows(cSpatialIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext));
+            compareRows(rows(cSpatialIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
         }
         {
             Operator plan = indexScan_Default(pSpatialIndexRowType);
@@ -230,7 +231,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                     expected[r++] = new long[]{before(pid), z, after(cid), pid, cid};
                 }
             }
-            compareRows(rows(pSpatialIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext));
+            compareRows(rows(pSpatialIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
         }
     }
 
@@ -290,7 +291,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                                                    new SetColumnSelector(0, 1, 2));
             IndexKeyRange box = IndexKeyRange.spatial(pSpatialIndexRowType, lowerLeft, upperRight);
             Operator plan = indexScan_Default(pSpatialIndexRowType, false, box);
-            Cursor cursor = API.cursor(plan, queryContext);
+            Cursor cursor = API.cursor(plan, queryContext, queryBindings);
             cursor.open();
             Row row;
             while ((row = cursor.next()) != null) {
@@ -369,7 +370,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                                                    new SetColumnSelector(0, 1, 2));
             IndexKeyRange box = IndexKeyRange.spatial(cSpatialIndexRowType, lowerLeft, upperRight);
             Operator plan = indexScan_Default(cSpatialIndexRowType, false, box);
-            Cursor cursor = API.cursor(plan, queryContext);
+            Cursor cursor = API.cursor(plan, queryContext, queryBindings);
             cursor.open();
             Row row;
             while ((row = cursor.next()) != null) {
@@ -424,7 +425,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                                    new SetColumnSelector(0, 1, 2));
                 IndexKeyRange zStartRange = IndexKeyRange.around(cSpatialIndexRowType, zStartBound);
                 Operator plan = indexScan_Default(cSpatialIndexRowType, false, zStartRange);
-                Cursor cursor = API.cursor(plan, queryContext);
+                Cursor cursor = API.cursor(plan, queryContext, queryBindings);
                 cursor.open();
                 Row row;
                 long previousDistance = Long.MIN_VALUE;

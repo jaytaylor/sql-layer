@@ -103,6 +103,7 @@ public class Intersect_OrderedVsHKeyColumnEquivalenceIT extends OperatorITBase
                            "item.item_id");
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         db = new NewRow[] {
             createNewRow(item, 1L, 1L, 100L, 100L, 100L, 100L, 100L, 100L, 100L, 100L, 100L),
             createNewRow(itemValueState, 1L, 1L, 111L, 111L, 1L, 1L),
@@ -128,7 +129,7 @@ public class Intersect_OrderedVsHKeyColumnEquivalenceIT extends OperatorITBase
             row(giNoValueItemValueState, 1L, 100L, 1L, 1L, 100L, 1L, 222L, 222L),
             row(giNoValueItemValueState, 1L, 100L, 1L, 1L, 100L, 1L, 333L, 333L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     private Operator intersectPlan()

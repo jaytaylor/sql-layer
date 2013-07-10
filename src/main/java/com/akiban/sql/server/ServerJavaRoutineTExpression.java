@@ -19,6 +19,7 @@ package com.akiban.sql.server;
 
 import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.explain.CompoundExplainer;
@@ -67,7 +68,7 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
             }
             if (allConstant && routine.isDeterministic()) {
                 ValueRoutineInvocation invocation = new TPreptimeValueRoutineInvocation(routine, values);
-                ServerJavaRoutine javaRoutine = javaRoutine = javaRoutine((ServerQueryContext)context, invocation);
+                ServerJavaRoutine javaRoutine = javaRoutine = javaRoutine((ServerQueryContext)context, null, invocation);
                 evaluate(javaRoutine);
                 constantSource = invocation.getReturnValue();
             }
@@ -102,6 +103,7 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
     }
 
     protected abstract ServerJavaRoutine javaRoutine(ServerQueryContext context,
+                                                     QueryBindings bindings,
                                                      ServerRoutineInvocation invocation);
 
     protected void evaluate(ServerJavaRoutine javaRoutine) {
@@ -204,7 +206,7 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
         }
 
         @Override
-        public ServerJavaValues asValues(ServerQueryContext context) {
+        public ServerJavaValues asValues(ServerQueryContext context, QueryBindings bindings) {
             return new ValueInvocationValues(getRoutine(), context, returnValue) {
                     @Override
                     protected int size() {
@@ -229,7 +231,7 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
         }
 
         @Override
-        public ServerJavaValues asValues(ServerQueryContext context) {
+        public ServerJavaValues asValues(ServerQueryContext context, QueryBindings bindings) {
             return new ValueInvocationValues(getRoutine(), context, returnValue) {
                     @Override
                     protected int size() {
@@ -247,6 +249,7 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
     class TEvaluatableJavaRoutine implements TEvaluatableExpression {
         private Routine routine;
         private List<TEvaluatableExpression> inputs;
+        private ServerQueryContext context;
         private ValueRoutineInvocation invocation;
         private ServerJavaRoutine javaRoutine;
 
@@ -268,8 +271,16 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
             for (TEvaluatableExpression input : inputs) {
                 input.with(context);
             }
+            this.context = (ServerQueryContext)context;
+        }
+
+        @Override
+        public void with(QueryBindings bindings) {
+            for (TEvaluatableExpression input : inputs) {
+                input.with(bindings);
+            }
             invocation = new TEvaluatableValueRoutineInvocation(routine, inputs);
-            javaRoutine = javaRoutine((ServerQueryContext)context, invocation);
+            javaRoutine = javaRoutine(context, bindings, invocation);
         }
 
         @Override

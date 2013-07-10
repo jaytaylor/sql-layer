@@ -58,6 +58,7 @@ public class OrphanResolutionIT extends OperatorITBase
         group = group(parent);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         db = new NewRow[] {
             createNewRow(child, 1L, 100L),
             createNewRow(child, 1L, 101L),
@@ -74,7 +75,7 @@ public class OrphanResolutionIT extends OperatorITBase
             insert_Default(
                 valuesScan_Default(
                     Arrays.asList(parentRow(1, 10)), parentRowType));
-        insertPlan.run(queryContext);
+        insertPlan.run(queryContext, queryBindings);
         // Execution of insertPlan used to hang before 1020342 was fixed.
         RowBase[] expected = new RowBase[] {
             row(parentRowType, 1L, 10L),
@@ -82,7 +83,7 @@ public class OrphanResolutionIT extends OperatorITBase
             row(childRowType, 1L, 100L, 1L),
             row(childRowType, 1L, 101L, 2L),
         };
-        compareRows(expected, cursor(groupScan_Default(group), queryContext));
+        compareRows(expected, cursor(groupScan_Default(group), queryContext, queryBindings));
     }
 
     private BindableRow parentRow(int pid, int px)

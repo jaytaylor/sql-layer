@@ -108,12 +108,13 @@ public class SequenceDDLIT extends AISDDLITBase {
         txnService().rollbackTransactionIfOpen(session());
 
         txnService().beginTransaction(session());
-        assertEquals("cur val c", 2, adapter.sequenceCurrentValue(seqName));
+        assertEquals("cur val c", 1, adapter.sequenceCurrentValue(seqName));
         // Expected gap, see nextValue() impl
         assertEquals("next val c", 3, adapter.sequenceNextValue(seqName));
         txnService().commitTransaction(session());
 
         safeRestartTestServices();
+        adapter = newStoreAdapter(SchemaCache.globalSchema(ddl().getAIS(session())));
 
         s1 = ais().getSequence(seqName);
         txnService().beginTransaction(session());
@@ -126,7 +127,6 @@ public class SequenceDDLIT extends AISDDLITBase {
     @Test
     public void freshValueAfterDropAndRecreate() throws Exception {
         StoreAdapter adapter = newStoreAdapter(SchemaCache.globalSchema(ddl().getAIS(session())));
-        
         final TableName seqName = new TableName("test", "s2");
         final String create = "CREATE SEQUENCE "+seqName+" START WITH 1 INCREMENT BY 1";
         final String drop = "DROP SEQUENCE "+seqName+" RESTRICT";

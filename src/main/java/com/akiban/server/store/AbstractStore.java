@@ -26,7 +26,6 @@ import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexToHKey;
 import com.akiban.ais.model.NopVisitor;
-import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
@@ -35,6 +34,7 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.GroupCursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
@@ -66,6 +66,8 @@ import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDataPValueSource;
 import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.service.listener.ListenerService;
+import com.akiban.server.service.listener.RowListener;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeLink;
@@ -111,12 +113,14 @@ public abstract class AbstractStore<SDType> implements Store {
 
     protected final LockService lockService;
     protected final SchemaManager schemaManager;
+    protected final ListenerService listenerService;
     protected IndexStatisticsService indexStatisticsService;
 
 
-    protected AbstractStore(LockService lockService, SchemaManager schemaManager) {
+    protected AbstractStore(LockService lockService, SchemaManager schemaManager, ListenerService listenerService) {
         this.lockService = lockService;
         this.schemaManager = schemaManager;
+        this.listenerService = listenerService;
     }
 
 
@@ -179,11 +183,7 @@ public abstract class AbstractStore<SDType> implements Store {
     /** Called prior to executing write, update, or delete row. For store specific needs only (i.e. can no-op). */
     protected abstract void preWrite(Session session, SDType storeData, RowDef rowDef, RowData rowData);
 
-    // TODO: Pull FullText out of Store
-    /** The hKey of the given table is changing. */
-    protected abstract void addChangeFor(Session session, UserTable table, Key hKey);
 
-       
     //
     // AbstractStore
     //
@@ -718,14 +718,18 @@ public abstract class AbstractStore<SDType> implements Store {
         List<TableIndex> tableIndexes = new ArrayList<>();
         List<GroupIndex> groupIndexes = new ArrayList<>();
         for(Index index : indexes) {
-            if(index.isTableIndex()) {
-                tableIndexes.add((TableIndex)index);
-            }
-            else if(index.isGroupIndex()) {
-                groupIndexes.add((GroupIndex)index);
-            }
-            else {
-                throw new IllegalArgumentException("Unknown index type: " + index);
+            switch(index.getIndexType()) {
+                case TABLE:
+                    tableIndexes.add((TableIndex)index);
+                break;
+                case GROUP:
+                   groupIndexes.add((GroupIndex)index);
+                break;
+                case FULL_TEXT:
+                    // Not managed by Store
+                break;
+                default:
+                    throw new IllegalArgumentException("Unknown index type: " + index);
             }
         }
         AkibanInformationSchema ais = schemaManager.getAis(session);
@@ -759,9 +763,10 @@ public abstract class AbstractStore<SDType> implements Store {
         }
         if(!groupIndexes.isEmpty()) {
             QueryContext context = new SimpleQueryContext(adapter);
+            QueryBindings bindings = context.createBindings();
             for(GroupIndex groupIndex : groupIndexes) {
                 runMaintenancePlan(
-                        context,
+                        context, bindings,
                         groupIndex,
                         StoreGIMaintenancePlans.groupIndexCreationPlan(adapter.schema(), groupIndex),
                         StoreGIHandler.forBuilding(this, adapter),
@@ -857,7 +862,10 @@ public abstract class AbstractStore<SDType> implements Store {
             }
         }
 
-        addChangeFor(session, rowDef.userTable(), hKey);
+        for(RowListener listener : listenerService.getRowListeners()) {
+            listener.onWrite(session, rowDef.userTable(), hKey, rowData);
+        }
+
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
         for(Index index : indexes) {
             writeIndexRow(session, index, rowData, hKey, indexRow);
@@ -920,8 +928,9 @@ public abstract class AbstractStore<SDType> implements Store {
         // Remove all indexes
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
         if(deleteIndexes) {
-            addChangeFor(session, rowDef.userTable(), hKey);
-
+            for(RowListener listener : listenerService.getRowListeners()) {
+                listener.onDelete(session, rowDef.userTable(), hKey, rowData);
+            }
             for(Index index : rowDef.getIndexes()) {
                 deleteIndexRow(session, index, rowData, hKey, indexRow);
             }
@@ -968,8 +977,9 @@ public abstract class AbstractStore<SDType> implements Store {
         if(tablesRequiringHKeyMaintenance == null) {
             packRowData(storeData, mergedRow);
             store(session, storeData);
-            addChangeFor(session, newRowDef.userTable(), hKey);
-
+            for(RowListener listener : listenerService.getRowListeners()) {
+                listener.onUpdate(session, oldRowDef.userTable(), hKey, oldRow, newRow);
+            }
             PersistitIndexRowBuffer indexRowBuffer = new PersistitIndexRowBuffer(this);
             for(Index index : oldRowDef.getIndexes()) {
                 updateIndex(session, index, oldRowDef, currentRow, mergedRow, hKey, indexRowBuffer);
@@ -1029,7 +1039,9 @@ public abstract class AbstractStore<SDType> implements Store {
                 if(tablesRequiringHKeyMaintenance == null || tablesRequiringHKeyMaintenance.get(ordinal)) {
                     PROPAGATE_REPLACE_TAP.in();
                     try {
-                        addChangeFor(session, rowDef.userTable(), hKey);
+                        for(RowListener listener : listenerService.getRowListeners()) {
+                            listener.onDelete(session, rowDef.userTable(), hKey, rowData);
+                        }
                         // Don't call deleteRow as the hKey does not need recomputed.
                         clear(session, storeData);
                         rowDef.getTableStatus().rowDeleted(session);
@@ -1193,14 +1205,15 @@ public abstract class AbstractStore<SDType> implements Store {
         Operator plan = PlanGenerator.generateBranchPlan(ais, uTable);
 
         QueryContext queryContext = new SimpleQueryContext(adapter);
-        Cursor cursor = API.cursor(plan, queryContext);
+        QueryBindings queryBindings = queryContext.createBindings();
+        Cursor cursor = API.cursor(plan, queryContext, queryBindings);
 
         List<Column> lookupCols = uTable.getPrimaryKeyIncludingInternal().getColumns();
         RowDataPValueSource pSource = new RowDataPValueSource();
         for(int i = 0; i < lookupCols.size(); ++i) {
             Column col = lookupCols.get(i);
             pSource.bind(col.getFieldDef(), rowData);
-            queryContext.setPValue(i, pSource);
+            queryBindings.setPValue(i, pSource);
         }
         try {
             Row row;
@@ -1289,11 +1302,12 @@ public abstract class AbstractStore<SDType> implements Store {
     }
 
     private static void runMaintenancePlan(QueryContext context,
+                                           QueryBindings bindings,
                                            GroupIndex groupIndex,
                                            Operator rootOperator,
                                            StoreGIHandler handler,
                                            StoreGIHandler.Action action) {
-        Cursor cursor = API.cursor(rootOperator, context);
+        Cursor cursor = API.cursor(rootOperator, context, bindings);
         cursor.open();
         try {
             Row row;
