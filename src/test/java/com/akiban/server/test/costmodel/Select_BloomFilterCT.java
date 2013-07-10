@@ -78,6 +78,7 @@ public class Select_BloomFilterCT extends CostModelBase
         fIndexRowType = fRowType.indexRowType(fx);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
     }
 
     protected void populateDB()
@@ -95,7 +96,7 @@ public class Select_BloomFilterCT extends CostModelBase
         Operator plan = loadOnly ? planLoadOnly() : planLoadAndSelect(startScan);
         long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             Row row;
             while ((row = cursor.next()) != null) {

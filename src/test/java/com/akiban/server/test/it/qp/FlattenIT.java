@@ -205,7 +205,7 @@ public class FlattenIT extends OperatorITBase
                 orderRowType,
                 INNER_JOIN);
         RowType coRowType = plan.rowType();
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(coRowType, 1L, "northbridge", 11L, 1L, "ori"),
             row(itemRowType, 111L, 11L),
@@ -241,7 +241,7 @@ public class FlattenIT extends OperatorITBase
                 itemRowType,
                 INNER_JOIN);
         RowType oiRowType = plan.rowType();
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(oiRowType, 11L, 1L, "ori", 111L, 11L),
@@ -275,7 +275,7 @@ public class FlattenIT extends OperatorITBase
                 orderRowType,
                 LEFT_JOIN);
         RowType coRowType = plan.rowType();
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(oKey(1L, 11L), coRowType, 1L, "northbridge", 11L, 1L, "ori"),
             row(iKey(1L, 11L, 111L), itemRowType, 111L, 11L),
@@ -312,7 +312,7 @@ public class FlattenIT extends OperatorITBase
                 itemRowType,
                 LEFT_JOIN);
         RowType oiRowType = plan.rowType();
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         TestRow[] expected = new TestRow[]{
             row(customerRowType, 1L, "northbridge"),
             row(oiRowType, 11L, 1L, "ori", 111L, 11L),
@@ -348,7 +348,7 @@ public class FlattenIT extends OperatorITBase
                 orderRowType,
                 RIGHT_JOIN);
         RowType coRowType = plan.rowType();
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(coRowType, 1L, "northbridge", 11L, 1L, "ori"),
             row(itemRowType, 111L, 11L),
@@ -385,7 +385,7 @@ public class FlattenIT extends OperatorITBase
                 itemRowType,
                 RIGHT_JOIN);
         RowType oiRowType = plan.rowType();
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(oiRowType, 11L, 1L, "ori", 111L, 11L),
@@ -419,7 +419,7 @@ public class FlattenIT extends OperatorITBase
                 orderRowType,
                 FULL_JOIN);
         RowType coRowType = plan.rowType();
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(coRowType, 1L, "northbridge", 11L, 1L, "ori"),
             row(itemRowType, 111L, 11L),
@@ -457,7 +457,7 @@ public class FlattenIT extends OperatorITBase
                 itemRowType,
                 FULL_JOIN);
         RowType oiRowType = plan.rowType();
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(oiRowType, 11L, 1L, "ori", 111L, 11L),
@@ -497,7 +497,7 @@ public class FlattenIT extends OperatorITBase
                 orderRowType,
                 FULL_JOIN, KEEP_PARENT, KEEP_CHILD);
         RowType coRowType = plan.rowType();
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(orderRowType, 11L, 1L, "ori"),
@@ -548,7 +548,7 @@ public class FlattenIT extends OperatorITBase
                 itemRowType,
                 FULL_JOIN, KEEP_PARENT, KEEP_CHILD);
         RowType oiRowType = plan.rowType();
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(orderRowType, 11L, 1L, "ori"),
@@ -613,7 +613,7 @@ public class FlattenIT extends OperatorITBase
                 customerRowType,
                 orderRowType,
                 LEFT_JOIN);
-        Cursor cursor = cursor(flattenCO, queryContext);
+        Cursor cursor = cursor(flattenCO, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(flattenCO.rowType(), 1L, "northbridge", 11L, 1L, "ori"),
             row(flattenCO.rowType(), 1L, "northbridge", 12L, 1L, "david"),
@@ -650,7 +650,7 @@ public class FlattenIT extends OperatorITBase
             row(flatten.rowType(), 6L, "nea", null, null),
             row(flatten.rowType(), 6L, "nea", 621L, 62L),
         };
-        compareRows(expected, cursor(flatten, queryContext));
+        compareRows(expected, cursor(flatten, queryContext, queryBindings));
     }
 
     @Test

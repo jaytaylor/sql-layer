@@ -26,6 +26,7 @@ import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.*;
+import com.akiban.server.AccumulatorAdapter.AccumInfo;
 import com.akiban.server.collation.CString;
 import com.akiban.server.collation.CStringKeyCoder;
 import com.akiban.server.error.*;
@@ -43,6 +44,7 @@ import com.persistit.*;
 import com.persistit.Management.DisplayFilter;
 import com.persistit.encoding.CoderManager;
 import com.persistit.exception.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -574,5 +576,29 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
             LOG.debug("Exception removing tree from Persistit", e);
             throw PersistitAdapter.wrapPersistitException(session, e);
         }
+    }
+
+    @Override
+    public long nextSequenceValue(Session session, Sequence sequence) {
+        // Note: Ever increasing, always incremented by 1, rollbacks will leave gaps. See bug1167045 for discussion.
+        AccumulatorAdapter accum = getAdapter(sequence);
+        long rawSequence = accum.seqAllocate();
+        return sequence.nextValueRaw(rawSequence);
+
+    }
+    
+    @Override 
+    public long curSequenceValue(Session session, Sequence sequence) {
+        AccumulatorAdapter accum = getAdapter(sequence);
+        try {
+            return sequence.currentValueRaw(accum.getSnapshot());
+        } catch (PersistitInterruptedException e) {
+            throw PersistitAdapter.wrapPersistitException(session, e);
+        }
+    }
+
+    private AccumulatorAdapter getAdapter(Sequence sequence)  {
+        Tree tree = sequence.getTreeCache().getTree();
+        return new AccumulatorAdapter(AccumInfo.SEQUENCE, tree);
     }
 }

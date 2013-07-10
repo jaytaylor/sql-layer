@@ -109,8 +109,8 @@ class Update_Default implements UpdatePlannable {
     // UpdatePlannable interface
 
     @Override
-    public UpdateResult run(QueryContext context) {
-        return new Execution(context, inputOperator.cursor(context)).run();
+    public UpdateResult run(QueryContext context, QueryBindings bindings) {
+        return new Execution(context, bindings, inputOperator.cursor(context, bindings)).run();
     }
 
     // Plannable interface
@@ -173,7 +173,7 @@ class Update_Default implements UpdatePlannable {
                     checkQueryCancelation();
                     ++seen;
                     if (updateFunction.rowIsSelected(oldRow)) {
-                        Row newRow = updateFunction.evaluate(oldRow, context);
+                        Row newRow = updateFunction.evaluate(oldRow, context, bindings);
                         context.checkConstraints(newRow, usePValues);
                         adapter().updateRow(oldRow, newRow, usePValues);
                         if (LOG_EXECUTION && LOG.isDebugEnabled()) {
@@ -193,9 +193,9 @@ class Update_Default implements UpdatePlannable {
             return new StandardUpdateResult(seen, modified);
         }
 
-        public Execution(QueryContext queryContext, Cursor input)
+        public Execution(QueryContext queryContext, QueryBindings bindings, Cursor input)
         {
-            super(queryContext);
+            super(queryContext, bindings);
             this.input = input;
         }
 

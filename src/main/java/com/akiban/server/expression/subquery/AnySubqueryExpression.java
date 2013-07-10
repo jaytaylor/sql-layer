@@ -74,6 +74,7 @@ public final class AnySubqueryExpression extends SubqueryExpression {
         @Override
         public ValueSource doEval() {
             expressionEvaluation.of(queryContext());
+            expressionEvaluation.of(queryBindings());
             Boolean result = Boolean.FALSE;
             BooleanExtractor extractor = Extractors.getBooleanExtractor();
             while (true) {

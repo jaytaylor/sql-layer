@@ -64,6 +64,7 @@ public class NWaySkipScanIT extends OperatorITBase
         tZIndexRowType = indexType(t, "z");
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         db = new NewRow[] {
             createNewRow(t, 1000L, 71L, 81L, 91L),
             createNewRow(t, 1001L, 71L, 81L, 92L),
@@ -124,7 +125,7 @@ public class NWaySkipScanIT extends OperatorITBase
             row(tXIndexRowType, 72L, 1007L),
             row(tXIndexRowType, 73L, 1008L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -138,8 +139,8 @@ public class NWaySkipScanIT extends OperatorITBase
             row(tXIndexRowType, 72L, 1006L),
             row(tXIndexRowType, 72L, 1007L),
         };
-        compareRows(expected, cursor(intersectXYunionX(71, 81, 72, false), queryContext));
-        compareRows(expected, cursor(intersectXYunionX(71, 81, 72, true), queryContext));
+        compareRows(expected, cursor(intersectXYunionX(71, 81, 72, false), queryContext, queryBindings));
+        compareRows(expected, cursor(intersectXYunionX(71, 81, 72, true), queryContext, queryBindings));
     }
 
     @Test
@@ -153,18 +154,18 @@ public class NWaySkipScanIT extends OperatorITBase
         };
         // Left input to intersection is empty
         {
-            compareRows(expected, cursor(intersectXYunionX(99, 81, 72, false), queryContext));
-            compareRows(expected, cursor(intersectXYunionX(99, 81, 72, true), queryContext));
+            compareRows(expected, cursor(intersectXYunionX(99, 81, 72, false), queryContext, queryBindings));
+            compareRows(expected, cursor(intersectXYunionX(99, 81, 72, true), queryContext, queryBindings));
         }
         // Right input to intersection is empty
         {
-            compareRows(expected, cursor(intersectXYunionX(71, 99, 72, false), queryContext));
-            compareRows(expected, cursor(intersectXYunionX(71, 99, 72, true), queryContext));
+            compareRows(expected, cursor(intersectXYunionX(71, 99, 72, false), queryContext, queryBindings));
+            compareRows(expected, cursor(intersectXYunionX(71, 99, 72, true), queryContext, queryBindings));
         }
         // Both inputs to intersection are empty
         {
-            compareRows(expected, cursor(intersectXYunionX(99, 99, 72, false), queryContext));
-            compareRows(expected, cursor(intersectXYunionX(99, 99, 72, true), queryContext));
+            compareRows(expected, cursor(intersectXYunionX(99, 99, 72, false), queryContext, queryBindings));
+            compareRows(expected, cursor(intersectXYunionX(99, 99, 72, true), queryContext, queryBindings));
         }
     }
 
@@ -178,8 +179,8 @@ public class NWaySkipScanIT extends OperatorITBase
                 row(tXIndexRowType, 72, 1004L),
                 row(tXIndexRowType, 72, 1005L),
             };
-            compareRows(expected, cursor(unionXXintersectY(71, 72, 81, LEFT, false), queryContext));
-            compareRows(expected, cursor(unionXXintersectY(71, 72, 81, LEFT, true), queryContext));
+            compareRows(expected, cursor(unionXXintersectY(71, 72, 81, LEFT, false), queryContext, queryBindings));
+            compareRows(expected, cursor(unionXXintersectY(71, 72, 81, LEFT, true), queryContext, queryBindings));
         }
         {
             RowBase[] expected = {
@@ -188,8 +189,8 @@ public class NWaySkipScanIT extends OperatorITBase
                 row(tXIndexRowType, 81, 1004L),
                 row(tXIndexRowType, 81, 1005L),
             };
-            compareRows(expected, cursor(unionXXintersectY(71, 72, 81, RIGHT, false), queryContext));
-            compareRows(expected, cursor(unionXXintersectY(71, 72, 81, RIGHT, true), queryContext));
+            compareRows(expected, cursor(unionXXintersectY(71, 72, 81, RIGHT, false), queryContext, queryBindings));
+            compareRows(expected, cursor(unionXXintersectY(71, 72, 81, RIGHT, true), queryContext, queryBindings));
         }
         {
             RowBase[] expected = {
@@ -198,8 +199,8 @@ public class NWaySkipScanIT extends OperatorITBase
                 row(tXIndexRowType, 72, 1006L),
                 row(tXIndexRowType, 72, 1007L),
             };
-            compareRows(expected, cursor(unionXXintersectY(71, 72, 82, LEFT, false), queryContext));
-            compareRows(expected, cursor(unionXXintersectY(71, 72, 82, LEFT, true), queryContext));
+            compareRows(expected, cursor(unionXXintersectY(71, 72, 82, LEFT, false), queryContext, queryBindings));
+            compareRows(expected, cursor(unionXXintersectY(71, 72, 82, LEFT, true), queryContext, queryBindings));
         }
         {
             RowBase[] expected = {
@@ -208,8 +209,8 @@ public class NWaySkipScanIT extends OperatorITBase
                 row(tXIndexRowType, 82, 1006L),
                 row(tXIndexRowType, 82, 1007L),
             };
-            compareRows(expected, cursor(unionXXintersectY(71, 72, 82, RIGHT, false), queryContext));
-            compareRows(expected, cursor(unionXXintersectY(71, 72, 82, RIGHT, true), queryContext));
+            compareRows(expected, cursor(unionXXintersectY(71, 72, 82, RIGHT, false), queryContext, queryBindings));
+            compareRows(expected, cursor(unionXXintersectY(71, 72, 82, RIGHT, true), queryContext, queryBindings));
         }
     }
 
@@ -222,8 +223,8 @@ public class NWaySkipScanIT extends OperatorITBase
                 row(tXIndexRowType, 72, 1004L),
                 row(tXIndexRowType, 72, 1005L),
             };
-            compareRows(expected, cursor(unionXXintersectY(99, 72, 81, LEFT, false), queryContext));
-            compareRows(expected, cursor(unionXXintersectY(99, 72, 81, LEFT, true), queryContext));
+            compareRows(expected, cursor(unionXXintersectY(99, 72, 81, LEFT, false), queryContext, queryBindings));
+            compareRows(expected, cursor(unionXXintersectY(99, 72, 81, LEFT, true), queryContext, queryBindings));
         }
         // Right input to union is empty
         {
@@ -231,21 +232,21 @@ public class NWaySkipScanIT extends OperatorITBase
                 row(tXIndexRowType, 71, 1000L),
                 row(tXIndexRowType, 71, 1001L),
             };
-            compareRows(expected, cursor(unionXXintersectY(71, 99, 81, LEFT, false), queryContext));
-            compareRows(expected, cursor(unionXXintersectY(71, 99, 81, LEFT, true), queryContext));
+            compareRows(expected, cursor(unionXXintersectY(71, 99, 81, LEFT, false), queryContext, queryBindings));
+            compareRows(expected, cursor(unionXXintersectY(71, 99, 81, LEFT, true), queryContext, queryBindings));
         }
         // Both inputs to union are empty
         {
             RowBase[] expected = {
             };
-            compareRows(expected, cursor(unionXXintersectY(99, 99, 81, LEFT, false), queryContext));
-            compareRows(expected, cursor(unionXXintersectY(99, 99, 81, LEFT, true), queryContext));
+            compareRows(expected, cursor(unionXXintersectY(99, 99, 81, LEFT, false), queryContext, queryBindings));
+            compareRows(expected, cursor(unionXXintersectY(99, 99, 81, LEFT, true), queryContext, queryBindings));
         }
     }
 
     private void testTwoIntersects(long key, Operator plan)
     {
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         cursor.open();
         RowBase row = cursor.next();
         assertEquals(Long.valueOf(key), getLong(row, 0));

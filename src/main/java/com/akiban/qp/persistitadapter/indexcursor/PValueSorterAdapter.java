@@ -17,6 +17,7 @@
 package com.akiban.qp.persistitadapter.indexcursor;
 
 import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
@@ -60,9 +61,10 @@ final class PValueSorterAdapter extends SorterAdapter<PValueSource, TPreparedExp
     }
 
     @Override
-    protected TEvaluatableExpression evaluation(API.Ordering ordering, QueryContext context, int i) {
+    protected TEvaluatableExpression evaluation(API.Ordering ordering, QueryContext context, QueryBindings bindings, int i) {
         TEvaluatableExpression evaluation = ordering.tExpression(i).build();
         evaluation.with(context);
+        evaluation.with(bindings);
         return evaluation;
     }
 

@@ -22,6 +22,7 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.BindableRow;
@@ -158,11 +159,12 @@ public class OperatorITBase extends ITBase
                           createNewRow(item, 222L, 22L)};
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
     }
 
     protected void testCursorLifecycle(Operator scan, CursorLifecycleTestCase testCase, AkCollator ... collators)
     {
-        Cursor cursor = cursor(scan, queryContext);
+        Cursor cursor = cursor(scan, queryContext, queryBindings);
         // Check idle following creation
         assertTrue(cursor.isIdle());
         // Check active following open
@@ -433,7 +435,7 @@ public class OperatorITBase extends ITBase
     @SuppressWarnings("unused") // useful for debugging
     protected void dumpToAssertion(Operator plan)
     {
-        dumpToAssertion(cursor(plan, queryContext));
+        dumpToAssertion(cursor(plan, queryContext, queryBindings));
     }
 
     protected void dump(Cursor cursor)
@@ -448,7 +450,7 @@ public class OperatorITBase extends ITBase
     
     protected void dump(Operator plan)
     {
-        dump(cursor(plan, queryContext));
+        dump(cursor(plan, queryContext, queryBindings));
     }
 
     protected void compareRenderedHKeys(String[] expected, Cursor cursor)
@@ -516,6 +518,7 @@ public class OperatorITBase extends ITBase
     protected NewRow[] db;
     protected NewRow[] emptyDB = new NewRow[0];
     protected StoreAdapter adapter;
+    protected QueryBindings queryBindings;
     protected QueryContext queryContext;
     protected AkCollator ciCollator;
     protected int customerOrdinal;

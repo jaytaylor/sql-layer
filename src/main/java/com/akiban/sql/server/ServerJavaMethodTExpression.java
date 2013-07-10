@@ -18,6 +18,7 @@
 package com.akiban.sql.server;
 
 import com.akiban.ais.model.Routine;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 
 import java.lang.reflect.Method;
@@ -31,10 +32,11 @@ public class ServerJavaMethodTExpression extends ServerJavaRoutineTExpression {
 
     @Override
     protected ServerJavaRoutine javaRoutine(ServerQueryContext context,
+                                            QueryBindings bindings,
                                             ServerRoutineInvocation invocation) {
         Method method = context.getServer().getRoutineLoader().
             loadJavaMethod(context.getSession(), routine.getName());
-        return new ServerJavaMethod(context, invocation, method);
+        return new ServerJavaMethod(context, bindings, invocation, method);
     }
 
 }

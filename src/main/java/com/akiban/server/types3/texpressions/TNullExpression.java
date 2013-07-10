@@ -17,6 +17,7 @@
 
 package com.akiban.server.types3.texpressions;
 
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.explain.*;
@@ -79,6 +80,10 @@ public final class TNullExpression implements TPreparedExpression {
 
         @Override
         public void with(QueryContext context) {
+        }
+
+        @Override
+        public void with(QueryBindings bindings) {
         }
 
         private InnerEvaluation(TInstance underlying) {

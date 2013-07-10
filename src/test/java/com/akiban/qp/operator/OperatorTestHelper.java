@@ -131,7 +131,9 @@ public final class OperatorTestHelper {
     }
 
     public static Cursor open(Operator plan) {
-        Cursor result = plan.cursor(new SimpleQueryContext(ADAPTER));
+        QueryContext queryContext = new SimpleQueryContext(ADAPTER);
+        QueryBindings queryBindings = queryContext.createBindings();
+        Cursor result = plan.cursor(queryContext, queryBindings);
         reopen(result);
         return result;
     }
@@ -186,6 +188,7 @@ public final class OperatorTestHelper {
 
         @Override
         public Cursor newIndexCursor(QueryContext context,
+                                     QueryBindings bindings,
                                      Index index,
                                      IndexKeyRange keyRange,
                                      API.Ordering ordering,
@@ -226,6 +229,7 @@ public final class OperatorTestHelper {
 
         @Override
         public Sorter createSorter(QueryContext context,
+                                   QueryBindings bindings,
                            Cursor input,
                            RowType rowType,
                            API.Ordering ordering,

@@ -19,6 +19,7 @@ package com.akiban.server.test.it.sort;
 
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.RowsBuilder;
 import com.akiban.qp.operator.TestOperator;
@@ -64,6 +65,7 @@ public abstract class SorterITBase extends ITBase {
 
 
     public abstract Sorter createSorter(QueryContext context,
+                                        QueryBindings bindings,
                                         Cursor input,
                                         RowType rowType,
                                         API.Ordering ordering,
@@ -141,7 +143,8 @@ public abstract class SorterITBase extends ITBase {
         TestOperator inputOperator = new TestOperator(inputRows);
 
         QueryContext context = queryContext(adapter);
-        Cursor inputCursor = API.cursor(inputOperator, context);
+        QueryBindings bindings = context.createBindings();
+        Cursor inputCursor = API.cursor(inputOperator, context, bindings);
         inputCursor.open();
 
         API.Ordering ordering = API.ordering();
@@ -149,7 +152,7 @@ public abstract class SorterITBase extends ITBase {
             ordering.append(field(inputOperator.rowType(), i), fieldOrdering[i]);
         }
 
-        Sorter sorter = createSorter(context, inputCursor, inputOperator.rowType(), ordering, sortOption, TEST_TAP);
+        Sorter sorter = createSorter(context, bindings, inputCursor, inputOperator.rowType(), ordering, sortOption, TEST_TAP);
         Cursor sortedCursor = sorter.sort();
 
         Row[] expectedRows = createBuilder(expected).rows().toArray(new Row[expected.size()]);

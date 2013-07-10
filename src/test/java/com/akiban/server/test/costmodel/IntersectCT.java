@@ -68,6 +68,7 @@ public class IntersectCT extends CostModelBase
         indexRowType = schema.indexRowType(index);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
     }
 
     private void populateDB()
@@ -124,7 +125,7 @@ public class IntersectCT extends CostModelBase
                 null);
         long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
-            Cursor cursor = cursor(intersect, queryContext);
+            Cursor cursor = cursor(intersect, queryContext, queryBindings);
             cursor.open();
             while (cursor.next() != null);
         }

@@ -55,7 +55,7 @@ public class DeleteIT extends OperatorITBase {
                         filter_Default(
                                 groupScan_Default(coi),
                                 Collections.singleton(customerRowType)),
-                        queryContext
+                        queryContext, queryBindings
                 )
         );
     }
@@ -73,7 +73,7 @@ public class DeleteIT extends OperatorITBase {
                         customerNameIndexRowType,
                         IndexKeyRange.unbounded(customerNameIndexRowType),
                         new API.Ordering()),
-                queryContext
+                queryContext, queryBindings
         ));
     }
 
@@ -94,7 +94,7 @@ public class DeleteIT extends OperatorITBase {
                         IndexKeyRange.unbounded(customerNameItemOidIndexRowType),
                         new API.Ordering(),
                         customerRowType),
-                queryContext
+                queryContext, queryBindings
         ));
     }
 
@@ -103,7 +103,7 @@ public class DeleteIT extends OperatorITBase {
                 row(customerRowType, new Object[]{2, "abc"}, new AkType[]{AkType.INT, AkType.VARCHAR})
         };
         UpdatePlannable insertPlan = delete_Default(rowsToValueScan(rows));
-        UpdateResult result = insertPlan.run(queryContext);
+        UpdateResult result = insertPlan.run(queryContext, queryBindings);
         assertEquals("rows touched", rows.length, result.rowsTouched());
         assertEquals("rows modified", rows.length, result.rowsModified());
     }

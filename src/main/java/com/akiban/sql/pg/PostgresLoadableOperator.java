@@ -21,6 +21,7 @@ import com.akiban.sql.server.ServerCallContextStack;
 import com.akiban.sql.server.ServerCallInvocation;
 
 import com.akiban.qp.loadableplan.LoadableOperator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
@@ -58,11 +59,11 @@ public class PostgresLoadableOperator extends PostgresOperatorStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
-        context = PostgresLoadablePlan.setParameters(context, invocation, usesPValues());
+    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
+        bindings = PostgresLoadablePlan.setParameters(bindings, invocation, usesPValues());
         ServerCallContextStack.push(context, invocation);
         try {
-            return super.execute(context, maxrows);
+            return super.execute(context, bindings, maxrows);
         }
         finally {
             ServerCallContextStack.pop(context, invocation);

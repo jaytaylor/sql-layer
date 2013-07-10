@@ -22,6 +22,7 @@ import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -84,17 +85,18 @@ class IndexCursorSpatial_InBox extends IndexCursor
     // IndexCursorSpatial_InBox interface
 
     public static IndexCursorSpatial_InBox create(QueryContext context,
+                                                  QueryBindings bindings,
                                                   IterationHelper iterationHelper,
                                                   IndexKeyRange keyRange)
     {
-        return  new IndexCursorSpatial_InBox(context, iterationHelper, keyRange);
+        return  new IndexCursorSpatial_InBox(context, bindings, iterationHelper, keyRange);
     }
 
     // For use by this class
 
-    private IndexCursorSpatial_InBox(QueryContext context, IterationHelper iterationHelper, IndexKeyRange keyRange)
+    private IndexCursorSpatial_InBox(QueryContext context, QueryBindings bindings, IterationHelper iterationHelper, IndexKeyRange keyRange)
     {
-        super(context, iterationHelper);
+        super(context, bindings, iterationHelper);
         assert keyRange.spatial();
         this.multiCursor = new MultiCursor();
         this.iterationHelper = iterationHelper;
@@ -114,7 +116,7 @@ class IndexCursorSpatial_InBox extends IndexCursor
             IterationHelper rowState = adapter.createIterationHelper(keyRange.indexRowType());
             if (Types3Switch.ON) {
                 IndexCursorUnidirectional<PValueSource> zIntervalCursor =
-                    new IndexCursorUnidirectional<>(context,
+                    new IndexCursorUnidirectional<>(context, bindings,
                                                                 rowState,
                                                                 zKeyRange,
                                                                 zOrdering,
@@ -123,7 +125,7 @@ class IndexCursorSpatial_InBox extends IndexCursor
             }
             else {
                 IndexCursorUnidirectional<ValueSource> zIntervalCursor =
-                    new IndexCursorUnidirectional<>(context,
+                    new IndexCursorUnidirectional<>(context, bindings,
                                                                rowState,
                                                                zKeyRange,
                                                                zOrdering,
@@ -139,8 +141,8 @@ class IndexCursorSpatial_InBox extends IndexCursor
         Index index = keyRange.indexRowType().index();
         IndexBound loBound = keyRange.lo();
         IndexBound hiBound = keyRange.hi();
-        BoundExpressions loExpressions = loBound.boundExpressions(context);
-        BoundExpressions hiExpressions = hiBound.boundExpressions(context);
+        BoundExpressions loExpressions = loBound.boundExpressions(context, bindings);
+        BoundExpressions hiExpressions = hiBound.boundExpressions(context, bindings);
         // Only 2d, lat/lon supported for now
         BigDecimal xLo, xHi, yLo, yHi;
         if (Types3Switch.ON) {

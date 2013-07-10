@@ -81,6 +81,7 @@ public class ProductCT extends CostModelBase
         group = group(root);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
     }
 
     protected void populateDB()
@@ -141,7 +142,7 @@ public class ProductCT extends CostModelBase
                 0);
         long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             while (cursor.next() != null);
         }
@@ -199,7 +200,7 @@ public class ProductCT extends CostModelBase
                 0);
         long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             while (cursor.next() != null);
         }
@@ -215,7 +216,7 @@ public class ProductCT extends CostModelBase
 
     private void dump(Operator plan)
     {
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         cursor.open();
         Row row;
         while ((row = cursor.next()) != null) {

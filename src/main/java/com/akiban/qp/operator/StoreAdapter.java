@@ -53,6 +53,7 @@ public abstract class StoreAdapter implements KeyCreator
     public abstract GroupCursor newGroupCursor(Group group);
 
     public abstract Cursor newIndexCursor(QueryContext context,
+                                          QueryBindings bindings,
                                           Index index,
                                           IndexKeyRange keyRange,
                                           API.Ordering ordering,
@@ -73,6 +74,7 @@ public abstract class StoreAdapter implements KeyCreator
     public abstract void deleteRow (Row oldRow, boolean usePValues, boolean cascadeDelete);
 
     public abstract Sorter createSorter(QueryContext context,
+                                        QueryBindings bindings,
                                         Cursor input,
                                         RowType rowType,
                                         API.Ordering ordering,

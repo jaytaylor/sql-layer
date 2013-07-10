@@ -19,6 +19,7 @@ package com.akiban.server.test.it.sort;
 
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.Sorter;
 import com.akiban.qp.persistitadapter.indexcursor.MemorySorter;
@@ -30,11 +31,12 @@ public final class MemorySorterIT extends SorterITBase
 {
     @Override
     public Sorter createSorter(QueryContext context,
+                               QueryBindings bindings,
                                Cursor input,
                                RowType rowType,
                                API.Ordering ordering,
                                API.SortOption sortOption,
                                InOutTap loadTap) {
-        return new MemorySorter(context, input, rowType, ordering, sortOption, loadTap, store().createKey());
+        return new MemorySorter(context, bindings, input, rowType, ordering, sortOption, loadTap, store().createKey());
     }
 }

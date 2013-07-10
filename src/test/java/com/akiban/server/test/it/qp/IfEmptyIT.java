@@ -101,7 +101,7 @@ public class IfEmptyIT extends OperatorITBase
             row(orderRowType, 200L, 2L, "david"),
             row(orderRowType, 201L, 2L, "david"),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -119,7 +119,7 @@ public class IfEmptyIT extends OperatorITBase
                 API.InputPreservationOption.DISCARD_INPUT);
         RowBase[] expected = new RowBase[]{
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -138,7 +138,7 @@ public class IfEmptyIT extends OperatorITBase
         RowBase[] expected = new RowBase[]{
             row(orderRowType, 999L, 999L, "herman"),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -157,7 +157,7 @@ public class IfEmptyIT extends OperatorITBase
         RowBase[] expected = new RowBase[]{
             row(orderRowType, 999L, 999L, "herman"),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test

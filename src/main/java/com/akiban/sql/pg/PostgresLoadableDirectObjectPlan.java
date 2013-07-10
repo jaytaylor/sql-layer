@@ -20,6 +20,7 @@ package com.akiban.sql.pg;
 import com.akiban.sql.server.ServerCallContextStack;
 import com.akiban.sql.server.ServerCallInvocation;
 
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectCursor;
@@ -93,8 +94,8 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
     }
 
     @Override
-    public DirectObjectCursor openCursor(PostgresQueryContext context) {
-        DirectObjectCursor cursor = plan.cursor(context);
+    public DirectObjectCursor openCursor(PostgresQueryContext context, QueryBindings bindings) {
+        DirectObjectCursor cursor = plan.cursor(context, bindings);
         cursor.open();
         return cursor;
     }
@@ -106,18 +107,18 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
     }
     
     @Override
-    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         int nrows = 0;
         DirectObjectCursor cursor = null;
         PostgresOutputter<List<?>> outputter = null;
         PostgresDirectObjectCopier copier = null;
-        context = PostgresLoadablePlan.setParameters(context, invocation, usesPValues());
+        bindings = PostgresLoadablePlan.setParameters(bindings, invocation, usesPValues());
         ServerCallContextStack.push(context, invocation);
         boolean suspended = false;
         try {
-            cursor = context.startCursor(this);
+            cursor = context.startCursor(this, bindings);
             switch (outputMode) {
             case TABLE:
                 outputter = new PostgresDirectObjectOutputter(context, this);

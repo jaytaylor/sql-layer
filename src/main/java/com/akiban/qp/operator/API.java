@@ -738,10 +738,10 @@ public class API
 
     // Execution interface
 
-    public static Cursor cursor(Operator root, QueryContext context)
+    public static Cursor cursor(Operator root, QueryContext context, QueryBindings bindings)
     {
         // if all they need is the wrapped cursor, create it directly
-        return new ChainedCursor(context, root.cursor(context));
+        return new ChainedCursor(context, bindings, root.cursor(context, bindings));
     }
 
     // Options

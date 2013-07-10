@@ -20,6 +20,8 @@ package com.akiban.sql.pg;
 import com.akiban.sql.server.ServerCallExplainer;
 import com.akiban.sql.server.ServerCallInvocation;
 
+import com.akiban.qp.operator.QueryBindings;
+import com.akiban.qp.operator.SparseArrayQueryBindings;
 import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
 import com.akiban.qp.loadableplan.LoadableOperator;
 import com.akiban.qp.loadableplan.LoadablePlan;
@@ -61,19 +63,18 @@ public class PostgresLoadablePlan
         return null;
     }
 
-    public static PostgresQueryContext setParameters(PostgresQueryContext context, ServerCallInvocation invocation, boolean usePVals) {
+    public static QueryBindings setParameters(QueryBindings bindings, ServerCallInvocation invocation, boolean usePVals) {
         if (!invocation.parametersInOrder()) {
             if (invocation.hasParameters()) {
-                PostgresQueryContext calleeContext = 
-                    new PostgresQueryContext(context.getServer());
-                invocation.copyParameters(context, calleeContext, usePVals);
-                context = calleeContext;
+                QueryBindings calleeBindings = new SparseArrayQueryBindings();
+                invocation.copyParameters(bindings, calleeBindings, usePVals);
+                bindings = calleeBindings;
             }
             else {
-                invocation.copyParameters(null, context, usePVals);
+                invocation.copyParameters(null, bindings, usePVals);
             }
         }
-        return context;
+        return bindings;
     }
 
     public static List<PostgresType> columnTypes(LoadablePlan<?> plan)

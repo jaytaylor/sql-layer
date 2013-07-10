@@ -21,6 +21,7 @@ import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.IndexName;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import static com.akiban.qp.operator.API.cursor;
 
@@ -51,6 +52,7 @@ public class FullTextIndexServiceIT extends ITBase
     protected Schema schema;
     protected StoreAdapter adapter;
     protected QueryContext queryContext;
+    protected QueryBindings queryBindings;
     private static final Logger logger = LoggerFactory.getLogger(FullTextIndexServiceIT.class);
 
 
@@ -103,6 +105,7 @@ public class FullTextIndexServiceIT extends ITBase
         schema = SchemaCache.globalSchema(ais());
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
     }
 
     @Test
@@ -295,7 +298,6 @@ public class FullTextIndexServiceIT extends ITBase
         ftScanAndCompare(builder, "flintstone", 15, expected1);
         ftScanAndCompare(builder, "state:MA", 15, expected1);
 
-        
         // part 2
         // write new rows
         writeRow(c, 4, "John Watson");
@@ -358,7 +360,6 @@ public class FullTextIndexServiceIT extends ITBase
         };
         FullTextQueryBuilder builder = new FullTextQueryBuilder(index, ais(), queryContext);
         ftScanAndCompare(builder, "flintstone", 10, expected);
-
         ftScanAndCompare(builder, "state:MA", 10, expected);
     }
 
@@ -433,7 +434,7 @@ public class FullTextIndexServiceIT extends ITBase
     private void ftScanAndCompare(FullTextQueryBuilder builder, String query, int limit, RowBase[] expected) {
         try(CloseableTransaction txn = txnService().beginCloseableTransaction(session())) {
             Operator plan = builder.scanOperator(query, limit);
-            compareRows(expected, cursor(plan, queryContext));
+            compareRows(expected, cursor(plan, queryContext, queryBindings));
             txn.commit();
         }
     }

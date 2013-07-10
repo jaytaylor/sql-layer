@@ -71,10 +71,11 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public Cursor newIndexCursor(QueryContext context, Index index, IndexKeyRange keyRange, API.Ordering ordering,
+    public Cursor newIndexCursor(QueryContext context, QueryBindings bindings, Index index, IndexKeyRange keyRange, API.Ordering ordering,
                                  IndexScanSelector selector, boolean usePValues)
     {
         return new PersistitIndexCursor(context,
+                                        bindings,
                                         schema.indexRowType(index),
                                         keyRange,
                                         ordering,
@@ -84,13 +85,14 @@ public class PersistitAdapter extends StoreAdapter
 
     @Override
     public Sorter createSorter(QueryContext context,
+                               QueryBindings bindings,
                                Cursor input,
                                RowType rowType,
                                API.Ordering ordering,
                                API.SortOption sortOption,
                                InOutTap loadTap)
     {
-        return new PersistitSorter(context, input, rowType, ordering, sortOption, loadTap);
+        return new PersistitSorter(context, bindings, input, rowType, ordering, sortOption, loadTap);
     }
 
     @Override
@@ -364,40 +366,25 @@ public class PersistitAdapter extends StoreAdapter
 
     @Override
     public long sequenceNextValue(TableName sequenceName) {
-        Sequence sequence = schema().ais().getSequence(sequenceName);
+        Sequence sequence = store.getAIS(getSession()).getSequence(sequenceName);
         if (sequence == null) {
             throw new NoSuchSequenceException (sequenceName);
         }
-        return sequenceValue (sequence, false);
+        return store.nextSequenceValue(getSession(), sequence);
     }
 
     @Override
     public long sequenceCurrentValue(TableName sequenceName) {
-        Sequence sequence = schema().ais().getSequence(sequenceName);
+        Sequence sequence = store.getAIS(getSession()).getSequence(sequenceName);
         if (sequence == null) {
             throw new NoSuchSequenceException (sequenceName);
         }
-        return sequenceValue (sequence, true);
+        return store.curSequenceValue(getSession(), sequence);
     }
 
     @Override
     public Key createKey() {
         return store.createKey();
-    }
-
-    private long sequenceValue (Sequence sequence, boolean getCurrentValue) {
-        try {
-            if (getCurrentValue) {
-                return sequence.currentValue();
-            } else {
-                return sequence.nextValue();
-            }
-        } catch (PersistitException e) {
-            rollbackIfNeeded(e);
-            handlePersistitException(e);
-            assert false;
-            return 0;
-        }
     }
 
     // Class state

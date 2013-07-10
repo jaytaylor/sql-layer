@@ -50,6 +50,7 @@ import com.akiban.ais.util.TableChangeValidator;
 import com.akiban.ais.util.TableChangeValidatorException;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.QueryContextBase;
 import com.akiban.qp.operator.SimpleQueryContext;
@@ -302,12 +303,13 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             final RowType oldSourceType = oldSchema.userTableRowType(origTable);
             final StoreAdapter adapter = store().createAdapter(session, oldSchema);
             final QueryContext queryContext = new ShimContext(adapter, context);
+            final QueryBindings queryBindings = queryContext.createBindings();
 
             Operator plan = filter_Default(
                     groupScan_Default(origTable.getGroup()),
                     Collections.singleton(oldSourceType)
             );
-            com.akiban.qp.operator.Cursor cursor = API.cursor(plan, queryContext);
+            com.akiban.qp.operator.Cursor cursor = API.cursor(plan, queryContext, queryBindings);
 
             cursor.open();
             try {
@@ -379,6 +381,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         // Build transformation
         final StoreAdapter adapter = store().createAdapter(session, origSchema);
         final QueryContext queryContext = new ShimContext(adapter, context);
+        final QueryBindings queryBindings = queryContext.createBindings();
 
         final AkibanInformationSchema newAIS = getAIS(session);
         final UserTable newTable = newAIS.getUserTable(newDefinition.getName());
@@ -484,7 +487,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         for(UserTable root : roots) {
             Operator plan = groupScan_Default(root.getGroup());
-            com.akiban.qp.operator.Cursor cursor = API.cursor(plan, queryContext);
+            com.akiban.qp.operator.Cursor cursor = API.cursor(plan, queryContext, queryBindings);
             cursor.open();
             try {
                 Row oldRow;
@@ -496,6 +499,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                         newRow = new ProjectedRow(newTableType,
                                                   oldRow,
                                                   queryContext,
+                                                  queryBindings,
                                                   projections,
                                                   ProjectedRow.createTEvaluatableExpressions(pProjections),
                                                   TInstance.createTInstances(pProjections));

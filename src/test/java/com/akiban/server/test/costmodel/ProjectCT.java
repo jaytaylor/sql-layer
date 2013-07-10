@@ -54,6 +54,7 @@ public class ProjectCT extends CostModelBase
         group = group(t);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
     }
 
     protected void populateDB(int rows)
@@ -70,7 +71,7 @@ public class ProjectCT extends CostModelBase
         Operator project = project_Default(timeScan, tRowType, Arrays.asList(ExpressionGenerators.literal(true)));
         long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
-            Cursor cursor = cursor(project, queryContext);
+            Cursor cursor = cursor(project, queryContext, queryBindings);
             cursor.open();
             while (cursor.next() != null);
         }
