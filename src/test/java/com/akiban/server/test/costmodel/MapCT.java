@@ -83,7 +83,7 @@ public class MapCT extends CostModelBase
         TimeOperator timeSetupOuter = new TimeOperator(setupOuter);
         Operator setupInner = limit_Default(groupScan_Default(group), innerRows);
         TimeOperator timeSetupInner = new TimeOperator(setupInner);
-        Operator plan = map_NestedLoops(timeSetupOuter, timeSetupInner, 0);
+        Operator plan = map_NestedLoops(timeSetupOuter, timeSetupInner, 0, 1);
         long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
             Cursor cursor = cursor(plan, queryContext, queryBindings);

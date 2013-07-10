@@ -50,6 +50,8 @@ import java.util.Set;
 
  <li><b>int inputBindingPosition:</b> Position of inner loop row in query context.
 
+ <li><b>int depth:</b> Number of nested Maps, including this one.
+
  </ul>
 
  <h1>Behavior</h1>
@@ -116,14 +118,17 @@ class Map_NestedLoops extends Operator
 
     public Map_NestedLoops(Operator outerInputOperator,
                            Operator innerInputOperator,
-                           int inputBindingPosition)
+                           int inputBindingPosition,
+                           int depth)
     {
         ArgumentValidation.notNull("outerInputOperator", outerInputOperator);
         ArgumentValidation.notNull("innerInputOperator", innerInputOperator);
         ArgumentValidation.isGTE("inputBindingPosition", inputBindingPosition, 0);
+        ArgumentValidation.isGT("depth", depth, 0);
         this.outerInputOperator = outerInputOperator;
         this.innerInputOperator = innerInputOperator;
         this.inputBindingPosition = inputBindingPosition;
+        this.depth = depth;
     }
 
     // Class state
@@ -136,13 +141,14 @@ class Map_NestedLoops extends Operator
 
     private final Operator outerInputOperator;
     private final Operator innerInputOperator;
-    private final int inputBindingPosition;
+    private final int inputBindingPosition, depth;
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
     {
         CompoundExplainer ex = new NestedLoopsExplainer(getName(), innerInputOperator, outerInputOperator, null, null, context);
         ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(inputBindingPosition));
+        ex.addAttribute(Label.DEPTH, PrimitiveExplainer.getInstance(depth));
         if (context.hasExtraInfo(this))
             ex.get().putAll(context.getExtraInfo(this).get());
         return ex;
