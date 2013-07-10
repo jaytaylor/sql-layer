@@ -896,13 +896,21 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
     }
 
-    private void dropGroupInternal(Session session, TableName groupName) {
+    private void dropGroupInternal(final Session session, TableName groupName) {
         final Group group = getAIS(session).getGroup(groupName);
         if(group == null) {
             return;
         }
         store().dropGroup(session, group);
         final UserTable root = group.getRoot();
+        root.traverseTableAndDescendants(new NopVisitor() {
+            @Override
+            public void visitUserTable(UserTable table) {
+                for(TableListener listener : listenerService.getTableListeners()) {
+                    listener.onDrop(session, table);
+                }
+            }
+        });
         schemaManager().dropTableDefinition(session, root.getName().getSchemaName(), root.getName().getTableName(),
                                             SchemaManager.DropBehavior.CASCADE);
         checkCursorsForDDLModification(session, root);
