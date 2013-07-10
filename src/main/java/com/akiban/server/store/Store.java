@@ -25,7 +25,6 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.TableStatistics;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.rowdata.RowData;
@@ -33,7 +32,6 @@ import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.service.tree.TreeLink;
-import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.persistit.Key;
 import com.persistit.Value;
 
