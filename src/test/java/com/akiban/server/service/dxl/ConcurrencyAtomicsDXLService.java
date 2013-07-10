@@ -131,7 +131,7 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
 
     public class ScanhooksDMLFunctions extends BasicDMLFunctions {
         ScanhooksDMLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, DDLFunctions ddlFunctions) {
-            super(middleman, schemaManager, store, ddlFunctions);
+            super(middleman, schemaManager, store, ddlFunctions, indexStatisticsService(), listenerService());
         }
 
         @Override

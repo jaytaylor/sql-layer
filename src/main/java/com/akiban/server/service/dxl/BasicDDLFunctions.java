@@ -265,7 +265,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             throw new UnsupportedDropException(table.getName());
         }
 
-        DMLFunctions dml = new BasicDMLFunctions(middleman(), schemaManager(), store(), this);
+        DMLFunctions dml = new BasicDMLFunctions(middleman(), schemaManager(), store(), this,
+                                                 indexStatisticsService, listenerService);
         if(table.isRoot()) {
             // Root table and no child tables, can delete all associated trees
             store().removeTrees(session, table);
@@ -1146,6 +1147,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             }
             schemaManager().dropIndexes(session, indexes);
             store().deleteIndexes(session, indexes);
+            for(TableListener listener : listenerService.getTableListeners()) {
+                listener.onDropIndex(session, indexes);
+            }
             txnService.commitTransaction(session);
         } finally {
             txnService.rollbackTransactionIfOpen(session);

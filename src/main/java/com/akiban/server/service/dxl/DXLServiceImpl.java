@@ -84,7 +84,8 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     }
 
     DMLFunctions createDMLFunctions(BasicDXLMiddleman middleman, DDLFunctions newlyCreatedDDLF) {
-        return new BasicDMLFunctions(middleman, schemaManager, store, newlyCreatedDDLF);
+        return new BasicDMLFunctions(middleman, schemaManager, store, newlyCreatedDDLF,
+                                     indexStatisticsService, listenerService);
     }
 
     DDLFunctions createDDLFunctions(BasicDXLMiddleman middleman) {
