@@ -24,6 +24,7 @@ import com.akiban.qp.loadableplan.DirectObjectPlan;
 import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
 import com.akiban.qp.operator.BindingNotSetException;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
@@ -48,8 +49,8 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
         return new DirectObjectPlan() {
 
             @Override
-            public DirectObjectCursor cursor(QueryContext context) {
-                return new DumpGroupDirectObjectCursor(context);
+            public DirectObjectCursor cursor(QueryContext context, QueryBindings bindings) {
+                return new DumpGroupDirectObjectCursor(context, bindings);
             }
 
             @Override
@@ -65,6 +66,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
 
     public static class DumpGroupDirectObjectCursor extends DirectObjectCursor {
         private final QueryContext context;
+        private final QueryBindings bindings;
         private UserTable rootTable;
         private Cursor cursor;
         private Map<UserTable,Integer> tableSizes;
@@ -72,8 +74,9 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
         private GroupRowFormatter formatter;
         private int messagesSent;
 
-        public DumpGroupDirectObjectCursor(QueryContext context) {
+        public DumpGroupDirectObjectCursor(QueryContext context, QueryBindings bindings) {
             this.context = context;
+            this.bindings = bindings;
         }
 
         @Override
@@ -81,18 +84,18 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             String currentSchema = context.getCurrentSchema();
             String schemaName, tableName;
             if (Types3Switch.ON) {
-                if (context.getPValue(0).isNull())
+                if (bindings.getPValue(0).isNull())
                     schemaName = currentSchema;
                 else
-                    schemaName = context.getPValue(0).getString();
-                tableName = context.getPValue(1).getString();
+                    schemaName = bindings.getPValue(0).getString();
+                tableName = bindings.getPValue(1).getString();
             }
             else {
-                if (context.getValue(0).isNull())
+                if (bindings.getValue(0).isNull())
                     schemaName = currentSchema;
                 else
-                    schemaName = context.getValue(0).getString();
-                tableName = context.getValue(1).getString();
+                    schemaName = bindings.getValue(0).getString();
+                tableName = bindings.getValue(1).getString();
             }
             rootTable = context.getStore().schema().ais()
                 .getUserTable(schemaName, tableName);
@@ -106,10 +109,10 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             int insertMaxRowCount;
             try {
                 if (Types3Switch.ON) {
-                    insertMaxRowCount = context.getPValue(2).getInt32();
+                    insertMaxRowCount = bindings.getPValue(2).getInt32();
                 }
                 else {
-                    insertMaxRowCount = (int)context.getValue(2).getLong();
+                    insertMaxRowCount = (int)bindings.getValue(2).getLong();
                 }
             }
             catch (BindingNotSetException ex) {

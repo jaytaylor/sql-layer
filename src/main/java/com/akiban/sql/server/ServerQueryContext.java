@@ -19,6 +19,7 @@ package com.akiban.sql.server;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContextBase;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.error.ErrorCode;

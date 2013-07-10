@@ -88,9 +88,9 @@ class Project_Default extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(QueryContext context)
+    protected Cursor cursor(QueryContext context, QueryBindings bindings)
     {
-        return new Execution(context, inputOperator.cursor(context));
+        return new Execution(context, bindings, inputOperator.cursor(context, bindings));
     }
 
     @Override
@@ -238,7 +238,7 @@ class Project_Default extends Operator
                 if ((inputRow = input.next()) != null) {
                     projectedRow =
                         inputRow.rowType() == rowType
-                        ? new ProjectedRow(projectType, inputRow, context, projections, pEvalExpr, tInstances)
+                        ? new ProjectedRow(projectType, inputRow, context, bindings, projections, pEvalExpr, tInstances)
                         : inputRow;
                 }
                 if (projectedRow == null) {
@@ -296,9 +296,9 @@ class Project_Default extends Operator
 
         // Execution interface
 
-        Execution(QueryContext context, Cursor input)
+        Execution(QueryContext context, QueryBindings bindings, Cursor input)
         {
-            super(context);
+            super(context, bindings);
             this.input = input;
             // one list of evaluatables per execution    
             if (pExpressions != null)

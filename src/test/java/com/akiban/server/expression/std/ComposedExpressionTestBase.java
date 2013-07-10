@@ -20,8 +20,9 @@ package com.akiban.server.expression.std;
 import com.akiban.server.expression.ExpressionComposer.NullTreating;
 import com.akiban.junit.OnlyIfNot;
 import com.akiban.qp.exec.Plannable;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.SimpleQueryContext;
+import com.akiban.qp.operator.SparseArrayQueryBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.server.explain.CompoundExplainer;
 import com.akiban.server.explain.ExplainContext;
@@ -273,8 +274,8 @@ public abstract class ComposedExpressionTestBase {
         return new NullsRow(null);
     }
     
-    private QueryContext dummyBindings() {
-        return new SimpleQueryContext(null);
+    private QueryBindings dummyBindings() {
+        return new SparseArrayQueryBindings();
     }
 
     private static Set<ExpressionAttribute> attributesSet(ExpressionAttribute[] attributes) {
@@ -358,6 +359,10 @@ public abstract class ComposedExpressionTestBase {
 
         @Override
         public void of(QueryContext context) {
+        }
+
+        @Override
+        public void of(QueryBindings bindings) {
             missingRequirements.remove(ExpressionAttribute.NEEDS_BINDINGS);
         }
 

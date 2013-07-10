@@ -123,9 +123,9 @@ class Product_NestedLoops extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(QueryContext context)
+    protected Cursor cursor(QueryContext context, QueryBindings bindings)
     {
-        return new Execution(context);
+        return new Execution(context, bindings);
     }
 
     @Override
@@ -303,11 +303,11 @@ class Product_NestedLoops extends Operator
 
         // Execution interface
 
-        Execution(QueryContext context)
+        Execution(QueryContext context, QueryBindings bindings)
         {
-            super(context);
-            this.outerInput = outerInputOperator.cursor(context);
-            this.innerRows = new InnerRows(innerInputOperator.cursor(context));
+            super(context, bindings);
+            this.outerInput = outerInputOperator.cursor(context, bindings);
+            this.innerRows = new InnerRows(innerInputOperator.cursor(context, bindings));
         }
 
         // For use by this class
@@ -368,7 +368,7 @@ class Product_NestedLoops extends Operator
             public void newBranchRow(Row branchRow)
             {
                 close();
-                context.setRow(inputBindingPosition, branchRow);
+                bindings.setRow(inputBindingPosition, branchRow);
                 innerInput.open();
                 rows.clear();
                 Row row;

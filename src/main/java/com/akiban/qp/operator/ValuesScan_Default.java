@@ -77,8 +77,8 @@ public class ValuesScan_Default extends Operator
     }
 
     @Override
-    protected Cursor cursor(QueryContext context) {
-        return new Execution(context, rows);
+    protected Cursor cursor(QueryContext context, QueryBindings bindings) {
+        return new Execution(context, bindings, rows);
     }
     
     @Override
@@ -123,8 +123,8 @@ public class ValuesScan_Default extends Operator
         private Iterator<? extends BindableRow> iter;
         private boolean destroyed = false;
 
-        public Execution (QueryContext context, Collection<? extends BindableRow> rows) {
-            super(context);
+        public Execution (QueryContext context, QueryBindings bindings, Collection<? extends BindableRow> rows) {
+            super(context, bindings);
             this.rows = rows;
         }
 
@@ -145,7 +145,7 @@ public class ValuesScan_Default extends Operator
                 }
                 Row output;
                 if (iter != null && iter.hasNext()) {
-                    output = iter.next().bind(context);
+                    output = iter.next().bind(context, bindings);
                 } else {
                     close();
                     output = null;

@@ -20,6 +20,7 @@ package com.akiban.server.types3.texpressions;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
@@ -38,7 +39,10 @@ abstract class SubqueryTEvaluateble implements TEvaluatableExpression {
 
     @Override
     public void evaluate() {
-        context.setRow(bindingPosition, outerRow);
+        bindings.setRow(bindingPosition, outerRow);
+        if (cursor == null) {
+            cursor = API.cursor(subquery, context, bindings);
+        }
         cursor.open();
         try {
             doEval(pvalue);
@@ -60,13 +64,23 @@ abstract class SubqueryTEvaluateble implements TEvaluatableExpression {
     @Override
     public void with(QueryContext context) {
         this.context = context;
-        this.cursor = API.cursor(subquery, context);
+        cursor = null;
+    }
+
+    @Override
+    public void with(QueryBindings bindings) {
+        this.bindings = bindings;
+        cursor = null;
     }
 
     protected abstract void doEval(PValueTarget out);
 
     protected QueryContext queryContext() {
         return context;
+    }
+
+    protected QueryBindings queryBindings() {
+        return bindings;
     }
 
     protected Row next() {
@@ -96,5 +110,6 @@ abstract class SubqueryTEvaluateble implements TEvaluatableExpression {
     private final PValue pvalue;
     private Cursor cursor;
     private QueryContext context;
+    private QueryBindings bindings;
     private Row outerRow;
 }

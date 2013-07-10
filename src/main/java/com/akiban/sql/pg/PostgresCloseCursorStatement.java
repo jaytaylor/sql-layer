@@ -23,6 +23,8 @@ import com.akiban.sql.parser.NodeTypes;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.StatementNode;
 
+import com.akiban.qp.operator.QueryBindings;
+
 import java.util.List;
 import java.io.IOException;
 
@@ -47,7 +49,7 @@ public class PostgresCloseCursorStatement extends PostgresBaseCursorStatement
     }
     
     @Override
-    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         if (preparedStatement)
             server.deallocatePreparedStatement(name);

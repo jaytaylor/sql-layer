@@ -29,6 +29,7 @@ import com.akiban.sql.server.ServerJavaRoutine;
 
 import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.server.error.ExternalRoutineInvocationException;
 import com.akiban.server.explain.Explainable;
 import com.akiban.server.types3.Types3Switch;
@@ -111,7 +112,7 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
         this.invocation = invocation;
     }
 
-    protected abstract ServerJavaRoutine javaRoutine(PostgresQueryContext context);
+    protected abstract ServerJavaRoutine javaRoutine(PostgresQueryContext context, QueryBindings bindings);
 
     public ServerCallInvocation getInvocation() {
         return invocation;
@@ -145,12 +146,12 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         int nrows = 0;
         Queue<ResultSet> dynamicResultSets = null;
-        ServerJavaRoutine call = javaRoutine(context);
+        ServerJavaRoutine call = javaRoutine(context, bindings);
         call.push();
         boolean anyOutput = false, success = false;
         try {
@@ -290,8 +291,10 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
     public static Explainable explainable(PostgresServerSession server,
                                           ServerCallInvocation invocation,
                                           List<ParameterNode> params, int[] paramTypes) {
-        return ((PostgresJavaRoutine)statement(server, invocation, params, paramTypes))
-            .javaRoutine(new PostgresQueryContext(server));
+        PostgresJavaRoutine routine = (PostgresJavaRoutine)statement(server, invocation, params, paramTypes);
+        PostgresQueryContext context = new PostgresQueryContext(server);
+        QueryBindings bindings = context.createBindings();
+        return routine.javaRoutine(context, bindings);
     }
 
 }

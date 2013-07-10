@@ -19,6 +19,7 @@ package com.akiban.sql.script;
 
 import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.server.error.ExternalRoutineInvocationException;
 import com.akiban.sql.server.ServerCallExplainer;
 import com.akiban.sql.server.ServerJavaRoutine;
@@ -52,9 +53,10 @@ public class ScriptFunctionJavaRoutine extends ServerJavaRoutine
     private Object functionResult;
     
     public ScriptFunctionJavaRoutine(ServerQueryContext context,
+                                     QueryBindings bindings,
                                      ServerRoutineInvocation invocation,
                                      ScriptPool<ScriptInvoker> pool) {
-        super(context, invocation);
+        super(context, bindings, invocation);
         this.pool = pool;
     }
 

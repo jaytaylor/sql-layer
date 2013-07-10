@@ -129,9 +129,9 @@ class AncestorLookup_Nested extends Operator
     }
 
     @Override
-    protected Cursor cursor(QueryContext context)
+    protected Cursor cursor(QueryContext context, QueryBindings bindings)
     {
-        return new Execution(context);
+        return new Execution(context, bindings);
     }
 
     @Override
@@ -245,7 +245,7 @@ class AncestorLookup_Nested extends Operator
             TAP_OPEN.in();
             try {
                 CursorLifecycle.checkIdle(this);
-                Row rowFromBindings = context.getRow(inputBindingPosition);
+                Row rowFromBindings = bindings.getRow(inputBindingPosition);
                 if (LOG_EXECUTION) {
                     LOG.debug("AncestorLookup_Nested: open using {}", rowFromBindings);
                 }
@@ -320,9 +320,9 @@ class AncestorLookup_Nested extends Operator
 
         // Execution interface
 
-        Execution(QueryContext context)
+        Execution(QueryContext context, QueryBindings bindings)
         {
-            super(context);
+            super(context, bindings);
             this.pending = new PendingRows(ancestors.size() + 1);
             this.ancestorCursor = adapter().newGroupCursor(group);
         }

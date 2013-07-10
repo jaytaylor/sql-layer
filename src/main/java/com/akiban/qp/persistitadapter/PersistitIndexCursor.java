@@ -106,6 +106,7 @@ class PersistitIndexCursor implements Cursor
     // For use by this package
 
     PersistitIndexCursor(QueryContext context,
+                         QueryBindings bindings,
                          IndexRowType indexRowType,
                          IndexKeyRange keyRange,
                          API.Ordering ordering,
@@ -115,13 +116,14 @@ class PersistitIndexCursor implements Cursor
         this.keyRange = keyRange;
         this.ordering = ordering;
         this.context = context;
+        this.bindings = bindings;
         this.indexRowType = indexRowType;
         this.isTableIndex = indexRowType.index().isTableIndex();
         this.usePValues = usePValues;
         this.selector = selector;
         this.idle = true;
         this.rowState = context.getStore().createIterationHelper(indexRowType);
-        this.indexCursor = IndexCursor.create(context, keyRange, ordering, rowState, usePValues);
+        this.indexCursor = IndexCursor.create(context, bindings, keyRange, ordering, rowState, usePValues);
     }
 
     // For use by this class
@@ -129,6 +131,7 @@ class PersistitIndexCursor implements Cursor
     // Object state
 
     private final QueryContext context;
+    private final QueryBindings bindings;
     private final IndexRowType indexRowType;
     private final IndexKeyRange keyRange;
     private final API.Ordering ordering;

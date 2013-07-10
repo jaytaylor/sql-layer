@@ -17,6 +17,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.sql.server.ServerCallInvocation;
 import com.akiban.sql.server.ServerJavaMethod;
 import com.akiban.sql.server.ServerJavaRoutine;
@@ -57,8 +58,8 @@ public class PostgresJavaMethod extends PostgresJavaRoutine
     }
 
     @Override
-    protected ServerJavaRoutine javaRoutine(PostgresQueryContext context) {
-        return new ServerJavaMethod(context, invocation, method);
+    protected ServerJavaRoutine javaRoutine(PostgresQueryContext context, QueryBindings bindings) {
+        return new ServerJavaMethod(context, bindings, invocation, method);
     }
     
 }

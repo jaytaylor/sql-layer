@@ -162,9 +162,9 @@ public class BranchLookup_Default extends Operator
     }
 
     @Override
-    public Cursor cursor(QueryContext context)
+    public Cursor cursor(QueryContext context, QueryBindings bindings)
     {
-        return new Execution(context, inputOperator.cursor(context));
+        return new Execution(context, bindings, inputOperator.cursor(context, bindings));
     }
 
     @Override
@@ -407,9 +407,9 @@ public class BranchLookup_Default extends Operator
 
         // Execution interface
 
-        Execution(QueryContext context, Cursor input)
+        Execution(QueryContext context, QueryBindings bindings, Cursor input)
         {
-            super(context);
+            super(context, bindings);
             this.inputCursor = input;
             this.lookupCursor = adapter().newGroupCursor(group);
             this.lookupRowHKey = adapter().newHKey(outputRowType.hKey());

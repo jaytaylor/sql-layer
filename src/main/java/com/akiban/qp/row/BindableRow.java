@@ -20,6 +20,7 @@ package com.akiban.qp.row;
 import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.ExpressionGenerator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.explain.*;
@@ -83,7 +84,7 @@ public abstract class BindableRow {
 
     // BindableRow instance interface
 
-    public abstract Row bind(QueryContext context);
+    public abstract Row bind(QueryContext context, QueryBindings bindings);
     public abstract CompoundExplainer getExplainer(ExplainContext context);
 
     private static ImmutableRow strictCopy(Row input, boolean usePValues) {
@@ -104,8 +105,8 @@ public abstract class BindableRow {
 
     private static class BindingExpressions extends BindableRow {
         @Override
-        public Row bind(QueryContext context) {
-            return new ExpressionRow(rowType, context, expressions, pExprs);
+        public Row bind(QueryContext context, QueryBindings bindings) {
+            return new ExpressionRow(rowType, context, bindings, expressions, pExprs);
         }
 
         @Override
@@ -263,7 +264,7 @@ public abstract class BindableRow {
 
     private static class Delegating extends BindableRow {
         @Override
-        public Row bind(QueryContext context) {
+        public Row bind(QueryContext context, QueryBindings bindings) {
             return row;
         }
 

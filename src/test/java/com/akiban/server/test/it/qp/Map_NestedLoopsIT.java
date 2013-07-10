@@ -143,7 +143,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
             row(itemRowType, 4010L, 401L),
             row(itemRowType, 4011L, 401L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -180,7 +180,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
             row(projectRowType, 4L, 400L),
             row(projectRowType, 4L, 401L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -218,7 +218,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
             row(projectRowType, 5L, null),
             row(projectRowType, 6L, null),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -287,7 +287,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
             row(customerRowType, 4L, "atlas"),
             row(customerRowType, 5L, "highland"),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     private Row intRow(RowType rowType, int x)
@@ -303,7 +303,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
             expressions = Arrays.asList((Expression) new LiteralExpression(AkType.INT, x));
             pExpressions = null;
         }
-        return new ExpressionRow(rowType, queryContext, expressions, pExpressions);
+        return new ExpressionRow(rowType, queryContext, queryBindings, expressions, pExpressions);
     }
 
     private Collection<? extends BindableRow> bindableExpressions(Row... rows) {

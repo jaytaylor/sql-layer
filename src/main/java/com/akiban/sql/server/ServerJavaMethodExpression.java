@@ -17,6 +17,7 @@
 
 package com.akiban.sql.server;
 
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.ais.model.Routine;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -43,10 +44,11 @@ public class ServerJavaMethodExpression extends ServerJavaRoutineExpression {
 
         @Override
         protected ServerJavaRoutine javaRoutine(ServerQueryContext context,
+                                                QueryBindings bindings,
                                                 ServerRoutineInvocation invocation) {
             Method method = context.getServer().getRoutineLoader().
                 loadJavaMethod(context.getSession(), routine.getName());
-            return new ServerJavaMethod(context, invocation, method);
+            return new ServerJavaMethod(context, bindings, invocation, method);
         }
     }
 

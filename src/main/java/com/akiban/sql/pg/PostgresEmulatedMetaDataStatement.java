@@ -18,6 +18,7 @@
 package com.akiban.sql.pg;
 
 import com.akiban.ais.model.*;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
@@ -441,7 +442,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         ServerValueEncoder encoder = server.getValueEncoder();

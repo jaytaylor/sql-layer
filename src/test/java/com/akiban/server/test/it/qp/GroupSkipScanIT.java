@@ -70,6 +70,7 @@ public class GroupSkipScanIT extends OperatorITBase
         c2NIndexRowType = indexType(c2, "cn");
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         db = new NewRow[] {
             createNewRow(p, 1L, 1L),
             createNewRow(c1, 101L, 1L, 100L),
@@ -111,9 +112,9 @@ public class GroupSkipScanIT extends OperatorITBase
             row(c2NIndexRowType, 120L, 1L, 121L),
             row(c2NIndexRowType, 120L, 9L, 921L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = jumpToEqual(true);
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     private Operator jumpToEqual(boolean skip) 

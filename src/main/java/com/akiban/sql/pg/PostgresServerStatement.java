@@ -31,6 +31,8 @@ import com.akiban.sql.parser.StatementNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.akiban.qp.operator.QueryBindings;
+
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.ConnectionTerminatedException;
 import com.akiban.server.error.InvalidOperationException;
@@ -84,7 +86,7 @@ public class PostgresServerStatement implements PostgresStatement {
     }
 
     @Override
-    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         
         context.checkQueryCancelation();
         PostgresServerSession server = context.getServer();

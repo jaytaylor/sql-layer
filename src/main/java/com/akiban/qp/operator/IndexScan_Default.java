@@ -163,9 +163,9 @@ class IndexScan_Default extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(QueryContext context)
+    protected Cursor cursor(QueryContext context, QueryBindings bindings)
     {
-        return new Execution(context);
+        return new Execution(context, bindings);
     }
 
     // IndexScan_Default interface
@@ -353,11 +353,11 @@ class IndexScan_Default extends Operator
 
         // Execution interface
 
-        Execution(QueryContext context)
+        Execution(QueryContext context, QueryBindings bindings)
         {
-            super(context);
+            super(context, bindings);
             UserTable table = (UserTable)index.rootMostTable();
-            this.cursor = adapter(table).newIndexCursor(context, index, indexKeyRange, ordering, scanSelector, usePValues);
+            this.cursor = adapter(table).newIndexCursor(context, bindings, index, indexKeyRange, ordering, scanSelector, usePValues);
         }
 
         // Object state

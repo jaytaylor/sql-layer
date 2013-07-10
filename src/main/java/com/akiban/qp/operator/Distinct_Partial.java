@@ -102,9 +102,9 @@ class Distinct_Partial extends Operator
     }
 
     @Override
-    protected Cursor cursor(QueryContext context)
+    protected Cursor cursor(QueryContext context, QueryBindings bindings)
     {
-        return new Execution(context, inputOperator.cursor(context), usePValue);
+        return new Execution(context, bindings, inputOperator.cursor(context, bindings), usePValue);
     }
 
     @Override
@@ -240,9 +240,9 @@ class Distinct_Partial extends Operator
 
         // Execution interface
 
-        Execution(QueryContext context, Cursor input, boolean usePValue)
+        Execution(QueryContext context, QueryBindings bindings, Cursor input, boolean usePValue)
         {
-            super(context);
+            super(context, bindings);
             this.input = input;
 
             nfields = distinctType.nFields();

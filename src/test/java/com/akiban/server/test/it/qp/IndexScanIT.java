@@ -90,7 +90,7 @@ public class IndexScanIT extends OperatorITBase
         IndexKeyRange keyRange = IndexKeyRange.bounded(itemOidIidIndexRowType, loBound, false, hiBound, false);
         Operator indexScan = indexScan_Default(itemOidIidIndexRowType, false, keyRange);
         String[] expected = new String[]{};
-        compareRenderedHKeys(expected, cursor(indexScan, queryContext));
+        compareRenderedHKeys(expected, cursor(indexScan, queryContext, queryBindings));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -104,7 +104,7 @@ public class IndexScanIT extends OperatorITBase
         ordering.append(ExpressionGenerators.field(itemOidIidIndexRowType, 1), false);
         Operator indexScan = indexScan_Default(itemOidIidIndexRowType, keyRange, ordering);
         String[] expected = new String[]{};
-        compareRenderedHKeys(expected, cursor(indexScan, queryContext));
+        compareRenderedHKeys(expected, cursor(indexScan, queryContext, queryBindings));
     }
 
     //
@@ -113,7 +113,7 @@ public class IndexScanIT extends OperatorITBase
     public void testExactMatchAbsent()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, false, iidKeyRange(299, true, 299, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{};
         compareRenderedHKeys(expected, cursor);
     }
@@ -122,7 +122,7 @@ public class IndexScanIT extends OperatorITBase
     public void testExactMatchPresent()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, false, iidKeyRange(212, true, 212, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(2, 21, 212)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -131,7 +131,7 @@ public class IndexScanIT extends OperatorITBase
     public void testEmptyRange()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, false, iidKeyRange(218, true, 219, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{};
         compareRenderedHKeys(expected, cursor);
     }
@@ -143,7 +143,7 @@ public class IndexScanIT extends OperatorITBase
     public void testFullScan()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType);
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{
             hkey(1, 11, 111),
             hkey(1, 11, 112),
@@ -161,7 +161,7 @@ public class IndexScanIT extends OperatorITBase
     public void testFullScanReverse()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, true);
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{
             hkey(2, 22, 222),
             hkey(2, 22, 221),
@@ -185,7 +185,7 @@ public class IndexScanIT extends OperatorITBase
                                                IndexKeyRange.unbounded(itemOidIidIndexRowType),
                                                ordering,
                                                itemOidIidIndexRowType.tableType());
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{
             hkey(1, 11, 112),
             hkey(1, 11, 111),
@@ -210,7 +210,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoInclusiveMatchHiInclusiveMatch()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, false, iidKeyRange(121, true, 211, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(1, 12, 121), hkey(1, 12, 122), hkey(2, 21, 211)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -219,7 +219,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoInclusiveMatchHiInclusiveMiss()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, false, iidKeyRange(212, true, 223, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(2, 21, 212), hkey(2, 22, 221), hkey(2, 22, 222)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -228,7 +228,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoInclusiveMatchHiExclusiveMatch()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, false, iidKeyRange(212, true, 222, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(2, 21, 212), hkey(2, 22, 221)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -237,7 +237,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoInclusiveMatchHiExclusiveMiss()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, false, iidKeyRange(212, true, 223, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(2, 21, 212), hkey(2, 22, 221), hkey(2, 22, 222)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -246,7 +246,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoInclusiveMissHiInclusiveMatch()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, false, iidKeyRange(100, true, 121, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(1, 11, 111), hkey(1, 11, 112), hkey(1, 12, 121)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -255,7 +255,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoInclusiveMissHiInclusiveMiss()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, false, iidKeyRange(100, true, 125, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(1, 11, 111), hkey(1, 11, 112), hkey(1, 12, 121), hkey(1, 12, 122)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -264,7 +264,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoInclusiveMissHiExclusiveMatch()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, false, iidKeyRange(100, true, 122, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(1, 11, 111), hkey(1, 11, 112), hkey(1, 12, 121)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -273,7 +273,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoInclusiveMissHiExclusiveMiss()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, false, iidKeyRange(100, true, 125, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(1, 11, 111), hkey(1, 11, 112), hkey(1, 12, 121), hkey(1, 12, 122)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -282,7 +282,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoExclusiveMatchHiInclusiveMatch()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, false, iidKeyRange(121, false, 211, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(1, 12, 122), hkey(2, 21, 211)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -291,7 +291,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoExclusiveMatchHiInclusiveMiss()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, false, iidKeyRange(212, false, 223, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(2, 22, 221), hkey(2, 22, 222)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -300,7 +300,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoExclusiveMatchHiExclusiveMatch()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, false, iidKeyRange(212, false, 222, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(2, 22, 221)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -309,7 +309,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoExclusiveMatchHiExclusiveMiss()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, false, iidKeyRange(212, false, 223, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(2, 22, 221), hkey(2, 22, 222)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -318,7 +318,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoExclusiveMissHiInclusiveMatch()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, false, iidKeyRange(100, false, 121, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(1, 11, 111), hkey(1, 11, 112), hkey(1, 12, 121)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -327,7 +327,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoExclusiveMissHiInclusiveMiss()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, false, iidKeyRange(100, false, 125, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(1, 11, 111), hkey(1, 11, 112), hkey(1, 12, 121), hkey(1, 12, 122)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -336,7 +336,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoExclusiveMissHiExclusiveMatch()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, false, iidKeyRange(100, false, 122, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(1, 11, 111), hkey(1, 11, 112), hkey(1, 12, 121)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -345,7 +345,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoExclusiveMissHiExclusiveMiss()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, false, iidKeyRange(100, false, 125, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(1, 11, 111), hkey(1, 11, 112), hkey(1, 12, 121), hkey(1, 12, 122)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -356,7 +356,7 @@ public class IndexScanIT extends OperatorITBase
     public void testExactMatchAbsentReverse()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, true, iidKeyRange(299, true, 299, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{};
         compareRenderedHKeys(expected, cursor);
     }
@@ -365,7 +365,7 @@ public class IndexScanIT extends OperatorITBase
     public void testExactMatchPresentReverse()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, true, iidKeyRange(212, true, 212, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(2, 21, 212)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -374,7 +374,7 @@ public class IndexScanIT extends OperatorITBase
     public void testEmptyRangeReverse()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, true, iidKeyRange(218, true, 219, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{};
         compareRenderedHKeys(expected, cursor);
     }
@@ -383,7 +383,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoInclusiveMatchHiInclusiveMatchReverse()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, true, iidKeyRange(121, true, 211, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(2, 21, 211), hkey(1, 12, 122), hkey(1, 12, 121)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -392,7 +392,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoInclusiveMatchHiInclusiveMissReverse()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, true, iidKeyRange(212, true, 223, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(2, 22, 222), hkey(2, 22, 221), hkey(2, 21, 212)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -401,7 +401,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoInclusiveMatchHiExclusiveMatchReverse()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, true, iidKeyRange(212, true, 222, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(2, 22, 221), hkey(2, 21, 212)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -410,7 +410,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoInclusiveMatchHiExclusiveMissReverse()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, true, iidKeyRange(212, true, 223, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(2, 22, 222), hkey(2, 22, 221), hkey(2, 21, 212)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -419,7 +419,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoInclusiveMissHiInclusiveMatchReverse()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, true, iidKeyRange(100, true, 121, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(1, 12, 121), hkey(1, 11, 112), hkey(1, 11, 111)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -428,7 +428,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoInclusiveMissHiInclusiveMissReverse()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, true, iidKeyRange(100, true, 125, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(1, 12, 122), hkey(1, 12, 121), hkey(1, 11, 112), hkey(1, 11, 111)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -437,7 +437,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoInclusiveMissHiExclusiveMatchReverse()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, true, iidKeyRange(100, true, 122, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(1, 12, 121), hkey(1, 11, 112), hkey(1, 11, 111)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -446,7 +446,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoInclusiveMissHiExclusiveMissReverse()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, true, iidKeyRange(100, true, 125, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(1, 12, 122), hkey(1, 12, 121), hkey(1, 11, 112), hkey(1, 11, 111)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -455,7 +455,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoExclusiveMatchHiInclusiveMatchReverse()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, true, iidKeyRange(121, false, 211, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(2, 21, 211), hkey(1, 12, 122)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -464,7 +464,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoExclusiveMatchHiInclusiveMissReverse()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, true, iidKeyRange(212, false, 223, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(2, 22, 222), hkey(2, 22, 221)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -473,7 +473,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoExclusiveMatchHiExclusiveMatchReverse()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, true, iidKeyRange(212, false, 222, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(2, 22, 221)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -482,7 +482,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoExclusiveMatchHiExclusiveMissReverse()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, true, iidKeyRange(212, false, 223, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(2, 22, 222), hkey(2, 22, 221)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -491,7 +491,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoExclusiveMissHiInclusiveMatchReverse()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, true, iidKeyRange(100, false, 121, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(1, 12, 121), hkey(1, 11, 112), hkey(1, 11, 111)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -500,7 +500,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoExclusiveMissHiInclusiveMissReverse()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, true, iidKeyRange(100, false, 125, true));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(1, 12, 122), hkey(1, 12, 121), hkey(1, 11, 112), hkey(1, 11, 111)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -509,7 +509,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoExclusiveMissHiExclusiveMatchReverse()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, true, iidKeyRange(100, false, 122, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(1, 12, 121), hkey(1, 11, 112), hkey(1, 11, 111)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -518,7 +518,7 @@ public class IndexScanIT extends OperatorITBase
     public void testLoExclusiveMissHiExclusiveMissReverse()
     {
         Operator indexScan = indexScan_Default(itemIidIndexRowType, true, iidKeyRange(100, false, 125, false));
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(1, 12, 122), hkey(1, 12, 121), hkey(1, 11, 112), hkey(1, 11, 111)};
         compareRenderedHKeys(expected, cursor);
     }
@@ -549,7 +549,7 @@ public class IndexScanIT extends OperatorITBase
     public void testAliasingOfPersistitIndexRowFields()
     {
         Operator indexScan = indexScan_Default(itemOidIidIndexRowType, false, null);
-        Cursor cursor = cursor(indexScan, queryContext);
+        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         cursor.open();
         Row row = cursor.next();
         if (usingPValues()) {

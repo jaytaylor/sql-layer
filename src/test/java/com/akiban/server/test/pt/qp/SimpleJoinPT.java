@@ -82,6 +82,7 @@ public class SimpleJoinPT extends QPProfilePTBase
         coi = group(customer);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
     }
 
     protected void populateDB(int customers, int ordersPerCustomer, int itemsPerOrder)
@@ -124,7 +125,7 @@ public class SimpleJoinPT extends QPProfilePTBase
                 JoinType.INNER_JOIN);
         Tap.setEnabled(".*", true);
         for (int s = 0; s < SCANS; s++) {
-            Cursor cursor = cursor(plan, queryContext);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
             cursor.open();
             while (cursor.next() != null) {
             }

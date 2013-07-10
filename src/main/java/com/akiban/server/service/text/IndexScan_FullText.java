@@ -20,6 +20,7 @@ package com.akiban.server.service.text;
 import com.akiban.ais.model.IndexName;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.explain.*;
@@ -52,8 +53,8 @@ public class IndexScan_FullText extends Operator
     }
 
     @Override
-    protected Cursor cursor(QueryContext context) {
-        Query query = queryExpression.getQuery(context);
+    protected Cursor cursor(QueryContext context, QueryBindings bindings) {
+        Query query = queryExpression.getQuery(context, bindings);
         FullTextIndexService service = context.getServiceManager().getServiceByClass(FullTextIndexService.class);
         return service.searchIndex(context, index, query, limit);
     }

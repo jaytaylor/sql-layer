@@ -76,6 +76,7 @@ public class SortWithLimitCT extends CostModelBase
         tRowType = schema.userTableRowType(userTable(t));
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
     }
 
     private void populateDB(int rows)
@@ -105,7 +106,7 @@ public class SortWithLimitCT extends CostModelBase
         Operator sort = sort_InsertionLimited(timeSetup, tRowType, ordering, SortOption.PRESERVE_DUPLICATES, rows);
         long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
-            Cursor cursor = cursor(sort, queryContext);
+            Cursor cursor = cursor(sort, queryContext, queryBindings);
             cursor.open();
             while (cursor.next() != null);
         }

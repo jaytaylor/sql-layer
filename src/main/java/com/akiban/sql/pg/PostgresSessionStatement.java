@@ -17,6 +17,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.server.error.NoSuchSchemaException;
 import com.akiban.server.error.UnsupportedConfigurationException;
 import com.akiban.server.error.UnsupportedSQLException;
@@ -113,7 +114,7 @@ public class PostgresSessionStatement implements PostgresStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         doOperation(server);
         {        

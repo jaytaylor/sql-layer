@@ -27,6 +27,7 @@ import com.akiban.qp.loadableplan.DirectObjectCursor;
 import com.akiban.qp.loadableplan.DirectObjectPlan;
 import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
 import com.akiban.qp.operator.BindingNotSetException;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.error.AkibanInternalException;
@@ -48,8 +49,8 @@ public class PersistitCLILoadablePlan extends LoadableDirectObjectPlan
         return new DirectObjectPlan() {
 
             @Override
-            public DirectObjectCursor cursor(QueryContext context) {
-                return new PersistitCliDirectObjectCursor(context);
+            public DirectObjectCursor cursor(QueryContext context, QueryBindings bindings) {
+                return new PersistitCliDirectObjectCursor(context, bindings);
             }
 
             @Override
@@ -61,6 +62,7 @@ public class PersistitCLILoadablePlan extends LoadableDirectObjectPlan
 
     public static class PersistitCliDirectObjectCursor extends DirectObjectCursor {
         final QueryContext context;
+        final QueryBindings bindings;
         final Persistit db;
         final Session session;
         boolean done = false;
@@ -68,8 +70,9 @@ public class PersistitCLILoadablePlan extends LoadableDirectObjectPlan
         long taskId;
         ArrayList<String> messages = new ArrayList<>();
 
-        public PersistitCliDirectObjectCursor(QueryContext context) {
+        public PersistitCliDirectObjectCursor(QueryContext context, QueryBindings bindings) {
             this.context = context;
+            this.bindings = bindings;
             this.db = ((PersistitAdapter)context.getStore()).persistit().getDb();
             this.session = context.getSession();
         }
@@ -81,9 +84,9 @@ public class PersistitCLILoadablePlan extends LoadableDirectObjectPlan
                 String carg;
                 try {
                     if (Types3Switch.ON)
-                        carg = context.getPValue(i).getString();
+                        carg = bindings.getPValue(i).getString();
                     else
-                        carg = context.getValue(i).getString();
+                        carg = bindings.getValue(i).getString();
                 } catch (BindingNotSetException ex) {
                     break;
                 }

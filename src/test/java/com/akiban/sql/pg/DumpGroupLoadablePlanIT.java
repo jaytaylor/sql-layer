@@ -20,6 +20,7 @@ package com.akiban.sql.pg;
 import com.akiban.qp.loadableplan.DirectObjectCursor;
 import com.akiban.qp.loadableplan.DirectObjectPlan;
 import com.akiban.qp.loadableplan.std.DumpGroupLoadablePlan;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
@@ -96,20 +97,21 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
                     return SCHEMA_NAME;
                 }
             };
+        QueryBindings queryBindings = queryContext.createBindings();
         if (Types3Switch.ON) {
-            queryContext.setPValue(0, new PValue(MString.varcharFor(SCHEMA_NAME), SCHEMA_NAME));
-            queryContext.setPValue(1, new PValue(MString.varcharFor(GROUP_NAME), GROUP_NAME));
+            queryBindings.setPValue(0, new PValue(MString.varcharFor(SCHEMA_NAME), SCHEMA_NAME));
+            queryBindings.setPValue(1, new PValue(MString.varcharFor(GROUP_NAME), GROUP_NAME));
             if (multiple)
-                queryContext.setPValue(2, new PValue(MNumeric.INT.instance(false), 10));
+                queryBindings.setPValue(2, new PValue(MNumeric.INT.instance(false), 10));
         }
         else {
-            queryContext.setValue(0, new FromObjectValueSource().setReflectively(SCHEMA_NAME));
-            queryContext.setValue(1, new FromObjectValueSource().setReflectively(GROUP_NAME));
+            queryBindings.setValue(0, new FromObjectValueSource().setReflectively(SCHEMA_NAME));
+            queryBindings.setValue(1, new FromObjectValueSource().setReflectively(GROUP_NAME));
             if (multiple)
-                queryContext.setValue(2, new FromObjectValueSource().setReflectively(10L));
+                queryBindings.setValue(2, new FromObjectValueSource().setReflectively(10L));
         }
 
-        DirectObjectCursor cursor = plan.cursor(queryContext);
+        DirectObjectCursor cursor = plan.cursor(queryContext, queryBindings);
         
         StringBuilder actual = new StringBuilder();
 
