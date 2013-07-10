@@ -15,23 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.text;
+package com.akiban.server.service.listener;
 
-import com.akiban.ais.model.IndexName;
-import com.akiban.qp.operator.RowCursor;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.service.BackgroundWork;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.UserTable;
+import com.akiban.server.service.session.Session;
 
-import java.util.List;
-import org.apache.lucene.search.Query;
+import java.util.Collection;
 
-/** Full service that does index maintenance and querying. */
-public interface FullTextIndexService extends FullTextIndexInfos {
-    /**
-     * @return An array of available background works
-     */
-    public List<? extends BackgroundWork> getBackgroundWorks();
+public interface TableListener
+{
+    void onCreate(Session session, UserTable table);
+    void onDrop(Session session, UserTable table);
 
-    public RowCursor searchIndex(QueryContext context, IndexName name, 
-                                 Query query, int limit);
+    void onCreateIndex(Session session, Collection<? extends Index> indexes);
+    void onDropIndex(Session session, Collection<? extends Index> indexes);
 }

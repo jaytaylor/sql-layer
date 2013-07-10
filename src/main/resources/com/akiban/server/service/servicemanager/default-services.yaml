@@ -31,3 +31,4 @@
     com.akiban.server.service.restdml.RestDMLService: com.akiban.server.service.restdml.RestDMLServiceImpl
     com.akiban.server.service.restdml.DirectService: com.akiban.server.service.restdml.DirectServiceImpl
     com.akiban.server.service.text.FullTextIndexService: com.akiban.server.service.text.FullTextIndexServiceImpl
+    com.akiban.server.service.listener.ListenerService : com.akiban.server.service.listener.ListenerServiceImpl
