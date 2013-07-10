@@ -29,6 +29,7 @@ import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.indexcursor.IterationHelper;
 import com.akiban.qp.persistitadapter.indexcursor.MemorySorter;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
+import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowPool;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -44,6 +45,8 @@ import com.akiban.util.tap.InOutTap;
 import com.persistit.Key;
 
 public class FDBAdapter extends StoreAdapter {
+    private static PersistitIndexRowPool indexRowPool = new PersistitIndexRowPool();
+
     private final FDBStore store;
 
     public FDBAdapter(FDBStore store, Schema schema, Session session, ConfigurationService config) {
@@ -63,12 +66,12 @@ public class FDBAdapter extends StoreAdapter {
                                  API.Ordering ordering,
                                  IndexScanSelector scanSelector,
                                  boolean usePValues) {
-        return new FDBIndexCursor(this,
-                                  context,
-                                  schema.indexRowType(index),
-                                  keyRange,
-                                  ordering,
-                                  scanSelector);
+        return new PersistitIndexCursor(context,
+                                        schema.indexRowType(index),
+                                        keyRange,
+                                        ordering,
+                                        scanSelector,
+                                        usePValues);
     }
 
     @Override
@@ -149,21 +152,21 @@ public class FDBAdapter extends StoreAdapter {
     }
 
     @Override
-    public PersistitIndexRow takeIndexRow(IndexRowType indexRowType) {
-        // TODO
-        throw new UnsupportedOperationException();
+    public PersistitIndexRow takeIndexRow(IndexRowType indexRowType)
+    {
+        return indexRowPool.takeIndexRow(this, indexRowType);
     }
 
     @Override
-    public void returnIndexRow(PersistitIndexRow indexRow) {
-        // TODO
-        throw new UnsupportedOperationException();
+    public void returnIndexRow(PersistitIndexRow indexRow)
+    {
+        assert !indexRow.isShared();
+        indexRowPool.returnIndexRow(this, indexRow.rowType(), indexRow);
     }
 
     @Override
     public IterationHelper createIterationHelper(IndexRowType indexRowType) {
-        // TODO
-        throw new UnsupportedOperationException();
+        return new FDBIterationHelper(this, indexRowType);
     }
 
     @Override
