@@ -42,6 +42,7 @@ import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.util.ReadWriteMap;
 import com.akiban.util.FDBCounter;
+import com.foundationdb.AsyncIterator;
 import com.foundationdb.KeySelector;
 import com.foundationdb.KeyValue;
 import com.foundationdb.RangeQuery;
@@ -89,34 +90,40 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         }
     }
 
-    public Iterator<KeyValue> groupIterator(Session session, Group group) {
+    public AsyncIterator<KeyValue> groupIterator(Session session, Group group) {
         Transaction txn = txnService.getTransaction(session);
         byte[] packedPrefix = packedTuple(group);
-        return txn.getRangeStartsWith(packedPrefix).iterator();
+        AsyncIterator<KeyValue> iter = txn.getRangeStartsWith(packedPrefix).asyncIterator();
+        iter.hasNext();         // Send to database.
+        return iter;
     }
 
     // TODO: Creates range for hKey and descendants, add another API to specify
-    public Iterator<KeyValue> groupIterator(Session session, Group group, Key hKey) {
+    public AsyncIterator<KeyValue> groupIterator(Session session, Group group, Key hKey) {
         Transaction txn = txnService.getTransaction(session);
         byte[] packedPrefix = packedTuple(group, hKey);
         Key after = createKey();
         hKey.copyTo(after);
         after.append(Key.AFTER);
         byte[] packedAfter = packedTuple(group, after);
-        return txn.getRange(packedPrefix, packedAfter).iterator();
+        AsyncIterator<KeyValue> iter = txn.getRange(packedPrefix, packedAfter).asyncIterator();
+        iter.hasNext();         // Send to database.
+        return iter;
     }
 
-    public Iterator<KeyValue> indexIterator(Session session, Index index, boolean reverse) {
+    public AsyncIterator<KeyValue> indexIterator(Session session, Index index, boolean reverse) {
         Transaction txn = txnService.getTransaction(session);
         byte[] packedPrefix = packedTuple(index);
         RangeQuery range = txn.getRangeStartsWith(packedPrefix);
         if(reverse) {
             range = range.reverse();
         }
-        return range.iterator();
+        AsyncIterator<KeyValue> iter = range.asyncIterator();
+        iter.hasNext();         // Send to database.
+        return iter;
     }
 
-    public Iterator<KeyValue> indexIterator(Session session, Index index, Key key, boolean inclusive, boolean reverse) {
+    public AsyncIterator<KeyValue> indexIterator(Session session, Index index, Key key, boolean inclusive, boolean reverse) {
         Transaction txn = txnService.getTransaction(session);
         byte[] packedEdge = packedTuple(index);
         byte[] packedKey = packedTuple(index, key);
@@ -146,7 +153,9 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         if(reverse) {
             range = range.reverse();
         }
-        return range.iterator();
+        AsyncIterator<KeyValue> iter = range.asyncIterator();
+        iter.hasNext();         // Send to database.
+        return iter;
     }
 
     @Override
