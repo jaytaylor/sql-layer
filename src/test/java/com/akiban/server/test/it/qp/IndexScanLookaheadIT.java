@@ -43,10 +43,19 @@ import static junit.framework.Assert.assertEquals;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class IndexScanLookaheadIT extends OperatorITBase
 {
+    @Override
+    protected Map<String, String> startupConfigProperties() {
+        final Map<String, String> properties = new HashMap<>();
+        properties.put("akserver.lookaheadQuantum.indexScan", "4");
+        return properties;
+    }
+
     @Override
     protected void setupPostCreateSchema() {
         super.setupPostCreateSchema();
