@@ -341,6 +341,17 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     }
 
     @Override
+    public void onTruncate(Session session, UserTable table, boolean isFast) {
+        if(isFast) {
+            for(FullTextIndex index : table.getFullTextIndexes()) {
+                if(index.getIndexType() == IndexType.FULL_TEXT) {
+                    throw new IllegalStateException("Cannot fast truncate: " + index);
+                }
+            }
+        }
+    }
+
+    @Override
     public void onCreateIndex(Session session, Collection<? extends Index> indexes) {
         for(Index index : indexes) {
             if(index.getIndexType() == IndexType.FULL_TEXT) {
@@ -580,17 +591,20 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         try
         {
             // Consume and commit updates to each index in distinct blocks to keep r/w window small-ish
-            for(;;) {
+            boolean done = false;
+            while(!done) {
                 transactionService.beginTransaction(session);
                 rows = getChangedRows(session);
-                if(!rows.hasStream()) {
-                    break;
-                }
-                if (populating.get(rows.getIndexName()) == null) {
-                    updateIndex(session, rows.getIndexName(), rows);
+                if(rows.hasStream()) {
+                    if(populating.get(rows.getIndexName()) == null) {
+                        updateIndex(session, rows.getIndexName(), rows);
+                    }
+                } else {
+                    done = true;
                 }
                 transactionService.commitTransaction(session);
             }
+
         }
         catch(Exception e)
         {
@@ -838,8 +852,8 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                 UserTable changeTable = ais.getUserTable(CHANGES_TABLE);
                 row = new NiceRow(changeTable.getTableId(), changeTable.rowDef());
             }
-            row.put(0, table.getName().getSchemaName());
-            row.put(1, table.getName().getTableName());
+            row.put(0, index.getIndexName().getSchemaName());
+            row.put(1, index.getIndexName().getTableName());
             row.put(2, index.getIndexName().getName());
             row.put(3, index.getIndexId());
             row.put(4, Arrays.copyOf(hKey.getEncodedBytes(), hKey.getEncodedSize()));
