@@ -403,7 +403,15 @@ class IndexScan_Default extends Operator
         public void open() {
             TAP_OPEN.in();
             try {
-                if (currentCursor == null) {
+                CursorLifecycle.checkIdle(this);
+                if (currentCursor != null) {
+                    currentCursor.open();
+                }
+                else if (pendingCursor != null) {
+                    currentCursor = pendingCursor;
+                    pendingCursor = null;
+                }
+                else {
                     // At the very beginning, the pipeline isn't started.
                     currentCursor = openACursor(currentBindings);
                 }
@@ -465,6 +473,10 @@ class IndexScan_Default extends Operator
                 currentCursor.destroy();
                 currentCursor = null;
             }
+            if (pendingCursor != null) {
+                pendingCursor.destroy();
+                pendingCursor = null;
+            }
             recyclePending();
             while (true) {
                 RowCursor cursor = cursorPool.poll();
@@ -494,19 +506,24 @@ class IndexScan_Default extends Operator
             recyclePending();
             bindingsCursor.openBindings();
             bindingsExhausted = false;
+            currentCursor = pendingCursor = null;
         }
 
         @Override
         public QueryBindings nextBindings() {
             if (currentCursor != null) {
-                CursorLifecycle.checkIdle(currentCursor);
                 cursorPool.add(currentCursor);
                 currentCursor = null;
+            }
+            if (pendingCursor != null) {
+                pendingCursor.close(); // Abandoning lookahead.
+                cursorPool.add(pendingCursor);
+                pendingCursor = null;
             }
             BindingsAndCursor bandc = pendingBindings.poll();
             if (bandc != null) {
                 currentBindings = bandc.bindings;
-                currentCursor = bandc.cursor;
+                pendingCursor = bandc.cursor;
                 return currentBindings;
             }
             currentBindings = bindingsCursor.nextBindings();
@@ -553,7 +570,7 @@ class IndexScan_Default extends Operator
 
         private RowCursor openACursor(QueryBindings bindings) {
             RowCursor cursor = cursorPool.remove();
-            ((BindingsAwareCursor)cursor).rebind(currentBindings);
+            ((BindingsAwareCursor)cursor).rebind(bindings);
             cursor.open();
             return cursor;
         }
@@ -564,7 +581,7 @@ class IndexScan_Default extends Operator
         private final Queue<BindingsAndCursor> pendingBindings;
         private final Queue<RowCursor> cursorPool;
         private QueryBindings currentBindings;
-        private RowCursor currentCursor;
+        private RowCursor pendingCursor, currentCursor;
         private boolean bindingsExhausted, destroyed;
     }
 }
