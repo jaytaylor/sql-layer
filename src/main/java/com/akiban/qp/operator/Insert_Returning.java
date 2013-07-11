@@ -82,8 +82,8 @@ None.
 public class Insert_Returning extends Operator {
 
     @Override
-    protected Cursor cursor(QueryContext context, QueryBindings bindings) {
-        return new Execution(context, bindings, inputOperator.cursor(context, bindings));
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor) {
+        return new Execution(context, inputOperator.cursor(context, bindingsCursor));
     }
 
     @Override
@@ -125,7 +125,7 @@ public class Insert_Returning extends Operator {
     private final boolean usePValues;
     
     // Inner classes
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends ChainedCursor
     {
 
         // Cursor interface
@@ -187,42 +187,31 @@ public class Insert_Returning extends Operator {
         @Override
         public void destroy()
         {
-            if (input != null) {
-                close();
-                input.destroy();
-                input = null;
-            }
+            close();
+            input.destroy();
         }
     
         @Override
         public boolean isIdle()
         {
-            return input != null && idle;
+            return !input.isDestroyed() && idle;
         }
     
         @Override
         public boolean isActive()
         {
-            return input != null && !idle;
+            return !input.isDestroyed() && !idle;
         }
-    
-        @Override
-        public boolean isDestroyed()
-        {
-            return input == null;
-        }
-    
+
         // Execution interface
     
-        Execution(QueryContext context, QueryBindings bindings, Cursor input)
+        Execution(QueryContext context, Cursor input)
         {
-            super(context, bindings);
-            this.input = input;
+            super(context, input);
         }
     
         // Object state
-    
-        private Cursor input; // input = null indicates destroyed.
+
         private boolean idle = true;
     }
 }

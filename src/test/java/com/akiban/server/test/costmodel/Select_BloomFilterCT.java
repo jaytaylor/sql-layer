@@ -97,7 +97,7 @@ public class Select_BloomFilterCT extends CostModelBase
         long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             Row row;
             while ((row = cursor.next()) != null) {
                 // System.out.println(row);

@@ -104,9 +104,9 @@ class Sort_InsertionLimited extends Operator
     }
 
     @Override
-    protected Cursor cursor(QueryContext context, QueryBindings bindings)
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, bindings, inputOperator.cursor(context, bindings));
+        return new Execution(context, inputOperator.cursor(context, bindingsCursor));
     }
 
     @Override
@@ -173,7 +173,7 @@ class Sort_InsertionLimited extends Operator
 
     private enum State { CLOSED, FILLING, EMPTYING, DESTROYED }
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends ChainedCursor
     {
         // Cursor interface
 
@@ -326,7 +326,7 @@ class Sort_InsertionLimited extends Operator
         {
             return state == State.DESTROYED;
         }
-        
+
         // private methods
         
         private boolean usingPValues() {
@@ -335,10 +335,9 @@ class Sort_InsertionLimited extends Operator
 
         // Execution interface
 
-        Execution(QueryContext context, QueryBindings bindings, Cursor input)
+        Execution(QueryContext context, Cursor input)
         {
-            super(context, bindings);
-            this.input = input;
+            super(context, input);
             int nsort = ordering.sortColumns();
             tEvaluations = new ArrayList<>(nsort);
             for (int i = 0; i < nsort; ++i) {
@@ -349,7 +348,6 @@ class Sort_InsertionLimited extends Operator
 
         // Object state
 
-        private final Cursor input;
         private final List<TEvaluatableExpression> tEvaluations;
         private State state = State.CLOSED;
         private SortedSet<Holder> sorted;

@@ -17,8 +17,29 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.row.HKey;
+public class LeafCursor extends OperatorCursor
+{
+    protected final QueryBindingsCursor bindingsCursor;
+    protected QueryBindings bindings;
 
-public interface GroupCursor extends RowCursor {
-    void rebind(HKey hKey, boolean deep);
+    protected LeafCursor(QueryContext context, QueryBindingsCursor bindingsCursor) {
+        super(context);
+        this.bindingsCursor = bindingsCursor;
+    }
+
+    @Override
+    public void openBindings() {
+        bindingsCursor.openBindings();
+    }
+
+    @Override
+    public QueryBindings nextBindings() {
+        bindings = bindingsCursor.nextBindings();
+        return bindings;
+    }
+
+    @Override
+    public void closeBindings() {
+        bindingsCursor.closeBindings();
+    }
 }

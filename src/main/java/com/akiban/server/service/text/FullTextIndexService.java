@@ -18,7 +18,7 @@
 package com.akiban.server.service.text;
 
 import com.akiban.ais.model.IndexName;
-import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.service.BackgroundWork;
 
@@ -32,5 +32,6 @@ public interface FullTextIndexService extends FullTextIndexInfos {
      */
     public List<? extends BackgroundWork> getBackgroundWorks();
 
-    public Cursor searchIndex(QueryContext context, IndexName name, Query query, int limit);
+    public RowCursor searchIndex(QueryContext context, IndexName name, 
+                                 Query query, int limit);
 }

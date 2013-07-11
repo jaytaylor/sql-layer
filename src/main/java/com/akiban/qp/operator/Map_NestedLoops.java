@@ -85,9 +85,9 @@ class Map_NestedLoops extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(QueryContext context, QueryBindings bindings)
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, bindings);
+        return new Execution(context, bindingsCursor);
     }
 
     @Override
@@ -150,7 +150,7 @@ class Map_NestedLoops extends Operator
 
     // Inner classes
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends OperatorCursor
     {
         // Cursor interface
 
@@ -242,13 +242,31 @@ class Map_NestedLoops extends Operator
             return outerInput.isDestroyed();
         }
 
+        @Override
+        public void openBindings() {
+            outerInput.openBindings();
+        }
+
+        @Override
+        public QueryBindings nextBindings() {
+            outerBindings = outerInput.nextBindings();
+            return outerBindings;
+        }
+
+        @Override
+        public void closeBindings() {
+            outerInput.closeBindings();
+        }
+
         // Execution interface
 
-        Execution(QueryContext context, QueryBindings bindings)
+        Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
-            super(context, bindings);
-            this.outerInput = outerInputOperator.cursor(context, bindings);
-            this.innerInput = innerInputOperator.cursor(context, bindings);
+            super(context);
+            this.outerInput = outerInputOperator.cursor(context, bindingsCursor);
+            // For now, the inside sees whatever bindings the outside currently has.
+            this.innerBindingsCursor = new SingletonQueryBindingsCursor(null);
+            this.innerInput = innerInputOperator.cursor(context, innerBindingsCursor);
         }
 
         // For use by this class
@@ -276,8 +294,9 @@ class Map_NestedLoops extends Operator
         private void startNewInnerLoop(Row row)
         {
             innerInput.close();
-            bindings.setRow(inputBindingPosition, row);
-            innerInput.open();
+            outerBindings.setRow(inputBindingPosition, row);
+            innerBindingsCursor.reset(outerBindings);
+            innerInput.openTopLevel();
         }
 
         // Object state
@@ -286,5 +305,7 @@ class Map_NestedLoops extends Operator
         private final Cursor innerInput;
         private final ShareHolder<Row> outerRow = new ShareHolder<>();
         private boolean closed = true;
+        private QueryBindings outerBindings;
+        private final SingletonQueryBindingsCursor innerBindingsCursor;
     }
 }

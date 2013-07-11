@@ -86,9 +86,9 @@ class HKeyUnion_Ordered extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(QueryContext context, QueryBindings bindings)
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, bindings);
+        return new Execution(context, bindingsCursor);
     }
 
     @Override
@@ -194,7 +194,7 @@ class HKeyUnion_Ordered extends Operator
 
     // Inner classes
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends OperatorCursor
     {
         // Cursor interface
 
@@ -308,13 +308,39 @@ class HKeyUnion_Ordered extends Operator
             return leftInput.isDestroyed();
         }
 
+        @Override
+        public void openBindings() {
+            bindingsCursor.openBindings();
+            leftInput.openBindings();
+            rightInput.openBindings();
+        }
+
+        @Override
+        public QueryBindings nextBindings() {
+            QueryBindings bindings = bindingsCursor.nextBindings();
+            QueryBindings other = leftInput.nextBindings();
+            assert (bindings == other);
+            other = rightInput.nextBindings();
+            assert (bindings == other);
+            return bindings;
+        }
+
+        @Override
+        public void closeBindings() {
+            bindingsCursor.closeBindings();
+            leftInput.closeBindings();
+            rightInput.closeBindings();
+        }
+
         // Execution interface
 
-        Execution(QueryContext context, QueryBindings bindings)
+        Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
-            super(context, bindings);
-            leftInput = left.cursor(context, bindings);
-            rightInput = right.cursor(context, bindings);
+            super(context);
+            MultipleQueryBindingsCursor multiple = new MultipleQueryBindingsCursor(bindingsCursor);
+            this.bindingsCursor = multiple;
+            this.leftInput = left.cursor(context, multiple.newCursor());
+            this.rightInput = right.cursor(context, multiple.newCursor());
             hKeyCache = new HKeyCache<>(context.getStore());
         }
         
@@ -366,6 +392,7 @@ class HKeyUnion_Ordered extends Operator
         // Rows from each input stream are bound to the QueryContext. However, QueryContext doesn't use
         // ShareHolders, so they are needed here.
 
+        private final QueryBindingsCursor bindingsCursor;
         private final Cursor leftInput;
         private final Cursor rightInput;
         private final ShareHolder<Row> leftRow = new ShareHolder<>();

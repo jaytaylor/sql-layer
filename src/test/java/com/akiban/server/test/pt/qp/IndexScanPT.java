@@ -93,12 +93,12 @@ public class IndexScanPT extends QPProfilePTBase
         long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             for (int s = 0; s < sequentialAccessesPerRandom; s++) {
                 Row row = cursor.next();
                 assert row != null;
             }
-            cursor.close();
+            cursor.closeTopLevel();
             cursor.destroy();
         }
         long end = System.nanoTime();

@@ -108,7 +108,7 @@ public class GIUpdateProfilePT extends PTBase
         Tap.setEnabled(".*", true);
         for (int s = 0; s < 100000000 ; s++) {
             Cursor cursor = cursor(scan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             Row row;
             RowDef customerRowDef = customerRowType.userTable().rowDef();
             while ((row = cursor.next()) != null) {

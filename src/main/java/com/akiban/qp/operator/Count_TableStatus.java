@@ -86,9 +86,9 @@ class Count_TableStatus extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(QueryContext context, QueryBindings bindings)
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, bindings);
+        return new Execution(context, bindingsCursor);
     }
 
     @Override
@@ -137,7 +137,7 @@ class Count_TableStatus extends Operator
 
     // Inner classes
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends LeafCursor
     {
         // Cursor interface
 
@@ -219,9 +219,9 @@ class Count_TableStatus extends Operator
 
         // Execution interface
 
-        Execution(QueryContext context, QueryBindings bindings)
+        Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
-            super(context, bindings);
+            super(context, bindingsCursor);
         }
 
         // Object state

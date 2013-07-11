@@ -1635,7 +1635,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
     {
         Operator plan = indexScan_Default(idxRowType, range, ordering);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        cursor.open();
+        cursor.openTopLevel();
 
         cursor.jump(indexRowWithId(targetId), INDEX_ROW_SELECTOR);
 
@@ -1649,7 +1649,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
             actualRows.add(row);
             rowHolders.add(new ShareHolder<>(row));
         }
-        cursor.close();
+        cursor.closeTopLevel();
 
         // find the row with given id
         List<Row> expectedRows = new ArrayList<>(expected.length);

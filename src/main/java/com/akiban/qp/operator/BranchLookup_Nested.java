@@ -148,9 +148,9 @@ public class BranchLookup_Nested extends Operator
     }
 
     @Override
-    public Cursor cursor(QueryContext context, QueryBindings bindings)
+    public Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, bindings);
+        return new Execution(context, bindingsCursor);
     }
 
     @Override
@@ -285,7 +285,7 @@ public class BranchLookup_Nested extends Operator
 
     // Inner classes
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends LeafCursor
     {
         // Cursor interface
 
@@ -383,9 +383,9 @@ public class BranchLookup_Nested extends Operator
 
         // Execution interface
 
-        Execution(QueryContext context, QueryBindings bindings)
+        Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
-            super(context, bindings);
+            super(context, bindingsCursor);
             this.cursor = adapter().newGroupCursor(group);
             this.hKey = adapter().newHKey(outputRowType.hKey());
         }

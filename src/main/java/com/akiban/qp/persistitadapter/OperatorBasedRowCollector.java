@@ -70,7 +70,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         QueryContext context = new SimpleQueryContext(adapter);
         QueryBindings bindings = context.createBindings();
         cursor = cursor(operator, context, bindings);
-        cursor.open();
+        cursor.openTopLevel();
         // closed was initialized to true, because hasMore is checked before open. (This is due to scan being
         // spread across possibly multiple requests.) Now set closed to false for the actual scanning of rows.
         closed = false;

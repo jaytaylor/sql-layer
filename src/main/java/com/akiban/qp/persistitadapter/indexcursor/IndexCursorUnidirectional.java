@@ -25,7 +25,6 @@ import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.SpatialHelper;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
@@ -140,7 +139,6 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     // IndexCursorUnidirectional interface
 
     public static <S> IndexCursorUnidirectional<S> create(QueryContext context,
-                                                  QueryBindings bindings,
                                                   IterationHelper iterationHelper,
                                                   IndexKeyRange keyRange,
                                                   API.Ordering ordering,
@@ -148,20 +146,19 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     {
         return
             keyRange == null // occurs if we're doing a sort (PersistitSorter)
-            ? new IndexCursorUnidirectional<>(context, bindings, iterationHelper, ordering, sortKeyAdapter)
-            : new IndexCursorUnidirectional<>(context, bindings, iterationHelper, keyRange, ordering, sortKeyAdapter);
+            ? new IndexCursorUnidirectional<>(context, iterationHelper, ordering, sortKeyAdapter)
+            : new IndexCursorUnidirectional<>(context, iterationHelper, keyRange, ordering, sortKeyAdapter);
     }
 
     // For use by this subclasses
 
     protected IndexCursorUnidirectional(QueryContext context,
-                                        QueryBindings bindings,
                                         IterationHelper iterationHelper,
                                         IndexKeyRange keyRange,
                                         API.Ordering ordering,
                                         SortKeyAdapter<S, ?> sortKeyAdapter)
     {
-        super(context, bindings, iterationHelper);
+        super(context, iterationHelper);
         // end state never changes. start state can change on a jump, so it is set in initializeCursor.
         this.endBoundColumns = keyRange.boundColumns();
         this.endKey = endBoundColumns == 0 ? null : adapter.takeIndexRow(keyRange.indexRowType());
@@ -483,12 +480,11 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     }
 
     private IndexCursorUnidirectional(QueryContext context,
-                                      QueryBindings bindings,
                                       IterationHelper iterationHelper,
                                       API.Ordering ordering,
                                       SortKeyAdapter<S, ?> sortKeyAdapter)
     {
-        super(context, bindings, iterationHelper);
+        super(context, iterationHelper);
         this.keyRange = null;
         this.ordering = ordering;
         if (ordering.allAscending()) {

@@ -40,7 +40,7 @@ class ExecutableQueryOperatorStatement extends ExecutableOperatorStatement
         Cursor cursor = null;
         try {
             cursor = API.cursor(resultOperator, context, bindings);
-            cursor.open();
+            cursor.openTopLevel();
             ExecuteResults result = new ExecuteResults(cursor);
             cursor = null;
             return result;

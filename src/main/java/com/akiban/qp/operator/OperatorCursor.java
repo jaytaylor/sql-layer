@@ -17,8 +17,26 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.row.HKey;
+public abstract class OperatorCursor extends OperatorExecutionBase implements Cursor
+{
+    protected OperatorCursor(QueryContext context) {
+        super(context);
+    }
 
-public interface GroupCursor extends RowCursor {
-    void rebind(HKey hKey, boolean deep);
+    @Override
+    public QueryBindings openTopLevel() {
+        openBindings();
+        QueryBindings bindings = nextBindings();
+        assert (bindings != null);
+        open();
+        return bindings;
+    }
+
+    @Override
+    public void closeTopLevel() {
+        close();
+        QueryBindings bindings = nextBindings();
+        assert (bindings == null);
+        closeBindings();
+    }
 }

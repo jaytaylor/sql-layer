@@ -104,6 +104,11 @@ public class FullTextQueryBuilder
         }
 
         @Override
+        public boolean needsBindings() {
+            return false;
+        }
+
+        @Override
         public Query getQuery(QueryContext context, QueryBindings bindings) {
             return query;
         }
@@ -138,6 +143,11 @@ public class FullTextQueryBuilder
         }
         return new FullTextQueryExpression() {
                 @Override
+                public boolean needsBindings() {
+                    return false;
+                }
+
+                @Override
                 public Query getQuery(QueryContext context, QueryBindings bindings) {
                     return infos.parseQuery(context, indexName, fieldName, query);
                 }
@@ -160,6 +170,11 @@ public class FullTextQueryBuilder
                                               final TPreparedExpression qexpr) {
         final String fieldName = (defaultField == null) ? null : defaultField.getColumn().getName();
         return new FullTextQueryExpression() {
+                @Override
+                public boolean needsBindings() {
+                    return true;
+                }
+
                 @Override
                 public Query getQuery(QueryContext context, QueryBindings bindings) {
                     TEvaluatableExpression qeval = qexpr.build();
@@ -196,6 +211,11 @@ public class FullTextQueryBuilder
                                               final TPreparedExpression qexpr) {
         final String fieldName = checkFieldForMatch(field);
         return new FullTextQueryExpression() {
+                @Override
+                public boolean needsBindings() {
+                    return true;
+                }
+
                 @Override
                 public Query getQuery(QueryContext context, QueryBindings bindings) {
                     TEvaluatableExpression qeval = qexpr.build();
@@ -245,6 +265,16 @@ public class FullTextQueryBuilder
         }
         FullTextQueryExpression result = 
             new FullTextQueryExpression() {
+                @Override
+                public boolean needsBindings() {
+                    for (FullTextQueryExpression query : queries) {
+                        if (query.needsBindings()) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+
                 @Override
                 public Query getQuery(QueryContext context, QueryBindings bindings) {
                     BooleanQuery query = new BooleanQuery();

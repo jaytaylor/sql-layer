@@ -110,7 +110,8 @@ class Update_Default implements UpdatePlannable {
 
     @Override
     public UpdateResult run(QueryContext context, QueryBindings bindings) {
-        return new Execution(context, bindings, inputOperator.cursor(context, bindings)).run();
+        QueryBindingsCursor bindingsCursor = new SingletonQueryBindingsCursor(bindings);
+        return new Execution(context, inputOperator.cursor(context, bindingsCursor)).run();
     }
 
     // Plannable interface
@@ -167,7 +168,7 @@ class Update_Default implements UpdatePlannable {
                 UPDATE_TAP.in();
             }
             try {
-                input.open();
+                QueryBindings bindings = input.openTopLevel();
                 Row oldRow;
                 while ((oldRow = input.next()) != null) {
                     checkQueryCancelation();
@@ -184,7 +185,7 @@ class Update_Default implements UpdatePlannable {
                 }
             } finally {
                 if (input != null) {
-                    input.close();
+                    input.destroy();
                 }
                 if (TAP_NEXT_ENABLED) {
                     UPDATE_TAP.out();
@@ -193,9 +194,9 @@ class Update_Default implements UpdatePlannable {
             return new StandardUpdateResult(seen, modified);
         }
 
-        public Execution(QueryContext queryContext, QueryBindings bindings, Cursor input)
+        public Execution(QueryContext queryContext, Cursor input)
         {
-            super(queryContext, bindings);
+            super(queryContext);
             this.input = input;
         }
 

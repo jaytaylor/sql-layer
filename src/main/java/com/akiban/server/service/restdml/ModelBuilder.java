@@ -204,7 +204,7 @@ public class ModelBuilder {
             int convertedRows = 0;
             try(CloseableTransaction txn = txnService.beginCloseableTransaction(session)) {
                 Cursor cursor = groupScanCursor(session, tempName);
-                cursor.open();
+                cursor.openTopLevel();
                 try {
                     while((row = cursor.next()) != null) {
                         node = (ObjectNode)JsonUtils.readTree(row.pvalue(1).getString());
@@ -213,7 +213,7 @@ public class ModelBuilder {
                         restDMLService.insertNoTxn(session, null, tableName, node);
                         ++convertedRows;
                     }
-                    cursor.close();
+                    cursor.closeTopLevel();
                 } finally {
                     cursor.destroy();
                 }
@@ -311,7 +311,7 @@ public class ModelBuilder {
         QueryContext queryContext = new SimpleQueryContext(adapter);
         QueryBindings queryBindings = queryContext.createBindings();
         Cursor cursor = API.cursor(plan, queryContext, queryBindings);
-        cursor.open();
+        cursor.openTopLevel();
         try {
             return cursor.next();
         } finally {
@@ -334,7 +334,7 @@ public class ModelBuilder {
 
     private boolean scanCursor(PrintWriter writer, Cursor cursor, boolean first) throws IOException {
         Row row;
-        cursor.open();
+        cursor.openTopLevel();
         try {
             while((row = cursor.next()) != null) {
                 if(!first) {
@@ -348,7 +348,7 @@ public class ModelBuilder {
                 writer.write(node.toString());
             }
         } finally {
-            cursor.close();
+            cursor.closeTopLevel();
         }
         return first;
     }

@@ -155,7 +155,7 @@ public class UpsertProcessor extends DMLProcessor {
                 i++;
             }
             cursor = API.cursor(plan, context.queryContext, context.queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             return cursor.next();
         } finally {
             if (cursor != null) {

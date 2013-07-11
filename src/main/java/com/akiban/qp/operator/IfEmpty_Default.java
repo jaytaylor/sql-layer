@@ -116,9 +116,9 @@ class IfEmpty_Default extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(QueryContext context, QueryBindings bindings)
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, bindings);
+        return new Execution(context, bindingsCursor);
     }
 
     @Override
@@ -213,7 +213,7 @@ class IfEmpty_Default extends Operator
         UNKNOWN, DONE, ECHO_INPUT
     }
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends ChainedCursor
     {
         // Cursor interface
 
@@ -310,18 +310,11 @@ class IfEmpty_Default extends Operator
             return !closed;
         }
 
-        @Override
-        public boolean isDestroyed()
-        {
-            return input.isDestroyed();
-        }
-
         // Execution interface
 
-        Execution(QueryContext context, QueryBindings bindings)
+        Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
-            super(context, bindings);
-            this.input = inputOperator.cursor(context, bindings);
+            super(context, inputOperator.cursor(context, bindingsCursor));
             if (pExpressions != null) {
                 this.oEvaluations = null;
                 this.pEvaluations = new ArrayList<>(pExpressions.size());
@@ -378,7 +371,6 @@ class IfEmpty_Default extends Operator
 
         // Object state
 
-        private final Cursor input;
         private final List<ExpressionEvaluation> oEvaluations;
         private final List<TEvaluatableExpression> pEvaluations;
         private final ShareHolder<ValuesHolderRow> emptySubstitute = new ShareHolder<>();

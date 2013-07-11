@@ -126,10 +126,10 @@ public class SimpleJoinPT extends QPProfilePTBase
         Tap.setEnabled(".*", true);
         for (int s = 0; s < SCANS; s++) {
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             while (cursor.next() != null) {
             }
-            cursor.close();
+            cursor.closeTopLevel();
         }
         TapReport[] reports = Tap.getReport(".*");
         for (TapReport report : reports) {

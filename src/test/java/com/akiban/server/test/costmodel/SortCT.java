@@ -161,7 +161,7 @@ public class SortCT extends CostModelBase
         start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
             Cursor cursor = cursor(setup, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             while (cursor.next() != null);
         }
         stop = System.nanoTime();
@@ -170,7 +170,7 @@ public class SortCT extends CostModelBase
         start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
             Cursor cursor = cursor(sort, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             while (cursor.next() != null);
         }
         stop = System.nanoTime();

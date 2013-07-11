@@ -20,7 +20,6 @@ package com.akiban.qp.persistitadapter.indexcursor;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.persistit.Key;
 
@@ -31,25 +30,23 @@ class IndexCursorUnidirectionalLexicographic<S> extends IndexCursorUnidirectiona
     // IndexCursorUnidirectional interface
 
     public static <S> IndexCursorUnidirectionalLexicographic<S> create(QueryContext context,
-                                                               QueryBindings bindings,
                                                                IterationHelper iterationHelper,
                                                                IndexKeyRange keyRange,
                                                                API.Ordering ordering,
                                                                SortKeyAdapter<S, ?> sortKeyAdapter)
     {
-        return new IndexCursorUnidirectionalLexicographic<>(context, bindings, iterationHelper, keyRange, ordering, sortKeyAdapter);
+        return new IndexCursorUnidirectionalLexicographic<>(context, iterationHelper, keyRange, ordering, sortKeyAdapter);
     }
 
     // For use by this class
 
     private IndexCursorUnidirectionalLexicographic(QueryContext context,
-                                                   QueryBindings bindings,
                                                    IterationHelper iterationHelper,
                                                    IndexKeyRange keyRange,
                                                    API.Ordering ordering,
                                                    SortKeyAdapter<S, ?> sortKeyAdapter)
     {
-        super(context, bindings, iterationHelper, keyRange, ordering, sortKeyAdapter);
+        super(context, iterationHelper, keyRange, ordering, sortKeyAdapter);
     }
 
     @Override

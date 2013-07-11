@@ -165,7 +165,7 @@ final class Aggregate_Partial extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(QueryContext context, QueryBindings bindings) {
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor) {
         final List<Aggregator> aggregators;
         if (aggregatorFactories != null) {
             aggregators = new ArrayList<>();
@@ -182,7 +182,7 @@ final class Aggregate_Partial extends Operator
             aggregators = null;
         }
         return new AggregateCursor(
-                context, bindings,
+                context, bindingsCursor,
                 aggregators
         );
     }
@@ -369,7 +369,7 @@ final class Aggregate_Partial extends Operator
 
     // nested classes
 
-    private class AggregateCursor extends OperatorExecutionBase implements Cursor
+    private class AggregateCursor extends OperatorCursor
     {
 
         // Cursor interface
@@ -485,6 +485,22 @@ final class Aggregate_Partial extends Operator
         public boolean isDestroyed()
         {
             return cursorState == CursorState.DESTROYED;
+        }
+
+
+        @Override
+        public void openBindings() {
+            inputCursor.openBindings();
+        }
+
+        @Override
+        public QueryBindings nextBindings() {
+            return inputCursor.nextBindings();
+        }
+
+        @Override
+        public void closeBindings() {
+            inputCursor.closeBindings();
         }
 
         // for use in this class
@@ -641,10 +657,10 @@ final class Aggregate_Partial extends Operator
 
         // AggregateCursor interface
 
-        private AggregateCursor(QueryContext context, QueryBindings bindings,
+        private AggregateCursor(QueryContext context, QueryBindingsCursor bindingsCursor,
                                 List<Aggregator> aggregators) {
-            super(context, bindings);
-            this.inputCursor = inputOperator.cursor(context, bindings);
+            super(context);
+            this.inputCursor = inputOperator.cursor(context, bindingsCursor);
             this.aggregators = aggregators;
             if (aggregators != null) {
                 keyValues = new ArrayList<>();

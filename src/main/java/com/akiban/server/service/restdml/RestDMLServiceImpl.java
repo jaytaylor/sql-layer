@@ -614,9 +614,10 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     private static void collectResults(JDBCResultSet resultSet, AkibanAppender appender) throws SQLException {
         SQLOutputCursor cursor = new SQLOutputCursor(resultSet);
         JsonRowWriter jsonRowWriter = new JsonRowWriter(cursor);
-        if(jsonRowWriter.writeRows(cursor, appender, "\n", cursor)) {
+        if(jsonRowWriter.writeRowsFromOpenCursor(cursor, appender, "\n", cursor)) {
             appender.append('\n');
         }
+        cursor.close();
     }
 
     private JDBCConnection jdbcConnection(HttpServletRequest request) throws SQLException {

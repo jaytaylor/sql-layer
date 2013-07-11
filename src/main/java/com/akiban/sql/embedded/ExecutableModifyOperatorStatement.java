@@ -22,6 +22,7 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryBindings;
+import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.row.ImmutableRow;
 import com.akiban.qp.row.ProjectedRow;
 import com.akiban.qp.row.Row;
@@ -54,7 +55,7 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
     @Override
     public ExecuteResults execute(EmbeddedQueryContext context, QueryBindings bindings) {
         int updateCount = 0;
-        SpoolCursor  returningRows = null;
+        SpoolCursor returningRows = null;
         if (resultSetMetaData != null)
             // If there are results, we need to read them all now to get the update
             // count right and have this all happen even if the caller
@@ -65,7 +66,7 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
         RuntimeException runtimeException = null;
         try {
             cursor = API.cursor(resultOperator, context, bindings);
-            cursor.open();
+            cursor.openTopLevel();
             Row row;
             while ((row = cursor.next()) != null) {
                 updateCount++;
@@ -116,7 +117,7 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
         return AISGenerationMode.NOT_ALLOWED;
     }
 
-    static class SpoolCursor implements Cursor {
+    static class SpoolCursor implements RowCursor {
         private List<ShareHolder<Row>> rows = new ArrayList<>();
         private Iterator<ShareHolder<Row>> iterator;
         private enum State { CLOSED, FILLING, EMPTYING, DESTROYED }

@@ -244,7 +244,7 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
     {
         Operator plan = indexScan_Default(idxRowType, bounded(1, bLo, lowInclusive, bHi, hiInclusive), ordering);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        cursor.open();
+        cursor.openTopLevel();
         cursor.jump(indexRow(targetId), INDEX_ROW_SELECTOR);
 
         Row row;
@@ -257,7 +257,7 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
             actualRows.add(row);
             rowHolders.add(new ShareHolder<>(row));
         }
-        cursor.close();
+        cursor.closeTopLevel();
 
              // check the list of rows
         checkRows(actualRows, expected);

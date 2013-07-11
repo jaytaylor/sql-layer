@@ -17,8 +17,7 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.row.HKey;
-
-public interface GroupCursor extends RowCursor {
-    void rebind(HKey hKey, boolean deep);
+public interface BindingsAwareCursor extends RowCursor
+{
+    public void rebind(QueryBindings bindings);
 }

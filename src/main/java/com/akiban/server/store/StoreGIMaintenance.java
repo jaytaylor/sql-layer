@@ -87,7 +87,7 @@ class StoreGIMaintenance {
             cursor = API.cursor(planOperator, context, bindings);
             RUN_TAP.in();
             runTapEntered = true;
-            cursor.open();
+            cursor.openTopLevel();
             Row row;
             while ((row = cursor.next()) != null) {
                 boolean actioned = false;
@@ -160,7 +160,7 @@ class StoreGIMaintenance {
                 Cursor siblingsCounter = API.cursor(siblingsLookup, context, bindings);
                 SIBLING_ALL_TAP.in();
                 try {
-                    siblingsCounter.open();
+                    siblingsCounter.openTopLevel();
                     int siblings = 0;
                     while (siblingsCounter.next() != null) {
                         SIBLING_ROW_TAP.hit();

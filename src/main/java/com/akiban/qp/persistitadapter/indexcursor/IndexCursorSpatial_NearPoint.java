@@ -22,7 +22,7 @@ import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.BindingsAwareCursor;
 import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
@@ -110,21 +110,28 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         }
     }
 
+    @Override
+    public void rebind(QueryBindings bindings)
+    {
+        super.rebind(bindings);
+        geCursor.rebind(bindings);
+        ltCursor.rebind(bindings);
+    }
+
     // IndexCursorSpatial_InBox interface
 
     public static IndexCursorSpatial_NearPoint create(QueryContext context,
-                                                      QueryBindings bindings,
                                                       IterationHelper iterationHelper,
                                                       IndexKeyRange keyRange)
     {
-        return new IndexCursorSpatial_NearPoint(context, bindings, iterationHelper, keyRange);
+        return new IndexCursorSpatial_NearPoint(context, iterationHelper, keyRange);
     }
 
     // For use by this class
 
-    private IndexCursorSpatial_NearPoint(QueryContext context, QueryBindings bindings, IterationHelper iterationHelper, IndexKeyRange keyRange)
+    private IndexCursorSpatial_NearPoint(QueryContext context, IterationHelper iterationHelper, IndexKeyRange keyRange)
     {
-        super(context, bindings, iterationHelper);
+        super(context, iterationHelper);
         assert keyRange.spatial();
         this.iterationHelper = iterationHelper;
         IndexRowType physicalIndexRowType = keyRange.indexRowType().physicalRowType();
@@ -183,12 +190,12 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
             upOrdering.append((TPreparedExpression)null, true);
             downOrdering.append((TPreparedExpression)null, false);
         }
-        geCursor = new IndexCursorUnidirectional<>(context, bindings,
+        geCursor = new IndexCursorUnidirectional<>(context, 
                                                                geRowState,
                                                                geKeyRange,
                                                                upOrdering,
                                                                PValueSortKeyAdapter.INSTANCE);
-        ltCursor = new IndexCursorUnidirectional<>(context, bindings,
+        ltCursor = new IndexCursorUnidirectional<>(context, 
                                                                ltRowState,
                                                                ltKeyRange,
                                                                downOrdering,
@@ -222,11 +229,11 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
     private final int zPosition;
     private final IterationHelper iterationHelper;
     private long zStart;
-    private Cursor geCursor;
+    private BindingsAwareCursor geCursor;
     private Row geRow;
     private long geDistance;
     private boolean geNeedToAdvance;
-    private Cursor ltCursor;
+    private BindingsAwareCursor ltCursor;
     private Row ltRow;
     private long ltDistance;
     private boolean ltNeedToAdvance;

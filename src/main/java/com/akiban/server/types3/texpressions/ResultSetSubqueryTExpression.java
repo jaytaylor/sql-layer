@@ -42,7 +42,7 @@ public class ResultSetSubqueryTExpression extends SubqueryTExpression
         public void evaluate() {
             bindings.setRow(bindingPosition, outerRow);
             Cursor cursor = API.cursor(subquery, context, bindings);
-            cursor.open();
+            cursor.openTopLevel();
             pvalue.putObject(cursor);
         }
 

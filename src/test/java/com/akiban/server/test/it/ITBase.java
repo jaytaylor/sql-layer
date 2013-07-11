@@ -21,6 +21,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -51,16 +52,24 @@ public abstract class ITBase extends ApiTestBase {
         super(suffix);
     }
 
-    protected void compareRows(RowBase[] expected, Cursor cursor)
+    protected void compareRows(RowBase[] expected, RowCursor cursor)
     {
-        compareRows(expected, cursor, null);
+        compareRows(expected, cursor, (cursor instanceof Cursor), null);
     }
 
-    protected void compareRows(RowBase[] expected, Cursor cursor, AkCollator ... collators)
+    protected void compareRows(RowBase[] expected, RowCursor cursor, AkCollator ... collators)
+    {
+        compareRows(expected, cursor, (cursor instanceof Cursor), collators);
+    }
+
+    protected void compareRows(RowBase[] expected, RowCursor cursor, boolean topLevel, AkCollator ... collators)
     {
         List<ShareHolder<Row>> actualRows = new ArrayList<>(); // So that result is viewable in debugger
         try {
-            cursor.open();
+            if (topLevel)
+                ((Cursor)cursor).openTopLevel();
+            else
+                cursor.open();
             RowBase actualRow;
             while ((actualRow = cursor.next()) != null) {
                 int count = actualRows.size();
@@ -80,7 +89,10 @@ public abstract class ITBase extends ApiTestBase {
                 actualRows.add(new ShareHolder<>((Row) actualRow));
             }
         } finally {
-            cursor.close();
+            if (topLevel)
+                ((Cursor)cursor).closeTopLevel();
+            else
+                cursor.close();
         }
         assertEquals(expected.length, actualRows.size());
     }

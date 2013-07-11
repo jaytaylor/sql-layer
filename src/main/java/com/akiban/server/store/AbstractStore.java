@@ -35,6 +35,7 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.GroupCursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryBindings;
+import com.akiban.qp.operator.QueryBindingsCursor;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
@@ -1119,7 +1120,7 @@ public abstract class AbstractStore<SDType> implements Store {
         }
         try {
             Row row;
-            cursor.open();
+            cursor.openTopLevel();
             while((row = cursor.next()) != null) {
                 UserTable table = row.rowType().userTable();
                 RowData data = adapter.rowData(table.rowDef(), row, new PValueRowDataCreator());
@@ -1131,7 +1132,7 @@ public abstract class AbstractStore<SDType> implements Store {
                                      StoreGIHandler.forTable(this, adapter, uTable),
                                      StoreGIHandler.Action.CASCADE);
             }
-            cursor.close();
+            cursor.closeTopLevel();
         } finally {
             cursor.destroy();
         }
@@ -1210,7 +1211,7 @@ public abstract class AbstractStore<SDType> implements Store {
                                            StoreGIHandler handler,
                                            StoreGIHandler.Action action) {
         Cursor cursor = API.cursor(rootOperator, context, bindings);
-        cursor.open();
+        cursor.openTopLevel();
         try {
             Row row;
             while((row = cursor.next()) != null) {
@@ -1218,6 +1219,7 @@ public abstract class AbstractStore<SDType> implements Store {
                     handler.handleRow(groupIndex, row, action);
                 }
             }
+            cursor.closeTopLevel();
         } finally {
             cursor.destroy();
         }

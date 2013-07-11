@@ -28,6 +28,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.Store;
@@ -76,14 +77,14 @@ public class DeleteProcessor extends DMLProcessor {
                     context.queryBindings.setPValue(i, pvalue);
                 }
     
-                cursor.open();
+                cursor.openTopLevel();
                 Row row;
                 while ((row = cursor.next()) != null) {
                     // Do Nothing - the act of reading the cursor 
                     // does the delete row processing.
                     // TODO: Check that we got 1 row through.
                 }
-                cursor.close();
+                cursor.closeTopLevel();
             }
         } finally {
             if (cursor != null)

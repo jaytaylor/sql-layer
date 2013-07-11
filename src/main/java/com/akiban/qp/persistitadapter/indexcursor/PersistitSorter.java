@@ -18,7 +18,7 @@
 package com.akiban.qp.persistitadapter.indexcursor;
 
 import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
@@ -67,7 +67,7 @@ public class PersistitSorter implements Sorter
 {
     public PersistitSorter(QueryContext context,
                            QueryBindings bindings,
-                           Cursor input,
+                           RowCursor input,
                            RowType rowType,
                            API.Ordering ordering,
                            API.SortOption sortOption,
@@ -95,7 +95,7 @@ public class PersistitSorter implements Sorter
     }
 
     @Override
-    public Cursor sort()
+    public RowCursor sort()
     {
         loadTree();
         return cursor();
@@ -144,10 +144,12 @@ public class PersistitSorter implements Sorter
         }
     }
 
-    private Cursor cursor()
+    private RowCursor cursor()
     {
         exchange.clear();
-        return IndexCursor.create(context, bindings, null, ordering, iterationHelper, usePValues);
+        IndexCursor indexCursor = IndexCursor.create(context, null, ordering, iterationHelper, usePValues);
+        indexCursor.rebind(bindings);
+        return indexCursor;
     }
 
     private void createKey(Row row)
@@ -188,7 +190,7 @@ public class PersistitSorter implements Sorter
     // Object state
 
     final PersistitAdapter adapter;
-    final Cursor input;
+    final RowCursor input;
     final RowType rowType;
     final API.Ordering ordering;
     final QueryContext context;

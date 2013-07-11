@@ -22,6 +22,7 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.persistitadapter.TempVolume;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.indexcursor.PersistitSorter;
@@ -117,10 +118,10 @@ public class PersistitSorterOverflowIT extends ITBase {
                 context, bindings
         );
 
-        inputCursor.open();
+        inputCursor.openTopLevel();
         try {
             PersistitSorter sorter = new PersistitSorter(context, bindings, inputCursor, rowType, ordering, API.SortOption.PRESERVE_DUPLICATES, tap);
-            Cursor sortedCursor = sorter.sort();
+            RowCursor sortedCursor = sorter.sort();
             sortedCursor.open();
             try {
                 while(sortedCursor.next() != null) {
@@ -130,7 +131,7 @@ public class PersistitSorterOverflowIT extends ITBase {
                 sortedCursor.close();
             }
         } finally {
-            inputCursor.close();
+            inputCursor.closeTopLevel();
         }
     }
 }
