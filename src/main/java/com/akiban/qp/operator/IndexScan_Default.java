@@ -424,6 +424,7 @@ class IndexScan_Default extends Operator
                     RowCursor cursor = null;
                     if (bindings.getDepth() == currentBindings.getDepth()) {
                         cursor = openACursor(bindings);
+                        LOG.debug("IndexScan: lookahead {}", bindings);
                     }
                     pendingBindings.add(new BindingsAndCursor(bindings, cursor));
                 }

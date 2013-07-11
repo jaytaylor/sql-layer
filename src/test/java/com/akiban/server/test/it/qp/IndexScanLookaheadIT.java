@@ -28,6 +28,7 @@ import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.SetColumnSelector;
+import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValue;
@@ -59,6 +60,32 @@ public class IndexScanLookaheadIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema() {
         super.setupPostCreateSchema();
+        // Like super, but with a whole lot more cid=2 orders.
+        db = new NewRow[]{createNewRow(customer, 1L, "xyz"),
+                          createNewRow(customer, 2L, "abc"),
+                          createNewRow(customer, 4L, "qqq"),
+                          createNewRow(order, 11L, 1L, "ori"),
+                          createNewRow(order, 12L, 1L, "david"),
+                          createNewRow(order, 21L, 2L, "tom"),
+                          createNewRow(order, 22L, 2L, "jack"),
+                          createNewRow(order, 23L, 2L, "dave"),
+                          createNewRow(order, 24L, 2L, "dave"),
+                          createNewRow(order, 25L, 2L, "dave"),
+                          createNewRow(order, 26L, 2L, "dave"),
+                          createNewRow(order, 27L, 2L, "dave"),
+                          createNewRow(order, 28L, 2L, "dave"),
+                          createNewRow(order, 29L, 2L, "dave"),
+                          createNewRow(order, 41L, 4L, "nathan"),
+                          createNewRow(item, 111L, 11L),
+                          createNewRow(item, 112L, 11L),
+                          createNewRow(item, 121L, 12L),
+                          createNewRow(item, 122L, 12L),
+                          createNewRow(item, 211L, 21L),
+                          createNewRow(item, 212L, 21L),
+                          createNewRow(item, 221L, 22L),
+                          createNewRow(item, 222L, 22L),
+                          createNewRow(item, 241L, 24L),
+                          createNewRow(item, 251L, 25L)};
         use(db);
     }
 
@@ -145,7 +172,7 @@ public class IndexScanLookaheadIT extends OperatorITBase
                     2, 2),
                 1, 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        String[] expected = new String[]{hkey(2, 21, 211),hkey(2, 21, 212),hkey(2, 22,221),hkey(2, 22,222)};
+        String[] expected = new String[]{hkey(2, 21, 211),hkey(2, 21, 212),hkey(2, 22, 221),hkey(2, 22, 222),hkey(2, 24, 241),hkey(2, 25, 251)};
         compareRenderedHKeys(expected, cursor);
     }
 
