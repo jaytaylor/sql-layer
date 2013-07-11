@@ -66,10 +66,13 @@ import com.akiban.server.error.ScanRetryAbandonedException;
 import com.akiban.server.error.TableDefinitionChangedException;
 import com.akiban.server.error.TableDefinitionMismatchException;
 import com.akiban.server.service.dxl.BasicDXLMiddleman.ScanData;
+import com.akiban.server.service.listener.ListenerService;
+import com.akiban.server.service.listener.TableListener;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.RowCollector;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
+import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.GrowableByteBuffer;
 import com.akiban.util.tap.PointTap;
@@ -86,15 +89,20 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
     private final static Logger logger = LoggerFactory.getLogger(BasicDMLFunctions.class);
     private final DDLFunctions ddlFunctions;
+    private final IndexStatisticsService indexStatisticsService;
+    private final ListenerService listenerService;
     private final Scanner scanner;
     private static final int SCAN_RETRY_COUNT = 0;
 
     private static PointTap SCAN_RETRY_ABANDON_TAP = Tap.createCount("BasicDMLFunctions: scan abandons");
 
     @Inject
-    BasicDMLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, DDLFunctions ddlFunctions) {
+    BasicDMLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, DDLFunctions ddlFunctions,
+                      IndexStatisticsService indexStatisticsService, ListenerService listenerService) {
         super(middleman, schemaManager, store);
         this.ddlFunctions = ddlFunctions;
+        this.indexStatisticsService = indexStatisticsService;
+        this.listenerService = listenerService;
         this.scanner = new Scanner();
     }
 
@@ -119,16 +127,14 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     };
 
     @Override
-    public TableStatistics getTableStatistics(Session session, int tableId,
-            boolean updateFirst) 
+    public TableStatistics getTableStatistics(Session session, int tableId, boolean updateFirst)
     {
         logger.trace("stats for {} updating: {}", tableId, updateFirst);
+        UserTable table = (UserTable)ddlFunctions.getTable(session, tableId);
         if (updateFirst) {
-            ddlFunctions.updateTableStatistics(session,
-                                               ddlFunctions.getTableName(session, tableId),
-                                               null);
+            ddlFunctions.updateTableStatistics(session, table.getName(), null);
         }
-        return store().getTableStatistics(session, tableId);
+        return indexStatisticsService.getTableStatistics(session, table);
     }
 
     @Override
@@ -703,6 +709,9 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
      * @throws Exception 
      */
     private boolean canFastTruncate(Session session, UserTable userTable) {
+        if(!userTable.getFullTextIndexes().isEmpty()) {
+            return false;
+        }
         List<UserTable> tableList = new ArrayList<>();
         tableList.add(userTable.getGroup().getRoot());
         while(!tableList.isEmpty()) {
@@ -725,11 +734,15 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     {
         logger.trace("truncating tableId={}", tableId);
         final int knownAIS = ddlFunctions.getGenerationAsInt(session);
-        final Table table = ddlFunctions.getTable(session, tableId);
-        final UserTable utable = table.isUserTable() ? (UserTable)table : null;
+        final TableName name = ddlFunctions.getTableName(session, tableId);
+        final UserTable utable = ddlFunctions.getUserTable(session, name);
 
-        if(utable == null || canFastTruncate(session, utable)) {
-            store().truncateGroup(session, table.getGroup());
+        if(canFastTruncate(session, utable)) {
+            store().truncateGroup(session, utable.getGroup());
+            // All other tables in the group have no rows. Only need to truncate this table.
+            for(TableListener listener : listenerService.getTableListeners()) {
+                listener.onTruncate(session, utable, true);
+            }
             return;
         }
 
@@ -786,6 +799,11 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             }
         }
         store().truncateTableStatus(session, tableId);
+
+        for(TableListener listener : listenerService.getTableListeners()) {
+            listener.onTruncate(session, utable, false);
+        }
+
         if (thrown != null) {
             throw thrown;
         }

@@ -25,7 +25,6 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.TableStatistics;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.rowdata.RowData;
@@ -33,7 +32,6 @@ import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.service.tree.TreeLink;
-import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.persistit.Key;
 import com.persistit.Value;
 
@@ -93,8 +91,6 @@ public interface Store extends KeyCreator {
 
     long getRowCount(Session session, boolean exact, RowData start, RowData end, byte[] columnBitMap);
 
-    TableStatistics getTableStatistics(Session session, int tableId);
-
     /**
      * Delete all data associated with the group. This includes
      * all indexes from all tables, group indexes, and the group itself.
@@ -134,8 +130,6 @@ public interface Store extends KeyCreator {
     public PersistitStore getPersistitStore();
 
     void truncateIndexes(Session session, Collection<? extends Index> indexes);
-
-    void setIndexStatistics(IndexStatisticsService indexStatistics);
 
     StoreAdapter createAdapter(Session session, Schema schema);
 

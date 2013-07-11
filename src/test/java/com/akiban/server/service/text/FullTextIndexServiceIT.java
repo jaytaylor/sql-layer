@@ -377,6 +377,52 @@ public class FullTextIndexServiceIT extends ITBase
         ftScanAndCompare(builder, "name:Flintstone AND sku:1234", 10, expected);
     }
 
+    @Test
+    public void testTruncate() throws InterruptedException {
+        FullTextIndex index = createFullTextIndex(SCHEMA, "c", "idx_c", "name", "i.sku", "a.state");
+        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
+        
+        final int limit = 15;
+        RowType rowType = rowType("c");
+        String nameQuery = "flintstone";
+        RowBase[] nameExpected = new RowBase[] { row(rowType, 1L), row(rowType, 3L) };
+        String stateQuery = "state:MA";
+        RowBase[] stateExpected = new RowBase[] { row(rowType, 1L), row(rowType, 3L) };
+        String skuQuery = "sku:1234";
+        RowBase[] skuExpected = new RowBase[] { row(rowType, 1L) };
+        RowBase[] emptyExpected = {};
+        
+        FullTextQueryBuilder builder = new FullTextQueryBuilder(index, ais(), queryContext);
+        ftScanAndCompare(builder, nameQuery, limit, nameExpected);
+        ftScanAndCompare(builder, stateQuery, limit, stateExpected);
+        ftScanAndCompare(builder, skuQuery, limit, skuExpected);
+
+        dml().truncateTable(session(), a);
+        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
+        ftScanAndCompare(builder, nameQuery, limit, nameExpected);
+        ftScanAndCompare(builder, stateQuery, limit, emptyExpected);
+        ftScanAndCompare(builder, skuQuery, limit, skuExpected);
+
+        dml().truncateTable(session(), o);
+        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
+        ftScanAndCompare(builder, nameQuery, limit, nameExpected);
+        ftScanAndCompare(builder, stateQuery, limit, emptyExpected);
+        ftScanAndCompare(builder, skuQuery, limit, emptyExpected); // Non-cascading key, connection to c1 is unknown
+
+        dml().truncateTable(session(), i);
+        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
+        ftScanAndCompare(builder, nameQuery, limit, nameExpected);
+        ftScanAndCompare(builder, stateQuery, limit, emptyExpected);
+        ftScanAndCompare(builder, skuQuery, limit, emptyExpected);
+
+        dml().truncateTable(session(), c);
+        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
+        ftScanAndCompare(builder, nameQuery, limit, emptyExpected);
+        ftScanAndCompare(builder, stateQuery, limit, emptyExpected);
+        ftScanAndCompare(builder, skuQuery, limit, emptyExpected);
+    }
+
+
     protected RowType rowType(String tableName) {
         return schema.newHKeyRowType(ais().getUserTable(SCHEMA, tableName).hKey());
     }

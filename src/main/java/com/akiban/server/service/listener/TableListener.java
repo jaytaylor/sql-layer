@@ -27,6 +27,7 @@ public interface TableListener
 {
     void onCreate(Session session, UserTable table);
     void onDrop(Session session, UserTable table);
+    void onTruncate(Session session, UserTable table, boolean isFast);
 
     void onCreateIndex(Session session, Collection<? extends Index> indexes);
     void onDropIndex(Session session, Collection<? extends Index> indexes);
