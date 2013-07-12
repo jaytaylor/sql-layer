@@ -469,6 +469,7 @@ class AncestorLookup_Default extends Operator
                         ancestorIndex++;
                     }
                     else if (ancestorIndex >= nancestors) {
+                        // Done with this row.
                         inputRows[currentIndex].release();
                         inputRowBindings[currentIndex] = null;
                         currentIndex = (currentIndex + 1) % quantum;
@@ -480,7 +481,7 @@ class AncestorLookup_Default extends Operator
                         ancestorCursors[index].close();
                         if ((outputRow != null) && 
                             !ancestorHKeys[index].equals(outputRow.hKey())) {
-                            // Not the row we wanted.
+                            // Not the row we wanted; no matching ancestor.
                             outputRow = null;
                         }
                         ancestorHKeys[index] = null;
@@ -522,8 +523,8 @@ class AncestorLookup_Default extends Operator
         public void destroy() {
             pendingBindings.clear();
             Arrays.fill(inputRowBindings, null);
-            for (ShareHolder<Row> input : inputRows) {
-                input.release();
+            for (ShareHolder<Row> row : inputRows) {
+                row.release();
             }
             for (GroupCursor ancestorCursor : ancestorCursors) {
                 if (ancestorCursor != null) {
@@ -565,7 +566,7 @@ class AncestorLookup_Default extends Operator
                 if (currentBindings == null) {
                     bindingsExhausted = true;
                 }
-                newBindings = true; // Read from input, not pending.
+                newBindings = true; // Read from input, not pending, will need to open.
             }
             return currentBindings;
         }
@@ -601,8 +602,11 @@ class AncestorLookup_Default extends Operator
         // For use by this class
 
         private void clearBindings() {
-            for (ShareHolder<Row> input : inputRows) {
-                input.release();
+            if (nextBindings != null) {
+                input.close();  // Starting over.
+            }
+            for (ShareHolder<Row> row : inputRows) {
+                row.release();
             }
             pendingBindings.clear();
             Arrays.fill(inputRowBindings, null);
