@@ -136,7 +136,7 @@ class AncestorLookup_Default extends Operator
     protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
         if (lookaheadQuantum == null) {
-            lookaheadQuantum = Integer.valueOf(context.getStore().getConfig().getProperty("akserver.lookaheadQuantum.indexScan"));
+            lookaheadQuantum = Integer.valueOf(context.getStore().getConfig().getProperty("akserver.lookaheadQuantum.groupLookup"));
         }
         if (lookaheadQuantum <= 1) {
             return new Execution(context, inputOperator.cursor(context, bindingsCursor));
@@ -421,12 +421,18 @@ class AncestorLookup_Default extends Operator
                     // necessary, and open cursors for them.
                     while (!bindingsExhausted && !inputRows[nextIndex].isHolding()) {
                         if (nextBindings == null) {
-                            nextBindings = input.nextBindings();
-                            if (nextBindings == null) {
-                                bindingsExhausted = true;
-                                break;
+                            if (newBindings) {
+                                nextBindings = currentBindings;
+                                newBindings = false;
                             }
-                            pendingBindings.add(nextBindings);
+                            if (nextBindings == null) {
+                                nextBindings = input.nextBindings();
+                                if (nextBindings == null) {
+                                    bindingsExhausted = true;
+                                    break;
+                                }
+                                pendingBindings.add(nextBindings);
+                            }
                             input.open();
                         }
                         Row row = input.next();
@@ -559,6 +565,7 @@ class AncestorLookup_Default extends Operator
                 if (currentBindings == null) {
                     bindingsExhausted = true;
                 }
+                newBindings = true; // Read from input, not pending.
             }
             return currentBindings;
         }
@@ -613,6 +620,6 @@ class AncestorLookup_Default extends Operator
         private final HKey[] ancestorHKeys;
         private int currentIndex, nextIndex, ancestorIndex;
         private QueryBindings currentBindings, nextBindings;
-        private boolean bindingsExhausted, closed = true;
+        private boolean bindingsExhausted, closed = true, newBindings;
     }
 }

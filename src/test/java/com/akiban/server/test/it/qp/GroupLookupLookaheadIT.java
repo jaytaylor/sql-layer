@@ -94,8 +94,34 @@ public class GroupLookupLookaheadIT extends OperatorITBase
                     row(customerRowType, 2L, "foundation"),
                 };
             }
+
+            @Override
+            public boolean reopenTopLevel() {
+                return true;
+            }
         };
         testCursorLifecycle(plan, testCase);
+    }
+
+    @Test
+    public void testSimple()
+    {
+        Operator plan =
+            ancestorLookup_Default(
+                filter_Default(
+                    groupScan_Default(coi),
+                    Collections.singleton(orderRowType)),
+                coi,
+                orderRowType,
+                Collections.singleton(customerRowType),
+                InputPreservationOption.DISCARD_INPUT);
+        RowBase[] expected = new RowBase[]{
+            row(customerRowType, 1L, "northbridge"),
+            row(customerRowType, 1L, "northbridge"),
+            row(customerRowType, 2L, "foundation"),
+            row(customerRowType, 2L, "foundation"),
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
 }
