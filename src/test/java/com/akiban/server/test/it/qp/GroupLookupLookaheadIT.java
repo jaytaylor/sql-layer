@@ -17,24 +17,40 @@
 
 package com.akiban.server.test.it.qp;
 
+import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.row.BindableRow;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TPreparedLiteral;
+
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static com.akiban.qp.operator.API.*;
+import static com.akiban.server.test.ExpressionGenerators.*;
 
 public class GroupLookupLookaheadIT extends OperatorITBase
 {
@@ -71,7 +87,7 @@ public class GroupLookupLookaheadIT extends OperatorITBase
     }
 
     @Test
-    public void testCursor()
+    public void testAncestorLookupCursor()
     {
         Operator plan =
             ancestorLookup_Default(
@@ -103,8 +119,8 @@ public class GroupLookupLookaheadIT extends OperatorITBase
         testCursorLifecycle(plan, testCase);
     }
 
-    @Test
-    public void testSimple()
+    @Test @Ignore // Same check in testCursor
+    public void testAncestorLookupSimple()
     {
         Operator plan =
             ancestorLookup_Default(
@@ -122,6 +138,59 @@ public class GroupLookupLookaheadIT extends OperatorITBase
             row(customerRowType, 2L, "foundation"),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
+    }
+
+    @Test
+    public void testAncestorLookupMap()
+    {
+        RowType cidValueRowType = schema.newValuesType(AkType.INT);
+        List<ExpressionGenerator> cidExprs = Arrays.asList(boundField(cidValueRowType, 1, 0));
+        IndexBound cidBound =
+            new IndexBound(
+                new RowBasedUnboundExpressions(orderCidIndexRowType, cidExprs),
+                new SetColumnSelector(0));
+        IndexKeyRange cidRange = IndexKeyRange.bounded(orderCidIndexRowType, cidBound, true, cidBound, true);
+        Operator plan =
+            map_NestedLoops(
+                valuesScan_Default(
+                    bindableExpressions(intRow(cidValueRowType, 1),
+                                        intRow(cidValueRowType, 2),
+                                        intRow(cidValueRowType, 10)),
+                    cidValueRowType),
+                ancestorLookup_Default(
+                    indexScan_Default(orderCidIndexRowType, false, cidRange),
+                    coi,
+                    orderCidIndexRowType,
+                    Arrays.asList(customerRowType, orderRowType),
+                    InputPreservationOption.DISCARD_INPUT),
+                1, 1);
+        RowBase[] expected = new RowBase[]{
+            row(customerRowType, 1L, "northbridge"),
+            row(orderRowType, 11L, 1L, "ori"),
+            row(customerRowType, 1L, "northbridge"),
+            row(orderRowType, 12L, 1L, "david"),
+            row(customerRowType, 2L, "foundation"),
+            row(orderRowType, 21L, 2L, "tom"),
+            row(customerRowType, 2L, "foundation"),
+            row(orderRowType, 22L, 2L, "jack"),
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
+    }
+
+    // For use by this class
+
+    private Row intRow(RowType rowType, int x)
+    {
+        List<TPreparedExpression> pExpressions = Arrays.<TPreparedExpression>asList(new TPreparedLiteral(MNumeric.INT.instance(false), new PValue(MNumeric.INT.instance(false), x)));
+        return new ExpressionRow(rowType, queryContext, queryBindings, null, pExpressions);
+    }
+
+    private Collection<? extends BindableRow> bindableExpressions(Row... rows) {
+        List<BindableRow> result = new ArrayList<>();
+        for (Row row : rows) {
+            result.add(BindableRow.of(row, true));
+        }
+        return result;
     }
 
 }
