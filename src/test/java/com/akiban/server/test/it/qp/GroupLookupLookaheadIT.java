@@ -71,6 +71,9 @@ public class GroupLookupLookaheadIT extends OperatorITBase
             createNewRow(order, 12L, 1L, "david"),
             createNewRow(order, 21L, 2L, "tom"),
             createNewRow(order, 22L, 2L, "jack"),
+            createNewRow(order, 23L, 2L, "dave"),
+            createNewRow(order, 24L, 2L, "dave"),
+            createNewRow(order, 25L, 2L, "dave"),
             createNewRow(order, 31L, 3L, "peter"),
             createNewRow(item, 111L, 11L),
             createNewRow(item, 112L, 11L),
@@ -153,7 +156,7 @@ public class GroupLookupLookaheadIT extends OperatorITBase
         Operator plan =
             map_NestedLoops(
                 valuesScan_Default(
-                    bindableExpressions(intRow(cidValueRowType, 1),
+                    bindableExpressions(intRow(cidValueRowType, 3),
                                         intRow(cidValueRowType, 2),
                                         intRow(cidValueRowType, 10)),
                     cidValueRowType),
@@ -165,14 +168,17 @@ public class GroupLookupLookaheadIT extends OperatorITBase
                     InputPreservationOption.DISCARD_INPUT),
                 1, 1);
         RowBase[] expected = new RowBase[]{
-            row(customerRowType, 1L, "northbridge"),
-            row(orderRowType, 11L, 1L, "ori"),
-            row(customerRowType, 1L, "northbridge"),
-            row(orderRowType, 12L, 1L, "david"),
+            row(orderRowType, 31L, 3L, "peter"),
             row(customerRowType, 2L, "foundation"),
             row(orderRowType, 21L, 2L, "tom"),
             row(customerRowType, 2L, "foundation"),
             row(orderRowType, 22L, 2L, "jack"),
+            row(customerRowType, 2L, "foundation"),
+            row(orderRowType, 23L, 2L, "dave"),
+            row(customerRowType, 2L, "foundation"),
+            row(orderRowType, 24L, 2L, "dave"),
+            row(customerRowType, 2L, "foundation"),
+            row(orderRowType, 25L, 2L, "dave"),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
