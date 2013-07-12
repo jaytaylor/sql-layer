@@ -111,6 +111,9 @@ public class GroupLookupLookaheadIT extends OperatorITBase
                     row(customerRowType, 1L, "northbridge"),
                     row(customerRowType, 2L, "foundation"),
                     row(customerRowType, 2L, "foundation"),
+                    row(customerRowType, 2L, "foundation"),
+                    row(customerRowType, 2L, "foundation"),
+                    row(customerRowType, 2L, "foundation"),
                 };
             }
 
