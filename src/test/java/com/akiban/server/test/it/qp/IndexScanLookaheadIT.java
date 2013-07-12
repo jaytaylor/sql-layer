@@ -139,7 +139,7 @@ public class IndexScanLookaheadIT extends OperatorITBase
                  indexScan_Default(orderCidIndexRowType, false, cidRange),
                 1, 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        String[] expected = new String[]{hkey(2, 21),hkey(2, 22)};
+        String[] expected = new String[]{hkey(2, 21),hkey(2, 22),hkey(2, 23),hkey(2, 24),hkey(2, 25),hkey(2, 26),hkey(2, 27),hkey(2, 28),hkey(2, 29),hkey(4, 41)};
         compareRenderedHKeys(expected, cursor);
     }
 
