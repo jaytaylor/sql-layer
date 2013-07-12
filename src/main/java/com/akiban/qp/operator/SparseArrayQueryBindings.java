@@ -28,6 +28,7 @@ import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.util.BloomFilter;
+import com.akiban.util.ShareHolder;
 import com.akiban.util.SparseArray;
 
 import java.math.BigDecimal;
@@ -173,7 +174,7 @@ public class SparseArrayQueryBindings implements QueryBindings
     @Override
     public Row getRow(int index) {
         if (bindings.isDefined(index)) {
-            return (Row)bindings.get(index);
+            return ((ShareHolder<Row>)bindings.get(index)).get();
         }
         else if (parent != null) {
             return parent.getRow(index);
@@ -186,8 +187,15 @@ public class SparseArrayQueryBindings implements QueryBindings
     @Override
     public void setRow(int index, Row row)
     {
-        // TODO: Should this use a RowHolder or will that make things worse?
-        bindings.set(index, row);
+        ShareHolder<Row> holder = null;
+        if (bindings.isDefined(index)) {
+            holder = (ShareHolder<Row>)bindings.get(index);
+        }
+        if (holder == null) {
+            holder = new ShareHolder<Row>();
+            bindings.set(index, holder);
+        }
+        holder.hold(row);
     }
 
     @Override
