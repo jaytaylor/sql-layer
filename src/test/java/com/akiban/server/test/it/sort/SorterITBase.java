@@ -23,27 +23,22 @@ import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.operator.RowsBuilder;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.operator.TestOperator;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.Sorter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.test.it.ITBase;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.NullValueSource;
-import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
-import com.persistit.exception.PersistitException;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static com.akiban.server.test.ExpressionGenerators.field;
@@ -140,7 +135,7 @@ public abstract class SorterITBase extends ITBase {
 
         RowsBuilder inputRows = createBuilder(input);
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
-        PersistitAdapter adapter = persistitAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter(schema);
         TestOperator inputOperator = new TestOperator(inputRows);
 
         QueryContext context = queryContext(adapter);

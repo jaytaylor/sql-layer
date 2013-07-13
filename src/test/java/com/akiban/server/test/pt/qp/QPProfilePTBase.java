@@ -63,6 +63,11 @@ public class QPProfilePTBase extends PTBase
         return uniqueStartupConfigProperties(getClass());
     }
 
+    PersistitAdapter persistitAdapter(Schema schema) {
+        PersistitStore store = (PersistitStore)store();
+        return store.createAdapter(session(), schema);
+    }
+
     protected Group group(int userTableId)
     {
         return getRowDef(userTableId).table().getGroup();
@@ -129,7 +134,7 @@ public class QPProfilePTBase extends PTBase
     {
         List<RowBase> actualRows = new ArrayList<>(); // So that result is viewable in debugger
         try {
-            cursor.openTopLevel();
+            cursor.open();
             RowBase actualRow;
             while ((actualRow = cursor.next()) != null) {
                 int count = actualRows.size();
@@ -142,7 +147,7 @@ public class QPProfilePTBase extends PTBase
                 actualRows.add(actualRow);
             }
         } finally {
-            cursor.closeTopLevel();
+            cursor.close();
         }
         assertEquals(expected.length, actualRows.size());
     }
@@ -151,7 +156,7 @@ public class QPProfilePTBase extends PTBase
     {
         int count;
         try {
-            cursor.openTopLevel();
+            cursor.open();
             count = 0;
             List<RowBase> actualRows = new ArrayList<>(); // So that result is viewable in debugger
             RowBase actualRow;
@@ -161,7 +166,7 @@ public class QPProfilePTBase extends PTBase
                 actualRows.add(actualRow);
             }
         } finally {
-            cursor.closeTopLevel();
+            cursor.close();
         }
         assertEquals(expected.length, count);
     }

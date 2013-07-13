@@ -22,7 +22,6 @@ import com.akiban.ais.model.Index;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.IndexKeyVisitor;
-import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 import com.akiban.server.store.TreeRecordVisitor;
 
@@ -39,23 +38,26 @@ public class TestStore
     public void writeRow(Session session, TestRow row)
         throws Exception
     {
-        mainDelegate.writeRow(session, row.toRowData(), null);
+        realStore.writeRow(session, row.toRowData(), null);
         map.put(row.hKey(), row);
     }
 
     public void deleteRow(Session session, TestRow row)
         throws Exception
     {
-        mainDelegate.deleteRow(session, row.toRowData(), true, false);
+        realStore.deleteRow(session, row.toRowData(), true, false);
         map.remove(row.hKey());
     }
 
     public void updateRow(Session session, TestRow oldRow, TestRow newRow, ColumnSelector columnSelector)
     {
-        mainDelegate.updateRow(session,
-                               oldRow.toRowData(),
-                               newRow.toRowData(), // Not mergedRow. Rely on delegate to merge existing and new.
-                               null);
+        realStore.updateRow(
+                session,
+                oldRow.toRowData(),
+                newRow.toRowData(),
+                // Not mergedRow. Rely on delegate to merge existing and new.
+                null
+        );
         TestRow currentRow = map.remove(oldRow.hKey());
         TestRow mergedRow = mergeRows(currentRow, newRow, columnSelector);
         map.put(mergedRow.hKey(), mergedRow);
@@ -64,16 +66,15 @@ public class TestStore
     public void traverse(Session session, Group group, TreeRecordVisitor testVisitor, TreeRecordVisitor realVisitor)
         throws Exception
     {
-        persistitStore.traverse(session, group, realVisitor);
+        realStore.traverse(session, group, realVisitor);
         for (Map.Entry<HKey, TestRow> entry : map.entrySet()) {
             testVisitor.visit(entry.getKey().objectArray(), entry.getValue());
         }
     }
 
     public void traverse(Session session, Index index, IndexKeyVisitor visitor)
-        throws Exception
     {
-        persistitStore.traverse(session, index, visitor);
+        realStore.traverse(session, index, visitor);
     }
 
     // TestStore interface
@@ -83,10 +84,9 @@ public class TestStore
         return map.get(hKey);
     }
 
-    public TestStore(Store mainDelegate, PersistitStore persistitStore)
+    public TestStore(Store realStore)
     {
-        this.mainDelegate = mainDelegate;
-        this.persistitStore = persistitStore;
+        this.realStore = realStore;
     }
 
     public void writeTestRow(TestRow row)
@@ -122,6 +122,5 @@ public class TestStore
     // Object state
 
     private final SortedMap<HKey, TestRow> map = new TreeMap<>();
-    private final Store mainDelegate;
-    private final PersistitStore persistitStore;
+    private final Store realStore;
 }

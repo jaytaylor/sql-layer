@@ -23,8 +23,8 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.RowCursor;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.TempVolume;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.indexcursor.PersistitSorter;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -105,7 +105,7 @@ public class PersistitSorterOverflowIT extends PersistitITBase
     private void doSort() {
         InOutTap tap = Tap.createTimer("test");
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
-        PersistitAdapter adapter = persistitAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter(schema);
 
         UserTable userTable = getUserTable(SCHEMA, TABLE);
         RowType rowType = schema.userTableRowType(userTable);

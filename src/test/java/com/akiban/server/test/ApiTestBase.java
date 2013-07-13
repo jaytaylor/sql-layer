@@ -426,10 +426,6 @@ public class ApiTestBase {
         return sm.getStore();
     }
 
-    protected final PersistitStore persistitStore() {
-        return store().getPersistitStore();
-    }
-    
     protected final AkServerInterface akServer() {
         return sm.getAkSserver();
     }
@@ -450,10 +446,6 @@ public class ApiTestBase {
 
     protected final StoreAdapter newStoreAdapter(Session explicit_session, Schema schema) {
         return store().createAdapter(explicit_session, schema);
-    }
-
-    protected final PersistitAdapter persistitAdapter(Schema schema) {
-        return new PersistitAdapter(schema, persistitStore(), treeService(), session(), configService());
     }
 
     protected final QueryContext queryContext(StoreAdapter adapter) {

@@ -564,11 +564,6 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
-    public PersistitStore getPersistitStore() {
-        return this;
-    }
-
-    @Override
     public void removeTree(Session session, TreeLink treeLink) {
         try {
             if(!schemaManager.treeRemovalIsDelayed()) {

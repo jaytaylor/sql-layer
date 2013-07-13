@@ -126,9 +126,6 @@ public interface Store extends KeyCreator {
      */
     void removeTrees(Session session, Collection<? extends TreeLink> treeLinks);
 
-    /** Get the underlying {@link PersistitStore}. */
-    public PersistitStore getPersistitStore();
-
     void truncateIndexes(Session session, Collection<? extends Index> indexes);
 
     StoreAdapter createAdapter(Session session, Schema schema);
