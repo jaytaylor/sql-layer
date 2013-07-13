@@ -462,14 +462,19 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         removeTrees(session, sequences);
     }
 
-    public void traverse(Session session, Group group, TreeRecordVisitor visitor) throws PersistitException {
+    @Override
+    public void traverse(Session session, Group group, TreeRecordVisitor visitor) {
         Exchange exchange = getExchange(session, group);
         try {
             exchange.clear().append(Key.BEFORE);
-            visitor.initialize(session, this, exchange);
-            while (exchange.next(true)) {
-                visitor.visit();
+            visitor.initialize(session, this);
+            while(exchange.next(true)) {
+                RowData rowData = new RowData();
+                expandRowData(exchange, rowData);
+                visitor.visit(exchange.getKey(), rowData);
             }
+        } catch(PersistitException e) {
+            throw PersistitAdapter.wrapPersistitException(session, e);
         } finally {
             releaseExchange(session, exchange);
         }
