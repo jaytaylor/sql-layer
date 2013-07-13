@@ -49,20 +49,19 @@ import java.util.Queue;
 
  <li><b>IndexRowType indexType:</b> The index's type.
 
- <li><b>boolean reverse:</b> Indicates whether keys should be visited
- in ascending order (reverse = false) or descending order (reverse =
- true).
-
  <li><b>IndexKeyRange indexKeyRange:</b> Describes the range of keys
  to be visited. The values specified by the indexKeyRange should
  restrict one or more of the leading fields of the index. If null,
  then the entire index will be scanned.
 
- <li><b>UserTableRowType innerJoinUntilRowType</b>: On a table index,
- this must be the UserTableRowType of the Index's table (but it's
- ignored). On a group index, this is the table until which the group
- index is interpreted with INNER JOIN semantics. The specified row
- type must be within the group index's branch segment.
+ <li><b>Ordering ordering:</b> Indicates whether keys should be visited
+  in ascending order or descending order.
+
+ <li><b>IndexScanSelector scanSelector:</b> On a group index, specify which
+  tables must be present for OUTER JOIN semantics.
+
+ <li><b>int lookaheadQuantum:</b> Number of cursors to try to keep open by looking
+  ahead in bindings stream.
 
  </ul>
 
