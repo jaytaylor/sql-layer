@@ -17,7 +17,7 @@
 
 package com.akiban.server.service.tree;
 
-import com.akiban.server.test.it.ITBase;
+import com.akiban.server.test.it.PersistitITBase;
 import com.persistit.Exchange;
 import com.persistit.Tree;
 import com.persistit.exception.PersistitException;
@@ -29,10 +29,9 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
-public class TreeServiceImplVolumeIT extends ITBase {
-
+public class TreeServiceImplVolumeIT extends PersistitITBase
+{
     @Override
     protected Map<String, String> startupConfigProperties() {
         final Map<String, String> properties = new HashMap<>();

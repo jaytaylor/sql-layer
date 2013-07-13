@@ -19,6 +19,8 @@ package com.akiban.server.test.pt;
 
 import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.server.service.servicemanager.GuicedServiceManager.BindingsConfigurationProvider;
+import com.akiban.server.store.PersistitStore;
 import com.akiban.server.test.ApiTestBase;
 
 import com.akiban.ais.model.TableIndex;
@@ -53,6 +55,7 @@ import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.test.ExpressionGenerators;
+import com.akiban.server.test.it.PersistitITBase;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.TInstance;
@@ -80,6 +83,20 @@ public class AggregatePT extends ApiTestBase {
 
     public AggregatePT() {
         super("PT");
+    }
+
+    @Override
+    protected BindingsConfigurationProvider serviceBindingsProvider() {
+        return PersistitITBase.doBind(super.serviceBindingsProvider());
+    }
+
+    @Override
+    protected Map<String, String> startupConfigProperties() {
+        return uniqueStartupConfigProperties(getClass());
+    }
+
+    private PersistitStore persistitStore() {
+        return(PersistitStore)store();
     }
 
     private TableIndex index;

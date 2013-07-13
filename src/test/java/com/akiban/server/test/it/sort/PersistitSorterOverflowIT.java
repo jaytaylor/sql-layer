@@ -31,7 +31,7 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.test.ExpressionGenerators;
-import com.akiban.server.test.it.ITBase;
+import com.akiban.server.test.it.PersistitITBase;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 import com.persistit.exception.PersistitIOException;
@@ -43,7 +43,8 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
-public class PersistitSorterOverflowIT extends ITBase {
+public class PersistitSorterOverflowIT extends PersistitITBase
+{
     private static final String SCHEMA = "test";
     private static final String TABLE = "t";
     private static final int ROW_COUNT = 1000;

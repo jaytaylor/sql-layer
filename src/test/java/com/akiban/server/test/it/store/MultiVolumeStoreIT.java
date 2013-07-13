@@ -25,12 +25,13 @@ import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.server.test.it.PersistitITBase;
 import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class MultiVolumeStoreIT extends ITBase {
+public class MultiVolumeStoreIT extends PersistitITBase {
     private final static String DEFAULT_SCHEMA = "default_schema";
     private final static String TEST1_SCHEMA = "test1";
     private final static String TEST2_SCHEMA = "test2";

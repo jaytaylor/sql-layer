@@ -21,6 +21,7 @@ import static org.junit.Assert.*;
 
 import java.util.List;
 
+import com.akiban.server.test.it.PersistitITBase;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import org.junit.Test;
 
@@ -30,13 +31,12 @@ import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.test.it.ITBase;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValue;
 
-public class PersistitCLILoadablePlanIT extends ITBase {
-
+public class PersistitCLILoadablePlanIT extends PersistitITBase
+{
     @Test
     public void invokePersistitOperation() throws Exception {
         PersistitCLILoadablePlan loadablePlan = new PersistitCLILoadablePlan();
