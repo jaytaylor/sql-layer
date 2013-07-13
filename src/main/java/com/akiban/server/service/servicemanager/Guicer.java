@@ -22,8 +22,10 @@ import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Exceptions;
 import com.google.inject.AbstractModule;
+import com.google.inject.Binding;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.ProvisionException;
 import com.google.inject.Scopes;
@@ -31,6 +33,7 @@ import com.google.inject.grapher.GrapherModule;
 import com.google.inject.grapher.InjectorGrapher;
 import com.google.inject.grapher.graphviz.GraphvizModule;
 import com.google.inject.grapher.graphviz.GraphvizRenderer;
+import com.google.inject.internal.LinkedBindingImpl;
 import com.google.inject.spi.Dependency;
 import com.google.inject.spi.InjectionPoint;
 
@@ -80,6 +83,15 @@ public final class Guicer {
 
     public boolean isRequired(Class<?> interfaceClass) {
         return directlyRequiredClasses.contains(interfaceClass);
+    }
+
+    public boolean isBoundTo(Class<?> interfaceClass, Class<?> targetClass) {
+        Binding<?> existing = _injector.getExistingBinding(Key.get(interfaceClass));
+        if(existing instanceof LinkedBindingImpl) {
+            Key<?> key = ((LinkedBindingImpl<?>)existing).getLinkedKey();
+            return key.getTypeLiteral().getRawType() == targetClass;
+        }
+        return false;
     }
 
     /**
