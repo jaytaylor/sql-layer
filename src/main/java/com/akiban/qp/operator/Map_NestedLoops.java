@@ -92,7 +92,7 @@ class Map_NestedLoops extends Operator
     @Override
     protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        if (pipeline)
+        if (!pipeline)
             return new Execution(context, bindingsCursor); // Old-style
         else {
             Cursor outerCursor = outerInputOperator.cursor(context, bindingsCursor);
