@@ -110,6 +110,7 @@ import org.junit.rules.MethodRule;
 import org.junit.rules.TestName;
 import org.junit.rules.TestWatchman;
 import org.junit.runners.model.FrameworkMethod;
+import org.junit.runners.model.Statement;
 
 /**
  * <p>Base class for all API tests. Contains a @SetUp that gives you a fresh DDLFunctions and DMLFunctions, plus
@@ -197,6 +198,30 @@ public class ApiTestBase {
         }
     }
 
+    private static class RetryRule implements MethodRule {
+        private static int MAX_TRIES = 3;
+        private static int totalRetries = 0;
+
+        @Override
+        public Statement apply(final Statement base, FrameworkMethod method, Object target) {
+            return new Statement() {
+                @Override
+                public void evaluate() throws Throwable {
+                    int tryCount = 1;
+                    try {
+                        base.evaluate();
+                    } catch(Throwable t) {
+                        if(++tryCount > MAX_TRIES || !isRetryableException(t)) {
+                            throw t;
+                        }
+                        ++totalRetries;
+                    }
+                }
+            };
+        }
+    }
+
+
     protected ApiTestBase(String suffix)
     {
         final String name = this.getClass().getSimpleName();
@@ -218,7 +243,11 @@ public class ApiTestBase {
 
     @Rule
     public static final TestName testName = new TestName();
-    
+
+    @Rule
+    public static final RetryRule retryRule = new RetryRule();
+
+
     protected String testName() {
         return testName.getMethodName();
     }
