@@ -48,6 +48,7 @@ public enum Label
     INFIX_REPRESENTATION(Category.DESCRIPTION),
     ASSOCIATIVE(Category.DESCRIPTION),
     INDEX(Category.DESCRIPTION),
+    PIPELINE(Category.DESCRIPTION),
     DEPTH(Category.DESCRIPTION),
     
     // IDENTIFIER
