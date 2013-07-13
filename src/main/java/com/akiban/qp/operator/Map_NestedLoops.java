@@ -346,9 +346,13 @@ class Map_NestedLoops extends Operator
                 pendingBindings = null;
                 return bindings;
             }
-            bindings = input.nextBindings();
-            assert ((bindings == null) || (bindings.getDepth() < depth));
-            return bindings;
+            while (true) {
+                // Skip over any that we would elide.
+                bindings = input.nextBindings();
+                if ((bindings == null) || (bindings.getDepth() < depth))
+                    return bindings;
+                assert (bindings.getDepth() == depth);
+            }
         }
 
         @Override
