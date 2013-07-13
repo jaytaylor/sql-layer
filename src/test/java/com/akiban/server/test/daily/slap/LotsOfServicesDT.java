@@ -23,7 +23,7 @@ import org.junit.Test;
 
 public final class LotsOfServicesDT extends DailyBase {
     @Test
-    public void loop() throws Exception{
+    public void loop() throws Throwable {
 
         stopTestServices(); // shut down ApiTestBase's @Before services
 

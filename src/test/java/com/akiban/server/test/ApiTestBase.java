@@ -253,7 +253,7 @@ public class ApiTestBase {
     }
 
     @Before
-    public final void startTestServices() throws Exception {
+    public final void startTestServices() throws Throwable {
         types3SwitchSave = Types3Switch.ON;
         Types3Switch.ON &= testSupportsPValues();
         assertTrue("some row updaters were left over: " + unfinishedRowUpdaters, unfinishedRowUpdaters.isEmpty());
@@ -262,8 +262,9 @@ public class ApiTestBase {
             ConverterTestUtils.setGlobalTimezone("UTC");
             Map<String, String> startupConfigProperties = startupConfigProperties();
             Map<String,String> propertiesForEquality = propertiesForEquality(startupConfigProperties);
-            if (needServicesRestart || lastStartupConfigProperties == null ||
-                    !lastStartupConfigProperties.equals(propertiesForEquality))
+            if (needServicesRestart ||
+                lastStartupConfigProperties == null ||
+                !lastStartupConfigProperties.equals(propertiesForEquality))
             {
                 // we need a shutdown if we needed a restart, or if the lastStartupConfigProperties are not null,
                 // which (because of the condition on the "if" above) implies the last startup config properties
@@ -309,6 +310,9 @@ public class ApiTestBase {
      * @throws Exception the startup exception
      */
     void handleStartupFailure(Exception e) throws Exception {
+        if(sm != null && sm.getState() != ServiceManager.State.IDLE) {
+            sm.stopServices();
+        }
         throw e;
     }
 
@@ -389,9 +393,6 @@ public class ApiTestBase {
     public final void stopTestServices() throws Exception {
         beforeStopServices();
         ServiceManagerImpl.setServiceManager(null);
-        if (lastStartupConfigProperties == null) {
-            return;
-        }
         lastStartupConfigProperties = null;
         sm.stopServices();
     }
