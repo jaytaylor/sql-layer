@@ -29,7 +29,7 @@ import java.io.StringWriter;
 import java.io.File;
 import java.util.concurrent.Callable;
 
-public class PersistitStoreIndexStatisticsIT extends PostgresServerFilesITBase
+public class IndexStatisticsServiceIT extends PostgresServerFilesITBase
 {
     public static final File RESOURCE_DIR = IndexStatisticsYamlTest.RESOURCE_DIR;
     public static final File YAML_FILE = new File(RESOURCE_DIR, "stats.yaml");
