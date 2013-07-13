@@ -154,7 +154,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
             map_NestedLoops(
                 indexScan_Default(aValueIndexRowType),
                 branchLookup_Nested(rabc, aValueIndexRowType, rRowType, InputPreservationOption.DISCARD_INPUT, 0),
-                0);
+                0, 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             // Each r row, and everything below it, is duplicated, because the A index refers to each r value twice.
@@ -202,7 +202,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
                     Collections.singleton(aRowType),
                     InputPreservationOption.DISCARD_INPUT),
                 branchLookup_Nested(rabc, aRowType, rRowType, InputPreservationOption.DISCARD_INPUT, 0),
-                0);
+                0, 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             // Each r row, and everything below it, is duplicated, because the A index refers to each r value twice.
@@ -247,7 +247,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
                     groupScan_Default(rabc),
                     Collections.singleton(aRowType)),
                 branchLookup_Nested(rabc, aRowType, bRowType, InputPreservationOption.DISCARD_INPUT, 0),
-                0);
+                0, 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(bRowType, 15L, 1L, "b15"),
@@ -272,9 +272,9 @@ public class BranchLookup_NestedIT extends OperatorITBase
                         groupScan_Default(rabc),
                         Collections.singleton(aRowType)),
                     branchLookup_Nested(rabc, aRowType, bRowType, InputPreservationOption.DISCARD_INPUT, 0),
-                    0),
+                    0, 1),
                 branchLookup_Nested(rabc, bRowType, cRowType, InputPreservationOption.KEEP_INPUT, 1),
-                1);
+                1, 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(bRowType, 15L, 1L, "b15"),
@@ -324,7 +324,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
             map_NestedLoops(
                 abIndexScan,
                 branchLookup_Nested(rabc, abIndexScan.rowType(), cRowType, InputPreservationOption.DISCARD_INPUT, 0),
-                0);
+                0, 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(cRowType, 17L, 1L, "c17"),
@@ -342,7 +342,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
                                 groupScan_Default(rabc),
                                 Collections.singleton(aRowType)),
                         branchLookup_Nested(rabc, aRowType, rRowType, aRowType, InputPreservationOption.DISCARD_INPUT, 0),
-                        0);
+                        0, 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
                 row(aRowType, 13L, 1L, "a13"),
@@ -366,7 +366,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
                     groupScan_Default(rabc),
                     Collections.singleton(aRowType)),
                 branchLookup_Nested(rabc, aRowType, rRowType, aRowType, InputPreservationOption.DISCARD_INPUT, 0),
-                0);
+                0, 1);
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
@@ -382,6 +382,11 @@ public class BranchLookup_NestedIT extends OperatorITBase
                     row(aRowType, 23L, 2L, "a23"),
                     row(aRowType, 24L, 2L, "a24"),
                 };
+            }
+
+            @Override
+            public boolean reopenTopLevel() {
+                return true;
             }
         };
         testCursorLifecycle(plan, testCase);

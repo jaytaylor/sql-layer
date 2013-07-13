@@ -28,6 +28,7 @@ import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.util.BloomFilter;
+import com.akiban.util.ShareHolder;
 import com.akiban.util.SparseArray;
 
 import java.math.BigDecimal;
@@ -35,20 +36,46 @@ import java.math.BigInteger;
 
 public class SparseArrayQueryBindings implements QueryBindings
 {
-    private SparseArray<Object> bindings = new SparseArray<>();
+    private final SparseArray<Object> bindings = new SparseArray<>();
+    private final QueryBindings parent;
+    private final int depth;
+
+    public SparseArrayQueryBindings() {
+        this.parent = null;
+        this.depth = 0;
+    }
+
+    public SparseArrayQueryBindings(QueryBindings parent) {
+        this.parent = parent;
+        this.depth = parent.getDepth() + 1;
+    }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + bindings.describeElements() + "]";
+        StringBuilder str = new StringBuilder(getClass().getSimpleName());
+        str.append('(');
+        bindings.describeElements(str);
+        if (parent != null) {
+            str.append(", ");
+            str.append(parent);
+        }
+        str.append(')');
+        return str.toString();
     }
 
     /* QueryBindings interface */
 
     @Override
     public PValueSource getPValue(int index) {
-        if (!bindings.isDefined(index))
+        if (bindings.isDefined(index)) {
+            return (PValueSource)bindings.get(index);
+        }
+        else if (parent != null) {
+            return parent.getPValue(index);
+        }
+        else {
             throw new BindingNotSetException(index);
-        return (PValueSource)bindings.get(index);
+        }
     }
 
     /*
@@ -77,9 +104,15 @@ public class SparseArrayQueryBindings implements QueryBindings
     
     @Override
     public ValueSource getValue(int index) {
-        if (!bindings.isDefined(index))
+        if (bindings.isDefined(index)) {
+            return (ValueSource)bindings.get(index);
+        }
+        else if (parent != null) {
+            return parent.getValue(index);
+        }
+        else {
             throw new BindingNotSetException(index);
-        return (ValueSource)bindings.get(index);
+        }
     }
 
     @Override
@@ -140,23 +173,42 @@ public class SparseArrayQueryBindings implements QueryBindings
 
     @Override
     public Row getRow(int index) {
-        if (!bindings.isDefined(index))
+        if (bindings.isDefined(index)) {
+            return ((ShareHolder<Row>)bindings.get(index)).get();
+        }
+        else if (parent != null) {
+            return parent.getRow(index);
+        }
+        else {
             throw new BindingNotSetException(index);
-        return (Row)bindings.get(index);
+        }
     }
 
     @Override
     public void setRow(int index, Row row)
     {
-        // TODO: Should this use a RowHolder or will that make things worse?
-        bindings.set(index, row);
+        ShareHolder<Row> holder = null;
+        if (bindings.isDefined(index)) {
+            holder = (ShareHolder<Row>)bindings.get(index);
+        }
+        if (holder == null) {
+            holder = new ShareHolder<Row>();
+            bindings.set(index, holder);
+        }
+        holder.hold(row);
     }
 
     @Override
     public HKey getHKey(int index) {
-        if (!bindings.isDefined(index))
+        if (bindings.isDefined(index)) {
+            return (HKey)bindings.get(index);
+        }
+        else if (parent != null) {
+            return parent.getHKey(index);
+        }
+        else {
             throw new BindingNotSetException(index);
-        return (HKey)bindings.get(index);
+        }
     }
 
     @Override
@@ -167,9 +219,15 @@ public class SparseArrayQueryBindings implements QueryBindings
 
     @Override
     public BloomFilter getBloomFilter(int index) {
-        if (!bindings.isDefined(index))
+        if (bindings.isDefined(index)) {
+            return (BloomFilter)bindings.get(index);
+        }
+        else if (parent != null) {
+            return parent.getBloomFilter(index);
+        }
+        else {
             throw new BindingNotSetException(index);
-        return (BloomFilter)bindings.get(index);
+        }
     }
 
     @Override
@@ -180,5 +238,20 @@ public class SparseArrayQueryBindings implements QueryBindings
     @Override
     public void clear() {
         bindings.clear();
+    }
+
+    @Override
+    public QueryBindings getParent() {
+        return parent;
+    }
+
+    @Override
+    public int getDepth() {
+        return depth;
+    }
+
+    @Override
+    public QueryBindings createBindings() {
+        return new SparseArrayQueryBindings(this);
     }
 }

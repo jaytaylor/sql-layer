@@ -496,9 +496,10 @@ public class API
 
     public static Operator map_NestedLoops(Operator outerInput,
                                            Operator innerInput,
-                                           int inputBindingPosition)
+                                           int inputBindingPosition,
+                                           int depth)
     {
-        return new Map_NestedLoops(outerInput, innerInput, inputBindingPosition);
+        return new Map_NestedLoops(outerInput, innerInput, inputBindingPosition, depth);
     }
 
     // IfEmpty

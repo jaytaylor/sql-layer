@@ -1524,10 +1524,13 @@ public class OperatorAssembler extends BaseRule
             PlanNode outer = mapJoin.getOuter();
             RowStream ostream = assembleStream(outer);
             boundRows.set(pos, ostream.fieldOffsets);
+            nestedBindingsDepth++;
             RowStream stream = assembleStream(mapJoin.getInner());
             stream.operator = API.map_NestedLoops(ostream.operator, 
                                                   stream.operator,
-                                                  currentBindingPosition());
+                                                  currentBindingPosition(),
+                                                  nestedBindingsDepth);
+            nestedBindingsDepth--;
             popBoundRow();
             return stream;
         }
@@ -2238,7 +2241,7 @@ public class OperatorAssembler extends BaseRule
 
         /* Bindings-related state */
 
-        protected int expressionBindingsOffset, loopBindingsOffset;
+        protected int expressionBindingsOffset, loopBindingsOffset, nestedBindingsDepth;
         protected Stack<ColumnExpressionToIndex> boundRows = new Stack<>(); // Needs to be List<>.
         protected Map<BaseHashTable,Integer> hashTablePositions = new HashMap<>();
 
@@ -2255,6 +2258,7 @@ public class OperatorAssembler extends BaseRule
             }
 
             loopBindingsOffset = expressionBindingsOffset;
+            nestedBindingsDepth = 0;
         }
 
         protected int pushBoundRow(ColumnExpressionToIndex boundRow) {

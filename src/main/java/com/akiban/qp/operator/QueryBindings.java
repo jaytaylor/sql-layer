@@ -107,4 +107,19 @@ public interface QueryBindings
      * Clear all bindings.
      */
     public void clear();
+
+    /**
+     * Get the parent from which undefined bindings inherit.
+     */
+    public QueryBindings getParent();
+
+    /**
+     * Get the inheritance depth.
+     */
+    public int getDepth();
+
+    /**
+     * Make a new set of bindings inheriting from this one.
+     */
+    public QueryBindings createBindings();
 }
