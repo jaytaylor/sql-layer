@@ -31,7 +31,6 @@ import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.test.it.ITBase;
-import com.persistit.exception.RollbackException;
 
 // Inspired by bug 1078331
 
@@ -113,7 +112,7 @@ public class WriteSkewIT extends ITBase
         sessionA.join(10000);
         sessionB.join(10000);
         assertNull(sessionA.termination());
-        assertTrue(sessionB.termination() instanceof RollbackException);
+        assertTrue("sessionB termination was retryable", isRetryableException(sessionB.termination()));
     }
 
     private void createDatabase() throws InvalidOperationException
@@ -170,12 +169,9 @@ public class WriteSkewIT extends ITBase
                 txnService().commitTransaction(threadPrivateSession);
                 semB.release();
                 committed = true;
-            } catch (RollbackException e) {
+            } catch (Exception e) {
                 termination = e;
                 exceptionInAnyThread.set(true);
-            } catch (Exception e) {
-                System.out.printf("Thread %s threw unexpected Exception %s\n", Thread.currentThread().getName(), e);
-                e.printStackTrace();
             } finally {
                 if (!committed) {
                     txnService().rollbackTransactionIfOpen(threadPrivateSession);

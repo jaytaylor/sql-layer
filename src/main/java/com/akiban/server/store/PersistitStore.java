@@ -557,6 +557,11 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
+    public boolean isRetryableException(Throwable t) {
+        return (t instanceof RollbackException);
+    }
+
+    @Override
     public void truncateTree(Session session, TreeLink treeLink) {
         Exchange iEx = treeService.getExchange(session, treeLink);
         try {

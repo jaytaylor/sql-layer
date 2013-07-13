@@ -283,6 +283,13 @@ public class ApiTestBase {
         throw e;
     }
 
+    protected static boolean isRetryableException(Throwable t) {
+        if(sm != null && sm.serviceIsStarted(Store.class)) {
+            return sm.getStore().isRetryableException(t);
+        }
+        return false;
+    }
+
     protected ServiceManager createServiceManager(Map<String, String> startupConfigProperties) {
         TestConfigService.setOverrides(startupConfigProperties);
         return new GuicedServiceManager(serviceBindingsProvider());
