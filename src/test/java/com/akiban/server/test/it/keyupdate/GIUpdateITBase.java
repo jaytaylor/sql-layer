@@ -24,6 +24,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
 import com.akiban.server.store.IndexRecordVisitor;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.util.Strings;
@@ -108,6 +109,13 @@ public abstract class GIUpdateITBase extends ITBase {
     }
 
     private void checkIndex(GroupIndex groupIndex, String... expected) {
+        try(CloseableTransaction txn = txnService().beginCloseableTransaction(session())) {
+            checkIndexInternal(groupIndex, expected);
+            txn.commit();
+        }
+    }
+
+    private void checkIndexInternal(GroupIndex groupIndex, String... expected) {
         StringsIndexScanner scanner = store().traverse(session(), groupIndex, new StringsIndexScanner());
         // convert "a, b, c => d" to "[a, b, c] => d"
         for (int i = 0; i < expected.length; ++i) {

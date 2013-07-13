@@ -20,6 +20,7 @@ package com.akiban.server.test.it.pstraverse;
 import com.akiban.ais.model.Index;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.test.it.keyupdate.CollectingIndexKeyVisitor;
 import org.junit.Before;
@@ -109,13 +110,15 @@ public abstract class KeysBase extends ITBase {
     protected void traversePK(int rowDefId, List<? super Long>... expectedIndexes) throws Exception {
         Index pkIndex = getRowDef(rowDefId).getPKIndex();
 
-        CollectingIndexKeyVisitor visitor = new CollectingIndexKeyVisitor();
-        store().traverse(session(), pkIndex, visitor);
-
-        assertEquals("traversed indexes", Arrays.asList(expectedIndexes), visitor.records());
+        try(CloseableTransaction txn = txnService().beginCloseableTransaction(session())) {
+            CollectingIndexKeyVisitor visitor = new CollectingIndexKeyVisitor();
+            store().traverse(session(), pkIndex, visitor);
+            assertEquals("traversed indexes", Arrays.asList(expectedIndexes), visitor.records());
+            txn.commit();
+        }
     }
 
-    @Test @SuppressWarnings("unused") // invoked via JMX
+    @Test
     public void scanCustomers() throws InvalidOperationException {
 
         List<NewRow> actual = scanAll(scanAllRequest(customers));

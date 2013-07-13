@@ -40,6 +40,15 @@ import java.util.Arrays;
 import java.util.List;
 
 public final class GroupIndexScanIT extends ITBase {
+    @Before
+    public final void beginTxn() {
+        txnService().beginTransaction(session());
+    }
+
+    @After
+    public final void endTxn() {
+        txnService().rollbackTransaction(session());
+    }
 
     @Test
     public void scanAtLeastO () {
