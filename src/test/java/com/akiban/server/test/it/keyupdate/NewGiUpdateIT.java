@@ -1907,7 +1907,7 @@ public final class NewGiUpdateIT extends ITBase {
     }
     
     @After
-    public final void forgetTables() throws PersistitException {
+    public final void forgetTables() {
         if (needTapHeaders) {
             log(TAP_HEADER
                     + "name\t"
@@ -1922,11 +1922,21 @@ public final class NewGiUpdateIT extends ITBase {
 
         Tap.setEnabled(TAP_PATTERN, false);
 
-        dml().truncateTable(session(), a);
-        dml().truncateTable(session(), h);
-        dml().truncateTable(session(), i);
-        dml().truncateTable(session(), o);
-        dml().truncateTable(session(), c);
+        int[] ids = { a, h, i, o, c};
+        int idIndex = 0;
+        for(int i = 5; i >= 0; --i) {
+            try {
+                while(idIndex < ids.length) {
+                    dml().truncateTable(session(), ids[idIndex]);
+                    ++idIndex;
+                }
+                break;
+            } catch(Exception e) {
+                if(!isRetryableException(e) || i == 0) {
+                    throw e;
+                }
+            }
+        }
 
         GisCheckBuilder emptyCheckBuilder = checker();
         for (GroupIndex gi : group().getIndexes()) {

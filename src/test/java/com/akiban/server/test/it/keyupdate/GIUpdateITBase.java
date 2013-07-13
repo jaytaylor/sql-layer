@@ -52,12 +52,22 @@ public abstract class GIUpdateITBase extends ITBase {
     }
 
     @After
-    public final void forgetTables() throws PersistitException {
-        dml().truncateTable(session(), a);
-        dml().truncateTable(session(), h);
-        dml().truncateTable(session(), i);
-        dml().truncateTable(session(), o);
-        dml().truncateTable(session(), c);
+    public final void forgetTables() {
+        int[] ids = { a, h, i, o, c};
+        int idIndex = 0;
+        for(int i = 5; i >= 0; --i) {
+            try {
+                while(idIndex < ids.length) {
+                    dml().truncateTable(session(), ids[idIndex]);
+                    ++idIndex;
+                }
+                break;
+            } catch(Exception e) {
+                if(!isRetryableException(e) || i == 0) {
+                    throw e;
+                }
+            }
+        }
 
         Group group = getUserTable(c).getGroup();
         for (GroupIndex groupIndex : group.getIndexes()) {

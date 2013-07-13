@@ -199,7 +199,7 @@ public class ApiTestBase {
     }
 
     private static class RetryRule implements MethodRule {
-        private static int MAX_TRIES = 3;
+        private static int MAX_TRIES = 5;
         private static int totalRetries = 0;
 
         @Override
