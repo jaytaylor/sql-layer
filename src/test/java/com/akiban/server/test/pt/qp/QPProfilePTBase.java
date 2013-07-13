@@ -134,7 +134,7 @@ public class QPProfilePTBase extends PTBase
     {
         List<RowBase> actualRows = new ArrayList<>(); // So that result is viewable in debugger
         try {
-            cursor.open();
+            cursor.openTopLevel();
             RowBase actualRow;
             while ((actualRow = cursor.next()) != null) {
                 int count = actualRows.size();
@@ -147,7 +147,7 @@ public class QPProfilePTBase extends PTBase
                 actualRows.add(actualRow);
             }
         } finally {
-            cursor.close();
+            cursor.closeTopLevel();
         }
         assertEquals(expected.length, actualRows.size());
     }
@@ -156,7 +156,7 @@ public class QPProfilePTBase extends PTBase
     {
         int count;
         try {
-            cursor.open();
+            cursor.openTopLevel();
             count = 0;
             List<RowBase> actualRows = new ArrayList<>(); // So that result is viewable in debugger
             RowBase actualRow;
@@ -166,7 +166,7 @@ public class QPProfilePTBase extends PTBase
                 actualRows.add(actualRow);
             }
         } finally {
-            cursor.close();
+            cursor.closeTopLevel();
         }
         assertEquals(expected.length, count);
     }

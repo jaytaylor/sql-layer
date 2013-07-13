@@ -25,7 +25,6 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.sql.TestBase;
@@ -78,13 +77,6 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
 
     @Test
     public void testDump() throws Exception {
-        try(CloseableTransaction txn = txnService().beginCloseableTransaction(session())) {
-            testDumpInternal();
-            txn.commit();
-        }
-    }
-
-    private void testDumpInternal() throws Exception {
         // Run the INSERTs via SQL.
         String sql = TestBase.fileContents(file);
 
