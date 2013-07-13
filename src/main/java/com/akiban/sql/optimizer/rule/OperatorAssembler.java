@@ -1460,7 +1460,8 @@ public class OperatorAssembler extends BaseRule
                                                              group,
                                                              inputRowType,
                                                              ancestorTypes,
-                                                             flag);
+                                                             flag,
+                                                             rulesContext.getPipelineConfiguration().getGroupLookupLookaheadQuantum());
             }
             stream.rowType = null;
             stream.fieldOffsets = null;

@@ -23,10 +23,12 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.ExpressionGenerator;
+import com.akiban.qp.operator.IndexScanSelector;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
@@ -55,10 +57,12 @@ import static com.akiban.server.test.ExpressionGenerators.*;
 public class GroupLookupLookaheadIT extends OperatorITBase
 {
     @Override
-    protected Map<String, String> startupConfigProperties() {
-        final Map<String, String> properties = new HashMap<>();
-        properties.put("akserver.lookaheadQuantum.groupLookup", "4");
-        return properties;
+    protected boolean pipelineMap() {
+        return true;
+    }
+
+    protected int lookaheadQuantum() {
+        return 4;
     }
 
     @Override
@@ -100,7 +104,8 @@ public class GroupLookupLookaheadIT extends OperatorITBase
                 coi,
                 orderRowType,
                 Collections.singleton(customerRowType),
-                InputPreservationOption.DISCARD_INPUT);
+                InputPreservationOption.DISCARD_INPUT,
+                lookaheadQuantum());
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
@@ -136,7 +141,8 @@ public class GroupLookupLookaheadIT extends OperatorITBase
                 coi,
                 orderRowType,
                 Collections.singleton(customerRowType),
-                InputPreservationOption.DISCARD_INPUT);
+                InputPreservationOption.DISCARD_INPUT,
+                lookaheadQuantum());
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(customerRowType, 1L, "northbridge"),
@@ -164,12 +170,13 @@ public class GroupLookupLookaheadIT extends OperatorITBase
                                         intRow(cidValueRowType, 10)),
                     cidValueRowType),
                 ancestorLookup_Default(
-                    indexScan_Default(orderCidIndexRowType, false, cidRange),
+                    indexScan_Default(orderCidIndexRowType, cidRange, ordering(orderCidIndexRowType), IndexScanSelector.leftJoinAfter(orderCidIndexRowType.index(), orderRowType.userTable()), lookaheadQuantum()),
                     coi,
                     orderCidIndexRowType,
                     Arrays.asList(customerRowType, orderRowType),
-                    InputPreservationOption.DISCARD_INPUT),
-                1, 1);
+                    InputPreservationOption.DISCARD_INPUT,
+                    lookaheadQuantum()),
+                1, pipelineMap(), 1);
         RowBase[] expected = new RowBase[]{
             row(orderRowType, 31L, 3L, "peter"),
             row(customerRowType, 2L, "foundation"),
@@ -200,6 +207,14 @@ public class GroupLookupLookaheadIT extends OperatorITBase
             result.add(BindableRow.of(row, true));
         }
         return result;
+    }
+
+    private Ordering ordering(IndexRowType indexRowType) {
+        Ordering ordering = new Ordering();
+        for (int i = 0; i < indexRowType.nFields(); i++) {
+            ordering.append(field(indexRowType, i), true);
+        }
+        return ordering;
     }
 
 }

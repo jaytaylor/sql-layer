@@ -71,6 +71,9 @@ import java.util.*;
  will be preserved in the output stream (flag = KEEP_INPUT), or
  discarded (flag = DISCARD_INPUT).
 
+ <li><b>int lookaheadQuantum:</b> Number of cursors to try to keep open by looking
+  ahead in input stream, possibly across multiple bindings.
+
  </ul>
 
  rowType may be an index row type or a group row type. For a group row
@@ -130,14 +133,9 @@ class AncestorLookup_Default extends Operator
         inputOperator.findDerivedTypes(derivedTypes);
     }
 
-    static Integer lookaheadQuantum = null;
-
     @Override
     protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        if (lookaheadQuantum == null) {
-            lookaheadQuantum = Integer.valueOf(context.getStore().getConfig().getProperty("akserver.lookaheadQuantum.groupLookup"));
-        }
         if (lookaheadQuantum <= 1) {
             return new Execution(context, inputOperator.cursor(context, bindingsCursor));
         }
@@ -166,13 +164,15 @@ class AncestorLookup_Default extends Operator
                                   Group group,
                                   RowType rowType,
                                   Collection<UserTableRowType> ancestorTypes,
-                                  API.InputPreservationOption flag)
+                                  API.InputPreservationOption flag,
+                                  int lookaheadQuantum)
     {
         validateArguments(rowType, ancestorTypes, flag);
         this.inputOperator = inputOperator;
         this.group = group;
         this.rowType = rowType;
         this.keepInput = flag == API.InputPreservationOption.KEEP_INPUT;
+        this.lookaheadQuantum = lookaheadQuantum;
         // Sort ancestor types by depth
         this.ancestors = new ArrayList<>(ancestorTypes.size());
         for (UserTableRowType ancestorType : ancestorTypes) {
@@ -249,6 +249,7 @@ class AncestorLookup_Default extends Operator
     private final RowType rowType;
     private final List<UserTable> ancestors;
     private final boolean keepInput;
+    private final int lookaheadQuantum;
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
