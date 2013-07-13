@@ -385,7 +385,16 @@ public class API
                                              Ordering ordering,
                                              IndexScanSelector indexScanSelector)
     {
-        return new IndexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector, USE_PVALUES);
+        return indexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector, 1);
+    }
+
+    public static Operator indexScan_Default(IndexRowType indexType,
+                                             IndexKeyRange indexKeyRange,
+                                             Ordering ordering,
+                                             IndexScanSelector indexScanSelector,
+                                             int lookaheadQuantum)
+    {
+        return new IndexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector, lookaheadQuantum, USE_PVALUES);
     }
 
     // Select
@@ -497,9 +506,11 @@ public class API
     public static Operator map_NestedLoops(Operator outerInput,
                                            Operator innerInput,
                                            int inputBindingPosition,
+                                           boolean pipeline,
                                            int depth)
     {
-        return new Map_NestedLoops(outerInput, innerInput, inputBindingPosition, depth);
+        return new Map_NestedLoops(outerInput, innerInput, inputBindingPosition, 
+                                   pipeline, depth);
     }
 
     // IfEmpty

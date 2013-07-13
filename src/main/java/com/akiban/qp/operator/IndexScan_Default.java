@@ -164,14 +164,9 @@ class IndexScan_Default extends Operator
 
     // Operator interface
 
-    static Integer lookaheadQuantum = null;
-
     @Override
     protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        if (lookaheadQuantum == null) {
-            lookaheadQuantum = Integer.valueOf(context.getStore().getConfig().getProperty("akserver.lookaheadQuantum.indexScan"));
-        }
         if (lookaheadQuantum <= 1) {
             return new Execution(context, bindingsCursor);
         }
@@ -186,6 +181,7 @@ class IndexScan_Default extends Operator
                              IndexKeyRange indexKeyRange,
                              API.Ordering ordering,
                              IndexScanSelector scanSelector,
+                             int lookaheadQuantum,
                              boolean usePValues)
     {
         ArgumentValidation.notNull("indexType", indexType);
@@ -194,6 +190,7 @@ class IndexScan_Default extends Operator
         this.ordering = ordering;
         this.indexKeyRange = indexKeyRange;
         this.scanSelector = scanSelector;
+        this.lookaheadQuantum = lookaheadQuantum;
         this.usePValues = usePValues;
     }
 
@@ -210,6 +207,7 @@ class IndexScan_Default extends Operator
     private final API.Ordering ordering;
     private final IndexKeyRange indexKeyRange;
     private final IndexScanSelector scanSelector;
+    private final int lookaheadQuantum;
     private final boolean usePValues;
 
     @Override
