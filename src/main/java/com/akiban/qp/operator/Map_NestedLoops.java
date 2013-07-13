@@ -51,6 +51,8 @@ import java.util.Set;
 
  <li><b>int inputBindingPosition:</b> Position of inner loop row in query context.
 
+ <li><b>boolean pipeline:</b> Whether to use bracketing cursors instead of rebinding.
+
  <li><b>int depth:</b> Number of nested Maps, including this one.
 
  </ul>
@@ -90,7 +92,7 @@ class Map_NestedLoops extends Operator
     @Override
     protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        if (false)
+        if (!pipeline)
             return new Execution(context, bindingsCursor); // Old-style
         else {
             Cursor outerCursor = outerInputOperator.cursor(context, bindingsCursor);
@@ -127,6 +129,7 @@ class Map_NestedLoops extends Operator
     public Map_NestedLoops(Operator outerInputOperator,
                            Operator innerInputOperator,
                            int inputBindingPosition,
+                           boolean pipeline,
                            int depth)
     {
         ArgumentValidation.notNull("outerInputOperator", outerInputOperator);
@@ -136,6 +139,7 @@ class Map_NestedLoops extends Operator
         this.outerInputOperator = outerInputOperator;
         this.innerInputOperator = innerInputOperator;
         this.inputBindingPosition = inputBindingPosition;
+        this.pipeline = pipeline;
         this.depth = depth;
     }
 
@@ -150,12 +154,14 @@ class Map_NestedLoops extends Operator
     private final Operator outerInputOperator;
     private final Operator innerInputOperator;
     private final int inputBindingPosition, depth;
+    private final boolean pipeline;
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
     {
         CompoundExplainer ex = new NestedLoopsExplainer(getName(), innerInputOperator, outerInputOperator, null, null, context);
         ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(inputBindingPosition));
+        ex.addAttribute(Label.PIPELINE, PrimitiveExplainer.getInstance(pipeline));
         ex.addAttribute(Label.DEPTH, PrimitiveExplainer.getInstance(depth));
         if (context.hasExtraInfo(this))
             ex.get().putAll(context.getExtraInfo(this).get());
@@ -346,9 +352,13 @@ class Map_NestedLoops extends Operator
                 pendingBindings = null;
                 return bindings;
             }
-            bindings = input.nextBindings();
-            assert ((bindings == null) || (bindings.getDepth() < depth));
-            return bindings;
+            while (true) {
+                // Skip over any that we would elide.
+                bindings = input.nextBindings();
+                if ((bindings == null) || (bindings.getDepth() < depth))
+                    return bindings;
+                assert (bindings.getDepth() == depth);
+            }
         }
 
         @Override

@@ -36,6 +36,7 @@ public abstract class ServerOperatorCompiler extends OperatorCompiler
         initParser(server.getParser());
         initFunctionsRegistry(server.functionsRegistry());
         initCostEstimator(server.costEstimator(this, keyCreator), usePValues);
+        initPipelineConfiguration(server.getPipelineConfiguration());
         if (usePValues)
             initT3Registry(server.t3RegistryService());
         

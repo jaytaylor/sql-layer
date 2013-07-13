@@ -23,6 +23,7 @@ import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.sql.parser.SQLParser;
 
 import com.akiban.sql.optimizer.AISBinderContext;
+import com.akiban.sql.optimizer.rule.PipelineConfiguration;
 import com.akiban.sql.optimizer.rule.cost.CostEstimator;
 
 import com.akiban.ais.model.AkibanInformationSchema;
@@ -165,4 +166,7 @@ public interface ServerSession
 
     /** Check access to given schema */
     public boolean isSchemaAccessible(String schemaName);
+
+    /** Get the pipeline configuration. */
+    public PipelineConfiguration getPipelineConfiguration();
 }
