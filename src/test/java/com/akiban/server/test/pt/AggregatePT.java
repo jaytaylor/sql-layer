@@ -95,10 +95,6 @@ public class AggregatePT extends ApiTestBase {
         return uniqueStartupConfigProperties(getClass());
     }
 
-    private PersistitStore persistitStore() {
-        return(PersistitStore)store();
-    }
-
     private TableIndex index;
 
     @Before

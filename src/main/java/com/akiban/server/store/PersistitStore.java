@@ -119,11 +119,6 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         return treeService.createKey();
     }
 
-    @Override
-    public PersistitStore getPersistitStore() {
-        return this;
-    }
-
     public Persistit getDb() {
         return treeService.getDb();
     }
@@ -561,6 +556,11 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         } finally {
             releaseExchange(session, iEx);
         }
+    }
+
+    @Override
+    public PersistitStore getPersistitStore() {
+        return this;
     }
 
     @Override
