@@ -23,6 +23,7 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.error.BranchingGroupIndexException;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
 import com.akiban.server.store.IndexKeyVisitor;
 import com.akiban.server.test.it.ITBase;
 import junit.framework.Assert;
@@ -225,27 +226,30 @@ public class GroupIndexIT extends ITBase {
 
         final int[] curKey = {0};
         final String indexName = groupIndex.getIndexName().getName();
-        store().traverse(session(), groupIndex, new IndexKeyVisitor() {
-            @Override
-            public boolean groupIndex()
-            {
-                return true;
-            }
+        try(CloseableTransaction txn = txnService().beginCloseableTransaction(session())) {
+            store().traverse(session(), groupIndex, new IndexKeyVisitor() {
+                @Override
+                public boolean groupIndex()
+                {
+                    return true;
+                }
 
-            @Override
-            protected void visit(List<?> actual) {
-                if(!keyIt.hasNext()) {
-                    extraKeys.add(actual);
+                @Override
+                protected void visit(List<?> actual) {
+                    if(!keyIt.hasNext()) {
+                        extraKeys.add(actual);
+                    }
+                    else {
+                        List<Object> expected = Arrays.asList(keyIt.next());
+                        List<?> actualOfDeclared = actual.subList(0, declaredColumns);
+                        assertEquals(String.format("Key entry %d of index %s", curKey[0], indexName),
+                                     expected.toString(), actualOfDeclared.toString());
+                        curKey[0]++;
+                    }
                 }
-                else {
-                    List<Object> expected = Arrays.asList(keyIt.next());
-                    List<?> actualOfDeclared = actual.subList(0, declaredColumns);
-                    assertEquals(String.format("Key entry %d of index %s", curKey[0], indexName),
-                                 expected.toString(), actualOfDeclared.toString());
-                    curKey[0]++;
-                }
-            }
-        });
+            });
+            txn.commit();
+        }
 
         if(!extraKeys.isEmpty()) {
             Assert.fail(String.format("Extra keys tree for index %s: %s", indexName, extraKeys));

@@ -23,6 +23,7 @@ import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
 import com.akiban.server.store.IndexRecordVisitor;
 import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.akiban.server.test.it.ITBase;
@@ -2137,7 +2138,11 @@ public final class NewGiUpdateIT extends ITBase {
         }
 
         private void checkIndex(final GroupIndex groupIndex, List<String> expected) {
-            StringsIndexScanner scanner = store().traverse(session(), groupIndex, new StringsIndexScanner());
+            StringsIndexScanner scanner;
+            try(CloseableTransaction txn = txnService().beginCloseableTransaction(session())) {
+                scanner = store().traverse(session(), groupIndex, new StringsIndexScanner());
+                txn.commit();
+            }
             AssertUtils.assertCollectionEquals(
                     "scan of " + groupIndex.getIndexName().getName(),
                     expected,
