@@ -552,6 +552,11 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
+    public boolean treeExists(Session session, String schemaName, String treeName) {
+        return treeService.treeExists(schemaName, treeName);
+    }
+
+    @Override
     public void truncateTree(Session session, TreeLink treeLink) {
         Exchange iEx = treeService.getExchange(session, treeLink);
         try {

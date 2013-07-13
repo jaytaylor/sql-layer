@@ -130,6 +130,8 @@ public interface Store extends KeyCreator {
 
     StoreAdapter createAdapter(Session session, Schema schema);
 
+    boolean treeExists(Session session, String schemaName, String treeName);
+
     // TODO: Better abstraction
     void traverse(Session session, Group group, TreeRecordVisitor visitor);
     <V extends IndexVisitor<Key,Value>> V traverse(Session session, Index index, V visitor);
