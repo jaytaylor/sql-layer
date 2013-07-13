@@ -23,9 +23,11 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.ExpressionGenerator;
+import com.akiban.qp.operator.IndexScanSelector;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -51,10 +53,12 @@ import java.util.Map;
 public class IndexScanLookaheadIT extends OperatorITBase
 {
     @Override
-    protected Map<String, String> startupConfigProperties() {
-        final Map<String, String> properties = new HashMap<>();
-        properties.put("akserver.lookaheadQuantum.indexScan", "4");
-        return properties;
+    protected boolean pipelineMap() {
+        return true;
+    }
+
+    protected int lookaheadQuantum() {
+        return 4;
     }
 
     @Override
@@ -92,7 +96,7 @@ public class IndexScanLookaheadIT extends OperatorITBase
     @Test
     public void testCursor()
     {
-        Operator indexScan = indexScan_Default(itemIidIndexRowType, true, iidKeyRange(100, false, 125, false));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, iidKeyRange(100, false, 125, false), ordering(itemIidIndexRowType), IndexScanSelector.leftJoinAfter(itemIidIndexRowType.index(), itemRowType.userTable()), lookaheadQuantum());
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
@@ -104,7 +108,7 @@ public class IndexScanLookaheadIT extends OperatorITBase
             @Override
             public String[] firstExpectedHKeys()
             {
-                return new String[]{hkey(1, 12, 122), hkey(1, 12, 121), hkey(1, 11, 112), hkey(1, 11, 111)};
+                return new String[]{hkey(1, 11, 111), hkey(1, 11, 112), hkey(1, 12, 121), hkey(1, 12, 122)};
             }
         };
         testCursorLifecycle(indexScan, testCase);
@@ -113,7 +117,7 @@ public class IndexScanLookaheadIT extends OperatorITBase
     @Test
     public void testSingle()
     {
-        Operator indexScan = indexScan_Default(itemIidIndexRowType, false, iidKeyRange(212, true, 212, true));
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, iidKeyRange(212, true, 212, true), ordering(itemIidIndexRowType), IndexScanSelector.leftJoinAfter(itemIidIndexRowType.index(), itemRowType.userTable()), lookaheadQuantum());
         Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(2, 21, 212)};
         compareRenderedHKeys(expected, cursor);
@@ -136,8 +140,8 @@ public class IndexScanLookaheadIT extends OperatorITBase
                                         intRow(cidValueRowType, 4),
                                         intRow(cidValueRowType, 6)),
                     cidValueRowType),
-                 indexScan_Default(orderCidIndexRowType, false, cidRange),
-                1, 1);
+                indexScan_Default(orderCidIndexRowType, cidRange, ordering(orderCidIndexRowType), IndexScanSelector.leftJoinAfter(orderCidIndexRowType.index(), orderRowType.userTable()), lookaheadQuantum()),
+                1, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(2, 21),hkey(2, 22),hkey(2, 23),hkey(2, 24),hkey(2, 25),hkey(2, 26),hkey(2, 27),hkey(2, 28),hkey(2, 29),hkey(4, 41)};
         compareRenderedHKeys(expected, cursor);
@@ -167,10 +171,10 @@ public class IndexScanLookaheadIT extends OperatorITBase
                                         intRow(cidValueRowType, 6)),
                     cidValueRowType),
                 map_NestedLoops(
-                    indexScan_Default(orderCidIndexRowType, false, cidRange),
-                    indexScan_Default(itemOidIndexRowType, false, oidRange),
-                    2, 2),
-                1, 1);
+                    indexScan_Default(orderCidIndexRowType, cidRange, ordering(orderCidIndexRowType), IndexScanSelector.leftJoinAfter(orderCidIndexRowType.index(), orderRowType.userTable()), lookaheadQuantum()),
+                    indexScan_Default(itemOidIndexRowType, oidRange, ordering(itemOidIndexRowType), IndexScanSelector.leftJoinAfter(itemOidIndexRowType.index(), itemRowType.userTable()), lookaheadQuantum()),
+                    2, pipelineMap(), 2),
+                1, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         String[] expected = new String[]{hkey(2, 21, 211),hkey(2, 21, 212),hkey(2, 22, 221),hkey(2, 22, 222),hkey(2, 24, 241),hkey(2, 25, 251)};
         compareRenderedHKeys(expected, cursor);
@@ -210,6 +214,14 @@ public class IndexScanLookaheadIT extends OperatorITBase
     private String hkey(int cid, int oid, int iid)
     {
         return String.format("{1,(long)%s,2,(long)%s,3,(long)%s}", cid, oid, iid);
+    }
+
+    private Ordering ordering(IndexRowType indexRowType) {
+        Ordering ordering = new Ordering();
+        for (int i = 0; i < indexRowType.nFields(); i++) {
+            ordering.append(field(indexRowType, i), true);
+        }
+        return ordering;
     }
 
 }
