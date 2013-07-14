@@ -88,9 +88,9 @@ class Project_Default extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(QueryContext context, QueryBindings bindings)
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, bindings, inputOperator.cursor(context, bindings));
+        return new Execution(context, inputOperator.cursor(context, bindingsCursor));
     }
 
     @Override
@@ -204,7 +204,7 @@ class Project_Default extends Operator
 
     // Inner classes
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends ChainedCursor
     {
         // Cursor interface
         
@@ -268,47 +268,42 @@ class Project_Default extends Operator
         @Override
         public void destroy()
         {
-            if (input != null) {
-                close();
-                input.destroy();
-                input = null;
-                pEvalExpr = null;
-            }
+            close();
+            input.destroy();
+            pEvalExpr = null;
         }
 
         @Override
         public boolean isIdle()
         {
-            return input != null && idle;
+            return !input.isDestroyed() && idle;
         }
 
         @Override
         public boolean isActive()
         {
-            return input != null && !idle;
+            return !input.isDestroyed() && !idle;
         }
 
         @Override
         public boolean isDestroyed()
         {
-            return input == null;
+            return input.isDestroyed();
         }
 
         // Execution interface
 
-        Execution(QueryContext context, QueryBindings bindings, Cursor input)
+        Execution(QueryContext context, Cursor input)
         {
-            super(context, bindings);
-            this.input = input;
+            super(context, input);
             // one list of evaluatables per execution    
             if (pExpressions != null)
-                    pEvalExpr = ProjectedRow.createTEvaluatableExpressions(pExpressions);
+                pEvalExpr = ProjectedRow.createTEvaluatableExpressions(pExpressions);
             else
                 pEvalExpr = null;
         }
 
         // Object state
-        private Cursor input; // input = null indicates destroyed.
         private boolean idle = true;
         private List<TEvaluatableExpression> pEvalExpr = null;
     }

@@ -207,7 +207,7 @@ public class SkipScanPerformanceIT extends OperatorITBase
         Tap.reset("operator.*");
         Tap.setEnabled("operator.*", true);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        cursor.open();
+        cursor.openTopLevel();
         while (cursor.next() != null);
         TapReport[] reports = Tap.getReport("operator.*");
         for (TapReport report : reports) {
@@ -223,7 +223,7 @@ public class SkipScanPerformanceIT extends OperatorITBase
         Tap.reset("operator.*");
         Tap.setEnabled("operator.*", true);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        cursor.open();
+        cursor.openTopLevel();
         Row row;
         while ((row = cursor.next()) != null);
         TapReport[] reports = Tap.getReport("operator.*");

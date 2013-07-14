@@ -72,7 +72,7 @@ public class ProjectCT extends CostModelBase
         long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
             Cursor cursor = cursor(project, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             while (cursor.next() != null);
         }
         long stop = System.nanoTime();

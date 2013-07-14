@@ -23,7 +23,7 @@ import com.akiban.qp.loadableplan.DirectObjectCursor;
 import com.akiban.qp.loadableplan.DirectObjectPlan;
 import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
 import com.akiban.qp.operator.BindingNotSetException;
-import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
@@ -68,7 +68,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
         private final QueryContext context;
         private final QueryBindings bindings;
         private UserTable rootTable;
-        private Cursor cursor;
+        private RowCursor cursor;
         private Map<UserTable,Integer> tableSizes;
         private StringBuilder buffer;
         private GroupRowFormatter formatter;

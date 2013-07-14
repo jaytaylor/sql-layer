@@ -92,9 +92,9 @@ class Sort_General extends Operator
     }
 
     @Override
-    protected Cursor cursor(QueryContext context, QueryBindings bindings)
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, bindings, inputOperator.cursor(context, bindings));
+        return new Execution(context, inputOperator.cursor(context, bindingsCursor));
     }
 
     @Override
@@ -153,7 +153,7 @@ class Sort_General extends Operator
 
     // Inner classes
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends ChainedCursor
     {
         // Cursor interface
 
@@ -243,16 +243,14 @@ class Sort_General extends Operator
 
         // Execution interface
 
-        Execution(QueryContext context, QueryBindings bindings, Cursor input)
+        Execution(QueryContext context, Cursor input)
         {
-            super(context, bindings);
-            this.input = input;
+            super(context, input);
         }
 
         // Object state
 
-        private final Cursor input;
-        private Cursor output;
+        private RowCursor output;
         private boolean destroyed = false;
     }
 }

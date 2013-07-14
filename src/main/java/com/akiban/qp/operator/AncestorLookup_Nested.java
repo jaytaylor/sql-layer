@@ -129,9 +129,9 @@ class AncestorLookup_Nested extends Operator
     }
 
     @Override
-    protected Cursor cursor(QueryContext context, QueryBindings bindings)
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, bindings);
+        return new Execution(context, bindingsCursor);
     }
 
     @Override
@@ -235,7 +235,7 @@ class AncestorLookup_Nested extends Operator
 
     // Inner classes
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends LeafCursor
     {
         // Cursor interface
 
@@ -320,9 +320,9 @@ class AncestorLookup_Nested extends Operator
 
         // Execution interface
 
-        Execution(QueryContext context, QueryBindings bindings)
+        Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
-            super(context, bindings);
+            super(context, bindingsCursor);
             this.pending = new PendingRows(ancestors.size() + 1);
             this.ancestorCursor = adapter().newGroupCursor(group);
         }

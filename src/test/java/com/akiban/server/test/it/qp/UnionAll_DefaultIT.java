@@ -270,7 +270,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
                                       xEQ9Range,
                                       ordering),
                     txIndexRowType),
-                0);
+                0, pipelineMap(), 1);
         String[] expected = new String[]{
             hKey(1000),
             hKey(1002),

@@ -102,9 +102,9 @@ class Select_HKeyOrdered extends Operator
     }
 
     @Override
-    protected Cursor cursor(QueryContext context, QueryBindings bindings)
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, bindings, inputOperator.cursor(context, bindings));
+        return new Execution(context, inputOperator.cursor(context, bindingsCursor));
     }
 
     @Override
@@ -177,7 +177,7 @@ class Select_HKeyOrdered extends Operator
 
     // Inner classes
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends ChainedCursor
     {
         // Cursor interface
 
@@ -298,18 +298,11 @@ class Select_HKeyOrdered extends Operator
             return !input.isDestroyed() && !idle;
         }
 
-        @Override
-        public boolean isDestroyed()
-        {
-            return input.isDestroyed();
-        }
-
         // Execution interface
 
-        Execution(QueryContext context, QueryBindings bindings, Cursor input)
+        Execution(QueryContext context, Cursor input)
         {
-            super(context, bindings);
-            this.input = input;
+            super(context, input);
             if (predicate == null) {
                 this.evaluation = null;
                 this.pEvaluation = pPredicate.build();
@@ -322,7 +315,6 @@ class Select_HKeyOrdered extends Operator
 
         // Object state
 
-        private final Cursor input;
         private final ShareHolder<Row> selectedRow = new ShareHolder<>(); // The last input row with type = predicateRowType.
         private final ExpressionEvaluation evaluation;
         private final TEvaluatableExpression pEvaluation;

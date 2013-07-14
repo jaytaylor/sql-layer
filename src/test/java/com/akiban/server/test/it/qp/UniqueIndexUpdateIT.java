@@ -65,7 +65,7 @@ public class UniqueIndexUpdateIT extends OperatorITBase
         dml().writeRow(session(), createNewRow(t, 4000L, 4L, null));
         Operator plan = indexScan_Default(xyIndexRowType);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        cursor.open();
+        cursor.openTopLevel();
         Row row;
         // Need to examine PIRBs to see null separators
         int count = 0;
@@ -99,7 +99,7 @@ public class UniqueIndexUpdateIT extends OperatorITBase
         dml().writeRow(session(), createNewRow(t, 4000L, 4L, null));
         // Change nulls to some other value. Scan backwards to avoid halloween issues.
         Cursor cursor = cursor(indexScan_Default(xyIndexRowType, true), queryContext, queryBindings);
-        cursor.open();
+        cursor.openTopLevel();
         Row row;
         final long NEW_Y_VALUE = 99;
         while ((row = cursor.next()) != null) {
@@ -116,7 +116,7 @@ public class UniqueIndexUpdateIT extends OperatorITBase
         cursor.close();
         // Check final state
         cursor = cursor(indexScan_Default(xyIndexRowType), queryContext, queryBindings);
-        cursor.open();
+        cursor.openTopLevel();
         // Need to examine PIRBs to see null separators
         int count = 0;
         while ((row = cursor.next()) != null) {
@@ -165,7 +165,7 @@ public class UniqueIndexUpdateIT extends OperatorITBase
     private void checkIndex(long ... expectedIds)
     {
         Cursor cursor = cursor(indexScan_Default(xyIndexRowType), queryContext, queryBindings);
-        cursor.open();
+        cursor.openTopLevel();
         Row row;
         int count = 0;
         while ((row = cursor.next()) != null) {
@@ -189,7 +189,7 @@ public class UniqueIndexUpdateIT extends OperatorITBase
         NewRow newRow = createNewRow(t, 1L, 10L, 10L);
         dml().updateRow(session(), oldRow, newRow, null);
         Cursor cursor = cursor(indexScan_Default(xyIndexRowType), queryContext, queryBindings);
-        cursor.open();
+        cursor.openTopLevel();
         Row row = cursor.next();
         assertEquals(Long.valueOf(10), getLong(row, 0));
         assertEquals(Long.valueOf(10), getLong(row, 1));

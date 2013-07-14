@@ -83,7 +83,7 @@ public final class ResultSetSubqueryExpression extends SubqueryExpression {
         public ValueSource eval() {
             bindings.setRow(bindingPosition, outerRow);
             Cursor cursor = API.cursor(subquery, context, bindings);
-            cursor.open();
+            cursor.openTopLevel();
             return new ValueHolder(AkType.RESULT_SET, cursor);
         }
 

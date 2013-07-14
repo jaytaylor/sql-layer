@@ -17,8 +17,15 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.row.Row;
-
-public interface Cursor extends RowOrientedCursorBase<Row>
+public interface Cursor extends RowCursor, QueryBindingsCursor
 {
+    /** Open this cursor for top-level execution: opens the bindings
+     * stream and then the cursor within the only bindings.
+     */
+    public QueryBindings openTopLevel();
+
+    /** Close top-level execution: check that there are no further
+     * bindings and close cursor and bindings.
+     */
+    public void closeTopLevel();
 }

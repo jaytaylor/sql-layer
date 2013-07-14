@@ -87,8 +87,8 @@ final class Limit_Default extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(QueryContext context, QueryBindings bindings) {
-        return new Execution(context, bindings, inputOperator.cursor(context, bindings));
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor) {
+        return new Execution(context, inputOperator.cursor(context, bindingsCursor));
     }
 
     // Plannable interface
@@ -326,8 +326,8 @@ final class Limit_Default extends Operator
         }
 
         // Execution interface
-        Execution(QueryContext context, QueryBindings bindings, Cursor input) {
-            super(context, bindings, input);
+        Execution(QueryContext context, Cursor input) {
+            super(context, input);
         }
 
         // object state

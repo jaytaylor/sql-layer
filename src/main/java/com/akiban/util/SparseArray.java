@@ -112,6 +112,11 @@ public class SparseArray<T> {
 
     public String describeElements() {
         StringBuilder sb = new StringBuilder();
+        describeElements(sb);
+        return sb.toString();
+    }
+
+    public StringBuilder describeElements(StringBuilder sb) {
         sb.append('[');
         
         int size = definedElements.size(); 
@@ -123,7 +128,7 @@ public class SparseArray<T> {
             sb.setLength(sb.length() - 2);  // snip off the trailing ", "
         sb.append(']');
 
-        return sb.toString();
+        return sb;
     }
 
     protected T initialValue() {

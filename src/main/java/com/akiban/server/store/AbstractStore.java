@@ -35,6 +35,7 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.GroupCursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryBindings;
+import com.akiban.qp.operator.QueryBindingsCursor;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
@@ -45,8 +46,6 @@ import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.TableStatistics;
-import com.akiban.server.TableStatus;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.ConstantColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
@@ -71,10 +70,6 @@ import com.akiban.server.service.listener.RowListener;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeLink;
-import com.akiban.server.store.statistics.Histogram;
-import com.akiban.server.store.statistics.HistogramEntry;
-import com.akiban.server.store.statistics.IndexStatistics;
-import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.akiban.sql.optimizer.rule.PlanGenerator;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.PointTap;
@@ -86,7 +81,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
@@ -114,7 +108,6 @@ public abstract class AbstractStore<SDType> implements Store {
     protected final LockService lockService;
     protected final SchemaManager schemaManager;
     protected final ListenerService listenerService;
-    protected IndexStatisticsService indexStatisticsService;
 
 
     protected AbstractStore(LockService lockService, SchemaManager schemaManager, ListenerService listenerService) {
@@ -271,50 +264,6 @@ public abstract class AbstractStore<SDType> implements Store {
             }
         }
         return false;
-    }
-
-    /** Convert from new-format histogram to old for adapter. */
-    protected TableStatistics.Histogram indexStatisticsToHistogram(Session session, Index index, Key key) {
-        IndexStatistics stats = indexStatisticsService.getIndexStatistics(session, index);
-        if (stats == null) {
-            return null;
-        }
-        Histogram fromHistogram = stats.getHistogram(0, index.getKeyColumns().size());
-        if (fromHistogram == null) {
-            return null;
-        }
-        IndexDef indexDef = index.indexDef();
-        RowDef indexRowDef = indexDef.getRowDef();
-        TableStatistics.Histogram toHistogram = new TableStatistics.Histogram(index.getIndexId());
-        RowData indexRowData = new RowData(new byte[4096]);
-        Object[] indexValues = new Object[indexRowDef.getFieldCount()];
-        long count = 0;
-        for (HistogramEntry entry : fromHistogram.getEntries()) {
-            // Decode the key.
-            int keylen = entry.getKeyBytes().length;
-            System.arraycopy(entry.getKeyBytes(), 0, key.getEncodedBytes(), 0, keylen);
-            key.setEncodedSize(keylen);
-            key.indexTo(0);
-            int depth = key.getDepth();
-            // Copy key fields to index row.
-            for (int field : indexDef.getFields()) {
-                if (--depth >= 0) {
-                    indexValues[field] = key.decode();
-                } else {
-                    indexValues[field] = null;
-                }
-            }
-            indexRowData.createRow(indexRowDef, indexValues);
-            // Partial counts to running total less than key.
-            count += entry.getLessCount();
-            toHistogram.addSample(new TableStatistics.HistogramSample(indexRowData.copy(), count));
-            count += entry.getEqualCount();
-        }
-        // Add final entry with all nulls.
-        Arrays.fill(indexValues, null);
-        indexRowData.createRow(indexRowDef, indexValues);
-        toHistogram.addSample(new TableStatistics.HistogramSample(indexRowData.copy(), count));
-        return toHistogram;
     }
 
     protected BitSet analyzeFieldChanges(Session session, RowDef rowDef, RowData oldRow, RowData newRow)
@@ -640,38 +589,6 @@ public abstract class AbstractStore<SDType> implements Store {
         }
     }
 
-    // This is to avoid circular dependencies in Guicer.
-    // TODO: There is still a functional circularity: store needs
-    // stats to clear them when deleting a group; stats need store to
-    // persist the stats. It would be better to separate out the
-    // higher level store functions from what other services require.
-    @Override
-    public void setIndexStatistics(IndexStatisticsService indexStatisticsService) {
-        this.indexStatisticsService = indexStatisticsService;
-    }
-
-    @Override
-    public TableStatistics getTableStatistics(final Session session, int tableId) {
-        final RowDef rowDef = getRowDef(session, tableId);
-        final TableStatistics ts = new TableStatistics(tableId);
-        final TableStatus status = rowDef.getTableStatus();
-        ts.setAutoIncrementValue(status.getAutoIncrement(session));
-        ts.setRowCount(status.getRowCount(session));
-        // TODO - get correct values
-        ts.setMeanRecordLength(100);
-        ts.setBlockSize(8192);
-        for(Index index : rowDef.getIndexes()) {
-            if(index.isSpatial()) {
-                continue;
-            }
-            TableStatistics.Histogram histogram = indexStatisticsToHistogram(session, index, createKey());
-            if(histogram != null) {
-                ts.addHistogram(histogram);
-            }
-        }
-        return ts;
-    }
-
     @Override
     public long getRowCount(Session session, boolean exact, RowData start, RowData end, byte[] columnBitMap) {
         // TODO: Compute a reasonable value. The value 2 is special because it is not 0 or 1 but will
@@ -691,19 +608,13 @@ public abstract class AbstractStore<SDType> implements Store {
 
     @Override
     public void truncateGroup(final Session session, final Group group) {
-        final List<Index> indexes = new ArrayList<>();
         // Collect indexes, truncate table statuses
         group.getRoot().traverseTableAndDescendants(new NopVisitor() {
             @Override
             public void visitUserTable(UserTable table) {
-                indexes.addAll(table.getIndexesIncludingInternal());
                 table.rowDef().getTableStatus().truncate(session);
             }
         });
-
-        indexes.addAll(group.getIndexes());
-        truncateIndexes(session, indexes);
-
         // Truncate the group tree
         truncateTree(session, group);
     }
@@ -781,8 +692,6 @@ public abstract class AbstractStore<SDType> implements Store {
         for(Index index : indexes) {
             truncateTree(session, index.indexDef());
         }
-        // Delete any statistics associated with index.
-        indexStatisticsService.deleteIndexStatistics(session, indexes);
     }
 
     @Override
@@ -793,7 +702,6 @@ public abstract class AbstractStore<SDType> implements Store {
                 removeTree(session, indexDef);
             }
         }
-        indexStatisticsService.deleteIndexStatistics(session, indexes);
     }
 
     @Override
@@ -802,19 +710,14 @@ public abstract class AbstractStore<SDType> implements Store {
         for(Index index : table.getIndexesIncludingInternal()) {
             removeTree(session, index.indexDef());
         }
-        indexStatisticsService.deleteIndexStatistics(session, table.getIndexesIncludingInternal());
-
         // Group indexes
         for(Index index : table.getGroupIndexes()) {
             removeTree(session, index.indexDef());
         }
-        indexStatisticsService.deleteIndexStatistics(session, table.getGroupIndexes());
-
         // Sequence
         if(table.getIdentityColumn() != null) {
             deleteSequences(session, Collections.singleton(table.getIdentityColumn().getIdentityGenerator()));
         }
-
         // And the group tree
         removeTree(session, table.getGroup());
     }
@@ -1217,7 +1120,7 @@ public abstract class AbstractStore<SDType> implements Store {
         }
         try {
             Row row;
-            cursor.open();
+            cursor.openTopLevel();
             while((row = cursor.next()) != null) {
                 UserTable table = row.rowType().userTable();
                 RowData data = adapter.rowData(table.rowDef(), row, new PValueRowDataCreator());
@@ -1229,7 +1132,7 @@ public abstract class AbstractStore<SDType> implements Store {
                                      StoreGIHandler.forTable(this, adapter, uTable),
                                      StoreGIHandler.Action.CASCADE);
             }
-            cursor.close();
+            cursor.closeTopLevel();
         } finally {
             cursor.destroy();
         }
@@ -1308,7 +1211,7 @@ public abstract class AbstractStore<SDType> implements Store {
                                            StoreGIHandler handler,
                                            StoreGIHandler.Action action) {
         Cursor cursor = API.cursor(rootOperator, context, bindings);
-        cursor.open();
+        cursor.openTopLevel();
         try {
             Row row;
             while((row = cursor.next()) != null) {
@@ -1316,6 +1219,7 @@ public abstract class AbstractStore<SDType> implements Store {
                     handler.handleRow(groupIndex, row, action);
                 }
             }
+            cursor.closeTopLevel();
         } finally {
             cursor.destroy();
         }

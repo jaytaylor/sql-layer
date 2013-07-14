@@ -26,6 +26,7 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.IndexScanSelector;
 import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.indexcursor.IterationHelper;
 import com.akiban.qp.persistitadapter.indexcursor.MemorySorter;
@@ -61,15 +62,13 @@ public class FDBAdapter extends StoreAdapter {
     }
 
     @Override
-    public Cursor newIndexCursor(QueryContext context,
-                                 QueryBindings bindings,
-                                 Index index,
-                                 IndexKeyRange keyRange,
-                                 API.Ordering ordering,
-                                 IndexScanSelector scanSelector,
-                                 boolean usePValues) {
+    public RowCursor newIndexCursor(QueryContext context,
+                                    Index index,
+                                    IndexKeyRange keyRange,
+                                    API.Ordering ordering,
+                                    IndexScanSelector scanSelector,
+                                    boolean usePValues) {
         return new PersistitIndexCursor(context,
-                                        bindings,
                                         schema.indexRowType(index),
                                         keyRange,
                                         ordering,
@@ -109,7 +108,7 @@ public class FDBAdapter extends StoreAdapter {
     @Override
     public Sorter createSorter(QueryContext context,
                                QueryBindings bindings,
-                               Cursor input,
+                               RowCursor input,
                                RowType rowType,
                                API.Ordering ordering,
                                API.SortOption sortOption,

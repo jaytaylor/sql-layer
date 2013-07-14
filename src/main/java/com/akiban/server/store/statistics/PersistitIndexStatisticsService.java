@@ -21,6 +21,7 @@ import com.akiban.ais.model.GroupIndex;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.listener.ListenerService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
@@ -39,8 +40,9 @@ public class PersistitIndexStatisticsService extends AbstractIndexStatisticsServ
                                            TransactionService txnService,
                                            SchemaManager schemaManager,
                                            SessionService sessionService,
-                                           ConfigurationService configurationService) {
-        super(store, txnService, schemaManager, sessionService, configurationService);
+                                           ConfigurationService configurationService,
+                                           ListenerService listenerService) {
+        super(store, txnService, schemaManager, sessionService, configurationService, listenerService);
         if(store instanceof PersistitStore) {
             this.store = (PersistitStore)store;
         } else {

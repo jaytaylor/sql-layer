@@ -31,6 +31,7 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
@@ -177,7 +178,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     }
 
     @Override
-    public Cursor searchIndex(QueryContext context, IndexName name, Query query, int limit) {
+    public RowCursor searchIndex(QueryContext context, IndexName name, Query query, int limit) {
         FullTextIndexInfo index = getIndex(context.getSession(), name, null);
         try {
             return index.getSearcher().search(context, index.getHKeyRowType(), 
@@ -266,7 +267,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         }
         finally {
             if(cursor != null) {
-                cursor.close();
                 cursor.destroy();
             }
             if(!success) {
@@ -308,7 +308,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             finally
             {
                 if(cursor != null) {
-                    cursor.close();
                     cursor.destroy();
                 }
                 if(!success) {
@@ -338,6 +337,17 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     public void onDrop(Session session, UserTable table) {
         for(FullTextIndex index : table.getFullTextIndexes()) {
             dropIndex(session, index);
+        }
+    }
+
+    @Override
+    public void onTruncate(Session session, UserTable table, boolean isFast) {
+        if(isFast) {
+            for(FullTextIndex index : table.getFullTextIndexes()) {
+                if(index.getIndexType() == IndexType.FULL_TEXT) {
+                    throw new IllegalStateException("Cannot fast truncate: " + index);
+                }
+            }
         }
     }
 
@@ -581,17 +591,20 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         try
         {
             // Consume and commit updates to each index in distinct blocks to keep r/w window small-ish
-            for(;;) {
+            boolean done = false;
+            while(!done) {
                 transactionService.beginTransaction(session);
                 rows = getChangedRows(session);
-                if(!rows.hasStream()) {
-                    break;
-                }
-                if (populating.get(rows.getIndexName()) == null) {
-                    updateIndex(session, rows.getIndexName(), rows);
+                if(rows.hasStream()) {
+                    if(populating.get(rows.getIndexName()) == null) {
+                        updateIndex(session, rows.getIndexName(), rows);
+                    }
+                } else {
+                    done = true;
                 }
                 transactionService.commitTransaction(session);
             }
+
         }
         catch(Exception e)
         {
@@ -839,8 +852,8 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                 UserTable changeTable = ais.getUserTable(CHANGES_TABLE);
                 row = new NiceRow(changeTable.getTableId(), changeTable.rowDef());
             }
-            row.put(0, table.getName().getSchemaName());
-            row.put(1, table.getName().getTableName());
+            row.put(0, index.getIndexName().getSchemaName());
+            row.put(1, index.getIndexName().getTableName());
             row.put(2, index.getIndexName().getName());
             row.put(3, index.getIndexId());
             row.put(4, Arrays.copyOf(hKey.getEncodedBytes(), hKey.getEncodedSize()));

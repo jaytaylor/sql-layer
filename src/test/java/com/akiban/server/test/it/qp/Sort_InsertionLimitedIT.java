@@ -540,7 +540,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 map_NestedLoops(
                     filter_Default(groupScan_Default(coi),
                                    Collections.singleton(customerRowType)),
-                    project, 0),
+                    project, 0, pipelineMap(), 1),
                 projectType,
                 ordering(field(projectType, 0), true),
                 SortOption.PRESERVE_DUPLICATES,

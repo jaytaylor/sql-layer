@@ -33,6 +33,7 @@ import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 import com.akiban.sql.optimizer.rule.ExplainPlanContext;
 import com.akiban.sql.optimizer.rule.RulesTestHelper;
+import com.akiban.sql.optimizer.rule.PipelineConfiguration;
 import com.akiban.sql.optimizer.rule.cost.TestCostEstimator;
 
 import com.akiban.junit.NamedParameterizedRunner;
@@ -122,6 +123,7 @@ public class OperatorCompilerTest extends NamedParamsTestBase
                 compiler.initT3Registry(t3Registry);
             }
             compiler.initCostEstimator(new TestCostEstimator(ais, compiler.getSchema(), statsFile, false, properties), usePValues);
+            compiler.initPipelineConfiguration(new PipelineConfiguration());
             compiler.initDone();
             return compiler;
         }

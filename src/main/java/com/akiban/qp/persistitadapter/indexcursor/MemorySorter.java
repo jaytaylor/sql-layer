@@ -18,7 +18,7 @@
 package com.akiban.qp.persistitadapter.indexcursor;
 
 import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
@@ -75,7 +75,7 @@ public class MemorySorter implements Sorter
 
     private final QueryContext context;
     private final QueryBindings bindings;
-    private final Cursor input;
+    private final RowCursor input;
     private final API.Ordering ordering;
     private final Key key;
     private final InOutTap loadTap;
@@ -83,7 +83,7 @@ public class MemorySorter implements Sorter
 
     public MemorySorter(QueryContext context,
                         QueryBindings bindings,
-                        Cursor input,
+                        RowCursor input,
                         RowType rowType,
                         API.Ordering ordering,
                         API.SortOption sortOption,
@@ -114,7 +114,7 @@ public class MemorySorter implements Sorter
     }
 
     @Override
-    public Cursor sort() {
+    public RowCursor sort() {
         loadMap();
         return new CollectionCursor(navigableMap.values());
     }
@@ -181,7 +181,7 @@ public class MemorySorter implements Sorter
         return states;
     }
 
-    private static final class CollectionCursor implements Cursor {
+    private static final class CollectionCursor implements RowCursor {
         private final Collection<Row> collection;
         private boolean isIdle = true;
         private boolean isDestroyed = false;

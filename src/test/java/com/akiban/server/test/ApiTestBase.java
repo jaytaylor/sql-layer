@@ -1356,6 +1356,10 @@ public class ApiTestBase {
         return true;
     }
 
+    protected boolean pipelineMap() {
+        return false;
+    }
+
     protected DDLFunctions ddlForAlter() {
         return ddl();
     }

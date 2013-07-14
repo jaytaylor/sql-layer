@@ -123,9 +123,9 @@ class Product_NestedLoops extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(QueryContext context, QueryBindings bindings)
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, bindings);
+        return new Execution(context, bindingsCursor);
     }
 
     @Override
@@ -198,7 +198,7 @@ class Product_NestedLoops extends Operator
 
     // Inner classes
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends OperatorCursor
     {
         // Cursor interface
 
@@ -301,13 +301,29 @@ class Product_NestedLoops extends Operator
             return outerInput.isDestroyed();
         }
 
+        @Override
+        public void openBindings() {
+            outerInput.openBindings();
+        }
+
+        @Override
+        public QueryBindings nextBindings() {
+            outerBindings = outerInput.nextBindings();
+            return outerBindings;
+        }
+
+        @Override
+        public void closeBindings() {
+            outerInput.closeBindings();
+        }
+
         // Execution interface
 
-        Execution(QueryContext context, QueryBindings bindings)
+        Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
-            super(context, bindings);
-            this.outerInput = outerInputOperator.cursor(context, bindings);
-            this.innerRows = new InnerRows(innerInputOperator.cursor(context, bindings));
+            super(context);
+            this.outerInput = outerInputOperator.cursor(context, bindingsCursor);
+            this.innerRows = new InnerRows(context, bindingsCursor);
         }
 
         // For use by this class
@@ -345,14 +361,16 @@ class Product_NestedLoops extends Operator
         private final ShareHolder<Row> outerBranchRow = new ShareHolder<>();
         private final InnerRows innerRows;
         private boolean closed = true;
+        private QueryBindings outerBindings;
 
         // Inner classes
 
         private class InnerRows
         {
-            public InnerRows(Cursor innerInput)
+            public InnerRows(QueryContext context, QueryBindingsCursor bindingsCursor)
             {
-                this.innerInput = innerInput;
+                this.innerBindingsCursor = new SingletonQueryBindingsCursor(null);
+                this.innerInput = innerInputOperator.cursor(context, innerBindingsCursor);
             }
 
             public Row next()
@@ -368,8 +386,9 @@ class Product_NestedLoops extends Operator
             public void newBranchRow(Row branchRow)
             {
                 close();
-                bindings.setRow(inputBindingPosition, branchRow);
-                innerInput.open();
+                outerBindings.setRow(inputBindingPosition, branchRow);
+                innerBindingsCursor.reset(outerBindings);
+                innerInput.openTopLevel();
                 rows.clear();
                 Row row;
                 while ((row = innerInput.next()) != null) {
@@ -392,6 +411,7 @@ class Product_NestedLoops extends Operator
             private final Cursor innerInput;
             private final RowList rows = new RowList();
             private final RowList.Scan scan = rows.scan();
+            private final SingletonQueryBindingsCursor innerBindingsCursor;
         }
     }
 }

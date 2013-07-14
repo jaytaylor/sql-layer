@@ -36,6 +36,8 @@ public abstract class SchemaRulesContext extends RulesContext
     private FunctionsRegistry functionsRegistry;
     private CostEstimator costEstimator;
     private T3RegistryService t3Registry;
+    private PipelineConfiguration pipelineConfiguration;
+
     protected SchemaRulesContext() {
     }
 
@@ -55,12 +57,17 @@ public abstract class SchemaRulesContext extends RulesContext
         this.costEstimator = costEstimator;
     }
 
+    protected void initPipelineConfiguration(PipelineConfiguration pipelineConfiguration) {
+        this.pipelineConfiguration = pipelineConfiguration;
+    }
+
     @Override
     protected void initDone() {
         super.initDone();
         assert (schema != null) : "initSchema() not called";
         assert (functionsRegistry != null) : "initFunctionsRegistry() not called";
         assert (costEstimator != null) : "initCostEstimator() not called";
+        assert (pipelineConfiguration != null) : "initPipelineConfiguration() not called";
     }
 
     public Schema getSchema() {
@@ -88,5 +95,9 @@ public abstract class SchemaRulesContext extends RulesContext
     }
 
     public abstract String getDefaultSchemaName();
+
+    public PipelineConfiguration getPipelineConfiguration() {
+        return pipelineConfiguration;
+    }
 
 }

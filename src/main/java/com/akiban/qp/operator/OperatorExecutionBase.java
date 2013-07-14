@@ -81,8 +81,8 @@ public abstract class OperatorExecutionBase extends ExecutionBase implements Row
         }
     }
 
-    protected OperatorExecutionBase(QueryContext context, QueryBindings bindings)
+    protected OperatorExecutionBase(QueryContext context)
     {
-        super(context, bindings);
+        super(context);
     }
 }

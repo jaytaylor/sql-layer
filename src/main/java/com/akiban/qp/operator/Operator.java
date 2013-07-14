@@ -69,7 +69,7 @@ public abstract class Operator implements Plannable
         return Collections.emptyList();
     }
 
-    protected abstract Cursor cursor(QueryContext context, QueryBindings bindings);
+    protected abstract Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor);
 
     @Override
     public String describePlan()

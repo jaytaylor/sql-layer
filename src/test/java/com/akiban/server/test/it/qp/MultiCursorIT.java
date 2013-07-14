@@ -17,7 +17,7 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.Schema;
@@ -53,7 +53,7 @@ public class MultiCursorIT extends OperatorITBase
     @Test
     public void testNoCursors()
     {
-        Cursor multiCursor = multiCursor();
+        RowCursor multiCursor = multiCursor();
         multiCursor.open();
         assertTrue(multiCursor.isIdle());
         assertNull(multiCursor.next());
@@ -67,7 +67,7 @@ public class MultiCursorIT extends OperatorITBase
             for (int i = 0; i < n; i++) {
                 a[i] = i;
             }
-            Cursor multiCursor = multiCursor(new TestCursor(a));
+            RowCursor multiCursor = multiCursor(new TestCursor(a));
             multiCursor.open();
             assertTrue(multiCursor.isActive());
             Row row;
@@ -84,13 +84,13 @@ public class MultiCursorIT extends OperatorITBase
     @Test
     public void testMultipleCursors()
     {
-        Cursor multiCursor = multiCursor(new TestCursor(new int[]{}),
-                                         new TestCursor(new int[]{0, 1, 2}),
-                                         new TestCursor(new int[]{}),
-                                         new TestCursor(new int[]{}),
-                                         new TestCursor(new int[]{3}),
-                                         new TestCursor(new int[]{}),
-                                         new TestCursor(new int[]{}));
+        RowCursor multiCursor = multiCursor(new TestCursor(new int[]{}),
+                                            new TestCursor(new int[]{0, 1, 2}),
+                                            new TestCursor(new int[]{}),
+                                            new TestCursor(new int[]{}),
+                                            new TestCursor(new int[]{3}),
+                                            new TestCursor(new int[]{}),
+                                            new TestCursor(new int[]{}));
         multiCursor.open();
         Row row;
         long expected = 0;
@@ -120,7 +120,7 @@ public class MultiCursorIT extends OperatorITBase
     private int t;
     private UserTableRowType tRowType;
 
-    private class TestCursor implements Cursor
+    private class TestCursor implements RowCursor
     {
         @Override
         public void open()

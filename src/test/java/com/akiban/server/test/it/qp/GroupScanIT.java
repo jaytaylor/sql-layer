@@ -140,7 +140,7 @@ public class GroupScanIT extends OperatorITBase
         use(db);
         Operator groupScan = groupScan_Default(coi);
         Cursor cursor = cursor(groupScan, queryContext, queryBindings);
-        cursor.open();
+        cursor.openTopLevel();
         Row row = cursor.next();
         assertSame(customerRowType, row.rowType());
         row = cursor.next();

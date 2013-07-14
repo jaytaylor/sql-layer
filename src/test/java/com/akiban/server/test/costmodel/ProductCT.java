@@ -143,7 +143,7 @@ public class ProductCT extends CostModelBase
         long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             while (cursor.next() != null);
         }
         long stop = System.nanoTime();
@@ -201,7 +201,7 @@ public class ProductCT extends CostModelBase
         long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
             Cursor cursor = cursor(plan, queryContext, queryBindings);
-            cursor.open();
+            cursor.openTopLevel();
             while (cursor.next() != null);
         }
         long stop = System.nanoTime();
@@ -217,7 +217,7 @@ public class ProductCT extends CostModelBase
     private void dump(Operator plan)
     {
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        cursor.open();
+        cursor.openTopLevel();
         Row row;
         while ((row = cursor.next()) != null) {
             System.out.println(row);

@@ -133,7 +133,7 @@ public final class GroupIndexScanIT extends ITBase {
     private List<List<?>> planToList(Operator plan) {
         List<List<?>> actualResults = new ArrayList<>();
         Cursor cursor =  API.cursor(plan, queryContext, queryBindings);
-        cursor.open();
+        cursor.openTopLevel();
         try {
             ToObjectValueTarget target = new ToObjectValueTarget();
             for (Row row = cursor.next(); row != null; row = cursor.next()) {
@@ -157,7 +157,7 @@ public final class GroupIndexScanIT extends ITBase {
                 actualResults.add(Arrays.asList(rowArray));
             }
         } finally {
-            cursor.close();
+            cursor.closeTopLevel();
         }
         return actualResults;
     }
