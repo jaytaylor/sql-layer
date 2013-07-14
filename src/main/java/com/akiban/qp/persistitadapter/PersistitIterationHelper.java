@@ -32,7 +32,7 @@ public class PersistitIterationHelper implements IterationHelper
     @Override
     public Row row()
     {
-        unsharedRow().get().copyFromExchange(exchange);
+        unsharedRow().get().copyFrom(exchange);
         return row.get();
     }
 

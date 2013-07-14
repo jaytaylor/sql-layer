@@ -356,15 +356,6 @@ public abstract class Index implements Traversable
         return false;
     }
 
-    // Unique, non-PK indexes store a "null separator value", making index rows unique that would otherwise
-    // be considered duplicates due to nulls.
-    public long nextNullSeparatorValue()
-    {
-        Tree tree = indexDef.getTreeCache().getTree();
-        AccumulatorAdapter accumulator = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.UNIQUE_ID, tree);
-        return accumulator.seqAllocate();
-    }
-
     // akTypes, akCollators and tInstances provide type info for physical index rows.
     // Physical != logical for spatial indexes.
 
