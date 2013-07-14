@@ -1182,7 +1182,8 @@ public class OperatorAssembler extends BaseRule
                 stream.operator = API.indexScan_Default(indexRowType,
                                                         assembleSpatialIndexKeyRange(indexScan, null),
                                                         API.ordering(), // TODO: what ordering?
-                                                        selector);
+                                                        selector,
+                                                        rulesContext.getPipelineConfiguration().getIndexScanLookaheadQuantum());
                 indexRowType = indexRowType.physicalRowType();
                 stream.rowType = indexRowType;
             }
@@ -1190,7 +1191,8 @@ public class OperatorAssembler extends BaseRule
                 stream.operator = API.indexScan_Default(indexRowType,
                                                         assembleIndexKeyRange(indexScan, null),
                                                         assembleIndexOrdering(indexScan, indexRowType),
-                                                        selector);
+                                                        selector,
+                                                        rulesContext.getPipelineConfiguration().getIndexScanLookaheadQuantum());
                 stream.rowType = indexRowType;
             }
             else {
@@ -1221,7 +1223,8 @@ public class OperatorAssembler extends BaseRule
                     Operator scan = API.indexScan_Default(indexRowType,
                                                           assembleIndexKeyRange(indexScan, null, rangeSegment),
                                                           assembleIndexOrdering(indexScan, indexRowType),
-                                                          selector);
+                                                          selector,
+                                                          rulesContext.getPipelineConfiguration().getIndexScanLookaheadQuantum());
                     if (stream.operator == null) {
                         stream.operator = scan;
                         stream.rowType = indexRowType;
