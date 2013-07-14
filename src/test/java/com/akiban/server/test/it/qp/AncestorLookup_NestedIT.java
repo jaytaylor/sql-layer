@@ -141,7 +141,7 @@ public class AncestorLookup_NestedIT extends OperatorITBase
             map_NestedLoops(
                 indexScan_Default(aValueIndexRowType),
                 ancestorLookup_Nested(rabc, aValueIndexRowType, Collections.singleton(aRowType), 0),
-                0, 1);
+                0, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(aRowType, 13L, 1L, "a13"),
@@ -159,7 +159,7 @@ public class AncestorLookup_NestedIT extends OperatorITBase
             map_NestedLoops(
                 indexScan_Default(aValueIndexRowType),
                 ancestorLookup_Nested(rabc, aValueIndexRowType, Arrays.asList(aRowType, rRowType), 0),
-                0, 1);
+                0, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(rRowType, 1L, "r1"),
@@ -181,7 +181,7 @@ public class AncestorLookup_NestedIT extends OperatorITBase
             map_NestedLoops(
                 indexScan_Default(aValueIndexRowType),
                 ancestorLookup_Nested(rabc, aValueIndexRowType, Arrays.asList(rRowType, aRowType), 0),
-                0, 1);
+                0, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(rRowType, 1L, "r1"),
@@ -204,9 +204,9 @@ public class AncestorLookup_NestedIT extends OperatorITBase
                 map_NestedLoops(
                     indexScan_Default(aValueIndexRowType),
                     ancestorLookup_Nested(rabc, aValueIndexRowType, Arrays.asList(aRowType), 0),
-                    0, 1),
+                    0, pipelineMap(), 1),
                 ancestorLookup_Nested(rabc, aRowType, Arrays.asList(rRowType), 1),
-                1, 1);
+                1, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(rRowType, 1L, "r1"),
@@ -236,7 +236,7 @@ public class AncestorLookup_NestedIT extends OperatorITBase
             map_NestedLoops(
                 abIndexScan,
                 ancestorLookup_Nested(rabc, abIndexScan.rowType(), Collections.singleton(rRowType), 0),
-                0, 1);
+                0, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(rRowType, 1L, "r1"),
@@ -272,7 +272,7 @@ public class AncestorLookup_NestedIT extends OperatorITBase
             map_NestedLoops(
                 abcIndexScan,
                 ancestorLookup_Nested(rabc, abcIndexScan.rowType(), Collections.singleton(rRowType), 0),
-                0, 1);
+                0, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(rRowType, 1L, "r1"),
@@ -287,7 +287,7 @@ public class AncestorLookup_NestedIT extends OperatorITBase
             map_NestedLoops(
                 indexScan_Default(aValueIndexRowType),
                 ancestorLookup_Nested(rabc, aValueIndexRowType, Collections.singleton(aRowType), 0),
-                0, 1);
+                0, pipelineMap(), 1);
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override

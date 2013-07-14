@@ -1529,6 +1529,7 @@ public class OperatorAssembler extends BaseRule
             stream.operator = API.map_NestedLoops(ostream.operator, 
                                                   stream.operator,
                                                   currentBindingPosition(),
+                                                  rulesContext.getPipelineConfiguration().isMapEnabled(),
                                                   nestedBindingsDepth);
             nestedBindingsDepth--;
             popBoundRow();

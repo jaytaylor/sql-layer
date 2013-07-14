@@ -50,6 +50,7 @@ public class RulesTestContext extends SchemaRulesContext
         context.initCostEstimator(new TestCostEstimator(ais, context.getSchema(), 
                                                         statsFile, statsIgnoreMissingIndexes,
                                                         properties), false);
+        context.initPipelineConfiguration(new PipelineConfiguration());
         context.initDone();
         return context;
     }
