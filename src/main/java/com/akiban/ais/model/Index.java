@@ -19,7 +19,6 @@ package com.akiban.ais.model;
 
 import com.akiban.ais.model.validation.AISInvariants;
 import com.akiban.qp.persistitadapter.SpatialHelper;
-import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.geophile.Space;
 import com.akiban.server.geophile.SpaceLatLon;
@@ -29,7 +28,6 @@ import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.persistit.Tree;
 
 import java.util.*;
 
