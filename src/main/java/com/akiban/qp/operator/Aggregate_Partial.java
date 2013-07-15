@@ -506,6 +506,7 @@ final class Aggregate_Partial extends Operator
         @Override
         public void cancelBindings(QueryBindings bindings) {
             inputCursor.cancelBindings(bindings);
+            cursorState = CursorState.CLOSED;
         }
 
         // for use in this class

@@ -433,9 +433,9 @@ class Intersect_Ordered extends Operator
 
         @Override
         public void cancelBindings(QueryBindings bindings) {
-            bindingsCursor.cancelBindings(bindings);
             leftInput.cancelBindings(bindings);
             rightInput.cancelBindings(bindings);
+            bindingsCursor.cancelBindings(bindings);
         }
 
         // Execution interface

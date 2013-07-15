@@ -329,10 +329,10 @@ final class UnionAll_Default extends Operator {
 
         @Override
         public void cancelBindings(QueryBindings bindings) {
-            bindingsCursor.cancelBindings(bindings);
             for (int i = 0; i < cursors.length; i++) {
                 cursors[i].cancelBindings(bindings);
             }
+            bindingsCursor.cancelBindings(bindings);
         }
 
         private Execution(QueryContext context, QueryBindingsCursor bindingsCursor)

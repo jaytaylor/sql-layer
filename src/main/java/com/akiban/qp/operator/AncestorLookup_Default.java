@@ -586,8 +586,25 @@ class AncestorLookup_Default extends Operator
                 if (!pending.isAncestor(bindings)) break;
                 pendingBindings.remove();
             }
-            
+            int nancestors = ancestors.size();
+            while ((inputRowBindings[currentIndex] != null) &&
+                   inputRowBindings[currentIndex].isAncestor(bindings)) {
+                inputRows[currentIndex].release();
+                inputRowBindings[currentIndex] = null;
+                for (int i = 0; i < nancestors; i++) {
+                    int index = currentIndex * nancestors + i;
+                    ancestorCursors[index].close();
+                    ancestorHKeys[index] = null;
+                }
+                currentIndex = (currentIndex + 1) % quantum;
+            }
+            currentBindings = null;
+            newBindings = false;
             input.cancelBindings(bindings);
+            if ((nextBindings != null) && nextBindings.isAncestor(bindings)) {
+                nextBindings = null;
+            }
+            closed = true;
         }
 
         // LookaheadExecution interface

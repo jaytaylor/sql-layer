@@ -319,7 +319,9 @@ class Product_NestedLoops extends Operator
 
         @Override
         public void cancelBindings(QueryBindings bindings) {
+            closeInner();
             outerInput.cancelBindings(bindings);
+            closed = true;
         }
 
         // Execution interface

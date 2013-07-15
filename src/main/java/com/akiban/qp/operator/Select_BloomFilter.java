@@ -341,6 +341,7 @@ class Select_BloomFilter extends Operator
         @Override
         public void cancelBindings(QueryBindings bindings) {
             inputCursor.cancelBindings(bindings);
+            idle = true;
         }
 
         // Execution interface
