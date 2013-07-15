@@ -71,6 +71,9 @@ import java.util.*;
  will be preserved in the output stream (flag = KEEP_INPUT), or
  discarded (flag = DISCARD_INPUT).
 
+ <li><b>int lookaheadQuantum:</b> Number of cursors to try to keep open by looking
+  ahead in input stream, possibly across multiple bindings.
+
  </ul>
 
  rowType may be an index row type or a group row type. For a group row
@@ -133,7 +136,12 @@ class AncestorLookup_Default extends Operator
     @Override
     protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, inputOperator.cursor(context, bindingsCursor));
+        if (lookaheadQuantum <= 1) {
+            return new Execution(context, inputOperator.cursor(context, bindingsCursor));
+        }
+        else {
+            return new LookaheadExecution(context, inputOperator.cursor(context, bindingsCursor), lookaheadQuantum);
+        }
     }
 
     @Override
@@ -156,13 +164,15 @@ class AncestorLookup_Default extends Operator
                                   Group group,
                                   RowType rowType,
                                   Collection<UserTableRowType> ancestorTypes,
-                                  API.InputPreservationOption flag)
+                                  API.InputPreservationOption flag,
+                                  int lookaheadQuantum)
     {
         validateArguments(rowType, ancestorTypes, flag);
         this.inputOperator = inputOperator;
         this.group = group;
         this.rowType = rowType;
         this.keepInput = flag == API.InputPreservationOption.KEEP_INPUT;
+        this.lookaheadQuantum = lookaheadQuantum;
         // Sort ancestor types by depth
         this.ancestors = new ArrayList<>(ancestorTypes.size());
         for (UserTableRowType ancestorType : ancestorTypes) {
@@ -239,6 +249,7 @@ class AncestorLookup_Default extends Operator
     private final RowType rowType;
     private final List<UserTable> ancestors;
     private final boolean keepInput;
+    private final int lookaheadQuantum;
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
@@ -376,5 +387,244 @@ class AncestorLookup_Default extends Operator
         private final GroupCursor ancestorCursor;
         private final ShareHolder<Row> ancestorRow = new ShareHolder<>();
         private final PendingRows pending;
+    }
+
+    private class LookaheadExecution extends OperatorCursor {
+        // Cursor interface
+
+        @Override
+        public void open() {
+            TAP_OPEN.in();
+            try {
+                CursorLifecycle.checkIdle(this);
+                closed = false;
+                ancestorIndex = -1;
+            } finally {
+                TAP_OPEN.out();
+            }
+        }
+
+        @Override
+        public Row next()
+        {
+            if (TAP_NEXT_ENABLED) {
+                TAP_NEXT.in();
+            }
+            try {
+                if (CURSOR_LIFECYCLE_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
+                checkQueryCancelation();
+                Row outputRow = null;
+                int nancestors = ancestors.size();
+                while (!closed && outputRow == null) {
+                    // Get some more input rows, crossing bindings boundaries as
+                    // necessary, and open cursors for them.
+                    while (!bindingsExhausted && !inputRows[nextIndex].isHolding()) {
+                        if (nextBindings == null) {
+                            if (newBindings) {
+                                nextBindings = currentBindings;
+                                newBindings = false;
+                            }
+                            if (nextBindings == null) {
+                                nextBindings = input.nextBindings();
+                                if (nextBindings == null) {
+                                    bindingsExhausted = true;
+                                    break;
+                                }
+                                pendingBindings.add(nextBindings);
+                            }
+                            input.open();
+                        }
+                        Row row = input.next();
+                        if (row == null) {
+                            input.close();
+                            nextBindings = null;
+                        }
+                        else {
+                            inputRows[nextIndex].hold(row);
+                            if (LOG_EXECUTION) {
+                                LOG.debug("AncestorLookup: new input {}", row);
+                            }
+                            inputRowBindings[nextIndex] = nextBindings;
+                            for (int i = 0; i < nancestors; i++) {
+                                int index = nextIndex * nancestors + i;
+                                ancestorHKeys[index] = row.ancestorHKey(ancestors.get(i));
+                                ancestorCursors[index].rebind(ancestorHKeys[index], false);
+                                ancestorCursors[index].open();
+                            }
+                            nextIndex = (nextIndex + 1) % quantum;
+                        }                        
+                    }
+                    // Now take ancestor rows from the front of those.
+                    if (!inputRows[currentIndex].isHolding()) {
+                        closed = true; // No more rows loaded.
+                    }
+                    else if (inputRowBindings[currentIndex] != currentBindings) {
+                        closed = true; // Row came from another bindings.
+                    }
+                    else if (ancestorIndex < 0) {
+                        if (keepInput) {
+                            outputRow = inputRows[currentIndex].get();
+                        }
+                        ancestorIndex++;
+                    }
+                    else if (ancestorIndex >= nancestors) {
+                        // Done with this row.
+                        inputRows[currentIndex].release();
+                        inputRowBindings[currentIndex] = null;
+                        currentIndex = (currentIndex + 1) % quantum;
+                        ancestorIndex = -1;
+                    }
+                    else {
+                        int index = currentIndex * nancestors + ancestorIndex;
+                        outputRow = ancestorCursors[index].next();
+                        ancestorCursors[index].close();
+                        if ((outputRow != null) && 
+                            !ancestorHKeys[index].equals(outputRow.hKey())) {
+                            // Not the row we wanted; no matching ancestor.
+                            outputRow = null;
+                        }
+                        ancestorHKeys[index] = null;
+                        ancestorIndex++;
+                    }
+                }
+                if (LOG_EXECUTION) {
+                    LOG.debug("AncestorLookup: yield {}", outputRow);
+                }
+                return outputRow;
+            } finally {
+                if (TAP_NEXT_ENABLED) {
+                    TAP_NEXT.out();
+                }
+            }
+        }
+
+        @Override
+        public void close() {
+            CursorLifecycle.checkIdleOrActive(this);
+            if (!closed) {
+                int nancestors = ancestors.size();
+                // Any rows for the current bindings being closed need to be discarded.
+                while (currentBindings == inputRowBindings[currentIndex]) {
+                    inputRows[currentIndex].release();
+                    inputRowBindings[currentIndex] = null;
+                    for (int i = 0; i < nancestors; i++) {
+                        int index = currentIndex * nancestors + i;
+                        ancestorCursors[index].close();
+                        ancestorHKeys[index] = null;
+                    }
+                    currentIndex = (currentIndex + 1) % quantum;
+                }
+                closed = true;
+            }
+        }
+
+        @Override
+        public void destroy() {
+            pendingBindings.clear();
+            Arrays.fill(inputRowBindings, null);
+            for (ShareHolder<Row> row : inputRows) {
+                row.release();
+            }
+            for (GroupCursor ancestorCursor : ancestorCursors) {
+                if (ancestorCursor != null) {
+                    ancestorCursor.destroy();
+                }
+            }
+            input.destroy();
+        }
+
+        @Override
+        public boolean isIdle() {
+            return !input.isDestroyed() && closed;
+        }
+
+        @Override
+        public boolean isActive() {
+            return !input.isDestroyed() && !closed;
+        }
+
+        @Override
+        public boolean isDestroyed() {
+            return input.isDestroyed();
+        }
+
+        @Override
+        public void openBindings() {
+            clearBindings();
+            input.openBindings();
+            currentIndex = nextIndex = 0;
+            bindingsExhausted = false;
+        }
+                
+        @Override
+        public QueryBindings nextBindings() {
+            CursorLifecycle.checkIdle(this);
+            currentBindings = pendingBindings.poll();
+            if (currentBindings == null) {
+                currentBindings = input.nextBindings();
+                if (currentBindings == null) {
+                    bindingsExhausted = true;
+                }
+                newBindings = true; // Read from input, not pending, will need to open.
+            }
+            return currentBindings;
+        }
+
+        @Override
+        public void closeBindings() {
+            input.closeBindings();
+            clearBindings();
+        }
+
+        // LookaheadExecution interface
+
+        LookaheadExecution(QueryContext context, Cursor input, int quantum) {
+            super(context);
+            this.input = input;
+            this.pendingBindings = new ArrayDeque<>(quantum+1);
+            int nancestors = ancestors.size();
+            // Convert from number of cursors to number of input rows, rounding up.
+            quantum = (quantum + nancestors - 1) / nancestors;
+            this.quantum = quantum;
+            this.inputRows = (ShareHolder<Row>[])new ShareHolder[quantum];
+            this.inputRowBindings = new QueryBindings[quantum];
+            for (int i = 0; i < this.inputRows.length; i++) {
+                this.inputRows[i] = new ShareHolder<Row>();
+            }
+            this.ancestorCursors = new GroupCursor[quantum * nancestors];
+            this.ancestorHKeys = new HKey[quantum * nancestors];
+            for (int i = 0; i < this.ancestorCursors.length; i++) {
+                this.ancestorCursors[i] = adapter().newGroupCursor(group);
+            }
+        }
+
+        // For use by this class
+
+        private void clearBindings() {
+            if (nextBindings != null) {
+                input.close();  // Starting over.
+            }
+            for (ShareHolder<Row> row : inputRows) {
+                row.release();
+            }
+            pendingBindings.clear();
+            Arrays.fill(inputRowBindings, null);
+            currentBindings = nextBindings = null;
+        }
+
+        // Object state
+
+        private final Cursor input;
+        private final Queue<QueryBindings> pendingBindings;
+        private final int quantum;
+        private final ShareHolder<Row>[] inputRows;
+        private final QueryBindings[] inputRowBindings;
+        private final GroupCursor[] ancestorCursors;
+        private final HKey[] ancestorHKeys;
+        private int currentIndex, nextIndex, ancestorIndex;
+        private QueryBindings currentBindings, nextBindings;
+        private boolean bindingsExhausted, closed = true, newBindings;
     }
 }
