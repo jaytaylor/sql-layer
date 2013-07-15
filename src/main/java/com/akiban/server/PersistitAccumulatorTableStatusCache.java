@@ -17,6 +17,7 @@
 
 package com.akiban.server;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.error.PersistitAdapterException;
@@ -37,6 +38,11 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
 
     public PersistitAccumulatorTableStatusCache(TreeService treeService) {
         this.treeService = treeService;
+    }
+
+    public synchronized void clearTableStatus(Session session, UserTable table) {
+        // Nothing for the status itself, Accumulators attached to Tree
+        memoryStatuses.remove(table.getTableId());
     }
 
     @Override

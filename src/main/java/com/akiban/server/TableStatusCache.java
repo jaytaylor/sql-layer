@@ -17,8 +17,10 @@
 
 package com.akiban.server;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.service.session.Session;
 import com.persistit.exception.PersistitInterruptedException;
 
 public interface TableStatusCache {
@@ -42,9 +44,12 @@ public interface TableStatusCache {
     TableStatus getOrCreateMemoryTableStatus(int tableID, MemoryTableFactory factory);
 
     /**
-     * Clean up any AIS associated state stored by this cache or any of its 
+     * Clean up any AIS associated state stored by this cache or any of its
      * TableStatuses. At a minimum, this will set the RowDef of each TableStatus
      * to <code>null</code>.
      */
     void detachAIS();
+
+    /** Permanently remove any state associated with the given table. */
+    void clearTableStatus(Session session, UserTable table);
 }

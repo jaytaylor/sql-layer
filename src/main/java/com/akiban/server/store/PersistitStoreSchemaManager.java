@@ -1059,6 +1059,11 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
         }
     }
 
+    @Override
+    protected void clearTableStatus(Session session, UserTable table) {
+        treeService.getTableStatusCache().clearTableStatus(session, table);
+    }
+
     /**
      * Find UserTables without ordinals and look them up in the old Accumulator based location.
      * @return count of tables whose ordinal was updated
