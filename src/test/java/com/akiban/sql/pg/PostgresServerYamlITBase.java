@@ -17,6 +17,9 @@
 
 package com.akiban.sql.pg;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
@@ -28,29 +31,24 @@ import java.io.Reader;
  */
 public class PostgresServerYamlITBase extends PostgresServerITBase
 {
-    /** Whether to enable debugging output. */
-    protected static final boolean DEBUG = Boolean.getBoolean("test.DEBUG");
+    private static final Logger LOG = LoggerFactory.getLogger(PostgresServerYamlITBase.class);
 
     protected PostgresServerYamlITBase() {
     }
 
     /** Run a test with YAML input from the specified file. */
     protected void testYaml(File file) throws Exception {
-        if(DEBUG) {
-            System.err.println("\nFile: " + file);
-        }
+        LOG.debug("File: {}", file);
         Throwable thrown = null;
         try(Reader in = new InputStreamReader(new FileInputStream(file), "UTF-8")) {
             new YamlTester(file.toString(), in, getConnection()).test();
-            if(DEBUG) {
-                System.err.println("Test passed");
-            }
+            LOG.debug("Test passed");
         } catch(Exception | AssertionError e) {
             thrown = e;
             throw e;
         } finally {
             if(thrown != null) {
-                System.err.println("Test failed: " + thrown);
+                LOG.error("Test failed", thrown);
                 try {
                     forgetConnection();
                 } catch(Exception e2) {
