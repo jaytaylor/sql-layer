@@ -225,7 +225,7 @@ public class GroupIndexIT extends ITBase {
 
         final int[] curKey = {0};
         final String indexName = groupIndex.getIndexName().getName();
-        persistitStore().traverse(session(), groupIndex, new IndexKeyVisitor() {
+        store().traverse(session(), groupIndex, new IndexKeyVisitor() {
             @Override
             public boolean groupIndex()
             {

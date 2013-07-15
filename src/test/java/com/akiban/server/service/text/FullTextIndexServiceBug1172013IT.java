@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import java.util.Collections;
 
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,7 +47,7 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
     public static final String SCHEMA = "test";
     protected FullTextIndexService fullText;
     protected Schema schema;
-    protected PersistitAdapter adapter;
+    protected StoreAdapter adapter;
     protected QueryContext queryContext;
     private int c;
     private int o;
@@ -102,7 +103,7 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
         fullText = serviceManager().getServiceByClass(FullTextIndexService.class);
 
         schema = SchemaCache.globalSchema(ais());
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         
         // This test is specifically for FullTextIndexServiceImpl.java

@@ -110,7 +110,7 @@ public abstract class KeysBase extends ITBase {
         Index pkIndex = getRowDef(rowDefId).getPKIndex();
 
         CollectingIndexKeyVisitor visitor = new CollectingIndexKeyVisitor();
-        persistitStore().traverse(session(), pkIndex, visitor);
+        store().traverse(session(), pkIndex, visitor);
 
         assertEquals("traversed indexes", Arrays.asList(expectedIndexes), visitor.records());
     }

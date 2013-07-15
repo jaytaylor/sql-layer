@@ -23,15 +23,15 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.RowCursor;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.TempVolume;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.indexcursor.PersistitSorter;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.test.ExpressionGenerators;
-import com.akiban.server.test.it.ITBase;
+import com.akiban.server.test.it.PersistitITBase;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 import com.persistit.exception.PersistitIOException;
@@ -43,7 +43,8 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
-public class PersistitSorterOverflowIT extends ITBase {
+public class PersistitSorterOverflowIT extends PersistitITBase
+{
     private static final String SCHEMA = "test";
     private static final String TABLE = "t";
     private static final int ROW_COUNT = 1000;
@@ -104,7 +105,7 @@ public class PersistitSorterOverflowIT extends ITBase {
     private void doSort() {
         InOutTap tap = Tap.createTimer("test");
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
-        PersistitAdapter adapter = persistitAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter(schema);
 
         UserTable userTable = getUserTable(SCHEMA, TABLE);
         RowType rowType = schema.userTableRowType(userTable);

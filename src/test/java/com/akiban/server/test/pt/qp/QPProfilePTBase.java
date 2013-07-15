@@ -34,6 +34,9 @@ import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.service.servicemanager.GuicedServiceManager.BindingsConfigurationProvider;
+import com.akiban.server.store.PersistitStore;
+import com.akiban.server.test.it.PersistitITBase;
 import com.akiban.server.test.it.qp.TestRow;
 import com.akiban.server.test.pt.PTBase;
 import com.akiban.server.types.ToObjectValueTarget;
@@ -41,12 +44,30 @@ import com.akiban.server.types.ToObjectValueTarget;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class QPProfilePTBase extends PTBase
 {
+    // TODO: Remove this need. See newGroupRow() below.
+
+    @Override
+    protected BindingsConfigurationProvider serviceBindingsProvider() {
+        return PersistitITBase.doBind(super.serviceBindingsProvider());
+    }
+
+    @Override
+    protected Map<String, String> startupConfigProperties() {
+        return uniqueStartupConfigProperties(getClass());
+    }
+
+    PersistitAdapter persistitAdapter(Schema schema) {
+        PersistitStore store = (PersistitStore)store();
+        return store.createAdapter(session(), schema);
+    }
+
     protected Group group(int userTableId)
     {
         return getRowDef(userTableId).table().getGroup();

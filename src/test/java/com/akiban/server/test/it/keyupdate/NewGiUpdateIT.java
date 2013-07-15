@@ -2127,7 +2127,7 @@ public final class NewGiUpdateIT extends ITBase {
         }
 
         private void checkIndex(final GroupIndex groupIndex, List<String> expected) {
-            StringsIndexScanner scanner = persistitStore().traverse(session(), groupIndex, new StringsIndexScanner());
+            StringsIndexScanner scanner = store().traverse(session(), groupIndex, new StringsIndexScanner());
             AssertUtils.assertCollectionEquals(
                     "scan of " + groupIndex.getIndexName().getName(),
                     expected,

@@ -25,6 +25,7 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
+import com.akiban.server.test.it.PersistitITBase;
 import com.google.inject.Inject;
 import org.junit.Test;
 import java.util.Map;
@@ -35,7 +36,8 @@ public final class FailureOnStartupIT extends ApiTestBase {
 
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
-        return super.serviceBindingsProvider().bind(Store.class, BadStore.class);
+        return PersistitITBase.doBind(super.serviceBindingsProvider())
+                              .bind(Store.class, BadStore.class);
     }
 
     @Override

@@ -126,13 +126,11 @@ public interface Store extends KeyCreator {
      */
     void removeTrees(Session session, Collection<? extends TreeLink> treeLinks);
 
-    /** Get the underlying {@link PersistitStore}. */
-    public PersistitStore getPersistitStore();
-
     void truncateIndexes(Session session, Collection<? extends Index> indexes);
 
     StoreAdapter createAdapter(Session session, Schema schema);
 
     // TODO: Better abstraction
+    void traverse(Session session, Group group, TreeRecordVisitor visitor);
     <V extends IndexVisitor<Key,Value>> V traverse(Session session, Index index, V visitor);
 }

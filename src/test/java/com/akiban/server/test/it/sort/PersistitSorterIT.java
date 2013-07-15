@@ -24,10 +24,22 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.Sorter;
 import com.akiban.qp.persistitadapter.indexcursor.PersistitSorter;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.service.servicemanager.GuicedServiceManager.BindingsConfigurationProvider;
+import com.akiban.server.test.it.PersistitITBase;
 import com.akiban.util.tap.InOutTap;
+
+import java.util.Map;
 
 public final class PersistitSorterIT extends SorterITBase
 {
+    protected BindingsConfigurationProvider serviceBindingsProvider() {
+        return PersistitITBase.doBind(super.serviceBindingsProvider());
+    }
+
+    protected Map<String, String> startupConfigProperties() {
+        return uniqueStartupConfigProperties(getClass());
+    }
+
     @Override
     public Sorter createSorter(QueryContext context,
                                QueryBindings bindings,
