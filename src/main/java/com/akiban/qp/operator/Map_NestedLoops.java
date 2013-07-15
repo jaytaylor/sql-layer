@@ -219,6 +219,17 @@ class Map_NestedLoops extends Operator
             }
             input.closeBindings();
         }
+
+        @Override
+        public void cancelBindings(QueryBindings bindings) {
+            if ((baseBindings != null) && baseBindings.isAncestor(bindings)) {
+                baseBindings = null;
+                input.close();
+            }
+            if (bindings.getDepth() < depth) {
+                input.cancelBindings(bindings);
+            }
+        }
     }
 
     // Other end of pipeline: remove the extra binding levels that we
@@ -365,6 +376,11 @@ class Map_NestedLoops extends Operator
         public void closeBindings() {
             input.closeBindings();
         }
+
+        @Override
+        public void cancelBindings(QueryBindings bindings) {
+            input.cancelBindings(bindings);
+        }
     }
 
     // Old-style execution: bind outer row into existing context and
@@ -475,6 +491,11 @@ class Map_NestedLoops extends Operator
         @Override
         public void closeBindings() {
             outerInput.closeBindings();
+        }
+
+        @Override
+        public void cancelBindings(QueryBindings bindings) {
+            outerInput.cancelBindings(bindings);
         }
 
         // Execution interface

@@ -30,4 +30,7 @@ public interface QueryBindingsCursor
 
     /** Close stream of bindings. */
     public void closeBindings();
+
+    /** Advance stream past given bindings. */
+    public void cancelBindings(QueryBindings bindings);
 }

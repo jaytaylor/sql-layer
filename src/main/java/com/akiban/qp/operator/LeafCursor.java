@@ -42,4 +42,9 @@ public class LeafCursor extends OperatorCursor
     public void closeBindings() {
         bindingsCursor.closeBindings();
     }
+
+    @Override
+    public void cancelBindings(QueryBindings bindings) {
+        bindingsCursor.cancelBindings(bindings);
+    }
 }

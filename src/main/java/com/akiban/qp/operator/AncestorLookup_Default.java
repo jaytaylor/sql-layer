@@ -578,6 +578,18 @@ class AncestorLookup_Default extends Operator
             clearBindings();
         }
 
+        @Override
+        public void cancelBindings(QueryBindings bindings) {
+            while (true) {
+                QueryBindings pending = pendingBindings.peek();
+                if (pending == null) break;
+                if (!pending.isAncestor(bindings)) break;
+                pendingBindings.remove();
+            }
+            
+            input.cancelBindings(bindings);
+        }
+
         // LookaheadExecution interface
 
         LookaheadExecution(QueryContext context, Cursor input, int quantum) {

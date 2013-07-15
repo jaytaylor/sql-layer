@@ -317,6 +317,11 @@ class Product_NestedLoops extends Operator
             outerInput.closeBindings();
         }
 
+        @Override
+        public void cancelBindings(QueryBindings bindings) {
+            outerInput.cancelBindings(bindings);
+        }
+
         // Execution interface
 
         Execution(QueryContext context, QueryBindingsCursor bindingsCursor)

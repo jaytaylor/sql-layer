@@ -333,6 +333,13 @@ class Union_Ordered extends Operator
             rightInput.closeBindings();
         }
 
+        @Override
+        public void cancelBindings(QueryBindings bindings) {
+            bindingsCursor.cancelBindings(bindings);
+            leftInput.cancelBindings(bindings);
+            rightInput.cancelBindings(bindings);
+        }
+
         // Execution interface
 
         Execution(QueryContext context, QueryBindingsCursor bindingsCursor)

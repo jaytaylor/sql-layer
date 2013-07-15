@@ -327,6 +327,14 @@ final class UnionAll_Default extends Operator {
             }
         }
 
+        @Override
+        public void cancelBindings(QueryBindings bindings) {
+            bindingsCursor.cancelBindings(bindings);
+            for (int i = 0; i < cursors.length; i++) {
+                cursors[i].cancelBindings(bindings);
+            }
+        }
+
         private Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
             super(context);

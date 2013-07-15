@@ -54,6 +54,13 @@ public class SingletonQueryBindingsCursor implements QueryBindingsCursor
         state = State.CLOSED;
     }
 
+    @Override
+    public void cancelBindings(QueryBindings ancestor) {
+        if ((state == State.PENDING) && bindings.isAncestor(ancestor)) {
+            state = State.EXHAUSTED;
+        }
+    }
+
     public void reset(QueryBindings bindings) {
         this.bindings = bindings;
         this.state = State.CLOSED;
