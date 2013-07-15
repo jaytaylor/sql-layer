@@ -18,7 +18,6 @@
 package com.akiban.qp.persistitadapter.indexrow;
 
 import com.akiban.ais.model.*;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.indexcursor.OldExpressionsSortKeyAdapter;
 import com.akiban.qp.persistitadapter.indexcursor.PValueSortKeyAdapter;
 import com.akiban.qp.persistitadapter.indexcursor.SortKeyAdapter;
@@ -32,7 +31,9 @@ import com.akiban.server.collation.AkCollator;
 import com.akiban.server.geophile.Space;
 import com.akiban.server.geophile.SpaceLatLon;
 import com.akiban.server.rowdata.*;
+import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.KeyCreator;
+import com.akiban.server.store.Store;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
@@ -44,7 +45,6 @@ import com.akiban.util.ArgumentValidation;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Value;
-import com.persistit.exception.PersistitException;
 
 import static java.lang.Math.min;
 
@@ -189,7 +189,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     }
 
     @Override
-    public void close(boolean forInsert)
+    public void close(Session session, Store store, boolean forInsert)
     {
         // Write null-separating value if necessary
         if (index.isUniqueAndMayContainNulls()) {
@@ -202,7 +202,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
                     hasNull = pKey.isNull();
                 }
                 if (hasNull) {
-                    nullSeparator = index.nextNullSeparatorValue();
+                    nullSeparator = store.nullIndexSeparatorValue(session, index);
                 }
             }
             // else: We're creating an index row to update or delete. Don't need a new null separator value.
@@ -353,11 +353,17 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         }
     }
 
-    protected void copyFrom(Exchange exchange)
+    /** Override {@link #copyFrom(Key, Value)} if needed. */
+    public final void copyFrom(Exchange ex)
     {
-        exchange.getKey().copyTo(pKey);
+        copyFrom(ex.getKey(), ex.getValue());
+    }
+
+    public void copyFrom(Key key, Value value)
+    {
+        key.copyTo(pKey);
         if (index.isUnique()) {
-            byte[] source = exchange.getValue().getByteArray();
+            byte[] source = value.getByteArray();
             pValue.setEncodedSize(source.length);
             byte[] target = pValue.getEncodedBytes();
             System.arraycopy(source, 0, target, 0, source.length);
@@ -460,6 +466,18 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
             this.pKeyTarget = null;
             this.pValueTarget = null;
         }
+    }
+
+    public Key getPKey() {
+        return pKey;
+    }
+
+    public Key getPValue() {
+        return pValue;
+    }
+
+    public Value getValue() {
+        return value;
     }
 
     // Object state

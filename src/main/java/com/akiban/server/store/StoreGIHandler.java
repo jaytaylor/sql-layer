@@ -99,7 +99,9 @@ class StoreGIHandler<SDType> {
                     copyFieldToIndexRow(groupIndex, row, irc.getFieldPosition(f++));
                 }
             }
-            indexRow.close(action == Action.STORE);
+            // Non-null values only required for UNIQUE indexes, which GIs cannot be
+            assert !groupIndex.isUnique() : "Unexpected unique index: " + groupIndex;
+            indexRow.close(null, null, false);
             indexRow.tableBitmap(tableBitmap(groupIndex, row));
             switch (action) {
                 case CASCADE_STORE:

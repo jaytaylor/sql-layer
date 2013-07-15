@@ -406,7 +406,7 @@ public class RowData {
             }
             if (exception != null && growBuffer) {
                 int newSize = bytes.length == 0 ? CREATE_ROW_INITIAL_SIZE : bytes.length * 2;
-                bytes = new byte[newSize];
+                reset(new byte[newSize]);
             }
         } while (growBuffer && exception != null);
         if (exception != null) {
