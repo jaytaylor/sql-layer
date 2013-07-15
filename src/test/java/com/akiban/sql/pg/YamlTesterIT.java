@@ -28,9 +28,12 @@ import java.io.Writer;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Test the {@code YamlTester} class. */
 public class YamlTesterIT extends PostgresServerYamlITBase {
+    private static final Logger LOG = LoggerFactory.getLogger(YamlTesterIT.class);
 
     static
     {
@@ -2097,56 +2100,41 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     /* Other methods */
 
     private void testYaml(String yaml) throws Exception {
-	if (DEBUG) {
+	if (LOG.isDebugEnabled()) {
 	    StackTraceElement[] callStack =
 		Thread.currentThread().getStackTrace();
 	    if (callStack.length > 2) {
-		String testMethod = callStack[2].getMethodName();
-		System.err.println(testMethod + ": ");
+		    String testMethod = callStack[2].getMethodName();
+            LOG.debug("{}: ", testMethod);
 	    }
 	}
 	try {
 	    new YamlTester(null, new StringReader(yaml), getConnection()).test();
 	} catch (Exception e) {
-	    if (DEBUG) {
-		System.err.println("Test failed:");
-                e.printStackTrace();
-	    }
-            forgetConnection();
+        LOG.debug("Test failed:", e);
+        forgetConnection();
 	    throw e;
 	} catch (Error e) {
-	    if (DEBUG) {
-		System.err.println("Test failed:");
-		e.printStackTrace();
-	    }
-            forgetConnection();
+        LOG.debug("Test failed", e);
+        forgetConnection();
 	    throw e;
 	}
-	if (DEBUG) {
-	    System.err.println("Test passed");
-	}
-
+    LOG.debug("Test passed");
     }
 
     private void testYamlFail(String yaml) throws Exception {
-	if (DEBUG) {
-	    StackTraceElement[] callStack =
-		Thread.currentThread().getStackTrace();
+    if(LOG.isDebugEnabled()) {
+	    StackTraceElement[] callStack = Thread.currentThread().getStackTrace();
 	    if (callStack.length > 2) {
-		String testMethod = callStack[2].getMethodName();
-		System.err.println(testMethod + ": ");
+		    String testMethod = callStack[2].getMethodName();
+            LOG.debug("{}: ", testMethod);
 	    }
 	}
         try {
 	    new YamlTester(null, new StringReader(yaml), getConnection()).test();
-	    if (DEBUG) {
-		System.err.println("Test failed: Expected exception");
-	    }
+        LOG.debug("Test failed: Expected exception");
 	} catch (Throwable t) {
-	    if (DEBUG) {
-		System.err.println(t);
-		//t.printStackTrace();
-	    }
+        LOG.debug("Caught", t);
 	    return;
 	}
 	fail("Expected exception");

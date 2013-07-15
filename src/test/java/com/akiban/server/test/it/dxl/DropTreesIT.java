@@ -26,6 +26,7 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.UnsupportedDropException;
+import com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.store.PersistitStoreSchemaManager;
 import com.akiban.server.store.SchemaManager;
@@ -40,10 +41,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-
 public final class DropTreesIT extends ITBase {
     private boolean treeExists(TreeLink link) throws Exception {
-        return treeService().treeExists(link.getSchemaName(), link.getTreeName());
+        try(CloseableTransaction txn = txnService().beginCloseableTransaction(session())) {
+            boolean exists = store().treeExists(session(), link.getSchemaName(), link.getTreeName());
+            txn.commit();
+            return exists;
+        }
     }
 
     private TreeLink treeLink(Object o) {
@@ -450,21 +454,6 @@ public final class DropTreesIT extends ITBase {
         int pid = createTable("s", "p", "id int not null primary key, name varchar(32)");
         Table p = getUserTable(pid);
         Index index = createGroupIndex(p.getGroup().getName(), "name", "p.name");
-        ddl().dropTable(session(), p.getName());
-        expectNoTree(index);
-        expectNoTree(p);
-    }
-
-    @Ignore("Can't write rows to group index that is on single/root table?")
-    @Test
-    public void dropSingleTableWithGroupIndexWithData() throws Exception {
-        int pid = createTable("s", "p", "id int not null primary key, name varchar(32)");
-        Table p = getUserTable(pid);
-        Index index = createGroupIndex(p.getGroup().getName(), "name", "p.name");
-        writeRows(createNewRow(pid, 1, "foo"),
-                  createNewRow(pid, 2, "bar"));
-        expectTree(p);
-        expectTree(index);
         ddl().dropTable(session(), p.getName());
         expectNoTree(index);
         expectNoTree(p);

@@ -40,7 +40,6 @@ import java.util.Arrays;
 import java.util.List;
 
 public final class GroupIndexScanIT extends ITBase {
-
     @Test
     public void scanAtLeastO () {
         Operator plan = API.indexScan_Default(giRowType, false, unboundedRange(giRowType), uTableRowType(o));
@@ -107,10 +106,13 @@ public final class GroupIndexScanIT extends ITBase {
                 createNewRow(i, 101L, 12L, null),
                 createNewRow(i, 102L, 12L, "3333")
         );
+
+        txnService().beginTransaction(session());
     }
 
     @After
     public void tearDown() {
+        txnService().rollbackTransaction(session());
         c = o = i = h = null;
         schema = null;
         giRowType = null;

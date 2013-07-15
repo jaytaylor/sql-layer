@@ -66,4 +66,6 @@ public interface ServiceManager extends ServiceManagerBase {
     boolean serviceIsStarted(Class<?> serviceClass);
     
     MonitorService getMonitorService();
+
+    boolean serviceIsBoundTo(Class<?> serviceClass, Class<?> implClass);
 }

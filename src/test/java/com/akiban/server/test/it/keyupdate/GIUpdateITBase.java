@@ -24,6 +24,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
 import com.akiban.server.store.IndexRecordVisitor;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.util.Strings;
@@ -52,12 +53,22 @@ public abstract class GIUpdateITBase extends ITBase {
     }
 
     @After
-    public final void forgetTables() throws PersistitException {
-        dml().truncateTable(session(), a);
-        dml().truncateTable(session(), h);
-        dml().truncateTable(session(), i);
-        dml().truncateTable(session(), o);
-        dml().truncateTable(session(), c);
+    public final void forgetTables() {
+        int[] ids = { a, h, i, o, c};
+        int idIndex = 0;
+        for(int i = 5; i >= 0; --i) {
+            try {
+                while(idIndex < ids.length) {
+                    dml().truncateTable(session(), ids[idIndex]);
+                    ++idIndex;
+                }
+                break;
+            } catch(Exception e) {
+                if(!isRetryableException(e) || i == 0) {
+                    throw e;
+                }
+            }
+        }
 
         Group group = getUserTable(c).getGroup();
         for (GroupIndex groupIndex : group.getIndexes()) {
@@ -98,6 +109,13 @@ public abstract class GIUpdateITBase extends ITBase {
     }
 
     private void checkIndex(GroupIndex groupIndex, String... expected) {
+        try(CloseableTransaction txn = txnService().beginCloseableTransaction(session())) {
+            checkIndexInternal(groupIndex, expected);
+            txn.commit();
+        }
+    }
+
+    private void checkIndexInternal(GroupIndex groupIndex, String... expected) {
         StringsIndexScanner scanner = store().traverse(session(), groupIndex, new StringsIndexScanner());
         // convert "a, b, c => d" to "[a, b, c] => d"
         for (int i = 0; i < expected.length; ++i) {

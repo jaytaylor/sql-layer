@@ -64,7 +64,7 @@ public final class DirectUpdateIT extends ITBase {
     }
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() throws Throwable {
         startTestServices();
         loadDatabase();
         Direct.enter("test", ais());

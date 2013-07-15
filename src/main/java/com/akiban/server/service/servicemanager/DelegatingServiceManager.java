@@ -104,6 +104,11 @@ public abstract class DelegatingServiceManager implements ServiceManager {
     }
 
     @Override
+    public boolean serviceIsBoundTo(Class<?> serviceClass, Class<?> implClass) {
+        return delegate().serviceIsBoundTo(serviceClass, implClass);
+    }
+
+    @Override
     public MonitorService getMonitorService() {
         return delegate().getMonitorService();
     }
