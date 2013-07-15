@@ -111,6 +111,7 @@ import org.junit.rules.MethodRule;
 import org.junit.rules.TestName;
 import org.junit.rules.TestWatchman;
 import org.junit.runners.model.FrameworkMethod;
+import org.junit.runners.model.Statement;
 
 /**
  * <p>Base class for all API tests. Contains a @SetUp that gives you a fresh DDLFunctions and DMLFunctions, plus
@@ -198,6 +199,30 @@ public class ApiTestBase {
         }
     }
 
+    private static class RetryRule implements MethodRule {
+        private static int MAX_TRIES = 5;
+        private static int totalRetries = 0;
+
+        @Override
+        public Statement apply(final Statement base, FrameworkMethod method, Object target) {
+            return new Statement() {
+                @Override
+                public void evaluate() throws Throwable {
+                    int tryCount = 1;
+                    try {
+                        base.evaluate();
+                    } catch(Throwable t) {
+                        if(++tryCount > MAX_TRIES || !isRetryableException(t)) {
+                            throw t;
+                        }
+                        ++totalRetries;
+                    }
+                }
+            };
+        }
+    }
+
+
     protected ApiTestBase(String suffix)
     {
         final String name = this.getClass().getSimpleName();
@@ -219,13 +244,17 @@ public class ApiTestBase {
 
     @Rule
     public static final TestName testName = new TestName();
-    
+
+    @Rule
+    public static final RetryRule retryRule = new RetryRule();
+
+
     protected String testName() {
         return testName.getMethodName();
     }
 
     @Before
-    public final void startTestServices() throws Exception {
+    public final void startTestServices() throws Throwable {
         types3SwitchSave = Types3Switch.ON;
         Types3Switch.ON &= testSupportsPValues();
         assertTrue("some row updaters were left over: " + unfinishedRowUpdaters, unfinishedRowUpdaters.isEmpty());
@@ -234,8 +263,9 @@ public class ApiTestBase {
             ConverterTestUtils.setGlobalTimezone("UTC");
             Map<String, String> startupConfigProperties = startupConfigProperties();
             Map<String,String> propertiesForEquality = propertiesForEquality(startupConfigProperties);
-            if (needServicesRestart || lastStartupConfigProperties == null ||
-                    !lastStartupConfigProperties.equals(propertiesForEquality))
+            if (needServicesRestart ||
+                lastStartupConfigProperties == null ||
+                !lastStartupConfigProperties.equals(propertiesForEquality))
             {
                 // we need a shutdown if we needed a restart, or if the lastStartupConfigProperties are not null,
                 // which (because of the condition on the "if" above) implies the last startup config properties
@@ -281,7 +311,17 @@ public class ApiTestBase {
      * @throws Exception the startup exception
      */
     void handleStartupFailure(Exception e) throws Exception {
+        if(sm != null && sm.getState() != ServiceManager.State.IDLE) {
+            sm.stopServices();
+        }
         throw e;
+    }
+
+    protected static boolean isRetryableException(Throwable t) {
+        if(sm != null && sm.serviceIsStarted(Store.class)) {
+            return sm.getStore().isRetryableException(t);
+        }
+        return false;
     }
 
     protected ServiceManager createServiceManager(Map<String, String> startupConfigProperties) {
@@ -354,9 +394,6 @@ public class ApiTestBase {
     public final void stopTestServices() throws Exception {
         beforeStopServices();
         ServiceManagerImpl.setServiceManager(null);
-        if (lastStartupConfigProperties == null) {
-            return;
-        }
         lastStartupConfigProperties = null;
         sm.stopServices();
     }
@@ -429,10 +466,6 @@ public class ApiTestBase {
         return sm.getStore();
     }
 
-    protected final PersistitStore persistitStore() {
-        return store().getPersistitStore();
-    }
-    
     protected final AkServerInterface akServer() {
         return sm.getAkSserver();
     }
@@ -453,10 +486,6 @@ public class ApiTestBase {
 
     protected final StoreAdapter newStoreAdapter(Session explicit_session, Schema schema) {
         return store().createAdapter(explicit_session, schema);
-    }
-
-    protected final PersistitAdapter persistitAdapter(Schema schema) {
-        return new PersistitAdapter(schema, store(), treeService(), session(), configService());
     }
 
     protected final QueryContext queryContext(StoreAdapter adapter) {

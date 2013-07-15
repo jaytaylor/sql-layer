@@ -17,8 +17,8 @@
 
 package com.akiban.server;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
-import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.session.Session;
 
 import java.util.HashMap;
@@ -42,6 +42,11 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
         for(MemoryTableStatus status : tableStatusMap.values()) {
             status.setRowDef(null);
         }
+    }
+
+    @Override
+    public void clearTableStatus(Session session, UserTable table) {
+        tableStatusMap.remove(table.getTableId());
     }
 
     private MemoryTableStatus getInternalTableStatus(int tableID, MemoryTableFactory factory) {

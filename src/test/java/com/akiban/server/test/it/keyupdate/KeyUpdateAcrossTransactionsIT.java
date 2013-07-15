@@ -44,7 +44,7 @@ public final class KeyUpdateAcrossTransactionsIT extends ITBase
     @Before
     public final void before() throws Exception
     {
-        testStore = new TestStore(store(), persistitStore());
+        testStore = new TestStore(store());
     }
 
     @Test

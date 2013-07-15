@@ -62,7 +62,28 @@ public abstract class ITBase extends ApiTestBase {
         compareRows(expected, cursor, (cursor instanceof Cursor), collators);
     }
 
-    protected void compareRows(RowBase[] expected, RowCursor cursor, boolean topLevel, AkCollator ... collators)
+    protected void compareRows(RowBase[] expected, RowCursor cursor, boolean topLevel, AkCollator ... collators) {
+        boolean began = false;
+        if(!txnService().isTransactionActive(session())) {
+            txnService().beginTransaction(session());
+            began = true;
+        }
+        boolean success = false;
+        try {
+            compareRowsInternal(expected, cursor, topLevel, collators);
+            success = true;
+        } finally {
+            if(began) {
+                if(success) {
+                    txnService().commitTransaction(session());
+                } else {
+                    txnService().rollbackTransaction(session());
+                }
+            }
+        }
+    }
+
+    private void compareRowsInternal(RowBase[] expected, RowCursor cursor, boolean topLevel, AkCollator ... collators)
     {
         List<ShareHolder<Row>> actualRows = new ArrayList<>(); // So that result is viewable in debugger
         try {

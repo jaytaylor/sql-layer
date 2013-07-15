@@ -119,11 +119,6 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         return treeService.createKey();
     }
 
-    @Override
-    public PersistitStore getPersistitStore() {
-        return this;
-    }
-
     public Persistit getDb() {
         return treeService.getDb();
     }
@@ -144,16 +139,17 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         releaseStoreData(session, exchange);
     }
 
-    private static void constructIndexRow(Exchange exchange,
-                                          RowData rowData,
-                                          Index index,
-                                          Key hKey,
-                                          PersistitIndexRowBuffer indexRow,
-                                          boolean forInsert) throws PersistitException
+    private void constructIndexRow(Session session,
+                                   Exchange exchange,
+                                   RowData rowData,
+                                   Index index,
+                                   Key hKey,
+                                   PersistitIndexRowBuffer indexRow,
+                                   boolean forInsert) throws PersistitException
     {
         indexRow.resetForWrite(index, exchange.getKey(), exchange.getValue());
         indexRow.initialize(rowData, hKey);
-        indexRow.close(forInsert);
+        indexRow.close(session, this, forInsert);
     }
 
     @Override
@@ -249,7 +245,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         checkNotGroupIndex(index);
         Exchange iEx = getExchange(session, index);
         try {
-            constructIndexRow(iEx, rowData, index, hKey, indexRow, true);
+            constructIndexRow(session, iEx, rowData, index, hKey, indexRow, true);
             checkUniqueness(index, rowData, iEx);
             iEx.store();
         } catch(PersistitException e) {
@@ -317,11 +313,12 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
             // Can't use a PIRB, because we need to get the hkey. Need a PersistitIndexRow.
             IndexRowType indexRowType = adapter.schema().indexRowType(index);
             PersistitIndexRow indexRow = adapter.takeIndexRow(indexRowType);
-            constructIndexRow(exchange, rowData, index, hKey, indexRow, false);
+            constructIndexRow(session, exchange, rowData, index, hKey, indexRow, false);
             Key.Direction direction = Key.Direction.GTEQ;
             while (exchange.traverse(direction, true)) {
-                indexRow.copyFromExchange(exchange); // Gets the current state of the exchange into oldIndexRow
-                PersistitHKey rowHKey = (PersistitHKey) indexRow.hKey();
+                // Delicate: copyFromExchange() initializes the key returned by hKey
+                indexRow.copyFrom(exchange);
+                PersistitHKey rowHKey = (PersistitHKey)indexRow.hKey();
                 if (rowHKey.key().compareTo(hKey) == 0) {
                     deleted = exchange.remove();
                     break;
@@ -330,7 +327,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
             }
             adapter.returnIndexRow(indexRow);
         } else {
-            constructIndexRow(exchange, rowData, index, hKey, indexRowBuffer, false);
+            constructIndexRow(session, exchange, rowData, index, hKey, indexRowBuffer, false);
             deleted = exchange.remove();
         }
         assert deleted : "Exchange remove on deleteIndexRow";
@@ -467,14 +464,19 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         removeTrees(session, sequences);
     }
 
-    public void traverse(Session session, Group group, TreeRecordVisitor visitor) throws PersistitException {
+    @Override
+    public void traverse(Session session, Group group, TreeRecordVisitor visitor) {
         Exchange exchange = getExchange(session, group);
         try {
             exchange.clear().append(Key.BEFORE);
-            visitor.initialize(session, this, exchange);
-            while (exchange.next(true)) {
-                visitor.visit();
+            visitor.initialize(session, this);
+            while(exchange.next(true)) {
+                RowData rowData = new RowData();
+                expandRowData(exchange, rowData);
+                visitor.visit(exchange.getKey(), rowData);
             }
+        } catch(PersistitException e) {
+            throw PersistitAdapter.wrapPersistitException(session, e);
         } finally {
             releaseExchange(session, exchange);
         }
@@ -549,6 +551,23 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     @Override
     public PersistitAdapter createAdapter(Session session, Schema schema) {
         return new PersistitAdapter(schema, this, treeService, session, config);
+    }
+
+    @Override
+    public boolean treeExists(Session session, String schemaName, String treeName) {
+        return treeService.treeExists(schemaName, treeName);
+    }
+
+    @Override
+    public boolean isRetryableException(Throwable t) {
+        return (t instanceof RollbackException);
+    }
+
+    @Override
+    public long nullIndexSeparatorValue(Session session, Index index) {
+        Tree tree = index.indexDef().getTreeCache().getTree();
+        AccumulatorAdapter accumulator = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.UNIQUE_ID, tree);
+        return accumulator.seqAllocate();
     }
 
     @Override

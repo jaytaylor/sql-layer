@@ -20,17 +20,16 @@ package com.akiban.server.service.tree;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.akiban.server.test.it.PersistitITBase;
 import org.junit.Test;
 
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
-import com.akiban.server.test.it.ITBase;
 import com.persistit.Exchange;
 import com.persistit.Tree;
 
-public class TreeServiceImplRemoveTreeIT extends ITBase {
- 
-    
+public class TreeServiceImplRemoveTreeIT extends PersistitITBase
+{
     @Test
     public void verifyDeleteTreeReleasesResources() throws Exception {
         final TreeServiceImpl treeService = (TreeServiceImpl)treeService();

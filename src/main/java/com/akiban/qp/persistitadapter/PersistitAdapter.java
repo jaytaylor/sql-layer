@@ -174,7 +174,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
             key = persistitKeyValueSource.key();
             depth = persistitKeyValueSource.depth();
         } else {
-            key = persistit.createKey();
+            key = store.createKey();
             collator.append(key, valueSource.getString());
             depth = 0;
         }
@@ -195,7 +195,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
 
     public PersistitStore persistit()
     {
-        return persistit;
+        return store;
     }
 
     public RowDef rowDef(int tableId)
@@ -234,17 +234,17 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
 
     public Exchange takeExchange(Group group) throws PersistitException
     {
-        return persistit.getExchange(getSession(), group);
+        return store.getExchange(getSession(), group);
     }
 
     public Exchange takeExchange(Index index)
     {
-        return persistit.getExchange(getSession(), index);
+        return store.getExchange(getSession(), index);
     }
 
     public Key newKey()
     {
-        return new Key(persistit.getDb());
+        return new Key(store.getDb());
     }
 
     public void handlePersistitException(PersistitException e)
@@ -278,7 +278,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
 
     public void returnExchange(Exchange exchange)
     {
-        persistit.releaseExchange(getSession(), exchange);
+        store.releaseExchange(getSession(), exchange);
     }
 
     public Transaction transaction() {
@@ -314,7 +314,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
     }
 
     public PersistitAdapter(Schema schema,
-                            Store store,
+                            PersistitStore store,
                             TreeService treeService,
                             Session session,
                             ConfigurationService config)
@@ -323,7 +323,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
     }
 
     public PersistitAdapter(Schema schema,
-                            Store store,
+                            PersistitStore store,
                             TreeService treeService,
                             Session session,
                             ConfigurationService config,
@@ -331,8 +331,6 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
     {
         super(schema, session, config);
         this.store = store;
-        this.persistit = store.getPersistitStore();
-        assert this.persistit != null : store;
         this.treeService = treeService;
         this.withStepChanging = withStepChanging;
         session.put(STORE_ADAPTER_KEY, this);
@@ -389,8 +387,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
     // Object state
 
     private final TreeService treeService;
-    private final Store store;
-    private final PersistitStore persistit;
+    private final PersistitStore store;
     private boolean withStepChanging;
     private final PersistitKeyHasher keyHasher = new PersistitKeyHasher();
 }

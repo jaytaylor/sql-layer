@@ -37,18 +37,10 @@ import java.util.Map;
 
 public abstract class TreeRecordVisitor
 {
-    public final void visit() throws PersistitException, InvalidOperationException
-    {
-        NewRow row = row();
-        Object[] key = key(row.getRowDef());
-        visit(key, row);
-    }
-
-    public final void initialize(Session session, PersistitStore store, Exchange exchange)
+    public final void initialize(Session session, Store store)
     {
         this.session = session;
         this.store = store;
-        this.exchange = exchange;
         for (UserTable table : store.getAIS(session).getUserTables().values()) {
             if (!table.getName().getSchemaName().equals(TableName.INFORMATION_SCHEMA) &&
                 !table.getName().getSchemaName().equals(TableName.SECURITY_SCHEMA)) {
@@ -57,19 +49,18 @@ public abstract class TreeRecordVisitor
         }
     }
 
-    public abstract void visit(Object[] key, NewRow row);
-
-    private NewRow row() throws PersistitException, InvalidOperationException
-    {
-        RowData rowData = new RowData(EMPTY_BYTE_ARRAY);
-        store.expandRowData(exchange, rowData);
-        return new LegacyRowWrapper(store.getRowDef(session, rowData.getRowDefId()), rowData);
+    public void visit(Key key, RowData rowData) {
+        RowDef rowDef = store.getRowDef(session, rowData.getRowDefId());
+        Object[] keyObjs = key(key, rowDef);
+        NewRow newRow = new LegacyRowWrapper(rowDef, rowData);
+        visit(keyObjs, newRow);
     }
 
-    private Object[] key(RowDef rowDef)
+    public abstract void visit(Object[] key, NewRow row);
+
+    private Object[] key(Key key, RowDef rowDef)
     {
         // Key traversal
-        Key key = exchange.getKey();
         int keySize = key.getDepth();
         // HKey traversal
         HKey hKey = rowDef.userTable().hKey();
@@ -91,10 +82,7 @@ public abstract class TreeRecordVisitor
         return keyArray;
     }
 
-    private final static byte[] EMPTY_BYTE_ARRAY = new byte[0];
-
+    private Store store;
     private Session session;
-    private PersistitStore store;
-    private Exchange exchange;
     private final Map<Integer, UserTable> ordinalToTable = new HashMap<>();
 }

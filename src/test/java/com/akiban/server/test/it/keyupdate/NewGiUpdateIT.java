@@ -23,6 +23,7 @@ import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
 import com.akiban.server.store.IndexRecordVisitor;
 import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.akiban.server.test.it.ITBase;
@@ -30,7 +31,6 @@ import com.akiban.util.AssertUtils;
 import com.akiban.util.Strings;
 import com.akiban.util.tap.Tap;
 import com.akiban.util.tap.TapReport;
-import com.persistit.exception.PersistitException;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -1907,7 +1907,7 @@ public final class NewGiUpdateIT extends ITBase {
     }
     
     @After
-    public final void forgetTables() throws PersistitException {
+    public final void forgetTables() {
         if (needTapHeaders) {
             log(TAP_HEADER
                     + "name\t"
@@ -1922,11 +1922,21 @@ public final class NewGiUpdateIT extends ITBase {
 
         Tap.setEnabled(TAP_PATTERN, false);
 
-        dml().truncateTable(session(), a);
-        dml().truncateTable(session(), h);
-        dml().truncateTable(session(), i);
-        dml().truncateTable(session(), o);
-        dml().truncateTable(session(), c);
+        int[] ids = { a, h, i, o, c};
+        int idIndex = 0;
+        for(int i = 5; i >= 0; --i) {
+            try {
+                while(idIndex < ids.length) {
+                    dml().truncateTable(session(), ids[idIndex]);
+                    ++idIndex;
+                }
+                break;
+            } catch(Exception e) {
+                if(!isRetryableException(e) || i == 0) {
+                    throw e;
+                }
+            }
+        }
 
         GisCheckBuilder emptyCheckBuilder = checker();
         for (GroupIndex gi : group().getIndexes()) {
@@ -2128,12 +2138,10 @@ public final class NewGiUpdateIT extends ITBase {
 
         private void checkIndex(final GroupIndex groupIndex, List<String> expected) {
             StringsIndexScanner scanner;
-            txnService().beginTransaction(session());
-            try {
+            try(CloseableTransaction txn = txnService().beginCloseableTransaction(session())) {
                 scanner = store().traverse(session(), groupIndex, new StringsIndexScanner());
                 txnService().commitTransaction(session());
-            } finally {
-                txnService().rollbackTransactionIfOpen(session());
+                txn.commit();
             }
             AssertUtils.assertCollectionEquals(
                     "scan of " + groupIndex.getIndexName().getName(),

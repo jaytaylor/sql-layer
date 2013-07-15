@@ -134,9 +134,10 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     protected abstract void saveAISChangeWithRowDefs(Session session, AkibanInformationSchema newAIS, Collection<String> schemaNames);
     /** validateAndFreeze, serializeMemoryTables, buildRowDefCache */
     protected abstract void unSavedAISChangeWithRowDefs(Session session, AkibanInformationSchema newAIS);
+    /** Run the given callable under a transaction, retrying if necessary. Session should be closed when finished. */
     protected abstract <V> V transactionally(Session session, ThrowingCallable<V> callable);
-
-    protected abstract void deleteTableStatuses(Session session, Collection<Integer> tableIDs);
+    /** Remove any persisted table status state associated with the given table. */
+    protected abstract void clearTableStatus(Session session, UserTable table);
 
 
     //
@@ -617,14 +618,18 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             }
         });
 
+        final AkibanInformationSchema oldAIS = getAis(session);
         final AkibanInformationSchema newAIS = removeTablesFromAIS(session, tables, sequences);
         bumpTableVersions(newAIS, tableIDs);
+
+        for(Integer tableID : tableIDs) {
+            clearTableStatus(session, oldAIS.getUserTable(tableID));
+        }
 
         if(table.hasMemoryTableFactory()) {
             unSavedAISChangeWithRowDefs(session, newAIS);
         } else {
             saveAISChangeWithRowDefs(session, newAIS, schemas);
-            deleteTableStatuses(session, tableIDs);
         }
     }
 

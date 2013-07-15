@@ -74,7 +74,7 @@ public class FDBIterationHelper implements IterationHelper
         PersistitIndexRow row = unsharedRow().get();
         // updateKey() called from advance
         updateValue();
-        row.copyFromKeyValue(key, value);
+        row.copyFrom(key, value);
         return row;
     }
 

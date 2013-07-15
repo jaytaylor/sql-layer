@@ -25,6 +25,7 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.sql.TestBase;
@@ -77,6 +78,14 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
 
     @Test
     public void testDump() throws Exception {
+        String expectedSQL = runSQL();
+        try(CloseableTransaction txn = txnService().beginCloseableTransaction(session())) {
+            runPlan(expectedSQL);
+            txn.commit();
+        }
+    }
+
+    private String runSQL() throws Exception {
         // Run the INSERTs via SQL.
         String sql = TestBase.fileContents(file);
 
@@ -85,7 +94,10 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
             stmt.execute(sqls);
         }
         stmt.close();
+        return sql;
+    }
 
+    private void runPlan(String expectedSQL) throws Exception {
         DumpGroupLoadablePlan loadablePlan = new DumpGroupLoadablePlan();
         DirectObjectPlan plan = loadablePlan.plan();
 
@@ -130,7 +142,7 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
         }
         cursor.close();
 
-        assertEquals(sql, actual.toString());
+        assertEquals(expectedSQL, actual.toString());
     }
 
 }
