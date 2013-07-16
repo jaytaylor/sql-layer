@@ -102,19 +102,25 @@ public class Map_NestedLoopsIT extends OperatorITBase
     @Test(expected = IllegalArgumentException.class)
     public void testLeftInputNull()
     {
-        map_NestedLoops(null, groupScan_Default(coi), 0);
+        map_NestedLoops(null, groupScan_Default(coi), 0, pipelineMap(), 1);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testRightInputNull()
     {
-        map_NestedLoops(groupScan_Default(coi), null, 0);
+        map_NestedLoops(groupScan_Default(coi), null, 0, pipelineMap(), 1);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testNegativeInputBindingPosition()
     {
-        map_NestedLoops(groupScan_Default(coi), groupScan_Default(coi), -1);
+        map_NestedLoops(groupScan_Default(coi), groupScan_Default(coi), -1, pipelineMap(), 1);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testNonPositiveDepth()
+    {
+        map_NestedLoops(groupScan_Default(coi), groupScan_Default(coi), 0, pipelineMap(),0);
     }
 
     // Test operator execution
@@ -126,7 +132,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
             map_NestedLoops(
                 indexScan_Default(itemOidIndexRowType, false),
                 ancestorLookup_Nested(coi, itemOidIndexRowType, Collections.singleton(itemRowType), 0),
-                0);
+                0, pipelineMap(), 1);
         RowBase[] expected = new RowBase[]{
             row(itemRowType, 1000L, 100L),
             row(itemRowType, 1001L, 100L),
@@ -143,7 +149,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
             row(itemRowType, 4010L, 401L),
             row(itemRowType, 4011L, 401L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -169,7 +175,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
                     groupScan_Default(coi),
                     Collections.singleton(customerRowType)),
                 project,
-                0);
+                0, pipelineMap(), 1);
         RowType projectRowType = project.rowType();
         RowBase[] expected = new RowBase[]{
             row(projectRowType, 1L, 100L),
@@ -180,7 +186,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
             row(projectRowType, 4L, 400L),
             row(projectRowType, 4L, 401L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -206,7 +212,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
                     groupScan_Default(coi),
                     Collections.singleton(customerRowType)),
                 ifEmpty_Default(project, projectRowType, Arrays.asList(boundField(customerRowType, 0, 0), literal(null)), InputPreservationOption.KEEP_INPUT),
-                0);
+                0, pipelineMap(), 1);
         RowBase[] expected = new RowBase[]{
             row(projectRowType, 1L, 100L),
             row(projectRowType, 1L, 101L),
@@ -218,7 +224,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
             row(projectRowType, 5L, null),
             row(projectRowType, 6L, null),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -228,7 +234,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
             map_NestedLoops(
                 indexScan_Default(itemOidIndexRowType, false),
                 ancestorLookup_Nested(coi, itemOidIndexRowType, Collections.singleton(itemRowType), 0),
-                0);
+                0, pipelineMap(), 1);
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
@@ -250,6 +256,13 @@ public class Map_NestedLoopsIT extends OperatorITBase
                     row(itemRowType, 4010L, 401L),
                     row(itemRowType, 4011L, 401L),
                 };
+            }
+
+            @Override
+            public boolean reopenTopLevel() {
+                // You cannot just re-open() a pipelined Map_NestedLoops, but you can
+                // openTopLevel() it again.
+                return true;
             }
         };
         testCursorLifecycle(plan, testCase);
@@ -278,8 +291,8 @@ public class Map_NestedLoopsIT extends OperatorITBase
                 map_NestedLoops(
                     indexScan_Default(customerCidIndexRowType, false, cidRange),
                     ancestorLookup_Nested(coi, customerCidIndexRowType, Collections.singleton(customerRowType), 0),
-                    0),
-                1);
+                    0, pipelineMap(), 2),
+                1, pipelineMap(), 1);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(customerRowType, 2L, "foundation"),
@@ -287,7 +300,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
             row(customerRowType, 4L, "atlas"),
             row(customerRowType, 5L, "highland"),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     private Row intRow(RowType rowType, int x)
@@ -303,7 +316,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
             expressions = Arrays.asList((Expression) new LiteralExpression(AkType.INT, x));
             pExpressions = null;
         }
-        return new ExpressionRow(rowType, queryContext, expressions, pExpressions);
+        return new ExpressionRow(rowType, queryContext, queryBindings, expressions, pExpressions);
     }
 
     private Collection<? extends BindableRow> bindableExpressions(Row... rows) {

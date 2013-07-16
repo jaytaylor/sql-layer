@@ -46,10 +46,39 @@ public class SimpleBlobIT extends ITBase {
     }
     
     @Test
-    public void testBlobs() throws Exception {
+    public void testBlobs_1() throws Exception {
+        testBlobs(1);
+    }
+
+    @Test
+    public void testBlobs_2() throws Exception {
+        testBlobs(2);
+    }
+
+    @Test
+    public void testBlobs_3() throws Exception {
+        testBlobs(3);
+    }
+
+    @Test
+    public void testBlobs_4() throws Exception {
+        testBlobs(4);
+    }
+
+    @Test
+    public void testBlobs_5() throws Exception {
+        testBlobs(5);
+    }
+
+    @Test
+    public void testBlobs_6() throws Exception {
+        testBlobs(6);
+    }
+
+    private void testBlobs(int rowCount) throws Exception {
         final int tid = setUpTable();
         final List<NewRow> expected = new ArrayList<>();
-        for (int i = 1; i <= 6; ++i) {
+        for (int i = 1; i <= rowCount; ++i) {
             int bsize = (int)Math.pow(5, i);
             int csize = (int)Math.pow(10, i);
             NewRow row = createNewRow(tid, (long)i, bigString(bsize), bigString(csize));

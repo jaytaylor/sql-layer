@@ -27,6 +27,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.persistitadapter.FDBAdapter;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.DuplicateKeyException;
 import com.akiban.server.error.FDBAdapterException;
 import com.akiban.server.rowdata.FieldDef;
@@ -35,12 +36,15 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.listener.ListenerService;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.util.ReadWriteMap;
 import com.akiban.util.FDBCounter;
+import com.foundationdb.AsyncIterator;
+import com.foundationdb.FDBError;
 import com.foundationdb.KeySelector;
 import com.foundationdb.KeyValue;
 import com.foundationdb.RangeQuery;
@@ -75,8 +79,9 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
                     ConfigurationService configService,
                     SchemaManager schemaManager,
                     TransactionService txnService,
-                    LockService lockService) {
-        super(lockService, schemaManager);
+                    LockService lockService,
+                    ListenerService listenerService) {
+        super(lockService, schemaManager, listenerService);
         this.holder = holder;
         this.configService = configService;
         this.schemaManager = schemaManager;
@@ -87,34 +92,40 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         }
     }
 
-    public Iterator<KeyValue> groupIterator(Session session, Group group) {
+    public AsyncIterator<KeyValue> groupIterator(Session session, Group group) {
         Transaction txn = txnService.getTransaction(session);
         byte[] packedPrefix = packedTuple(group);
-        return txn.getRangeStartsWith(packedPrefix).iterator();
+        AsyncIterator<KeyValue> iter = txn.getRangeStartsWith(packedPrefix).asyncIterator();
+        iter.hasNext();         // Send to database.
+        return iter;
     }
 
     // TODO: Creates range for hKey and descendants, add another API to specify
-    public Iterator<KeyValue> groupIterator(Session session, Group group, Key hKey) {
+    public AsyncIterator<KeyValue> groupIterator(Session session, Group group, Key hKey) {
         Transaction txn = txnService.getTransaction(session);
         byte[] packedPrefix = packedTuple(group, hKey);
         Key after = createKey();
         hKey.copyTo(after);
         after.append(Key.AFTER);
         byte[] packedAfter = packedTuple(group, after);
-        return txn.getRange(packedPrefix, packedAfter).iterator();
+        AsyncIterator<KeyValue> iter = txn.getRange(packedPrefix, packedAfter).asyncIterator();
+        iter.hasNext();         // Send to database.
+        return iter;
     }
 
-    public Iterator<KeyValue> indexIterator(Session session, Index index, boolean reverse) {
+    public AsyncIterator<KeyValue> indexIterator(Session session, Index index, boolean reverse) {
         Transaction txn = txnService.getTransaction(session);
         byte[] packedPrefix = packedTuple(index);
         RangeQuery range = txn.getRangeStartsWith(packedPrefix);
         if(reverse) {
             range = range.reverse();
         }
-        return range.iterator();
+        AsyncIterator<KeyValue> iter = range.asyncIterator();
+        iter.hasNext();         // Send to database.
+        return iter;
     }
 
-    public Iterator<KeyValue> indexIterator(Session session, Index index, Key key, boolean inclusive, boolean reverse) {
+    public AsyncIterator<KeyValue> indexIterator(Session session, Index index, Key key, boolean inclusive, boolean reverse) {
         Transaction txn = txnService.getTransaction(session);
         byte[] packedEdge = packedTuple(index);
         byte[] packedKey = packedTuple(index, key);
@@ -144,7 +155,9 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         if(reverse) {
             range = range.reverse();
         }
-        return range.iterator();
+        AsyncIterator<KeyValue> iter = range.asyncIterator();
+        iter.hasNext();         // Send to database.
+        return iter;
     }
 
     @Override
@@ -230,6 +243,23 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         return cachedGICounter(session, index).getSnapshot(txn);
     }
 
+    public static void expandRowData(RowData rowData, byte[] value, boolean copyBytes) {
+        if(copyBytes) {
+            byte[] rowBytes = rowData.getBytes();
+            if((rowBytes == null) || (rowBytes.length < value.length)) {
+                rowBytes = Arrays.copyOf(value, value.length);
+                rowData.reset(rowBytes);
+            } else {
+                System.arraycopy(value, 0, rowBytes, 0, value.length);
+                rowData.reset(0, value.length);
+            }
+        } else {
+            rowData.reset(value);
+        }
+        rowData.prepareRow(0);
+    }
+
+
     //
     // Service
     //
@@ -307,8 +337,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
 
     @Override
     protected void expandRowData(FDBStoreData storeData, RowData rowData) {
-        rowData.reset(storeData.value);
-        rowData.prepareRow(0);
+        expandRowData(rowData, storeData.value, true);
     }
 
     @Override
@@ -393,7 +422,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
                                  PersistitIndexRowBuffer indexRow) {
         Transaction txn = txnService.getTransaction(session);
         Key indexKey = createKey();
-        constructIndexRow(indexKey, rowData, index, hKey, indexRow, true);
+        constructIndexRow(session, indexKey, rowData, index, hKey, indexRow, true);
         checkUniqueness(txn, index, rowData, indexKey);
 
         byte[] packedKey = packedTuple(index, indexRow.getPKey());
@@ -413,7 +442,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             throw new UnsupportedOperationException("Can't delete unique index with nulls");
         } else {
             Key indexKey = createKey();
-            constructIndexRow(indexKey, rowData, index, hKey, indexRowBuffer, false);
+            constructIndexRow(session, indexKey, rowData, index, hKey, indexRowBuffer, false);
             txn.clear(packedTuple(index, indexKey));
         }
     }
@@ -424,19 +453,9 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     }
 
     @Override
-    protected void addChangeFor(Session session, UserTable table, Key hKey) {
-        // None
-    }
-
-    @Override
     public void truncateTree(Session session, TreeLink treeLink) {
         Transaction txn = txnService.getTransaction(session);
         txn.clearRangeStartsWith(packedTuple(treeLink));
-    }
-
-    @Override
-    public PersistitStore getPersistitStore() {
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -480,6 +499,45 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     }
 
     @Override
+    public boolean treeExists(Session session, String schemaName, String treeName) {
+        Transaction txn = txnService.getTransaction(session);
+        return txn.getRangeStartsWith(packedTuple(treeName)).limit(1).iterator().hasNext();
+    }
+
+    @Override
+    public boolean isRetryableException(Throwable t) {
+        if(t instanceof FDBError) {
+            int code = ((FDBError)t).getCode();
+            // not_committed || commit_unknown_result
+            return (code == 1020) || (code == 1021);
+        }
+        return false;
+    }
+
+    @Override
+    public long nullIndexSeparatorValue(Session session, final Index index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void traverse(Session session, Group group, TreeRecordVisitor visitor) {
+        Transaction txn = txnService.getTransaction(session);
+        visitor.initialize(session, this);
+        Key key = createKey();
+        for(KeyValue kv : txn.getRangeStartsWith(packedTuple(group))) {
+            // Key
+            byte[] keyBytes = Tuple.fromBytes(kv.getKey()).getBytes(2);
+            key.setEncodedSize(keyBytes.length);
+            System.arraycopy(keyBytes, 0, key.getEncodedBytes(), 0, keyBytes.length);
+            // Value
+            RowData rowData = new RowData();
+            expandRowData(rowData, kv.getValue(), true);
+            // Visit
+            visitor.visit(key, rowData);
+        }
+    }
+
+    @Override
     public <V extends IndexVisitor<Key, Value>> V traverse(Session session, Index index, V visitor) {
         Key key = createKey();
         Value value = new Value((Persistit)null);
@@ -520,16 +578,17 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     // Internal
     //
 
-    private static void constructIndexRow(Key indexKey,
-                                          RowData rowData,
-                                          Index index,
-                                          Key hKey,
-                                          PersistitIndexRowBuffer indexRow,
-                                          boolean forInsert) {
+    private void constructIndexRow(Session session,
+                                   Key indexKey,
+                                   RowData rowData,
+                                   Index index,
+                                   Key hKey,
+                                   PersistitIndexRowBuffer indexRow,
+                                   boolean forInsert) {
         indexKey.clear();
         indexRow.resetForWrite(index, indexKey, new Value((Persistit) null));
         indexRow.initialize(rowData, hKey);
-        indexRow.close(forInsert);
+        indexRow.close(session, this, forInsert);
     }
 
     private void checkUniqueness(Transaction txn, Index index, RowData rowData, Key key) {
@@ -581,12 +640,20 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     }
 
     private static byte[] packedTuple(TreeLink treeLink) {
-        return Tuple.from(treeLink.getTreeName(), "/").pack();
+        return packedTuple(treeLink.getTreeName());
     }
 
     private static byte[] packedTuple(TreeLink treeLink, Key key) {
+        return packedTuple(treeLink.getTreeName(), key);
+    }
+
+    private static byte[] packedTuple(String treeName) {
+        return Tuple.from(treeName, "/").pack();
+    }
+
+    private static byte[] packedTuple(String treeName, Key key) {
         byte[] keyBytes = Arrays.copyOf(key.getEncodedBytes(), key.getEncodedSize());
-        return Tuple.from(treeLink.getTreeName(), "/", keyBytes).pack();
+        return Tuple.from(treeName, "/", keyBytes).pack();
     }
 
     private SequenceCache getEmptyCache () {

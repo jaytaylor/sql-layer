@@ -17,6 +17,7 @@
 
 package com.akiban.server;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.rowdata.RowDef;
@@ -74,12 +75,13 @@ public class FDBTableStatusCache implements TableStatusCache {
         }
     }
 
-    public synchronized void deleteTableStatus(Session session, int tableID) {
-        FDBTableStatus status = tableStatusMap.remove(tableID);
+    @Override
+    public synchronized void clearTableStatus(Session session, UserTable table) {
+        FDBTableStatus status = tableStatusMap.remove(table.getTableId());
         if(status != null) {
             status.clearState(session);
         }
-        memoryTableStatusMap.remove(tableID);
+        memoryTableStatusMap.remove(table.getTableId());
     }
 
 

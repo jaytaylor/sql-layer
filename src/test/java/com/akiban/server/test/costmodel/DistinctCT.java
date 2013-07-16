@@ -71,6 +71,7 @@ public class DistinctCT extends CostModelBase
         tRowType = schema.userTableRowType(userTable(t));
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
     }
 
     private void populateDBBestCase(int rows)
@@ -120,8 +121,8 @@ public class DistinctCT extends CostModelBase
         Operator distinct = distinct_Partial(setup, inputRowType);
         long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
-            Cursor cursor = cursor(distinct, queryContext);
-            cursor.open();
+            Cursor cursor = cursor(distinct, queryContext, queryBindings);
+            cursor.openTopLevel();
             while (cursor.next() != null);
         }
         long stop = System.nanoTime();

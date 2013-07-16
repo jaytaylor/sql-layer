@@ -101,12 +101,12 @@ class Select_BloomFilter extends Operator
     }
 
     @Override
-    protected Cursor cursor(QueryContext context)
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
         if (tFields == null)
-            return new Execution<>(context, fields, oldExpressionsAdapater);
+            return new Execution<>(context, bindingsCursor, fields, oldExpressionsAdapater);
         else
-            return new Execution<>(context, tFields, newExpressionsAdapter);
+            return new Execution<>(context, bindingsCursor, tFields, newExpressionsAdapter);
     }
 
     @Override
@@ -233,7 +233,7 @@ class Select_BloomFilter extends Operator
         }
     };
 
-    private class Execution<E> extends OperatorExecutionBase implements Cursor
+    private class Execution<E> extends OperatorCursor
     {
         // Cursor interface
 
@@ -243,8 +243,8 @@ class Select_BloomFilter extends Operator
             TAP_OPEN.in();
             try {
                 CursorLifecycle.checkIdle(this);
-                filter = context.getBloomFilter(bindingPosition);
-                context.setBloomFilter(bindingPosition, null);
+                filter = bindings.getBloomFilter(bindingPosition);
+                bindings.setBloomFilter(bindingPosition, null);
                 inputCursor.open();
                 idle = false;
             } finally {
@@ -322,14 +322,31 @@ class Select_BloomFilter extends Operator
             return destroyed;
         }
 
+        @Override
+        public void openBindings() {
+            inputCursor.openBindings();
+        }
+
+        @Override
+        public QueryBindings nextBindings() {
+            bindings = inputCursor.nextBindings();
+            return bindings;
+        }
+
+        @Override
+        public void closeBindings() {
+            inputCursor.closeBindings();
+        }
+
         // Execution interface
 
-        <EXPR> Execution(QueryContext context,
+        <EXPR> Execution(QueryContext context, QueryBindingsCursor bindingsCursor,
                               List<? extends EXPR> expressions, ExpressionAdapter<EXPR,E> adapter)
         {
             super(context);
-            this.inputCursor = input.cursor(context);
-            this.onPositiveCursor = onPositive.cursor(context);
+            this.inputCursor = input.cursor(context, bindingsCursor);
+            this.onPositiveBindingsCursor = new SingletonQueryBindingsCursor(null);
+            this.onPositiveCursor = onPositive.cursor(context, onPositiveBindingsCursor);
             this.adapter = adapter;
             for (EXPR field : expressions) {
                 E eval = adapter.evaluate(field, context);
@@ -359,13 +376,14 @@ class Select_BloomFilter extends Operator
             // occurs during next().
             TAP_CHECK.in();
             try {
-                context.setRow(bindingPosition, row);
-                onPositiveCursor.open();
+                bindings.setRow(bindingPosition, row);
+                onPositiveBindingsCursor.reset(bindings);
+                onPositiveCursor.openTopLevel();
                 try {
                     return onPositiveCursor.next() != null;
                 } finally {
-                    onPositiveCursor.close();
-                    context.setRow(bindingPosition, null);
+                    onPositiveCursor.closeTopLevel();
+                    bindings.setRow(bindingPosition, null);
                 }
             } finally {
                 TAP_CHECK.out();
@@ -376,6 +394,8 @@ class Select_BloomFilter extends Operator
 
         private final Cursor inputCursor;
         private final Cursor onPositiveCursor;
+        private final SingletonQueryBindingsCursor onPositiveBindingsCursor;
+        private QueryBindings bindings;
         private BloomFilter filter;
         private final List<E> fieldEvals = new ArrayList<>();
         private final ExpressionAdapter<?, E> adapter;

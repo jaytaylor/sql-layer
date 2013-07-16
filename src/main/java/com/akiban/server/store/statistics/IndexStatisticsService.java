@@ -18,6 +18,8 @@
 package com.akiban.server.store.statistics;
 
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
+import com.akiban.server.TableStatistics;
 import com.akiban.server.service.session.Session;
 import com.akiban.ais.model.Index;
 import com.persistit.exception.PersistitException;
@@ -43,6 +45,9 @@ public interface IndexStatisticsService
     
     /** Get available statistics for the given index. */
     public IndexStatistics getIndexStatistics(Session session, Index index);
+
+    /** @deprecated Get old style table statistics */
+    TableStatistics getTableStatistics(Session session, UserTable table);
 
     /** Update statistics for the given indexes. */
     public void updateIndexStatistics(Session session, 

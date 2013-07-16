@@ -24,7 +24,9 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
+import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitKeyAppender;
+import com.akiban.server.store.Store;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.TInstance;
@@ -64,6 +66,6 @@ public abstract class IndexRow extends AbstractRow
 
     public abstract <S> void append(S source, AkType type, TInstance tInstance, AkCollator collator);
 
-    public abstract void close(boolean forInsert);
+    public abstract void close(Session session, Store store, boolean forInsert);
 
 }

@@ -24,6 +24,7 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.FDBStore;
+import com.foundationdb.AsyncIterator;
 import com.foundationdb.KeyValue;
 import com.foundationdb.tuple.Tuple;
 import com.persistit.Key;
@@ -57,9 +58,9 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
             .append((long) index.getIndexId());
 
         IndexStatistics result = null;
-        Iterator<KeyValue> it = getStore().groupIterator(session, indexStatisticsRowDef.getGroup(), hKey);
-        while(it.hasNext()) {
-            KeyValue kv = it.next();
+        AsyncIterator<KeyValue> it = getStore().groupIterator(session, indexStatisticsRowDef.getGroup(), hKey);
+        while(it.hasNext().get()) {
+            KeyValue kv = it.next().get();
             if(result == null) {
                 result = decodeHeader(kv, indexStatisticsRowDef, index);
             } else {
@@ -83,9 +84,9 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
                 .append((long) indexDef.getRowDef().getRowDefId())
                 .append((long) index.getIndexId());
 
-        Iterator<KeyValue> it = getStore().groupIterator(session, indexStatisticsRowDef.getGroup(), hKey);
-        while(it.hasNext()) {
-            KeyValue kv = it.next();
+        AsyncIterator<KeyValue> it = getStore().groupIterator(session, indexStatisticsRowDef.getGroup(), hKey);
+        while(it.hasNext().get()) {
+            KeyValue kv = it.next().get();
             RowData rowData = new RowData();
             rowData.reset(kv.getValue());
             rowData.prepareRow(0);
@@ -99,9 +100,9 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
         IndexStatisticsVisitor<Key,byte[]> visitor = new IndexStatisticsVisitor<>(session, index, indexRowCount, this);
         int bucketCount = indexStatisticsService.bucketCount();
         visitor.init(bucketCount);
-        Iterator<KeyValue> it = getStore().indexIterator(session, index, false);
-        while(it.hasNext()) {
-            KeyValue kv = it.next();
+        AsyncIterator<KeyValue> it = getStore().indexIterator(session, index, false);
+        while(it.hasNext().get()) {
+            KeyValue kv = it.next().get();
             // TODO: Consolidate KeyValue -> (Key,[byte[]|RowData])
             byte[] keyBytes = Tuple.fromBytes(kv.getKey()).getBytes(2);
             Key key = getStore().createKey();
@@ -116,9 +117,9 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
     @Override
     public long manuallyCountEntries(Session session, Index index) {
         int count = 0;
-        Iterator<KeyValue> it = getStore().indexIterator(session, index, false);
-        while(it.hasNext()) {
-            it.next();
+        AsyncIterator<KeyValue> it = getStore().indexIterator(session, index, false);
+        while(it.hasNext().get()) {
+            it.next().get();
             ++count;
         }
         return count;

@@ -223,10 +223,8 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     }
 
     @Override
-    protected void deleteTableStatuses(Session session, Collection<Integer> tableIDs) {
-        for(Integer id : tableIDs) {
-            tableStatusCache.deleteTableStatus(session, id);
-        }
+    protected void clearTableStatus(Session session, UserTable table) {
+        tableStatusCache.clearTableStatus(session, table);
     }
 
     @Override

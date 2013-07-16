@@ -157,6 +157,11 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
     }
 
     @Override
+    public boolean serviceIsBoundTo(Class<?> serviceClass, Class<?> implClass) {
+        return guicer.isBoundTo(serviceClass, implClass);
+    }
+
+    @Override
     public boolean serviceIsStarted(Class<?> serviceClass) {
         return guicer.serviceIsStarted(serviceClass);
     }

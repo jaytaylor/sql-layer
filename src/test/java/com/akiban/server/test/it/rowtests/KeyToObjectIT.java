@@ -24,6 +24,7 @@ import com.akiban.ais.model.Table;
 import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.UnsupportedIndexDataTypeException;
+import com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
 import com.akiban.server.store.IndexVisitor;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.types.ToObjectValueTarget;
@@ -52,6 +53,13 @@ public class KeyToObjectIT extends ITBase {
         return false;
     }
 
+    private void testKeyToObject(int tableId, int expectedRowCount, String indexName) throws Exception {
+        try(CloseableTransaction txn = txnService().beginCloseableTransaction(session())) {
+            testKeyToObjectInternal(tableId, expectedRowCount, indexName);
+            txn.commit();
+        }
+    }
+
     /**
      * Internal helper for comparing all indexed values in an index tree to their values in the row after
      * going through Encoder.toObject(RowData) and Encoder.toObject(Key), respectively.
@@ -61,7 +69,7 @@ public class KeyToObjectIT extends ITBase {
      * @param indexName Name of index to compare to.
      * @throws Exception On error.
      */
-    private void testKeyToObject(int tableId, int expectedRowCount, String indexName) throws Exception {
+    private void testKeyToObjectInternal(int tableId, int expectedRowCount, String indexName) throws Exception {
         final Table table = getUserTable(tableId);
         final Index index = table.getIndex(indexName);
         assertNotNull("expected index named: "+indexName, index);
@@ -71,7 +79,7 @@ public class KeyToObjectIT extends ITBase {
 
         final Iterator<NewRow> rowIt = allRows.iterator();
 
-        persistitStore().traverse(session(), index, new IndexVisitor<Key,Value>() {
+        store().traverse(session(), index, new IndexVisitor<Key,Value>() {
             private int rowCounter = 0;
 
             @Override

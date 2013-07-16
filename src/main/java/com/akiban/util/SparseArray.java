@@ -112,18 +112,24 @@ public class SparseArray<T> {
 
     public String describeElements() {
         StringBuilder sb = new StringBuilder();
+        describeElements(sb);
+        return sb.toString();
+    }
+
+    public StringBuilder describeElements(StringBuilder sb) {
         sb.append('[');
+        int ilen = sb.length();
         
         int size = definedElements.size(); 
         for (int i = 0; i < size; ++i) {
             if (isDefined(i))
                 sb.append(internalGet(i)).append(", ");
         }
-        if (sb.length() > 1)                // sb is not just the initial '['
+        if (sb.length() > ilen)             // sb is not just the initial '['
             sb.setLength(sb.length() - 2);  // snip off the trailing ", "
         sb.append(']');
 
-        return sb.toString();
+        return sb;
     }
 
     protected T initialValue() {

@@ -17,6 +17,7 @@
 
 package com.akiban.server.service.text;
 
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.explain.Explainable;
 
@@ -26,5 +27,6 @@ import org.apache.lucene.search.Query;
  * parsed from a string, or built up from expressions.
  */
 public interface FullTextQueryExpression extends Explainable {
-    public Query getQuery(QueryContext context);
+    public boolean needsBindings();
+    public Query getQuery(QueryContext context, QueryBindings bindings);
 }

@@ -17,7 +17,7 @@
 
 package com.akiban.sql.embedded;
 
-import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.RowCursor;
 
 import java.sql.ResultSet;
 import java.util.Queue;
@@ -25,7 +25,7 @@ import java.util.Queue;
 class ExecuteResults
 {
     private int updateCount;
-    private Cursor cursor;
+    private RowCursor cursor;
     private Queue<ResultSet> additionalResultSets;
 
     /** No results. */
@@ -36,7 +36,7 @@ class ExecuteResults
     /** Ordinary select result. 
      * Transaction remains open while it is visited.
      */
-    public ExecuteResults(Cursor cursor) {
+    public ExecuteResults(RowCursor cursor) {
         this.updateCount = -1;
         this.cursor = cursor;
     }
@@ -44,7 +44,7 @@ class ExecuteResults
     /** Update result, possibly with returned keys. 
      * These keys are already copied in order to get update count correct.
      */
-    public ExecuteResults(int updateCount, Cursor generatedKeys) {
+    public ExecuteResults(int updateCount, RowCursor generatedKeys) {
         this.updateCount = updateCount;
         this.cursor = generatedKeys;
     }
@@ -59,7 +59,7 @@ class ExecuteResults
         return updateCount;
     }
     
-    public Cursor getCursor() {
+    public RowCursor getCursor() {
         return cursor;
     }
 

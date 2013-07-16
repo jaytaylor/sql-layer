@@ -92,9 +92,9 @@ class EmitBoundRow_Nested extends Operator
     }
 
     @Override
-    protected Cursor cursor(QueryContext context)
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, inputOperator.cursor(context));
+        return new Execution(context, inputOperator.cursor(context, bindingsCursor));
     }
 
     @Override
@@ -163,7 +163,7 @@ class EmitBoundRow_Nested extends Operator
 
     // Inner classes
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends ChainedCursor
     {
         // Cursor interface
 
@@ -199,7 +199,7 @@ class EmitBoundRow_Nested extends Operator
                 }
                 else  {
                     assert (row.rowType() == inputRowType);
-                    Row rowFromBindings = context.getRow(bindingPosition);
+                    Row rowFromBindings = bindings.getRow(bindingPosition);
                     assert (rowFromBindings.rowType() == boundRowType);
                     if (boundRowType == outputRowType) {
                         row = rowFromBindings;
@@ -236,34 +236,11 @@ class EmitBoundRow_Nested extends Operator
             input.destroy();
         }
 
-        @Override
-        public boolean isIdle()
-        {
-            return input.isIdle();
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return input.isActive();
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            return input.isDestroyed();
-        }
-
         // Execution interface
 
         Execution(QueryContext context, Cursor input)
         {
-            super(context);
-            this.input = input;
+            super(context, input);
         }
-
-        // Object state
-
-        private final Cursor input;
     }
 }

@@ -51,6 +51,7 @@ public class SortPT extends QPProfilePTBase
         tRowType = schema.userTableRowType(userTable(t));
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
     }
 
     @Test
@@ -110,11 +111,11 @@ public class SortPT extends QPProfilePTBase
                 tRowType, 
                 ordering, 
                 SortOption.PRESERVE_DUPLICATES);
-        Cursor cursor = cursor(plan, queryContext);
-        cursor.open();
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
+        cursor.openTopLevel();
         while (cursor.next() != null) {
         }
-        cursor.close();
+        cursor.closeTopLevel();
         if (print) {
             System.out.println("---------------------------------------------------------------------");
             System.out.println(String.format("Sort %s on field %s", n, field == 0 ? "id" : "rand"));

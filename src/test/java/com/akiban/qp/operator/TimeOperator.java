@@ -41,9 +41,9 @@ public class TimeOperator extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(QueryContext context)
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context);
+        return new Execution(context, bindingsCursor);
     }
 
     @Override
@@ -90,7 +90,7 @@ public class TimeOperator extends Operator
 
     // Inner classes
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends ChainedCursor
     {
         // Cursor interface
 
@@ -122,40 +122,11 @@ public class TimeOperator extends Operator
             elapsedNsec += stop - start;
         }
 
-        @Override
-        public void destroy()
-        {
-            input.destroy();
-        }
-
-        @Override
-        public boolean isIdle()
-        {
-            return input.isIdle();
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return input.isActive();
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            return input.isDestroyed();
-        }
-
         // Execution interface
 
-        Execution(QueryContext context)
+        Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
-            super(context);
-            this.input = inputOperator.cursor(context);
+            super(context, inputOperator.cursor(context, bindingsCursor));
         }
-
-        // Object state
-
-        private final Cursor input;
     }
 }

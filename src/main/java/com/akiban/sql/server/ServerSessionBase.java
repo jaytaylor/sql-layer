@@ -40,6 +40,7 @@ import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.sql.optimizer.AISBinderContext;
+import com.akiban.sql.optimizer.rule.PipelineConfiguration;
 import com.akiban.sql.optimizer.rule.cost.CostEstimator;
 
 import java.util.*;
@@ -47,10 +48,12 @@ import java.util.*;
 public abstract class ServerSessionBase extends AISBinderContext implements ServerSession
 {
     public static final String COMPILER_PROPERTIES_PREFIX = "optimizer.";
+    public static final String PIPELINE_PROPERTIES_PREFIX = "akserver.pipeline.";
 
     protected final ServerServiceRequirements reqs;
     protected Properties compilerProperties;
     protected Map<String,Object> attributes = new HashMap<>();
+    protected PipelineConfiguration pipelineConfiguration;
     
     protected Session session;
     protected Map<StoreAdapter.AdapterType, StoreAdapter> adapters = 
@@ -399,6 +402,13 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     @Override
     public boolean isSchemaAccessible(String schemaName) {
         return reqs.securityService().isAccessible(session, schemaName);
+    }
+
+    @Override
+    public PipelineConfiguration getPipelineConfiguration() {
+        if (pipelineConfiguration == null)
+            pipelineConfiguration = new PipelineConfiguration(reqs.config().deriveProperties(PIPELINE_PROPERTIES_PREFIX));
+        return pipelineConfiguration;
     }
 
 }

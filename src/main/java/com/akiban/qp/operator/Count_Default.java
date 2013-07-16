@@ -93,9 +93,9 @@ class Count_Default extends Operator
     }
 
     @Override
-    protected Cursor cursor(QueryContext context)
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, inputOperator.cursor(context));
+        return new Execution(context, inputOperator.cursor(context, bindingsCursor));
     }
 
     @Override
@@ -151,7 +151,7 @@ class Count_Default extends Operator
 
     // Inner classes
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends ChainedCursor
     {
         // Cursor interface
 
@@ -233,23 +233,15 @@ class Count_Default extends Operator
             return !closed;
         }
 
-        @Override
-        public boolean isDestroyed()
-        {
-            return input.isDestroyed();
-        }
-
         // Execution interface
 
         Execution(QueryContext context, Cursor input)
         {
-            super(context);
-            this.input = input;
+            super(context, input);
         }
 
         // Object state
 
-        private final Cursor input;
         private long count;
         private boolean closed = true;
     }

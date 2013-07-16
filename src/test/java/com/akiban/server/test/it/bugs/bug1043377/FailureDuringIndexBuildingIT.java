@@ -19,16 +19,12 @@ package com.akiban.server.test.it.bugs.bug1043377;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.lock.LockService;
-import com.akiban.server.service.servicemanager.GuicedServiceManager;
+import com.akiban.server.service.listener.ListenerService;
+import com.akiban.server.service.listener.TableListener;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.tree.TreeService;
-import com.akiban.server.store.PersistitStore;
-import com.akiban.server.store.SchemaManager;
-import com.akiban.server.store.Store;
 import com.akiban.server.test.it.ITBase;
-import com.google.inject.Inject;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import java.util.Collection;
 import java.util.Map;
@@ -36,12 +32,17 @@ import java.util.Map;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
-public final class FailureDuringIndexBuildingIT extends ITBase {
+public final class FailureDuringIndexBuildingIT extends ITBase implements TableListener {
     private static final AssertionError EXPECTED_EXCEPTION = new AssertionError();
 
-    @Override
-    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
-        return super.serviceBindingsProvider().bind(Store.class, ThrowsAfterBuildIndexesStore.class);
+    @Before
+    public void registerListener() {
+        serviceManager().getServiceByClass(ListenerService.class).registerTableListener(this);
+    }
+
+    @After
+    public void deregisterListener() {
+        serviceManager().getServiceByClass(ListenerService.class).deregisterTableListener(this);
     }
 
     @Override
@@ -74,17 +75,29 @@ public final class FailureDuringIndexBuildingIT extends ITBase {
         assertNull("Index should not be present", table.getIndex(INDEX));
     }
 
-    public static class ThrowsAfterBuildIndexesStore extends PersistitStore {
-        @Inject
-        public ThrowsAfterBuildIndexesStore(TreeService treeService, ConfigurationService configService,
-                                            SchemaManager schemaManager, LockService lockService) {
-            super(treeService, configService, schemaManager, lockService);
-        }
 
-        @Override
-        public void buildIndexes(Session session, Collection<? extends Index> indexes) {
-            super.buildIndexes(session, indexes);
-            throw EXPECTED_EXCEPTION;
-        }
+    //
+    // TableListener
+    //
+
+    @Override
+    public void onCreate(Session session, UserTable table) {
+    }
+
+    @Override
+    public void onDrop(Session session, UserTable table) {
+    }
+
+    @Override
+    public void onTruncate(Session session, UserTable table, boolean isFast) {
+    }
+
+    @Override
+    public void onCreateIndex(Session session, Collection<? extends Index> indexes) {
+        throw EXPECTED_EXCEPTION;
+    }
+
+    @Override
+    public void onDropIndex(Session session, Collection<? extends Index> indexes) {
     }
 }

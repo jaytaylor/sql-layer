@@ -17,6 +17,7 @@
 package com.akiban.qp.persistitadapter.indexcursor;
 
 import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
@@ -60,7 +61,7 @@ final class OldSorterAdapter extends SorterAdapter<ValueSource, Expression, Expr
     }
 
     @Override
-    protected ExpressionEvaluation evaluation(API.Ordering ordering, QueryContext context, int i) {
+    protected ExpressionEvaluation evaluation(API.Ordering ordering, QueryContext context, QueryBindings bindings, int i) {
         throw new IllegalStateException("types3 off");
     }
 

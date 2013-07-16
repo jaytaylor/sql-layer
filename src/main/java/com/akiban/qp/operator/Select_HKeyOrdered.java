@@ -102,9 +102,9 @@ class Select_HKeyOrdered extends Operator
     }
 
     @Override
-    protected Cursor cursor(QueryContext context)
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, inputOperator.cursor(context));
+        return new Execution(context, inputOperator.cursor(context, bindingsCursor));
     }
 
     @Override
@@ -177,7 +177,7 @@ class Select_HKeyOrdered extends Operator
 
     // Inner classes
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends ChainedCursor
     {
         // Cursor interface
 
@@ -188,10 +188,14 @@ class Select_HKeyOrdered extends Operator
             try {
                 CursorLifecycle.checkIdle(this);
                 input.open();
-                if (evaluation == null)
+                if (evaluation == null) {
                     pEvaluation.with(context);
-                else
+                    pEvaluation.with(bindings);
+                }
+                else {
                     evaluation.of(context);
+                    evaluation.of(bindings);
+                }
                 idle = false;
             } finally {
                 TAP_OPEN.out();
@@ -294,18 +298,11 @@ class Select_HKeyOrdered extends Operator
             return !input.isDestroyed() && !idle;
         }
 
-        @Override
-        public boolean isDestroyed()
-        {
-            return input.isDestroyed();
-        }
-
         // Execution interface
 
         Execution(QueryContext context, Cursor input)
         {
-            super(context);
-            this.input = input;
+            super(context, input);
             if (predicate == null) {
                 this.evaluation = null;
                 this.pEvaluation = pPredicate.build();
@@ -318,7 +315,6 @@ class Select_HKeyOrdered extends Operator
 
         // Object state
 
-        private final Cursor input;
         private final ShareHolder<Row> selectedRow = new ShareHolder<>(); // The last input row with type = predicateRowType.
         private final ExpressionEvaluation evaluation;
         private final TEvaluatableExpression pEvaluation;

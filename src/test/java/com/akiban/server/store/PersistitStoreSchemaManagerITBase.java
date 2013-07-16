@@ -17,12 +17,13 @@
 
 package com.akiban.server.store;
 
-import com.akiban.server.test.it.ITBase;
+import com.akiban.server.test.it.PersistitITBase;
 import org.junit.Before;
 
 import java.util.Map;
 
-public class PersistitStoreSchemaManagerITBase extends ITBase {
+public class PersistitStoreSchemaManagerITBase extends PersistitITBase
+{
     protected PersistitStoreSchemaManager pssm;
 
     private PersistitStoreSchemaManager castToPSSM() {

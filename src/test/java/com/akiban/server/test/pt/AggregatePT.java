@@ -19,6 +19,8 @@ package com.akiban.server.test.pt;
 
 import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.server.service.servicemanager.GuicedServiceManager.BindingsConfigurationProvider;
+import com.akiban.server.store.PersistitStore;
 import com.akiban.server.test.ApiTestBase;
 
 import com.akiban.ais.model.TableIndex;
@@ -27,8 +29,11 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.LeafCursor;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.OperatorExecutionBase;
+import com.akiban.qp.operator.OperatorCursor;
+import com.akiban.qp.operator.QueryBindings;
+import com.akiban.qp.operator.QueryBindingsCursor;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
@@ -50,6 +55,7 @@ import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.test.ExpressionGenerators;
+import com.akiban.server.test.it.PersistitITBase;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.TInstance;
@@ -77,6 +83,20 @@ public class AggregatePT extends ApiTestBase {
 
     public AggregatePT() {
         super("PT");
+    }
+
+    @Override
+    protected BindingsConfigurationProvider serviceBindingsProvider() {
+        return PersistitITBase.doBind(super.serviceBindingsProvider());
+    }
+
+    @Override
+    protected Map<String, String> startupConfigProperties() {
+        return uniqueStartupConfigProperties(getClass());
+    }
+
+    private PersistitStore persistitStore() {
+        return (PersistitStore)store();
     }
 
     private TableIndex index;
@@ -133,19 +153,20 @@ public class AggregatePT extends ApiTestBase {
 
         StoreAdapter adapter = newStoreAdapter(schema);
         QueryContext queryContext = queryContext(adapter);
+        QueryBindings queryBindings = queryContext.createBindings();
         
         System.out.println("NORMAL OPERATORS");
         double time = 0.0;
         for (int i = 0; i < WARMUPS+REPEATS; i++) {
             long start = System.nanoTime();
-            Cursor cursor = API.cursor(plan, queryContext);
-            cursor.open();
+            Cursor cursor = API.cursor(plan, queryContext, queryBindings);
+            cursor.openTopLevel();
             while (true) {
                 Row row = cursor.next();
                 if (row == null) break;
                 if (i == 0) System.out.println(row);
             }
-            cursor.close();
+            cursor.closeTopLevel();
             long end = System.nanoTime();
             if (i >= WARMUPS)
                 time += (end - start) / 1.0e6;
@@ -208,19 +229,20 @@ public class AggregatePT extends ApiTestBase {
 
         StoreAdapter adapter = newStoreAdapter(schema);
         QueryContext queryContext = queryContext(adapter);
+        QueryBindings queryBindings = queryContext.createBindings();
         
         System.out.println("BESPOKE OPERATOR");
         double time = 0.0;
         for (int i = 0; i < WARMUPS+REPEATS; i++) {
             long start = System.nanoTime();
-            Cursor cursor = API.cursor(plan, queryContext);
-            cursor.open();
+            Cursor cursor = API.cursor(plan, queryContext, queryBindings);
+            cursor.openTopLevel();
             while (true) {
                 Row row = cursor.next();
                 if (row == null) break;
                 if (i == 0) System.out.println(row);
             }
-            cursor.close();
+            cursor.closeTopLevel();
             long end = System.nanoTime();
             if (i >= WARMUPS)
                 time += (end - start) / 1.0e6;
@@ -261,8 +283,8 @@ public class AggregatePT extends ApiTestBase {
         }
 
         @Override
-        protected Cursor cursor(QueryContext context) {
-            return new BespokeCursor(context, API.cursor(inputOperator, context), outputType);
+        protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor) {
+            return new BespokeCursor(context, API.cursor(inputOperator, context, bindingsCursor), outputType);
         }
 
         @Override
@@ -287,7 +309,7 @@ public class AggregatePT extends ApiTestBase {
         }
     }
 
-    static class BespokeCursor extends OperatorExecutionBase implements Cursor {
+    static class BespokeCursor extends OperatorCursor {
         private Cursor inputCursor;
         private RowType outputType;
         private ValuesHolderRow outputRow;
@@ -352,6 +374,21 @@ public class AggregatePT extends ApiTestBase {
                     return outputRow;
                 }
             }
+        }
+
+        @Override
+        public void openBindings() {
+            inputCursor.openBindings();
+        }
+
+        @Override
+        public QueryBindings nextBindings() {
+            return inputCursor.nextBindings();
+        }
+
+        @Override
+        public void closeBindings() {
+            inputCursor.closeBindings();
         }
     }
 
@@ -552,19 +589,20 @@ public class AggregatePT extends ApiTestBase {
         
         StoreAdapter adapter = newStoreAdapter(schema);
         QueryContext queryContext = queryContext(adapter);
+        QueryBindings queryBindings = queryContext.createBindings();
         
         System.out.println("SORTED");
         double time = 0.0;
         for (int i = 0; i < WARMUPS+REPEATS; i++) {
             long start = System.nanoTime();
-            Cursor cursor = API.cursor(plan, queryContext);
-            cursor.open();
+            Cursor cursor = API.cursor(plan, queryContext, queryBindings);
+            cursor.openTopLevel();
             while (true) {
                 Row row = cursor.next();
                 if (row == null) break;
                 if (i == 0) System.out.println(row);
             }
-            cursor.close();
+            cursor.closeTopLevel();
             long end = System.nanoTime();
             if (i >= WARMUPS)
                 time += (end - start) / 1.0e6;
@@ -607,19 +645,20 @@ public class AggregatePT extends ApiTestBase {
         
         StoreAdapter adapter = newStoreAdapter(schema);
         QueryContext queryContext = queryContext(adapter);
+        QueryBindings queryBindings = queryContext.createBindings();
         
         System.out.println("PARALLEL " + nthreads);
         double time = 0.0;
         for (int i = 0; i < WARMUPS+REPEATS; i++) {
             long start = System.nanoTime();
-            Cursor cursor = API.cursor(plan, queryContext);
-            cursor.open();
+            Cursor cursor = API.cursor(plan, queryContext, queryBindings);
+            cursor.openTopLevel();
             while (true) {
                 Row row = cursor.next();
                 if (row == null) break;
                 if (i == 0) System.out.println(row);
             }
-            cursor.close();
+            cursor.closeTopLevel();
             long end = System.nanoTime();
             if (i >= WARMUPS)
                 time += (end - start) / 1.0e6;
@@ -643,8 +682,8 @@ public class AggregatePT extends ApiTestBase {
         }
 
         @Override
-        protected Cursor cursor(QueryContext context) {
-            return new ParallelCursor(context, inputOperator, valuesType, valuesRows, bindingPosition);
+        protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor) {
+            return new ParallelCursor(context, bindingsCursor, inputOperator, valuesType, valuesRows, bindingPosition);
         }
 
         @Override
@@ -696,20 +735,19 @@ public class AggregatePT extends ApiTestBase {
         }
     }
 
-    class ParallelCursor extends OperatorExecutionBase implements Cursor {
+    class ParallelCursor extends LeafCursor {
         private RowQueue queue;
         private List<WorkerThread> threads;
         private int nrunning;
         private Row heldRow;
 
-        public ParallelCursor(QueryContext context, Operator inputOperator, ValuesRowType valuesType, List<ValuesRow> valuesRows, int bindingPosition) {
-            super(context);
-            this.context = context;
+        public ParallelCursor(QueryContext context, QueryBindingsCursor bindingsCursor, Operator inputOperator, ValuesRowType valuesType, List<ValuesRow> valuesRows, int bindingPosition) {
+            super(context, bindingsCursor);
             int nthreads = valuesRows.size();
             queue = new RowQueue(Thread.currentThread());
             threads = new ArrayList<>(nthreads);
             for (ValuesRow valuesRow : valuesRows) {
-                threads.add(new WorkerThread(context, inputOperator, valuesType, valuesRow, bindingPosition, queue));
+                threads.add(new WorkerThread(inputOperator, valuesType, valuesRow, bindingPosition, queue));
             }
         }
 
@@ -784,24 +822,25 @@ public class AggregatePT extends ApiTestBase {
             }
             return null;
         }
-        
     }
 
     class WorkerThread implements Runnable {
         private Session session;
         private StoreAdapter adapter;
         private QueryContext context;
+        private QueryBindings bindings;
         private Cursor inputCursor;        
         private RowQueue queue;
         private Thread thread;
         private volatile boolean open;
         
-        public WorkerThread(QueryContext context, Operator inputOperator, ValuesRowType valuesType, ValuesRow valuesRow, int bindingPosition, RowQueue queue) {
+        public WorkerThread(Operator inputOperator, ValuesRowType valuesType, ValuesRow valuesRow, int bindingPosition, RowQueue queue) {
             session = createNewSession();
             adapter = newStoreAdapter(session, (Schema)valuesType.schema());
             context = queryContext(adapter);
-            context.setRow(bindingPosition, valuesRow);
-            inputCursor = API.cursor(inputOperator, context);
+            bindings = context.createBindings();
+            bindings.setRow(bindingPosition, valuesRow);
+            inputCursor = API.cursor(inputOperator, context, bindings);
             this.queue = queue;
         }
         
@@ -828,7 +867,7 @@ public class AggregatePT extends ApiTestBase {
 
         @Override
         public void run() {
-            inputCursor.open();
+            inputCursor.openTopLevel();
             open = true;
             txnService().beginTransaction(session);
             try {
@@ -846,7 +885,7 @@ public class AggregatePT extends ApiTestBase {
                 throw new QueryCanceledException(context.getSession());
             }
             finally {
-                inputCursor.close();
+                inputCursor.closeTopLevel();
                 txnService().commitTransaction(session);
             }
         }

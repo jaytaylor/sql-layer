@@ -72,7 +72,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
     }
 
     @Override
-    public Cursor newIndexCursor(QueryContext context, Index index, IndexKeyRange keyRange, API.Ordering ordering,
+    public RowCursor newIndexCursor(QueryContext context, Index index, IndexKeyRange keyRange, API.Ordering ordering,
                                  IndexScanSelector selector, boolean usePValues)
     {
         return new PersistitIndexCursor(context,
@@ -85,13 +85,14 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
 
     @Override
     public Sorter createSorter(QueryContext context,
-                               Cursor input,
+                               QueryBindings bindings,
+                               RowCursor input,
                                RowType rowType,
                                API.Ordering ordering,
                                API.SortOption sortOption,
                                InOutTap loadTap)
     {
-        return new PersistitSorter(context, input, rowType, ordering, sortOption, loadTap);
+        return new PersistitSorter(context, bindings, input, rowType, ordering, sortOption, loadTap);
     }
 
     @Override
@@ -173,7 +174,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
             key = persistitKeyValueSource.key();
             depth = persistitKeyValueSource.depth();
         } else {
-            key = persistit.createKey();
+            key = store.createKey();
             collator.append(key, valueSource.getString());
             depth = 0;
         }
@@ -194,7 +195,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
 
     public PersistitStore persistit()
     {
-        return persistit;
+        return store;
     }
 
     public RowDef rowDef(int tableId)
@@ -233,17 +234,17 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
 
     public Exchange takeExchange(Group group) throws PersistitException
     {
-        return persistit.getExchange(getSession(), group);
+        return store.getExchange(getSession(), group);
     }
 
     public Exchange takeExchange(Index index)
     {
-        return persistit.getExchange(getSession(), index);
+        return store.getExchange(getSession(), index);
     }
 
     public Key newKey()
     {
-        return new Key(persistit.getDb());
+        return new Key(store.getDb());
     }
 
     public void handlePersistitException(PersistitException e)
@@ -277,7 +278,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
 
     public void returnExchange(Exchange exchange)
     {
-        persistit.releaseExchange(getSession(), exchange);
+        store.releaseExchange(getSession(), exchange);
     }
 
     public Transaction transaction() {
@@ -313,7 +314,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
     }
 
     public PersistitAdapter(Schema schema,
-                            Store store,
+                            PersistitStore store,
                             TreeService treeService,
                             Session session,
                             ConfigurationService config)
@@ -322,7 +323,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
     }
 
     public PersistitAdapter(Schema schema,
-                            Store store,
+                            PersistitStore store,
                             TreeService treeService,
                             Session session,
                             ConfigurationService config,
@@ -330,8 +331,6 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
     {
         super(schema, session, config);
         this.store = store;
-        this.persistit = store.getPersistitStore();
-        assert this.persistit != null : store;
         this.treeService = treeService;
         this.withStepChanging = withStepChanging;
         session.put(STORE_ADAPTER_KEY, this);
@@ -359,12 +358,20 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
 
     @Override
     public long sequenceNextValue(TableName sequenceName) {
-        return sequenceValue (store.getAIS(getSession()).getSequence(sequenceName), false) ;
+        Sequence sequence = store.getAIS(getSession()).getSequence(sequenceName);
+        if (sequence == null) {
+            throw new NoSuchSequenceException (sequenceName);
+        }
+        return store.nextSequenceValue(getSession(), sequence);
     }
 
     @Override
     public long sequenceCurrentValue(TableName sequenceName) {
-        return sequenceValue (store.getAIS(getSession()).getSequence(sequenceName), true);
+        Sequence sequence = store.getAIS(getSession()).getSequence(sequenceName);
+        if (sequence == null) {
+            throw new NoSuchSequenceException (sequenceName);
+        }
+        return store.curSequenceValue(getSession(), sequence);
     }
 
     @Override
@@ -372,22 +379,6 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
         return store.createKey();
     }
 
-    private long sequenceValue (Sequence sequence, boolean getCurrentValue) {
-        try {
-            if (getCurrentValue) {
-                return store.curSequenceValue(getSession(), sequence);
-            } else {
-                return store.nextSequenceValue(getSession(), sequence);
-            }
-        } catch (PersistitException e) {
-            rollbackIfNeeded(e);
-            handlePersistitException(e);
-            assert false;
-            return 0;
-        } catch (Exception ex) {
-            throw new PersistitAdapterException(ex);
-        }
-    }
 
     // Class state
 
@@ -396,8 +387,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
     // Object state
 
     private final TreeService treeService;
-    private final Store store;
-    private final PersistitStore persistit;
+    private final PersistitStore store;
     private boolean withStepChanging;
     private final PersistitKeyHasher keyHasher = new PersistitKeyHasher();
 }

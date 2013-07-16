@@ -52,7 +52,7 @@ public class GroupScanIT extends OperatorITBase
     {
         use(db);
         Operator groupScan = groupScan_Default(coi);
-        Cursor cursor = cursor(groupScan, queryContext);
+        Cursor cursor = cursor(groupScan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "xyz"),
                                            row(orderRowType, 11L, 1L, "ori"),
                                            row(itemRowType, 111L, 11L),
@@ -76,7 +76,7 @@ public class GroupScanIT extends OperatorITBase
     {
         use(emptyDB);
         Operator groupScan = groupScan_Default(coi);
-        Cursor cursor = cursor(groupScan, queryContext);
+        Cursor cursor = cursor(groupScan, queryContext, queryBindings);
         compareRows(EMPTY_EXPECTED, cursor);
     }
 
@@ -95,7 +95,7 @@ public class GroupScanIT extends OperatorITBase
                                                                  orderSalesmanIndexRowType,
                                                                  Arrays.asList(customerRowType),
                                                                  InputPreservationOption.DISCARD_INPUT);
-        Cursor cursor = cursor(ancestorLookup, queryContext);
+        Cursor cursor = cursor(ancestorLookup, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{row(customerRowType, 2L, "abc")};
         compareRows(expected, cursor);
     }
@@ -118,7 +118,7 @@ public class GroupScanIT extends OperatorITBase
         IndexKeyRange indexKeyRange = IndexKeyRange.bounded(orderSalesmanIndexRowType, tom, true, tom, true);
         Operator groupScan = indexScan_Default(orderSalesmanIndexRowType, false, indexKeyRange);
         Operator lookup = branchLookup_Default(groupScan, coi, orderSalesmanIndexRowType, orderRowType, InputPreservationOption.DISCARD_INPUT  );
-        Cursor cursor = cursor(lookup, queryContext);
+        Cursor cursor = cursor(lookup, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{row(orderRowType, 21L, 2L, "tom"),
                                            row(itemRowType, 211L, 21L),
                                            row(itemRowType, 212L, 21L)
@@ -139,8 +139,8 @@ public class GroupScanIT extends OperatorITBase
     {
         use(db);
         Operator groupScan = groupScan_Default(coi);
-        Cursor cursor = cursor(groupScan, queryContext);
-        cursor.open();
+        Cursor cursor = cursor(groupScan, queryContext, queryBindings);
+        cursor.openTopLevel();
         Row row = cursor.next();
         assertSame(customerRowType, row.rowType());
         row = cursor.next();

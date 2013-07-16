@@ -20,6 +20,7 @@ package com.akiban.server.test.pt.qp;
 import com.akiban.ais.model.*;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Limit;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
@@ -33,6 +34,9 @@ import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.service.servicemanager.GuicedServiceManager.BindingsConfigurationProvider;
+import com.akiban.server.store.PersistitStore;
+import com.akiban.server.test.it.PersistitITBase;
 import com.akiban.server.test.it.qp.TestRow;
 import com.akiban.server.test.pt.PTBase;
 import com.akiban.server.types.ToObjectValueTarget;
@@ -40,12 +44,30 @@ import com.akiban.server.types.ToObjectValueTarget;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class QPProfilePTBase extends PTBase
 {
+    // TODO: Remove this need. See newGroupRow() below.
+
+    @Override
+    protected BindingsConfigurationProvider serviceBindingsProvider() {
+        return PersistitITBase.doBind(super.serviceBindingsProvider());
+    }
+
+    @Override
+    protected Map<String, String> startupConfigProperties() {
+        return uniqueStartupConfigProperties(getClass());
+    }
+
+    PersistitAdapter persistitAdapter(Schema schema) {
+        PersistitStore store = (PersistitStore)store();
+        return store.createAdapter(session(), schema);
+    }
+
     protected Group group(int userTableId)
     {
         return getRowDef(userTableId).table().getGroup();
@@ -112,7 +134,7 @@ public class QPProfilePTBase extends PTBase
     {
         List<RowBase> actualRows = new ArrayList<>(); // So that result is viewable in debugger
         try {
-            cursor.open();
+            cursor.openTopLevel();
             RowBase actualRow;
             while ((actualRow = cursor.next()) != null) {
                 int count = actualRows.size();
@@ -125,7 +147,7 @@ public class QPProfilePTBase extends PTBase
                 actualRows.add(actualRow);
             }
         } finally {
-            cursor.close();
+            cursor.closeTopLevel();
         }
         assertEquals(expected.length, actualRows.size());
     }
@@ -134,7 +156,7 @@ public class QPProfilePTBase extends PTBase
     {
         int count;
         try {
-            cursor.open();
+            cursor.openTopLevel();
             count = 0;
             List<RowBase> actualRows = new ArrayList<>(); // So that result is viewable in debugger
             RowBase actualRow;
@@ -144,7 +166,7 @@ public class QPProfilePTBase extends PTBase
                 actualRows.add(actualRow);
             }
         } finally {
-            cursor.close();
+            cursor.closeTopLevel();
         }
         assertEquals(expected.length, count);
     }
@@ -168,4 +190,5 @@ public class QPProfilePTBase extends PTBase
     protected Schema schema;
     protected PersistitAdapter adapter;
     protected QueryContext queryContext;
+    protected QueryBindings queryBindings;
 }

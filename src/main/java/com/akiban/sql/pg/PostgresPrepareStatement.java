@@ -21,6 +21,8 @@ import com.akiban.sql.parser.PrepareStatementNode;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.StatementNode;
 
+import com.akiban.qp.operator.QueryBindings;
+
 import java.util.List;
 import java.io.IOException;
 
@@ -42,7 +44,7 @@ public class PostgresPrepareStatement extends PostgresBaseCursorStatement
     }
     
     @Override
-    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         server.prepareStatement(name, sql, stmt, null, null);
         {        

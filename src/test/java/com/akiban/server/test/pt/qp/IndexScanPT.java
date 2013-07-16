@@ -52,6 +52,7 @@ public class IndexScanPT extends QPProfilePTBase
         idxRowType = indexType(t, "x");
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
     }
 
     @Test
@@ -91,13 +92,13 @@ public class IndexScanPT extends QPProfilePTBase
         Operator plan = indexScan_Default(idxRowType, keyRange, ordering);
         long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
-            Cursor cursor = cursor(plan, queryContext);
-            cursor.open();
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
+            cursor.openTopLevel();
             for (int s = 0; s < sequentialAccessesPerRandom; s++) {
                 Row row = cursor.next();
                 assert row != null;
             }
-            cursor.close();
+            cursor.closeTopLevel();
             cursor.destroy();
         }
         long end = System.nanoTime();

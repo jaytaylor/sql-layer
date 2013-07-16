@@ -17,6 +17,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.server.service.routines.ScriptEvaluator;
 import com.akiban.server.service.routines.ScriptPool;
 import com.akiban.sql.script.ScriptBindingsRoutine;
@@ -55,8 +56,8 @@ public class PostgresScriptBindingsRoutine extends PostgresJavaRoutine
     }
 
     @Override
-    protected ServerJavaRoutine javaRoutine(PostgresQueryContext context) {
-        return new ScriptBindingsRoutine(context, invocation, pool);
+    protected ServerJavaRoutine javaRoutine(PostgresQueryContext context, QueryBindings bindings) {
+        return new ScriptBindingsRoutine(context, bindings, invocation, pool);
     }
     
 }

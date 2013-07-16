@@ -22,6 +22,8 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Limit;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.AbstractRow;
@@ -65,8 +67,10 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         if (cursor != null) {
             throw new IllegalStateException("cursor is already open");
         }
-        cursor = cursor(operator, new SimpleQueryContext(adapter));
-        cursor.open();
+        QueryContext context = new SimpleQueryContext(adapter);
+        QueryBindings bindings = context.createBindings();
+        cursor = cursor(operator, context, bindings);
+        cursor.openTopLevel();
         // closed was initialized to true, because hasMore is checked before open. (This is due to scan being
         // spread across possibly multiple requests.) Now set closed to false for the actual scanning of rows.
         closed = false;

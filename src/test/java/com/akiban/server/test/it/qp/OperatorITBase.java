@@ -22,6 +22,7 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.BindableRow;
@@ -158,11 +159,14 @@ public class OperatorITBase extends ITBase
                           createNewRow(item, 222L, 22L)};
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
     }
 
     protected void testCursorLifecycle(Operator scan, CursorLifecycleTestCase testCase, AkCollator ... collators)
     {
-        Cursor cursor = cursor(scan, queryContext);
+        Cursor cursor = cursor(scan, queryContext, queryBindings);
+        cursor.openBindings();
+        cursor.nextBindings();
         // Check idle following creation
         assertTrue(cursor.isIdle());
         // Check active following open
@@ -180,9 +184,9 @@ public class OperatorITBase extends ITBase
         // Check active during iteration
         testCase.firstSetup();
         if (testCase.hKeyComparison()) {
-            compareRenderedHKeys(testCase.firstExpectedHKeys(), cursor);
+            compareRenderedHKeys(testCase.firstExpectedHKeys(), cursor, testCase.reopenTopLevel());
         } else {
-            compareRows(testCase.firstExpectedRows(), cursor, collators);
+            compareRows(testCase.firstExpectedRows(), cursor, testCase.reopenTopLevel(), collators);
         }
         assertTrue(cursor.isIdle());
         // Check close during iteration.
@@ -190,7 +194,10 @@ public class OperatorITBase extends ITBase
             ? testCase.firstExpectedHKeys().length > 1
             : testCase.firstExpectedRows().length > 1) {
             testCase.firstSetup();
-            cursor.open();
+            if (testCase.reopenTopLevel())
+                cursor.openTopLevel();
+            else
+                cursor.open();
             cursor.next();
             assertTrue(cursor.isActive());
             cursor.close();
@@ -199,9 +206,9 @@ public class OperatorITBase extends ITBase
         // Check that a second execution works
         testCase.secondSetup();
         if (testCase.hKeyComparison()) {
-            compareRenderedHKeys(testCase.secondExpectedHKeys(), cursor);
+            compareRenderedHKeys(testCase.secondExpectedHKeys(), cursor, testCase.reopenTopLevel());
         } else {
-            compareRows(testCase.secondExpectedRows(), cursor, collators);
+            compareRows(testCase.secondExpectedRows(), cursor, testCase.reopenTopLevel(), collators);
         }
         assertTrue(cursor.isIdle());
         // Check close of idle cursor is permitted
@@ -401,13 +408,13 @@ public class OperatorITBase extends ITBase
     {
         List<RowBase> actualRows = new ArrayList<>(); // So that result is viewable in debugger
         try {
-            cursor.open();
+            cursor.openTopLevel();
             RowBase actualRow;
             while ((actualRow = cursor.next()) != null) {
                 actualRows.add(actualRow);
             }
         } finally {
-            cursor.close();
+            cursor.closeTopLevel();
         }
     }
 
@@ -416,7 +423,7 @@ public class OperatorITBase extends ITBase
     {
         List<String> strings = new ArrayList<>();
         try {
-            cursor.open();
+            cursor.openTopLevel();
             Row row;
             while ((row = cursor.next()) != null) {
                 strings.add(String.valueOf(row));
@@ -424,7 +431,7 @@ public class OperatorITBase extends ITBase
         } catch (Throwable t) {
             t.printStackTrace();
         } finally {
-            cursor.close();
+            cursor.closeTopLevel();
         }
         strings.add(0, strings.size() == 1 ? "1 string:" : strings.size() + " strings:");
         throw new AssertionError(Strings.join(strings));
@@ -433,29 +440,37 @@ public class OperatorITBase extends ITBase
     @SuppressWarnings("unused") // useful for debugging
     protected void dumpToAssertion(Operator plan)
     {
-        dumpToAssertion(cursor(plan, queryContext));
+        dumpToAssertion(cursor(plan, queryContext, queryBindings));
     }
 
     protected void dump(Cursor cursor)
     {
-        cursor.open();
+        cursor.openTopLevel();
         Row row;
         while ((row = cursor.next()) != null) {
             LOG.debug("{}", String.valueOf(row));
         }
-        cursor.close();
+        cursor.closeTopLevel();
     }
     
     protected void dump(Operator plan)
     {
-        dump(cursor(plan, queryContext));
+        dump(cursor(plan, queryContext, queryBindings));
     }
 
     protected void compareRenderedHKeys(String[] expected, Cursor cursor)
     {
+        compareRenderedHKeys(expected, cursor, true);
+    }
+
+    protected void compareRenderedHKeys(String[] expected, Cursor cursor, boolean topLevel)
+    {
         int count;
         try {
-            cursor.open();
+            if (topLevel)
+                cursor.openTopLevel();
+            else
+                cursor.open();
             count = 0;
             List<RowBase> actualRows = new ArrayList<>(); // So that result is viewable in debugger
             RowBase actualRow;
@@ -465,7 +480,10 @@ public class OperatorITBase extends ITBase
                 actualRows.add(actualRow);
             }
         } finally {
-            cursor.close();
+            if (topLevel)
+                cursor.closeTopLevel();
+            else
+                cursor.close();
         }
         assertEquals(expected.length, count);
     }
@@ -516,6 +534,7 @@ public class OperatorITBase extends ITBase
     protected NewRow[] db;
     protected NewRow[] emptyDB = new NewRow[0];
     protected StoreAdapter adapter;
+    protected QueryBindings queryBindings;
     protected QueryContext queryContext;
     protected AkCollator ciCollator;
     protected int customerOrdinal;
@@ -556,6 +575,10 @@ public class OperatorITBase extends ITBase
         public String[] secondExpectedHKeys()
         {
             return firstExpectedHKeys();
+        }
+
+        public boolean reopenTopLevel() {
+            return false;
         }
     }
 }

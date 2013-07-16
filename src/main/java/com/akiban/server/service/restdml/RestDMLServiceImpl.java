@@ -614,9 +614,10 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     private static void collectResults(JDBCResultSet resultSet, AkibanAppender appender) throws SQLException {
         SQLOutputCursor cursor = new SQLOutputCursor(resultSet);
         JsonRowWriter jsonRowWriter = new JsonRowWriter(cursor);
-        if(jsonRowWriter.writeRows(cursor, appender, "\n", cursor)) {
+        if(jsonRowWriter.writeRowsFromOpenCursor(cursor, appender, "\n", cursor)) {
             appender.append('\n');
         }
+        cursor.close();
     }
 
     private JDBCConnection jdbcConnection(HttpServletRequest request) throws SQLException {
@@ -677,7 +678,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         ENTITY_TEXT.in();
         FullTextQueryBuilder builder = new FullTextQueryBuilder(indexName, 
                                                                 fullTextService);
-        try (Session session = sessionService.createSession()) {
+        try (Session session = sessionService.createSession();
+             CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
             extDataService.dumpBranchAsJson(session,
                                             writer,
                                             indexName.getSchemaName(),
@@ -685,7 +687,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                                             builder.scanOperator(query, realLimit),
                                             fullTextService.searchRowType(session, indexName),
                                             realDepth,
-                                            true);
+                                            false);
+            txn.commit();
         } finally {
             ENTITY_TEXT.out();
         }

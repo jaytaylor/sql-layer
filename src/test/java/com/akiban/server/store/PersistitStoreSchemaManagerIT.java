@@ -23,7 +23,6 @@ import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Set;
@@ -83,8 +82,8 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
         treeNames = pssm.getTreeNames();
         assertEquals("Group tree is in set after restart", false, treeNames.contains(groupTreeName));
         assertEquals("PK tree is in set after restart", false, treeNames.contains(pkTreeName));
-        assertEquals("Group tree exist after restart", false, treeService().treeExists(SCHEMA, groupTreeName));
-        assertEquals("PK tree exists after restart", false, treeService().treeExists(SCHEMA, pkTreeName));
+        assertEquals("Group tree exist after restart", false, store().treeExists(session(), SCHEMA, groupTreeName));
+        assertEquals("PK tree exists after restart", false, store().treeExists(session(), SCHEMA, pkTreeName));
     }
 
     @Test

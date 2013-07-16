@@ -28,7 +28,7 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.persistit.exception.PersistitException;
 
-class PersistitIndexCursor implements Cursor
+class PersistitIndexCursor implements BindingsAwareCursor
 {
     // Cursor interface
 
@@ -101,6 +101,12 @@ class PersistitIndexCursor implements Cursor
     public boolean isDestroyed()
     {
         return destroyed;
+    }
+
+    @Override
+    public void rebind(QueryBindings bindings)
+    {
+        indexCursor.rebind(bindings);
     }
 
     // For use by this package

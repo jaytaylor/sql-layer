@@ -20,6 +20,9 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Collections;
 
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -39,14 +42,12 @@ import com.akiban.server.test.it.ITBase;
 import com.akiban.server.types3.mcompat.mfuncs.WaitFunctionHelpers;
 import com.akiban.sql.embedded.EmbeddedJDBCService;
 import com.akiban.sql.embedded.EmbeddedJDBCServiceImpl;
-import com.persistit.Exchange;
-import com.persistit.exception.PersistitException;
 
 public class FullTextIndexServiceBug1172013IT extends ITBase {
     public static final String SCHEMA = "test";
     protected FullTextIndexService fullText;
     protected Schema schema;
-    protected PersistitAdapter adapter;
+    protected StoreAdapter adapter;
     protected QueryContext queryContext;
     private int c;
     private int o;
@@ -102,7 +103,7 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
         fullText = serviceManager().getServiceByClass(FullTextIndexService.class);
 
         schema = SchemaCache.globalSchema(ais());
-        adapter = persistitAdapter(schema);
+        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         
         // This test is specifically for FullTextIndexServiceImpl.java
@@ -113,7 +114,7 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
 
     /** Race concurrent drop vs create. */
     @Test
-    public void testDelete1 () throws InterruptedException, PersistitException {
+    public void testDelete1 () throws InterruptedException {
         logger.debug("Running test delete 1");
 
         createFullTextIndex(
@@ -142,7 +143,7 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
 
     /** Race concurrent drop vs create, with lined up start. */
     @Test
-    public void testDelete2() throws InterruptedException, PersistitException {
+    public void testDelete2() throws InterruptedException {
         logger.debug("Running test delete 2");
         createFullTextIndex(
                 SCHEMA, "o", "idx3_o",
@@ -177,7 +178,7 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
 
     /** Serial create and drop. */
     @Test
-    public void testDelete3() throws InterruptedException, PersistitException {
+    public void testDelete3() throws InterruptedException {
         logger.debug("Running test delete 3");
         createFullTextIndex(
                 SCHEMA, "o", "idx3_o",
@@ -234,10 +235,9 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
         }
     }
 
-    private void verifyClean(FullTextIndexServiceImpl fullTextImpl) throws InterruptedException, PersistitException { 
+    private void verifyClean(FullTextIndexServiceImpl fullTextImpl) throws InterruptedException {
         WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
-        traverse(createNewSession(),
-                fullTextImpl,
+        traverse(fullTextImpl,
                 new Visitor()
                 {
                     int n = 0;
@@ -257,20 +257,24 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
 
     }
     
-    private static void traverse(Session session, FullTextIndexServiceImpl serv,
-            Visitor visitor) throws PersistitException
+    private void traverse(FullTextIndexServiceImpl serv, Visitor visitor)
     {
-        try
+        Cursor cursor = null;
+        try(Session session = createNewSession();
+            CloseableTransaction txn = txnService().beginCloseableTransaction(session))
         {
-            Exchange ex = serv.getPopulateExchange(session);
+            cursor = serv.populateTableCursor(session);
+            cursor.open();
             IndexName toPopulate;
-            while ((toPopulate = serv.nextInQueue(session, ex, true)) != null)
-            visitor.visit(toPopulate);
+            while((toPopulate = serv.nextInQueue(session, cursor, true)) != null) {
+                visitor.visit(toPopulate);
+            }
             visitor.endOfTree();
-        }
-        finally
-        {
-            session.close();
+            txn.commit();
+        } finally {
+            if(cursor != null) {
+                cursor.close();
+            }
         }
     }
 }

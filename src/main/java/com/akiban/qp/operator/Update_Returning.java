@@ -94,8 +94,8 @@ public class Update_Returning extends Operator {
     }
 
     @Override
-    protected Cursor cursor(QueryContext context) {
-        return new Execution(context, inputOperator.cursor(context));
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor) {
+        return new Execution(context, inputOperator.cursor(context, bindingsCursor));
     }
     
     public Update_Returning (Operator inputOperator, UpdateFunction updateFunction, boolean usePvals) {
@@ -120,7 +120,7 @@ public class Update_Returning extends Operator {
     private static final Logger LOG = LoggerFactory.getLogger(Update_Returning.class);
 
     // Inner classes
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends ChainedCursor
     {
 
         // Cursor interface
@@ -153,7 +153,7 @@ public class Update_Returning extends Operator {
                 Row inputRow;
                 Row newRow = null;
                 if ((inputRow = input.next()) != null) {
-                    newRow = updateFunction.evaluate(inputRow, context);
+                    newRow = updateFunction.evaluate(inputRow, context, bindings);
                     context.checkConstraints(newRow, usePValues);
                     adapter().updateRow(inputRow, newRow, usePValues);
                 }
@@ -181,42 +181,31 @@ public class Update_Returning extends Operator {
         @Override
         public void destroy()
         {
-            if (input != null) {
-                close();
-                input.destroy();
-                input = null;
-            }
+            close();
+            input.destroy();
         }
     
         @Override
         public boolean isIdle()
         {
-            return input != null && idle;
+            return !input.isDestroyed() && idle;
         }
     
         @Override
         public boolean isActive()
         {
-            return input != null && !idle;
+            return !input.isDestroyed() && !idle;
         }
-    
-        @Override
-        public boolean isDestroyed()
-        {
-            return input == null;
-        }
-    
+
         // Execution interface
     
         Execution(QueryContext context, Cursor input)
         {
-            super(context);
-            this.input = input;
+            super(context, input);
         }
     
         // Object state
-    
-        private Cursor input; // input = null indicates destroyed.
+
         private boolean idle = true;
     }
 

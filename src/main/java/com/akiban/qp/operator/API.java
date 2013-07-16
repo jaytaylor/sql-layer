@@ -256,7 +256,17 @@ public class API
                                                   Collection<UserTableRowType> ancestorTypes,
                                                   InputPreservationOption flag)
     {
-        return new AncestorLookup_Default(inputOperator, group, rowType, ancestorTypes, flag);
+        return ancestorLookup_Default(inputOperator, group, rowType, ancestorTypes, flag, 1);
+    }
+
+    public static Operator ancestorLookup_Default(Operator inputOperator,
+                                                  Group group,
+                                                  RowType rowType,
+                                                  Collection<UserTableRowType> ancestorTypes,
+                                                  InputPreservationOption flag,
+                                                  int lookaheadQuantum)
+    {
+        return new AncestorLookup_Default(inputOperator, group, rowType, ancestorTypes, flag, lookaheadQuantum);
     }
 
     public static Operator ancestorLookup_Nested(Group group,
@@ -385,7 +395,16 @@ public class API
                                              Ordering ordering,
                                              IndexScanSelector indexScanSelector)
     {
-        return new IndexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector, USE_PVALUES);
+        return indexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector, 1);
+    }
+
+    public static Operator indexScan_Default(IndexRowType indexType,
+                                             IndexKeyRange indexKeyRange,
+                                             Ordering ordering,
+                                             IndexScanSelector indexScanSelector,
+                                             int lookaheadQuantum)
+    {
+        return new IndexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector, lookaheadQuantum, USE_PVALUES);
     }
 
     // Select
@@ -496,9 +515,12 @@ public class API
 
     public static Operator map_NestedLoops(Operator outerInput,
                                            Operator innerInput,
-                                           int inputBindingPosition)
+                                           int inputBindingPosition,
+                                           boolean pipeline,
+                                           int depth)
     {
-        return new Map_NestedLoops(outerInput, innerInput, inputBindingPosition);
+        return new Map_NestedLoops(outerInput, innerInput, inputBindingPosition, 
+                                   pipeline, depth);
     }
 
     // IfEmpty
@@ -738,10 +760,14 @@ public class API
 
     // Execution interface
 
-    public static Cursor cursor(Operator root, QueryContext context)
+    public static Cursor cursor(Operator root, QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        // if all they need is the wrapped cursor, create it directly
-        return new ChainedCursor(context, root.cursor(context));
+        return new ChainedCursor(context, root.cursor(context, bindingsCursor));
+    }
+
+    public static Cursor cursor(Operator root, QueryContext context, QueryBindings bindings)
+    {
+        return cursor(root, context, new SingletonQueryBindingsCursor(bindings));
     }
 
     // Options

@@ -18,12 +18,14 @@
 package com.akiban.server.test;
 
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.listener.ListenerService;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
+import com.akiban.server.test.it.PersistitITBase;
 import com.google.inject.Inject;
 import org.junit.Test;
 import java.util.Map;
@@ -34,7 +36,8 @@ public final class FailureOnStartupIT extends ApiTestBase {
 
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
-        return super.serviceBindingsProvider().bind(Store.class, BadStore.class);
+        return PersistitITBase.doBind(super.serviceBindingsProvider())
+                              .bind(Store.class, BadStore.class);
     }
 
     @Override
@@ -81,8 +84,8 @@ public final class FailureOnStartupIT extends ApiTestBase {
 
         @Inject
         public BadStore(TreeService treeService, ConfigurationService configService,
-                        SchemaManager schemaManager, LockService lockService) {
-            super(treeService, configService, schemaManager, lockService);
+                        SchemaManager schemaManager, LockService lockService, ListenerService listenerService) {
+            super(treeService, configService, schemaManager, lockService, listenerService);
         }
 
         @Override

@@ -17,6 +17,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -34,6 +35,12 @@ public abstract class AbstractUnaryExpressionEvaluation extends ExpressionEvalua
     public void of(QueryContext context) {
         operandEvaluation.of(context);
         this.context = context;
+    }
+
+    @Override
+    public void of(QueryBindings bindings) {
+        operandEvaluation.of(bindings);
+        this.bindings = bindings;
     }
 
     @Override
@@ -81,4 +88,5 @@ public abstract class AbstractUnaryExpressionEvaluation extends ExpressionEvalua
     private final ExpressionEvaluation operandEvaluation;
     private ValueHolder valueHolder;
     private QueryContext context;
+    private QueryBindings bindings;
 }

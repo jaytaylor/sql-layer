@@ -17,6 +17,7 @@
 
 package com.akiban.sql.server;
 
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedCharsetException;
 import com.akiban.server.types.AkType;
@@ -42,8 +43,8 @@ public class ServerValueDecoder
 
     /** Decode the given value into a the given bindings at the given position.
      */
-    public  <T extends ServerSession> void decodeValue(byte[] encoded, ServerType type, boolean binary,
-                                                       ServerQueryContext<T> context, int index) {
+    public  void decodeValue(byte[] encoded, ServerType type, boolean binary,
+                             QueryBindings bindings, int index) {
         AkType targetType = null;
         if (type != null)
             targetType = type.getAkType();
@@ -129,11 +130,11 @@ public class ServerValueDecoder
             objectSource.setExplicitly(value, decodedType);
         else
             objectSource.setReflectively(value);
-        context.setValue(index, objectSource, targetType);
+        bindings.setValue(index, objectSource, targetType);
     }
    
-    public <T extends ServerSession> void decodePValue(byte[] encoded, ServerType type, boolean binary,
-                                                       ServerQueryContext<T> context, int index) {
+    public void decodePValue(byte[] encoded, ServerType type, boolean binary,
+                             QueryBindings bindings, int index) {
         AkType targetType = null;
         if (type != null)
             targetType = type.getAkType();
@@ -218,7 +219,7 @@ public class ServerValueDecoder
         if (decodedType == null)
             decodedType = targetType;
         PValueSource source = PValueSources.fromObject(value, decodedType).value();
-        context.setPValue(index, source);
+        bindings.setPValue(index, source);
     }
 
     private static DataInputStream getDataStream(byte[] bytes) {

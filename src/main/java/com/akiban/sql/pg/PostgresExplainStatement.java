@@ -28,6 +28,8 @@ import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.server.ServerValueEncoder;
 
+import com.akiban.qp.operator.QueryBindings;
+
 import com.akiban.server.explain.Explainable;
 import com.akiban.server.explain.format.DefaultFormatter;
 import com.akiban.server.explain.format.JsonFormatter;
@@ -111,7 +113,7 @@ public class PostgresExplainStatement implements PostgresStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         ServerValueEncoder encoder = server.getValueEncoder();

@@ -18,7 +18,8 @@
 package com.akiban.qp.persistitadapter.indexcursor;
 
 import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.RowCursor;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.Sorter;
@@ -65,7 +66,8 @@ import java.util.concurrent.atomic.AtomicLong;
 public class PersistitSorter implements Sorter
 {
     public PersistitSorter(QueryContext context,
-                           Cursor input,
+                           QueryBindings bindings,
+                           RowCursor input,
                            RowType rowType,
                            API.Ordering ordering,
                            API.SortOption sortOption,
@@ -73,6 +75,7 @@ public class PersistitSorter implements Sorter
     {
         this.usePValues = Types3Switch.ON;
         this.context = context;
+        this.bindings = bindings;
         this.adapter = (PersistitAdapter)context.getStore();
         this.input = input;
         this.rowType = rowType;
@@ -85,14 +88,14 @@ public class PersistitSorter implements Sorter
         sorterAdapter = usePValues
                 ? new PValueSorterAdapter()
                 : new OldSorterAdapter();
-        sorterAdapter.init(this.rowType, this.ordering, key, value, this.context, sortOption);
+        sorterAdapter.init(this.rowType, this.ordering, key, value, this.context, this.bindings, sortOption);
         iterationHelper = new SorterIterationHelper(sorterAdapter.createValueAdapter());
         this.loadTap = loadTap;
 
     }
 
     @Override
-    public Cursor sort()
+    public RowCursor sort()
     {
         loadTree();
         return cursor();
@@ -141,10 +144,12 @@ public class PersistitSorter implements Sorter
         }
     }
 
-    private Cursor cursor()
+    private RowCursor cursor()
     {
         exchange.clear();
-        return IndexCursor.create(context, null, ordering, iterationHelper, usePValues);
+        IndexCursor indexCursor = IndexCursor.create(context, null, ordering, iterationHelper, usePValues);
+        indexCursor.rebind(bindings);
+        return indexCursor;
     }
 
     private void createKey(Row row)
@@ -185,10 +190,11 @@ public class PersistitSorter implements Sorter
     // Object state
 
     final PersistitAdapter adapter;
-    final Cursor input;
+    final RowCursor input;
     final RowType rowType;
     final API.Ordering ordering;
     final QueryContext context;
+    final QueryBindings bindings;
     final Key key;
     final Value value;
     final int rowFields;

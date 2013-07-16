@@ -21,6 +21,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -103,7 +104,12 @@ public class FullTextQueryBuilder
         }
 
         @Override
-        public Query getQuery(QueryContext context) {
+        public boolean needsBindings() {
+            return false;
+        }
+
+        @Override
+        public Query getQuery(QueryContext context, QueryBindings bindings) {
             return query;
         }
 
@@ -137,7 +143,12 @@ public class FullTextQueryBuilder
         }
         return new FullTextQueryExpression() {
                 @Override
-                public Query getQuery(QueryContext context) {
+                public boolean needsBindings() {
+                    return false;
+                }
+
+                @Override
+                public Query getQuery(QueryContext context, QueryBindings bindings) {
                     return infos.parseQuery(context, indexName, fieldName, query);
                 }
 
@@ -160,9 +171,15 @@ public class FullTextQueryBuilder
         final String fieldName = (defaultField == null) ? null : defaultField.getColumn().getName();
         return new FullTextQueryExpression() {
                 @Override
-                public Query getQuery(QueryContext context) {
+                public boolean needsBindings() {
+                    return true;
+                }
+
+                @Override
+                public Query getQuery(QueryContext context, QueryBindings bindings) {
                     TEvaluatableExpression qeval = qexpr.build();
                     qeval.with(context);
+                    qeval.with(bindings);
                     qeval.evaluate();
                     if (qeval.resultValue().isNull())
                         return null;
@@ -195,9 +212,15 @@ public class FullTextQueryBuilder
         final String fieldName = checkFieldForMatch(field);
         return new FullTextQueryExpression() {
                 @Override
-                public Query getQuery(QueryContext context) {
+                public boolean needsBindings() {
+                    return true;
+                }
+
+                @Override
+                public Query getQuery(QueryContext context, QueryBindings bindings) {
                     TEvaluatableExpression qeval = qexpr.build();
                     qeval.with(context);
+                    qeval.with(bindings);
                     qeval.evaluate();
                     if (qeval.resultValue().isNull())
                         return null;
@@ -243,7 +266,17 @@ public class FullTextQueryBuilder
         FullTextQueryExpression result = 
             new FullTextQueryExpression() {
                 @Override
-                public Query getQuery(QueryContext context) {
+                public boolean needsBindings() {
+                    for (FullTextQueryExpression query : queries) {
+                        if (query.needsBindings()) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+
+                @Override
+                public Query getQuery(QueryContext context, QueryBindings bindings) {
                     BooleanQuery query = new BooleanQuery();
                     for (int i = 0; i < queries.size(); i++) {
                         BooleanClause.Occur occur;
@@ -260,7 +293,7 @@ public class FullTextQueryBuilder
                         default:
                             throw new IllegalArgumentException(types.get(i).toString());
                         }
-                        query.add(queries.get(i).getQuery(context), occur);
+                        query.add(queries.get(i).getQuery(context, bindings), occur);
                     }
                     return query;
                 }
@@ -281,7 +314,7 @@ public class FullTextQueryBuilder
                 }
             };
         if (isConstant) {
-            return new Constant(result.getQuery(buildContext));
+            return new Constant(result.getQuery(buildContext, null));
         }
         else {
             return result;

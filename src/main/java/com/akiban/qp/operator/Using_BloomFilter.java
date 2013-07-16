@@ -95,9 +95,9 @@ class Using_BloomFilter extends Operator
     }
 
     @Override
-    protected Cursor cursor(QueryContext context)
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, streamInput.cursor(context));
+        return new Execution(context, streamInput.cursor(context, bindingsCursor));
     }
 
     @Override
@@ -174,7 +174,7 @@ class Using_BloomFilter extends Operator
 
     // Inner classes
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends ChainedCursor
     {
         // Cursor interface
 
@@ -184,7 +184,7 @@ class Using_BloomFilter extends Operator
             TAP_OPEN.in();
             try {
                 BloomFilter filter = loadBloomFilter();
-                context.setBloomFilter(filterBindingPosition, filter);
+                bindings.setBloomFilter(filterBindingPosition, filter);
                 input.open();
             } finally {
                 TAP_OPEN.out();
@@ -211,43 +211,18 @@ class Using_BloomFilter extends Operator
         }
 
         @Override
-        public void close()
-        {
-            input.close();
-        }
-
-        @Override
         public void destroy()
         {
             close();
             input.destroy();
-            context.setBloomFilter(filterBindingPosition, null);
-        }
-
-        @Override
-        public boolean isIdle()
-        {
-            return input.isIdle();
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return input.isActive();
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            return input.isDestroyed();
+            bindings.setBloomFilter(filterBindingPosition, null);
         }
 
         // Execution interface
 
         Execution(QueryContext context, Cursor input)
         {
-            super(context);
-            this.input = input;
+            super(context, input);
         }
 
         // For use by this class
@@ -268,8 +243,9 @@ class Using_BloomFilter extends Operator
         {
             int fields = filterRowType.nFields();
             int rows = 0;
-            Cursor loadCursor = filterInput.cursor(context);
-            loadCursor.open();
+            QueryBindingsCursor bindingsCursor = new SingletonQueryBindingsCursor(bindings);
+            Cursor loadCursor = filterInput.cursor(context, bindingsCursor);
+            loadCursor.openTopLevel();
             Row row;
             while ((row = loadCursor.next()) != null) {
                 int h = 0;
@@ -290,8 +266,5 @@ class Using_BloomFilter extends Operator
             return rows;
         }
 
-        // Object state
-
-        private final Cursor input;
     }
 }

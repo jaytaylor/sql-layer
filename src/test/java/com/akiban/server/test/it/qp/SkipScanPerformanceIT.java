@@ -67,6 +67,7 @@ public class SkipScanPerformanceIT extends OperatorITBase
         tZIndexRowType = indexType(t, "z");
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
     }
 
     private static final IntersectOption LEFT = IntersectOption.OUTPUT_LEFT;
@@ -205,8 +206,8 @@ public class SkipScanPerformanceIT extends OperatorITBase
         Operator plan = intersectXY(x, y, skipScan);
         Tap.reset("operator.*");
         Tap.setEnabled("operator.*", true);
-        Cursor cursor = cursor(plan, queryContext);
-        cursor.open();
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
+        cursor.openTopLevel();
         while (cursor.next() != null);
         TapReport[] reports = Tap.getReport("operator.*");
         for (TapReport report : reports) {
@@ -221,8 +222,8 @@ public class SkipScanPerformanceIT extends OperatorITBase
         Operator plan = intersectXYintersectZ(x, y, z, skipScan);
         Tap.reset("operator.*");
         Tap.setEnabled("operator.*", true);
-        Cursor cursor = cursor(plan, queryContext);
-        cursor.open();
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
+        cursor.openTopLevel();
         Row row;
         while ((row = cursor.next()) != null);
         TapReport[] reports = Tap.getReport("operator.*");

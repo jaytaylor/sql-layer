@@ -56,6 +56,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
         groupTable = group(t);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         db = new NewRow[]{
             createNewRow(t, 1000L, 8L),
             createNewRow(t, 1001L, 9L),
@@ -113,7 +114,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
                     ExpressionGenerators.literal(false)),
                 tRowType);
         RowBase[] expected = new RowBase[]{};
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -140,7 +141,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
             row(tRowType, 1005L, 9L),
             row(tRowType, 1007L, 9L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -167,7 +168,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
             row(tRowType, 1004L, 8L),
             row(tRowType, 1006L, 8L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -201,7 +202,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
             row(tRowType, 1005L, 9L),
             row(tRowType, 1007L, 9L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -269,7 +270,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
                                       xEQ9Range,
                                       ordering),
                     txIndexRowType),
-                0);
+                0, pipelineMap(), 1);
         String[] expected = new String[]{
             hKey(1000),
             hKey(1002),
@@ -288,7 +289,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
             hKey(1005),
             hKey(1007),
         };
-        compareRenderedHKeys(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext, queryBindings));
     }
 
     private String hKey(int id)

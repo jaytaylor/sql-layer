@@ -17,7 +17,7 @@
 
 package com.akiban.server.service.text;
 
-import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.rowtype.HKeyRowType;
 
@@ -45,8 +45,8 @@ public class Searcher implements Closeable
         this.searcherManager = new SearcherManager(index.open(), new SearcherFactory());
     }
 
-    public Cursor search(QueryContext context, HKeyRowType rowType,
-                         Query query, int limit)
+    public RowCursor search(QueryContext context, HKeyRowType rowType,
+                            Query query, int limit)
             throws IOException {
         searcherManager.maybeRefresh(); // TODO: Move to better place.
         if (limit <= 0) limit = DEFAULT_LIMIT;

@@ -82,9 +82,9 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
     }
 
     @Override
-    public Cursor openCursor(PostgresQueryContext context) {
-        Cursor cursor = API.cursor(resultOperator, context);
-        cursor.open();
+    public Cursor openCursor(PostgresQueryContext context, QueryBindings bindings) {
+        Cursor cursor = API.cursor(resultOperator, context, bindings);
+        cursor.openTopLevel();
         return cursor;
     }
 
@@ -95,7 +95,7 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
     }
     
     @Override
-    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         int nrows = 0;
@@ -106,7 +106,7 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
         try {
             lock(context, DXLFunction.UNSPECIFIED_DML_READ);
             lockSuccess = true;
-            cursor = context.startCursor(this);
+            cursor = context.startCursor(this, bindings);
             PostgresOutputter<Row> outputter = getRowOutputter(context);
             outputter.beforeData();
             if (cursor != null) {

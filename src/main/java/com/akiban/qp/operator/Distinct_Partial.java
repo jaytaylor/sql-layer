@@ -102,9 +102,9 @@ class Distinct_Partial extends Operator
     }
 
     @Override
-    protected Cursor cursor(QueryContext context)
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, inputOperator.cursor(context), usePValue);
+        return new Execution(context, inputOperator.cursor(context, bindingsCursor), usePValue);
     }
 
     @Override
@@ -158,7 +158,7 @@ class Distinct_Partial extends Operator
 
     // Inner classes
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends ChainedCursor
     {
         // Cursor interface
 
@@ -242,8 +242,7 @@ class Distinct_Partial extends Operator
 
         Execution(QueryContext context, Cursor input, boolean usePValue)
         {
-            super(context);
-            this.input = input;
+            super(context, input);
 
             nfields = distinctType.nFields();
             if (!usePValue) {
@@ -346,7 +345,6 @@ class Distinct_Partial extends Operator
 
         // Object state
 
-        private final Cursor input;
         private final ShareHolder<Row> currentRow = new ShareHolder<>();
         private final int nfields;
         // currentValues contains copies of the first nvalid of currentRow's fields,

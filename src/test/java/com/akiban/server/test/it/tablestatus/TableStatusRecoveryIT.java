@@ -19,8 +19,6 @@ package com.akiban.server.test.it.tablestatus;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.Collections;
-import java.util.Map;
 import java.util.concurrent.Callable;
 
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
@@ -30,11 +28,10 @@ import org.junit.Test;
 
 import com.akiban.server.TableStatistics;
 import com.akiban.server.TableStatus;
-import com.persistit.Persistit;
 
 public class TableStatusRecoveryIT extends ITBase {
-    private final static int ROW_COUNT = 10000;
-    
+    private final static int ROW_COUNT = 100;
+
     @Test
     public void simpleInsertRowCountTest() throws Exception {
         int tableId = createTable("test", "A", "I INT NOT NULL, V VARCHAR(255), PRIMARY KEY(I)");

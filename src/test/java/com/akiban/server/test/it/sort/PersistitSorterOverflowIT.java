@@ -20,16 +20,18 @@ package com.akiban.server.test.it.sort;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.RowCursor;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.TempVolume;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.indexcursor.PersistitSorter;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.test.ExpressionGenerators;
-import com.akiban.server.test.it.ITBase;
+import com.akiban.server.test.it.PersistitITBase;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 import com.persistit.exception.PersistitIOException;
@@ -41,7 +43,8 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
-public class PersistitSorterOverflowIT extends ITBase {
+public class PersistitSorterOverflowIT extends PersistitITBase
+{
     private static final String SCHEMA = "test";
     private static final String TABLE = "t";
     private static final int ROW_COUNT = 1000;
@@ -102,7 +105,7 @@ public class PersistitSorterOverflowIT extends ITBase {
     private void doSort() {
         InOutTap tap = Tap.createTimer("test");
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
-        PersistitAdapter adapter = persistitAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter(schema);
 
         UserTable userTable = getUserTable(SCHEMA, TABLE);
         RowType rowType = schema.userTableRowType(userTable);
@@ -110,15 +113,16 @@ public class PersistitSorterOverflowIT extends ITBase {
         ordering.append(ExpressionGenerators.field(rowType, 1), true);
 
         QueryContext context = queryContext(adapter);
+        QueryBindings bindings = context.createBindings();
         Cursor inputCursor = API.cursor(
                 API.groupScan_Default(userTable.getGroup()),
-                context
+                context, bindings
         );
 
-        inputCursor.open();
+        inputCursor.openTopLevel();
         try {
-            PersistitSorter sorter = new PersistitSorter(context, inputCursor, rowType, ordering, API.SortOption.PRESERVE_DUPLICATES, tap);
-            Cursor sortedCursor = sorter.sort();
+            PersistitSorter sorter = new PersistitSorter(context, bindings, inputCursor, rowType, ordering, API.SortOption.PRESERVE_DUPLICATES, tap);
+            RowCursor sortedCursor = sorter.sort();
             sortedCursor.open();
             try {
                 while(sortedCursor.next() != null) {
@@ -128,7 +132,7 @@ public class PersistitSorterOverflowIT extends ITBase {
                 sortedCursor.close();
             }
         } finally {
-            inputCursor.close();
+            inputCursor.closeTopLevel();
         }
     }
 }

@@ -27,7 +27,6 @@ import com.akiban.qp.util.HKeyCache;
 import com.akiban.server.PersistitKeyPValueSource;
 import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.collation.AkCollator;
-import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
@@ -35,7 +34,6 @@ import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.AkibanAppender;
-import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Value;
 
@@ -106,14 +104,10 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
         throw new UnsupportedOperationException(getClass().toString());
     }
 
-    public void copyFromExchange(Exchange ex)
+    @Override
+    public void copyFrom(Key key, Value value)
     {
-        copyFromKeyValue(ex.getKey(), ex.getValue());
-    }
-
-    public void copyFromKeyValue(Key key, Value value)
-    {
-        copyFrom(key, value);
+        super.copyFrom(key, value);
         constructHKeyFromIndexKey(hKeyCache.hKey(leafmostTable).key(), indexToHKey());
     }
 

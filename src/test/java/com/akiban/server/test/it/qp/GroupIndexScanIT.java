@@ -40,7 +40,6 @@ import java.util.Arrays;
 import java.util.List;
 
 public final class GroupIndexScanIT extends ITBase {
-
     @Test
     public void scanAtLeastO () {
         Operator plan = API.indexScan_Default(giRowType, false, unboundedRange(giRowType), uTableRowType(o));
@@ -95,6 +94,7 @@ public final class GroupIndexScanIT extends ITBase {
         schema = new Schema(ddl().getAIS(session()));
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         giRowType = schema.indexRowType(gi);
 
         writeRows(
@@ -106,10 +106,13 @@ public final class GroupIndexScanIT extends ITBase {
                 createNewRow(i, 101L, 12L, null),
                 createNewRow(i, 102L, 12L, "3333")
         );
+
+        txnService().beginTransaction(session());
     }
 
     @After
     public void tearDown() {
+        txnService().rollbackTransaction(session());
         c = o = i = h = null;
         schema = null;
         giRowType = null;
@@ -131,8 +134,8 @@ public final class GroupIndexScanIT extends ITBase {
 
     private List<List<?>> planToList(Operator plan) {
         List<List<?>> actualResults = new ArrayList<>();
-        Cursor cursor =  API.cursor(plan, queryContext);
-        cursor.open();
+        Cursor cursor =  API.cursor(plan, queryContext, queryBindings);
+        cursor.openTopLevel();
         try {
             ToObjectValueTarget target = new ToObjectValueTarget();
             for (Row row = cursor.next(); row != null; row = cursor.next()) {
@@ -156,7 +159,7 @@ public final class GroupIndexScanIT extends ITBase {
                 actualResults.add(Arrays.asList(rowArray));
             }
         } finally {
-            cursor.close();
+            cursor.closeTopLevel();
         }
         return actualResults;
     }
@@ -178,6 +181,7 @@ public final class GroupIndexScanIT extends ITBase {
     private Schema schema;
     private StoreAdapter adapter;
     private QueryContext queryContext;
+    private QueryBindings queryBindings;
     private IndexRowType giRowType;
 
     private final static String SCHEMA = "schema";

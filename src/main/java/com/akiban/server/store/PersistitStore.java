@@ -18,7 +18,6 @@
 package com.akiban.server.store;
 
 import com.akiban.ais.model.*;
-import com.akiban.ais.model.Index.IndexType;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitHKey;
@@ -27,6 +26,7 @@ import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.*;
+import com.akiban.server.AccumulatorAdapter.AccumInfo;
 import com.akiban.server.collation.CString;
 import com.akiban.server.collation.CStringKeyCoder;
 import com.akiban.server.error.*;
@@ -34,9 +34,9 @@ import com.akiban.server.error.DuplicateKeyException;
 import com.akiban.server.rowdata.*;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.listener.ListenerService;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.text.FullTextIndexService;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.service.tree.TreeService;
 import com.google.inject.Inject;
@@ -50,7 +50,6 @@ import org.slf4j.LoggerFactory;
 
 import java.rmi.RemoteException;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static com.persistit.Key.EQ;
 
@@ -59,225 +58,28 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     private static final Logger LOG = LoggerFactory.getLogger(PersistitStore.class);
 
     private static final String WRITE_LOCK_ENABLED_CONFIG = "akserver.write_lock_enabled";
-    private static final String MAINTENANCE_SCHEMA = "maintenance";
-    private static final String FULL_TEXT_TABLE = "full_text";
 
     private boolean writeLockEnabled;
 
     private final ConfigurationService config;
-
     private final TreeService treeService;
-
     private final SchemaManager schemaManager;
-
     private DisplayFilter originalDisplayFilter;
-
-    private FullTextIndexService fullTextService;
-
     private RowDataValueCoder valueCoder;
-
-    // Each row change has a 'uniqueChangeId', stored in the 'maintenance.full_text' table
-    // The number would be reset after all maintenance is done
-    private volatile AtomicLong uniqueChangeId = new AtomicLong(0);
 
 
     @Inject
     public PersistitStore(TreeService treeService,
                           ConfigurationService config,
                           SchemaManager schemaManager,
-                          LockService lockService) {
-        super(lockService, schemaManager);
+                          LockService lockService,
+                          ListenerService listenerService) {
+        super(lockService, schemaManager, listenerService);
         this.treeService = treeService;
         this.config = config;
         this.schemaManager = schemaManager;
     }
 
-
-    //
-    // FullText change tracking
-    // TODO: Move out of PersistitStore
-    //
-
-    public void setFullTextService(FullTextIndexService service)
-    {
-        fullTextService = service;
-    }
-
-     // --- for tracking changes 
-    private Exchange getChangeExchange(Session session) throws PersistitException
-    {
-        return treeService.getExchange(session,
-                                       treeService.treeLink(MAINTENANCE_SCHEMA,
-                                                            FULL_TEXT_TABLE));
-    }
-
-    private void addChange(Session session,
-                           String schema,
-                           String table,
-                           String index,
-                           Integer indexId,
-                           Key rowHKey)
-    {
-        try {
-            Exchange ex = getChangeExchange(session);
-
-            // KEY: schema | table | indexName | indexId | unique_num
-            ex.clear().append(schema).append(table).append(index).append(indexId).append(uniqueChangeId.getAndIncrement());
-
-            // VALUE: rowHKey's bytes | indexId
-            ex.getValue().clear().putByteArray(rowHKey.getEncodedBytes(),
-                                               0,
-                                               rowHKey.getEncodedSize());
-            ex.store();
-        } catch(PersistitException e) {
-            throw PersistitAdapter.wrapPersistitException(session, e);
-        }
-    }
-
-    @Override
-    protected void addChangeFor(Session session, UserTable table, Key hKey)
-    {
-        for (Index index : table.getFullTextIndexes())
-        {
-            IndexName idxName = index.getIndexName();
-            addChange(session,
-                      idxName.getSchemaName(),
-                      idxName.getTableName(),
-                      idxName.getName(),
-                      index.getIndexId(),
-                      hKey);
-        }
-    }
-    // --- for reporting changes
-
-    /**
-     * Collect all 'HKeyRow's from the list of key-value pairs that have
-     * the same schema.table.indexName,
-     * also fill schema[0],
-     *           table[0],
-     *      and  indexName[0]
-     *  with correct values
-     */
-    public HKeyBytesStream getChangedRows(Session session) throws PersistitException
-    {
-        Exchange ex = getChangeExchange(session);
-        ex.append(Key.BEFORE);
-        return new HKeyBytesStream(ex, session);
-    }
-
- 
-    /**
-     * 
-     * This is supposed to behave similar* to Scheme's stream,
-     * (ie., each element is not computed until it absolutely has to be.)
-     * 
-     * In other words, the byte arrays are not decoded before hand
-     */
-    public class HKeyBytesStream implements Iterable<byte[]>
-    {
-        private final Exchange ex;
-        private KeyFilter filter;
-        private IndexName indexName;
-        private final Session session;
-
-        // 'private' because this should not be constructed
-        // anywhere other than PersistitStore.getChangedRows()
-        // The class itself, however, is public, as it can be used anywhere
-        private HKeyBytesStream (Exchange ex, Session session) throws PersistitException
-        {
-            this.ex = ex;
-            this.session = session;
-            findNextIndex();
-        }
-
-        private void findNextIndex() throws PersistitException
-        {
-            indexName = null;
-            Key key = ex.getKey();
-            while(ex.next(true)) {
-                indexName = new IndexName(new TableName(key.decodeString(), key.decodeString()), key.decodeString());
-                int indexID = key.decodeInt();
-                UserTable table = getAIS(session).getUserTable(indexName.getFullTableName());
-                Index index = (table != null) ? table.getFullTextIndex(indexName.getName()) : null;
-                // May have been deleted or recreated
-                if(index != null && index.getIndexId() == indexID) {
-                    key.cut(); // Remove unique id
-                    filter = new KeyFilter(ex.getKey());
-                    break;
-                }
-                ex.remove();
-                indexName = null;
-            }
-        }
-
-        public boolean hasStream()
-        {
-            return indexName != null;
-        }
-
-        public IndexName getIndexName()
-        {
-            return indexName;
-        }
-
-        @Override
-        public Iterator<byte[]> iterator()
-        {
-            return new StreamIterator(hasStream());
-        }
-
-        private class StreamIterator implements Iterator<byte[]>
-        {
-            private Boolean hasNext;
-
-            private StreamIterator(boolean hasNext) {
-                this.hasNext = hasNext;
-            }
-
-            private void advance()
-            {
-                try {
-                    hasNext = ex.next(filter);
-                } catch(PersistitException e) {
-                    throw PersistitAdapter.wrapPersistitException(session, e);
-                }
-            }
-
-            @Override
-            public boolean hasNext()
-            {
-                if(hasNext == null) {
-                    advance();
-                }
-                return hasNext;
-            }
-
-            @Override
-            public byte[] next()
-            {
-                if(hasNext == null) {
-                    advance();
-                }
-                if(!hasNext) {
-                    throw new NoSuchElementException();
-                }
-                hasNext = null;
-                return ex.getValue().getByteArray();
-            }
-
-            @Override
-            public void remove()
-            {
-                try {
-                    ex.remove();
-                } catch(PersistitException e) {
-                    throw PersistitAdapter.wrapPersistitException(session, e);
-                }
-            }   
-        }
-    }
-
-    //------ end fulltext index maintenance services ------
 
     @Override
     public synchronized void start() {
@@ -317,11 +119,6 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         return treeService.createKey();
     }
 
-    @Override
-    public PersistitStore getPersistitStore() {
-        return this;
-    }
-
     public Persistit getDb() {
         return treeService.getDb();
     }
@@ -342,16 +139,17 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         releaseStoreData(session, exchange);
     }
 
-    private static void constructIndexRow(Exchange exchange,
-                                          RowData rowData,
-                                          Index index,
-                                          Key hKey,
-                                          PersistitIndexRowBuffer indexRow,
-                                          boolean forInsert) throws PersistitException
+    private void constructIndexRow(Session session,
+                                   Exchange exchange,
+                                   RowData rowData,
+                                   Index index,
+                                   Key hKey,
+                                   PersistitIndexRowBuffer indexRow,
+                                   boolean forInsert) throws PersistitException
     {
         indexRow.resetForWrite(index, exchange.getKey(), exchange.getValue());
         indexRow.initialize(rowData, hKey);
-        indexRow.close(forInsert);
+        indexRow.close(session, this, forInsert);
     }
 
     @Override
@@ -447,7 +245,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         checkNotGroupIndex(index);
         Exchange iEx = getExchange(session, index);
         try {
-            constructIndexRow(iEx, rowData, index, hKey, indexRow, true);
+            constructIndexRow(session, iEx, rowData, index, hKey, indexRow, true);
             checkUniqueness(index, rowData, iEx);
             iEx.store();
         } catch(PersistitException e) {
@@ -515,11 +313,12 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
             // Can't use a PIRB, because we need to get the hkey. Need a PersistitIndexRow.
             IndexRowType indexRowType = adapter.schema().indexRowType(index);
             PersistitIndexRow indexRow = adapter.takeIndexRow(indexRowType);
-            constructIndexRow(exchange, rowData, index, hKey, indexRow, false);
+            constructIndexRow(session, exchange, rowData, index, hKey, indexRow, false);
             Key.Direction direction = Key.Direction.GTEQ;
             while (exchange.traverse(direction, true)) {
-                indexRow.copyFromExchange(exchange); // Gets the current state of the exchange into oldIndexRow
-                PersistitHKey rowHKey = (PersistitHKey) indexRow.hKey();
+                // Delicate: copyFromExchange() initializes the key returned by hKey
+                indexRow.copyFrom(exchange);
+                PersistitHKey rowHKey = (PersistitHKey)indexRow.hKey();
                 if (rowHKey.key().compareTo(hKey) == 0) {
                     deleted = exchange.remove();
                     break;
@@ -528,7 +327,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
             }
             adapter.returnIndexRow(indexRow);
         } else {
-            constructIndexRow(exchange, rowData, index, hKey, indexRowBuffer, false);
+            constructIndexRow(session, exchange, rowData, index, hKey, indexRowBuffer, false);
             deleted = exchange.remove();
         }
         assert deleted : "Exchange remove on deleteIndexRow";
@@ -647,32 +446,6 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
-    public void buildIndexes(Session session, Collection<? extends Index> indexes) {
-        // TODO: Generalize. Knowing about FullTextService is wrong.
-        Collection<Index> nonFTIndexes = new ArrayList<>();
-        for(Index index : indexes) {
-            if(index.getIndexType() == IndexType.FULL_TEXT) {
-                // This schedules a deferred process to populate the
-                // full text index at a later date (starting in a few seconds).
-                fullTextService.schedulePopulate(session, index.getIndexName());
-            } else {
-                nonFTIndexes.add(index);
-            }
-        }
-        super.buildIndexes(session, nonFTIndexes);
-    }
-
-    @Override
-    public void removeTrees(Session session, UserTable table) {
-        super.removeTrees(session, table);
-
-        // TODO: Generalize. Knowing about FullTextService is wrong.
-        for(FullTextIndex idx : table.getOwnFullTextIndexes()) {
-            fullTextService.dropIndex(session, idx);
-        }
-    }
-
-    @Override
     protected void preWrite(Session session, Exchange storeData, RowDef rowDef, RowData rowData) {
         try {
             lockKeys(adapter(session), rowDef, rowData, storeData);
@@ -687,31 +460,23 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
-    public void deleteIndexes(final Session session, final Collection<? extends Index> indexes) {
-        super.deleteIndexes(session, indexes);
-        // TODO: Generalize. Knowing about FullTextService is wrong.
-        for(Index index : indexes) {
-            // no trees to drop
-            if (index.getIndexType() == IndexType.FULL_TEXT)
-            {
-                fullTextService.dropIndex(session, (FullTextIndex)index);
-            }
-        }
-    }
-    
-    @Override
     public void deleteSequences (Session session, Collection<? extends Sequence> sequences) {
         removeTrees(session, sequences);
     }
 
-    public void traverse(Session session, Group group, TreeRecordVisitor visitor) throws PersistitException {
+    @Override
+    public void traverse(Session session, Group group, TreeRecordVisitor visitor) {
         Exchange exchange = getExchange(session, group);
         try {
             exchange.clear().append(Key.BEFORE);
-            visitor.initialize(session, this, exchange);
-            while (exchange.next(true)) {
-                visitor.visit();
+            visitor.initialize(session, this);
+            while(exchange.next(true)) {
+                RowData rowData = new RowData();
+                expandRowData(exchange, rowData);
+                visitor.visit(exchange.getKey(), rowData);
             }
+        } catch(PersistitException e) {
+            throw PersistitAdapter.wrapPersistitException(session, e);
         } finally {
             releaseExchange(session, exchange);
         }
@@ -789,6 +554,23 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
+    public boolean treeExists(Session session, String schemaName, String treeName) {
+        return treeService.treeExists(schemaName, treeName);
+    }
+
+    @Override
+    public boolean isRetryableException(Throwable t) {
+        return (t instanceof RollbackException);
+    }
+
+    @Override
+    public long nullIndexSeparatorValue(Session session, Index index) {
+        Tree tree = index.indexDef().getTreeCache().getTree();
+        AccumulatorAdapter accumulator = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.UNIQUE_ID, tree);
+        return accumulator.seqAllocate();
+    }
+
+    @Override
     public void truncateTree(Session session, TreeLink treeLink) {
         Exchange iEx = treeService.getExchange(session, treeLink);
         try {
@@ -816,13 +598,25 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
-    public long nextSequenceValue(Session session, Sequence sequence) throws PersistitException {
-        return sequence.nextValue();
+    public long nextSequenceValue(Session session, Sequence sequence) {
+        // Note: Ever increasing, always incremented by 1, rollbacks will leave gaps. See bug1167045 for discussion.
+        AccumulatorAdapter accum = getAdapter(sequence);
+        long rawSequence = accum.seqAllocate();
+        return sequence.nextValueRaw(rawSequence);
     }
     
     @Override 
-    public long curSequenceValue(Session session, Sequence sequence) throws PersistitException {
-        return sequence.currentValue();
+    public long curSequenceValue(Session session, Sequence sequence) {
+        AccumulatorAdapter accum = getAdapter(sequence);
+        try {
+            return sequence.currentValueRaw(accum.getSnapshot());
+        } catch (PersistitInterruptedException e) {
+            throw PersistitAdapter.wrapPersistitException(session, e);
+        }
     }
- 
+
+    private AccumulatorAdapter getAdapter(Sequence sequence)  {
+        Tree tree = sequence.getTreeCache().getTree();
+        return new AccumulatorAdapter(AccumInfo.SEQUENCE, tree);
+    }
 }

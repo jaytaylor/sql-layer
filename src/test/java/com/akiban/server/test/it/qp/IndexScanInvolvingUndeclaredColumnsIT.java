@@ -73,6 +73,7 @@ public class IndexScanInvolvingUndeclaredColumnsIT extends OperatorITBase
         };
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         use(db);
     }
 
@@ -90,7 +91,7 @@ public class IndexScanInvolvingUndeclaredColumnsIT extends OperatorITBase
                 idxRowType,
                 range,
                 ordering);
-        compareRows(new RowBase[0], cursor(plan, queryContext));
+        compareRows(new RowBase[0], cursor(plan, queryContext, queryBindings));
     }
 
     // For use by this class

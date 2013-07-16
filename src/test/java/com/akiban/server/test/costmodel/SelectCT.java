@@ -52,6 +52,7 @@ public class SelectCT extends CostModelBase
         group = group(t);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
     }
 
     protected void populateDB(int rows)
@@ -68,8 +69,8 @@ public class SelectCT extends CostModelBase
         Operator select = select_HKeyOrdered(timeScan, tRowType, ExpressionGenerators.literal(true));
         long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
-            Cursor cursor = cursor(select, queryContext);
-            cursor.open();
+            Cursor cursor = cursor(select, queryContext, queryBindings);
+            cursor.openTopLevel();
             while (cursor.next() != null);
         }
         long stop = System.nanoTime();

@@ -21,42 +21,44 @@ import static org.junit.Assert.*;
 
 import java.util.List;
 
+import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.server.test.it.PersistitITBase;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import org.junit.Test;
 
 import com.akiban.qp.loadableplan.DirectObjectCursor;
 import com.akiban.qp.loadableplan.DirectObjectPlan;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.test.it.ITBase;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValue;
 
-public class PersistitCLILoadablePlanIT extends ITBase {
-
+public class PersistitCLILoadablePlanIT extends PersistitITBase
+{
     @Test
     public void invokePersistitOperation() throws Exception {
         PersistitCLILoadablePlan loadablePlan = new PersistitCLILoadablePlan();
         DirectObjectPlan plan = loadablePlan.plan();
 
         Schema schema = new Schema(ais());
-        PersistitAdapter adapter = persistitAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter(schema);
         QueryContext queryContext = queryContext(adapter);
+        QueryBindings queryBindings = queryContext.createBindings();
 
-        DirectObjectCursor cursor = plan.cursor(queryContext);
+        DirectObjectCursor cursor = plan.cursor(queryContext, queryBindings);
         if (Types3Switch.ON) {
-            queryContext.setPValue(0, new PValue(MString.varcharFor("stat"), "stat"));
-            queryContext.setPValue(1, new PValue(MString.varcharFor("count=3"), "count=3"));
-            queryContext.setPValue(2, new PValue(MString.varcharFor("delay=2"), "delay=2"));
-            queryContext.setPValue(3, new PValue(MString.varcharFor("-a"), "-a"));
+            queryBindings.setPValue(0, new PValue(MString.varcharFor("stat"), "stat"));
+            queryBindings.setPValue(1, new PValue(MString.varcharFor("count=3"), "count=3"));
+            queryBindings.setPValue(2, new PValue(MString.varcharFor("delay=2"), "delay=2"));
+            queryBindings.setPValue(3, new PValue(MString.varcharFor("-a"), "-a"));
         }
         else {
-            queryContext.setValue(0, new FromObjectValueSource().setReflectively("stat"));
-            queryContext.setValue(1, new FromObjectValueSource().setReflectively("count=3"));
-            queryContext.setValue(2, new FromObjectValueSource().setReflectively("delay=2"));
-            queryContext.setValue(3, new FromObjectValueSource().setReflectively("-a"));
+            queryBindings.setValue(0, new FromObjectValueSource().setReflectively("stat"));
+            queryBindings.setValue(1, new FromObjectValueSource().setReflectively("count=3"));
+            queryBindings.setValue(2, new FromObjectValueSource().setReflectively("delay=2"));
+            queryBindings.setValue(3, new FromObjectValueSource().setReflectively("-a"));
         }
         
         int populatedResults = 0;

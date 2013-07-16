@@ -22,6 +22,7 @@ import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -79,6 +80,13 @@ class IndexCursorSpatial_InBox extends IndexCursor
     {
         super.destroy();
         multiCursor.destroy();
+    }
+
+    @Override
+    public void rebind(QueryBindings bindings)
+    {
+        super.rebind(bindings);
+        multiCursor.rebind(bindings);
     }
 
     // IndexCursorSpatial_InBox interface
@@ -139,8 +147,8 @@ class IndexCursorSpatial_InBox extends IndexCursor
         Index index = keyRange.indexRowType().index();
         IndexBound loBound = keyRange.lo();
         IndexBound hiBound = keyRange.hi();
-        BoundExpressions loExpressions = loBound.boundExpressions(context);
-        BoundExpressions hiExpressions = hiBound.boundExpressions(context);
+        BoundExpressions loExpressions = loBound.boundExpressions(context, bindings);
+        BoundExpressions hiExpressions = hiBound.boundExpressions(context, bindings);
         // Only 2d, lat/lon supported for now
         BigDecimal xLo, xHi, yLo, yHi;
         if (Types3Switch.ON) {

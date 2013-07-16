@@ -1058,8 +1058,8 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
     }
 
     @Override
-    protected void deleteTableStatuses(Session session, Collection<Integer> tableIDs) {
-        // Nothing extra to do, table status state stored in accumulators, which are attached to the trees.
+    protected void clearTableStatus(Session session, UserTable table) {
+        treeService.getTableStatusCache().clearTableStatus(session, table);
     }
 
     /**

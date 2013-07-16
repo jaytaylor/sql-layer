@@ -20,6 +20,7 @@ package com.akiban.server.test.pt.qp;
 import com.akiban.ais.model.Group;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.row.OverlayingRow;
@@ -76,6 +77,7 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
         group = group(grandparent);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         // The following is adapter from super.setUpProfiling. Leave taps disabled, they'll be enabled after loading
         // and warmup
         beforeProfiling();
@@ -153,7 +155,7 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
                                }
 
                                @Override
-                               public Row evaluate(Row original, QueryContext context)
+                               public Row evaluate(Row original, QueryContext context, QueryBindings bindings)
                                {
                                    OverlayingRow updatedRow = new OverlayingRow(original);
                                    long i;
@@ -187,7 +189,7 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
                             Tap.setEnabled(".*propagate.*", true);
                             start = System.nanoTime();
                         }
-                        updatePlan.run(queryContext);
+                        updatePlan.run(queryContext, queryBindings);
                         return start;
                     }
                 });
@@ -227,7 +229,7 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
                                }
 
                                @Override
-                               public Row evaluate(Row original, QueryContext context)
+                               public Row evaluate(Row original, QueryContext context, QueryBindings bindings)
                                {
                                    OverlayingRow updatedRow = new OverlayingRow(original);
                                    long i;
@@ -257,7 +259,7 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
                                }
 
                                @Override
-                               public Row evaluate(Row original, QueryContext context)
+                               public Row evaluate(Row original, QueryContext context, QueryBindings bindings)
                                {
                                    OverlayingRow updatedRow = new OverlayingRow(original);
                                    long i;
@@ -291,8 +293,8 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
                             Tap.setEnabled(".*propagate.*", true);
                             start = System.nanoTime();
                         }
-                        updatePlan.run(queryContext);
-                        revertPlan.run(queryContext);
+                        updatePlan.run(queryContext, queryBindings);
+                        revertPlan.run(queryContext, queryBindings);
                         return start;
                     }
                 });

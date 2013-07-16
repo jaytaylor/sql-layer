@@ -17,6 +17,7 @@
 
 package com.akiban.server.types3.texpressions;
 
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.explain.*;
@@ -127,6 +128,15 @@ public final class TPreparedFunction implements TPreparedExpression {
             for (int i = 0, inputsSize = inputs.size(); i < inputsSize; i++) {
                 TEvaluatableExpression input = inputs.get(i);
                 input.with(context);
+                inputValues[i] = null;
+            }
+        }
+
+        @Override
+        public void with(QueryBindings bindings) {
+            for (int i = 0, inputsSize = inputs.size(); i < inputsSize; i++) {
+                TEvaluatableExpression input = inputs.get(i);
+                input.with(bindings);
                 inputValues[i] = null;
             }
         }

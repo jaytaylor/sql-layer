@@ -20,10 +20,12 @@ package com.akiban.sql.pg;
 import com.akiban.qp.loadableplan.DirectObjectCursor;
 import com.akiban.qp.loadableplan.DirectObjectPlan;
 import com.akiban.qp.loadableplan.std.DumpGroupLoadablePlan;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.sql.TestBase;
@@ -76,6 +78,14 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
 
     @Test
     public void testDump() throws Exception {
+        String expectedSQL = runSQL();
+        try(CloseableTransaction txn = txnService().beginCloseableTransaction(session())) {
+            runPlan(expectedSQL);
+            txn.commit();
+        }
+    }
+
+    private String runSQL() throws Exception {
         // Run the INSERTs via SQL.
         String sql = TestBase.fileContents(file);
 
@@ -84,7 +94,10 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
             stmt.execute(sqls);
         }
         stmt.close();
+        return sql;
+    }
 
+    private void runPlan(String expectedSQL) throws Exception {
         DumpGroupLoadablePlan loadablePlan = new DumpGroupLoadablePlan();
         DirectObjectPlan plan = loadablePlan.plan();
 
@@ -96,20 +109,21 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
                     return SCHEMA_NAME;
                 }
             };
+        QueryBindings queryBindings = queryContext.createBindings();
         if (Types3Switch.ON) {
-            queryContext.setPValue(0, new PValue(MString.varcharFor(SCHEMA_NAME), SCHEMA_NAME));
-            queryContext.setPValue(1, new PValue(MString.varcharFor(GROUP_NAME), GROUP_NAME));
+            queryBindings.setPValue(0, new PValue(MString.varcharFor(SCHEMA_NAME), SCHEMA_NAME));
+            queryBindings.setPValue(1, new PValue(MString.varcharFor(GROUP_NAME), GROUP_NAME));
             if (multiple)
-                queryContext.setPValue(2, new PValue(MNumeric.INT.instance(false), 10));
+                queryBindings.setPValue(2, new PValue(MNumeric.INT.instance(false), 10));
         }
         else {
-            queryContext.setValue(0, new FromObjectValueSource().setReflectively(SCHEMA_NAME));
-            queryContext.setValue(1, new FromObjectValueSource().setReflectively(GROUP_NAME));
+            queryBindings.setValue(0, new FromObjectValueSource().setReflectively(SCHEMA_NAME));
+            queryBindings.setValue(1, new FromObjectValueSource().setReflectively(GROUP_NAME));
             if (multiple)
-                queryContext.setValue(2, new FromObjectValueSource().setReflectively(10L));
+                queryBindings.setValue(2, new FromObjectValueSource().setReflectively(10L));
         }
 
-        DirectObjectCursor cursor = plan.cursor(queryContext);
+        DirectObjectCursor cursor = plan.cursor(queryContext, queryBindings);
         
         StringBuilder actual = new StringBuilder();
 
@@ -128,7 +142,7 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
         }
         cursor.close();
 
-        assertEquals(sql, actual.toString());
+        assertEquals(expectedSQL, actual.toString());
     }
 
 }

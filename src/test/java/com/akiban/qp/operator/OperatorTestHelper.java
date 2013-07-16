@@ -131,13 +131,16 @@ public final class OperatorTestHelper {
     }
 
     public static Cursor open(Operator plan) {
-        Cursor result = plan.cursor(new SimpleQueryContext(ADAPTER));
+        QueryContext queryContext = new SimpleQueryContext(ADAPTER);
+        QueryBindings queryBindings = queryContext.createBindings();
+        QueryBindingsCursor queryBindingsCursor = new SingletonQueryBindingsCursor(queryBindings);
+        Cursor result = plan.cursor(queryContext, queryBindingsCursor);
         reopen(result);
         return result;
     }
 
     public static void reopen(Cursor cursor) {
-        cursor.open();
+        cursor.openTopLevel();
     }
 
     public static List<Row> execute(Operator plan) {
@@ -226,7 +229,8 @@ public final class OperatorTestHelper {
 
         @Override
         public Sorter createSorter(QueryContext context,
-                           Cursor input,
+                                   QueryBindings bindings,
+                           RowCursor input,
                            RowType rowType,
                            API.Ordering ordering,
                            API.SortOption sortOption,

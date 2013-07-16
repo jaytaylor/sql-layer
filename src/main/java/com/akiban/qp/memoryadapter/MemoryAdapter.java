@@ -26,7 +26,9 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.GroupCursor;
 import com.akiban.qp.operator.IndexScanSelector;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.operator.API.Ordering;
 import com.akiban.qp.operator.API.SortOption;
@@ -71,7 +73,7 @@ public class MemoryAdapter extends StoreAdapter {
     }
 
     @Override
-    public Cursor newIndexCursor(QueryContext context, Index index,
+    public RowCursor newIndexCursor(QueryContext context, Index index,
             IndexKeyRange keyRange, Ordering ordering,
             IndexScanSelector scanSelector, boolean usePValues) {
         
@@ -92,7 +94,7 @@ public class MemoryAdapter extends StoreAdapter {
     }
 
     @Override
-    public Sorter createSorter(QueryContext context, Cursor input, RowType rowType,
+    public Sorter createSorter(QueryContext context, QueryBindings bindings, RowCursor input, RowType rowType,
                                Ordering ordering, SortOption sortOption, InOutTap loadTap) {
         throw new UnsupportedOperationException();
     }

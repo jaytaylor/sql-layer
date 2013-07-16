@@ -99,6 +99,7 @@ public class SortCT extends CostModelBase
         tRowType = schema.userTableRowType(userTable(t));
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
     }
 
     private void populateDB(int rows)
@@ -159,8 +160,8 @@ public class SortCT extends CostModelBase
         // Measure time for setup
         start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
-            Cursor cursor = cursor(setup, queryContext);
-            cursor.open();
+            Cursor cursor = cursor(setup, queryContext, queryBindings);
+            cursor.openTopLevel();
             while (cursor.next() != null);
         }
         stop = System.nanoTime();
@@ -168,8 +169,8 @@ public class SortCT extends CostModelBase
         // Measure time for complete plan
         start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
-            Cursor cursor = cursor(sort, queryContext);
-            cursor.open();
+            Cursor cursor = cursor(sort, queryContext, queryBindings);
+            cursor.openTopLevel();
             while (cursor.next() != null);
         }
         stop = System.nanoTime();

@@ -90,7 +90,7 @@ public class UpsertProcessor extends DMLProcessor {
                 }
                 if (arrayElement.isObject()) {
                     processRow (arrayElement, appender, context);
-                    context.queryContext.clear();
+                    context.queryBindings.clear();
                     context.allValues.clear();
                 }
                 // else throw Bad Json Format Exception
@@ -151,11 +151,11 @@ public class UpsertProcessor extends DMLProcessor {
                     return null;
                 }
                 pvalue.putString(context.allValues.get(column), null);
-                context.queryContext.setPValue(i, pvalue);
+                context.queryBindings.setPValue(i, pvalue);
                 i++;
             }
-            cursor = API.cursor(plan, context.queryContext);
-            cursor.open();
+            cursor = API.cursor(plan, context.queryContext, context.queryBindings);
+            cursor.openTopLevel();
             return cursor.next();
         } finally {
             if (cursor != null) {
@@ -179,14 +179,14 @@ public class UpsertProcessor extends DMLProcessor {
                 } else {
                     pvalue.putString(context.allValues.get(column), null);
                 }
-                context.queryContext.setPValue(i, pvalue);
+                context.queryBindings.setPValue(i, pvalue);
                 upList.add(column);
                 i++;
             }
         }
         
         Operator update = updateGenerator.create(context.tableName,upList);
-        Cursor cursor = API.cursor(update, context.queryContext);
+        Cursor cursor = API.cursor(update, context.queryContext, context.queryBindings);
         JsonRowWriter writer = new JsonRowWriter(new TableRowTracker(context.table, 0));
         WriteCapturePKRow rowWriter = new WriteCapturePKRow();
         writer.writeRows(cursor, appender, "\n", rowWriter);

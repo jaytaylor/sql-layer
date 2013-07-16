@@ -26,13 +26,14 @@
     com.akiban.server.service.restdml.RestDMLService: com.akiban.server.service.restdml.RestDMLServiceImpl
     com.akiban.server.service.restdml.DirectService: com.akiban.server.service.restdml.DirectServiceImpl
     com.akiban.server.service.text.FullTextIndexService: com.akiban.server.service.text.FullTextIndexServiceImpl
+    com.akiban.server.service.listener.ListenerService : com.akiban.server.service.listener.ListenerServiceImpl
     ##
     ##
     ## Persistit
     ##
     #com.akiban.server.service.tree.TreeService : com.akiban.server.service.tree.TreeServiceImpl
     #com.akiban.server.store.SchemaManager : com.akiban.server.store.PersistitStoreSchemaManager
-    #com.akiban.server.store.Store : com.akiban.qp.persistitadapter.OperatorStore
+    #com.akiban.server.store.Store : com.akiban.server.store.PersistitStore
     #com.akiban.server.store.statistics.IndexStatisticsService : com.akiban.server.store.statistics.PersistitIndexStatisticsService
     #com.akiban.server.service.transaction.TransactionService : com.akiban.server.store.PersistitTransactionService
     #

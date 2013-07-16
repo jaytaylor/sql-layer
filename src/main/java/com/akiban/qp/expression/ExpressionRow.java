@@ -20,6 +20,7 @@ package com.akiban.qp.expression;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.row.HKey;
@@ -40,7 +41,7 @@ public class ExpressionRow extends AbstractRow
     private List<? extends TPreparedExpression> pExpressions;
     private List<TEvaluatableExpression> pEvaluations;
 
-    public ExpressionRow(RowType rowType, QueryContext context, List<? extends Expression> expressions,
+    public ExpressionRow(RowType rowType, QueryContext context, QueryBindings bindings, List<? extends Expression> expressions,
                          List<? extends TPreparedExpression> pExpressions) {
         this.rowType = rowType;
         this.expressions = expressions;
@@ -51,6 +52,7 @@ public class ExpressionRow extends AbstractRow
             for (TPreparedExpression expression : pExpressions) {
                 TEvaluatableExpression evaluation = expression.build();
                 evaluation.with(context);
+                evaluation.with(bindings);
                 this.pEvaluations.add(evaluation);
             }
         }
@@ -62,6 +64,7 @@ public class ExpressionRow extends AbstractRow
                 }
                 ExpressionEvaluation evaluation = expression.evaluation();
                 evaluation.of(context);
+                evaluation.of(bindings);
                 this.evaluations.add(evaluation);
             }
         }

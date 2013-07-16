@@ -19,8 +19,9 @@ package com.akiban.qp.persistitadapter.indexcursor;
 
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.BindingsAwareCursor;
 import com.akiban.qp.operator.CursorLifecycle;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.Row;
@@ -31,7 +32,7 @@ import com.persistit.Key;
 import com.persistit.Key.Direction;
 import com.persistit.exception.PersistitException;
 
-public abstract class IndexCursor implements Cursor
+public abstract class IndexCursor implements BindingsAwareCursor
 {
     // Cursor interface
 
@@ -88,6 +89,12 @@ public abstract class IndexCursor implements Cursor
         return destroyed;
     }
 
+    @Override
+    public void rebind(QueryBindings bindings)
+    {
+        this.bindings = bindings;
+    }
+    
     // For use by subclasses
 
     protected boolean nextInternal(boolean deep)
@@ -158,6 +165,7 @@ public abstract class IndexCursor implements Cursor
     protected final QueryContext context;
     protected final StoreAdapter adapter;
     protected final IterationHelper iterationHelper;
+    protected QueryBindings bindings;
     private boolean idle = true;
     private boolean destroyed = false;
 

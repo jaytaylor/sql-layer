@@ -73,6 +73,7 @@ public class GroupScanProfilePT extends QPProfilePTBase
         coi = group(customer);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
     }
 
     protected void populateDB(int customers, int ordersPerCustomer, int itemsPerOrder)
@@ -105,11 +106,11 @@ public class GroupScanProfilePT extends QPProfilePTBase
         long start = System.nanoTime();
         Operator plan = groupScan_Default(coi);
         for (int s = 0; s < SCANS; s++) {
-            Cursor cursor = cursor(plan, queryContext);
-            cursor.open();
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
+            cursor.openTopLevel();
             while (cursor.next() != null) {
             }
-            cursor.close();
+            cursor.closeTopLevel();
         }
         long end = System.nanoTime();
         double sec = (end - start) / (1000.0 * 1000 * 1000);

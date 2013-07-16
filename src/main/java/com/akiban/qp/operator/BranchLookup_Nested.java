@@ -148,9 +148,9 @@ public class BranchLookup_Nested extends Operator
     }
 
     @Override
-    public Cursor cursor(QueryContext context)
+    public Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context);
+        return new Execution(context, bindingsCursor);
     }
 
     @Override
@@ -285,7 +285,7 @@ public class BranchLookup_Nested extends Operator
 
     // Inner classes
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends LeafCursor
     {
         // Cursor interface
 
@@ -295,7 +295,7 @@ public class BranchLookup_Nested extends Operator
             TAP_OPEN.in();
             try {
                 CursorLifecycle.checkIdle(this);
-                Row rowFromBindings = context.getRow(inputBindingPosition);
+                Row rowFromBindings = bindings.getRow(inputBindingPosition);
                 if (LOG_EXECUTION) {
                     LOG.debug("BranchLookup_Nested: open using {}", rowFromBindings);
                 }
@@ -383,9 +383,9 @@ public class BranchLookup_Nested extends Operator
 
         // Execution interface
 
-        Execution(QueryContext context)
+        Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
-            super(context);
+            super(context, bindingsCursor);
             this.cursor = adapter().newGroupCursor(group);
             this.hKey = adapter().newHKey(outputRowType.hKey());
         }

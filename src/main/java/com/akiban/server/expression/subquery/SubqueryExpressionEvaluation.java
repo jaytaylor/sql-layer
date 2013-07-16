@@ -20,6 +20,7 @@ package com.akiban.server.expression.subquery;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
@@ -31,7 +32,13 @@ public abstract class SubqueryExpressionEvaluation extends ExpressionEvaluation.
     @Override
     public void of(QueryContext context) {
         this.context = context;
-        this.cursor = API.cursor(subquery, context);
+        cursor = null;
+    }
+
+    @Override
+    public void of(QueryBindings bindings) {
+        this.bindings = bindings;
+        cursor = null;
     }
 
     @Override
@@ -45,13 +52,16 @@ public abstract class SubqueryExpressionEvaluation extends ExpressionEvaluation.
 
     @Override
     public final ValueSource eval() {
-        context.setRow(bindingPosition, outerRow);
-        cursor.open();
+        bindings.setRow(bindingPosition, outerRow);
+        if (cursor == null) {
+            cursor = API.cursor(subquery, context, bindings);
+        }
+        cursor.openTopLevel();
         try {
             return doEval();
         }
         finally {
-            cursor.close();
+            cursor.closeTopLevel();
         }
     }
 
@@ -88,6 +98,10 @@ public abstract class SubqueryExpressionEvaluation extends ExpressionEvaluation.
         return context;
     }
 
+    protected QueryBindings queryBindings() {
+        return bindings;
+    }
+
     protected Row next() {
         Row row = cursor.next();
         if ((row != null) &&
@@ -113,6 +127,7 @@ public abstract class SubqueryExpressionEvaluation extends ExpressionEvaluation.
     private final int bindingPosition;
     private Cursor cursor;
     private QueryContext context;
+    private QueryBindings bindings;
     private Row outerRow;
 
 }

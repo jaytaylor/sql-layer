@@ -105,6 +105,7 @@ public class TreeScanCT extends CostModelBase
         idxRowType = indexType(t, indexedColumn.name());
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
     }
 
     protected void populateDB(int rows)
@@ -133,8 +134,8 @@ public class TreeScanCT extends CostModelBase
         Operator plan = indexScan_Default(idxRowType, keyRange, ordering);
         long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
-            Cursor cursor = cursor(plan, queryContext);
-            cursor.open();
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
+            cursor.openTopLevel();
             for (int s = 0; s < sequentialAccessesPerRandom; s++) {
                 Row row = cursor.next();
                 assert row != null;
@@ -153,13 +154,13 @@ public class TreeScanCT extends CostModelBase
     {
         ValuesHolderRow boundRow = new ValuesHolderRow(idxRowType);
         ValueHolder valueHolder = boundRow.holderAt(0);
-        queryContext.setRow(0, boundRow);
+        queryBindings.setRow(0, boundRow);
         IndexBound bound = new IndexBound(boundRow, new SetColumnSelector(0));
         IndexKeyRange keyRange = IndexKeyRange.bounded(idxRowType, bound, true, bound, true);
         Ordering ordering = new Ordering();
         ordering.append(field(idxRowType, 0), true);
         Operator plan = indexScan_Default(idxRowType, keyRange, ordering);
-        Cursor cursor = cursor(plan, queryContext);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
         long startTime = System.nanoTime();
         for (int r = 0; r < runs; r++) {
             for (int s = 0; s < sequentialAccessesPerRandom; s++) {
@@ -169,10 +170,10 @@ public class TreeScanCT extends CostModelBase
                 } else {
                     valueHolder.putString((String) key);
                 }
-                cursor.open();
+                cursor.openTopLevel();
                 Row row = cursor.next();
                 assert row != null;
-                cursor.close();
+                cursor.closeTopLevel();
             }
         }
         long endTime = System.nanoTime();

@@ -124,13 +124,13 @@ public class RowIndexer implements Closeable
     
     public long indexRows(Cursor cursor) throws IOException {
         documentCount = 0;
-        cursor.open();
+        cursor.openTopLevel();
         Row row;
         do {
             row = cursor.next();
             indexRow(row);
         } while (row != null);
-        cursor.close();
+        cursor.closeTopLevel();
         return documentCount;
     }
 

@@ -17,41 +17,21 @@
 
 package com.akiban.server.service.text;
 
-import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.IndexName;
-import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.service.BackgroundWork;
-import com.akiban.server.service.session.Session;
 
 import java.util.List;
 import org.apache.lucene.search.Query;
 
 /** Full service that does index maintenance and querying. */
 public interface FullTextIndexService extends FullTextIndexInfos {
-        
     /**
-     * This is a 'promise' to populate the given index, which is *being*
-     * created.
-     * @param name 
-     */
-    public void schedulePopulate(Session session, IndexName name);
-
-    /**
-     * Update the given index based on the changedRow 
-     * 
-     * @param name
-     * @param changedRow 
-     */
-    public void updateIndex(Session session, IndexName name, Iterable<byte[]> rows);
-    
-    /**
-     * TODO: move this to <pre>Service</pre> ?
-     * 
      * @return An array of available background works
      */
     public List<? extends BackgroundWork> getBackgroundWorks();
-    public void dropIndex(Session session, FullTextIndex name);
-    public Cursor searchIndex(QueryContext context, IndexName name, 
-                              Query query, int limit);
+
+    public RowCursor searchIndex(QueryContext context, IndexName name, 
+                                 Query query, int limit);
 }

@@ -29,7 +29,7 @@ import java.util.Map;
 import com.akiban.direct.AbstractDirectObject;
 import com.akiban.direct.Direct;
 import com.akiban.direct.DirectResultSet;
-import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.row.Row;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
@@ -42,14 +42,14 @@ public class JDBCResultSet implements DirectResultSet
 {
     protected final JDBCStatement statement;
     protected final JDBCResultSetMetaData metaData;
-    protected Cursor cursor;
+    protected RowCursor cursor;
     protected Row row;
     private final EmbeddedQueryContext context;
     private final Values values;
     private JDBCWarning warnings;
 
     protected JDBCResultSet(JDBCStatement statement, JDBCResultSetMetaData metaData,
-                            Cursor cursor) {
+                            RowCursor cursor) {
         this.statement = statement;
         this.metaData = metaData;
         this.cursor = cursor;
@@ -100,7 +100,7 @@ public class JDBCResultSet implements DirectResultSet
         protected ResultSet toResultSet(int index, Object cursor) {
             if (cursor == null)
                 return null;
-            JDBCResultSet resultSet = new JDBCResultSet(statement, metaData.getNestedResultSet(index + 1), (Cursor)cursor);
+            JDBCResultSet resultSet = new JDBCResultSet(statement, metaData.getNestedResultSet(index + 1), (RowCursor)cursor);
             statement.secondaryResultSet(resultSet);
             return resultSet;
         }
@@ -137,7 +137,7 @@ public class JDBCResultSet implements DirectResultSet
 
     @Override
     public <T> T unwrap(Class<T> iface) throws SQLException {
-        if (iface == Cursor.class)
+        if (iface == RowCursor.class)
             return (T)cursor;
         if (iface == Row.class)
             return (T)row;
@@ -146,7 +146,7 @@ public class JDBCResultSet implements DirectResultSet
     
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
-        if (iface == Cursor.class)
+        if (iface == RowCursor.class)
             return true;
         if (iface == Row.class)
             return true;

@@ -20,6 +20,7 @@ package com.akiban.server.expression.subquery;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
@@ -65,6 +66,11 @@ public final class ResultSetSubqueryExpression extends SubqueryExpression {
         }
 
         @Override
+        public void of(QueryBindings bindings) {
+            this.bindings = bindings;
+        }
+
+        @Override
         public void of(Row row) {
             if (row.rowType() != outerRowType) {
                 throw new IllegalArgumentException("wrong row type: " + outerRowType +
@@ -75,9 +81,9 @@ public final class ResultSetSubqueryExpression extends SubqueryExpression {
 
         @Override
         public ValueSource eval() {
-            context.setRow(bindingPosition, outerRow);
-            Cursor cursor = API.cursor(subquery, context);
-            cursor.open();
+            bindings.setRow(bindingPosition, outerRow);
+            Cursor cursor = API.cursor(subquery, context, bindings);
+            cursor.openTopLevel();
             return new ValueHolder(AkType.RESULT_SET, cursor);
         }
 
@@ -110,6 +116,7 @@ public final class ResultSetSubqueryExpression extends SubqueryExpression {
         private final RowType outerRowType;
         private final int bindingPosition;
         private QueryContext context;
+        private QueryBindings bindings;
         private Row outerRow;
     }
 

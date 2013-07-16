@@ -56,6 +56,7 @@ public class Union_OrderedIT extends OperatorITBase
         coi = group(t);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         db = new NewRow[] {
             createNewRow(t, 1000L, 1L),
             createNewRow(t, 1001L, 1L),
@@ -225,11 +226,11 @@ public class Union_OrderedIT extends OperatorITBase
         Operator plan = unionPlan(0, 0, true, false);
         RowBase[] expected = new RowBase[] {
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = unionPlan(0, 0, false, false);
         expected = new RowBase[] {
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -241,14 +242,14 @@ public class Union_OrderedIT extends OperatorITBase
             row(tRowType, 1L, 1001L),
             row(tRowType, 1L, 1002L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = unionPlan(0, 1, false, false);
         expected = new RowBase[] {
             row(tRowType, 1L, 1002L),
             row(tRowType, 1L, 1001L),
             row(tRowType, 1L, 1000L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -260,14 +261,14 @@ public class Union_OrderedIT extends OperatorITBase
             row(tRowType, 1L, 1001L),
             row(tRowType, 1L, 1002L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = unionPlan(1, 0, false, false);
         expected = new RowBase[] {
             row(tRowType, 1L, 1002L),
             row(tRowType, 1L, 1001L),
             row(tRowType, 1L, 1000L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -279,14 +280,14 @@ public class Union_OrderedIT extends OperatorITBase
             row(tRowType, 1L, 1001L),
             row(tRowType, 1L, 1002L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = unionPlan(1, 1, false, false);
         expected = new RowBase[] {
             row(tRowType, 1L, 1002L),
             row(tRowType, 1L, 1001L),
             row(tRowType, 1L, 1000L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = unionPlan(1, 1, true, true);
         expected = new RowBase[] {
             row(tRowType, 1L, 1000L),
@@ -296,7 +297,7 @@ public class Union_OrderedIT extends OperatorITBase
             row(tRowType, 1L, 1002L),
             row(tRowType, 1L, 1002L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -311,7 +312,7 @@ public class Union_OrderedIT extends OperatorITBase
             row(tRowType, 2L, 2001L),
             row(tRowType, 2L, 2002L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = unionPlan(1, 2, false, false);
         expected = new RowBase[] {
             row(tRowType, 2L, 2002L),
@@ -321,7 +322,7 @@ public class Union_OrderedIT extends OperatorITBase
             row(tRowType, 1L, 1001L),
             row(tRowType, 1L, 1000L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     private Operator unionPlan(int k1, int k2, boolean ascending, boolean outputEqual)

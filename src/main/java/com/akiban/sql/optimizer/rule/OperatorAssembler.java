@@ -1182,7 +1182,8 @@ public class OperatorAssembler extends BaseRule
                 stream.operator = API.indexScan_Default(indexRowType,
                                                         assembleSpatialIndexKeyRange(indexScan, null),
                                                         API.ordering(), // TODO: what ordering?
-                                                        selector);
+                                                        selector,
+                                                        rulesContext.getPipelineConfiguration().getIndexScanLookaheadQuantum());
                 indexRowType = indexRowType.physicalRowType();
                 stream.rowType = indexRowType;
             }
@@ -1190,7 +1191,8 @@ public class OperatorAssembler extends BaseRule
                 stream.operator = API.indexScan_Default(indexRowType,
                                                         assembleIndexKeyRange(indexScan, null),
                                                         assembleIndexOrdering(indexScan, indexRowType),
-                                                        selector);
+                                                        selector,
+                                                        rulesContext.getPipelineConfiguration().getIndexScanLookaheadQuantum());
                 stream.rowType = indexRowType;
             }
             else {
@@ -1221,7 +1223,8 @@ public class OperatorAssembler extends BaseRule
                     Operator scan = API.indexScan_Default(indexRowType,
                                                           assembleIndexKeyRange(indexScan, null, rangeSegment),
                                                           assembleIndexOrdering(indexScan, indexRowType),
-                                                          selector);
+                                                          selector,
+                                                          rulesContext.getPipelineConfiguration().getIndexScanLookaheadQuantum());
                     if (stream.operator == null) {
                         stream.operator = scan;
                         stream.rowType = indexRowType;
@@ -1457,7 +1460,8 @@ public class OperatorAssembler extends BaseRule
                                                              group,
                                                              inputRowType,
                                                              ancestorTypes,
-                                                             flag);
+                                                             flag,
+                                                             rulesContext.getPipelineConfiguration().getGroupLookupLookaheadQuantum());
             }
             stream.rowType = null;
             stream.fieldOffsets = null;
@@ -1524,10 +1528,14 @@ public class OperatorAssembler extends BaseRule
             PlanNode outer = mapJoin.getOuter();
             RowStream ostream = assembleStream(outer);
             boundRows.set(pos, ostream.fieldOffsets);
+            nestedBindingsDepth++;
             RowStream stream = assembleStream(mapJoin.getInner());
             stream.operator = API.map_NestedLoops(ostream.operator, 
                                                   stream.operator,
-                                                  currentBindingPosition());
+                                                  currentBindingPosition(),
+                                                  rulesContext.getPipelineConfiguration().isMapEnabled(),
+                                                  nestedBindingsDepth);
+            nestedBindingsDepth--;
             popBoundRow();
             return stream;
         }
@@ -2238,7 +2246,7 @@ public class OperatorAssembler extends BaseRule
 
         /* Bindings-related state */
 
-        protected int expressionBindingsOffset, loopBindingsOffset;
+        protected int expressionBindingsOffset, loopBindingsOffset, nestedBindingsDepth;
         protected Stack<ColumnExpressionToIndex> boundRows = new Stack<>(); // Needs to be List<>.
         protected Map<BaseHashTable,Integer> hashTablePositions = new HashMap<>();
 
@@ -2255,6 +2263,7 @@ public class OperatorAssembler extends BaseRule
             }
 
             loopBindingsOffset = expressionBindingsOffset;
+            nestedBindingsDepth = 0;
         }
 
         protected int pushBoundRow(ColumnExpressionToIndex boundRow) {

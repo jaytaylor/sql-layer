@@ -116,9 +116,9 @@ class IfEmpty_Default extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(QueryContext context)
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context);
+        return new Execution(context, bindingsCursor);
     }
 
     @Override
@@ -213,7 +213,7 @@ class IfEmpty_Default extends Operator
         UNKNOWN, DONE, ECHO_INPUT
     }
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends ChainedCursor
     {
         // Cursor interface
 
@@ -310,18 +310,11 @@ class IfEmpty_Default extends Operator
             return !closed;
         }
 
-        @Override
-        public boolean isDestroyed()
-        {
-            return input.isDestroyed();
-        }
-
         // Execution interface
 
-        Execution(QueryContext context)
+        Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
-            super(context);
-            this.input = inputOperator.cursor(context);
+            super(context, inputOperator.cursor(context, bindingsCursor));
             if (pExpressions != null) {
                 this.oEvaluations = null;
                 this.pEvaluations = new ArrayList<>(pExpressions.size());
@@ -349,6 +342,7 @@ class IfEmpty_Default extends Operator
                 for (int i = 0; i < nFields; i++) {
                     TEvaluatableExpression outerJoinRowColumnEvaluation = pEvaluations.get(i);
                     outerJoinRowColumnEvaluation.with(context);
+                    outerJoinRowColumnEvaluation.with(bindings);
                     outerJoinRowColumnEvaluation.evaluate();
                     PValueTargets.copyFrom(
                             outerJoinRowColumnEvaluation.resultValue(),
@@ -359,6 +353,7 @@ class IfEmpty_Default extends Operator
                 for (int i = 0; i < nFields; i++) {
                     ExpressionEvaluation outerJoinRowColumnEvaluation = oEvaluations.get(i);
                     outerJoinRowColumnEvaluation.of(context);
+                    outerJoinRowColumnEvaluation.of(bindings);
                     valuesHolderRow.holderAt(i).copyFrom(outerJoinRowColumnEvaluation.eval());
                 }
             }
@@ -376,7 +371,6 @@ class IfEmpty_Default extends Operator
 
         // Object state
 
-        private final Cursor input;
         private final List<ExpressionEvaluation> oEvaluations;
         private final List<TEvaluatableExpression> pEvaluations;
         private final ShareHolder<ValuesHolderRow> emptySubstitute = new ShareHolder<>();

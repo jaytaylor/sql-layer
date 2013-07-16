@@ -85,8 +85,9 @@ class Insert_Default implements UpdatePlannable {
     }
 
     @Override
-    public UpdateResult run(QueryContext context) {
-        return new Execution(context, inputOperator.cursor(context)).run();
+    public UpdateResult run(QueryContext context, QueryBindings bindings) {
+        QueryBindingsCursor bindingsCursor = new SingletonQueryBindingsCursor(bindings);
+        return new Execution(context, inputOperator.cursor(context, bindingsCursor)).run();
     }
 
     @Override
@@ -139,7 +140,7 @@ class Insert_Default implements UpdatePlannable {
                 INSERT_TAP.in();
             }
             try {
-                input.open();
+                input.openTopLevel();
                 Row row;
                 while ((row = input.next()) != null) {
                     // LOG.warn("About to insert {}: {}", row.rowType().userTable(), row);
@@ -154,7 +155,7 @@ class Insert_Default implements UpdatePlannable {
                 }
             } finally {
                 if (input != null) {
-                    input.close();
+                    input.destroy();
                 }
                 if (TAP_NEXT_ENABLED) {
                     INSERT_TAP.out();

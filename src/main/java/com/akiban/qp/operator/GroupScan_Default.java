@@ -22,6 +22,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.explain.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
@@ -88,9 +89,9 @@ class GroupScan_Default extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(QueryContext context)
+    protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, cursorCreator);
+        return new Execution(context, bindingsCursor, cursorCreator);
     }
 
     // GroupScan_Default interface
@@ -126,7 +127,7 @@ class GroupScan_Default extends Operator
 
     // Inner classes
 
-    private static class Execution extends OperatorExecutionBase implements Cursor
+    private static class Execution extends LeafCursor
     {
 
         // Cursor interface
@@ -196,22 +197,30 @@ class GroupScan_Default extends Operator
             return cursor.isDestroyed();
         }
 
+        @Override
+        public QueryBindings nextBindings() {
+            QueryBindings bindings = super.nextBindings();
+            if (cursor instanceof BindingsAwareCursor)
+                ((BindingsAwareCursor)cursor).rebind(bindings);
+            return bindings;
+        }
+
         // Execution interface
 
-        Execution(QueryContext context, GroupCursorCreator cursorCreator)
+        Execution(QueryContext context, QueryBindingsCursor bindingsCursor, GroupCursorCreator cursorCreator)
         {
-            super(context);
+            super(context, bindingsCursor);
             this.cursor = cursorCreator.cursor(context);
         }
 
         // Object state
 
-        private final Cursor cursor;
+        private final RowCursor cursor;
     }
 
     static interface GroupCursorCreator
     {
-        Cursor cursor(QueryContext context);
+        RowCursor cursor(QueryContext context);
 
         Group group();
         
@@ -254,7 +263,7 @@ class GroupScan_Default extends Operator
         // GroupCursorCreator interface
 
         @Override
-        public Cursor cursor(QueryContext context)
+        public RowCursor cursor(QueryContext context)
         {
             return context.getStore(group().getRoot()).newGroupCursor(group());
         }
@@ -281,9 +290,9 @@ class GroupScan_Default extends Operator
         // GroupCursorCreator interface
 
         @Override
-        public Cursor cursor(QueryContext context)
+        public RowCursor cursor(QueryContext context)
         {
-            return new HKeyBoundCursor(context, 
+            return new HKeyBoundCursor(context,
                     context.getStore(group().getRoot()).newGroupCursor(group()),
                     hKeyBindingPosition, 
                     deep, 
@@ -329,7 +338,7 @@ class GroupScan_Default extends Operator
         private final UserTable hKeyType;
     }
 
-    private static class HKeyBoundCursor extends ChainedCursor
+    private static class HKeyBoundCursor implements BindingsAwareCursor
     {
 
         @Override
@@ -342,12 +351,12 @@ class GroupScan_Default extends Operator
 
         @Override
         public Row next() {
-            // If we've ever seen a row, just defer to super
+            // If we've ever seen a row, just defer to input
             if (sawOne) {
-                return super.next();
+                return input.next();
             }
-            Row result = super.next();
-            // If we saw a row, mark it as such and defer to super
+            Row result = input.next();
+            // If we saw a row, mark it as such and defer to input
             if (result != null) {
                 sawOne = true;
                 return result;
@@ -366,6 +375,46 @@ class GroupScan_Default extends Operator
             return next();
         }
 
+        @Override
+        public void jump(Row row, ColumnSelector columnSelector)
+        {
+            input.jump(row, columnSelector);
+        }
+
+        @Override
+        public void close() {
+            input.close();
+        }
+
+        @Override
+        public void destroy()
+        {
+            input.destroy();
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return input.isIdle();
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return input.isActive();
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return input.isDestroyed();
+        }
+
+        @Override
+        public void rebind(QueryBindings bindings) {
+            this.bindings = bindings;
+        }
+
         HKeyBoundCursor(QueryContext context,
                         GroupCursor input,
                         int hKeyBindingPosition,
@@ -373,7 +422,7 @@ class GroupScan_Default extends Operator
                         UserTable hKeyType,
                         UserTable shortenUntil)
         {
-            super(context, input);
+            this.context = context;
             this.input = input;
             this.hKeyBindingPosition = hKeyBindingPosition;
             this.deep = deep;
@@ -382,14 +431,16 @@ class GroupScan_Default extends Operator
         }
 
         private HKey getHKeyFromBindings() {
-            return context.getHKey(hKeyBindingPosition);
+            return bindings.getHKey(hKeyBindingPosition);
         }
 
+        private final QueryContext context;
         private final GroupCursor input;
         private final int hKeyBindingPosition;
         private final boolean deep;
         private UserTable atTable;
         private final UserTable stopSearchTable;
         private boolean sawOne = false;
+        private QueryBindings bindings;
     }
 }

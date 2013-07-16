@@ -61,6 +61,7 @@ public final class AnySubqueryTExpression extends SubqueryTExpression {
         @Override
         protected void doEval(PValueTarget out) {
             evaluation.with(queryContext());
+            evaluation.with(queryBindings());
             Boolean result = Boolean.FALSE;
             while (true) {
                 Row row = next();

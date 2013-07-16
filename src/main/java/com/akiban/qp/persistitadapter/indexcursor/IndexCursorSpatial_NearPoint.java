@@ -22,7 +22,8 @@ import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.BindingsAwareCursor;
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -109,6 +110,14 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         }
     }
 
+    @Override
+    public void rebind(QueryBindings bindings)
+    {
+        super.rebind(bindings);
+        geCursor.rebind(bindings);
+        ltCursor.rebind(bindings);
+    }
+
     // IndexCursorSpatial_InBox interface
 
     public static IndexCursorSpatial_NearPoint create(QueryContext context,
@@ -133,7 +142,7 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         // The index column selector needs to select all the columns before the z column, and the z column itself.
         IndexRowPrefixSelector indexColumnSelector = new IndexRowPrefixSelector(latColumn + 1);
         IndexBound loBound = keyRange.lo();
-        BoundExpressions loExpressions = loBound.boundExpressions(context);
+        BoundExpressions loExpressions = loBound.boundExpressions(context, bindings);
         // Compute z-value at beginning of forward and backward scans
         TInstance latInstance = index.getAllColumns().get(latColumn).getColumn().tInstance();
         TInstance lonInstance = index.getAllColumns().get(lonColumn).getColumn().tInstance();
@@ -181,12 +190,12 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
             upOrdering.append((TPreparedExpression)null, true);
             downOrdering.append((TPreparedExpression)null, false);
         }
-        geCursor = new IndexCursorUnidirectional<>(context,
+        geCursor = new IndexCursorUnidirectional<>(context, 
                                                                geRowState,
                                                                geKeyRange,
                                                                upOrdering,
                                                                PValueSortKeyAdapter.INSTANCE);
-        ltCursor = new IndexCursorUnidirectional<>(context,
+        ltCursor = new IndexCursorUnidirectional<>(context, 
                                                                ltRowState,
                                                                ltKeyRange,
                                                                downOrdering,
@@ -220,11 +229,11 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
     private final int zPosition;
     private final IterationHelper iterationHelper;
     private long zStart;
-    private Cursor geCursor;
+    private BindingsAwareCursor geCursor;
     private Row geRow;
     private long geDistance;
     private boolean geNeedToAdvance;
-    private Cursor ltCursor;
+    private BindingsAwareCursor ltCursor;
     private Row ltRow;
     private long ltDistance;
     private boolean ltNeedToAdvance;

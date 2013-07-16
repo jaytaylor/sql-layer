@@ -23,6 +23,7 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.error.BranchingGroupIndexException;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
 import com.akiban.server.store.IndexKeyVisitor;
 import com.akiban.server.test.it.ITBase;
 import junit.framework.Assert;
@@ -225,8 +226,7 @@ public class GroupIndexIT extends ITBase {
 
         final int[] curKey = {0};
         final String indexName = groupIndex.getIndexName().getName();
-        txnService().beginTransaction(session());
-        try {
+        try(CloseableTransaction txn = txnService().beginCloseableTransaction(session())) {
             store().traverse(session(), groupIndex, new IndexKeyVisitor() {
                 @Override
                 public boolean groupIndex()
@@ -248,9 +248,7 @@ public class GroupIndexIT extends ITBase {
                     }
                 }
             });
-            txnService().commitTransaction(session());
-        } finally {
-            txnService().rollbackTransactionIfOpen(session());
+            txn.commit();
         }
 
         if(!extraKeys.isEmpty()) {

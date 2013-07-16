@@ -18,7 +18,7 @@
 package com.akiban.server.service.tree;
 
 import com.akiban.server.service.tree.TreeServiceImpl.SchemaNode;
-import com.akiban.server.test.it.ITBase;
+import com.akiban.server.test.it.PersistitITBase;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -27,7 +27,8 @@ import java.util.SortedMap;
 
 import static org.junit.Assert.assertEquals;
 
-public class TreeServiceImplInvalidIT extends ITBase {
+public class TreeServiceImplInvalidIT extends PersistitITBase
+{
     @Override
     protected Map<String, String> startupConfigProperties() {
         final Map<String, String> properties = new HashMap<>();

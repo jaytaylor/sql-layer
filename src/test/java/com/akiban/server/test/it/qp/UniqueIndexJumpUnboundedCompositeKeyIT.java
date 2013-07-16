@@ -113,6 +113,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
         };
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
+        queryBindings = queryContext.createBindings();
         use(db);
         for (NewRow row : db)
         {
@@ -2851,8 +2852,8 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
                         long expected[][])
     {
         Operator plan = indexScan_Default(idxRowType, range, ordering);
-        Cursor cursor = cursor(plan, queryContext);
-        cursor.open();
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
+        cursor.openTopLevel();
 
 
         cursor.jump(indexRowWithId(targetId1, targetId2), INDEX_ROW_SELECTOR);
@@ -2867,7 +2868,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
             actualRows.add(row);
             rowHolders.add(new ShareHolder<>(row));
         }
-        cursor.close();
+        cursor.closeTopLevel();
 
         // check the list of rows
         checkRows(actualRows, expected);

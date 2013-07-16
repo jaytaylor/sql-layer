@@ -17,7 +17,9 @@
 
 package com.akiban.qp.util;
 
-import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.BindingsAwareCursor;
+import com.akiban.qp.operator.QueryBindings;
+import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.row.Row;
 import com.akiban.server.api.dml.ColumnSelector;
 
@@ -25,7 +27,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class MultiCursor implements Cursor
+public class MultiCursor implements BindingsAwareCursor
 {
     // Cursor interface
 
@@ -33,6 +35,8 @@ public class MultiCursor implements Cursor
     public void open()
     {
         sealed = false;
+        // TODO: Have a mode where all the cursors get opened so that
+        // they can start in parallel.
         cursorIterator = cursors.iterator();
         startNextCursor();
     }
@@ -93,9 +97,19 @@ public class MultiCursor implements Cursor
         return cursorIterator == null;
     }
 
+    @Override
+    public void rebind(QueryBindings bindings)
+    {
+        for (RowCursor cursor : cursors) {
+            if (cursor instanceof BindingsAwareCursor) {
+                ((BindingsAwareCursor)cursor).rebind(bindings);
+            }
+        }
+    }
+
     // MultiCursor interface
 
-    public void addCursor(Cursor cursor)
+    public void addCursor(RowCursor cursor)
     {
         if (sealed) {
             throw new IllegalStateException();
@@ -120,9 +134,9 @@ public class MultiCursor implements Cursor
 
     // Object state
 
-    private final List<Cursor> cursors = new ArrayList<>();
+    private final List<RowCursor> cursors = new ArrayList<>();
     private boolean sealed = false;
-    private Iterator<Cursor> cursorIterator;
-    private Cursor current;
+    private Iterator<RowCursor> cursorIterator;
+    private RowCursor current;
 
 }

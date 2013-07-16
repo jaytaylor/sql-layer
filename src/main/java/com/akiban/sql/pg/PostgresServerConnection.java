@@ -35,6 +35,7 @@ import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.SQLParserException;
 import com.akiban.sql.parser.StatementNode;
 
+import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.api.DDLFunctions;
@@ -627,8 +628,9 @@ public class PostgresServerConnection extends ServerSessionBase
         sessionMonitor.startStatement(sql, startTime);
 
         PostgresQueryContext context = new PostgresQueryContext(this);
+        QueryBindings bindings = context.createBindings(); // Empty of parameters.
         updateAIS(context);
-
+        
         PostgresStatement pstmt = null;
         if (statementCache != null)
             pstmt = statementCache.get(sql);
@@ -646,7 +648,7 @@ public class PostgresServerConnection extends ServerSessionBase
         int rowsProcessed = 0;
         if (pstmt != null) {
             pstmt.sendDescription(context, false, false);
-            rowsProcessed = executeStatementWithAutoTxn(pstmt, context, -1);
+            rowsProcessed = executeStatementWithAutoTxn(pstmt, context, bindings, -1);
         }
         else {
             // Parse as a _list_ of statements and process each in turn.
@@ -680,7 +682,7 @@ public class PostgresServerConnection extends ServerSessionBase
                     if ((statementCache != null) && singleStmt && pstmt.putInCache())
                         statementCache.put(stmtSQL, pstmt);
                     pstmt.sendDescription(context, false, false);
-                    rowsProcessed = executeStatement(pstmt, context, -1);
+                    rowsProcessed = executeStatement(pstmt, context, bindings, -1);
                     success = true;
                 } finally {
                     afterExecute(pstmt, local, success);
@@ -807,6 +809,7 @@ public class PostgresServerConnection extends ServerSessionBase
                               ((PostgresCursorGenerator<?>)stmt).canSuspend(this));
         PostgresBoundQueryContext bound = 
             new PostgresBoundQueryContext(this, pstmt, portalName, canSuspend, true);
+        QueryBindings bindings = bound.createBindings();
         if (params != null) {
             if (valueDecoder == null)
                 valueDecoder = new ServerValueDecoder(messenger.getEncoding());
@@ -825,11 +828,12 @@ public class PostgresServerConnection extends ServerSessionBase
                 if ((paramsBinary != null) && (i < paramsBinary.length))
                     binary = paramsBinary[i];
                 if (usePValues)
-                    valueDecoder.decodePValue(params[i], pgType, binary, bound, i);
+                    valueDecoder.decodePValue(params[i], pgType, binary, bindings, i);
                 else
-                    valueDecoder.decodeValue(params[i], pgType, binary, bound, i);
+                    valueDecoder.decodeValue(params[i], pgType, binary, bindings, i);
             }
         }
+        bound.setBindings(bindings);
         bound.setColumnBinary(resultsBinary, defaultResultsBinary);
         PostgresBoundQueryContext prev;
         synchronized (boundPortals) {
@@ -879,9 +883,10 @@ public class PostgresServerConnection extends ServerSessionBase
         PostgresBoundQueryContext context = boundPortals.get(portalName);
         if (context == null)
             throw new NoSuchCursorException(portalName);
+        QueryBindings bindings = context.getBindings();
         PostgresPreparedStatement pstmt = context.getStatement();
         sessionMonitor.startStatement(pstmt.getSQL(), pstmt.getName(), startTime);
-        int rowsProcessed = executeStatementWithAutoTxn(pstmt.getStatement(), context, maxrows);
+        int rowsProcessed = executeStatementWithAutoTxn(pstmt.getStatement(), context, bindings, maxrows);
         sessionMonitor.endStatement(rowsProcessed);
         logger.debug("Execute complete: {} rows", rowsProcessed);
         if (reqs.monitor().isQueryLogEnabled()) {
@@ -1069,13 +1074,13 @@ public class PostgresServerConnection extends ServerSessionBase
         }
     }
 
-    protected int executeStatementWithAutoTxn(PostgresStatement pstmt, PostgresQueryContext context, int maxrows)
+    protected int executeStatementWithAutoTxn(PostgresStatement pstmt, PostgresQueryContext context, QueryBindings bindings, int maxrows)
             throws IOException {
         ServerTransaction localTransaction = beforeExecute(pstmt);
         int rowsProcessed;
         boolean success = false;
         try {
-            rowsProcessed = executeStatement(pstmt, context, maxrows);
+            rowsProcessed = executeStatement(pstmt, context, bindings, maxrows);
             success = true;
         }
         finally {
@@ -1085,7 +1090,7 @@ public class PostgresServerConnection extends ServerSessionBase
         return rowsProcessed;
     }
 
-    protected int executeStatement(PostgresStatement pstmt, PostgresQueryContext context, int maxrows)
+    protected int executeStatement(PostgresStatement pstmt, PostgresQueryContext context, QueryBindings bindings, int maxrows)
             throws IOException {
         int rowsProcessed;
         StoreAdapter storeAdapter = null;
@@ -1103,7 +1108,7 @@ public class PostgresServerConnection extends ServerSessionBase
             }
             session.setTimeoutAfterMillis(getQueryTimeoutMilli());
             sessionMonitor.enterStage(MonitorStage.EXECUTE);
-            rowsProcessed = pstmt.execute(context, maxrows);
+            rowsProcessed = pstmt.execute(context, bindings, maxrows);
         }
         finally {
             if (storeAdapter != null)
@@ -1149,12 +1154,12 @@ public class PostgresServerConnection extends ServerSessionBase
         PostgresPreparedStatement pstmt = preparedStatements.get(estmt.getName());
         if (pstmt == null)
             throw new NoSuchPreparedStatementException(estmt.getName());
-        PostgresBoundQueryContext context = 
-            new PostgresBoundQueryContext(this, pstmt, null, false, false);
-        estmt.setParameters(context);
+        PostgresQueryContext context = new PostgresQueryContext(this);
+        QueryBindings bindings = context.createBindings();
+        estmt.setParameters(bindings);
         sessionMonitor.startStatement(pstmt.getSQL(), pstmt.getName());
         pstmt.getStatement().sendDescription(context, false, false);
-        int nrows = executeStatementWithAutoTxn(pstmt.getStatement(), context, maxrows);
+        int nrows = executeStatementWithAutoTxn(pstmt.getStatement(), context, bindings, maxrows);
         sessionMonitor.endStatement(nrows);
         return nrows;
     }
@@ -1204,9 +1209,11 @@ public class PostgresServerConnection extends ServerSessionBase
         }
         PostgresBoundQueryContext bound =
             new PostgresBoundQueryContext(this, ppstmt, name, true, false);
+        QueryBindings bindings = bound.createBindings();
         if (estmt != null) {
-            estmt.setParameters(bound);
+            estmt.setParameters(bindings);
         }
+        bound.setBindings(bindings);
         PostgresBoundQueryContext prev;
         synchronized (boundPortals) {
             prev = boundPortals.put(name, bound);
@@ -1220,10 +1227,11 @@ public class PostgresServerConnection extends ServerSessionBase
         PostgresBoundQueryContext bound = boundPortals.get(name);
         if (bound == null)
             throw new NoSuchCursorException(name);
+        QueryBindings bindings = bound.getBindings();
         PostgresPreparedStatement pstmt = bound.getStatement();
         sessionMonitor.startStatement(pstmt.getSQL(), pstmt.getName());
         pstmt.getStatement().sendDescription(bound, false, false);
-        int nrows = executeStatementWithAutoTxn(pstmt.getStatement(), bound, count);
+        int nrows = executeStatementWithAutoTxn(pstmt.getStatement(), bound, bindings, count);
         sessionMonitor.endStatement(nrows);
         return nrows;
     }

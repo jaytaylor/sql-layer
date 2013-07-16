@@ -19,6 +19,7 @@ package com.akiban.server.store.statistics;
 
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.listener.ListenerService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
@@ -40,8 +41,9 @@ public class FDBIndexStatisticsService extends AbstractIndexStatisticsService {
                                      TransactionService txnService,
                                      SchemaManager schemaManager,
                                      SessionService sessionService,
-                                     ConfigurationService configurationService) {
-        super(store, txnService, schemaManager, sessionService, configurationService);
+                                     ConfigurationService configurationService,
+                                     ListenerService listenerService) {
+        super(store, txnService, schemaManager, sessionService, configurationService, listenerService);
         if(store instanceof FDBStore) {
             this.store = (FDBStore)store;
         } else {
