@@ -272,6 +272,10 @@ public class PersistitSorter implements Sorter
         {
         }
 
+        @Override
+        public void preload(Direction dir, boolean deep) {
+        }
+
         SorterIterationHelper(PersistitValueSourceAdapter valueAdapter)
         {
             this.valueAdapter = valueAdapter;

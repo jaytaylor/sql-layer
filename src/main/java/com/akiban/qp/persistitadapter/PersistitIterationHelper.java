@@ -100,6 +100,10 @@ public class PersistitIterationHelper implements IterationHelper
         }
     }
 
+    @Override
+    public void preload(Direction dir, boolean deep) {
+    }
+
     // PersistitIterationHelper interface
 
     public PersistitIterationHelper(PersistitAdapter adapter, IndexRowType indexRowType)
