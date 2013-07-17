@@ -23,10 +23,13 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Sequence;
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.persistitadapter.FDBAdapter;
+import com.akiban.qp.persistitadapter.PersistitHKey;
+import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.DuplicateKeyException;
 import com.akiban.server.error.FDBAdapterException;
@@ -437,11 +440,42 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
                                   Key hKey,
                                   PersistitIndexRowBuffer indexRowBuffer) {
         Transaction txn = txnService.getTransaction(session);
-        if (index.isUniqueAndMayContainNulls()) {
-            // TODO: Is PersistitStore's broken w.r.t indexRow.hKey()?
-            throw new UnsupportedOperationException("Can't delete unique index with nulls");
+        Key indexKey = createKey();
+        // See big note in PersistitStore#deleteIndexRow() about format.
+        if(index.isUniqueAndMayContainNulls()) {
+            // IndexRow is used below, use these as intermediates.
+            Key spareKey = indexRowBuffer.getPKey();
+            Value spareValue = indexRowBuffer.getValue();
+            if(spareKey == null) {
+                spareKey = createKey();
+            }
+            if(spareValue == null) {
+                spareValue = new Value((Persistit)null);
+            }
+            // Can't use a PIRB, because we need to get the hkey. Need a PersistitIndexRow.
+            FDBAdapter adapter = createAdapter(session, SchemaCache.globalSchema(getAIS(session)));
+            IndexRowType indexRowType = adapter.schema().indexRowType(index);
+            PersistitIndexRow indexRow = adapter.takeIndexRow(indexRowType);
+            constructIndexRow(session, indexKey, rowData, index, hKey, indexRow, false);
+            for(KeyValue kv : txn.getRangeStartsWith(packedTuple(index, indexKey))) {
+                // Key
+                byte[] keyBytes = Tuple.fromBytes(kv.getKey()).getBytes(2);
+                spareKey.setEncodedSize(keyBytes.length);
+                System.arraycopy(keyBytes, 0, spareKey.getEncodedBytes(), 0, keyBytes.length);
+                // Value
+                byte[] valueBytes = kv.getValue();
+                spareValue.clear();
+                spareValue.putEncodedBytes(valueBytes, 0, valueBytes.length);
+                // Delicate: copyFromKeyValue initializes the key returned by hKey
+                indexRow.copyFrom(spareKey, spareValue);
+                PersistitHKey rowHKey = (PersistitHKey)indexRow.hKey();
+                if(rowHKey.key().compareTo(hKey) == 0) {
+                    txn.clear(kv.getKey());
+                    break;
+                }
+            }
+            adapter.returnIndexRow(indexRow);
         } else {
-            Key indexKey = createKey();
             constructIndexRow(session, indexKey, rowData, index, hKey, indexRowBuffer, false);
             txn.clear(packedTuple(index, indexKey));
         }
@@ -514,9 +548,28 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         return false;
     }
 
+    // TODO: A little ugly and slow, but unique indexes will get refactored soon and need for separator goes away.
     @Override
     public long nullIndexSeparatorValue(Session session, final Index index) {
-        throw new UnsupportedOperationException();
+        final long[] value = { 1 };
+        try {
+            // New txn to avoid spurious conflicts
+            holder.getDatabase().run(new Retryable() {
+                @Override
+                public void attempt(Transaction txn) {
+                    byte[] keyBytes = Tuple.from("indexCount", index.indexDef().getTreeName()).pack();
+                    byte[] valueBytes = txn.get(keyBytes).get();
+                    value[0] = 1;
+                    if(valueBytes != null) {
+                        value[0] += Tuple.fromBytes(valueBytes).getLong(0);
+                    }
+                    txn.set(keyBytes, Tuple.from(value[0]).pack());
+                }
+            });
+        } catch(Throwable t) {
+            throw new AkibanInternalException("Unexpected", t);
+        }
+        return value[0];
     }
 
     @Override
