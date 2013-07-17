@@ -22,7 +22,6 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.IndexScanSelector;
 import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
@@ -56,6 +55,7 @@ public class FDBAdapter extends StoreAdapter {
     private static final PersistitIndexRowPool indexRowPool = new PersistitIndexRowPool();
 
     private final FDBStore store;
+    private final PersistitKeyHasher keyHasher = new PersistitKeyHasher();
 
     public FDBAdapter(FDBStore store, Schema schema, Session session, ConfigurationService config) {
         super(schema, session, config);
@@ -149,7 +149,21 @@ public class FDBAdapter extends StoreAdapter {
 
     @Override
     public long hash(ValueSource valueSource, AkCollator collator) {
-        throw new UnsupportedOperationException();
+        assert collator != null; // Caller should have hashed in this case
+        long hash;
+        Key key;
+        int depth;
+        if (valueSource instanceof PersistitKeyValueSource) {
+            PersistitKeyValueSource persistitKeyValueSource = (PersistitKeyValueSource) valueSource;
+            key = persistitKeyValueSource.key();
+            depth = persistitKeyValueSource.depth();
+        } else {
+            key = createKey();
+            collator.append(key, valueSource.getString());
+            depth = 0;
+        }
+        hash = keyHasher.hash(key, depth);
+        return hash;
     }
 
     @Override
