@@ -283,9 +283,9 @@ public class BranchLookup_Nested extends Operator
         atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(inputBindingPosition));
         atts.put(Label.OUTPUT_TYPE, outputRowType.getExplainer(context));
         UserTableRowType ancestorRowType = outputRowType.schema().userTableRowType(commonAncestor);
-        if ((ancestorRowType != inputRowType) && (ancestorRowType != outputRowType))
+        if ((ancestorRowType != sourceRowType) && (ancestorRowType != outputRowType))
             atts.put(Label.ANCESTOR_TYPE, ancestorRowType.getExplainer(context));
-        return new LookUpOperatorExplainer(getName(), atts, inputRowType, false, null, context);
+        return new LookUpOperatorExplainer(getName(), atts, sourceRowType, false, null, context);
     }
 
     // Inner classes
