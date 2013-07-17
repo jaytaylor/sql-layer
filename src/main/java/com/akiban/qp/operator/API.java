@@ -234,6 +234,23 @@ public class API
                                        inputBindingPosition);
     }
 
+    public static Operator branchLookup_Nested(Group group,
+                                               RowType inputRowType,
+                                               RowType sourceRowType,
+                                               UserTableRowType ancestorRowType,
+                                               UserTableRowType outputRowType,
+                                               InputPreservationOption flag,
+                                               int inputBindingPosition)
+    {
+        return new BranchLookup_Nested(group,
+                                       inputRowType, 
+                                       sourceRowType,
+                                       ancestorRowType,
+                                       outputRowType,
+                                       flag,
+                                       inputBindingPosition);
+    }
+
     // Limit
 
     public static Operator limit_Default(Operator inputOperator, int limitRows)

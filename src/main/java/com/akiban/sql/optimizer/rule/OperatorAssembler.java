@@ -1475,7 +1475,9 @@ public class OperatorAssembler extends BaseRule
                 // Simple version for Product_NestedLoops.
                 stream = new RowStream();
                 API.InputPreservationOption flag = API.InputPreservationOption.KEEP_INPUT;
+                ColumnExpressionToIndex boundRow = boundRows.get(boundRows.size()-1);
                 stream.operator = API.branchLookup_Nested(group,
+                                                          boundRow.getRowType(),
                                                           tableRowType(branchLookup.getSource()),
                                                           tableRowType(branchLookup.getAncestor()),
                                                           tableRowType(branchLookup.getBranch()), 
@@ -1490,6 +1492,7 @@ public class OperatorAssembler extends BaseRule
                 int rowIndex = lookupNestedBoundRowIndex(((GroupLoopScan)branchLookup.getInput()));
                 ColumnExpressionToIndex boundRow = boundRows.get(rowIndex);
                 stream.operator = API.branchLookup_Nested(group,
+                                                          boundRow.getRowType(),
                                                           boundRow.getRowType(),
                                                           tableRowType(branchLookup.getAncestor()),
                                                           tableRowType(branchLookup.getBranch()), 
@@ -1546,14 +1549,12 @@ public class OperatorAssembler extends BaseRule
                 ancestorRowType = tableRowType(product.getAncestor());
             RowStream pstream = new RowStream();
             Flattened flattened = new Flattened();
+            pstream.fieldOffsets = flattened;
             int nbound = 0;
             for (PlanNode subplan : product.getSubplans()) {
                 if (pstream.operator != null) {
-                    // The actual bound row is the branch row, which
-                    // we don't access directly. Just give each
-                    // product a separate position; nesting doesn't
-                    // matter.
-                    pushBoundRow(null);
+                    pushBoundRow(flattened);
+                    nestedBindingsDepth++;
                     nbound++;
                 }
                 RowStream stream = assembleStream(subplan);
@@ -1562,13 +1563,18 @@ public class OperatorAssembler extends BaseRule
                     pstream.rowType = stream.rowType;
                 }
                 else {
-                    pstream.operator = API.product_NestedLoops(pstream.operator,
-                                                               stream.operator,
-                                                               pstream.rowType,
-                                                               ancestorRowType,
-                                                               stream.rowType,
-                                                               currentBindingPosition());
-                    pstream.rowType = pstream.operator.rowType();
+                    stream.operator = API.product_Nested(stream.operator,
+                                                         pstream.rowType,
+                                                         ancestorRowType,
+                                                         stream.rowType,
+                                                         currentBindingPosition());
+                    stream.rowType = stream.operator.rowType();
+                    pstream.operator = API.map_NestedLoops(pstream.operator,
+                                                           stream.operator,
+                                                           currentBindingPosition(),
+                                                           rulesContext.getPipelineConfiguration().isMapEnabled(),
+                                                           nestedBindingsDepth);
+                    pstream.rowType = stream.rowType;
                 }
                 if (stream.fieldOffsets instanceof ColumnSourceFieldOffsets) {
                     TableSource table = ((ColumnSourceFieldOffsets)
@@ -1578,13 +1584,13 @@ public class OperatorAssembler extends BaseRule
                 else {
                     flattened.product((Flattened)stream.fieldOffsets);
                 }
+                flattened.setRowType(pstream.rowType);
             }
             while (nbound > 0) {
                 popBoundRow();
+                nestedBindingsDepth--;
                 nbound--;
             }
-            flattened.setRowType(pstream.rowType);
-            pstream.fieldOffsets = flattened;
             return pstream;
         }
 
