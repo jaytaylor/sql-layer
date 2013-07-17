@@ -126,6 +126,10 @@ public class FDBIterationHelper implements IterationHelper
         return advance(deep);
     }
 
+    @Override
+    public void preload(Direction dir, boolean deep) {
+        checkIterator(dir, deep);
+    }
 
     //
     // Internal

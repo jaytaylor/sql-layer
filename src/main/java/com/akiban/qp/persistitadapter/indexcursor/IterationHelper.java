@@ -68,4 +68,11 @@ public interface IterationHelper
      * @return <code>true</code> if there was a key/value to traverse to.
      */
     boolean traverse(Direction dir, boolean deep);
+
+    /**
+     * Start cursor for given direction if that can be done asynchronously.
+     * @param dir The direction to advance in.
+     * @param deep <code>true</code> if the next physical key is desired, <code>false</code> if logical is.
+     */
+    void preload(Direction dir, boolean deep);
 }

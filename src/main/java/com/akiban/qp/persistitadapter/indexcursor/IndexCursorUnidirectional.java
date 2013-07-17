@@ -472,6 +472,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             pastStart = false;
         }
         keyComparison = initialKeyComparison;
+        iterationHelper.preload(keyComparison, true);
     }
 
     private Index index()
