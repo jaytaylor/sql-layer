@@ -45,7 +45,6 @@ import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.AkServerInterface;
 import com.akiban.server.AkServerUtil;
@@ -66,6 +65,8 @@ import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.service.tree.TreeServiceImpl;
+import com.akiban.server.store.FDBHolder;
+import com.akiban.server.store.FDBStore;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.t3expressions.TCastResolver;
 import com.akiban.server.types.ValueSource;
@@ -83,13 +84,14 @@ import com.akiban.util.AssertUtils;
 import com.akiban.util.Strings;
 import com.akiban.util.tap.TapReport;
 import com.akiban.util.Undef;
+import com.foundationdb.Retryable;
+import com.foundationdb.Transaction;
 import junit.framework.Assert;
 
 import org.junit.After;
 import org.junit.Before;
 
 import com.akiban.server.api.dml.scan.RowDataOutput;
-import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 import com.akiban.util.ListUtils;
 
@@ -253,6 +255,18 @@ public class ApiTestBase {
         return testName.getMethodName();
     }
 
+    private void clearFDBData() throws Throwable {
+        FDBHolder holder = sm.getServiceByClass(FDBHolder.class);
+        final byte[] begin = { 0x00 };
+        final byte[] end = { (byte)0xFF };
+        holder.getDatabase().run(new Retryable() {
+            @Override
+            public void attempt(Transaction txn) {
+                txn.clear(begin, end);
+            }
+        });
+    }
+
     @Before
     public final void startTestServices() throws Throwable {
         types3SwitchSave = Types3Switch.ON;
@@ -282,6 +296,13 @@ public class ApiTestBase {
                 }
                 assertNull("lastStartupConfigProperties should be null", lastStartupConfigProperties);
                 sm = createServiceManager(startupConfigProperties);
+
+                // Clear out FDB's data, too.
+                // TODO: Better way to shove this behind an interface?
+                if(sm.serviceIsBoundTo(Store.class, FDBStore.class)) {
+                    clearFDBData();
+                }
+
                 sm.startServices();
                 ServiceManagerImpl.setServiceManager(sm);
                 if (TAPS != null) {
