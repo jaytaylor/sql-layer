@@ -122,7 +122,7 @@ class Union_Ordered extends Operator
         return String.format("%s\n%s", describePlan(left), describePlan(right));
     }
 
-    // Project_Default interface
+    // Union_Ordered interface
 
     public Union_Ordered(Operator left,
                          Operator right,
