@@ -342,7 +342,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
 
     @Override
     protected void packRowData(FDBStoreData storeData, RowData rowData) {
-        storeData.value = Arrays.copyOfRange(rowData.getBytes(), rowData.getBufferStart(), rowData.getBufferEnd());
+        storeData.value = Arrays.copyOfRange(rowData.getBytes(), rowData.getRowStart(), rowData.getRowEnd());
     }
 
     @Override
@@ -407,7 +407,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         PersistitIndexRowBuffer indexRow = null;
         if (pkValue != null) {
             Value value = new Value((Persistit)null);
-            value.putByteArray(pkValue);
+            value.putEncodedBytes(pkValue, 0, pkValue.length);
             indexRow = new PersistitIndexRowBuffer(this);
             indexRow.resetForRead(parentPKIndex, parentPkKey, value);
         }
@@ -426,7 +426,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         checkUniqueness(txn, index, rowData, indexKey);
 
         byte[] packedKey = packedTuple(index, indexRow.getPKey());
-        byte[] packedValue = Arrays.copyOf(indexRow.getPValue().getEncodedBytes(), indexRow.getPValue().getEncodedSize());
+        byte[] packedValue = Arrays.copyOf(indexRow.getValue().getEncodedBytes(), indexRow.getValue().getEncodedSize());
         txn.set(packedKey, packedValue);
     }
 

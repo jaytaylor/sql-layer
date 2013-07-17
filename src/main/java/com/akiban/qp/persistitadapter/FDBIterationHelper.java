@@ -244,6 +244,6 @@ public class FDBIterationHelper implements IterationHelper
     private void updateValue() {
         byte[] valueBytes = lastKV.getValue();
         value.clear();
-        value.putByteArray(valueBytes);
+        value.putEncodedBytes(valueBytes, 0, valueBytes.length);
     }
 }

@@ -24,6 +24,7 @@ import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.rowdata.RowData;
+import com.akiban.server.store.FDBStore;
 import com.foundationdb.AsyncIterator;
 import com.foundationdb.KeyValue;
 import com.foundationdb.tuple.Tuple;
@@ -34,7 +35,6 @@ import java.util.Iterator;
 public class FDBGroupCursor implements GroupCursor {
     private final FDBAdapter adapter;
     private final Group group;
-    private Key controllingHKey;
     private PersistitHKey hKey;
     private boolean hKeyDeep;
     private GroupScan groupScan;
@@ -78,19 +78,17 @@ public class FDBGroupCursor implements GroupCursor {
             groupScan.advance();
             next = !idle;
             if (next) {
-                row = new FDBGroupRow(adapter);
                 KeyValue kv = groupScan.getCurrent();
-                Tuple tuple = Tuple.fromBytes(kv.getKey());
-
-                byte[] keyBytes = tuple.getBytes(2);
-                Key key = new Key(null, 2047);
+                // Key
+                byte[] keyBytes = Tuple.fromBytes(kv.getKey()).getBytes(2);
+                Key key = adapter.createKey();
                 System.arraycopy(keyBytes, 0, key.getEncodedBytes(), 0, keyBytes.length);
                 key.setEncodedSize(keyBytes.length);
-
+                // Value
                 RowData rowData = new RowData();
-                rowData.reset(kv.getValue());
-                rowData.prepareRow(0);
-
+                FDBStore.expandRowData(rowData, kv.getValue(), true);
+                // Row
+                row = new FDBGroupRow(adapter);
                 row.set(key, rowData);
             }
         }
