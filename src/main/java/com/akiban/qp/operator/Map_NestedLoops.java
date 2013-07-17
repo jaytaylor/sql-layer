@@ -124,7 +124,7 @@ class Map_NestedLoops extends Operator
         return String.format("%s\n%s", describePlan(outerInputOperator), describePlan(innerInputOperator));
     }
 
-    // Project_Default interface
+    // Map_NestedLoops interface
 
     public Map_NestedLoops(Operator outerInputOperator,
                            Operator innerInputOperator,

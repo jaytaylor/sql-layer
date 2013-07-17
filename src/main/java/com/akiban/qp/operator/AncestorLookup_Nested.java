@@ -140,7 +140,7 @@ class AncestorLookup_Nested extends Operator
         return toString();
     }
 
-    // AncestorLookup_Default interface
+    // AncestorLookup_Nested interface
 
     public AncestorLookup_Nested(Group group,
                                  RowType rowType,
