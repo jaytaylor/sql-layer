@@ -76,7 +76,7 @@ import java.util.Set;
 
  <h1>Performance</h1>
 
- Product_NestedLoops does no IO.
+ Map_NestedLoops does no IO.
 
  <h1>Memory Requirements</h1>
 

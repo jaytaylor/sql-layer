@@ -63,7 +63,7 @@ import java.util.Set;
  <h1>Behavior</h1>
 
  Suppose we have a COA schema (C is the parent of O and A), and that we
- have flattened C with O, and C with A. Product_NestedLoops has two
+ have flattened C with O, and C with A. Product_Nested has two
  input streams, with CO in one and CA in the other. The branch type is C.
  For this discussion, let's assume that CO is the outer stream, and CA is in the
  input stream.
@@ -71,7 +71,7 @@ import java.util.Set;
  For each CO row from the outer stream, a set of matching CA rows,
  (i.e., matching in C)
  from the input stream are retrieved. The CO row and all of the
- CA rows will have the same customer primary key. Product_NestedLoops
+ CA rows will have the same customer primary key. Product_Nested
  will write to the output stream product rows for each CO/CA
  combination.
 
@@ -89,7 +89,7 @@ import java.util.Set;
 
  <h1>Performance</h1>
 
- Product_NestedLoops does no IO.
+ Product_Nested does no IO.
 
  */
 

@@ -1472,7 +1472,7 @@ public class OperatorAssembler extends BaseRule
             RowStream stream;
             Group group = branchLookup.getSource().getGroup();
             if (branchLookup.getInput() == null) {
-                // Simple version for Product_NestedLoops.
+                // Simple version for Product_Nested.
                 stream = new RowStream();
                 API.InputPreservationOption flag = API.InputPreservationOption.KEEP_INPUT;
                 ColumnExpressionToIndex boundRow = boundRows.get(boundRows.size()-1);
