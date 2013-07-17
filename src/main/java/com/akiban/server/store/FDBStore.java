@@ -578,6 +578,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         Key key = createKey();
         for(KeyValue kv : txn.getRangeStartsWith(packedTuple(group))) {
             // Key
+            key.clear();
             byte[] keyBytes = Tuple.fromBytes(kv.getKey()).getBytes(2);
             key.setEncodedSize(keyBytes.length);
             System.arraycopy(keyBytes, 0, key.getEncodedBytes(), 0, keyBytes.length);
@@ -607,9 +608,8 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             // Value
             value.clear();
             byte[] valueBytes = kv.getValue();
-            System.arraycopy(valueBytes, 0, value.getEncodedBytes(), 0, valueBytes.length);
-            value.setEncodedSize(valueBytes.length);
-
+            value.putEncodedBytes(valueBytes, 0, valueBytes.length);
+            // Visit
             visitor.visit(key, value);
         }
         return visitor;
@@ -659,7 +659,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
 
     private boolean keyExistsInIndex(Transaction txn, Index index, Key key) {
         assert index.isUnique() : index;
-        return txn.getRangeStartsWith(packedTuple(index, key)).iterator().hasNext();
+        return txn.get(packedTuple(index, key)).get() != null;
     }
 
     private FDBCounter cachedGICounter(Session session, final GroupIndex index) {
