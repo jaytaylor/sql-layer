@@ -31,6 +31,7 @@ import static com.akiban.server.service.session.Session.StackKey;
 
 public class FDBTransactionService implements TransactionService {
     private static final Key<Transaction> TXN_KEY = Key.named("TXN_KEY");
+    private static final Key<Boolean> ROLLBACK_KEY = Key.named("TXN_ROLLBACK");
     private static final StackKey<Callback> PRE_COMMIT_KEY = StackKey.stackNamed("TXN_PRE_COMMIT");
     private static final StackKey<Callback> AFTER_END_KEY = StackKey.stackNamed("TXN_AFTER_END");
     private static final StackKey<Callback> AFTER_COMMIT_KEY = StackKey.stackNamed("TXN_AFTER_COMMIT");
@@ -48,6 +49,10 @@ public class FDBTransactionService implements TransactionService {
         Transaction txn = getTransactionInternal(session);
         requireActive(txn);
         return txn;
+    }
+
+    public void setRollbackPending(Session session) {
+        session.put(ROLLBACK_KEY, Boolean.TRUE);
     }
 
 
@@ -81,7 +86,7 @@ public class FDBTransactionService implements TransactionService {
 
     @Override
     public boolean isRollbackPending(Session session) {
-        return false; // TODO: Needed?
+        return session.get(ROLLBACK_KEY) == Boolean.TRUE;
     }
 
     @Override
@@ -127,6 +132,9 @@ public class FDBTransactionService implements TransactionService {
 
     @Override
     public void commitTransaction(Session session) {
+        if(isRollbackPending(session)) {
+            throw new IllegalStateException("Rollback is pending");
+        }
         commitTransactionInternal(session, false);
     }
 
@@ -135,7 +143,6 @@ public class FDBTransactionService implements TransactionService {
         requireActive(txn);
         RuntimeException re = null;
         try {
-            // TODO: Delay getting start and commit until (if) absolutely needed?
             long startTime = txn.getReadVersion().get();
             runCallbacks(session, PRE_COMMIT_KEY, startTime, null);
             txn.commit().get();
@@ -170,7 +177,6 @@ public class FDBTransactionService implements TransactionService {
         requireActive(txn);
         RuntimeException re = null;
         try {
-            // TODO: No abort() or rollback()?
             runCallbacks(session, AFTER_ROLLBACK_KEY, -1, null);
         } catch(RuntimeException e) {
             re = e;
@@ -249,19 +255,17 @@ public class FDBTransactionService implements TransactionService {
 
     private void end(Session session, Transaction txn, RuntimeException cause) {
         RuntimeException re = cause;
+        // if txn != null, Transaction gets aborted. Abnormal end, though, so no calling of rollback hooks.
         try {
+            session.remove(TXN_KEY);
+            // TODO: Keep and reset() instead?
             if(txn != null) {
-                // Abnormally ended, do not call rollback hooks
-                // TODO: no abort() or rollback() ?
+                txn.dispose();
             }
         } catch(RuntimeException e) {
             re = MultipleCauseException.combine(re, e);
-        }
-        try {
-            session.remove(TXN_KEY); // TODO: Reset instead?
-        } catch(RuntimeException e) {
-            re = MultipleCauseException.combine(re, e);
         } finally {
+            session.remove(ROLLBACK_KEY);
             clearStack(session, PRE_COMMIT_KEY);
             clearStack(session, AFTER_COMMIT_KEY);
             clearStack(session, AFTER_ROLLBACK_KEY);

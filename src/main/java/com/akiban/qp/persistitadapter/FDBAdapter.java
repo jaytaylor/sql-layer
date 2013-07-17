@@ -36,7 +36,10 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.collation.AkCollator;
+import com.akiban.server.error.DuplicateKeyException;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.config.ConfigurationService;
@@ -44,7 +47,10 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.store.FDBStore;
 import com.akiban.server.types.ValueSource;
 import com.akiban.util.tap.InOutTap;
+import com.foundationdb.FDBError;
 import com.persistit.Key;
+
+import java.io.InterruptedIOException;
 
 public class FDBAdapter extends StoreAdapter {
     private static final PersistitIndexRowPool indexRowPool = new PersistitIndexRowPool();
@@ -88,21 +94,36 @@ public class FDBAdapter extends StoreAdapter {
         RowData newRowData = rowData(rowDef, newRow, new PValueRowDataCreator());
         oldRowData.setExplicitRowDef(rowDef);
         newRowData.setExplicitRowDef(rowDef);
-        store.updateRow(getSession(), oldRowData, newRowData, null);
+        try {
+            store.updateRow(getSession(), oldRowData, newRowData, null);
+        } catch(InvalidOperationException e) {
+            rollbackIfNeeded(getSession(), e);
+            throw e;
+        }
     }
 
     @Override
     public void writeRow(Row newRow, Index[] indexes, boolean usePValues) {
         RowDef rowDef = newRow.rowType().userTable().rowDef();
         RowData newRowData = rowData(rowDef, newRow, new PValueRowDataCreator());
-        store.writeRow(getSession(), newRowData, indexes);
+        try {
+            store.writeRow(getSession(), newRowData, indexes);
+        } catch(InvalidOperationException e) {
+            rollbackIfNeeded(getSession(), e);
+            throw e;
+        }
     }
 
     @Override
     public void deleteRow(Row oldRow, boolean usePValues, boolean cascadeDelete) {
         RowDef rowDef = oldRow.rowType().userTable().rowDef();
         RowData oldRowData = rowData(rowDef, oldRow, new PValueRowDataCreator());
-        store.deleteRow(getSession(), oldRowData, true, cascadeDelete);
+        try {
+            store.deleteRow(getSession(), oldRowData, true, cascadeDelete);
+        } catch(InvalidOperationException e) {
+            rollbackIfNeeded(getSession(), e);
+            throw e;
+        }
     }
 
     @Override
@@ -179,5 +200,23 @@ public class FDBAdapter extends StoreAdapter {
     @Override
     public Key createKey() {
         return store.createKey();
+    }
+
+
+    //
+    // Internal
+    //
+
+    public static boolean isFromInterruption(Exception e) {
+        Throwable c = e.getCause();
+        // TODO: Is the IO needed?
+        return (e instanceof InterruptedException) || (e instanceof InterruptedIOException) ||
+               (c instanceof InterruptedException) || (c instanceof InterruptedIOException);
+    }
+
+    private void rollbackIfNeeded(Session session, Exception e) {
+        if((e instanceof DuplicateKeyException) || (e instanceof FDBError) || isFromInterruption(e)) {
+            store.setRollbackPending(session);
+        }
     }
 }

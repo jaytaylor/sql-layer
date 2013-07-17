@@ -262,6 +262,12 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         rowData.prepareRow(0);
     }
 
+    public void setRollbackPending(Session session) {
+        if(txnService.isTransactionActive(session)) {
+            txnService.setRollbackPending(session);
+        }
+    }
+
 
     //
     // Service
