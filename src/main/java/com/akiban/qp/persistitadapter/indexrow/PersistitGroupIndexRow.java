@@ -20,12 +20,11 @@ import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.IndexToHKey;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitHKey;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.IndexRowType;
-import com.persistit.Exchange;
-import com.persistit.exception.PersistitException;
+import com.persistit.Key;
+import com.persistit.Value;
 
 public class PersistitGroupIndexRow extends PersistitIndexRow
 {
@@ -41,20 +40,23 @@ public class PersistitGroupIndexRow extends PersistitIndexRow
 
     // PersistitIndexRow interface
 
+    @Override
     public IndexToHKey indexToHKey()
     {
         return index.indexToHKey(index.leafMostTable().getDepth());
     }
 
+    @Override
     public long tableBitmap()
     {
         return tableBitmap;
     }
 
-    public void copyFromExchange(Exchange exchange)
+    @Override
+    public void copyFrom(Key key, Value value)
     {
-        super.copyFromExchange(exchange);
-        tableBitmap = exchange.getValue().getLong();
+        super.copyFrom(key, value);
+        tableBitmap = value.getLong();
     }
 
     // PersistitGroupIndexRow interface

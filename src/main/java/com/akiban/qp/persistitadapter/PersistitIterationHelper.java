@@ -32,7 +32,7 @@ public class PersistitIterationHelper implements IterationHelper
     @Override
     public Row row()
     {
-        unsharedRow().get().copyFromExchange(exchange);
+        unsharedRow().get().copyFrom(exchange);
         return row.get();
     }
 
@@ -98,6 +98,10 @@ public class PersistitIterationHelper implements IterationHelper
         } catch(PersistitException e) {
             throw PersistitAdapter.wrapPersistitException(adapter.getSession(), e);
         }
+    }
+
+    @Override
+    public void preload(Direction dir, boolean deep) {
     }
 
     // PersistitIterationHelper interface
