@@ -159,7 +159,7 @@ public class BranchLookup_Nested extends Operator
         return toString();
     }
 
-    // BranchLookup_Default interface
+    // BranchLookup_Nested interface
 
     public BranchLookup_Nested(Group group,
                                RowType inputRowType,

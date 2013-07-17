@@ -141,7 +141,7 @@ class IfEmpty_Default extends Operator
         return describePlan(inputOperator);
     }
 
-    // Project_Default interface
+    // IfEmpty_Default interface
 
     public IfEmpty_Default(Operator inputOperator,
                            RowType rowType,
@@ -177,7 +177,7 @@ class IfEmpty_Default extends Operator
 
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: IfEmpty_Default open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: IfEmpty_Default next");
-    private static final Logger LOG = LoggerFactory.getLogger(BranchLookup_Nested.class);
+    private static final Logger LOG = LoggerFactory.getLogger(IfEmpty_Default.class);
 
     // Object state
 

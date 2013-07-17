@@ -157,7 +157,7 @@ class Product_NestedLoops extends Operator
         return describePlan(outerInputOperator);
     }
 
-    // Project_Default interface
+    // Product_NestedLoops interface
 
     public Product_NestedLoops(Operator outerInputOperator,
                                Operator innerInputOperator,
@@ -184,7 +184,7 @@ class Product_NestedLoops extends Operator
 
     private static InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Product_NestedLoops open");
     private static InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Product_NestedLoops next");
-    private static final Logger LOG = LoggerFactory.getLogger(BranchLookup_Nested.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Product_NestedLoops.class);
 
     // Object state
 
