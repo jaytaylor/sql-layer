@@ -166,14 +166,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     @Override
     public long nextSequenceValue(Session session, Sequence sequence) {
         long rawValue = 0;
-
-        SequenceCache cache = sequenceCache.getOrCreateAndPut (sequence.getTreeName(), 
-                new ReadWriteMap.ValueCreator<String, SequenceCache> (){
-                    public SequenceCache createValueForKey (String treeName) {
-                        return getEmptyCache();
-                    }
-                });
-       
+        SequenceCache cache = sequenceCache.getOrCreateAndPut(sequence.getTreeName(), SEQUENCE_CACHE_VALUE_CREATOR);
         cache.cacheLock();
         try {
             rawValue = cache.nextCacheValue();
@@ -714,11 +707,15 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         return Tuple.from(treeName, "/", keyBytes).pack();
     }
 
-    private SequenceCache getEmptyCache () {
-        return new SequenceCache ();
-    }
-    
-    private class SequenceCache {
+
+    private static final ReadWriteMap.ValueCreator<String, SequenceCache> SEQUENCE_CACHE_VALUE_CREATOR =
+            new ReadWriteMap.ValueCreator<String, SequenceCache>() {
+                public SequenceCache createValueForKey (String treeName) {
+                    return new SequenceCache();
+                }
+            };
+
+    private static class SequenceCache {
         private long value; 
         private long cacheSize;
         private final ReentrantLock cacheLock;
