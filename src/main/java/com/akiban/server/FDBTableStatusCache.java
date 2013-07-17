@@ -36,7 +36,6 @@ import java.util.Map;
 public class FDBTableStatusCache implements TableStatusCache {
     private final Database db;
     private final FDBTransactionService txnService;
-    private final Map<Integer,FDBTableStatus> tableStatusMap = new HashMap<>();
     private final Map<Integer,MemoryTableStatus> memoryTableStatusMap = new HashMap<>();
 
 
@@ -48,13 +47,7 @@ public class FDBTableStatusCache implements TableStatusCache {
 
     @Override
     public synchronized TableStatus createTableStatus(int tableID) {
-        FDBTableStatus status = tableStatusMap.get(tableID);
-        if(status == null) {
-            status = new FDBTableStatus(tableID);
-            tableStatusMap.put(tableID, status);
-            assert !memoryTableStatusMap.containsKey(tableID) : tableID;
-        }
-        return status;
+        return new FDBTableStatus(tableID);
     }
 
     @Override
@@ -63,21 +56,20 @@ public class FDBTableStatusCache implements TableStatusCache {
         if(status == null) {
             status = new MemoryTableStatus(tableID, factory);
             memoryTableStatusMap.put(tableID, status);
-            assert !tableStatusMap.containsKey(tableID) : tableID;
         }
         return status;
     }
 
     @Override
     public synchronized void detachAIS() {
-        for(FDBTableStatus status : tableStatusMap.values()) {
+        for(MemoryTableStatus status : memoryTableStatusMap.values()) {
             status.setRowDef(null);
         }
     }
 
     @Override
     public synchronized void clearTableStatus(Session session, UserTable table) {
-        FDBTableStatus status = tableStatusMap.remove(table.getTableId());
+        FDBTableStatus status = (FDBTableStatus)table.rowDef().getTableStatus();
         if(status != null) {
             status.clearState(session);
         }
@@ -90,19 +82,13 @@ public class FDBTableStatusCache implements TableStatusCache {
      */
     private class FDBTableStatus implements TableStatus {
         private final int tableID;
-        private final FDBCounter rowCounter;
-        private final byte[] autoIncKey;
-        private final byte[] uniqueKey;
+        private volatile FDBCounter rowCounter;
+        private volatile byte[] autoIncKey;
+        private volatile byte[] uniqueKey;
 
         public FDBTableStatus(int tableID) {
             this.tableID = tableID;
-            // TODO: Request prefix from Store? Delay until rowDef is set and use treeName?
-            String prefix = "tableStatus_" + tableID ;
-            this.autoIncKey = Tuple.from(prefix + "_autoInc").pack();
-            this.uniqueKey = Tuple.from(prefix + "_unique").pack();
 
-            byte[] counterKey = (prefix + "_rowCount").getBytes(Charset.forName("UTF8"));
-            this.rowCounter = new FDBCounter(db, counterKey, 0);
         }
 
         @Override
@@ -119,7 +105,8 @@ public class FDBTableStatusCache implements TableStatusCache {
         @Override
         public void truncate(Session session) {
             Transaction txn = txnService.getTransaction(session);
-            rowCounter.set(txn, 0);
+            // set(0) vs clear(): both iterate the entire range but clear leaves a clean db
+            rowCounter.clearState(txn);
             internalSetAutoInc(session, 0, true);
         }
 
@@ -130,7 +117,17 @@ public class FDBTableStatusCache implements TableStatusCache {
 
         @Override
         public void setRowDef(RowDef rowDef) {
-            // None
+            if(rowDef == null) {
+                this.autoIncKey = null;
+                this.uniqueKey = null;
+                this.rowCounter = null;
+            } else {
+                assert rowDef.getRowDefId() == tableID;
+                String treeName = rowDef.getPKIndex().indexDef().getTreeName();
+                this.autoIncKey = Tuple.from("tableStatus", treeName, "autoInc").pack();
+                this.uniqueKey = Tuple.from("tableStatus", treeName, "unique").pack();
+                this.rowCounter = new FDBCounter(db, "tableStatus", treeName, "rowCount");
+            }
         }
 
         @Override

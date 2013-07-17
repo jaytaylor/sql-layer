@@ -191,30 +191,6 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     // --------------------- Implement Store interface --------------------
 
     @Override
-    public void truncateGroup(final Session session, final Group group) {
-        List<Index> indexes = new ArrayList<>();
-        // Truncate the group tree
-        final Exchange hEx = getExchange(session, group);
-        try {
-            // Collect indexes, truncate table statuses
-            for(UserTable table : group.getRoot().getAIS().getUserTables().values()) {
-                if(table.getGroup() == group) {
-                    indexes.addAll(table.getIndexesIncludingInternal());
-                    table.rowDef().getTableStatus().truncate(session);
-                }
-            }
-            indexes.addAll(group.getIndexes());
-            truncateIndexes(session, indexes);
-
-            hEx.removeAll();
-        } catch(PersistitException e) {
-            throw PersistitAdapter.wrapPersistitException(session, e);
-        } finally {
-            releaseExchange(session, hEx);
-        }
-    }
-
-    @Override
     public void truncateIndexes(Session session, Collection<? extends Index> indexes) {
         super.truncateIndexes(session, indexes);
         for(Index index : indexes) {

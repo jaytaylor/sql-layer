@@ -36,6 +36,7 @@ import static com.akiban.qp.operator.API.*;
 
 import com.persistit.Transaction;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.akiban.qp.operator.API.indexScan_Default;
@@ -162,6 +163,7 @@ public class UpdateIT extends OperatorITBase
         compareRows(expected, executable);
     }
 
+    @Ignore("Halloween support")
     @Test
     // http://en.wikipedia.org/wiki/Halloween_Problem
     public void halloweenProblem() throws Exception {

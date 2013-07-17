@@ -23,10 +23,13 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Sequence;
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.persistitadapter.FDBAdapter;
+import com.akiban.qp.persistitadapter.PersistitHKey;
+import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.DuplicateKeyException;
 import com.akiban.server.error.FDBAdapterException;
@@ -163,14 +166,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     @Override
     public long nextSequenceValue(Session session, Sequence sequence) {
         long rawValue = 0;
-
-        SequenceCache cache = sequenceCache.getOrCreateAndPut (sequence.getTreeName(), 
-                new ReadWriteMap.ValueCreator<String, SequenceCache> (){
-                    public SequenceCache createValueForKey (String treeName) {
-                        return getEmptyCache();
-                    }
-                });
-       
+        SequenceCache cache = sequenceCache.getOrCreateAndPut(sequence.getTreeName(), SEQUENCE_CACHE_VALUE_CREATOR);
         cache.cacheLock();
         try {
             rawValue = cache.nextCacheValue();
@@ -259,6 +255,12 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         rowData.prepareRow(0);
     }
 
+    public void setRollbackPending(Session session) {
+        if(txnService.isTransactionActive(session)) {
+            txnService.setRollbackPending(session);
+        }
+    }
+
 
     //
     // Service
@@ -342,7 +344,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
 
     @Override
     protected void packRowData(FDBStoreData storeData, RowData rowData) {
-        storeData.value = Arrays.copyOfRange(rowData.getBytes(), rowData.getBufferStart(), rowData.getBufferEnd());
+        storeData.value = Arrays.copyOfRange(rowData.getBytes(), rowData.getRowStart(), rowData.getRowEnd());
     }
 
     @Override
@@ -407,7 +409,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         PersistitIndexRowBuffer indexRow = null;
         if (pkValue != null) {
             Value value = new Value((Persistit)null);
-            value.putByteArray(pkValue);
+            value.putEncodedBytes(pkValue, 0, pkValue.length);
             indexRow = new PersistitIndexRowBuffer(this);
             indexRow.resetForRead(parentPKIndex, parentPkKey, value);
         }
@@ -426,7 +428,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         checkUniqueness(txn, index, rowData, indexKey);
 
         byte[] packedKey = packedTuple(index, indexRow.getPKey());
-        byte[] packedValue = Arrays.copyOf(indexRow.getPValue().getEncodedBytes(), indexRow.getPValue().getEncodedSize());
+        byte[] packedValue = Arrays.copyOf(indexRow.getValue().getEncodedBytes(), indexRow.getValue().getEncodedSize());
         txn.set(packedKey, packedValue);
     }
 
@@ -437,11 +439,42 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
                                   Key hKey,
                                   PersistitIndexRowBuffer indexRowBuffer) {
         Transaction txn = txnService.getTransaction(session);
-        if (index.isUniqueAndMayContainNulls()) {
-            // TODO: Is PersistitStore's broken w.r.t indexRow.hKey()?
-            throw new UnsupportedOperationException("Can't delete unique index with nulls");
+        Key indexKey = createKey();
+        // See big note in PersistitStore#deleteIndexRow() about format.
+        if(index.isUniqueAndMayContainNulls()) {
+            // IndexRow is used below, use these as intermediates.
+            Key spareKey = indexRowBuffer.getPKey();
+            Value spareValue = indexRowBuffer.getValue();
+            if(spareKey == null) {
+                spareKey = createKey();
+            }
+            if(spareValue == null) {
+                spareValue = new Value((Persistit)null);
+            }
+            // Can't use a PIRB, because we need to get the hkey. Need a PersistitIndexRow.
+            FDBAdapter adapter = createAdapter(session, SchemaCache.globalSchema(getAIS(session)));
+            IndexRowType indexRowType = adapter.schema().indexRowType(index);
+            PersistitIndexRow indexRow = adapter.takeIndexRow(indexRowType);
+            constructIndexRow(session, indexKey, rowData, index, hKey, indexRow, false);
+            for(KeyValue kv : txn.getRangeStartsWith(packedTuple(index, indexKey))) {
+                // Key
+                byte[] keyBytes = Tuple.fromBytes(kv.getKey()).getBytes(2);
+                spareKey.setEncodedSize(keyBytes.length);
+                System.arraycopy(keyBytes, 0, spareKey.getEncodedBytes(), 0, keyBytes.length);
+                // Value
+                byte[] valueBytes = kv.getValue();
+                spareValue.clear();
+                spareValue.putEncodedBytes(valueBytes, 0, valueBytes.length);
+                // Delicate: copyFromKeyValue initializes the key returned by hKey
+                indexRow.copyFrom(spareKey, spareValue);
+                PersistitHKey rowHKey = (PersistitHKey)indexRow.hKey();
+                if(rowHKey.key().compareTo(hKey) == 0) {
+                    txn.clear(kv.getKey());
+                    break;
+                }
+            }
+            adapter.returnIndexRow(indexRow);
         } else {
-            Key indexKey = createKey();
             constructIndexRow(session, indexKey, rowData, index, hKey, indexRowBuffer, false);
             txn.clear(packedTuple(index, indexKey));
         }
@@ -514,9 +547,28 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         return false;
     }
 
+    // TODO: A little ugly and slow, but unique indexes will get refactored soon and need for separator goes away.
     @Override
     public long nullIndexSeparatorValue(Session session, final Index index) {
-        throw new UnsupportedOperationException();
+        final long[] value = { 1 };
+        try {
+            // New txn to avoid spurious conflicts
+            holder.getDatabase().run(new Retryable() {
+                @Override
+                public void attempt(Transaction txn) {
+                    byte[] keyBytes = Tuple.from("indexNull", index.indexDef().getTreeName()).pack();
+                    byte[] valueBytes = txn.get(keyBytes).get();
+                    value[0] = 1;
+                    if(valueBytes != null) {
+                        value[0] += Tuple.fromBytes(valueBytes).getLong(0);
+                    }
+                    txn.set(keyBytes, Tuple.from(value[0]).pack());
+                }
+            });
+        } catch(Throwable t) {
+            throw new AkibanInternalException("Unexpected", t);
+        }
+        return value[0];
     }
 
     @Override
@@ -526,6 +578,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         Key key = createKey();
         for(KeyValue kv : txn.getRangeStartsWith(packedTuple(group))) {
             // Key
+            key.clear();
             byte[] keyBytes = Tuple.fromBytes(kv.getKey()).getBytes(2);
             key.setEncodedSize(keyBytes.length);
             System.arraycopy(keyBytes, 0, key.getEncodedBytes(), 0, keyBytes.length);
@@ -555,9 +608,8 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             // Value
             value.clear();
             byte[] valueBytes = kv.getValue();
-            System.arraycopy(valueBytes, 0, value.getEncodedBytes(), 0, valueBytes.length);
-            value.setEncodedSize(valueBytes.length);
-
+            value.putEncodedBytes(valueBytes, 0, valueBytes.length);
+            // Visit
             visitor.visit(key, value);
         }
         return visitor;
@@ -607,7 +659,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
 
     private boolean keyExistsInIndex(Transaction txn, Index index, Key key) {
         assert index.isUnique() : index;
-        return txn.getRangeStartsWith(packedTuple(index, key)).iterator().hasNext();
+        return txn.get(packedTuple(index, key)).get() != null;
     }
 
     private FDBCounter cachedGICounter(Session session, final GroupIndex index) {
@@ -619,8 +671,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             counter = ais.getCachedValue(index, new CacheValueGenerator<FDBCounter>() {
                 @Override
                 public FDBCounter valueFor(AkibanInformationSchema ais) {
-                    byte[] prefix = Tuple.from(index.indexDef().getTreeName(), "counter").pack();
-                    return new FDBCounter(holder.getDatabase(), prefix, 0);
+                    return new FDBCounter(holder.getDatabase(), "indexCount", index.indexDef().getTreeName());
                 }
             });
         }
@@ -656,11 +707,15 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         return Tuple.from(treeName, "/", keyBytes).pack();
     }
 
-    private SequenceCache getEmptyCache () {
-        return new SequenceCache ();
-    }
-    
-    private class SequenceCache {
+
+    private static final ReadWriteMap.ValueCreator<String, SequenceCache> SEQUENCE_CACHE_VALUE_CREATOR =
+            new ReadWriteMap.ValueCreator<String, SequenceCache>() {
+                public SequenceCache createValueForKey (String treeName) {
+                    return new SequenceCache();
+                }
+            };
+
+    private static class SequenceCache {
         private long value; 
         private long cacheSize;
         private final ReentrantLock cacheLock;

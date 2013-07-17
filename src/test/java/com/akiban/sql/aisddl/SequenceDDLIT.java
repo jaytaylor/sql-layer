@@ -22,6 +22,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 import com.akiban.ais.model.Sequence;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.akiban.ais.model.TableName;
@@ -88,6 +89,7 @@ public class SequenceDDLIT extends AISDDLITBase {
         assertEquals(Collections.singletonList(MessageFormat.format(ErrorCode.NO_SUCH_SEQUENCE.getMessage(), "test", "not_exists")), getWarnings());
     }
 
+    @Ignore("Not valid with sequence cache >1")
     @Test
     public void durableAfterRollbackAndRestart() throws Exception {
         StoreAdapter adapter = newStoreAdapter(SchemaCache.globalSchema(ddl().getAIS(session())));

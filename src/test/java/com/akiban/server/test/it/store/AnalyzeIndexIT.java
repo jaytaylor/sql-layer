@@ -21,10 +21,12 @@ import static org.junit.Assert.assertEquals;
 
 import com.akiban.ais.model.Index;
 import com.akiban.server.rowdata.RowDef;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.akiban.server.TableStatistics;
 
+@Ignore("Too slow")
 public class AnalyzeIndexIT extends AbstractScanBase {
 
     @Test

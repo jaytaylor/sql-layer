@@ -1,6 +1,6 @@
 ---
-- Properties: sys-mysql
-- suppressed: true
+- Properties: all
+- suppressed: true  # Halloween support
 ---
 - CreateTable: t (id INT NOT NULL PRIMARY KEY, n INT);
 ---

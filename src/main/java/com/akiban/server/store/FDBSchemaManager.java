@@ -186,12 +186,21 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
 
     @Override
     protected void unSavedAISChangeWithRowDefs(Session session, final AkibanInformationSchema newAIS) {
-        // The *after* commit callback below is safe because this method is only called during startup or shutdown and
-        // those are both single threaded. If that ever changes, that needs adjusted.
-        ServiceManager.State state = serviceManager.getState();
-        if((state != ServiceManager.State.STARTING) && (state != ServiceManager.State.STOPPING)) {
-            throw new IllegalStateException("Unexpected unSaved change: " + serviceManager.getState());
-        }
+        //
+        // The *after* commit callback below is acceptable because in the real system, this
+        // this method is only called during startup or shutdown and those are both single threaded.
+        //
+        // If that ever changes, that needs adjusted. However, the worst that can happen is a read
+        // of the new system table (or routine, etc) after the commit but before the callback fires
+        // This does not affect any user data whatsoever.
+        //
+        //
+        // To be more strict and prevent that possibility, checks below would handle it but require test workarounds:
+        //
+        //ServiceManager.State state = serviceManager.getState();
+        //if((state != ServiceManager.State.STARTING) && (state != ServiceManager.State.STOPPING)) {
+        //    throw new IllegalStateException("Unexpected unSaved change: " + serviceManager.getState());
+        //}
 
         // A new generation isn't needed as we evict the current copy below and, as above, single threaded startup
         validateAndFreeze(session, newAIS, false);
@@ -217,8 +226,13 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
                 if (!txn.commitOrRetry()) break;
             }
             return value;
+        } catch(RuntimeException e) {
+            throw e;
         } catch(Exception e) {
-            throw new AkibanInternalException("unexpected", e);
+            throw new AkibanInternalException("Unexpected", e);
+        } finally {
+            txnService.rollbackTransactionIfOpen(session);
+            session.close();
         }
     }
 
@@ -388,6 +402,11 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
             reader.loadBuffer(buffer);
         }
         reader.loadAIS();
+
+        for(UserTable table : newAIS.getUserTables().values()) {
+            // nameGenerator is only needed to generate hidden PK, which shouldn't happen here
+            table.endTable(null);
+        }
 
         validateAndFreeze(session, newAIS, false);
         return newAIS;

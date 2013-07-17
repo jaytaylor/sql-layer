@@ -26,6 +26,7 @@ import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDataPValueSource;
+import com.akiban.server.rowdata.RowDataValueSource;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -35,6 +36,7 @@ import com.persistit.Key;
 public class FDBGroupRow extends AbstractRow {
     private final FDBAdapter adapter;
     private final HKeyCache<PersistitHKey> hKeyCache;
+    private SparseArray<RowDataValueSource> valueSources;
     private SparseArray<RowDataPValueSource> pvalueSources;
     private RowData rowData;
     private LegacyRowWrapper row;
@@ -68,7 +70,11 @@ public class FDBGroupRow extends AbstractRow {
     @Override
     public ValueSource eval(int i)
     {
-        throw new UnsupportedOperationException("types3 off");
+        FieldDef fieldDef = rowDef().getFieldDef(i);
+        RowData rowData = rowData();
+        RowDataValueSource valueSource = valueSource(i);
+        valueSource.bind(fieldDef, rowData);
+        return valueSource;
     }
 
     @Override
@@ -116,6 +122,21 @@ public class FDBGroupRow extends AbstractRow {
     public RowData rowData()
     {
         return rowData;
+    }
+
+    private RowDataValueSource valueSource(int i)
+    {
+        if (valueSources == null) {
+            valueSources = new SparseArray<RowDataValueSource>()
+            {
+                @Override
+                protected RowDataValueSource initialValue()
+                {
+                    return new RowDataValueSource();
+                }
+            };
+        }
+        return valueSources.get(i);
     }
 
     private RowDataPValueSource pValueSource(int i) {

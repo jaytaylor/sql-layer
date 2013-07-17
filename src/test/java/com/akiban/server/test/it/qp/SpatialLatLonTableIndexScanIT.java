@@ -34,6 +34,7 @@ import com.akiban.server.error.OutOfRangeException;
 import com.akiban.server.geophile.BoxLatLon;
 import com.akiban.server.geophile.Space;
 import com.akiban.server.geophile.SpaceLatLon;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.math.BigDecimal;
@@ -45,6 +46,7 @@ import static java.lang.Math.abs;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
+@Ignore("Too slow")
 public class SpatialLatLonTableIndexScanIT extends OperatorITBase
 {
     @Override

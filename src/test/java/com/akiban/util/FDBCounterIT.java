@@ -33,8 +33,7 @@ import java.nio.charset.Charset;
 import static org.junit.Assert.assertEquals;
 
 public class FDBCounterIT extends ITBase {
-    private static final int RANDOM_SEED = 0;
-    private static final byte[] KEY_PREFIX = "test".getBytes(Charset.forName("UTF8"));
+    private static final String KEY_PREFIX = "test";
 
     private FDBHolder holder;
     private FDBCounter counter;
@@ -42,7 +41,7 @@ public class FDBCounterIT extends ITBase {
     @Before
     public void createCounter() {
         holder = serviceManager().getServiceByClass(FDBHolder.class);
-        counter = new FDBCounter(holder.getDatabase(), KEY_PREFIX, RANDOM_SEED);
+        counter = new FDBCounter(holder.getDatabase(), KEY_PREFIX);
     }
 
     @After
