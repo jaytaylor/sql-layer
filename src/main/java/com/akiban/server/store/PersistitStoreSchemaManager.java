@@ -510,9 +510,10 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
 
         reader.loadAIS();
 
-        // ProtobufWriter does not save group tables (by design) so generate columns and indexes
-        AISBuilder builder = new AISBuilder(newAIS);
-        builder.groupingIsComplete();
+        for(UserTable table : newAIS.getUserTables().values()) {
+            // nameGenerator is only needed to generate hidden PK, which shouldn't happen here
+            table.endTable(null);
+        }
     }
 
     private void buildRowDefCache(Session session, AkibanInformationSchema newAis ) throws PersistitException {

@@ -619,8 +619,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             counter = ais.getCachedValue(index, new CacheValueGenerator<FDBCounter>() {
                 @Override
                 public FDBCounter valueFor(AkibanInformationSchema ais) {
-                    byte[] prefix = Tuple.from(index.indexDef().getTreeName(), "counter").pack();
-                    return new FDBCounter(holder.getDatabase(), prefix, 0);
+                    return new FDBCounter(holder.getDatabase(), index.indexDef().getTreeName(), "counter");
                 }
             });
         }

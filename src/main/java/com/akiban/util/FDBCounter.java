@@ -50,16 +50,17 @@ public class FDBCounter {
     private static final double COALESCE_PROBABILITY = 0.1;
 
     private final Random random;
-    private final byte[] keyPrefix;
-    private final Tuple subspace;
+    private final Tuple keyPrefix;
+    private final Range range;
     private final Database db;
     private final ThreadLocal<AsyncFuture<Nothing>> coalesceCommit = new ThreadLocal<>();
 
 
-    public FDBCounter(Database db, byte[] keyPrefix, int seed) {
-        this.keyPrefix = keyPrefix;
-        this.random = new Random(seed);
-        this.subspace = Tuple.from(keyPrefix);
+    public FDBCounter(Database db, Object... keyPrefix) {
+        this.keyPrefix = Tuple.from(keyPrefix);
+        // Note: Making use of 'very likely random' seed so multiple counters with same prefix can co-exist correctly
+        this.random = new Random();
+        this.range = Tuple.from(keyPrefix).range();
         this.db = db;
     }
 
@@ -99,7 +100,7 @@ public class FDBCounter {
      * Clears all stored state for the counter.
      */
     public void clearState(Transaction tr) {
-        tr.clear(subspace.range().begin, subspace.range().end);
+        tr.clear(range.begin, range.end);
     }
 
 
@@ -108,6 +109,7 @@ public class FDBCounter {
     //
 
     public void addWithCoalesce(Transaction tr, long x, boolean maybeCoalesce) {
+
         byte[] key = encodeNewKey();
         byte[] value = encodeValue(x);
         tr.set(key, value);
@@ -118,7 +120,6 @@ public class FDBCounter {
 
     private long computeSum(ReadTransaction tr) {
         long total = 0;
-        Range range = subspace.range();
         for(KeyValue kv : tr.getRange(range.begin, range.end)) {
             total += decodeValue(kv);
         }
@@ -129,7 +130,6 @@ public class FDBCounter {
         Transaction tr = db.createTransaction();
         try {
             byte[] bound = encodeNewKey();
-            Range range = subspace.range();
 
             // Go froward from begin to bound or reverse from end to bound
             RangeQuery coalesceRange;
@@ -155,7 +155,7 @@ public class FDBCounter {
     }
 
     private byte[] encodeNewKey() {
-        return Tuple.from(keyPrefix, randID()).pack();
+        return keyPrefix.add(randID()).pack();
     }
 
     private synchronized byte[] randID() {
