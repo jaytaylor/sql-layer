@@ -135,7 +135,8 @@ class Map_NestedLoops extends Operator
         ArgumentValidation.notNull("outerInputOperator", outerInputOperator);
         ArgumentValidation.notNull("innerInputOperator", innerInputOperator);
         ArgumentValidation.isGTE("inputBindingPosition", inputBindingPosition, 0);
-        ArgumentValidation.isGT("depth", depth, 0);
+        if (pipeline)
+            ArgumentValidation.isGT("depth", depth, 0);
         this.outerInputOperator = outerInputOperator;
         this.innerInputOperator = innerInputOperator;
         this.inputBindingPosition = inputBindingPosition;
