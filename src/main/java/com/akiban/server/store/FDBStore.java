@@ -557,7 +557,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             holder.getDatabase().run(new Retryable() {
                 @Override
                 public void attempt(Transaction txn) {
-                    byte[] keyBytes = Tuple.from("indexCount", index.indexDef().getTreeName()).pack();
+                    byte[] keyBytes = Tuple.from("indexNull", index.indexDef().getTreeName()).pack();
                     byte[] valueBytes = txn.get(keyBytes).get();
                     value[0] = 1;
                     if(valueBytes != null) {
@@ -672,7 +672,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             counter = ais.getCachedValue(index, new CacheValueGenerator<FDBCounter>() {
                 @Override
                 public FDBCounter valueFor(AkibanInformationSchema ais) {
-                    return new FDBCounter(holder.getDatabase(), index.indexDef().getTreeName(), "counter");
+                    return new FDBCounter(holder.getDatabase(), "indexCount", index.indexDef().getTreeName());
                 }
             });
         }
