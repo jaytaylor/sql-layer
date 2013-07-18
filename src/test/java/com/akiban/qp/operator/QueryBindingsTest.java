@@ -77,6 +77,9 @@ public class QueryBindingsTest
         parent.setPValue(0, value);
         QueryBindings child = parent.createBindings();
         assertEquals(1, child.getDepth());
+        assertTrue(parent.isAncestor(parent));
+        assertTrue(child.isAncestor(parent));
+        assertFalse(parent.isAncestor(child));
         Deque<Row> rows = new RowsBuilder(MNumeric.INT.instance(false))
             .row(100)
             .row(101)

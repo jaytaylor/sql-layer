@@ -114,6 +114,11 @@ public interface QueryBindings
     public QueryBindings getParent();
 
     /**
+     * Is this bindings an descendant of the given bindings?
+     */
+    public boolean isAncestor(QueryBindings ancestor);
+
+    /**
      * Get the inheritance depth.
      */
     public int getDepth();

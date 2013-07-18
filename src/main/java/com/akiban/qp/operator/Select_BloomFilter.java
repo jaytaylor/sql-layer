@@ -338,6 +338,12 @@ class Select_BloomFilter extends Operator
             inputCursor.closeBindings();
         }
 
+        @Override
+        public void cancelBindings(QueryBindings bindings) {
+            inputCursor.cancelBindings(bindings);
+            idle = true;
+        }
+
         // Execution interface
 
         <EXPR> Execution(QueryContext context, QueryBindingsCursor bindingsCursor,

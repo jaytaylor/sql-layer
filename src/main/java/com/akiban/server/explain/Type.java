@@ -51,6 +51,7 @@ public enum Type
     DUI(GeneralType.OPERATOR), // delete/update/insert
     DISTINCT(GeneralType.OPERATOR),
     FLATTEN_OPERATOR(GeneralType.OPERATOR),
+    PRODUCT_OPERATOR(GeneralType.OPERATOR),
     LIMIT_OPERATOR(GeneralType.OPERATOR),
     NESTED_LOOPS(GeneralType.OPERATOR),
     IF_EMPTY(GeneralType.OPERATOR),

@@ -332,6 +332,13 @@ class HKeyUnion_Ordered extends Operator
             rightInput.closeBindings();
         }
 
+        @Override
+        public void cancelBindings(QueryBindings bindings) {
+            leftInput.cancelBindings(bindings);
+            rightInput.cancelBindings(bindings);
+            bindingsCursor.cancelBindings(bindings);
+        }
+
         // Execution interface
 
         Execution(QueryContext context, QueryBindingsCursor bindingsCursor)

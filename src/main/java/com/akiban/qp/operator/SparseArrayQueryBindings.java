@@ -246,6 +246,16 @@ public class SparseArrayQueryBindings implements QueryBindings
     }
 
     @Override
+    public boolean isAncestor(QueryBindings ancestor) {
+        for (QueryBindings descendant = this; descendant != null; descendant = descendant.getParent()) {
+            if (descendant == ancestor) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
     public int getDepth() {
         return depth;
     }
