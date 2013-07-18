@@ -148,15 +148,15 @@ public class Product3WayIT extends OperatorITBase
                     null,
                     cRowType,
                     KEEP_INPUT,
-                    0),
+                    1),
                 rRowType,
                 cRowType,
                 INNER_JOIN);
-        Operator RABC = product_Nested(RC, RAB.rowType(), null, RC.rowType(), 0);
+        Operator RABC = product_Nested(RC, RAB.rowType(), null, RC.rowType(), 1);
         RowType rabcRowType = RABC.rowType();
         Operator plan = map_NestedLoops(
                             map_NestedLoops(RA, RAB, 0, pipelineMap(), 1),
-                            RABC, 0, pipelineMap(), 1);
+                            RABC, 1, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 15L, 1L, "b15", 17L, 1L, "c17"),
@@ -217,15 +217,15 @@ public class Product3WayIT extends OperatorITBase
                     null,
                     bRowType,
                     KEEP_INPUT,
-                    0),
+                    1),
                 rRowType,
                 bRowType,
                 INNER_JOIN);
-        Operator RACB = product_Nested(RB, RAC.rowType(), null, RB.rowType(), 0);
+        Operator RACB = product_Nested(RB, RAC.rowType(), null, RB.rowType(), 1);
         RowType racbRowType = RACB.rowType();
         Operator plan = map_NestedLoops(
                             map_NestedLoops(RA, RAC, 0, pipelineMap(), 1),
-                            RACB, 0, pipelineMap(), 1);
+                            RACB, 1, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(racbRowType, 1L, "r1", 13L, 1L, "a13", 17L, 1L, "c17", 15L, 1L, "b15"),
@@ -281,11 +281,11 @@ public class Product3WayIT extends OperatorITBase
                     null,
                     bRowType,
                     KEEP_INPUT,
-                    0),
+                    1),
                 rRowType,
                 bRowType,
                 INNER_JOIN);
-        Operator RAB = product_Nested(flattenRB, RA.rowType(), null, flattenRB.rowType(), 0);
+        Operator RAB = product_Nested(flattenRB, RA.rowType(), null, flattenRB.rowType(), 1);
         Operator flattenRC =
             flatten_HKeyOrdered(
                 branchLookup_Nested(
@@ -295,17 +295,17 @@ public class Product3WayIT extends OperatorITBase
                     null,
                     cRowType,
                     KEEP_INPUT,
-                    0),
+                    2),
                 rRowType,
                 cRowType,
                 INNER_JOIN);
-        Operator RABC = product_Nested(flattenRC, RAB.rowType(), null, flattenRC.rowType(), 0);
+        Operator RABC = product_Nested(flattenRC, RAB.rowType(), null, flattenRC.rowType(), 2);
         RowType rabcRowType = RABC.rowType();
         Operator plan = map_NestedLoops(
                             map_NestedLoops(
                                 map_NestedLoops(rScan, RA, 0, pipelineMap(), 1),
-                                RAB, 0, pipelineMap(), 1),
-                            RABC, 0, pipelineMap(), 1);
+                                RAB, 1, pipelineMap(), 1),
+                            RABC, 2, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 15L, 1L, "b15", 17L, 1L, "c17"),
