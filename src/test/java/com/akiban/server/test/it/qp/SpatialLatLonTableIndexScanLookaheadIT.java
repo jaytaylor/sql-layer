@@ -17,6 +17,9 @@
 
 package com.akiban.server.test.it.qp;
 
+import org.junit.Ignore;
+
+@Ignore("Too slow")
 public class SpatialLatLonTableIndexScanLookaheadIT extends SpatialLatLonTableIndexScanIT 
 {
     protected int lookaheadQuantum() {
