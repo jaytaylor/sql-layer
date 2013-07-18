@@ -50,6 +50,14 @@ public class MultiCursorIT extends OperatorITBase
         queryBindings = queryContext.createBindings();
     }
 
+    @Test(expected=IllegalStateException.class)
+    public void testSealed()
+    {
+        MultiCursor multiCursor = multiCursor();
+        multiCursor.open();
+        multiCursor.addCursor(new TestCursor(new int[]{}));
+    }
+
     @Test
     public void testNoCursors()
     {

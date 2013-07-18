@@ -34,7 +34,7 @@ public class MultiCursor implements BindingsAwareCursor
     @Override
     public void open()
     {
-        sealed = false;
+        sealed = true;
         // TODO: Have a mode where all the cursors get opened so that
         // they can start in parallel.
         cursorIterator = cursors.iterator();
