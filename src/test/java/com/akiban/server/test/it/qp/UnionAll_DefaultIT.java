@@ -70,30 +70,34 @@ public class UnionAll_DefaultIT extends OperatorITBase
         use(db);
     }
 
+    protected boolean openBoth() {
+        return false;
+    }
+
     // Test argument validation
 
     @Test(expected = IllegalArgumentException.class)
     public void testNullInput1()
     {
-        unionAll(null, tRowType, groupScan_Default(groupTable), tRowType);
+        unionAll_Default(null, tRowType, groupScan_Default(groupTable), tRowType, false);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testNullInput1Type()
     {
-        unionAll(groupScan_Default(groupTable), null, groupScan_Default(groupTable), tRowType);
+        unionAll_Default(groupScan_Default(groupTable), null, groupScan_Default(groupTable), tRowType, false);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testNullInput2()
     {
-        unionAll(groupScan_Default(groupTable), tRowType, null, tRowType);
+        unionAll_Default(groupScan_Default(groupTable), tRowType, null, tRowType, false);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testNullInput2Type()
     {
-        unionAll(groupScan_Default(groupTable), tRowType, groupScan_Default(groupTable), null);
+        unionAll_Default(groupScan_Default(groupTable), tRowType, groupScan_Default(groupTable), null, false);
     }
 
     // Test operator execution
@@ -102,7 +106,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
     public void testBothEmpty()
     {
         Operator plan =
-            unionAll(
+            unionAll_Default(
                 select_HKeyOrdered(
                     groupScan_Default(groupTable),
                     tRowType,
@@ -112,7 +116,8 @@ public class UnionAll_DefaultIT extends OperatorITBase
                     groupScan_Default(groupTable),
                     tRowType,
                     ExpressionGenerators.literal(false)),
-                tRowType);
+                tRowType,
+                openBoth());
         RowBase[] expected = new RowBase[]{};
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
@@ -121,7 +126,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
     public void testLeftEmpty()
     {
         Operator plan =
-            unionAll(
+            unionAll_Default(
                 select_HKeyOrdered(
                     groupScan_Default(groupTable),
                     tRowType,
@@ -134,7 +139,8 @@ public class UnionAll_DefaultIT extends OperatorITBase
                         ExpressionGenerators.field(tRowType, 1),
                         Comparison.EQ,
                         ExpressionGenerators.literal(9), castResolver())),
-                    tRowType);
+                tRowType,
+                openBoth());
         RowBase[] expected = new RowBase[]{
             row(tRowType, 1001L, 9L),
             row(tRowType, 1003L, 9L),
@@ -148,7 +154,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
     public void testRightEmpty()
     {
         Operator plan =
-            unionAll(
+            unionAll_Default(
                 select_HKeyOrdered(
                     groupScan_Default(groupTable),
                     tRowType,
@@ -161,7 +167,8 @@ public class UnionAll_DefaultIT extends OperatorITBase
                     groupScan_Default(groupTable),
                     tRowType,
                     ExpressionGenerators.literal(false)),
-                    tRowType);
+                tRowType, 
+                openBoth());
         RowBase[] expected = new RowBase[]{
             row(tRowType, 1000L, 8L),
             row(tRowType, 1002L, 8L),
@@ -175,7 +182,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
     public void testBothNonEmpty()
     {
         Operator plan =
-            unionAll(
+            unionAll_Default(
                 select_HKeyOrdered(
                     groupScan_Default(groupTable),
                     tRowType,
@@ -191,7 +198,8 @@ public class UnionAll_DefaultIT extends OperatorITBase
                         ExpressionGenerators.field(tRowType, 1),
                         Comparison.EQ,
                         ExpressionGenerators.literal(9), castResolver())),
-                    tRowType);
+                tRowType, 
+                openBoth());
         RowBase[] expected = new RowBase[]{
             row(tRowType, 1000L, 8L),
             row(tRowType, 1002L, 8L),
@@ -209,7 +217,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
     public void testCursor()
     {
         Operator plan =
-            unionAll(
+            unionAll_Default(
                 select_HKeyOrdered(
                     groupScan_Default(groupTable),
                     tRowType,
@@ -225,7 +233,8 @@ public class UnionAll_DefaultIT extends OperatorITBase
                         ExpressionGenerators.field(tRowType, 1),
                         Comparison.EQ,
                         ExpressionGenerators.literal(9), castResolver())),
-                tRowType);
+                tRowType, 
+                openBoth());
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
@@ -261,7 +270,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
                 limit_Default(
                     groupScan_Default(groupTable),
                     2),
-                unionAll(
+                unionAll_Default(
                     indexScan_Default(txIndexRowType,
                                       xEQ8Range,
                                       ordering),
@@ -269,7 +278,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
                     indexScan_Default(txIndexRowType,
                                       xEQ9Range,
                                       ordering),
-                    txIndexRowType),
+                    txIndexRowType, openBoth()),
                 0, pipelineMap(), 1);
         String[] expected = new String[]{
             hKey(1000),
