@@ -206,6 +206,11 @@
             <version>4.0.0</version>
         </dependency>
         <dependency>
+           <groupId>com.fasterxml.util</groupId>
+           <artifactId>java-merge-sort</artifactId>
+           <version>0.7.1</version>
+        </dependency>
+        <dependency>
           <groupId>org.apache.httpcomponents</groupId>
           <artifactId>httpclient</artifactId>
           <version>4.2.3</version>
