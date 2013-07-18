@@ -37,7 +37,7 @@ import java.util.Set;
 
  <h1>Overview</h1>
 
- Product_Nested computes the cartesian product of child rows owned by the same parent row. For example, if customer c1 has orders o10 and o11, and addresses a10 and a11; and customer c2 has order o20 and address a20, then Product_NestedLoops computes \{o10, o11\} x \{a10, a11\} for c1, and \{o20\} x \{a20\} for c2.
+ Product_Nested computes the cartesian product of child rows owned by the same parent row. For example, if customer c1 has orders o10 and o11, and addresses a10 and a11; and customer c2 has order o20 and address a20, then Product_Nested computes \{o10, o11\} x \{a10, a11\} for c1, and \{o20\} x \{a20\} for c2.
 
  <h1>Arguments</h1>
 
