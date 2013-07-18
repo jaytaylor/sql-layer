@@ -399,6 +399,9 @@ class Select_BloomFilter extends Operator
             // It is safe to reuse the binding position in this way because the filter is extracted and stored
             // in a field during open(), while the use of the binding position for use in the onPositive lookup
             // occurs during next().
+            if (LOG_EXECUTION) {
+                LOG.debug("Select_BloomFilter: candidate {}", row);
+            }
             TAP_CHECK.in();
             try {
                 bindings.setRow(bindingPosition, row);
@@ -452,7 +455,13 @@ class Select_BloomFilter extends Operator
             BloomFilter filter = baseBindings.getBloomFilter(bindingPosition);
             while (true) {
                 Row row = input.next();
-                if ((row == null) || filter.maybePresent(hashProjectedRow(row))) {
+                if (row == null) {
+                    return row;
+                }
+                if (filter.maybePresent(hashProjectedRow(row))) {
+                    if (ExecutionBase.LOG_EXECUTION) {
+                        LOG.debug("Select_BloomFilter: candidate {}", row);
+                    }
                     return row;
                 }
             }
@@ -510,8 +519,8 @@ class Select_BloomFilter extends Operator
                     inputOpenBindings = null;
                     if (row != null) {
                         row = bindings.getRow(bindingPosition);
+                        break;
                     }
-                    break;
                 }
                 if (LOG_EXECUTION) {
                     LOG.debug("Select_BloomFilter: yield {}", row);
