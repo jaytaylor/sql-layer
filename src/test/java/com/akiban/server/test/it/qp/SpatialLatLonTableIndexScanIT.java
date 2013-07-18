@@ -82,6 +82,10 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
         queryBindings = queryContext.createBindings();
     }
 
+    protected int lookaheadQuantum() {
+        return 1;
+    }
+
     @Test
     public void testLoad()
     {
@@ -343,7 +347,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
             IndexBound upperRight = new IndexBound(row(latLonIndexRowType, latHi, lonHi),
                                                    new SetColumnSelector(0, 1));
             IndexKeyRange box = IndexKeyRange.spatial(latLonIndexRowType, lowerLeft, upperRight);
-            Operator plan = indexScan_Default(latLonIndexRowType, false, box);
+            Operator plan = indexScan_Default(latLonIndexRowType, box, lookaheadQuantum());
             Cursor cursor = API.cursor(plan, queryContext, queryBindings);
             cursor.openTopLevel();
             Row row;
@@ -406,7 +410,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
             IndexBound upperRight = new IndexBound(row(latLonIndexRowType, latHi, lonHi),
                                                    new SetColumnSelector(0, 1));
             IndexKeyRange box = IndexKeyRange.spatial(latLonIndexRowType, lowerLeft, upperRight);
-            Operator plan = indexScan_Default(latLonIndexRowType, false, box);
+            Operator plan = indexScan_Default(latLonIndexRowType, box, lookaheadQuantum());
             Cursor cursor = API.cursor(plan, queryContext, queryBindings);
             cursor.openTopLevel();
             Row row;
@@ -471,7 +475,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                 IndexBound upperRight = new IndexBound(row(beforeLatLonIndexRowType, before, latHi, lonHi),
                                                        new SetColumnSelector(0, 1, 2));
                 IndexKeyRange box = IndexKeyRange.spatial(beforeLatLonIndexRowType, lowerLeft, upperRight);
-                Operator plan = indexScan_Default(beforeLatLonIndexRowType, false, box);
+                Operator plan = indexScan_Default(beforeLatLonIndexRowType, box, lookaheadQuantum());
                 Cursor cursor = API.cursor(plan, queryContext, queryBindings);
                 cursor.openTopLevel();
                 Row row;
@@ -505,7 +509,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
             IndexBound zStartBound = new IndexBound(row(latLonIndexRowType, queryLat, queryLon),
                                                     new SetColumnSelector(0, 1));
             IndexKeyRange zStartRange = IndexKeyRange.around(latLonIndexRowType, zStartBound);
-            Operator plan = indexScan_Default(latLonIndexRowType, false, zStartRange);
+            Operator plan = indexScan_Default(latLonIndexRowType, zStartRange, lookaheadQuantum());
             Cursor cursor = API.cursor(plan, queryContext, queryBindings);
             cursor.openTopLevel();
             Row row;
@@ -560,7 +564,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                     new IndexBound(row(beforeLatLonIndexRowType, before,  queryLat, queryLon),
                                    new SetColumnSelector(0, 1, 2));
                 IndexKeyRange zStartRange = IndexKeyRange.around(beforeLatLonIndexRowType, zStartBound);
-                Operator plan = indexScan_Default(beforeLatLonIndexRowType, false, zStartRange);
+                Operator plan = indexScan_Default(beforeLatLonIndexRowType, zStartRange, lookaheadQuantum());
                 Cursor cursor = API.cursor(plan, queryContext, queryBindings);
                 cursor.openTopLevel();
                 Row row;
@@ -702,7 +706,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
         IndexBound upperRight = new IndexBound(row(latLonIndexRowType, latHi, lonHi),
                                                new SetColumnSelector(0, 1));
         IndexKeyRange box = IndexKeyRange.spatial(latLonIndexRowType, lowerLeft, upperRight);
-        Operator plan = indexScan_Default(latLonIndexRowType, false, box);
+        Operator plan = indexScan_Default(latLonIndexRowType, box, lookaheadQuantum());
         Cursor cursor = API.cursor(plan, queryContext, queryBindings);
         cursor.openTopLevel();
         Row row;
@@ -747,7 +751,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
         IndexBound upperRight = new IndexBound(row(latLonIndexRowType, latHi, lonHi),
                                                new SetColumnSelector(0, 1));
         IndexKeyRange box = IndexKeyRange.spatial(latLonIndexRowType, lowerLeft, upperRight);
-        Operator plan = indexScan_Default(latLonIndexRowType, false, box);
+        Operator plan = indexScan_Default(latLonIndexRowType, box, lookaheadQuantum());
         Cursor cursor = API.cursor(plan, queryContext, queryBindings);
         cursor.openTopLevel();
         Row row;

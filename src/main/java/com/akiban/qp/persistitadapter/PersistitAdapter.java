@@ -73,14 +73,15 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
 
     @Override
     public RowCursor newIndexCursor(QueryContext context, Index index, IndexKeyRange keyRange, API.Ordering ordering,
-                                 IndexScanSelector selector, boolean usePValues)
+                                    IndexScanSelector selector, boolean usePValues, boolean openAllSubCursors)
     {
         return new PersistitIndexCursor(context,
                                         schema.indexRowType(index),
                                         keyRange,
                                         ordering,
                                         selector,
-                                        usePValues);
+                                        usePValues,
+                                        openAllSubCursors);
     }
 
     @Override
