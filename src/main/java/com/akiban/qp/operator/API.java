@@ -400,6 +400,20 @@ public class API
 
     public static Operator indexScan_Default(IndexRowType indexType,
                                              IndexKeyRange indexKeyRange,
+                                             int lookaheadQuantum)
+    {
+        Ordering ordering = new Ordering();
+        int fields = indexType.nFields();
+        for (int f = 0; f < fields; f++) {
+            ordering.append(new TPreparedField(indexType.typeInstanceAt(f), f), true);
+        }
+        IndexScanSelector indexScanSelector = IndexScanSelector.leftJoinAfter(indexType.index(),
+                                                                              indexType.tableType().userTable());
+        return indexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector, lookaheadQuantum);
+    }
+
+    public static Operator indexScan_Default(IndexRowType indexType,
+                                             IndexKeyRange indexKeyRange,
                                              Ordering ordering,
                                              IndexScanSelector indexScanSelector,
                                              int lookaheadQuantum)
