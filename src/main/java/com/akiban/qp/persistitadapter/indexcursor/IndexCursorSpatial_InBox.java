@@ -93,18 +93,19 @@ class IndexCursorSpatial_InBox extends IndexCursor
 
     public static IndexCursorSpatial_InBox create(QueryContext context,
                                                   IterationHelper iterationHelper,
-                                                  IndexKeyRange keyRange)
+                                                  IndexKeyRange keyRange,
+                                                  boolean openAll)
     {
-        return  new IndexCursorSpatial_InBox(context, iterationHelper, keyRange);
+        return  new IndexCursorSpatial_InBox(context, iterationHelper, keyRange, openAll);
     }
 
     // For use by this class
 
-    private IndexCursorSpatial_InBox(QueryContext context, IterationHelper iterationHelper, IndexKeyRange keyRange)
+    private IndexCursorSpatial_InBox(QueryContext context, IterationHelper iterationHelper, IndexKeyRange keyRange, boolean openAll)
     {
         super(context, iterationHelper);
         assert keyRange.spatial();
-        this.multiCursor = new MultiCursor();
+        this.multiCursor = new MultiCursor(openAll);
         this.iterationHelper = iterationHelper;
         Index spatialIndex = keyRange.indexRowType().index();
         assert spatialIndex.isSpatial() : spatialIndex;

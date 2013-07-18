@@ -75,7 +75,7 @@ public class MemoryAdapter extends StoreAdapter {
     @Override
     public RowCursor newIndexCursor(QueryContext context, Index index,
             IndexKeyRange keyRange, Ordering ordering,
-            IndexScanSelector scanSelector, boolean usePValues) {
+            IndexScanSelector scanSelector, boolean usePValues, boolean openAllSubCursors) {
         
         Table table = index.rootMostTable();
         if (table.isUserTable()) {

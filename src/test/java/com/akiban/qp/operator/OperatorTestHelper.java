@@ -193,7 +193,8 @@ public final class OperatorTestHelper {
                                      IndexKeyRange keyRange,
                                      API.Ordering ordering,
                                      IndexScanSelector selector,
-                                     boolean usePValues)
+                                     boolean usePValues,
+                                     boolean openAllSubCursors)
         {
             throw new UnsupportedOperationException();
         }
