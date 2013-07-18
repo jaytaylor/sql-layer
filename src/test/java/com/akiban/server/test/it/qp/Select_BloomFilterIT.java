@@ -243,6 +243,11 @@ public class Select_BloomFilterIT extends OperatorITBase
                     row(outputRowType, 6L, 62L, 602L),
                 };
             }
+
+            @Override
+            public boolean reopenTopLevel() {
+                return pipelineSelectBloomFilter();
+            }
         };
         testCursorLifecycle(plan, testCase);
     }
