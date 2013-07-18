@@ -76,7 +76,7 @@ import java.util.Set;
 
  <h1>Performance</h1>
 
- Product_NestedLoops does no IO.
+ Map_NestedLoops does no IO.
 
  <h1>Memory Requirements</h1>
 
@@ -135,7 +135,8 @@ class Map_NestedLoops extends Operator
         ArgumentValidation.notNull("outerInputOperator", outerInputOperator);
         ArgumentValidation.notNull("innerInputOperator", innerInputOperator);
         ArgumentValidation.isGTE("inputBindingPosition", inputBindingPosition, 0);
-        ArgumentValidation.isGT("depth", depth, 0);
+        if (pipeline)
+            ArgumentValidation.isGT("depth", depth, 0);
         this.outerInputOperator = outerInputOperator;
         this.innerInputOperator = innerInputOperator;
         this.inputBindingPosition = inputBindingPosition;

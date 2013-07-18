@@ -33,14 +33,13 @@ import java.util.Collections;
 import java.util.Set;
 
 import static com.akiban.qp.operator.API.*;
-import static com.akiban.qp.operator.API.FlattenOption.KEEP_PARENT;
 import static com.akiban.qp.operator.API.JoinType.INNER_JOIN;
 import static com.akiban.qp.rowtype.RowTypeChecks.checkRowTypeFields;
 import static com.akiban.server.types.AkType.INT;
 import static com.akiban.server.types.AkType.VARCHAR;
 import static org.junit.Assert.assertTrue;
 
-public class Product_NestedLoopsIT extends OperatorITBase
+public class Product_NestedIT extends OperatorITBase
 {
     @Override
     protected void setupPostCreateSchema()
@@ -97,33 +96,27 @@ public class Product_NestedLoopsIT extends OperatorITBase
     // Test argument validation
 
     @Test(expected = IllegalArgumentException.class)
-    public void testLeftInputNull()
+    public void testInputNull()
     {
-        product_NestedLoops(null, groupScan_Default(coi), customerRowType, customerRowType, 0);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testRightInputNull()
-    {
-        product_NestedLoops(groupScan_Default(coi), null, customerRowType, customerRowType, 0);
+        product_Nested(null, customerRowType, null, customerRowType, 0);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testLeftTypeNull()
     {
-        product_NestedLoops(groupScan_Default(coi), groupScan_Default(coi), null, customerRowType, 0);
+        product_Nested(groupScan_Default(coi), null, null, customerRowType, 0);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testRightTypeNull()
     {
-        product_NestedLoops(groupScan_Default(coi), groupScan_Default(coi), customerRowType, null, 0);
+        product_Nested(groupScan_Default(coi), customerRowType, null, null, 0);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testNegativeInputBindingPosition()
     {
-        product_NestedLoops(groupScan_Default(coi), groupScan_Default(coi), customerRowType, customerRowType, -1);
+        product_Nested(groupScan_Default(coi), customerRowType, null, customerRowType, -1);
     }
 
     // Test operator execution
@@ -150,17 +143,17 @@ public class Product_NestedLoopsIT extends OperatorITBase
                     removeDescendentTypes(orderRowType)),
                 customerRowType,
                 orderRowType,
-                INNER_JOIN,
-                KEEP_PARENT);
+                INNER_JOIN);
         Operator flattenCA =
             flatten_HKeyOrdered(
-                branchLookup_Nested(coi, customerRowType, addressRowType, InputPreservationOption.KEEP_INPUT, 0),
+                branchLookup_Nested(coi, flattenCO.rowType(), customerRowType, null, addressRowType, InputPreservationOption.KEEP_INPUT, 0),
                 customerRowType,
                 addressRowType,
                 INNER_JOIN);
-        Operator plan = product_NestedLoops(flattenCO, flattenCA, flattenCO.rowType(), flattenCA.rowType(), 0);
-        RowType coaRowType = plan.rowType();
+        Operator product = product_Nested(flattenCA, flattenCO.rowType(), null, flattenCA.rowType(), 0);
+        RowType coaRowType = product.rowType();
         checkRowTypeFields(coaRowType, INT, VARCHAR, INT, INT, VARCHAR, INT, INT, VARCHAR);
+        Operator plan = map_NestedLoops(flattenCO, product, 0, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(coaRowType, 2L, "foundation", 200L, 2L, "david", 2000L, 2L, "222 2000 st"),
@@ -191,13 +184,14 @@ public class Product_NestedLoopsIT extends OperatorITBase
                 INNER_JOIN);
         Operator flattenCA =
             flatten_HKeyOrdered(
-                branchLookup_Nested(coi, customerRowType, addressRowType, InputPreservationOption.KEEP_INPUT, 0),
+                branchLookup_Nested(coi, flattenCO.rowType(), customerRowType, null, addressRowType, InputPreservationOption.KEEP_INPUT, 0),
                 customerRowType,
                 addressRowType,
                 INNER_JOIN);
-        Operator plan = product_NestedLoops(flattenCO, flattenCA, flattenCO.rowType(), flattenCA.rowType(), 0);
-        RowType coaRowType = plan.rowType();
+        Operator product = product_Nested(flattenCA, flattenCO.rowType(), null, flattenCA.rowType(), 0);
+        RowType coaRowType = product.rowType();
         checkRowTypeFields(coaRowType, INT, VARCHAR, INT, INT, VARCHAR, INT, INT, VARCHAR);
+        Operator plan = map_NestedLoops(flattenCO, product, 0, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
             row(coaRowType, 2L, "foundation", 200L, 2L, "david", 2000L, 2L, "222 2000 st"),
@@ -222,12 +216,12 @@ public class Product_NestedLoopsIT extends OperatorITBase
                     Arrays.asList(customerRowType, addressRowType)),
                 customerRowType,
                 addressRowType,
-                JoinType.LEFT_JOIN,
-                FlattenOption.KEEP_PARENT);
+                JoinType.LEFT_JOIN);
         Operator flattenCAInner =
             flatten_HKeyOrdered(
                 branchLookup_Nested(
                     coi,
+                    flattenCAOuter.rowType(),
                     customerRowType,
                     customerRowType,
                     addressRowType,
@@ -237,14 +231,14 @@ public class Product_NestedLoopsIT extends OperatorITBase
                 addressRowType,
                 JoinType.LEFT_JOIN);
         Operator product =
-            product_NestedLoops(
-                flattenCAOuter,
+            product_Nested(
                 flattenCAInner,
                 flattenCAOuter.rowType(),
                 customerRowType,
                 flattenCAInner.rowType(),
                 0);
         RowType productRowType = product.rowType();
+        Operator plan = map_NestedLoops(flattenCAOuter, product, 0, pipelineMap(), 1);
         RowBase[] expected = new RowBase[]{
             row(productRowType, 1L, "northbridge", 1000L, 1L, "111 1000 st", 1000L, 1L, "111 1000 st"),
             row(productRowType, 1L, "northbridge", 1000L, 1L, "111 1000 st", 1001L, 1L, "111 1001 st"),
@@ -262,7 +256,7 @@ public class Product_NestedLoopsIT extends OperatorITBase
             row(productRowType, 5L, "highland", 5001L, 5L, "555 5001 st", 5001, 5L, "555 5001 st"),
             row(productRowType, 6L, "flybridge", null, null, null, null, null, null),
         };
-        compareRows(expected, cursor(product, queryContext, queryBindings));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -285,16 +279,16 @@ public class Product_NestedLoopsIT extends OperatorITBase
                     removeDescendentTypes(orderRowType)),
                 customerRowType,
                 orderRowType,
-                INNER_JOIN,
-                KEEP_PARENT);
+                INNER_JOIN);
         Operator flattenCA =
             flatten_HKeyOrdered(
-                branchLookup_Nested(coi, customerRowType, addressRowType, InputPreservationOption.KEEP_INPUT, 0),
+                branchLookup_Nested(coi, flattenCO.rowType(), customerRowType, null, addressRowType, InputPreservationOption.KEEP_INPUT, 0),
                 customerRowType,
                 addressRowType,
                 INNER_JOIN);
-        Operator plan = product_NestedLoops(flattenCO, flattenCA, flattenCO.rowType(), flattenCA.rowType(), 0);
-        final RowType coaRowType = plan.rowType();
+        Operator product = product_Nested(flattenCA, flattenCO.rowType(), null, flattenCA.rowType(), 0);
+        final RowType coaRowType = product.rowType();
+        Operator plan = map_NestedLoops(flattenCO, product, 0, pipelineMap(), 1);
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override

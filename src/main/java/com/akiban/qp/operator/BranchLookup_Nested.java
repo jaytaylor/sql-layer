@@ -56,7 +56,9 @@ import static java.lang.Math.min;
  <li><b>GroupTable groupTable:</b> The group table containing the
  ancestors of interest.
 
- <li><b>RowType inputRowType:</b> Branches will be located for input
+ <li><b>RowType inputRowType:</b> Bound row will be of this type.
+ 
+ <li><b>RowType sourceRowType:</b> Branches will be located for input
  rows of this type.
  
  <li><b>UserTableRowType ancestorRowType:</b> Identifies the table in the group at which branching occurs.
@@ -136,7 +138,7 @@ public class BranchLookup_Nested extends Operator
         return String.format("%s(%s %s -> %s)",
                              getClass().getSimpleName(),
                              group.getRoot().getName(),
-                             inputRowType,
+                             sourceRowType,
                              outputRowType);
     }
 
@@ -163,6 +165,7 @@ public class BranchLookup_Nested extends Operator
 
     public BranchLookup_Nested(Group group,
                                RowType inputRowType,
+                               RowType sourceRowType,
                                UserTableRowType ancestorRowType,
                                UserTableRowType outputRowType,
                                API.InputPreservationOption flag,
@@ -170,21 +173,22 @@ public class BranchLookup_Nested extends Operator
     {
         ArgumentValidation.notNull("group", group);
         ArgumentValidation.notNull("inputRowType", inputRowType);
+        ArgumentValidation.notNull("sourceRowType", sourceRowType);
         ArgumentValidation.notNull("outputRowType", outputRowType);
         ArgumentValidation.notNull("flag", flag);
-        ArgumentValidation.isTrue("inputRowType instanceof UserTableRowType || flag == API.InputPreservationOption.DISCARD_INPUT",
-                                  inputRowType instanceof UserTableRowType || flag == API.InputPreservationOption.DISCARD_INPUT);
+        ArgumentValidation.isTrue("sourceRowType instanceof UserTableRowType || flag == API.InputPreservationOption.DISCARD_INPUT",
+                                  sourceRowType instanceof UserTableRowType || flag == API.InputPreservationOption.DISCARD_INPUT);
         ArgumentValidation.isGTE("hKeyBindingPosition", inputBindingPosition, 0);
         UserTableRowType inputTableType = null;
-        if (inputRowType instanceof UserTableRowType) {
-            inputTableType = (UserTableRowType) inputRowType;
-        } else if (inputRowType instanceof IndexRowType) {
-            inputTableType = ((IndexRowType) inputRowType).tableType();
-        } else if (inputRowType instanceof HKeyRowType) {
+        if (sourceRowType instanceof UserTableRowType) {
+            inputTableType = (UserTableRowType) sourceRowType;
+        } else if (sourceRowType instanceof IndexRowType) {
+            inputTableType = ((IndexRowType) sourceRowType).tableType();
+        } else if (sourceRowType instanceof HKeyRowType) {
             Schema schema = outputRowType.schema();
-            inputTableType = schema.userTableRowType(inputRowType.hKey().userTable());
+            inputTableType = schema.userTableRowType(sourceRowType.hKey().userTable());
         }
-        assert inputTableType != null : inputRowType;
+        assert inputTableType != null : sourceRowType;
         UserTable inputTable = inputTableType.userTable();
         UserTable outputTable = outputRowType.userTable();
         ArgumentValidation.isSame("inputTable.getGroup()",
@@ -193,6 +197,7 @@ public class BranchLookup_Nested extends Operator
                                   outputTable.getGroup());
         this.group = group;
         this.inputRowType = inputRowType;
+        this.sourceRowType = sourceRowType;
         this.outputRowType = outputRowType;
         this.keepInput = flag == API.InputPreservationOption.KEEP_INPUT;
         this.inputBindingPosition = inputBindingPosition;
@@ -262,7 +267,7 @@ public class BranchLookup_Nested extends Operator
     // Object state
 
     private final Group group;
-    private final RowType inputRowType;
+    private final RowType inputRowType, sourceRowType;
     private final UserTableRowType outputRowType;
     private final boolean keepInput;
     // If keepInput is true, inputPrecedesBranch controls whether input row appears before the retrieved branch.
@@ -278,9 +283,9 @@ public class BranchLookup_Nested extends Operator
         atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(inputBindingPosition));
         atts.put(Label.OUTPUT_TYPE, outputRowType.getExplainer(context));
         UserTableRowType ancestorRowType = outputRowType.schema().userTableRowType(commonAncestor);
-        if ((ancestorRowType != inputRowType) && (ancestorRowType != outputRowType))
+        if ((ancestorRowType != sourceRowType) && (ancestorRowType != outputRowType))
             atts.put(Label.ANCESTOR_TYPE, ancestorRowType.getExplainer(context));
-        return new LookUpOperatorExplainer(getName(), atts, inputRowType, false, null, context);
+        return new LookUpOperatorExplainer(getName(), atts, sourceRowType, false, null, context);
     }
 
     // Inner classes
@@ -296,10 +301,13 @@ public class BranchLookup_Nested extends Operator
             try {
                 CursorLifecycle.checkIdle(this);
                 Row rowFromBindings = bindings.getRow(inputBindingPosition);
+                assert rowFromBindings.rowType() == inputRowType : rowFromBindings;
+                if (inputRowType != sourceRowType) {
+                    rowFromBindings = rowFromBindings.subRow(sourceRowType);
+                }
                 if (LOG_EXECUTION) {
                     LOG.debug("BranchLookup_Nested: open using {}", rowFromBindings);
                 }
-                assert rowFromBindings.rowType() == inputRowType : rowFromBindings;
                 computeLookupRowHKey(rowFromBindings);
                 cursor.rebind(hKey, true);
                 cursor.open();
