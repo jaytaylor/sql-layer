@@ -120,7 +120,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
     @Test(expected = IllegalArgumentException.class)
     public void testNonPositiveDepth()
     {
-        map_NestedLoops(groupScan_Default(coi), groupScan_Default(coi), 0, pipelineMap(),0);
+        map_NestedLoops(groupScan_Default(coi), groupScan_Default(coi), 0, true,0);
     }
 
     // Test operator execution
