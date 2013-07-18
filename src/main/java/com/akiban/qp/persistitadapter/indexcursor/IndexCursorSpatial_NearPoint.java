@@ -51,7 +51,6 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
     {
         super.open();
         // iterationHelper.closeIteration() closes the PersistitIndexCursor, releasing its Exchange.
-        // This iteration uses the Exchanges in the IndexScanRowStates owned by each cursor of the MultiCursor.
         iterationHelper.closeIteration();
         geCursor.open();
         geNeedToAdvance = true;
