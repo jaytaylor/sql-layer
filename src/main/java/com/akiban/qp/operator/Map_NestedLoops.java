@@ -219,6 +219,17 @@ class Map_NestedLoops extends Operator
             }
             input.closeBindings();
         }
+
+        @Override
+        public void cancelBindings(QueryBindings bindings) {
+            if ((baseBindings != null) && baseBindings.isAncestor(bindings)) {
+                baseBindings = null;
+                input.close();
+            }
+            if (bindings.getDepth() < depth) {
+                input.cancelBindings(bindings);
+            }
+        }
     }
 
     // Other end of pipeline: remove the extra binding levels that we
@@ -228,8 +239,7 @@ class Map_NestedLoops extends Operator
     {
         private final Cursor input;
         private final int depth;
-        private QueryBindings pendingBindings;
-        private boolean open, inputOpen;
+        private QueryBindings currentBindings, pendingBindings, openBindings, inputOpenBindings;
         
         public CollapseBindingsCursor(QueryContext context, Cursor input, int depth) {
             super(context);
@@ -240,8 +250,8 @@ class Map_NestedLoops extends Operator
         @Override
         public void open() {
             CursorLifecycle.checkIdle(this);
-            open = true;
-            inputOpen = false;
+            openBindings = currentBindings;
+            inputOpenBindings = null;
         }
 
         @Override
@@ -256,25 +266,25 @@ class Map_NestedLoops extends Operator
                 checkQueryCancelation();
                 Row row = null;
                 while (true) {
-                    if (inputOpen) {
+                    if (inputOpenBindings != null) {
                         row = input.next();
                         if (row != null) break;
                         input.close();
-                        inputOpen = false;
+                        inputOpenBindings = null;
                     }
                     QueryBindings bindings = input.nextBindings();
                     if (bindings == null) {
-                        open = false;
+                        openBindings = null;
                         break;
                     }
                     if (bindings.getDepth() == depth) {
                         input.open();
-                        inputOpen = true;
+                        inputOpenBindings = bindings;
                     }
                     else if (bindings.getDepth() < depth) {
                         // End of this binding's rowset. Arrange for this to be next one.
                         pendingBindings = bindings;
-                        open = false;
+                        openBindings = null;
                         break;
                     }
                     else {
@@ -301,20 +311,10 @@ class Map_NestedLoops extends Operator
         @Override
         public void close() {
             CursorLifecycle.checkIdleOrActive(this);
-            if (open) {
-                if (inputOpen) {
-                    input.close();
-                    inputOpen = false;
-                }
-                // Advance bindings to where stream would have ended.
-                while (pendingBindings == null) {
-                    QueryBindings bindings = input.nextBindings();
-                    if (bindings == null) break;
-                    if (bindings.getDepth() < depth) {
-                        pendingBindings = bindings;
-                    }
-                }
-                open = false;
+            if (openBindings != null) {
+                cancelBindings(openBindings);
+                assert (inputOpenBindings == null);
+                assert (openBindings == null);
             }
         }
 
@@ -326,12 +326,12 @@ class Map_NestedLoops extends Operator
 
         @Override
         public boolean isIdle() {
-            return !input.isDestroyed() && !open;
+            return !input.isDestroyed() && (openBindings == null);
         }
 
         @Override
         public boolean isActive() {
-            return open;
+            return (openBindings != null);
         }
 
         @Override
@@ -341,29 +341,43 @@ class Map_NestedLoops extends Operator
 
         @Override
         public void openBindings() {
-            pendingBindings = null;
+            pendingBindings = currentBindings = null;
             input.openBindings();
         }
 
         @Override
         public QueryBindings nextBindings() {
-            QueryBindings bindings = pendingBindings;
-            if (bindings != null) {
+            currentBindings = pendingBindings;
+            if (currentBindings != null) {
                 pendingBindings = null;
-                return bindings;
+                return currentBindings;
             }
             while (true) {
                 // Skip over any that we would elide.
-                bindings = input.nextBindings();
-                if ((bindings == null) || (bindings.getDepth() < depth))
-                    return bindings;
-                assert (bindings.getDepth() == depth);
+                currentBindings = input.nextBindings();
+                if ((currentBindings == null) || (currentBindings.getDepth() < depth))
+                    return currentBindings;
+                assert (currentBindings.getDepth() == depth);
             }
         }
 
         @Override
         public void closeBindings() {
             input.closeBindings();
+        }
+
+        @Override
+        public void cancelBindings(QueryBindings bindings) {
+            input.cancelBindings(bindings);
+            if ((inputOpenBindings != null) && inputOpenBindings.isAncestor(bindings)) {
+                inputOpenBindings = null;
+            }
+            if ((openBindings != null) && openBindings.isAncestor(bindings)) {
+                openBindings = null;
+            }
+            if ((pendingBindings != null) && pendingBindings.isAncestor(bindings)) {
+                pendingBindings = null;
+            }
         }
     }
 
@@ -475,6 +489,13 @@ class Map_NestedLoops extends Operator
         @Override
         public void closeBindings() {
             outerInput.closeBindings();
+        }
+
+        @Override
+        public void cancelBindings(QueryBindings bindings) {
+            innerInput.close();
+            outerInput.cancelBindings(bindings);
+            closed = true;
         }
 
         // Execution interface
