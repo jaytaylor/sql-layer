@@ -292,7 +292,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         // D rows on (a, b)), and, for positives, check F using an index scan keyed by D.a and D.b.
         Operator plan =
             project_Default(
-                using_BloomFilter(
+                 using_BloomFilter(
                     // filterInput
                     loadFilter,
                     // filterRowType
@@ -317,7 +317,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
                         // collators
                         collators,
                         // filterBindingPosition
-                        0,
+                        0, false, 1,
                         ExpressionGenerator.ErasureMaker.MARK),
                     // collators
                     collators

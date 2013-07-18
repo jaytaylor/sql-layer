@@ -53,6 +53,10 @@ import java.util.*;
  * loaded by the Using_BloomFilter operator. This bindingPosition is also used to hold a row from
  * the input stream that passes the filter and needs to be tested for existence using the onPositive
  * operator.
+ <li><b>boolean pipeline:</b> Whether to use bracketing cursors instead of rebinding.
+
+ <li><b>int depth:</b> Number of nested Maps, including this one.
+
  * <p/>
  * <h1>Behavior</h1>
  * <p/>
@@ -128,7 +132,9 @@ class Select_BloomFilter extends Operator
                               List<? extends Expression> fields,
                               List<? extends TPreparedExpression> tFields,
                               List<AkCollator> collators,
-                              int bindingPosition)
+                              int bindingPosition,
+                              boolean pipeline,
+                              int depth)
     {
         ArgumentValidation.notNull("input", input);
         ArgumentValidation.notNull("onPositive", onPositive);
@@ -142,9 +148,12 @@ class Select_BloomFilter extends Operator
         }
         ArgumentValidation.isGT("fields.size()", size, 0);
         ArgumentValidation.isGTE("bindingPosition", bindingPosition, 0);
+        ArgumentValidation.isGT("depth", depth, 0);
         this.input = input;
         this.onPositive = onPositive;
         this.bindingPosition = bindingPosition;
+        this.pipeline = pipeline;
+        this.depth = depth;
         this.fields = fields;
         this.tFields = tFields;
         this.collators = collators;
@@ -168,7 +177,8 @@ class Select_BloomFilter extends Operator
 
     private final Operator input;
     private final Operator onPositive;
-    private final int bindingPosition;
+    private final int bindingPosition, depth;
+    private final boolean pipeline;
     private final List<? extends Expression> fields;
     private final List<? extends TPreparedExpression> tFields;
     private final List<AkCollator> collators;

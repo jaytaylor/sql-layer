@@ -107,6 +107,10 @@ public class Select_BloomFilterIT extends OperatorITBase
         use(db);
     }
 
+    protected boolean pipelineSelectBloomFilter() {
+        return false;
+    }
+
     // Test argument validation
 
     @Test
@@ -301,7 +305,9 @@ public class Select_BloomFilterIT extends OperatorITBase
                             ExpressionGenerators.field(dIndexRowType, 1),
                             ExpressionGenerators.field(dIndexRowType, 2)),
                         // filterBindingPosition
-                        0)),
+                        0,
+                        pipelineSelectBloomFilter(),
+                        1)),
                 dIndexRowType,
                 Arrays.asList(
                     ExpressionGenerators.field(dIndexRowType, 0),   // test_id
