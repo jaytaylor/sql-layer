@@ -107,10 +107,19 @@ class Select_BloomFilter extends Operator
     @Override
     protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        if (tFields == null)
-            return new Execution<>(context, bindingsCursor, fields, oldExpressionsAdapater);
-        else
-            return new Execution<>(context, bindingsCursor, tFields, newExpressionsAdapter);
+        if (!pipeline) {
+            if (tFields == null)
+                return new Execution<>(context, bindingsCursor, fields, oldExpressionsAdapater);
+            else
+                return new Execution<>(context, bindingsCursor, tFields, newExpressionsAdapter);
+        }
+        else {
+            assert (tFields != null);
+            Cursor inputCursor = input.cursor(context, bindingsCursor);
+            QueryBindingsCursor toBindings = new FilterBindingsCursor(context, inputCursor, bindingPosition, depth, tFields, newExpressionsAdapter);
+            Cursor checkCursor = onPositive.cursor(context, toBindings);
+            return new RecoverRowsCursor(context, checkCursor, bindingPosition, depth);
+        }
     }
 
     @Override
@@ -417,5 +426,103 @@ class Select_BloomFilter extends Operator
         private final ExpressionAdapter<?, E> adapter;
         private boolean idle = true;
         private boolean destroyed = false;
+    }
+
+    // Turn input rows that match the filter into bindings for the onPositive plan.
+    private class FilterBindingsCursor extends Map_NestedLoops.RowToBindingsCursor
+    {
+        private final StoreAdapter storeAdapter;
+        private final List<TEvaluatableExpression> fieldEvals = new ArrayList<>();
+        private final ExpressionAdapter<TPreparedExpression, TEvaluatableExpression> expressionAdapter;
+
+        public FilterBindingsCursor(QueryContext context, Cursor input, 
+                                    int bindingPosition, int depth,
+                                    List<? extends TPreparedExpression> expressions, ExpressionAdapter<TPreparedExpression, TEvaluatableExpression> expressionAdapter) {
+            super(input, bindingPosition, depth);
+            this.storeAdapter = context.getStore();
+            this.expressionAdapter = expressionAdapter;
+            for (TPreparedExpression field : expressions) {
+                TEvaluatableExpression eval = expressionAdapter.evaluate(field, context);
+                fieldEvals.add(eval);
+            }
+        }
+
+        @Override
+        protected Row nextInputRow() {
+            BloomFilter filter = baseBindings.getBloomFilter(bindingPosition);
+            while (true) {
+                Row row = input.next();
+                if ((row == null) || filter.maybePresent(hashProjectedRow(row))) {
+                    return row;
+                }
+            }
+        }
+
+        private int hashProjectedRow(Row row)
+        {
+            int hash = 0;
+            for (int f = 0; f < fieldEvals.size(); f++) {
+                TEvaluatableExpression fieldEval = fieldEvals.get(f);
+                hash = hash ^ expressionAdapter.hash(storeAdapter, fieldEval, row, collator(f));
+            }
+            return hash;
+        }
+    }
+
+    // If any context at our depth has a non-empty rowset from
+    // onPositive, it passed, so let it through.
+    private static class RecoverRowsCursor extends Map_NestedLoops.CollapseBindingsCursor
+    {
+        private final int bindingPosition;
+
+        public RecoverRowsCursor(QueryContext context, Cursor input, int bindingPosition, int depth) {
+            super(context, input, depth);
+            this.bindingPosition = bindingPosition;
+        }
+
+        @Override
+        public Row next() {
+            if (TAP_NEXT_ENABLED) {
+                TAP_NEXT.in();
+            }
+            try {
+                if (CURSOR_LIFECYCLE_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
+                checkQueryCancelation();
+                Row row = null;
+                while (true) {
+                    QueryBindings bindings = input.nextBindings();
+                    if (bindings == null) {
+                        openBindings = null;
+                        break;
+                    }
+                    if (bindings.getDepth() < depth) {
+                        pendingBindings = bindings;
+                        openBindings = null;
+                        break;
+                    }
+                    assert (bindings.getDepth() == depth);
+                    input.open();
+                    inputOpenBindings = bindings;
+                    row = input.next();
+                    input.close();
+                    inputOpenBindings = null;
+                    if (row != null) {
+                        row = bindings.getRow(bindingPosition);
+                    }
+                    break;
+                }
+                if (LOG_EXECUTION) {
+                    LOG.debug("Select_BloomFilter: yield {}", row);
+                }
+                return row;
+            } 
+            finally {
+                if (TAP_NEXT_ENABLED) {
+                    TAP_NEXT.out();
+                }
+            }
+        }
     }
 }
