@@ -374,7 +374,7 @@ class IndexScan_Default extends Operator
         {
             super(context, bindingsCursor);
             UserTable table = (UserTable)index.rootMostTable();
-            this.cursor = adapter(table).newIndexCursor(context, index, indexKeyRange, ordering, scanSelector, usePValues);
+            this.cursor = adapter(table).newIndexCursor(context, index, indexKeyRange, ordering, scanSelector, usePValues, false);
         }
 
         // Object state
@@ -576,7 +576,7 @@ class IndexScan_Default extends Operator
             UserTable table = (UserTable)index.rootMostTable();
             StoreAdapter adapter = adapter(table);
             for (int i = 0; i < quantum; i++) {
-                RowCursor cursor = adapter.newIndexCursor(context, index, indexKeyRange, ordering, scanSelector, usePValues);
+                RowCursor cursor = adapter.newIndexCursor(context, index, indexKeyRange, ordering, scanSelector, usePValues, true);
                 cursorPool.add(cursor);
             }
         }

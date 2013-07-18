@@ -116,7 +116,8 @@ class PersistitIndexCursor implements BindingsAwareCursor
                          IndexKeyRange keyRange,
                          API.Ordering ordering,
                          IndexScanSelector selector,
-                         boolean usePValues)
+                         boolean usePValues,
+                         boolean openAllSubCursors)
     {
         this.keyRange = keyRange;
         this.ordering = ordering;
@@ -127,7 +128,7 @@ class PersistitIndexCursor implements BindingsAwareCursor
         this.selector = selector;
         this.idle = true;
         this.rowState = context.getStore().createIterationHelper(indexRowType);
-        this.indexCursor = IndexCursor.create(context, keyRange, ordering, rowState, usePValues);
+        this.indexCursor = IndexCursor.create(context, keyRange, ordering, rowState, usePValues, openAllSubCursors);
     }
 
     // For use by this class

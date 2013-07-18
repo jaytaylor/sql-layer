@@ -57,7 +57,8 @@ public abstract class StoreAdapter implements KeyCreator
                                              IndexKeyRange keyRange,
                                              API.Ordering ordering,
                                              IndexScanSelector scanSelector,
-                                             boolean usePValues);
+                                             boolean usePValues,
+                                             boolean openAllSubCursors);
 
     public abstract <HKEY extends com.akiban.qp.row.HKey> HKEY newHKey(HKey hKeyMetadata);
 

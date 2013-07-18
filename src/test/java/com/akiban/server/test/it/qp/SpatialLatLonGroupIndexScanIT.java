@@ -93,6 +93,10 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
         queryBindings = queryContext.createBindings();
     }
 
+    protected int lookaheadQuantum() {
+        return 1;
+    }
+
     @Test
     public void testLoad()
     {
@@ -290,7 +294,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
             IndexBound upperRight = new IndexBound(row(pSpatialIndexRowType, beforeEQ, latHi, lonHi),
                                                    new SetColumnSelector(0, 1, 2));
             IndexKeyRange box = IndexKeyRange.spatial(pSpatialIndexRowType, lowerLeft, upperRight);
-            Operator plan = indexScan_Default(pSpatialIndexRowType, false, box);
+            Operator plan = indexScan_Default(pSpatialIndexRowType, box, lookaheadQuantum());
             Cursor cursor = API.cursor(plan, queryContext, queryBindings);
             cursor.openTopLevel();
             Row row;
@@ -369,7 +373,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
             IndexBound upperRight = new IndexBound(row(cSpatialIndexRowType, beforeEQ, latHi, lonHi),
                                                    new SetColumnSelector(0, 1, 2));
             IndexKeyRange box = IndexKeyRange.spatial(cSpatialIndexRowType, lowerLeft, upperRight);
-            Operator plan = indexScan_Default(cSpatialIndexRowType, false, box);
+            Operator plan = indexScan_Default(cSpatialIndexRowType, box, lookaheadQuantum());
             Cursor cursor = API.cursor(plan, queryContext, queryBindings);
             cursor.openTopLevel();
             Row row;
@@ -424,7 +428,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                     new IndexBound(row(cSpatialIndexRowType, beforeEQ,  queryLat, queryLon),
                                    new SetColumnSelector(0, 1, 2));
                 IndexKeyRange zStartRange = IndexKeyRange.around(cSpatialIndexRowType, zStartBound);
-                Operator plan = indexScan_Default(cSpatialIndexRowType, false, zStartRange);
+                Operator plan = indexScan_Default(cSpatialIndexRowType, zStartRange, lookaheadQuantum());
                 Cursor cursor = API.cursor(plan, queryContext, queryBindings);
                 cursor.openTopLevel();
                 Row row;

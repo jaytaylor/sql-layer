@@ -50,6 +50,14 @@ public class MultiCursorIT extends OperatorITBase
         queryBindings = queryContext.createBindings();
     }
 
+    @Test(expected=IllegalStateException.class)
+    public void testSealed()
+    {
+        MultiCursor multiCursor = multiCursor();
+        multiCursor.open();
+        multiCursor.addCursor(new TestCursor(new int[]{}));
+    }
+
     @Test
     public void testNoCursors()
     {
@@ -84,7 +92,18 @@ public class MultiCursorIT extends OperatorITBase
     @Test
     public void testMultipleCursors()
     {
-        RowCursor multiCursor = multiCursor(new TestCursor(new int[]{}),
+        testMultipleCursors(false);
+    }
+
+    @Test
+    public void testOpenAll()
+    {
+        testMultipleCursors(true);
+    }
+
+    private void testMultipleCursors(boolean openAll) {
+        RowCursor multiCursor = multiCursor(openAll,
+                                            new TestCursor(new int[]{}),
                                             new TestCursor(new int[]{0, 1, 2}),
                                             new TestCursor(new int[]{}),
                                             new TestCursor(new int[]{}),
@@ -104,7 +123,12 @@ public class MultiCursorIT extends OperatorITBase
 
     private MultiCursor multiCursor(TestCursor ... cursors)
     {
-        MultiCursor multiCursor = new MultiCursor();
+        return multiCursor(false, cursors);
+    }
+
+    private MultiCursor multiCursor(boolean openAll, TestCursor ... cursors)
+    {
+        MultiCursor multiCursor = new MultiCursor(openAll);
         for (TestCursor cursor : cursors) {
             multiCursor.addCursor(cursor);
         }
