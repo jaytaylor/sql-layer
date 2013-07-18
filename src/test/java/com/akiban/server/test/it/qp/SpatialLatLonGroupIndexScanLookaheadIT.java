@@ -19,6 +19,7 @@ package com.akiban.server.test.it.qp;
 
 public class SpatialLatLonGroupIndexScanLookaheadIT extends SpatialLatLonGroupIndexScanIT
 {
+    @Override
     protected int lookaheadQuantum() {
         return 10;
     }
