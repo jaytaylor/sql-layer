@@ -54,13 +54,9 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         // This iteration uses the Exchanges in the IndexScanRowStates owned by each cursor of the MultiCursor.
         iterationHelper.closeIteration();
         geCursor.open();
-        geRow = geCursor.next();
-        geDistance = distanceFromStart(geRow);
-        geNeedToAdvance = false;
+        geNeedToAdvance = true;
         ltCursor.open();
-        ltRow = ltCursor.next();
-        ltDistance = distanceFromStart(ltRow);
-        ltNeedToAdvance = false;
+        ltNeedToAdvance = true;
     }
 
     @Override
@@ -72,7 +68,8 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
             geRow = geCursor.next();
             geDistance = distanceFromStart(geRow);
             geNeedToAdvance = false;
-        } else if (ltNeedToAdvance) {
+        } 
+        if (ltNeedToAdvance) {
             ltRow = ltCursor.next();
             ltDistance = distanceFromStart(ltRow);
             ltNeedToAdvance = false;
