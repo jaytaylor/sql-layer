@@ -215,7 +215,9 @@ class Using_BloomFilter extends Operator
         {
             close();
             input.destroy();
-            bindings.setBloomFilter(filterBindingPosition, null);
+            if (bindings != null) {
+                bindings.setBloomFilter(filterBindingPosition, null);
+            }
         }
 
         // Execution interface

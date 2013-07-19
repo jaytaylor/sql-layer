@@ -317,7 +317,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
                         // collators
                         collators,
                         // filterBindingPosition
-                        0,
+                        0, false, 1,
                         ExpressionGenerator.ErasureMaker.MARK),
                     // collators
                     collators

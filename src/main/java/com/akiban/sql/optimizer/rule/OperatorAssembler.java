@@ -1827,6 +1827,7 @@ public class OperatorAssembler extends BaseRule
             int pos = getHashTablePosition(bloomFilter);
             RowStream stream = assembleStream(bloomFilterFilter.getInput());
             boundRows.set(pos, stream.fieldOffsets);
+            nestedBindingsDepth++;
             RowStream cstream = assembleStream(bloomFilterFilter.getCheck());
             boundRows.set(pos, null);
             List<Expression> fields = oldPartialAssembler.assembleExpressions(bloomFilterFilter.getLookupExpressions(),
@@ -1842,7 +1843,10 @@ public class OperatorAssembler extends BaseRule
                                                      fields,
                                                      tFields,
                                                      collators,
-                                                     pos + loopBindingsOffset);
+                                                     pos + loopBindingsOffset,
+                                                     rulesContext.getPipelineConfiguration().isSelectBloomFilterEnabled(),
+                                                     nestedBindingsDepth);
+            nestedBindingsDepth--;
             return stream;
         }
 
