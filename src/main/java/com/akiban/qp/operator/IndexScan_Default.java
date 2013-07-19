@@ -374,7 +374,7 @@ class IndexScan_Default extends Operator
         {
             super(context, bindingsCursor);
             UserTable table = (UserTable)index.rootMostTable();
-            this.cursor = adapter(table).newIndexCursor(context, index, indexKeyRange, ordering, scanSelector, usePValues);
+            this.cursor = adapter(table).newIndexCursor(context, index, indexKeyRange, ordering, scanSelector, usePValues, false);
         }
 
         // Object state
@@ -537,6 +537,34 @@ class IndexScan_Default extends Operator
             recyclePending();
         }
 
+        @Override
+        public void cancelBindings(QueryBindings bindings) {
+            if ((currentBindings != null) && currentBindings.isAncestor(bindings)) {
+                if (currentCursor != null) {
+                    currentCursor.close();
+                    cursorPool.add(currentCursor);
+                    currentCursor = null;
+                }
+                if (pendingCursor != null) {
+                    pendingCursor.close();
+                    cursorPool.add(pendingCursor);
+                    pendingCursor = null;
+                }
+                currentBindings = null;
+            }
+            while (true) {
+                BindingsAndCursor bandc = pendingBindings.peek();
+                if (bandc == null) break;
+                if (!bandc.bindings.isAncestor(bindings)) break;
+                bandc = pendingBindings.remove();
+                if (bandc.cursor != null) {
+                    bandc.cursor.close();
+                    cursorPool.add(bandc.cursor);
+                }
+            }
+            bindingsCursor.cancelBindings(bindings);
+        }
+
         // LookaheadExecution interface
 
         LookaheadExecution(QueryContext context, QueryBindingsCursor bindingsCursor, 
@@ -548,7 +576,7 @@ class IndexScan_Default extends Operator
             UserTable table = (UserTable)index.rootMostTable();
             StoreAdapter adapter = adapter(table);
             for (int i = 0; i < quantum; i++) {
-                RowCursor cursor = adapter.newIndexCursor(context, index, indexKeyRange, ordering, scanSelector, usePValues);
+                RowCursor cursor = adapter.newIndexCursor(context, index, indexKeyRange, ordering, scanSelector, usePValues, true);
                 cursorPool.add(cursor);
             }
         }

@@ -233,6 +233,9 @@ public class DefaultFormatter
         case FLATTEN_OPERATOR:
             appendFlattenOperator(name, atts);
             break;
+        case PRODUCT_OPERATOR:
+            appendProductOperator(name, atts);
+            break;
         case ORDERED:
             appendOrderedOperator(name, atts);
             break;
@@ -530,6 +533,14 @@ public class DefaultFormatter
         }
     }
 
+    protected void appendProductOperator(String name, Attributes atts) {
+        if (levelOfDetail != LevelOfDetail.BRIEF) {
+            append(atts.getAttribute(Label.OUTER_TYPE));
+            sb.append(" x ");
+            append(atts.getAttribute(Label.INNER_TYPE));
+        }
+    }
+
     protected void appendOrderedOperator(String name, Attributes atts) {
         if (levelOfDetail != LevelOfDetail.BRIEF) {
             if (atts.containsKey(Label.UNION_OPTION) &&
@@ -585,11 +596,6 @@ public class DefaultFormatter
         if (levelOfDetail != LevelOfDetail.BRIEF) {
             if (name.equals("Map_NestedLoops")) {
                 // Label the loop?
-            }
-            else if (name.equals("Product_NestedLoops")) {
-                append(atts.getAttribute(Label.OUTER_TYPE));
-                sb.append(" x ");
-                append(atts.getAttribute(Label.INNER_TYPE));
             }
         }
     }

@@ -122,7 +122,7 @@ class Union_Ordered extends Operator
         return String.format("%s\n%s", describePlan(left), describePlan(right));
     }
 
-    // Project_Default interface
+    // Union_Ordered interface
 
     public Union_Ordered(Operator left,
                          Operator right,
@@ -331,6 +331,13 @@ class Union_Ordered extends Operator
             bindingsCursor.closeBindings();
             leftInput.closeBindings();
             rightInput.closeBindings();
+        }
+
+        @Override
+        public void cancelBindings(QueryBindings bindings) {
+            leftInput.cancelBindings(bindings);
+            rightInput.cancelBindings(bindings);
+            bindingsCursor.cancelBindings(bindings);
         }
 
         // Execution interface

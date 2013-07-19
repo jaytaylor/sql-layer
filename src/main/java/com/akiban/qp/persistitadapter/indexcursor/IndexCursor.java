@@ -128,7 +128,8 @@ public abstract class IndexCursor implements BindingsAwareCursor
                                      IndexKeyRange keyRange,
                                      API.Ordering ordering,
                                      IterationHelper iterationHelper,
-                                     boolean usePValues)
+                                     boolean usePValues,
+                                     boolean openAllSubCursors)
     {
         SortKeyAdapter<?, ?> adapter =
             usePValues
@@ -138,7 +139,7 @@ public abstract class IndexCursor implements BindingsAwareCursor
             keyRange != null && keyRange.spatial()
             ? keyRange.hi() == null
                 ? IndexCursorSpatial_NearPoint.create(context, iterationHelper, keyRange)
-                : IndexCursorSpatial_InBox.create(context, iterationHelper, keyRange)
+                : IndexCursorSpatial_InBox.create(context, iterationHelper, keyRange, openAllSubCursors)
             : ordering.allAscending() || ordering.allDescending()
                 ? (keyRange != null && keyRange.lexicographic()
                     ? IndexCursorUnidirectionalLexicographic.create(context, iterationHelper, keyRange, ordering, adapter)

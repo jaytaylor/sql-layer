@@ -120,7 +120,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
     @Test(expected = IllegalArgumentException.class)
     public void testNonPositiveDepth()
     {
-        map_NestedLoops(groupScan_Default(coi), groupScan_Default(coi), 0, pipelineMap(),0);
+        map_NestedLoops(groupScan_Default(coi), groupScan_Default(coi), 0, true,0);
     }
 
     // Test operator execution
@@ -299,6 +299,49 @@ public class Map_NestedLoopsIT extends OperatorITBase
             row(customerRowType, 3L, "matrix"),
             row(customerRowType, 4L, "atlas"),
             row(customerRowType, 5L, "highland"),
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
+    }
+
+    @Test
+    public void testDeepMapLimit()
+    {
+        RowType intRowType = schema.newValuesType(AkType.INT);
+        List<ExpressionGenerator> expressions = Arrays.asList(boundField(intRowType, 0, 0), boundField(intRowType, 1, 0), field(intRowType, 0));
+        Operator inside = 
+            project_Default(
+                valuesScan_Default(
+                    bindableExpressions(intRow(intRowType, 1),
+                                        intRow(intRowType, 2),
+                                        intRow(intRowType, 3)),
+                    intRowType),
+                intRowType, expressions);
+        RowType insideRowType = inside.rowType();
+        Operator plan =
+            map_NestedLoops(
+                valuesScan_Default(
+                    bindableExpressions(intRow(intRowType, 100),
+                                        intRow(intRowType, 200),
+                                        intRow(intRowType, 300)),
+                    intRowType),
+                limit_Default(
+                    map_NestedLoops(
+                        valuesScan_Default(
+                            bindableExpressions(intRow(intRowType, 10),
+                                                intRow(intRowType, 20),
+                                                intRow(intRowType, 30)),
+                            intRowType),
+                        inside,
+                        1, pipelineMap(), 2),
+                    2),
+                0, pipelineMap(), 1);
+        RowBase[] expected = new RowBase[]{
+            row(insideRowType, 100L, 10L, 1L),
+            row(insideRowType, 100L, 10L, 2L),
+            row(insideRowType, 200L, 10L, 1L),
+            row(insideRowType, 200L, 10L, 2L),
+            row(insideRowType, 300L, 10L, 1L),
+            row(insideRowType, 300L, 10L, 2L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }

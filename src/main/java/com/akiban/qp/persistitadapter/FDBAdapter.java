@@ -73,13 +73,15 @@ public class FDBAdapter extends StoreAdapter {
                                     IndexKeyRange keyRange,
                                     API.Ordering ordering,
                                     IndexScanSelector scanSelector,
-                                    boolean usePValues) {
+                                    boolean usePValues,
+                                    boolean openAllSubCursors) {
         return new PersistitIndexCursor(context,
                                         schema.indexRowType(index),
                                         keyRange,
                                         ordering,
                                         scanSelector,
-                                        usePValues);
+                                        usePValues,
+                                        openAllSubCursors);
     }
 
     @Override

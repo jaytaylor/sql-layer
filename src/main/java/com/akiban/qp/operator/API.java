@@ -210,6 +210,7 @@ public class API
                                                int inputBindingPosition)
     {
         return new BranchLookup_Nested(group,
+                                       inputRowType, 
                                        inputRowType,
                                        null,
                                        outputRowType,
@@ -225,7 +226,25 @@ public class API
                                                int inputBindingPosition)
     {
         return new BranchLookup_Nested(group,
+                                       inputRowType, 
                                        inputRowType,
+                                       ancestorRowType,
+                                       outputRowType,
+                                       flag,
+                                       inputBindingPosition);
+    }
+
+    public static Operator branchLookup_Nested(Group group,
+                                               RowType inputRowType,
+                                               RowType sourceRowType,
+                                               UserTableRowType ancestorRowType,
+                                               UserTableRowType outputRowType,
+                                               InputPreservationOption flag,
+                                               int inputBindingPosition)
+    {
+        return new BranchLookup_Nested(group,
+                                       inputRowType, 
+                                       sourceRowType,
                                        ancestorRowType,
                                        outputRowType,
                                        flag,
@@ -400,6 +419,20 @@ public class API
 
     public static Operator indexScan_Default(IndexRowType indexType,
                                              IndexKeyRange indexKeyRange,
+                                             int lookaheadQuantum)
+    {
+        Ordering ordering = new Ordering();
+        int fields = indexType.nFields();
+        for (int f = 0; f < fields; f++) {
+            ordering.append(new TPreparedField(indexType.typeInstanceAt(f), f), true);
+        }
+        IndexScanSelector indexScanSelector = IndexScanSelector.leftJoinAfter(indexType.index(),
+                                                                              indexType.tableType().userTable());
+        return indexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector, lookaheadQuantum);
+    }
+
+    public static Operator indexScan_Default(IndexRowType indexType,
+                                             IndexKeyRange indexKeyRange,
                                              Ordering ordering,
                                              IndexScanSelector indexScanSelector,
                                              int lookaheadQuantum)
@@ -448,9 +481,10 @@ public class API
                                                        RowType innerType,
                                                        int inputBindingPosition)
     {
-        return new Product_NestedLoops(outerInput, innerInput, outerType, null, innerType, inputBindingPosition);
+        return product_NestedLoops(outerInput, innerInput, outerType, null, innerType, inputBindingPosition);
     }
 
+    /** deprecated */
     public static Operator product_NestedLoops(Operator outerInput,
                                                        Operator innerInput,
                                                        RowType outerType,
@@ -458,7 +492,19 @@ public class API
                                                        RowType innerType,
                                                        int inputBindingPosition)
     {
-        return new Product_NestedLoops(outerInput, innerInput, outerType, branchType, innerType, inputBindingPosition);
+        return map_NestedLoops(outerInput,
+                               product_Nested(innerInput, outerType, branchType, innerType, inputBindingPosition),
+                               inputBindingPosition,
+                               false, 0);
+    }
+
+    public static Operator product_Nested(Operator input,
+                                          RowType outerType,
+                                          UserTableRowType branchType,
+                                          RowType inputType,
+                                          int bindingPosition)
+    {
+        return new Product_Nested(input, outerType, branchType, inputType, bindingPosition);
     }
 
     // Count

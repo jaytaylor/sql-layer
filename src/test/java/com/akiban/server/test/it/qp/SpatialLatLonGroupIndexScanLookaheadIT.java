@@ -15,22 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.operator;
+package com.akiban.server.test.it.qp;
 
-/**
- * A stream of {@link QueryBindings}.
- */
-public interface QueryBindingsCursor
+import org.junit.Ignore;
+
+@Ignore("Too slow")
+public class SpatialLatLonGroupIndexScanLookaheadIT extends SpatialLatLonGroupIndexScanIT
 {
-    /** Open stream of bindings. */
-    public void openBindings();
-
-    /** Get (and make current for <code>open</code>) the next set of bindings. */
-    public QueryBindings nextBindings();
-
-    /** Close stream of bindings. */
-    public void closeBindings();
-
-    /** Advance stream past given bindings. */
-    public void cancelBindings(QueryBindings bindings);
+    protected int lookaheadQuantum() {
+        return 10;
+    }
 }

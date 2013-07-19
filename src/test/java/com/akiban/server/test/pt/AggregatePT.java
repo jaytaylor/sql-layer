@@ -390,6 +390,11 @@ public class AggregatePT extends ApiTestBase {
         public void closeBindings() {
             inputCursor.closeBindings();
         }
+
+        @Override
+        public void cancelBindings(QueryBindings bindings) {
+            inputCursor.cancelBindings(bindings);
+        }
     }
 
     static final AkType[] TYPES = { 

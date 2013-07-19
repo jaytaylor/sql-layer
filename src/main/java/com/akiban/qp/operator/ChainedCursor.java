@@ -91,4 +91,10 @@ public class ChainedCursor extends OperatorCursor
     public void closeBindings() {
         input.closeBindings();
     }
+
+    @Override
+    public void cancelBindings(QueryBindings ancestor) {
+        input.cancelBindings(ancestor);
+        close();                // In case override maintains some additional state.
+    }
 }

@@ -58,6 +58,11 @@ public class MultipleQueryBindingsCursor implements QueryBindingsCursor
         cursors.get(0).closeBindings();
     }
 
+    @Override
+    public void cancelBindings(QueryBindings bindings) {
+        input.cancelBindings(bindings);
+    }
+
     public QueryBindingsCursor newCursor() {
         assert (offset == 0);
         SubCursor cursor = new SubCursor();
@@ -116,6 +121,20 @@ public class MultipleQueryBindingsCursor implements QueryBindingsCursor
         @Override
         public void closeBindings() {
             open = false;
+        }
+
+        @Override
+        public void cancelBindings(QueryBindings ancestor) {
+            while (index - offset < buffer.size()) {
+                QueryBindings bindings = buffer.get(index - offset);
+                if (bindings.isAncestor(ancestor)) {
+                    index++;
+                }
+                else {
+                    break;
+                }
+            }
+            shrink();
         }
     }
 }

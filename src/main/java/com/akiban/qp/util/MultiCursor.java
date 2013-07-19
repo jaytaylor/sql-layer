@@ -34,9 +34,12 @@ public class MultiCursor implements BindingsAwareCursor
     @Override
     public void open()
     {
-        sealed = false;
-        // TODO: Have a mode where all the cursors get opened so that
-        // they can start in parallel.
+        sealed = true;
+        if (openAll) {
+            for (RowCursor cursor : cursors) {
+                cursor.open();
+            }
+        }
         cursorIterator = cursors.iterator();
         startNextCursor();
     }
@@ -109,6 +112,14 @@ public class MultiCursor implements BindingsAwareCursor
 
     // MultiCursor interface
 
+    public MultiCursor() {
+        this(false);
+    }
+
+    public MultiCursor(boolean openAll) {
+        this.openAll = openAll;
+    }
+
     public void addCursor(RowCursor cursor)
     {
         if (sealed) {
@@ -126,7 +137,9 @@ public class MultiCursor implements BindingsAwareCursor
                 current.close();
             }
             current = cursorIterator.next();
-            current.open();
+            if (!openAll) {
+                current.open();
+            }
         } else {
             current = null;
         }
@@ -135,6 +148,7 @@ public class MultiCursor implements BindingsAwareCursor
     // Object state
 
     private final List<RowCursor> cursors = new ArrayList<>();
+    private final boolean openAll;
     private boolean sealed = false;
     private Iterator<RowCursor> cursorIterator;
     private RowCursor current;

@@ -147,7 +147,7 @@ public class PersistitSorter implements Sorter
     private RowCursor cursor()
     {
         exchange.clear();
-        IndexCursor indexCursor = IndexCursor.create(context, null, ordering, iterationHelper, usePValues);
+        IndexCursor indexCursor = IndexCursor.create(context, null, ordering, iterationHelper, usePValues, false);
         indexCursor.rebind(bindings);
         return indexCursor;
     }
