@@ -22,6 +22,7 @@ import org.junit.Ignore;
 @Ignore("Too slow")
 public class SpatialLatLonGroupIndexScanLookaheadIT extends SpatialLatLonGroupIndexScanIT
 {
+    @Override
     protected int lookaheadQuantum() {
         return 10;
     }

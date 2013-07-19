@@ -15,15 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.qp;
+package com.akiban.qp.operator;
 
-import org.junit.Ignore;
-
-@Ignore("Too slow")
-public class SpatialLatLonTableIndexScanLookaheadIT extends SpatialLatLonTableIndexScanIT 
+public class UnionAll_DefaultOpenBothTest extends UnionAll_DefaultTest 
 {
     @Override
-    protected int lookaheadQuantum() {
-        return 10;
+    protected boolean openBoth() {
+        return true;
     }
 }

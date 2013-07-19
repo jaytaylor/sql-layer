@@ -1013,7 +1013,8 @@ public class OperatorAssembler extends BaseRule
             RowStream stream = assembleQuery(updateInput.getInput());
             TableSource table = updateInput.getTable();
             UserTableRowType rowType = tableRowType(table);
-            if (stream.rowType != rowType) {
+            if ((stream.rowType != rowType) ||
+                !boundRowIsForTable(stream.fieldOffsets, table)) {
                 int rowIndex = lookupNestedBoundRowIndex(table);
                 ColumnExpressionToIndex boundRow = boundRows.get(rowIndex);
                 stream.operator = API.emitBoundRow_Nested(stream.operator,
@@ -1243,7 +1244,7 @@ public class OperatorAssembler extends BaseRule
                                                             ascending, unionOrderedAll);
                     }
                     else {
-                        stream.operator = API.unionAll(stream.operator, stream.rowType, scan, indexRowType);
+                        stream.operator = API.unionAll_Default(stream.operator, stream.rowType, scan, indexRowType, rulesContext.getPipelineConfiguration().isUnionAllOpenBoth());
                         stream.rowType = stream.operator.rowType();
                     }
                 }
@@ -1827,6 +1828,7 @@ public class OperatorAssembler extends BaseRule
             int pos = getHashTablePosition(bloomFilter);
             RowStream stream = assembleStream(bloomFilterFilter.getInput());
             boundRows.set(pos, stream.fieldOffsets);
+            nestedBindingsDepth++;
             RowStream cstream = assembleStream(bloomFilterFilter.getCheck());
             boundRows.set(pos, null);
             List<Expression> fields = oldPartialAssembler.assembleExpressions(bloomFilterFilter.getLookupExpressions(),
@@ -1842,7 +1844,10 @@ public class OperatorAssembler extends BaseRule
                                                      fields,
                                                      tFields,
                                                      collators,
-                                                     pos + loopBindingsOffset);
+                                                     pos + loopBindingsOffset,
+                                                     rulesContext.getPipelineConfiguration().isSelectBloomFilterEnabled(),
+                                                     nestedBindingsDepth);
+            nestedBindingsDepth--;
             return stream;
         }
 
@@ -2350,12 +2355,17 @@ public class OperatorAssembler extends BaseRule
             for (int rowIndex = 0; rowIndex < boundRows.size(); rowIndex++) {
                 ColumnExpressionToIndex boundRow = boundRows.get(rowIndex);
                 if (boundRow == null) continue;
-                if ((boundRow instanceof ColumnSourceFieldOffsets) &&
-                    (((ColumnSourceFieldOffsets)boundRow).getSource()) == table) {
+                if (boundRowIsForTable(boundRow, table)) {
                     return rowIndex;
                 }
             }
             throw new AkibanInternalException("Outer loop not found " + table);
+        }
+
+        protected boolean boundRowIsForTable(ColumnExpressionToIndex boundRow,
+                                             TableSource table) {
+            return ((boundRow instanceof ColumnSourceFieldOffsets) &&
+                    (((ColumnSourceFieldOffsets)boundRow).getSource()) == table);
         }
     }
 

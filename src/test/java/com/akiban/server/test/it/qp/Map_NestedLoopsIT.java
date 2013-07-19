@@ -262,7 +262,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
             public boolean reopenTopLevel() {
                 // You cannot just re-open() a pipelined Map_NestedLoops, but you can
                 // openTopLevel() it again.
-                return true;
+                return pipelineMap();
             }
         };
         testCursorLifecycle(plan, testCase);

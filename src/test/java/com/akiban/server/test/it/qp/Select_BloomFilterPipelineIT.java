@@ -17,13 +17,10 @@
 
 package com.akiban.server.test.it.qp;
 
-import org.junit.Ignore;
-
-@Ignore("Too slow")
-public class SpatialLatLonTableIndexScanLookaheadIT extends SpatialLatLonTableIndexScanIT 
+public class Select_BloomFilterPipelineIT extends Select_BloomFilterIT
 {
     @Override
-    protected int lookaheadQuantum() {
-        return 10;
+    protected boolean pipelineSelectBloomFilter() {
+        return true;
     }
 }

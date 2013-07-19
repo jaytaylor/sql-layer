@@ -100,3 +100,4 @@ update-5: returning with expressions
 
 update-6: update with subquery
 
+update-7: update with subquery on same table and indexable join

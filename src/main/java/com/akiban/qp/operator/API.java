@@ -588,9 +588,9 @@ public class API
 
     // Union
 
-    public static Operator unionAll(Operator input1, RowType input1RowType, Operator input2, RowType input2RowType)
+    public static Operator unionAll_Default(Operator input1, RowType input1RowType, Operator input2, RowType input2RowType, boolean openBoth)
     {
-        return new UnionAll_Default(input1, input1RowType, input2, input2RowType, USE_PVALUES);
+        return new UnionAll_Default(input1, input1RowType, input2, input2RowType, USE_PVALUES, openBoth);
     }
     
     // Intersect
@@ -710,18 +710,22 @@ public class API
     public static Operator select_BloomFilter(Operator input,
                                               Operator onPositive,
                                               List<? extends ExpressionGenerator> filterFields,
-                                              int bindingPosition)
+                                              int bindingPosition,
+                                              boolean pipeline,
+                                              int depth)
     {
-        return select_BloomFilter(input, onPositive, generateOld(filterFields), generateNew(filterFields), null, bindingPosition);
+        return select_BloomFilter(input, onPositive, generateOld(filterFields), generateNew(filterFields), null, bindingPosition, pipeline, depth);
     }
 
     public static Operator select_BloomFilter(Operator input,
                                               Operator onPositive,
                                               List<? extends Expression> filterFields,
                                               List<? extends TPreparedExpression> tFilterFields,
-                                              int bindingPosition)
+                                              int bindingPosition,
+                                              boolean pipeline,
+                                              int depth)
     {
-        return select_BloomFilter(input, onPositive, filterFields, tFilterFields, null, bindingPosition);
+        return select_BloomFilter(input, onPositive, filterFields, tFilterFields, null, bindingPosition, pipeline, depth);
     }
 
     public static Operator select_BloomFilter(Operator input,
@@ -729,14 +733,18 @@ public class API
                                               List<? extends Expression> filterFields,
                                               List<? extends TPreparedExpression> tFilterFields,
                                               List<AkCollator> collators,
-                                              int bindingPosition)
+                                              int bindingPosition,
+                                              boolean pipeline,
+                                              int depth)
     {
         return new Select_BloomFilter(input,
                                       onPositive,
                                       filterFields,
                                       tFilterFields,
                                       collators,
-                                      bindingPosition);
+                                      bindingPosition,
+                                      pipeline,
+                                      depth);
     }
 
     public static Operator select_BloomFilter(Operator input,
@@ -744,6 +752,8 @@ public class API
                                               List<? extends ExpressionGenerator> filterFields,
                                               List<AkCollator> collators,
                                               int bindingPosition,
+                                              boolean pipeline,
+                                              int depth,
                                               ExpressionGenerator.ErasureMaker marker)
     {
         return new Select_BloomFilter(input,
@@ -751,7 +761,9 @@ public class API
                 generateOld(filterFields),
                 generateNew(filterFields),
                 collators,
-                bindingPosition);
+                bindingPosition,
+                pipeline,
+                depth);
     }
 
     // EmitBoundRow_Nested

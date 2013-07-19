@@ -25,6 +25,7 @@ public class PipelineConfiguration
     private int indexScanLookaheadQuantum = 1;
     private int groupLookupLookaheadQuantum = 1;
     private boolean unionAllOpenBoth = false;
+    private boolean selectBloomFilterEnabled = false;
 
     public PipelineConfiguration() {
     }
@@ -49,6 +50,10 @@ public class PipelineConfiguration
         return unionAllOpenBoth;
     }
 
+    public boolean isSelectBloomFilterEnabled() {
+        return selectBloomFilterEnabled;
+    }
+
     public void load(Properties properties) {
         for (String prop : properties.stringPropertyNames()) {
             String val = properties.getProperty(prop);
@@ -60,6 +65,8 @@ public class PipelineConfiguration
                 groupLookupLookaheadQuantum = Integer.parseInt(val);
             else if ("unionAll.openBoth".equals(prop))
                 unionAllOpenBoth = Boolean.parseBoolean(val);
+            else if ("selectBloomFilter.enabled".equals(prop))
+                selectBloomFilterEnabled = Boolean.parseBoolean(val);
             else
                 throw new IllegalArgumentException("Unknown property " + prop);
         }

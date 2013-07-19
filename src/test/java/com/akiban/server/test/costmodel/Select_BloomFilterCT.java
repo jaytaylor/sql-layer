@@ -160,8 +160,8 @@ public class Select_BloomFilterCT extends CostModelBase
                         new Ordering()),
                     // filterFields
                     Arrays.asList(ExpressionGenerators.field(dIndexRowType, 0)),
-                    // filterBindingPosition
-                    0));
+                    // filterBindingPosition, pipeline, depth
+                    0, false, 1));
         return plan;
     }
 
@@ -213,8 +213,8 @@ public class Select_BloomFilterCT extends CostModelBase
                         new Ordering()),
                     // filterFields
                     Arrays.asList(ExpressionGenerators.field(dIndexRowType, 0)),
-                    // filterBindingPosition
-                    0));
+                    // filterBindingPosition, pipeline, depth
+                    0, false, 1));
         return plan;
     }
 

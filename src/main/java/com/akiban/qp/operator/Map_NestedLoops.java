@@ -174,9 +174,9 @@ class Map_NestedLoops extends Operator
     // Pipeline execution: turn outer loop row stream into binding stream for inner loop.
     protected static class RowToBindingsCursor implements QueryBindingsCursor
     {
-        private final Cursor input;
-        private final int depth, bindingPosition;
-        private QueryBindings baseBindings;
+        protected final Cursor input;
+        protected final int depth, bindingPosition;
+        protected QueryBindings baseBindings;
 
         public RowToBindingsCursor(Cursor input, int bindingPosition, int depth) {
             this.input = input;
@@ -193,7 +193,7 @@ class Map_NestedLoops extends Operator
         @Override
         public QueryBindings nextBindings() {
             if (baseBindings != null) {
-                Row row = input.next();
+                Row row = nextInputRow();
                 if (row != null) {
                     QueryBindings bindings = baseBindings.createBindings();
                     assert (bindings.getDepth() == depth);
@@ -231,6 +231,10 @@ class Map_NestedLoops extends Operator
                 input.cancelBindings(bindings);
             }
         }
+
+        protected Row nextInputRow() {
+            return input.next();
+        }
     }
 
     // Other end of pipeline: remove the extra binding levels that we
@@ -238,9 +242,9 @@ class Map_NestedLoops extends Operator
     // entire outer rowset.
     protected static class CollapseBindingsCursor extends OperatorCursor
     {
-        private final Cursor input;
-        private final int depth;
-        private QueryBindings currentBindings, pendingBindings, openBindings, inputOpenBindings;
+        protected final Cursor input;
+        protected final int depth;
+        protected QueryBindings currentBindings, pendingBindings, openBindings, inputOpenBindings;
         
         public CollapseBindingsCursor(QueryContext context, Cursor input, int depth) {
             super(context);
