@@ -31,10 +31,15 @@ import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.persistitadapter.Sorter;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.PersistitKeyPValueTarget;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.tap.InOutTap;
 import com.persistit.Key;
 import com.persistit.Persistit;
+import com.persistit.exception.KeyTooLongException;
 
 import com.fasterxml.sort.DataReader;
 import com.fasterxml.sort.DataReaderFactory;
@@ -82,8 +87,6 @@ public class MergeJoinSorter implements Sorter {
     private RowType rowType;
     private Ordering ordering;
     private InOutTap loadTap;
-    private PValueSorterAdapter sorterAdapter;
-    private Key key;
 
     private OutputStream keyFinalFile;
     
@@ -101,11 +104,6 @@ public class MergeJoinSorter implements Sorter {
         this.rowType = rowType;
         this.ordering = ordering.copy();
         this.loadTap = loadTap;
-        this.sorterAdapter = new PValueSorterAdapter();
-        this.key = context.getStore().createKey();
-        // Note: init may change this.ordering
-        sorterAdapter.init(rowType, this.ordering, this.key, null, this.context, this.bindings, sortOption);
-        
     }
 
     @Override
@@ -135,8 +133,8 @@ public class MergeJoinSorter implements Sorter {
                 new KeyReaderFactory(), 
                 new KeyWriterFactory(), 
                 compare);
-        //s.sort(input, keyFinalFile);
-        
+        s.sort(new KeyReadCursor(context, input, rowType), new KeyWriter(keyFinalFile));
+       
     }
     
     private RowCursor cursor() {
@@ -188,6 +186,80 @@ public class MergeJoinSorter implements Sorter {
             return key;
         }
         
+    }
+    
+    public static class KeyReadCursor extends DataReader<Key> {
+        
+        private final QueryContext context;
+        private RowCursor input;
+        private int rowCount = 0;
+        private Key convertKey;
+        private int rowFields;
+        private TInstance tFieldTypes[];
+        private PersistitKeyPValueTarget valueTarget;
+                
+                
+        public KeyReadCursor (QueryContext context, RowCursor input, RowType rowType) {
+            this.context = context;
+            this.input = input;
+            this.rowFields = rowType.nFields();
+            this.convertKey = new Key ((Persistit)null);
+            this.tFieldTypes = new TInstance[rowFields];
+            for (int i = 0; i < rowFields; i++) {
+                tFieldTypes[i] = rowType.typeInstanceAt(i);
+            }
+            valueTarget = new PersistitKeyPValueTarget();
+            valueTarget.attach(convertKey);
+            
+        }
+        @Override
+        public void close() throws IOException {
+            // Do Nothing;
+        }
+
+        @Override
+        public int estimateSizeInBytes(Key arg0) {
+            return arg0.getEncodedSize();
+        }
+
+        @Override
+        public Key readNext() throws IOException {
+            Row row = input.next();
+            context.checkQueryCancelation();
+
+            if (row == null) {
+                return null;
+            } else {
+                ++rowCount;
+                createValue(row);
+            }
+            
+            return new Key(convertKey);
+        }
+        
+        private void createValue(Row row)
+        {
+            while(true) {
+                try {
+                    convertKey.clear();
+                    for (int i = 0; i < rowFields; i++) {
+                        //sorterAdapter.evaluateToTarget(row, i);
+                        PValueSource field = row.pvalue(i);
+                        //putFieldToTarget(field, i, oFieldTypes, tFieldTypes);
+                        tFieldTypes[i].writeCanonical(field, valueTarget);
+                    }
+                    break;
+                } catch (KeyTooLongException e) {
+                    if (convertKey.getMaximumSize() == Key.MAX_KEY_LENGTH_UPPER_BOUND) {
+                        throw e;
+                    }
+                    convertKey.setMaximumSize(Math.min((convertKey.getMaximumSize() * 2), Key.MAX_KEY_LENGTH_UPPER_BOUND));
+                }
+            }
+        }
+        public int rowCount() {
+            return rowCount;
+        }
     }
     
     private class KeyWriterFactory extends DataWriterFactory<Key> {

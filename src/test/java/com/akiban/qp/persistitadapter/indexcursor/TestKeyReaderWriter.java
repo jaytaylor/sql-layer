@@ -21,6 +21,9 @@ import static org.junit.Assert.*;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -82,6 +85,42 @@ public class TestKeyReaderWriter {
         assertTrue (startKey.compareTo(endKey) == 0);
     }
     
+    @Test
+    public void cycleNKeys() throws IOException{
+        List<Key> keys = new ArrayList<Key>(100);
+        for (int i = 0; i < 100; i++) {
+            Key newKey = new Key ((Persistit)null);
+            newKey.append(i);
+            keys.add(newKey);
+        }
+        verifyNKeys (keys);
+    }
+    
+    @Test
+    public void cycleNStrings() throws IOException {
+        List<Key> keys = new ArrayList<Key>(100);
+        for (int i = 0; i < 100; i++) {
+            Key newKey = new Key ((Persistit)null);
+            newKey.append(characters(5+random.nextInt(1000)));
+            keys.add(newKey);
+        }
+        verifyNKeys (keys);
+    }
+    
+    @Test
+    public void cycleNMultiKeys () throws IOException {
+        List<Key> keys = new ArrayList<Key>(100);
+        for (int i = 0; i < 100; i++) {
+            Key newKey = new Key ((Persistit)null);
+            newKey.append(random.nextInt());
+            newKey.append(null);
+            newKey.append(characters(3+random.nextInt(25)));
+            newKey.append(characters(3+random.nextInt(25)));
+            keys.add(newKey);
+        }
+        verifyNKeys(keys);
+    }
+    
     private void verifyInput() throws IOException {
         is = new ByteArrayInputStream (os.toByteArray());
         KeyReader reader = new KeyReader (is);
@@ -90,5 +129,27 @@ public class TestKeyReaderWriter {
         
     }
     
+    private void verifyNKeys(List<Key> keys) throws IOException  {
+        for (Key key : keys) {
+            writer.writeEntry(key);
+        }
+        is = new ByteArrayInputStream (os.toByteArray());
+        KeyReader reader = new KeyReader (is);
+
+        Key endKey;
+        for (Key startKey : keys) {
+            endKey = reader.readNext();
+            assertTrue (startKey.compareTo(endKey) == 0);
+        }
+    }
+
+    static final String ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    static final Random random = new Random();
+    private static String characters(final int length) {
+        StringBuilder sb = new StringBuilder(length);
+        for( int i = 0; i < length; i++ ) 
+           sb.append(ALPHA.charAt(random.nextInt(ALPHA.length())));
+        return sb.toString();
+     }
 
 }

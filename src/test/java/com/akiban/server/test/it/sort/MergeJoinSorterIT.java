@@ -14,28 +14,25 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package com.akiban.server.test.it.sort;
 
-import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.API.Ordering;
+import com.akiban.qp.operator.API.SortOption;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.Sorter;
-import com.akiban.qp.persistitadapter.indexcursor.MemorySorter;
+import com.akiban.qp.persistitadapter.indexcursor.MergeJoinSorter;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.tap.InOutTap;
 
-public final class MemorySorterIT extends SorterITBase
-{
+public class MergeJoinSorterIT extends SorterITBase {
+
     @Override
-    public Sorter createSorter(QueryContext context,
-                               QueryBindings bindings,
-                               Cursor input,
-                               RowType rowType,
-                               API.Ordering ordering,
-                               API.SortOption sortOption,
-                               InOutTap loadTap) {
-        return new MemorySorter(context, bindings, input, rowType, ordering, sortOption, loadTap, store().createKey());
+    public Sorter createSorter(QueryContext context, QueryBindings bindings,
+            Cursor input, RowType rowType, Ordering ordering,
+            SortOption sortOption, InOutTap loadTap) {
+        return new MergeJoinSorter(context, bindings, input, rowType, ordering, sortOption, loadTap);
     }
+
 }
