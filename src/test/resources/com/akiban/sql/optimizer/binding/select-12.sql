@@ -1,0 +1,1 @@
+SELECT * FROM t1 t WHERE t.z NOT IN (SELECT t.z FROM t2 t WHERE t.w = 'X')

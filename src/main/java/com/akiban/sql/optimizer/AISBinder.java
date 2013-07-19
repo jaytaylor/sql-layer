@@ -18,9 +18,9 @@
 package com.akiban.sql.optimizer;
 
 import com.akiban.server.error.AmbiguousColumNameException;
+import com.akiban.server.error.CorrelationNameAlreadyUsedException;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.JoinNodeAdditionException;
-import com.akiban.server.error.MultipleJoinsToTableException;
 import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.error.NoSuchTableException;
@@ -531,9 +531,12 @@ public class AISBinder implements Visitor
         BindingContext bindingContext = getBindingContext();
         bindingContext.tables.add(fromTable);
         if (fromTable.getCorrelationName() != null) {
-            if (bindingContext.correlationNames.put(fromTable.getCorrelationName(), 
-                                                    fromTable) != null) {
-                throw new MultipleJoinsToTableException(fromTable.getOrigTableName().getSchemaName(), fromTable.getOrigTableName().getTableName());
+            FromTable prevTable = 
+                bindingContext.correlationNames.put(fromTable.getCorrelationName(),
+                                                    fromTable);
+            if ((prevTable != null) && bindingContext.tables.contains(prevTable)) {
+                // Other occurrence in this same context.
+                throw new CorrelationNameAlreadyUsedException(fromTable.getCorrelationName());
             }
         }
     }
@@ -1222,6 +1225,7 @@ public class AISBinder implements Visitor
     protected void pushBindingContext(ResultSetNode resultSet) {
         BindingContext next = new BindingContext();
         if (!bindingContexts.isEmpty()) {
+            // Initially inherit all the same correlation names (but can overwrite).
             next.correlationNames.putAll(bindingContexts.peek().correlationNames);
         }
         if (resultSet != null) {
