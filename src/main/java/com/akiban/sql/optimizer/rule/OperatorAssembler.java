@@ -1243,7 +1243,7 @@ public class OperatorAssembler extends BaseRule
                                                             ascending, unionOrderedAll);
                     }
                     else {
-                        stream.operator = API.unionAll(stream.operator, stream.rowType, scan, indexRowType);
+                        stream.operator = API.unionAll_Default(stream.operator, stream.rowType, scan, indexRowType, rulesContext.getPipelineConfiguration().isUnionAllOpenBoth());
                         stream.rowType = stream.operator.rowType();
                     }
                 }

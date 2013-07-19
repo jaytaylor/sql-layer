@@ -53,6 +53,7 @@ import java.util.List;
  <li><b>RowType input1Type:</b> Type of rows in first input stream. 
  <li><b>Operator input2:</b> Source of second input stream. 
  <li><b>RowType input2Type:</b> Type of rows in second input stream. 
+ <li><b>boolean openBoth:</b> Whether to open both input cursors at the same time rather than as needed. 
 
  <h1>Behavior</h1>
 
@@ -105,7 +106,7 @@ final class UnionAll_Default extends Operator {
         return new Execution(context, bindingsCursor);
     }
 
-    UnionAll_Default(Operator input1, RowType input1Type, Operator input2, RowType input2Type, boolean usePValues) {
+    UnionAll_Default(Operator input1, RowType input1Type, Operator input2, RowType input2Type, boolean usePValues, boolean openBoth) {
         ArgumentValidation.notNull("first input", input1);
         ArgumentValidation.notNull("first input type", input1Type);
         ArgumentValidation.notNull("second input", input2);
@@ -114,6 +115,7 @@ final class UnionAll_Default extends Operator {
         this.inputs = Arrays.asList(input1, input2);
         this.inputTypes = Arrays.asList(input1Type, input2Type);
         ArgumentValidation.isEQ("inputs.size", inputs.size(), "inputTypes.size", inputTypes.size());
+        this.openBoth = openBoth;
     }
 
     // for use in this package (in ctor and unit tests)
@@ -186,6 +188,7 @@ final class UnionAll_Default extends Operator {
     private final List<? extends Operator> inputs;
     private final List<? extends RowType> inputTypes;
     private final RowType outputRowType;
+    private final boolean openBoth;
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
@@ -202,6 +205,8 @@ final class UnionAll_Default extends Operator {
        
         att.put(Label.OUTPUT_TYPE, outputRowType.getExplainer(context));
         
+        att.put(Label.PIPELINE, PrimitiveExplainer.getInstance(openBoth));
+
         return new CompoundExplainer(Type.UNION, att);
     }
 
@@ -213,8 +218,11 @@ final class UnionAll_Default extends Operator {
             try {
                 CursorLifecycle.checkIdle(this);
                 idle = false;
-                // TODO: Have a mode where all the cursors get opened
-                // so that they can start in parallel.
+                if (openBoth) {
+                    for (int i = 0; i < cursors.length; i++) {
+                        cursors[i].open();
+                    }
+                }
             } finally {
                 TAP_OPEN.out();
             }
@@ -261,11 +269,16 @@ final class UnionAll_Default extends Operator {
         @Override
         public void close() {
             CursorLifecycle.checkIdleOrActive(this);
-            inputOperatorsIndex = -1;
             if (currentCursor != null) {
                 currentCursor.close();
                 currentCursor = null;
             }
+            if (openBoth) {
+                while (++inputOperatorsIndex < inputs.size()) {
+                    cursors[inputOperatorsIndex].close();
+                }
+            }
+            inputOperatorsIndex = -1;
             currentInputRowType = null;
             rowHolder.release();
             idle = true;
@@ -355,7 +368,9 @@ final class UnionAll_Default extends Operator {
         private Row nextCursorFirstRow() {
             while (++inputOperatorsIndex < inputs.size()) {
                 Cursor nextCursor = cursors[inputOperatorsIndex];
-                nextCursor.open();
+                if (!openBoth) {
+                    nextCursor.open();
+                }
                 Row nextRow = nextCursor.next();
                 if (nextRow == null) {
                     nextCursor.close();
