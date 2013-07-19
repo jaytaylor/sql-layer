@@ -251,7 +251,7 @@ public enum ErrorCode {
     AMBIGUOUS_COLUMN_NAME   ("42", "506", Importance.DEBUG, AmbiguousColumNameException.class),
     SUBQUERY_RESULT_FAIL    ("42", "507", Importance.DEBUG, SubqueryResultsSetupException.class),
     JOIN_NODE_ERROR         ("42", "508", Importance.DEBUG, JoinNodeAdditionException.class),
-    MULTIPLE_JOINS          ("42", "509", Importance.DEBUG, MultipleJoinsToTableException.class),
+    CORRELATION_NAME_ALREADY_USED ("42", "509", Importance.DEBUG, CorrelationNameAlreadyUsedException.class),
     VIEW_BAD_SUBQUERY       ("42", "50A", Importance.DEBUG, ViewHasBadSubqueryException.class),
     TABLE_BAD_SUBQUERY      ("42", "50B", Importance.DEBUG, TableIsBadSubqueryException.class),
     WRONG_FUNCTION_ARITY    ("42", "50C", Importance.DEBUG, WrongExpressionArityException.class),

@@ -18,9 +18,9 @@
 package com.akiban.sql.optimizer;
 
 import com.akiban.server.error.AmbiguousColumNameException;
+import com.akiban.server.error.CorrelationNameAlreadyUsedException;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.JoinNodeAdditionException;
-import com.akiban.server.error.MultipleJoinsToTableException;
 import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.error.NoSuchTableException;
@@ -533,7 +533,7 @@ public class AISBinder implements Visitor
         if (fromTable.getCorrelationName() != null) {
             if (bindingContext.correlationNames.put(fromTable.getCorrelationName(), 
                                                     fromTable) != null) {
-                throw new MultipleJoinsToTableException(fromTable.getOrigTableName().getSchemaName(), fromTable.getOrigTableName().getTableName());
+                throw new CorrelationNameAlreadyUsedException(fromTable.getCorrelationName());
             }
         }
     }
