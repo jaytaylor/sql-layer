@@ -531,8 +531,11 @@ public class AISBinder implements Visitor
         BindingContext bindingContext = getBindingContext();
         bindingContext.tables.add(fromTable);
         if (fromTable.getCorrelationName() != null) {
-            if (bindingContext.correlationNames.put(fromTable.getCorrelationName(), 
-                                                    fromTable) != null) {
+            FromTable prevTable = 
+                bindingContext.correlationNames.put(fromTable.getCorrelationName(),
+                                                    fromTable);
+            if ((prevTable != null) && bindingContext.tables.contains(prevTable)) {
+                // Other occurrence in this same context.
                 throw new CorrelationNameAlreadyUsedException(fromTable.getCorrelationName());
             }
         }
@@ -1222,6 +1225,7 @@ public class AISBinder implements Visitor
     protected void pushBindingContext(ResultSetNode resultSet) {
         BindingContext next = new BindingContext();
         if (!bindingContexts.isEmpty()) {
+            // Initially inherit all the same correlation names (but can overwrite).
             next.correlationNames.putAll(bindingContexts.peek().correlationNames);
         }
         if (resultSet != null) {
