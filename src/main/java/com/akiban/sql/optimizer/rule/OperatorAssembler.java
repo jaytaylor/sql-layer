@@ -1457,12 +1457,12 @@ public class OperatorAssembler extends BaseRule
                     inputRowType = tableRowType(ancestorLookup.getDescendant());
                     flag = API.InputPreservationOption.KEEP_INPUT;
                 }
-                stream.operator = API.ancestorLookup_Default(stream.operator,
-                                                             group,
-                                                             inputRowType,
-                                                             ancestorTypes,
-                                                             flag,
-                                                             rulesContext.getPipelineConfiguration().getGroupLookupLookaheadQuantum());
+                stream.operator = API.groupLookup_Default(stream.operator,
+                                                          group,
+                                                          inputRowType,
+                                                          ancestorTypes,
+                                                          flag,
+                                                          rulesContext.getPipelineConfiguration().getGroupLookupLookaheadQuantum());
             }
             stream.rowType = null;
             stream.fieldOffsets = null;

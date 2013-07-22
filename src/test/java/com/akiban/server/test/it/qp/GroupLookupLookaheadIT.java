@@ -97,7 +97,7 @@ public class GroupLookupLookaheadIT extends OperatorITBase
     public void testAncestorLookupCursor()
     {
         Operator plan =
-            ancestorLookup_Default(
+            groupLookup_Default(
                 filter_Default(
                     groupScan_Default(coi),
                     Collections.singleton(orderRowType)),
@@ -134,7 +134,7 @@ public class GroupLookupLookaheadIT extends OperatorITBase
     public void testAncestorLookupSimple()
     {
         Operator plan =
-            ancestorLookup_Default(
+            groupLookup_Default(
                 filter_Default(
                     groupScan_Default(coi),
                     Collections.singleton(orderRowType)),
@@ -169,7 +169,7 @@ public class GroupLookupLookaheadIT extends OperatorITBase
                                         intRow(cidValueRowType, 2),
                                         intRow(cidValueRowType, 10)),
                     cidValueRowType),
-                ancestorLookup_Default(
+                groupLookup_Default(
                     indexScan_Default(orderCidIndexRowType, cidRange, ordering(orderCidIndexRowType), IndexScanSelector.leftJoinAfter(orderCidIndexRowType.index(), orderRowType.userTable()), lookaheadQuantum()),
                     coi,
                     orderCidIndexRowType,

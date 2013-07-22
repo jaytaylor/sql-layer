@@ -40,17 +40,17 @@ import java.util.*;
 
  <h1>Overview</h1>
 
- AncestorLookup_Default locates ancestors of both group rows and index rows.
+ GroupLookup_Default locates ancestors of both group rows and index rows.
 
  One expected usage is to locate the group row corresponding to an
  index row. For example, an index on customer.name yields index rows
- which AncestorLookup_Default can then use to locate customer
+ which GroupLookup_Default can then use to locate customer
  rows. (The ancestor relationship is reflexive, e.g. customer is
  considered to be an ancestor of customer.)
 
  Another expected usage is to locate ancestors higher in the group. For
  example, given either an item row or an item index row,
- AncestorLookup_Default can be used to find the corresponding order and
+ GroupLookup_Default can be used to find the corresponding order and
  customer.
 
  Unlike BranchLookup, AncestorLookup always locates 0-1 row per ancestor type.
@@ -105,17 +105,17 @@ import java.util.*;
 
  <h1>Performance</h1>
 
- For each input row, AncestorLookup_Default does one random access for
+ For each input row, GroupLookup_Default does one random access for
  each ancestor type.
 
  <h1>Memory Requirements</h1>
 
- AncestorLookup_Default stores in memory up to (ancestorTypes.size() +
+ GroupLookup_Default stores in memory up to (ancestorTypes.size() +
  1) rows.
 
  */
 
-class AncestorLookup_Default extends Operator
+class GroupLookup_Default extends Operator
 {
     // Object interface
 
@@ -158,14 +158,14 @@ class AncestorLookup_Default extends Operator
         return describePlan(inputOperator);
     }
 
-    // AncestorLookup_Default interface
+    // GroupLookup_Default interface
 
-    public AncestorLookup_Default(Operator inputOperator,
-                                  Group group,
-                                  RowType rowType,
-                                  Collection<UserTableRowType> ancestorTypes,
-                                  API.InputPreservationOption flag,
-                                  int lookaheadQuantum)
+    public GroupLookup_Default(Operator inputOperator,
+                               Group group,
+                               RowType rowType,
+                               Collection<UserTableRowType> ancestorTypes,
+                               API.InputPreservationOption flag,
+                               int lookaheadQuantum)
     {
         validateArguments(rowType, ancestorTypes, flag);
         this.inputOperator = inputOperator;
@@ -238,9 +238,9 @@ class AncestorLookup_Default extends Operator
 
     // Class state
 
-    private static final Logger LOG = LoggerFactory.getLogger(AncestorLookup_Default.class);
-    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: AncestorLookup_Default open");
-    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: AncestorLookup_Default next");
+    private static final Logger LOG = LoggerFactory.getLogger(GroupLookup_Default.class);
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: GroupLookup_Default open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: GroupLookup_Default next");
 
     // Object state
 

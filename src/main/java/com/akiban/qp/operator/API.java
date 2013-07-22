@@ -275,17 +275,17 @@ public class API
                                                   Collection<UserTableRowType> ancestorTypes,
                                                   InputPreservationOption flag)
     {
-        return ancestorLookup_Default(inputOperator, group, rowType, ancestorTypes, flag, 1);
+        return groupLookup_Default(inputOperator, group, rowType, ancestorTypes, flag, 1);
     }
 
-    public static Operator ancestorLookup_Default(Operator inputOperator,
-                                                  Group group,
-                                                  RowType rowType,
-                                                  Collection<UserTableRowType> ancestorTypes,
-                                                  InputPreservationOption flag,
-                                                  int lookaheadQuantum)
+    public static Operator groupLookup_Default(Operator inputOperator,
+                                               Group group,
+                                               RowType rowType,
+                                               Collection<UserTableRowType> ancestorTypes,
+                                               InputPreservationOption flag,
+                                               int lookaheadQuantum)
     {
-        return new AncestorLookup_Default(inputOperator, group, rowType, ancestorTypes, flag, lookaheadQuantum);
+        return new GroupLookup_Default(inputOperator, group, rowType, ancestorTypes, flag, lookaheadQuantum);
     }
 
     public static Operator ancestorLookup_Nested(Group group,
