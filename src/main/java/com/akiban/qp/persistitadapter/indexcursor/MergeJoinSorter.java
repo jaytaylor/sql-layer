@@ -17,6 +17,7 @@
 package com.akiban.qp.persistitadapter.indexcursor;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -27,15 +28,20 @@ import java.util.Comparator;
 
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.API.Ordering;
+import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.QueryBindings;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.persistitadapter.Sorter;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.PersistitKeyPValueSource;
 import com.akiban.server.PersistitKeyPValueTarget;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.util.tap.InOutTap;
 import com.persistit.Key;
 import com.persistit.Persistit;
@@ -47,7 +53,6 @@ import com.fasterxml.sort.DataWriter;
 import com.fasterxml.sort.DataWriterFactory;
 import com.fasterxml.sort.SortConfig;
 import com.fasterxml.sort.TempFileProvider;
-import com.fasterxml.sort.std.StdComparator;
 
 /**
  * <h1>Overview</h1>
@@ -89,6 +94,7 @@ public class MergeJoinSorter implements Sorter {
     private InOutTap loadTap;
 
     private OutputStream keyFinalFile;
+    private File finalFile;
     
     public MergeJoinSorter (QueryContext context,
             QueryBindings bindings,
@@ -124,7 +130,7 @@ public class MergeJoinSorter implements Sorter {
     
     private void loadTree() throws FileNotFoundException, IOException {
         MergeTempFileProvider tmpFileProvider = new MergeTempFileProvider(context);
-        keyFinalFile = new FileOutputStream(tmpFileProvider.provide());
+        finalFile  = tmpFileProvider.provide();
         
         Comparator<Key> compare = null;
         
@@ -133,16 +139,18 @@ public class MergeJoinSorter implements Sorter {
                 new KeyReaderFactory(), 
                 new KeyWriterFactory(), 
                 compare);
-        s.sort(new KeyReadCursor(context, input, rowType), new KeyWriter(keyFinalFile));
+        s.sort(new KeyReadCursor(context, input, rowType), new KeyWriter(new FileOutputStream(finalFile)));
        
     }
     
     private RowCursor cursor() {
-        return null;
-        //KeyFinalCursor cursor = new KeyFinalCursor (keyFinalFile);
-        //return cursor;
-        //IndexCursor indexCursor = IndexCursor.create(context, keyRange, ordering, iterationHelper, usePValues);
-        //return indexCursor;
+        KeyFinalCursor cursor = null;
+        try {
+            cursor = new KeyFinalCursor (finalFile, rowType);
+        } catch (FileNotFoundException e) {
+            //TODO: Throw unexpected Operations exception or specific internal error
+        }
+        return cursor;
     }
 
     private class KeyReaderFactory extends DataReaderFactory<Key> {
@@ -177,11 +185,21 @@ public class MergeJoinSorter implements Sorter {
         @Override
         public Key readNext() throws IOException {
             length.clear();
-            is.read(length.array());
+            int bytesRead = is.read(length.array());
+            if (bytesRead == -1) { // EOF marker
+                return null;
+            } else if (bytesRead != 4) {
+                //TODO: pick an error to throw?
+                return null;
+            }
             int len = length.getInt();
             Key key = new Key ((Persistit)null);
             key.setMaximumSize(len);
-            is.read(key.getEncodedBytes(), 0, len);
+            bytesRead = is.read(key.getEncodedBytes(), 0, len);
+            if (bytesRead < len) {
+                //TODO: Pick an error to throw?
+                return null;
+            }
             key.setEncodedSize(len);
             return key;
         }
@@ -310,6 +328,99 @@ public class MergeJoinSorter implements Sorter {
             File f = File.createTempFile(prefix, suffix, directory);
             f.deleteOnExit();
             return f;
+        }
+    }
+    
+    public static class KeyFinalCursor implements RowCursor {
+        private boolean isIdle = true;
+        private boolean isDestroyed = false;
+
+        private final KeyReader read; 
+        private final RowType rowType;
+        private PersistitKeyPValueSource valueSources[]; 
+        
+        public KeyFinalCursor (File inputFile, RowType rowType) throws FileNotFoundException {
+            this (new FileInputStream(inputFile), rowType);
+        }
+        
+        public KeyFinalCursor(InputStream stream, RowType rowType) {
+            read = new KeyReader(stream);
+            this.rowType = rowType;
+            valueSources = new PersistitKeyPValueSource[rowType.nFields()];
+            for (int i = 0; i < rowType.nFields(); i++) {
+                valueSources[i] = new PersistitKeyPValueSource (rowType.typeInstanceAt(i));
+            }
+        }
+        
+        @Override
+        public void open() {
+            CursorLifecycle.checkIdle(this);
+            isIdle = false;
+        }
+
+        @Override
+        public Row next() {
+            CursorLifecycle.checkIdleOrActive(this);
+            Key key;
+            Row row = null;
+            try {
+                key = read.readNext();
+            } catch (IOException e) {
+                //TODO: Rethrow this exception or simply return null?
+                key = null;
+            }
+            if (key != null) {
+                row = createRow (key);
+                return row;
+            }
+            return null;
+        }
+        
+        private Row createRow (Key key) {
+            ValuesHolderRow rowCopy = new ValuesHolderRow(rowType, true);
+            for(int i = 0 ; i < rowType.nFields(); ++i) {
+                valueSources[i].attach(key, i, valueSources[i].tInstance());
+                PValueTargets.copyFrom(valueSources[i], rowCopy.pvalueAt(i));
+            }
+            return rowCopy;
+        }
+        
+        @Override
+        public void close() {
+            CursorLifecycle.checkIdleOrActive(this);
+            if(!isIdle) {
+                try {
+                    read.close();
+                } catch (IOException e) {
+                    // TODO: manage this exception? 
+                }
+                isIdle = true;
+            }
+        }
+
+        @Override
+        public void jump(Row row, ColumnSelector columnSelector) {
+            throw new UnsupportedOperationException();            
+        }
+
+        @Override
+        public void destroy() {
+            isDestroyed = true;
+        }
+
+        @Override
+        public boolean isIdle() {
+            return !isDestroyed && isIdle;
+        }
+
+        @Override
+        public boolean isActive() {
+            return !isDestroyed && !isIdle;
+        }
+
+        @Override
+        public boolean isDestroyed() {
+            return isDestroyed;
         }
     }
     
