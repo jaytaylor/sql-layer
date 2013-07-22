@@ -367,6 +367,11 @@ public class GroupLookup_DefaultIT extends OperatorITBase
                     row(customerRowType, 2L, "foundation"),
                 };
             }
+
+            @Override
+            public boolean reopenTopLevel() {
+                return (lookaheadQuantum() > 1);
+            }
         };
         testCursorLifecycle(plan, testCase);
     }
