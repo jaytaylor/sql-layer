@@ -1,0 +1,14 @@
+SelectQuery@56686e67
+  ResultSet@62285882[name]
+    Project@46caf126[customers.name]
+      Select@359e1a19[ANY(Subquery@1ec37acf)]
+        TableSource@b1de02c(customers)
+
+Subquery@1ec37acf
+  Project@3b31a09c[customers.cid == GROUP[0]]
+    Select@33b3bbd0[]
+      AggregateSource@37278020([orders.cid, orders.order_date],[])
+        Select@5cef6f34[items.sku == 1234]
+          JoinNode@6b6dee96(INNER[orders.oid == items.oid])
+            TableSource@24cd12a(orders)
+            TableSource@1381d94(items)

@@ -26,6 +26,8 @@ order-by-alias: Using aggregate alias in ORDER BY
 
 order-by-distinct: ORDER BY expression also DISTINCT
 
+subquery-1: a subquery with outer table comparison
+
 sum-all: aggregate without GROUP BY
 
 update: UPDATE to aggregate subexpression
