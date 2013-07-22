@@ -86,6 +86,15 @@ public abstract class SubqueryBoundTablesTracker implements PlanVisitor, Express
         return true;
     }
 
+    protected BaseQuery currentQuery() {
+        if (subqueries.isEmpty()) {
+            return rootQuery;
+        }
+        else {
+            return subqueries.peek().subquery;
+        }
+    }
+
     static class SubqueryState {
         Subquery subquery;
         Set<ColumnSource> tablesReferenced = new HashSet<>();

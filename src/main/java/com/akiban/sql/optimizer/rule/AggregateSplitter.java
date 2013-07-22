@@ -18,6 +18,7 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.sql.optimizer.rule.AggregateMapper.AggregateSourceFinder;
+import com.akiban.sql.optimizer.rule.AggregateMapper.AggregateSourceState;
 
 import com.akiban.server.error.UnsupportedSQLException;
 
@@ -43,9 +44,9 @@ public class AggregateSplitter extends BaseRule
 
     @Override
     public void apply(PlanContext plan) {
-        List<AggregateSource> sources = new AggregateSourceFinder().find(plan.getPlan());
-        for (AggregateSource source : sources) {
-            split(source);
+        List<AggregateSourceState> sources = new AggregateSourceFinder(plan).find();
+        for (AggregateSourceState source : sources) {
+            split(source.aggregateSource);
         }
     }
 

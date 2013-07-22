@@ -969,13 +969,10 @@ public class JoinAndIndexPicker extends BaseRule
                 Joinable j = (Joinable)n;
                 while (j.getOutput() instanceof Joinable)
                     j = (Joinable)j.getOutput();
-                BaseQuery query = rootQuery;
+                BaseQuery query = currentQuery();
                 SubquerySource subquerySource = null;
-                if (!subqueries.isEmpty()) {
-                    query = subqueries.peek().subquery;
-                    if (query.getOutput() instanceof SubquerySource)
-                        subquerySource = (SubquerySource)query.getOutput();
-                }
+                if (query.getOutput() instanceof SubquerySource)
+                    subquerySource = (SubquerySource)query.getOutput();
                 for (Picker picker : result) {
                     if (picker.joinable == j)
                         // Already have another set of joins to same root join.
