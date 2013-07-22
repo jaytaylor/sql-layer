@@ -34,7 +34,7 @@ import java.util.List;
 
 import static com.akiban.qp.operator.API.*;
 
-public class AncestorLookup_DefaultIT extends OperatorITBase
+public class GroupLookup_DefaultIT extends OperatorITBase
 {
     @Override
     protected void setupPostCreateSchema() {
@@ -61,46 +61,54 @@ public class AncestorLookup_DefaultIT extends OperatorITBase
         use(dbWithOrphans);
     }
 
+    protected int lookaheadQuantum() {
+        return 1;
+    }
+
     // IllegalArumentException tests
 
     @Test(expected = IllegalArgumentException.class)
     public void testAtLeastOneAncestor()
     {
-        ancestorLookup_Default(groupScan_Default(coi),
-                               coi,
-                               customerRowType,
-                               list(),
-                               InputPreservationOption.KEEP_INPUT);
+        groupLookup_Default(groupScan_Default(coi),
+                            coi,
+                            customerRowType,
+                            list(),
+                            InputPreservationOption.KEEP_INPUT,
+                            lookaheadQuantum());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testDescendentIsNotAncestor()
     {
-        ancestorLookup_Default(groupScan_Default(coi),
-                               coi,
-                               customerRowType,
-                               list(itemRowType),
-                               InputPreservationOption.KEEP_INPUT);
+        groupLookup_Default(groupScan_Default(coi),
+                            coi,
+                            customerRowType,
+                            list(itemRowType),
+                            InputPreservationOption.KEEP_INPUT,
+                            lookaheadQuantum());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testSelfIsNotAncestor()
     {
-        ancestorLookup_Default(groupScan_Default(coi),
-                               coi,
-                               customerRowType,
-                               list(customerRowType),
-                               InputPreservationOption.KEEP_INPUT);
+        groupLookup_Default(groupScan_Default(coi),
+                            coi,
+                            customerRowType,
+                            list(customerRowType),
+                            InputPreservationOption.KEEP_INPUT,
+                            lookaheadQuantum());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testKeepIndexInput()
     {
-        ancestorLookup_Default(groupScan_Default(coi),
-                               coi,
-                               customerNameIndexRowType,
-                               list(customerRowType),
-                               InputPreservationOption.KEEP_INPUT);
+        groupLookup_Default(groupScan_Default(coi),
+                            coi,
+                            customerNameIndexRowType,
+                            list(customerRowType),
+                            InputPreservationOption.KEEP_INPUT,
+                            lookaheadQuantum());
     }
 
     // Test ancestor lookup given index row
@@ -338,14 +346,15 @@ public class AncestorLookup_DefaultIT extends OperatorITBase
     public void testCursor()
     {
         Operator plan =
-            ancestorLookup_Default(
+            groupLookup_Default(
                 filter_Default(
                     groupScan_Default(coi),
                     Collections.singleton(orderRowType)),
                 coi,
                 orderRowType,
                 Collections.singleton(customerRowType),
-                InputPreservationOption.DISCARD_INPUT);
+                InputPreservationOption.DISCARD_INPUT,
+                lookaheadQuantum());
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
@@ -367,18 +376,19 @@ public class AncestorLookup_DefaultIT extends OperatorITBase
     private Operator indexRowToAncestorPlan(int iid, UserTableRowType ... rowTypes)
     {
         return
-            ancestorLookup_Default
+            groupLookup_Default
                 (indexScan_Default(itemIidIndexRowType, false, itemIidEQ(iid)),
                  coi,
                  itemIidIndexRowType,
                  list(rowTypes),
-                 InputPreservationOption.DISCARD_INPUT);
+                 InputPreservationOption.DISCARD_INPUT,
+                 lookaheadQuantum());
     }
 
     private Operator groupRowToAncestorPlan(int iid, boolean keepInput, UserTableRowType ... rowTypes)
     {
         return
-            ancestorLookup_Default
+            groupLookup_Default
                 (branchLookup_Default
                      (indexScan_Default(itemIidIndexRowType, false, itemIidEQ(iid)),
                       coi,
@@ -388,7 +398,8 @@ public class AncestorLookup_DefaultIT extends OperatorITBase
                  coi,
                  itemRowType,
                  list(rowTypes),
-                 keepInput ? InputPreservationOption.KEEP_INPUT : InputPreservationOption.DISCARD_INPUT);
+                 keepInput ? InputPreservationOption.KEEP_INPUT : InputPreservationOption.DISCARD_INPUT,
+                 lookaheadQuantum());
     }
 
     private Operator orderHKeyToCustomerAndOrderPlan(String salesman)
@@ -403,12 +414,13 @@ public class AncestorLookup_DefaultIT extends OperatorITBase
             2,
             orderRowType);
         return
-            ancestorLookup_Default(
+            groupLookup_Default(
                 indexMerge,
                 coi,
                 indexMerge.rowType(),
                 Arrays.asList(customerRowType, orderRowType),
-                InputPreservationOption.DISCARD_INPUT);
+                InputPreservationOption.DISCARD_INPUT,
+                lookaheadQuantum());
     }
 
     private IndexKeyRange itemIidEQ(int iid)

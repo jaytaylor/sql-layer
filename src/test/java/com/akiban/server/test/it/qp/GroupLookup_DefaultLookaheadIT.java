@@ -54,17 +54,8 @@ import java.util.Map;
 import static com.akiban.qp.operator.API.*;
 import static com.akiban.server.test.ExpressionGenerators.*;
 
-public class GroupLookupLookaheadIT extends OperatorITBase
+public class GroupLookup_DefaultLookaheadIT extends GroupLookup_DefaultIT
 {
-    @Override
-    protected boolean pipelineMap() {
-        return true;
-    }
-
-    protected int lookaheadQuantum() {
-        return 4;
-    }
-
     @Override
     protected void setupPostCreateSchema() {
         super.setupPostCreateSchema();
@@ -91,6 +82,16 @@ public class GroupLookupLookaheadIT extends OperatorITBase
             createNewRow(item, 311L, 31L),
             createNewRow(item, 312L, 31L)};
         use(dbWithOrphans);
+    }
+
+    @Override
+    protected boolean pipelineMap() {
+        return true;
+    }
+
+    @Override
+    protected int lookaheadQuantum() {
+        return 4;
     }
 
     @Test
