@@ -378,7 +378,7 @@ class GroupLookup_Default extends Operator
                 }
                 Row row = pending.take();
                 if (LOG_EXECUTION) {
-                    LOG.debug("AncestorLookup: yield {}", row);
+                    LOG.debug("GroupLookup: yield {}", row);
                 }
                 return row;
             } finally {
@@ -588,7 +588,7 @@ class GroupLookup_Default extends Operator
                         else {
                             inputRows[nextIndex].hold(row);
                             if (LOG_EXECUTION) {
-                                LOG.debug("AncestorLookup: new input {}", row);
+                                LOG.debug("GroupLookup: new input {}", row);
                             }
                             inputRowBindings[nextIndex] = nextBindings;
                             for (int i = 0; i < ncursors; i++) {
@@ -654,7 +654,7 @@ class GroupLookup_Default extends Operator
                     }
                 }
                 if (LOG_EXECUTION) {
-                    LOG.debug("AncestorLookup: yield {}", outputRow);
+                    LOG.debug("GroupLookup: yield {}", outputRow);
                 }
                 return outputRow;
             } finally {
