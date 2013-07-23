@@ -19,7 +19,6 @@ package com.akiban.qp.persistitadapter.indexcursor;
 
 import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.valuesScan_Default;
-import static com.akiban.server.test.ExpressionGenerators.literal;
 import static org.junit.Assert.*;
 
 import java.io.ByteArrayInputStream;
@@ -31,14 +30,15 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.persistitadapter.indexcursor.MergeJoinSorter.KeyReadCursor;
 import com.akiban.qp.persistitadapter.indexcursor.MergeJoinSorter.KeyReader;
 import com.akiban.qp.persistitadapter.indexcursor.MergeJoinSorter.KeyWriter;
 import com.akiban.qp.persistitadapter.indexcursor.MergeJoinSorter.KeyFinalCursor;
+import com.akiban.qp.persistitadapter.indexcursor.MergeJoinSorter.SortKey;
 import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
@@ -47,8 +47,9 @@ import com.akiban.server.test.it.qp.OperatorITBase;
 import com.akiban.server.test.it.qp.TestRow;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.akiban.server.types3.texpressions.TPreparedField;
+import com.akiban.util.tap.Tap;
 import com.persistit.Key;
-import com.persistit.Persistit;
 
 public class KeyFinalCursorIT extends OperatorITBase {
 
@@ -56,7 +57,7 @@ public class KeyFinalCursorIT extends OperatorITBase {
     private Schema schema;
     private ByteArrayOutputStream os;
     private ByteArrayInputStream is;
-    private Key startKey; 
+    private SortKey startKey; 
     private KeyWriter writer;
     private List<BindableRow> bindRows;
     
@@ -64,13 +65,13 @@ public class KeyFinalCursorIT extends OperatorITBase {
     public void createFileBuffers() {
         schema = new Schema(ais());
         os = new ByteArrayOutputStream();
-        startKey = new Key ((Persistit)null);
-        startKey.clear();
+        startKey = new SortKey();
         writer = new KeyWriter(os);
         bindRows = new ArrayList<>();
 
     }
 
+    /*
     @Test
     public void cycleSimple() throws IOException {
         RowType rowType = schema.newValuesType(MNumeric.INT.instance(true));
@@ -86,7 +87,7 @@ public class KeyFinalCursorIT extends OperatorITBase {
         };
         compareRows(expected, cursor);
     }
-    
+    */
     @Test
     public void cycleComplete() throws IOException {
         RowType rowType = schema.newValuesType(MNumeric.INT.instance(true));
@@ -113,6 +114,22 @@ public class KeyFinalCursorIT extends OperatorITBase {
         compareRows(rows, cursor);
     }
     
+    @Test
+    public void cycleNRows() throws IOException {
+        RowType rowType = schema.newValuesType(MNumeric.INT.instance(true));
+        
+        List<TestRow> rows = new ArrayList<>();
+        for (long i = 0; i < 100; i++) {
+            TestRow row = row (rowType, i);
+            rows.add(row);
+            bindRows.add(BindableRow.of(row, true));
+        }
+        RowCursor cursor = cycleRows (rowType);
+        
+        TestRow[] rowArray = new TestRow[rows.size()];
+        compareRows (rows.toArray(rowArray), cursor); 
+    }
+    
     private RowCursor cycleRows(RowType rowType) throws IOException {
         KeyReadCursor keyCursor = getKeyCursor(rowType , bindRows);
 
@@ -129,19 +146,26 @@ public class KeyFinalCursorIT extends OperatorITBase {
     }
     
     private KeyReadCursor getKeyCursor (RowType rowType, List<BindableRow> rows) {
+
         Operator op = valuesScan_Default(rows, rowType);
         Cursor cursor = cursor(op, queryContext, queryBindings);
+        API.Ordering ordering = API.ordering();
+        ordering.append(new TPreparedField (rowType.typeInstanceAt(0), 0), true);
+        
+        MergeJoinSorter mergeSorter = new MergeJoinSorter(queryContext, queryBindings, cursor, 
+                rowType, ordering, API.SortOption.PRESERVE_DUPLICATES, Tap.createTimer("Test Tap"));
+        
         cursor.open();
-        return new KeyReadCursor (queryContext, cursor, rowType);
+        return mergeSorter.readCursor();
     }
 
     
     private void verifyInput() throws IOException {
         is = new ByteArrayInputStream (os.toByteArray());
         KeyReader reader = new KeyReader (is);
-        Key endKey = reader.readNext();
-        assertTrue (startKey.compareTo(endKey) == 0);
-        
+        SortKey endKey = reader.readNext();
+        assertTrue (startKey.rowKey.compareTo(endKey.rowKey) == 0);
+        assertTrue (startKey.sortKeys.get(0).compareTo(endKey.sortKeys.get(0)) == 0);
     }
 /*    
     RowType rowType = schema.newValuesType(MNumeric.INT.instance(false),MNumeric.INT.instance(true), MString.varchar());

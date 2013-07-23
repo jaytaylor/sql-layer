@@ -24,7 +24,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.API.Ordering;
@@ -44,6 +47,7 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.util.tap.InOutTap;
 import com.persistit.Key;
+import com.persistit.KeyState;
 import com.persistit.Persistit;
 import com.persistit.exception.KeyTooLongException;
 
@@ -95,6 +99,11 @@ public class MergeJoinSorter implements Sorter {
 
     private OutputStream keyFinalFile;
     private File finalFile;
+
+    private final SorterAdapter<?, ?, ?> sorterAdapter;
+    private final List<Integer> orderChanges;
+    private Key sortKey;
+    private Comparator<SortKey> compare;
     
     public MergeJoinSorter (QueryContext context,
             QueryBindings bindings,
@@ -110,6 +119,24 @@ public class MergeJoinSorter implements Sorter {
         this.rowType = rowType;
         this.ordering = ordering.copy();
         this.loadTap = loadTap;
+        
+        this.sortKey = new Key ((Persistit)null);
+        this.sorterAdapter = new PValueSorterAdapter();
+        // Note: init may change this.ordering
+        sorterAdapter.init(rowType, this.ordering, this.sortKey, null, this.context, this.bindings, sortOption);
+        // Explicitly use input ordering to avoid appended field
+        this.orderChanges = new ArrayList<>();
+        List<Comparator<KeyState>> comparators = new ArrayList<>();
+        for(int i = 0; i < ordering.sortColumns(); ++i) {
+            Comparator<KeyState> c = ordering.ascending(i) ? ASC_COMPARATOR : DESC_COMPARATOR;
+            if(i == 0 || ordering.ascending(i-1) != ordering.ascending(i)) {
+                orderChanges.add(i);
+                comparators.add(c);
+            }
+        }
+        this.orderChanges.add(ordering.sortColumns());
+        this.compare = new KeySortCompare(comparators);
+        
     }
 
     @Override
@@ -132,15 +159,12 @@ public class MergeJoinSorter implements Sorter {
         MergeTempFileProvider tmpFileProvider = new MergeTempFileProvider(context);
         finalFile  = tmpFileProvider.provide();
         
-        Comparator<Key> compare = null;
-        
-        com.fasterxml.sort.Sorter<Key> s = new com.fasterxml.sort.Sorter<Key> (
+        com.fasterxml.sort.Sorter<SortKey> s = new com.fasterxml.sort.Sorter<SortKey> (
                 new SortConfig().withTempFileProvider(tmpFileProvider),
                 new KeyReaderFactory(), 
                 new KeyWriterFactory(), 
                 compare);
-        s.sort(new KeyReadCursor(context, input, rowType), new KeyWriter(new FileOutputStream(finalFile)));
-       
+        s.sort(new KeyReadCursor(), new KeyWriter(new FileOutputStream(finalFile)));
     }
     
     private RowCursor cursor() {
@@ -153,17 +177,41 @@ public class MergeJoinSorter implements Sorter {
         return cursor;
     }
 
-    private class KeyReaderFactory extends DataReaderFactory<Key> {
+    public KeyReadCursor readCursor() { 
+        return new KeyReadCursor(); 
+    }
+    public static class SortKey {
+        public List<KeyState> sortKeys;
+        public Key rowKey;
+     
+        public SortKey () {
+            this.sortKeys = new ArrayList<>();
+            this.rowKey = new Key ((Persistit)null);
+            rowKey.clear();
+        }
+        
+        public int getSize() {
+            int size = 0;
+            for (KeyState state : sortKeys) {
+                size += state.getBytes().length + 4;
+                size += 4;
+            }
+            size += rowKey.getEncodedSize() + 4;
+            return size;
+        }
+    }
+
+    private class KeyReaderFactory extends DataReaderFactory<SortKey> {
 
         @Override
-        public DataReader<Key> constructReader(InputStream arg0)
+        public DataReader<SortKey> constructReader(InputStream arg0)
                 throws IOException {
             return new KeyReader(arg0);
         }
         
     }
     
-    public static class KeyReader extends DataReader<Key> {
+    public static class KeyReader extends DataReader<SortKey> {
 
         private InputStream is;
         private ByteBuffer length;
@@ -178,84 +226,150 @@ public class MergeJoinSorter implements Sorter {
         }
 
         @Override
-        public int estimateSizeInBytes(Key arg0) {
-            return arg0.getEncodedSize();
+        public int estimateSizeInBytes(SortKey arg0) {
+            return arg0.getSize();
         }
 
         @Override
-        public Key readNext() throws IOException {
-            length.clear();
-            int bytesRead = is.read(length.array());
-            if (bytesRead == -1) { // EOF marker
-                return null;
-            } else if (bytesRead != 4) {
-                //TODO: pick an error to throw?
+        public SortKey readNext() throws IOException {
+            
+            SortKey key = new SortKey();
+            int states = readLength();
+            if (states < 0) { 
                 return null;
             }
-            int len = length.getInt();
+            for (int i = 0; i < states; i++) {
+                KeyState state = readKeyState();
+                if (state == null) {
+                    return null;
+                }
+                key.sortKeys.add(state);
+            }
+            
+            key.rowKey = readKey();
+            
+            return key;
+        }
+
+        private KeyState readKeyState() throws IOException {
+            int size = readLength();
+            if (size < 1) {
+                return null;
+            }
+            byte[] bytes = new byte[size];
+            int bytesRead = is.read(bytes);
+            if (bytesRead < size) {
+                return null;
+            }
+            return new KeyState(bytes);
+        }
+        
+        private Key readKey() throws IOException{
+            int size = readLength();
+            if (size < 1) {
+                return null;
+            }
             Key key = new Key ((Persistit)null);
-            key.setMaximumSize(len);
-            bytesRead = is.read(key.getEncodedBytes(), 0, len);
-            if (bytesRead < len) {
+            key.setMaximumSize(size);
+            int bytesRead = is.read(key.getEncodedBytes(), 0, size);
+            if (bytesRead < size) {
                 //TODO: Pick an error to throw?
                 return null;
             }
-            key.setEncodedSize(len);
+            key.setEncodedSize(size);
             return key;
         }
         
+        private int readLength() throws IOException {
+            length.clear();
+            int bytesRead = is.read(length.array());
+            if (bytesRead == -1) { // EOF marker
+                return -1;
+            } else if (bytesRead != 4) {
+                // TODO: pick an error to throw
+                return -1;
+            }
+            return length.getInt();
+        }
     }
     
-    public static class KeyReadCursor extends DataReader<Key> {
+    public class KeyReadCursor extends DataReader<SortKey> {
         
-        private final QueryContext context;
-        private RowCursor input;
         private int rowCount = 0;
         private Key convertKey;
+        private Key sortKey;
         private int rowFields;
         private TInstance tFieldTypes[];
         private PersistitKeyPValueTarget valueTarget;
-                
-                
-        public KeyReadCursor (QueryContext context, RowCursor input, RowType rowType) {
-            this.context = context;
-            this.input = input;
+        
+        public KeyReadCursor () {
             this.rowFields = rowType.nFields();
             this.convertKey = new Key ((Persistit)null);
+            this.sortKey = new Key ((Persistit)null);
             this.tFieldTypes = new TInstance[rowFields];
             for (int i = 0; i < rowFields; i++) {
                 tFieldTypes[i] = rowType.typeInstanceAt(i);
             }
             valueTarget = new PersistitKeyPValueTarget();
             valueTarget.attach(convertKey);
-            
         }
+        
         @Override
         public void close() throws IOException {
             // Do Nothing;
         }
 
         @Override
-        public int estimateSizeInBytes(Key arg0) {
-            return arg0.getEncodedSize();
+        public int estimateSizeInBytes(SortKey arg0) {
+            return arg0.getSize();
         }
 
         @Override
-        public Key readNext() throws IOException {
+        public SortKey readNext() throws IOException {
+            
+            // TODO: FixME
             Row row = input.next();
             context.checkQueryCancelation();
 
+            SortKey sortKey = new SortKey();
             if (row == null) {
                 return null;
             } else {
                 ++rowCount;
-                createValue(row);
+                sortKey.sortKeys = createKey(row, rowCount);
+                sortKey.rowKey = createValue(row);
             }
             
-            return new Key(convertKey);
+            return sortKey;
         }
         
-        private void createValue(Row row)
+        private List<KeyState> createKey(Row row, int rowCount) {
+            KeyState[] states = new KeyState[orderChanges.size() - 1];
+            for(int i = 0; i < states.length; ++i) {
+                int startOffset = orderChanges.get(i);
+                int endOffset = orderChanges.get(i + 1);
+                boolean isLast = i == states.length - 1;
+                // Loop for key growth
+                while(true) {
+                    try {
+                        sortKey.clear();
+                        for(int j = startOffset; j < endOffset; ++j) {
+                            sorterAdapter.evaluateToKey(row, j);
+                        }
+                        if(isLast && sorterAdapter.preserveDuplicates()) {
+                            sortKey.append(rowCount);
+                        }
+                        break;
+                    } catch (KeyTooLongException e) {
+                        sortKey.setMaximumSize(sortKey.getMaximumSize() * 2);
+                    }
+                }
+                states[i] = new KeyState(sortKey);
+            }
+            return Arrays.asList(states);
+        }
+
+        private Key createValue(Row row)
         {
             while(true) {
                 try {
@@ -274,22 +388,23 @@ public class MergeJoinSorter implements Sorter {
                     convertKey.setMaximumSize(Math.min((convertKey.getMaximumSize() * 2), Key.MAX_KEY_LENGTH_UPPER_BOUND));
                 }
             }
+            return convertKey;
         }
         public int rowCount() {
             return rowCount;
         }
     }
     
-    private class KeyWriterFactory extends DataWriterFactory<Key> {
+    private class KeyWriterFactory extends DataWriterFactory<SortKey> {
 
         @Override
-        public DataWriter<Key> constructWriter(OutputStream arg0)
+        public DataWriter<SortKey> constructWriter(OutputStream arg0)
                 throws IOException {
             return new KeyWriter(arg0);
         }
     }
     
-    public static class KeyWriter extends DataWriter<Key> {
+    public static class KeyWriter extends DataWriter<SortKey> {
         private OutputStream os;
         private ByteBuffer length;
 
@@ -304,11 +419,28 @@ public class MergeJoinSorter implements Sorter {
         }
 
         @Override
-        public void writeEntry(Key arg0) throws IOException {
+        public void writeEntry(SortKey arg0) throws IOException {
+            writeInt(arg0.sortKeys.size());
+            for (KeyState state : arg0.sortKeys) {
+                writeKeyState (state);
+            }
+            writeKey (arg0.rowKey);
+        }
+        
+        private void writeKeyState (KeyState state) throws IOException {
+            writeInt (state.getBytes().length);
+            os.write(state.getBytes());
+        }
+        
+        private void writeKey (Key key) throws IOException {
+            writeInt(key.getEncodedSize());
+            os.write(key.getEncodedBytes(), 0, key.getEncodedSize());
+        }
+        
+        private void writeInt (int size) throws IOException {
             length.clear();
-            length.putInt(arg0.getEncodedSize());
+            length.putInt(size);
             os.write(length.array());
-            os.write(arg0.getEncodedBytes(), 0, arg0.getEncodedSize());
         }
     }
     
@@ -361,7 +493,7 @@ public class MergeJoinSorter implements Sorter {
         @Override
         public Row next() {
             CursorLifecycle.checkIdleOrActive(this);
-            Key key;
+            SortKey key;
             Row row = null;
             try {
                 key = read.readNext();
@@ -376,10 +508,10 @@ public class MergeJoinSorter implements Sorter {
             return null;
         }
         
-        private Row createRow (Key key) {
+        private Row createRow (SortKey key) {
             ValuesHolderRow rowCopy = new ValuesHolderRow(rowType, true);
             for(int i = 0 ; i < rowType.nFields(); ++i) {
-                valueSources[i].attach(key, i, valueSources[i].tInstance());
+                valueSources[i].attach(key.rowKey, i, valueSources[i].tInstance());
                 PValueTargets.copyFrom(valueSources[i], rowCopy.pvalueAt(i));
             }
             return rowCopy;
@@ -424,13 +556,36 @@ public class MergeJoinSorter implements Sorter {
         }
     }
     
-    public class KeySortCompare implements Comparable<Key> {
+    public static class KeySortCompare implements Comparator<SortKey> {
+        private final Comparator<KeyState>[] comparators;
+
+        @SuppressWarnings("unchecked")
+        private KeySortCompare (List<Comparator<KeyState>> comparators) {
+            this.comparators = comparators.toArray(new Comparator[comparators.size()]);
+        }
 
         @Override
-        public int compareTo(Key o) {
-            // TODO Auto-generated method stub
-            return 0;
+        public int compare(SortKey o1, SortKey o2) {
+            int val = 0;
+            for (int i = 0; (i < comparators.length) && (val == 0); ++i) {
+                val = comparators[i].compare(o1.sortKeys.get(i), o2.sortKeys.get(i));
+            }
+            return val;
         }
-        
     }
+
+    private static final Comparator<KeyState> ASC_COMPARATOR = new Comparator<KeyState>() {
+        @Override
+        public int compare(KeyState k1, KeyState k2) {
+            return k1.compareTo(k2);
+        }
+    };
+
+    private static final Comparator<KeyState> DESC_COMPARATOR = new Comparator<KeyState>() {
+        @Override
+        public int compare(KeyState k1, KeyState k2) {
+            return k2.compareTo(k1);
+        }
+    };
+    
 }

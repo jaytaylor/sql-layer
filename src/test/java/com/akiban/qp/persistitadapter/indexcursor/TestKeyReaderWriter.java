@@ -30,33 +30,40 @@ import org.junit.Test;
 
 import com.akiban.qp.persistitadapter.indexcursor.MergeJoinSorter.KeyReader;
 import com.akiban.qp.persistitadapter.indexcursor.MergeJoinSorter.KeyWriter;
+import com.akiban.qp.persistitadapter.indexcursor.MergeJoinSorter.SortKey;
 import com.persistit.Key;
+import com.persistit.KeyState;
 import com.persistit.Persistit;
 
 public class TestKeyReaderWriter {
 
     private ByteArrayOutputStream os;
     private ByteArrayInputStream is;
-    private Key startKey;
+    private SortKey startKey;
+    private Key testKey;
     private KeyWriter writer;
     
     @Before
     public void createFileBuffers() {
         os = new ByteArrayOutputStream();
-        startKey = new Key ((Persistit)null);
-        startKey.clear();
+        startKey = new SortKey();
+        testKey = new Key ((Persistit)null);
         writer = new KeyWriter(os);
     }
     @Test
     public void cycleSimple() throws IOException {
-        startKey.append(1);
+        testKey.append(1);
+        startKey.sortKeys.add(new KeyState(testKey));
+        startKey.rowKey.append(1);
         writer.writeEntry(startKey);
         verifyInput();
     }
     
     @Test
     public void cycleString() throws IOException {
-        startKey.append("abcd");
+        testKey.append("abcd");
+        startKey.sortKeys.add(new KeyState(testKey));
+        startKey.rowKey.append("abcd");
         writer.writeEntry(startKey);
         verifyInput();
     }
@@ -64,33 +71,45 @@ public class TestKeyReaderWriter {
     @Test
     public void cycleNIntegers() throws IOException {
         for (int i = 0; i < 400; i++) {
-            startKey.append(i);
+            testKey.append(i);
+            startKey.rowKey.append(i);
         }
+        startKey.sortKeys.add(new KeyState(testKey));
         writer.writeEntry(startKey);
         verifyInput();
     }
     
     @Test
     public void cycle2Keys() throws IOException {
-        startKey.append(1);
+        
+        testKey.append(1);
+        startKey.sortKeys.add(new KeyState(testKey));
+        startKey.rowKey.append(1);
         writer.writeEntry(startKey);
         writer.writeEntry(startKey);
         
         is = new ByteArrayInputStream (os.toByteArray());
         KeyReader reader = new KeyReader (is);
 
-        Key endKey = reader.readNext();
-        assertTrue (startKey.compareTo(endKey) == 0);
+        SortKey endKey = reader.readNext();
+        assertTrue (startKey.rowKey.compareTo(endKey.rowKey) == 0);
+        assertTrue (startKey.sortKeys.get(0).compareTo(endKey.sortKeys.get(0)) == 0);
         endKey = reader.readNext();
-        assertTrue (startKey.compareTo(endKey) == 0);
+        assertTrue (startKey.rowKey.compareTo(endKey.rowKey) == 0);
+        assertTrue (startKey.sortKeys.get(0).compareTo(endKey.sortKeys.get(0)) == 0);
+        endKey = reader.readNext();
+        assertNull (endKey);
     }
     
     @Test
     public void cycleNKeys() throws IOException{
-        List<Key> keys = new ArrayList<Key>(100);
+        List<SortKey> keys = new ArrayList<>(100);
         for (int i = 0; i < 100; i++) {
-            Key newKey = new Key ((Persistit)null);
-            newKey.append(i);
+            SortKey newKey = new SortKey();
+            newKey.rowKey.append(i);
+            testKey.clear();
+            testKey.append(i);
+            newKey.sortKeys.add(new KeyState (testKey));
             keys.add(newKey);
         }
         verifyNKeys (keys);
@@ -98,10 +117,14 @@ public class TestKeyReaderWriter {
     
     @Test
     public void cycleNStrings() throws IOException {
-        List<Key> keys = new ArrayList<Key>(100);
+        List<SortKey> keys = new ArrayList<>(100);
         for (int i = 0; i < 100; i++) {
-            Key newKey = new Key ((Persistit)null);
-            newKey.append(characters(5+random.nextInt(1000)));
+            SortKey newKey = new SortKey();
+            String value = characters(5+random.nextInt(1000));
+            newKey.rowKey.append(value);
+            testKey.clear();
+            testKey.append(value);
+            newKey.sortKeys.add(new KeyState (testKey));
             keys.add(newKey);
         }
         verifyNKeys (keys);
@@ -109,13 +132,16 @@ public class TestKeyReaderWriter {
     
     @Test
     public void cycleNMultiKeys () throws IOException {
-        List<Key> keys = new ArrayList<Key>(100);
+        List<SortKey> keys = new ArrayList<>(100);
         for (int i = 0; i < 100; i++) {
-            Key newKey = new Key ((Persistit)null);
-            newKey.append(random.nextInt());
-            newKey.append(null);
-            newKey.append(characters(3+random.nextInt(25)));
-            newKey.append(characters(3+random.nextInt(25)));
+            SortKey newKey = new SortKey();
+            newKey.rowKey.append(random.nextInt());
+            newKey.rowKey.append(null);
+            newKey.rowKey.append(characters(3+random.nextInt(25)));
+            newKey.rowKey.append(characters(3+random.nextInt(25)));
+            testKey.clear();
+            testKey.append(i);
+            newKey.sortKeys.add(new KeyState (testKey));
             keys.add(newKey);
         }
         verifyNKeys(keys);
@@ -124,22 +150,24 @@ public class TestKeyReaderWriter {
     private void verifyInput() throws IOException {
         is = new ByteArrayInputStream (os.toByteArray());
         KeyReader reader = new KeyReader (is);
-        Key endKey = reader.readNext();
-        assertTrue (startKey.compareTo(endKey) == 0);
+        SortKey endKey = reader.readNext();
+        assertTrue (startKey.rowKey.compareTo(endKey.rowKey) == 0);
+        assertTrue (startKey.sortKeys.get(0).compareTo(endKey.sortKeys.get(0)) == 0);
         
     }
     
-    private void verifyNKeys(List<Key> keys) throws IOException  {
-        for (Key key : keys) {
+    private void verifyNKeys(List<SortKey> keys) throws IOException  {
+        for (SortKey key : keys) {
             writer.writeEntry(key);
         }
         is = new ByteArrayInputStream (os.toByteArray());
         KeyReader reader = new KeyReader (is);
 
-        Key endKey;
-        for (Key startKey : keys) {
+        SortKey endKey;
+        for (SortKey startKey : keys) {
             endKey = reader.readNext();
-            assertTrue (startKey.compareTo(endKey) == 0);
+            assertTrue (startKey.rowKey.compareTo(endKey.rowKey) == 0);
+            assertTrue (startKey.sortKeys.get(0).compareTo(endKey.sortKeys.get(0)) == 0);
         }
     }
 
