@@ -48,53 +48,49 @@ public class AggregateMapper extends BaseRule
 
     @Override
     public void apply(PlanContext plan) {
-        List<AggregateSource> sources = new AggregateSourceFinder().find(plan.getPlan());
-        for (AggregateSource source : sources) {
-            Mapper m = new Mapper(plan.getRulesContext(), source);
-            m.remap(source);
+        List<AggregateSourceState> sources = new AggregateSourceFinder(plan).find();
+        for (AggregateSourceState source : sources) {
+            Mapper m = new Mapper(plan.getRulesContext(), source.aggregateSource, source.containingQuery);
+            m.remap(source.aggregateSource);
         }
     }
 
-    static class AggregateSourceFinder implements PlanVisitor, ExpressionVisitor {
-        List<AggregateSource> result = new ArrayList<>();
+    static class AggregateSourceFinder extends SubqueryBoundTablesTracker {
+        List<AggregateSourceState> result = new ArrayList<>();
 
-        public List<AggregateSource> find(PlanNode root) {
-            root.accept(this);
+        public AggregateSourceFinder(PlanContext planContext) {
+            super(planContext);
+        }
+
+        public List<AggregateSourceState> find() {
+            run();
             return result;
         }
 
         @Override
-        public boolean visitEnter(PlanNode n) {
-            return visit(n);
-        }
-        @Override
-        public boolean visitLeave(PlanNode n) {
-            return true;
-        }
-        @Override
         public boolean visit(PlanNode n) {
+            super.visit(n);
             if (n instanceof AggregateSource)
-                result.add((AggregateSource)n);
+                result.add(new AggregateSourceState((AggregateSource)n, currentQuery()));
             return true;
         }
+    }
 
-        @Override
-        public boolean visitEnter(ExpressionNode n) {
-            return visit(n);
-        }
-        @Override
-        public boolean visitLeave(ExpressionNode n) {
-            return true;
-        }
-        @Override
-        public boolean visit(ExpressionNode n) {
-            return true;
+    static class AggregateSourceState {
+        AggregateSource aggregateSource;
+        BaseQuery containingQuery;
+
+        public AggregateSourceState(AggregateSource aggregateSource, 
+                                    BaseQuery containingQuery) {
+            this.aggregateSource = aggregateSource;
+            this.containingQuery = containingQuery;
         }
     }
 
     static class Mapper implements ExpressionRewriteVisitor {
         private RulesContext rulesContext;
         private AggregateSource source;
+        private BaseQuery query;
         private Set<ColumnSource> aggregated = new HashSet<>();
         private Map<ExpressionNode,ExpressionNode> map = 
             new HashMap<>();
@@ -119,9 +115,10 @@ public class AggregateMapper extends BaseRule
             return implicitAggregateSetting;
         }
 
-        public Mapper(RulesContext rulesContext, AggregateSource source) {
+        public Mapper(RulesContext rulesContext, AggregateSource source, BaseQuery query) {
             this.rulesContext = rulesContext;
             this.source = source;
+            this.query = query;
             aggregated.add(source);
             // Map all the group by expressions at the start.
             // This means that if you GROUP BY x+1, you can ORDER BY
@@ -184,7 +181,9 @@ public class AggregateMapper extends BaseRule
             }
             if (expr instanceof ColumnExpression) {
                 ColumnExpression column = (ColumnExpression)expr;
-                if (!aggregated.contains(column.getTable())) {
+                ColumnSource table = column.getTable();
+                if (!aggregated.contains(table) &&
+                    !query.getOuterTables().contains(table)) {
                     return nonAggregate(column);
                 }
             }
