@@ -1434,22 +1434,38 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleAncestorLookup(AncestorLookup ancestorLookup) {
             RowStream stream;
             Group group = ancestorLookup.getDescendant().getGroup();
-            List<UserTableRowType> ancestorTypes =
+            List<UserTableRowType> outputRowTypes =
                 new ArrayList<>(ancestorLookup.getAncestors().size());
             for (TableNode table : ancestorLookup.getAncestors()) {
-                ancestorTypes.add(tableRowType(table));
+                outputRowTypes.add(tableRowType(table));
             }
-            if (ancestorLookup.getInput() instanceof GroupLoopScan) {
+            PlanNode input = ancestorLookup.getInput();
+            if (input instanceof GroupLoopScan) {
                 stream = new RowStream();
                 int rowIndex = lookupNestedBoundRowIndex(((GroupLoopScan)ancestorLookup.getInput()));
                 ColumnExpressionToIndex boundRow = boundRows.get(rowIndex);
                 stream.operator = API.ancestorLookup_Nested(group,
                                                             boundRow.getRowType(),
-                                                            ancestorTypes,
+                                                            outputRowTypes,
                                                             rowIndex + loopBindingsOffset);
             }
             else {
-                stream = assembleStream(ancestorLookup.getInput());
+                BranchLookup branchLookup = null;
+                if (input instanceof BranchLookup) {
+                    branchLookup = (BranchLookup)input;
+                    if ((branchLookup.getInput() == null) ||
+                        (branchLookup.getSource().getGroup() != group)) {
+                        branchLookup = null;
+                    }
+                }
+                if (branchLookup != null) {
+                    for (TableSource table : branchLookup.getTables()) {
+                        outputRowTypes.add(tableRowType(table));
+                    }
+                    stream = assembleStream(branchLookup.getInput());
+                }
+                else
+                    stream = assembleStream(input);
                 RowType inputRowType = stream.rowType; // The index row type.
                 API.InputPreservationOption flag = API.InputPreservationOption.DISCARD_INPUT;
                 if (!isIndexRowType(inputRowType)) {
@@ -1460,7 +1476,7 @@ public class OperatorAssembler extends BaseRule
                 stream.operator = API.groupLookup_Default(stream.operator,
                                                           group,
                                                           inputRowType,
-                                                          ancestorTypes,
+                                                          outputRowTypes,
                                                           flag,
                                                           rulesContext.getPipelineConfiguration().getGroupLookupLookaheadQuantum());
             }
@@ -1510,11 +1526,19 @@ public class OperatorAssembler extends BaseRule
                     inputRowType = tableRowType(branchLookup.getSource());
                     flag = API.InputPreservationOption.KEEP_INPUT;
                 }
-                stream.operator = API.branchLookup_Default(stream.operator,
-                                                           group,
-                                                           inputRowType,
-                                                           tableRowType(branchLookup.getBranch()), 
-                                                           flag);
+                List<UserTableRowType> outputRowTypes =
+                    new ArrayList<>(branchLookup.getTables().size());
+                if (false)      // TODO: Any way to check that this matched?
+                    outputRowTypes.add(tableRowType(branchLookup.getBranch()));
+                for (TableSource table : branchLookup.getTables()) {
+                    outputRowTypes.add(tableRowType(table));
+                }
+                stream.operator = API.groupLookup_Default(stream.operator,
+                                                          group,
+                                                          inputRowType,
+                                                          outputRowTypes, 
+                                                          flag,
+                                                          rulesContext.getPipelineConfiguration().getGroupLookupLookaheadQuantum());
             }
             stream.rowType = null;
             stream.unknownTypesPresent = true;
