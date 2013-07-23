@@ -1463,6 +1463,7 @@ public class OperatorAssembler extends BaseRule
                         outputRowTypes.add(tableRowType(table));
                     }
                     stream = assembleStream(branchLookup.getInput());
+                    stream.unknownTypesPresent = true;
                 }
                 else
                     stream = assembleStream(input);
