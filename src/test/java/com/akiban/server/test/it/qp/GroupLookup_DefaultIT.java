@@ -22,12 +22,15 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -104,6 +107,28 @@ public class GroupLookup_DefaultIT extends OperatorITBase
                             coi,
                             customerNameIndexRowType,
                             list(customerRowType),
+                            InputPreservationOption.KEEP_INPUT,
+                            lookaheadQuantum());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBranchNonRootLookup()
+    {
+        groupLookup_Default(groupScan_Default(coi),
+                            coi,
+                            addressRowType,
+                            list(itemRowType),
+                            InputPreservationOption.KEEP_INPUT,
+                            lookaheadQuantum());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBranchRootLookup()
+    {
+        groupLookup_Default(groupScan_Default(coi),
+                            coi,
+                            addressRowType,
+                            list(orderRowType, itemRowType),
                             InputPreservationOption.KEEP_INPUT,
                             lookaheadQuantum());
     }
@@ -339,6 +364,259 @@ public class GroupLookup_DefaultIT extends OperatorITBase
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
+    // customer index -> customer + descendents
+
+    @Test
+    public void testCustomerIndexToMissingCustomer()
+    {
+        Operator plan = customerNameToCustomerPlan("matrix");
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
+        RowBase[] expected = new RowBase[]{};
+        compareRows(expected, cursor);
+    }
+
+    @Test
+    public void testCustomerIndexToCustomer()
+    {
+        Operator plan = customerNameToCustomerPlan("northbridge");
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
+        RowBase[] expected = new RowBase[]{
+            row(customerRowType, 1L, "northbridge"),
+            row(orderRowType, 11L, 1L, "ori"),
+            row(itemRowType, 111L, 11L),
+            row(itemRowType, 112L, 11L),
+            row(orderRowType, 12L, 1L, "david"),
+            row(itemRowType, 121L, 12L),
+            row(itemRowType, 122L, 12L),
+            row(addressRowType, 1001L, 1L, "111 1111 st"),
+            row(addressRowType, 1002L, 1L, "111 2222 st")
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test
+    public void testCustomerIndexToCustomerWithNoOrders()
+    {
+        Operator plan = customerNameToCustomerPlan("highland");
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
+        RowBase[] expected = new RowBase[]{
+            row(customerRowType, 4L, "highland"),
+            row(addressRowType, 4001L, 4L, "444 1111 st"),
+            row(addressRowType, 4002L, 4L, "444 2222 st")
+        };
+        compareRows(expected, cursor);
+    }
+
+    // address index -> customer + descendents
+
+    @Test @Ignore
+    public void testAddressIndexToMissingCustomer()
+    {
+        Operator plan = addressAddressToCustomerPlan("555 1111 st");
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
+        RowBase[] expected = new RowBase[]{
+            row(addressRowType, 5001L, 5L, "555 1111 st"),
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test @Ignore
+    public void testAddressIndexToCustomer()
+    {
+        Operator plan = addressAddressToCustomerPlan("222 2222 st");
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
+        RowBase[] expected = new RowBase[]{
+            row(customerRowType, 2L, "foundation"),
+            row(orderRowType, 21L, 2L, "tom"),
+            row(itemRowType, 211L, 21L),
+            row(itemRowType, 212L, 21L),
+            row(orderRowType, 22L, 2L, "jack"),
+            row(itemRowType, 221L, 22L),
+            row(itemRowType, 222L, 22L),
+            row(addressRowType, 2001L, 2L, "222 1111 st"),
+            row(addressRowType, 2002L, 2L, "222 2222 st")
+        };
+        compareRows(expected, cursor);
+    }
+
+    // address row -> customer + descendents
+
+    @Test @Ignore
+    public void testAddressToMissingCustomer()
+    {
+        Operator plan = addressToCustomerPlan("555 1111 st");
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
+        RowBase[] expected = new RowBase[]{
+            row(addressRowType, 5001L, 5L, "555 1111 st"),
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test @Ignore
+    public void testAddressToCustomer()
+    {
+        Operator plan = addressToCustomerPlan("222 2222 st");
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
+        RowBase[] expected = new RowBase[]{
+            row(customerRowType, 2L, "foundation"),
+            row(orderRowType, 21L, 2L, "tom"),
+            row(itemRowType, 211L, 21L),
+            row(itemRowType, 212L, 21L),
+            row(orderRowType, 22L, 2L, "jack"),
+            row(itemRowType, 221L, 22L),
+            row(itemRowType, 222L, 22L),
+            row(addressRowType, 2001L, 2L, "222 1111 st"),
+            row(addressRowType, 2002L, 2L, "222 2222 st")
+        };
+        compareRows(expected, cursor);
+    }
+
+    // address row -> order + descendents
+
+    @Test @Ignore
+    public void testAddressToOrder()
+    {
+        Operator plan = addressToOrderPlan("222 2222 st", false);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
+        RowBase[] expected = new RowBase[]{
+            row(orderRowType, 21L, 2L, "tom"),
+            row(itemRowType, 211L, 21L),
+            row(itemRowType, 212L, 21L),
+            row(orderRowType, 22L, 2L, "jack"),
+            row(itemRowType, 221L, 22L),
+            row(itemRowType, 222L, 22L)
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test @Ignore
+    public void testAddressToMissingOrder()
+    {
+        Operator plan = addressToOrderPlan("444 2222 st", false);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
+        RowBase[] expected = new RowBase[]{
+        };
+        compareRows(expected, cursor);
+    }
+
+    // Ordering of input row relative to branch
+
+    @Test @Ignore
+    public void testAddressToOrderAndAddress()
+    {
+        Operator plan = addressToOrderPlan("222 2222 st", true);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
+        RowBase[] expected = new RowBase[]{
+            row(orderRowType, 21L, 2L, "tom"),
+            row(itemRowType, 211L, 21L),
+            row(itemRowType, 212L, 21L),
+            row(orderRowType, 22L, 2L, "jack"),
+            row(itemRowType, 221L, 22L),
+            row(itemRowType, 222L, 22L),
+            row(addressRowType, 2002L, 2L, "222 2222 st"),
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test @Ignore
+    public void testOrderToOrderAndAddress()
+    {
+        Operator plan = orderToAddressPlan("tom", true);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
+        RowBase[] expected = new RowBase[]{
+            row(orderRowType, 21L, 2L, "tom"),
+            row(addressRowType, 2001L, 2L, "222 1111 st"),
+            row(addressRowType, 2002L, 2L, "222 2222 st")
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test @Ignore
+    public void testItemToItemAndAddress()
+    {
+        Operator plan = itemToAddressPlan(111L, true);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
+        RowBase[] expected = new RowBase[]{
+            row(itemRowType, 111L, 11L),
+            row(addressRowType, 1001L, 1L, "111 1111 st"),
+            row(addressRowType, 1002L, 1L, "111 2222 st"),
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test
+    public void testOrderToOrderAndCustomerAndItems()
+    {
+        Operator plan = 
+            groupLookup_Default(
+                indexScan_Default(orderSalesmanIndexRowType, false, orderSalesmanEQ("ori")),
+                coi,
+                orderSalesmanIndexRowType,
+                list(orderRowType, customerRowType, itemRowType),
+                InputPreservationOption.DISCARD_INPUT,
+                lookaheadQuantum());
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
+        RowBase[] expected = new RowBase[]{
+            row(customerRowType, 1L, "northbridge"),
+            row(orderRowType, 11L, 1L, "ori"),
+            row(itemRowType, 111L, 11L),
+            row(itemRowType, 112L, 11L),
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test
+    public void testOrderUnionToOrder()
+    {
+        Operator orderOrItem =
+            hKeyUnion_Ordered(
+                indexScan_Default(orderSalesmanIndexRowType, false, orderSalesmanEQ("ori")),
+                indexScan_Default(orderSalesmanIndexRowType, false, orderSalesmanEQ("david")),
+                orderSalesmanIndexRowType,
+                orderSalesmanIndexRowType,
+                2,
+                2,
+                1,
+                customerRowType);
+        Operator plan =
+            groupLookup_Default(
+                orderOrItem,
+                coi,
+                orderOrItem.rowType(),
+                descendants(orderRowType),
+                InputPreservationOption.DISCARD_INPUT,
+                lookaheadQuantum());
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
+        RowBase[] expected = new RowBase[]{
+            row(orderRowType, 11L, 1L, "ori"),
+            row(itemRowType, 111L, 11L),
+            row(itemRowType, 112L, 11L),
+            row(orderRowType, 12L, 1L, "david"),
+            row(itemRowType, 121L, 12L),
+            row(itemRowType, 122L, 12L),
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test
+    public void testPKAccess() {
+        Operator plan = 
+                groupLookup_Default(
+                        indexScan_Default(indexType(order, "oid"), false, orderIdEQ(11L)),
+                        coi,
+                        indexType(order, "oid"),
+                        descendants(orderRowType),
+                        InputPreservationOption.DISCARD_INPUT,
+                        lookaheadQuantum());
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
+        RowBase[] expected = new RowBase[]{
+                row(orderRowType, 11L, 1L, "ori"),
+                row(itemRowType, 111L, 11L),
+                row(itemRowType, 112L, 11L),
+        };
+        compareRows(expected, cursor);
+    }
+
     @Test
     public void testCursor()
     {
@@ -391,12 +669,13 @@ public class GroupLookup_DefaultIT extends OperatorITBase
     {
         return
             groupLookup_Default
-                (branchLookup_Default
+                (groupLookup_Default
                      (indexScan_Default(itemIidIndexRowType, false, itemIidEQ(iid)),
                       coi,
                       itemIidIndexRowType,
-                      itemRowType,
-                      InputPreservationOption.DISCARD_INPUT),
+                      list(itemRowType),
+                      InputPreservationOption.DISCARD_INPUT,
+                      lookaheadQuantum()),
                  coi,
                  itemRowType,
                  list(rowTypes),
@@ -425,6 +704,98 @@ public class GroupLookup_DefaultIT extends OperatorITBase
                 lookaheadQuantum());
     }
 
+    private Operator customerNameToCustomerPlan(String customerName)
+    {
+        return
+            groupLookup_Default(
+                indexScan_Default(customerNameIndexRowType, false, customerNameEQ(customerName)),
+                coi,
+                customerNameIndexRowType,
+                descendants(customerRowType),
+                InputPreservationOption.DISCARD_INPUT,
+                lookaheadQuantum());
+    }
+
+    private Operator addressAddressToCustomerPlan(String address)
+    {
+        return
+            groupLookup_Default(
+                indexScan_Default(addressAddressIndexRowType, false, addressAddressEQ(address)),
+                coi,
+                addressAddressIndexRowType,
+                descendants(customerRowType),
+                InputPreservationOption.DISCARD_INPUT,
+                lookaheadQuantum());
+    }
+
+    private Operator addressToCustomerPlan(String address)
+    {
+        return
+            groupLookup_Default(
+                    branchLookup_Default(
+                        indexScan_Default(addressAddressIndexRowType, false, addressAddressEQ(address)),
+                        coi,
+                        addressAddressIndexRowType,
+                        addressRowType,
+                        InputPreservationOption.DISCARD_INPUT),
+                    coi,
+                    addressRowType,
+                    descendants(customerRowType),
+                    InputPreservationOption.DISCARD_INPUT,
+                    lookaheadQuantum());
+    }
+
+    private Operator addressToOrderPlan(String address, boolean keepInput)
+    {
+        return
+            groupLookup_Default(
+                ancestorLookup_Default(
+                    indexScan_Default(addressAddressIndexRowType, false, addressAddressEQ(address)),
+                    coi,
+                    addressAddressIndexRowType,
+                    Arrays.asList(addressRowType),
+                    InputPreservationOption.DISCARD_INPUT),
+                coi,
+                addressRowType,
+                descendants(orderRowType),
+                keepInput ? InputPreservationOption.KEEP_INPUT : InputPreservationOption.DISCARD_INPUT,
+                lookaheadQuantum());
+    }
+
+    private Operator orderToAddressPlan(String salesman, boolean keepInput)
+    {
+        return
+            groupLookup_Default(
+                ancestorLookup_Default(
+                    indexScan_Default(orderSalesmanIndexRowType, false, orderSalesmanEQ(salesman)),
+                    coi,
+                    orderSalesmanIndexRowType,
+                    Arrays.asList(orderRowType),
+                    InputPreservationOption.DISCARD_INPUT),
+                coi,
+                orderRowType,
+                descendants(addressRowType),
+                keepInput ? InputPreservationOption.KEEP_INPUT : InputPreservationOption.DISCARD_INPUT,
+                lookaheadQuantum());
+    }
+
+    private Operator itemToAddressPlan(long iid, boolean keepInput)
+    {
+        return
+            groupLookup_Default(
+                ancestorLookup_Default(
+                    indexScan_Default(itemIidIndexRowType, false, itemIidEQ(iid)),
+                    coi,
+                    itemIidIndexRowType,
+                    Arrays.asList(itemRowType),
+                    InputPreservationOption.DISCARD_INPUT),
+                coi,
+                itemRowType,
+                descendants(addressRowType),
+                keepInput ? InputPreservationOption.KEEP_INPUT : InputPreservationOption.DISCARD_INPUT,
+                lookaheadQuantum());
+    }
+
     private IndexKeyRange itemIidEQ(int iid)
     {
         IndexBound bound = itemIidIndexBound(iid);
@@ -445,6 +816,72 @@ public class GroupLookup_DefaultIT extends OperatorITBase
     private IndexBound orderSalesmanBound(String salesman)
     {
         return new IndexBound(row(orderSalesmanIndexRowType, salesman), new SetColumnSelector(0));
+    }
+
+    private IndexKeyRange customerNameEQ(String name)
+    {
+        IndexBound bound = customerNameIndexBound(name);
+        return IndexKeyRange.bounded(customerNameIndexRowType, bound, true, bound, true);
+    }
+
+    private IndexKeyRange addressAddressEQ(String address)
+    {
+        IndexBound bound = addressAddressIndexBound(address);
+        return IndexKeyRange.bounded(addressAddressIndexRowType, bound, true, bound, true);
+    }
+
+    private IndexKeyRange orderSalesmanEQ(String salesman)
+    {
+        IndexBound bound = orderSalesmanIndexBound(salesman);
+        return IndexKeyRange.bounded(orderSalesmanIndexRowType, bound, true, bound, true);
+    }
+
+    private IndexKeyRange orderIdEQ(long oid) 
+    {
+        IndexRowType indexRowType = indexType(order, "oid");
+        IndexBound bound = new IndexBound(row(indexRowType, oid), new SetColumnSelector(0));
+        return IndexKeyRange.bounded(indexRowType, bound, true, bound, true);
+        
+    }
+    private IndexKeyRange itemIidEQ(long iid)
+    {
+        IndexBound bound = itemIidIndexBound(iid);
+        return IndexKeyRange.bounded(itemIidIndexRowType, bound, true, bound, true);
+    }
+
+    private IndexBound customerNameIndexBound(String name)
+    {
+        return new IndexBound(row(customerNameIndexRowType, name), new SetColumnSelector(0));
+    }
+
+    private IndexBound addressAddressIndexBound(String addr)
+    {
+        return new IndexBound(row(addressAddressIndexRowType, addr), new SetColumnSelector(0));
+    }
+
+    private IndexBound orderSalesmanIndexBound(String salesman)
+    {
+        return new IndexBound(row(orderSalesmanIndexRowType, salesman), new SetColumnSelector(0));
+    }
+
+    private IndexBound itemIidIndexBound(long iid)
+    {
+        return new IndexBound(row(itemIidIndexRowType, iid), new SetColumnSelector(0));
+    }
+
+    private List<UserTableRowType> descendants(UserTableRowType root)
+    {
+        List<UserTableRowType> result = new ArrayList<>();
+        addDescendants(result, root);
+        return result;
+    }
+
+    private void addDescendants(List<UserTableRowType> rowTypes,
+                                UserTableRowType root) {
+        rowTypes.add(root);
+        for (com.akiban.ais.model.Join join : root.userTable().getChildJoins()) {
+            addDescendants(rowTypes, root.schema().userTableRowType(join.getChild()));
+        }
     }
 
     private List<UserTableRowType> list(UserTableRowType... rowTypes)
