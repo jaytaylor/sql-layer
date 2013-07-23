@@ -143,5 +143,53 @@
 ---
 - Statement: drop sequence sequence6 restrict
 
+
+#
+# Current value for various ranges, with and without rollover.. Inspired by bug1191901.
+#
+---
+- Statement: CREATE SEQUENCE sequence7 START WITH 1 INCREMENT BY 1 MINVALUE 1 MAXVALUE 255 CYCLE;
+---
+- Statement: SELECT NEXT VALUE FOR sequence7;
+- output: [[1]]
+---
+- Statement: SELECT CURRENT VALUE FOR sequence7;
+- output: [[1]]
+---
+- Statement: DROP SEQUENCE sequence7 RESTRICT;
+
+---
+- Statement: CREATE SEQUENCE sequence8 START WITH 1 INCREMENT BY 1 MINVALUE 1 MAXVALUE 4294967296 CYCLE;
+---
+- Statement: SELECT NEXT VALUE FOR sequence8;
+- output: [[1]]
+---
+- Statement: SELECT CURRENT VALUE FOR sequence8;
+- output: [[1]]
+---
+- Statement: DROP SEQUENCE sequence8 RESTRICT;
+
+---
+- Statement: CREATE SEQUENCE sequence9 START WITH 1 INCREMENT BY 1 MINVALUE 1 MAXVALUE 9223372036854775807 CYCLE;
+---
+- Statement: SELECT NEXT VALUE FOR sequence9;
+- output: [[1]]
+---
+- Statement: SELECT CURRENT VALUE FOR sequence9;
+- output: [[1]]
+---
+- Statement: DROP SEQUENCE sequence9 RESTRICT;
+
+---
+- Statement: CREATE SEQUENCE sequence10 START WITH -9223372036854775808 INCREMENT BY 1 MINVALUE -9223372036854775808 MAXVALUE 9223372036854775807 CYCLE;
+---
+- Statement: SELECT NEXT VALUE FOR sequence10;
+- output: [[-9223372036854775808]]
+---
+- Statement: SELECT CURRENT VALUE FOR sequence10;
+- output: [[-9223372036854775808]]
+---
+- Statement: DROP SEQUENCE sequence10 RESTRICT;
+
 ...
 
