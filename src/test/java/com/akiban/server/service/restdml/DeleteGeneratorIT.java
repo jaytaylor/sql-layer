@@ -60,7 +60,7 @@ public class DeleteGeneratorIT extends ITBase {
         assertEquals(
                 getExplain(delete, table.getSchemaName()),
                 "\n  Delete_Returning()\n"+
-                "    AncestorLookup_Default(Index(c.PRIMARY) -> c)\n"+
+                "    GroupLookup_Default(Index(c.PRIMARY) -> c)\n"+
                 "      IndexScan_Default(Index(c.PRIMARY), cid = $1)");
     }
 
@@ -77,7 +77,7 @@ public class DeleteGeneratorIT extends ITBase {
         assertEquals(
                 getExplain(delete, table.getSchemaName()),
                 "\n  Delete_Returning()\n"+
-                "    AncestorLookup_Default(Index(c.PRIMARY) -> c)\n"+
+                "    GroupLookup_Default(Index(c.PRIMARY) -> c)\n"+
                 "      IndexScan_Default(Index(c.PRIMARY), cid = $1)");
     }
 
@@ -95,7 +95,7 @@ public class DeleteGeneratorIT extends ITBase {
         assertEquals(
                 getExplain(delete, table.getSchemaName()),
                 "\n  Delete_Returning()\n"+
-                "    AncestorLookup_Default(Index(o.PRIMARY) -> o)\n"+
+                "    GroupLookup_Default(Index(o.PRIMARY) -> o)\n"+
                 "      IndexScan_Default(Index(o.PRIMARY), cid = $1, oid = $2)");
     }
     
@@ -112,7 +112,7 @@ public class DeleteGeneratorIT extends ITBase {
         assertEquals (
                 getExplain(delete, table.getSchemaName()),
                 "\n  Delete_Returning()\n"+
-                "    AncestorLookup_Default(Index(c.PRIMARY) -> c)\n"+
+                "    GroupLookup_Default(Index(c.PRIMARY) -> c)\n"+
                 "      IndexScan_Default(Index(c.PRIMARY), __akiban_pk = $1)");
     }
 
