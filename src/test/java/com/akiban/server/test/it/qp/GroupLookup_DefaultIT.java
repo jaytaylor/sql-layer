@@ -24,6 +24,7 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -894,7 +895,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
     {
         List<UserTableRowType> result = new ArrayList<>();
         result.add(root);
-        for (RowType rowType : root.schema().descendentTypes(root, schema.userTableTypes())) {
+        for (RowType rowType : Schema.descendentTypes(root, schema.userTableTypes())) {
             result.add((UserTableRowType)rowType);
         }
         return result;

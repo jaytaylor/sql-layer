@@ -111,7 +111,7 @@ public class PlanGenerator {
         final UserTableRowType tableType = schema.userTableRowType(table);
         final List<UserTableRowType> tableTypes = new ArrayList<>();
         tableTypes.add(tableType);
-        for (RowType rowType : schema.descendentTypes(tableType, schema.userTableTypes())) {
+        for (RowType rowType : Schema.descendentTypes(tableType, schema.userTableTypes())) {
             tableTypes.add((UserTableRowType)rowType);
         }
         Operator plan = API.groupLookup_Default(scan, table.getGroup(), 

@@ -25,6 +25,7 @@ import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.aggregation.Aggregators;
@@ -189,17 +190,13 @@ public class API
                                                 UserTableRowType outputRowType,
                                                 InputPreservationOption flag)
     {
-        return branchLookup_Default(inputOperator, group, inputRowType, outputRowType, flag, NO_LIMIT);
-    }
-
-    public static Operator branchLookup_Default(Operator inputOperator,
-                                                Group group,
-                                                RowType inputRowType,
-                                                UserTableRowType outputRowType,
-                                                InputPreservationOption flag,
-                                                Limit limit)
-    {
-        return new BranchLookup_Default(inputOperator, group, inputRowType, outputRowType, flag, limit);
+        List<UserTableRowType> outputRowTypes = new ArrayList<>();
+        outputRowTypes.add(outputRowType);
+        Schema schema = (Schema)outputRowType.schema();
+        for (RowType rowType : schema.descendentTypes(outputRowType, schema.userTableTypes())) {
+            outputRowTypes.add((UserTableRowType)rowType);
+        }
+        return groupLookup_Default(inputOperator, group, inputRowType, outputRowTypes, flag, 1);
     }
 
     /** deprecated */
@@ -981,22 +978,4 @@ public class API
         private final List<AkCollator> collators = new ArrayList<>();
     }
 
-    // Class state
-
-    private static final Limit NO_LIMIT = new Limit()
-    {
-
-        @Override
-        public boolean limitReached(RowBase row)
-        {
-            return false;
-        }
-
-        @Override
-        public String toString()
-        {
-            return "NO LIMIT";
-        }
-
-    };
 }
