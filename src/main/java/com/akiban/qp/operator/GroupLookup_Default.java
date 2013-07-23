@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import static java.lang.Math.min;
 
 /**
 
@@ -191,7 +192,7 @@ class GroupLookup_Default extends Operator
         }
         UserTable inputTable = tableRowType.userTable();
         this.ancestors = new ArrayList<>(outputRowTypes.size());
-        List<UserTableRowType> branchOutputTypes = null;
+        List<UserTableRowType> branchOutputRowTypes = null;
         UserTable branchRoot = null;
         boolean outputInputTable = false;
         for (UserTableRowType outputRowType : outputRowTypes) {
@@ -202,9 +203,9 @@ class GroupLookup_Default extends Operator
             } else if (outputRowType.ancestorOf(tableRowType)) {
                 ancestors.add(outputRowType.userTable());
             } else if (tableRowType.ancestorOf(outputRowType)) {
-                if (branchOutputTypes == null)
-                    branchOutputTypes = new ArrayList<>();
-                branchOutputTypes.add(outputRowType);
+                if (branchOutputRowTypes == null)
+                    branchOutputRowTypes = new ArrayList<>();
+                branchOutputRowTypes.add(outputRowType);
                 if (branchRoot != inputTable) {
                     // Get immediate child of input above desired output.
                     UserTable childTable = outputRowType.userTable();
@@ -231,20 +232,20 @@ class GroupLookup_Default extends Operator
             if (branchRoot != inputTable) {
                 ancestors.add(inputTable);
             } else {
-                branchOutputTypes.add(tableRowType);
+                branchOutputRowTypes.add(tableRowType);
             }
         }
         if (ancestors.size() > 1) {
             Collections.sort(ancestors, SORT_TABLE_BY_DEPTH);
         }
-        if (branchOutputTypes == null) {
+        if (branchOutputRowTypes == null) {
             this.branchOutputRowTypes = null;
             this.branchRootOrdinal = -1;
         } else {
-            if (branchOutputTypes.size() > 1) {
-                Collections.sort(branchOutputTypes, SORT_ROWTYPE_BY_DEPTH);
+            if (branchOutputRowTypes.size() > 1) {
+                Collections.sort(branchOutputRowTypes, SORT_ROWTYPE_BY_DEPTH);
             }
-            this.branchOutputRowTypes = branchOutputTypes;
+            this.branchOutputRowTypes = branchOutputRowTypes;
             if (branchRoot == inputTable) {
                 this.branchRootOrdinal = -1;
             } else {
@@ -285,12 +286,30 @@ class GroupLookup_Default extends Operator
         return types;
     }
 
+    private static UserTable commonAncestor(UserTable inputTable, UserTable outputTable)
+    {
+        int minLevel = min(inputTable.getDepth(), outputTable.getDepth());
+        UserTable inputAncestor = inputTable;
+        while (inputAncestor.getDepth() > minLevel) {
+            inputAncestor = inputAncestor.parentTable();
+        }
+        UserTable outputAncestor = outputTable;
+        while (outputAncestor.getDepth() > minLevel) {
+            outputAncestor = outputAncestor.parentTable();
+        }
+        while (inputAncestor != outputAncestor) {
+            inputAncestor = inputAncestor.parentTable();
+            outputAncestor = outputAncestor.parentTable();
+        }
+        return outputAncestor;
+    }
+
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(GroupLookup_Default.class);
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: GroupLookup_Default open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: GroupLookup_Default next");
-
+    
     // Object state
 
     private final Operator inputOperator;
@@ -314,6 +333,18 @@ class GroupLookup_Default extends Operator
 
     // Inner classes
 
+    private static enum LookupState
+    {
+        // Just opened or after any branch rows
+        BETWEEN,
+        // Ancestors filled in, any branch not open.
+        ANCESTOR,
+        // Scanning branch rows.
+        BRANCH,
+        // Input ran out.
+        EXHAUSTED
+    }
+
     private class Execution extends ChainedCursor
     {
         // Cursor interface
@@ -325,7 +356,7 @@ class GroupLookup_Default extends Operator
             try {
                 CursorLifecycle.checkIdle(this);
                 input.open();
-                advance();
+                lookupState = LookupState.BETWEEN;
             } finally {
                 TAP_OPEN.out();
             }
@@ -342,12 +373,12 @@ class GroupLookup_Default extends Operator
                     CursorLifecycle.checkIdleOrActive(this);
                 }
                 checkQueryCancelation();
-                while (pending.isEmpty() && inputRow.isHolding()) {
+                while (pending.isEmpty() && (lookupState != LookupState.EXHAUSTED)) {
                     advance();
                 }
                 Row row = pending.take();
                 if (LOG_EXECUTION) {
-                    LOG.debug("AncestorLookup: {}", row == null ? null : row);
+                    LOG.debug("AncestorLookup: yield {}", row);
                 }
                 return row;
             } finally {
@@ -363,7 +394,7 @@ class GroupLookup_Default extends Operator
             CursorLifecycle.checkIdleOrActive(this);
             if (input.isActive()) {
                 input.close();
-                ancestorRow.release();
+                lookupRow.release();
                 pending.clear();
             }
         }
@@ -382,17 +413,39 @@ class GroupLookup_Default extends Operator
             super(context, input);
             // Why + 1: Because the input row (whose ancestors get discovered) also goes into pending.
             this.pending = new PendingRows(ancestors.size() + 1);
-            this.ancestorCursor = adapter().newGroupCursor(group);
+            this.lookupCursor = adapter().newGroupCursor(group);
+            if (branchOutputRowTypes != null) {
+                this.lookupRowHKey = adapter().newHKey(inputRowType.hKey());
+            }
+            else {
+                this.lookupRowHKey = null;
+            }
         }
 
         // For use by this class
 
         private void advance()
         {
+            switch (lookupState) {
+            case BETWEEN:
+                advanceInput();
+                break;
+            case ANCESTOR:
+                advanceLookup();
+                break;
+            case BRANCH:
+                advanceBranch();
+                break;
+            }
+        }
+
+        private void advanceInput()
+        {
             Row currentRow = input.next();
             if (currentRow != null) {
                 if (currentRow.rowType() == inputRowType) {
                     findAncestors(currentRow);
+                    lookupState = LookupState.ANCESTOR;
                 }
                 if (keepInput) {
                     pending.add(currentRow);
@@ -400,6 +453,7 @@ class GroupLookup_Default extends Operator
                 inputRow.hold(currentRow);
             } else {
                 inputRow.release();
+                lookupState = LookupState.EXHAUSTED;
             }
         }
 
@@ -408,8 +462,8 @@ class GroupLookup_Default extends Operator
             assert pending.isEmpty();
             for (int i = 0; i < ancestors.size(); i++) {
                 readAncestorRow(inputRow.ancestorHKey(ancestors.get(i)));
-                if (ancestorRow.isHolding()) {
-                    pending.add(ancestorRow.get());
+                if (lookupRow.isHolding()) {
+                    pending.add(lookupRow.get());
                 }
             }
         }
@@ -417,27 +471,66 @@ class GroupLookup_Default extends Operator
         private void readAncestorRow(HKey hKey)
         {
             try {
-                ancestorCursor.rebind(hKey, false);
-                ancestorCursor.open();
-                Row retrievedRow = ancestorCursor.next();
+                lookupCursor.rebind(hKey, false);
+                lookupCursor.open();
+                Row retrievedRow = lookupCursor.next();
                 if (retrievedRow == null) {
-                    ancestorRow.release();
+                    lookupRow.release();
                 } else {
                     // Retrieved row might not actually be what we were looking for -- not all ancestors are present,
                     // (there are orphan rows).
-                    ancestorRow.hold(hKey.equals(retrievedRow.hKey()) ? retrievedRow : null);
+                    lookupRow.hold(hKey.equals(retrievedRow.hKey()) ? retrievedRow : null);
                 }
             } finally {
-                ancestorCursor.close();
+                lookupCursor.close();
+            }
+        }
+
+        private void advanceLookup()
+        {
+            if (branchOutputRowTypes == null) {
+                lookupState = LookupState.BETWEEN;
+                return;
+            }
+            lookupRow.release();
+            computeBranchLookupRowHKey(inputRow.get());
+            lookupCursor.rebind(lookupRowHKey, true);
+            lookupCursor.open();
+            lookupState = LookupState.BRANCH;
+        }
+
+        private void computeBranchLookupRowHKey(Row row)
+        {
+            HKey ancestorHKey = row.hKey(); // row.ancestorHKey(commonAncestor);
+            ancestorHKey.copyTo(lookupRowHKey);
+            if (branchRootOrdinal != -1) {
+                lookupRowHKey.extendWithOrdinal(branchRootOrdinal);
+            }
+        }
+
+        private void advanceBranch()
+        {
+            Row currentLookupRow = lookupCursor.next();
+            if (currentLookupRow != null) {
+                lookupRow.hold(currentLookupRow);
+            } else {
+                lookupRow.release();
+                lookupState = LookupState.BETWEEN;
+            }
+
+            if (lookupRow.isHolding()) {
+                pending.add(lookupRow.get());
             }
         }
 
         // Object state
 
         private final ShareHolder<Row> inputRow = new ShareHolder<>();
-        private final GroupCursor ancestorCursor;
-        private final ShareHolder<Row> ancestorRow = new ShareHolder<>();
+        private final GroupCursor lookupCursor;
+        private final ShareHolder<Row> lookupRow = new ShareHolder<>();
         private final PendingRows pending;
+        private final HKey lookupRowHKey;
+        private LookupState lookupState;
     }
 
     private class LookaheadExecution extends OperatorCursor {
