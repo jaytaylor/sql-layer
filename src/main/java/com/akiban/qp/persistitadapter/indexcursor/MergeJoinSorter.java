@@ -297,7 +297,6 @@ public class MergeJoinSorter implements Sorter {
         
         private int rowCount = 0;
         private Key convertKey;
-        private Key sortKey;
         private int rowFields;
         private TInstance tFieldTypes[];
         private PersistitKeyPValueTarget valueTarget;
@@ -305,7 +304,6 @@ public class MergeJoinSorter implements Sorter {
         public KeyReadCursor () {
             this.rowFields = rowType.nFields();
             this.convertKey = new Key ((Persistit)null);
-            this.sortKey = new Key ((Persistit)null);
             this.tFieldTypes = new TInstance[rowFields];
             for (int i = 0; i < rowFields; i++) {
                 tFieldTypes[i] = rowType.typeInstanceAt(i);
@@ -388,7 +386,7 @@ public class MergeJoinSorter implements Sorter {
                     convertKey.setMaximumSize(Math.min((convertKey.getMaximumSize() * 2), Key.MAX_KEY_LENGTH_UPPER_BOUND));
                 }
             }
-            return convertKey;
+            return new Key(convertKey);
         }
         public int rowCount() {
             return rowCount;
@@ -450,9 +448,16 @@ public class MergeJoinSorter implements Sorter {
         private final String prefix;
         private final String suffix;
         public MergeTempFileProvider (QueryContext context) {
-            directory = new File (context.getServiceManager().getConfigurationService().getProperty("persistit.tmpvolddir"));
+            directory = new File (context.getServiceManager().getConfigurationService().getProperty("persistit.tmpvoldir"));
             suffix = ".tmp";
-            prefix = "sort-" +  context.getSessionId() + "-";
+            String tmpPrefix;
+            try {
+                tmpPrefix = "sort-" +  context.getSessionId() + "-";
+            } catch (UnsupportedOperationException ex) {
+                // This occurs during testing when SimpleQueryContext doesn't support sessionIDs
+                tmpPrefix = "sort-1-"; 
+            }
+            prefix = tmpPrefix;
         }
 
         @Override

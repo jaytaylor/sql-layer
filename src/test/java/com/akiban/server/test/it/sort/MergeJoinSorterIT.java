@@ -16,6 +16,9 @@
  */
 package com.akiban.server.test.it.sort;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.akiban.qp.operator.API.Ordering;
 import com.akiban.qp.operator.API.SortOption;
 import com.akiban.qp.operator.Cursor;
@@ -27,6 +30,14 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.tap.InOutTap;
 
 public class MergeJoinSorterIT extends SorterITBase {
+
+    @Override
+    public Map<String,String> startupConfigProperties() {
+        Map<String,String> props = new HashMap<>();
+        props.putAll(super.startupConfigProperties());
+        props.put("persistit.tmpvoldir","/tmp/akserver-junit/");
+        return props;
+    }
 
     @Override
     public Sorter createSorter(QueryContext context, QueryBindings bindings,
