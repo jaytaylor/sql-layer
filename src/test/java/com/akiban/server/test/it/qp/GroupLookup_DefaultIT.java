@@ -408,6 +408,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
     }
 
     // address index -> customer + descendents
+    // MOSTLY IGNORE since not supported by GroupLookup_Default currently.
 
     @Test @Ignore
     public void testAddressIndexToMissingCustomer()
@@ -561,6 +562,25 @@ public class GroupLookup_DefaultIT extends OperatorITBase
             row(orderRowType, 11L, 1L, "ori"),
             row(itemRowType, 111L, 11L),
             row(itemRowType, 112L, 11L),
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test
+    public void testCustomerToOrderOnly()
+    {
+        Operator plan =
+            groupLookup_Default(
+                indexScan_Default(customerNameIndexRowType, false, customerNameEQ("foundation")),
+                coi,
+                customerNameIndexRowType,
+                list(orderRowType),
+                InputPreservationOption.DISCARD_INPUT,
+                lookaheadQuantum());
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
+        RowBase[] expected = new RowBase[]{
+            row(orderRowType, 21L, 2L, "tom"),
+            row(orderRowType, 22L, 2L, "jack"),
         };
         compareRows(expected, cursor);
     }

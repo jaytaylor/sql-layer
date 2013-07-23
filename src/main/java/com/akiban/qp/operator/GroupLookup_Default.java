@@ -511,13 +511,12 @@ class GroupLookup_Default extends Operator
         private void advanceBranch()
         {
             Row currentLookupRow = lookupCursor.next();
-            if (currentLookupRow != null) {
-                lookupRow.hold(currentLookupRow);
-            } else {
-                lookupRow.release();
+            lookupRow.release();
+            if (currentLookupRow == null) {
                 lookupState = LookupState.BETWEEN;
+            } else if (branchOutputRowTypes.contains(currentLookupRow.rowType())) {
+                lookupRow.hold(currentLookupRow);
             }
-
             if (lookupRow.isHolding()) {
                 pending.add(lookupRow.get());
             }
