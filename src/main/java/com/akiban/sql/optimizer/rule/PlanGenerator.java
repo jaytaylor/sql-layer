@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Join;
 import com.akiban.ais.model.NopVisitor;
 import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.UserTable;
@@ -108,10 +109,11 @@ public class PlanGenerator {
 
     public static Operator generateBranchPlan (UserTable table, Operator scan, RowType scanType) {
         final Schema schema = (Schema)scanType.schema();
-        final UserTableRowType tableType = schema.userTableRowType(table);
-        Operator plan = API.branchLookup_Default(scan, table.getGroup(), 
-                                                 scanType, tableType, 
-                                                 API.InputPreservationOption.DISCARD_INPUT);
+        final List<UserTableRowType> tableTypes = new ArrayList<>();
+        gatherBranch(tableTypes, schema, table);
+        Operator plan = API.groupLookup_Default(scan, table.getGroup(), 
+                                                scanType, tableTypes, 
+                                                API.InputPreservationOption.DISCARD_INPUT, 1);
                                         
         if (logger.isDebugEnabled()) {
             DefaultFormatter formatter = new DefaultFormatter(table.getName().getSchemaName());
@@ -121,6 +123,13 @@ public class PlanGenerator {
         return plan;
     }
     
+    private static void gatherBranch(List<UserTableRowType> tableTypes, Schema schema, UserTable table) {
+        tableTypes.add(schema.userTableRowType(table));
+        for (Join childJoin : table.getChildJoins()) {
+            gatherBranch(tableTypes, schema, childJoin.getChild());
+        }
+    }
+
     /**
      * Scan a table starting with the primary key and return the full data row 
      * Generates a plan like
@@ -137,11 +146,12 @@ public class PlanGenerator {
         IndexRowType indexType = schema.indexRowType(table.getPrimaryKeyIncludingInternal().getIndex());
         
         Operator indexScan = generateIndexScan (ais, table);
-        Operator lookup = API.ancestorLookup_Default(indexScan,
+        Operator lookup = API.groupLookup_Default(indexScan,
                 table.getGroup(),
                 indexType,
                 ancestorType,
-                API.InputPreservationOption.DISCARD_INPUT);
+                API.InputPreservationOption.DISCARD_INPUT,
+                1);
         if (logger.isDebugEnabled()) {
             DefaultFormatter formatter = new DefaultFormatter(table.getName().getSchemaName());
             logger.debug("Ancestor Plan for {}:\n{}", table,
