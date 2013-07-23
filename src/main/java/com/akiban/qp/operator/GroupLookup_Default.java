@@ -394,6 +394,7 @@ class GroupLookup_Default extends Operator
             CursorLifecycle.checkIdleOrActive(this);
             if (input.isActive()) {
                 input.close();
+                lookupCursor.close();
                 lookupRow.release();
                 pending.clear();
             }
@@ -404,6 +405,7 @@ class GroupLookup_Default extends Operator
         {
             close();
             input.destroy();
+            lookupCursor.destroy();
         }
 
         // Execution interface
