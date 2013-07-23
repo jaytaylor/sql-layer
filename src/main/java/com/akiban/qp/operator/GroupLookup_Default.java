@@ -40,58 +40,57 @@ import java.util.*;
 
  <h1>Overview</h1>
 
- GroupLookup_Default locates ancestors of both group rows and index rows.
+ GroupLookup_Default locates related group rows of both group rows and index rows.
 
  One expected usage is to locate the group row corresponding to an
  index row. For example, an index on customer.name yields index rows
  which GroupLookup_Default can then use to locate customer
- rows. (The ancestor relationship is reflexive, e.g. customer is
- considered to be an ancestor of customer.)
+ rows.
 
  Another expected usage is to locate ancestors higher in the group. For
  example, given either an item row or an item index row,
  GroupLookup_Default can be used to find the corresponding order and
  customer.
 
- Unlike BranchLookup, AncestorLookup always locates 0-1 row per ancestor type.
+ Another expected usage is to locate descendants lower in the group. For
+ example, given either an order group row,
+ GroupLookup_Default can be used to find the corresponding items.
 
  <h1>Arguments</h1>
 
  <ul>
 
- <li><b>GroupTable groupTable:</b> The group table containing the
- ancestors of interest.
+ <li><b>Group group:</b> The group containing the tables of interest.
 
- <li><b>RowType rowType:</b> Ancestors will be located for input rows
+ <li><b>RowType inputRowType:</b> Other tables will be located for input rows
  of this type.
 
- <li><b>Collection<UserTableRowType> ancestorTypes:</b> Ancestor types to be located.
+ <li><b>Collection<UserTableRowType> outputRowTypes:</b> Tables to be located.
 
  <li><b>API.InputPreservationOption flag:</b> Indicates whether rows of type rowType
  will be preserved in the output stream (flag = KEEP_INPUT), or
  discarded (flag = DISCARD_INPUT).
 
  <li><b>int lookaheadQuantum:</b> Number of cursors to try to keep open by looking
-  ahead in input stream, possibly across multiple bindings.
+  ahead in input stream, possibly across multiple outer loops.
 
  </ul>
 
- rowType may be an index row type or a group row type. For a group row
- type, rowType must not be one of the ancestorTypes. For an index row
- type, rowType may be one of the ancestorTypes, and keepInput must be
- false (this may be relaxed in the future).
+ rowType may be an index row type or a group row type. For an index row
+ type, rowType may be one of the outputRowTypes, and keepInput must be
+ false.
 
- The groupTable, rowType, and all ancestorTypes must belong to the same
+ The group, inputRowType, and all outputRowTypes must belong to the same
  group.
 
- Each ancestorType must be an ancestor of the rowType (or, if rowType
- is an index type, then an ancestor of the index's table's type).
+ Each outputRowType must be an ancestor of the rowType or a descendant of it.
 
  <h1>Behavior</h1>
 
  For each input row, the hkey is obtained. For each ancestor type, the
- hkey is shortened if necessary, and the groupTable is then search for
- a record with that exact hkey. All the retrieved records are written
+ hkey is shortened if necessary, and the groupTable is then searched for
+ a record with that exact hkey. For each descendant type, the hkey is lengthened
+ with the ordinal of the shallowest descendant. All the retrieved records are written
  to the output stream in hkey order (ancestors before descendents), as
  is the input row if keepInput is true.
 
@@ -106,11 +105,11 @@ import java.util.*;
  <h1>Performance</h1>
 
  For each input row, GroupLookup_Default does one random access for
- each ancestor type.
+ each ancestor type and one range access if there are any descendant types.
 
  <h1>Memory Requirements</h1>
 
- GroupLookup_Default stores in memory up to (ancestorTypes.size() +
+ GroupLookup_Default stores in memory up to (number of ancestors +
  1) rows.
 
  */
@@ -122,7 +121,7 @@ class GroupLookup_Default extends Operator
     @Override
     public String toString()
     {
-        return String.format("%s(%s -> %s)", getClass().getSimpleName(), rowType, ancestors);
+        return String.format("%s(%s -> %s)", getClass().getSimpleName(), inputRowType, outputRowTypes());
     }
 
     // Operator interface
@@ -162,78 +161,128 @@ class GroupLookup_Default extends Operator
 
     public GroupLookup_Default(Operator inputOperator,
                                Group group,
-                               RowType rowType,
-                               Collection<UserTableRowType> ancestorTypes,
+                               RowType inputRowType,
+                               Collection<UserTableRowType> outputRowTypes,
                                API.InputPreservationOption flag,
                                int lookaheadQuantum)
     {
-        validateArguments(rowType, ancestorTypes, flag);
         this.inputOperator = inputOperator;
         this.group = group;
-        this.rowType = rowType;
+        this.inputRowType = inputRowType;
         this.keepInput = flag == API.InputPreservationOption.KEEP_INPUT;
         this.lookaheadQuantum = lookaheadQuantum;
-        // Sort ancestor types by depth
-        this.ancestors = new ArrayList<>(ancestorTypes.size());
-        for (UserTableRowType ancestorType : ancestorTypes) {
-            this.ancestors.add(ancestorType.userTable());
+
+        ArgumentValidation.notEmpty("ancestorTypes", outputRowTypes);
+        UserTableRowType tableRowType;
+        if (inputRowType instanceof UserTableRowType) {
+            tableRowType = (UserTableRowType)inputRowType;
+        } else if (inputRowType instanceof IndexRowType) {
+            // Keeping index rows not supported
+            ArgumentValidation.isTrue("flag == API.InputPreservationOption.DISCARD_INPUT",
+                                      flag == API.InputPreservationOption.DISCARD_INPUT);
+            tableRowType = ((IndexRowType) inputRowType).tableType();
+        } else if (inputRowType instanceof HKeyRowType) {
+            ArgumentValidation.isTrue("flag == API.InputPreservationOption.DISCARD_INPUT",
+                                      flag == API.InputPreservationOption.DISCARD_INPUT);
+            tableRowType = ((Schema) inputRowType.schema()).userTableRowType(((HKeyRowType) inputRowType).hKey().userTable());
+        } else {
+            ArgumentValidation.isTrue("invalid rowType", false);
+            tableRowType = null;
         }
-        if (this.ancestors.size() > 1) {
-            Collections.sort(this.ancestors,
-                             new Comparator<UserTable>()
-                             {
-                                 @Override
-                                 public int compare(UserTable x, UserTable y)
-                                 {
-                                     return x.getDepth() - y.getDepth();
-                                 }
-                             });
+        UserTable inputTable = tableRowType.userTable();
+        this.ancestors = new ArrayList<>(outputRowTypes.size());
+        List<UserTableRowType> branchOutputTypes = null;
+        UserTable branchRoot = null;
+        boolean outputInputTable = false;
+        for (UserTableRowType outputRowType : outputRowTypes) {
+            if (outputRowType == tableRowType) {
+                ArgumentValidation.isTrue("flag == API.InputPreservationOption.DISCARD_INPUT",
+                                          flag == API.InputPreservationOption.DISCARD_INPUT);
+                outputInputTable = true;
+            } else if (outputRowType.ancestorOf(tableRowType)) {
+                ancestors.add(outputRowType.userTable());
+            } else if (tableRowType.ancestorOf(outputRowType)) {
+                if (branchOutputTypes == null)
+                    branchOutputTypes = new ArrayList<>();
+                branchOutputTypes.add(outputRowType);
+                if (branchRoot != inputTable) {
+                    // Get immediate child of input above desired output.
+                    UserTable childTable = outputRowType.userTable();
+                    while (true) {
+                        UserTable parentTable = childTable.parentTable();
+                        if (parentTable ==  inputTable) break;
+                        childTable = parentTable;
+                    }
+                    if (branchRoot != childTable) {
+                        if (branchRoot == null) {
+                            branchRoot = childTable;
+                        } else {
+                            branchRoot = inputTable;
+                        }
+                    }
+                }
+            } else {
+                // The old BranchLookup_Default would allow, say, item
+                // to address, but the optimizer never generates that.
+                ArgumentValidation.isTrue("ancestor or descendant", false);
+            }
+        }
+        if (outputInputTable) {
+            if (branchRoot != inputTable) {
+                ancestors.add(inputTable);
+            } else {
+                branchOutputTypes.add(tableRowType);
+            }
+        }
+        if (ancestors.size() > 1) {
+            Collections.sort(ancestors, SORT_TABLE_BY_DEPTH);
+        }
+        if (branchOutputTypes == null) {
+            this.branchOutputRowTypes = null;
+            this.branchRootOrdinal = -1;
+        } else {
+            if (branchOutputTypes.size() > 1) {
+                Collections.sort(branchOutputTypes, SORT_ROWTYPE_BY_DEPTH);
+            }
+            this.branchOutputRowTypes = branchOutputTypes;
+            if (branchRoot == inputTable) {
+                this.branchRootOrdinal = -1;
+            } else {
+                this.branchRootOrdinal = ordinal(branchRoot);
+            }
         }
     }
     
     // For use by this class
 
-    private void validateArguments(RowType rowType, Collection<UserTableRowType> ancestorTypes, API.InputPreservationOption flag)
-    {
-        ArgumentValidation.notEmpty("ancestorTypes", ancestorTypes);
-        if (rowType instanceof IndexRowType) {
-            // Keeping index rows not supported
-            ArgumentValidation.isTrue("flag == API.InputPreservationOption.DISCARD_INPUT",
-                                      flag == API.InputPreservationOption.DISCARD_INPUT);
-            RowType tableRowType = ((IndexRowType) rowType).tableType();
-            // Each ancestorType must be an ancestor of rowType. ancestorType = tableRowType is OK only if the input
-            // is from an index. I.e., this operator can be used for an index lookup.
-            for (UserTableRowType ancestorType : ancestorTypes) {
-                ArgumentValidation.isTrue("ancestorType.ancestorOf(tableRowType)",
-                                          ancestorType.ancestorOf(tableRowType));
-                ArgumentValidation.isTrue("ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup()",
-                                          ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup());
+    private static final Comparator<UserTable> SORT_TABLE_BY_DEPTH =
+        new Comparator<UserTable>() 
+        {
+            @Override
+            public int compare(UserTable x, UserTable y)
+            {
+                return x.getDepth() - y.getDepth();
             }
-        } else if (rowType instanceof UserTableRowType) {
-            // Each ancestorType must be an ancestor of rowType. ancestorType = tableRowType is OK only if the input
-            // is from an index. I.e., this operator can be used for an index lookup.
-            for (RowType ancestorType : ancestorTypes) {
-                ArgumentValidation.isTrue("ancestorType != tableRowType",
-                                          ancestorType != rowType);
-                ArgumentValidation.isTrue("ancestorType.ancestorOf(tableRowType)",
-                                          ancestorType.ancestorOf(rowType));
-                ArgumentValidation.isTrue("ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup()",
-                                          ancestorType.userTable().getGroup() == rowType.userTable().getGroup());
+        };
+    private static final Comparator<UserTableRowType> SORT_ROWTYPE_BY_DEPTH =
+        new Comparator<UserTableRowType>() 
+        {
+            @Override
+            public int compare(UserTableRowType x, UserTableRowType y)
+            {
+                return x.userTable().getDepth() - y.userTable().getDepth();
             }
-        } else if (rowType instanceof HKeyRowType) {
-            ArgumentValidation.isTrue("flag == API.InputPreservationOption.DISCARD_INPUT",
-                                      flag == API.InputPreservationOption.DISCARD_INPUT);
-            for (UserTableRowType ancestorType : ancestorTypes) {
-                HKeyRowType hKeyRowType = (HKeyRowType) rowType;
-                UserTableRowType tableRowType = ancestorType.schema().userTableRowType(hKeyRowType.hKey().userTable());
-                ArgumentValidation.isTrue("ancestorType.ancestorOf(tableRowType)",
-                                          ancestorType.ancestorOf(tableRowType));
-                ArgumentValidation.isTrue("ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup()",
-                                          ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup());
-            }
-        } else {
-            ArgumentValidation.isTrue("invalid rowType", false);
+        };
+
+    private List<UserTableRowType> outputRowTypes() {
+        List<UserTableRowType> types = new ArrayList<>();
+        for (UserTable table : ancestors) {
+            types.add(((Schema) inputRowType.schema()).userTableRowType(table));
         }
+        if (branchOutputRowTypes != null) {
+            types.addAll(branchOutputRowTypes);
+        }
+        return types;
     }
 
     // Class state
@@ -246,19 +295,21 @@ class GroupLookup_Default extends Operator
 
     private final Operator inputOperator;
     private final Group group;
-    private final RowType rowType;
+    private final RowType inputRowType;
     private final List<UserTable> ancestors;
+    private final List<UserTableRowType> branchOutputRowTypes;
     private final boolean keepInput;
+    private final int branchRootOrdinal;
     private final int lookaheadQuantum;
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
     {
         Attributes atts = new Attributes();
-        for (UserTable table : ancestors) {
-            atts.put(Label.OUTPUT_TYPE, ((Schema)rowType.schema()).userTableRowType(table).getExplainer(context));
+        for (UserTableRowType outputType : outputRowTypes()) {
+            atts.put(Label.OUTPUT_TYPE, outputType.getExplainer(context));
         }
-        return new LookUpOperatorExplainer(getName(), atts, rowType, keepInput, inputOperator, context);
+        return new LookUpOperatorExplainer(getName(), atts, inputRowType, keepInput, inputOperator, context);
     }
 
     // Inner classes
@@ -340,7 +391,7 @@ class GroupLookup_Default extends Operator
         {
             Row currentRow = input.next();
             if (currentRow != null) {
-                if (currentRow.rowType() == rowType) {
+                if (currentRow.rowType() == inputRowType) {
                     findAncestors(currentRow);
                 }
                 if (keepInput) {

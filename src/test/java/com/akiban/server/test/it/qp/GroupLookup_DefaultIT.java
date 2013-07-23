@@ -87,18 +87,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testDescendentIsNotAncestor()
-    {
-        groupLookup_Default(groupScan_Default(coi),
-                            coi,
-                            customerRowType,
-                            list(itemRowType),
-                            InputPreservationOption.KEEP_INPUT,
-                            lookaheadQuantum());
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testSelfIsNotAncestor()
+    public void testKeepInputSelf()
     {
         groupLookup_Default(groupScan_Default(coi),
                             coi,
