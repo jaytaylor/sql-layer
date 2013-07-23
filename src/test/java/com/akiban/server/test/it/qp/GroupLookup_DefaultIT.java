@@ -23,6 +23,7 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -892,16 +893,11 @@ public class GroupLookup_DefaultIT extends OperatorITBase
     private List<UserTableRowType> descendants(UserTableRowType root)
     {
         List<UserTableRowType> result = new ArrayList<>();
-        addDescendants(result, root);
-        return result;
-    }
-
-    private void addDescendants(List<UserTableRowType> rowTypes,
-                                UserTableRowType root) {
-        rowTypes.add(root);
-        for (com.akiban.ais.model.Join join : root.userTable().getChildJoins()) {
-            addDescendants(rowTypes, root.schema().userTableRowType(join.getChild()));
+        result.add(root);
+        for (RowType rowType : root.schema().descendentTypes(root, schema.userTableTypes())) {
+            result.add((UserTableRowType)rowType);
         }
+        return result;
     }
 
     private List<UserTableRowType> list(UserTableRowType... rowTypes)

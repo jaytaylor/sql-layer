@@ -26,7 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Join;
 import com.akiban.ais.model.NopVisitor;
 import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.UserTable;
@@ -109,8 +108,12 @@ public class PlanGenerator {
 
     public static Operator generateBranchPlan (UserTable table, Operator scan, RowType scanType) {
         final Schema schema = (Schema)scanType.schema();
+        final UserTableRowType tableType = schema.userTableRowType(table);
         final List<UserTableRowType> tableTypes = new ArrayList<>();
-        gatherBranch(tableTypes, schema, table);
+        tableTypes.add(tableType);
+        for (RowType rowType : schema.descendentTypes(tableType, schema.userTableTypes())) {
+            tableTypes.add((UserTableRowType)rowType);
+        }
         Operator plan = API.groupLookup_Default(scan, table.getGroup(), 
                                                 scanType, tableTypes, 
                                                 API.InputPreservationOption.DISCARD_INPUT, 1);
@@ -121,13 +124,6 @@ public class PlanGenerator {
                          join(formatter.format(plan.getExplainer(new ExplainContext()))));
         }
         return plan;
-    }
-    
-    private static void gatherBranch(List<UserTableRowType> tableTypes, Schema schema, UserTable table) {
-        tableTypes.add(schema.userTableRowType(table));
-        for (Join childJoin : table.getChildJoins()) {
-            gatherBranch(tableTypes, schema, childJoin.getChild());
-        }
     }
 
     /**
