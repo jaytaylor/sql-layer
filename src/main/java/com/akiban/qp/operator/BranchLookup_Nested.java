@@ -613,10 +613,10 @@ public class BranchLookup_Nested extends Operator
         }
 
         @Override
-        protected BranchCursor openACursor(QueryBindings bindings) {
-            BranchCursor cursor = super.openACursor(bindings);
+        protected BranchCursor openACursor(QueryBindings bindings, boolean lookahead) {
+            BranchCursor cursor = super.openACursor(bindings, lookahead);
             if (LOG_EXECUTION) {
-                LOG.debug("BranchLookup_Nested: open using {}", cursor.inputRow.get());
+                LOG.debug("BranchLookup_Nested: open{} using {}", lookahead ? " lookahead" : "", cursor.inputRow.get());
             }
             return cursor;
         }

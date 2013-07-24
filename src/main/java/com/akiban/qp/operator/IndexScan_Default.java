@@ -424,11 +424,11 @@ class IndexScan_Default extends Operator
         }
 
         @Override
-        protected BindingsAwareCursor openACursor(QueryBindings bindings) {
+        protected BindingsAwareCursor openACursor(QueryBindings bindings, boolean lookahead) {
             if (LOG_EXECUTION) {
-                LOG.debug("IndexScan: open for {}", bindings);
+                LOG.debug("IndexScan: open{} for {}", lookahead ? " lookahead" : "", bindings);
             }
-            return super.openACursor(bindings);
+            return super.openACursor(bindings, lookahead);
         }
         
         // LookaheadExecution interface
