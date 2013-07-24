@@ -1489,6 +1489,13 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleBranchLookup(BranchLookup branchLookup) {
             RowStream stream;
             Group group = branchLookup.getSource().getGroup();
+            List<UserTableRowType> outputRowTypes =
+                new ArrayList<>(branchLookup.getTables().size());
+            if (false)      // TODO: Any way to check that this matched?
+                outputRowTypes.add(tableRowType(branchLookup.getBranch()));
+            for (TableSource table : branchLookup.getTables()) {
+                outputRowTypes.add(tableRowType(table));
+            }
             if (branchLookup.getInput() == null) {
                 // Simple version for Product_Nested.
                 stream = new RowStream();
@@ -1498,9 +1505,10 @@ public class OperatorAssembler extends BaseRule
                                                           boundRow.getRowType(),
                                                           tableRowType(branchLookup.getSource()),
                                                           tableRowType(branchLookup.getAncestor()),
-                                                          tableRowType(branchLookup.getBranch()), 
+                                                          outputRowTypes, 
                                                           flag,
-                                                          currentBindingPosition());
+                                                          currentBindingPosition(),
+                                                          rulesContext.getPipelineConfiguration().getGroupLookupLookaheadQuantum());
                 
             }
             else if (branchLookup.getInput() instanceof GroupLoopScan) {
@@ -1513,9 +1521,10 @@ public class OperatorAssembler extends BaseRule
                                                           boundRow.getRowType(),
                                                           boundRow.getRowType(),
                                                           tableRowType(branchLookup.getAncestor()),
-                                                          tableRowType(branchLookup.getBranch()), 
+                                                          outputRowTypes, 
                                                           flag,
-                                                          rowIndex + loopBindingsOffset);
+                                                          rowIndex + loopBindingsOffset,
+                                                          rulesContext.getPipelineConfiguration().getGroupLookupLookaheadQuantum());
             }
             else {
                 // Ordinary inline version.
@@ -1526,13 +1535,6 @@ public class OperatorAssembler extends BaseRule
                     // Getting from ancestor lookup.
                     inputRowType = tableRowType(branchLookup.getSource());
                     flag = API.InputPreservationOption.KEEP_INPUT;
-                }
-                List<UserTableRowType> outputRowTypes =
-                    new ArrayList<>(branchLookup.getTables().size());
-                if (false)      // TODO: Any way to check that this matched?
-                    outputRowTypes.add(tableRowType(branchLookup.getBranch()));
-                for (TableSource table : branchLookup.getTables()) {
-                    outputRowTypes.add(tableRowType(table));
                 }
                 stream.operator = API.groupLookup_Default(stream.operator,
                                                           group,

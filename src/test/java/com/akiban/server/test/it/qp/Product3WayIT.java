@@ -26,6 +26,7 @@ import com.akiban.server.api.dml.scan.NewRow;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
 import static com.akiban.qp.operator.API.JoinType.INNER_JOIN;
@@ -132,9 +133,10 @@ public class Product3WayIT extends OperatorITBase
                     RA.rowType(),
                     rRowType,
                     null,
-                    bRowType,
+                    list(bRowType),
                     KEEP_INPUT,
-                    0),
+                    0,
+                    1),
                 rRowType,
                 bRowType,
                 INNER_JOIN);
@@ -146,8 +148,9 @@ public class Product3WayIT extends OperatorITBase
                     RAB.rowType(),
                     rRowType,
                     null,
-                    cRowType,
+                    list(cRowType),
                     KEEP_INPUT,
+                    1,
                     1),
                 rRowType,
                 cRowType,
@@ -201,9 +204,10 @@ public class Product3WayIT extends OperatorITBase
                     RA.rowType(),
                     rRowType,
                     null,
-                    cRowType,
+                    list(cRowType),
                     KEEP_INPUT,
-                    0),
+                    0,
+                    1),
                 rRowType,
                 cRowType,
                 INNER_JOIN);
@@ -215,8 +219,9 @@ public class Product3WayIT extends OperatorITBase
                     RAC.rowType(),
                     rRowType,
                     null,
-                    bRowType,
+                    list(bRowType),
                     KEEP_INPUT,
+                    1,
                     1),
                 rRowType,
                 bRowType,
@@ -265,9 +270,10 @@ public class Product3WayIT extends OperatorITBase
                     rRowType,
                     rRowType,
                     null,
-                    aRowType,
+                    list(aRowType),
                     KEEP_INPUT,
-                    0),
+                    0,
+                    1),
                 rRowType,
                 aRowType,
                 INNER_JOIN);
@@ -279,8 +285,9 @@ public class Product3WayIT extends OperatorITBase
                     RA.rowType(),
                     rRowType,
                     null,
-                    bRowType,
+                    list(bRowType),
                     KEEP_INPUT,
+                    1,
                     1),
                 rRowType,
                 bRowType,
@@ -293,9 +300,10 @@ public class Product3WayIT extends OperatorITBase
                     RAB.rowType(),
                     rRowType,
                     null,
-                    cRowType,
+                    list(cRowType),
                     KEEP_INPUT,
-                    2),
+                    2,
+                    1),
                 rRowType,
                 cRowType,
                 INNER_JOIN);
@@ -335,6 +343,11 @@ public class Product3WayIT extends OperatorITBase
         Set<UserTableRowType> keepTypes = type.schema().userTableTypes();
         keepTypes.removeAll(Schema.descendentTypes(type, keepTypes));
         return keepTypes;
+    }
+
+    private List<UserTableRowType> list(UserTableRowType... rowTypes)
+    {
+        return Arrays.asList(rowTypes);
     }
 
     protected int r;

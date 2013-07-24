@@ -33,6 +33,11 @@ import com.akiban.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 import static java.lang.Math.min;
@@ -53,18 +58,17 @@ import static java.lang.Math.min;
 
  <ul>
 
- <li><b>GroupTable groupTable:</b> The group table containing the
- ancestors of interest.
+ <li><b>Group group:</b> The group containing the ancestors of interest.
 
  <li><b>RowType inputRowType:</b> Bound row will be of this type.
  
  <li><b>RowType sourceRowType:</b> Branches will be located for input
- rows of this type.
+ rows of this type. Possibly a subrow of inputRowType.
  
  <li><b>UserTableRowType ancestorRowType:</b> Identifies the table in the group at which branching occurs.
- Must be an ancestor of both inputRowType's table and outputRowType's table.
+ Must be an ancestor of both inputRowType's table and outputRowTypes' tables.
 
- <li><b>UserTableRowType outputRowType:</b> Type at the root of the branch to be
+ <li><b>UserTableRowType outputRowTypes:</b> Types within the branch to be
  retrieved.
 
  <li><b>API.InputPreservationOption flag:</b> Indicates whether rows of type rowType
@@ -74,17 +78,19 @@ import static java.lang.Math.min;
  <li><b>int inputBindingPosition:</b> Indicates input row's position in the query context. The hkey
  of this row will be used to locate ancestors.
 
+ <li><b>int lookaheadQuantum:</b> Number of cursors to try to keep open by looking
+  ahead in bindings stream.
+
  </ul>
 
  inputRowType may be an index row type, a user table row type, or an hkey row type. flag = KEEP_INPUT is permitted
  only for user table row types.
 
- The groupTable, inputRowType, and outputRowType must belong to the
+ The groupTable, inputRowType, and outputRowTypes must belong to the
  same group.
  
  ancestorRowType's table must be an ancestor of
- inputRowType's table and outputRowType's table. outputRowType's table must be the parent
- of outputRowType's table.
+ inputRowType's table and outputRowTypes' tables.
 
  <h1>Behavior</h1>
 
@@ -139,7 +145,7 @@ public class BranchLookup_Nested extends Operator
                              getClass().getSimpleName(),
                              group.getRoot().getName(),
                              sourceRowType,
-                             outputRowType);
+                             outputRowTypes);
     }
 
     // Operator interface
@@ -167,14 +173,15 @@ public class BranchLookup_Nested extends Operator
                                RowType inputRowType,
                                RowType sourceRowType,
                                UserTableRowType ancestorRowType,
-                               UserTableRowType outputRowType,
+                               Collection<UserTableRowType> outputRowTypes,
                                API.InputPreservationOption flag,
-                               int inputBindingPosition)
+                               int inputBindingPosition,
+                               int lookaheadQuantum)
     {
         ArgumentValidation.notNull("group", group);
         ArgumentValidation.notNull("inputRowType", inputRowType);
         ArgumentValidation.notNull("sourceRowType", sourceRowType);
-        ArgumentValidation.notNull("outputRowType", outputRowType);
+        ArgumentValidation.notEmpty("outputRowTypes", outputRowTypes);
         ArgumentValidation.notNull("flag", flag);
         ArgumentValidation.isTrue("sourceRowType instanceof UserTableRowType || flag == API.InputPreservationOption.DISCARD_INPUT",
                                   sourceRowType instanceof UserTableRowType || flag == API.InputPreservationOption.DISCARD_INPUT);
@@ -185,42 +192,75 @@ public class BranchLookup_Nested extends Operator
         } else if (sourceRowType instanceof IndexRowType) {
             inputTableType = ((IndexRowType) sourceRowType).tableType();
         } else if (sourceRowType instanceof HKeyRowType) {
-            Schema schema = outputRowType.schema();
+            Schema schema = outputRowTypes.iterator().next().schema();
             inputTableType = schema.userTableRowType(sourceRowType.hKey().userTable());
         }
         assert inputTableType != null : sourceRowType;
         UserTable inputTable = inputTableType.userTable();
-        UserTable outputTable = outputRowType.userTable();
-        ArgumentValidation.isSame("inputTable.getGroup()",
-                                  inputTable.getGroup(),
-                                  "outputTable.getGroup()",
-                                  outputTable.getGroup());
+        ArgumentValidation.isSame("inputTable.getGroup()", inputTable.getGroup(), 
+                                  "group", group);
+        UserTable commonAncestor;
+        if (ancestorRowType == null) {
+            commonAncestor = inputTable;
+        } else {
+            commonAncestor = ancestorRowType.userTable();
+            ArgumentValidation.isTrue("ancestorRowType.ancestorOf(inputTableType)",
+                                      ancestorRowType.ancestorOf(inputTableType));
+        }
+        for (UserTableRowType outputRowType : outputRowTypes) {
+            UserTable outputTable = outputRowType.userTable();
+            ArgumentValidation.isSame("outputTable.getGroup()", outputTable.getGroup(), 
+                                      "group", group);
+            if (ancestorRowType == null) {
+                commonAncestor = commonAncestor(commonAncestor, outputTable);
+            }
+            else {
+                ArgumentValidation.isTrue("ancestorRowType.ancestorOf(outputRowType)",
+                                          ancestorRowType.ancestorOf(outputRowType));
+            }
+        }
         this.group = group;
         this.inputRowType = inputRowType;
         this.sourceRowType = sourceRowType;
-        this.outputRowType = outputRowType;
+        this.outputRowTypes = new ArrayList<>(outputRowTypes);
+        Collections.sort(this.outputRowTypes, 
+                         new Comparator<UserTableRowType>() 
+                         {
+                             @Override
+                             public int compare(UserTableRowType x, UserTableRowType y)
+                                 {
+                                     return x.userTable().getDepth() - y.userTable().getDepth();
+                                 }
+                         });
+        this.commonAncestor = commonAncestor;
         this.keepInput = flag == API.InputPreservationOption.KEEP_INPUT;
         this.inputBindingPosition = inputBindingPosition;
-        if (ancestorRowType == null) {
-            this.commonAncestor = commonAncestor(inputTable, outputTable);
-        } else {
-            this.commonAncestor = ancestorRowType.userTable();
-            ArgumentValidation.isTrue("ancestorRowType.ancestorOf(inputTableType)",
-                                      ancestorRowType.ancestorOf(inputTableType));
-            ArgumentValidation.isTrue("ancestorRowType.ancestorOf(outputRowType)",
-                                      ancestorRowType.ancestorOf(outputRowType));
+        this.lookaheadQuantum = lookaheadQuantum;
+        // See whether there is a single branch beneath commonAncestor
+        // with all output row types.
+        UserTable outputTable = this.outputRowTypes.get(0).userTable();
+        boolean allOneBranch;
+        if (outputTable == commonAncestor) {
+            allOneBranch = false;
         }
-        switch (outputTable.getDepth() - commonAncestor.getDepth()) {
-            case 0:
-                branchRootOrdinal = -1;
-                break;
-            case 1:
-                branchRootOrdinal = ordinal(outputTable);
-                break;
-            default:
-                branchRootOrdinal = -1;
-                ArgumentValidation.isTrue("false", false);
-                break;
+        else {
+            while (outputTable.parentTable() != commonAncestor) {
+                outputTable = outputTable.parentTable();
+            }
+            UserTableRowType outputTableRowType = this.outputRowTypes.get(0).schema().userTableRowType(outputTable);
+            allOneBranch = true;
+            for (int i = 1; i < this.outputRowTypes.size(); i++) {
+                if (!outputTableRowType.ancestorOf(this.outputRowTypes.get(i))) {
+                    allOneBranch = false;
+                    break;
+                }
+            }
+        }
+        if (allOneBranch) {
+            branchRootOrdinal = ordinal(outputTable);
+        }
+        else {
+            branchRootOrdinal = -1;
         }
         // branchRootOrdinal = -1 means that outputTable is an ancestor of inputTable. In this case, inputPrecedesBranch
         // is false. Otherwise, branchRoot's parent is the common ancestor. Find inputTable's ancestor that is also
@@ -268,11 +308,12 @@ public class BranchLookup_Nested extends Operator
 
     private final Group group;
     private final RowType inputRowType, sourceRowType;
-    private final UserTableRowType outputRowType;
+    private final List<UserTableRowType> outputRowTypes;
     private final boolean keepInput;
     // If keepInput is true, inputPrecedesBranch controls whether input row appears before the retrieved branch.
     private final boolean inputPrecedesBranch;
     private final int inputBindingPosition;
+    private final int lookaheadQuantum;
     private final UserTable commonAncestor;
     private final int branchRootOrdinal;
 
@@ -281,10 +322,14 @@ public class BranchLookup_Nested extends Operator
     {
         Attributes atts = new Attributes();
         atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(inputBindingPosition));
-        atts.put(Label.OUTPUT_TYPE, outputRowType.getExplainer(context));
+        for (UserTableRowType outputRowType : outputRowTypes) {
+            atts.put(Label.OUTPUT_TYPE, outputRowType.getExplainer(context));
+        }
+        UserTableRowType outputRowType = outputRowTypes.get(0);
         UserTableRowType ancestorRowType = outputRowType.schema().userTableRowType(commonAncestor);
-        if ((ancestorRowType != sourceRowType) && (ancestorRowType != outputRowType))
+        if ((ancestorRowType != sourceRowType) && (ancestorRowType != outputRowType)) {
             atts.put(Label.ANCESTOR_TYPE, ancestorRowType.getExplainer(context));
+        }
         return new LookUpOperatorExplainer(getName(), atts, sourceRowType, false, null, context);
     }
 
@@ -334,7 +379,9 @@ public class BranchLookup_Nested extends Operator
                     row = inputRow.get();
                     inputRow.release();
                 } else {
-                    row = cursor.next();
+                    do {
+                        row = cursor.next();
+                    } while ((row != null) && !outputRowTypes.contains(row.rowType()));
                     if (row == null) {
                         if (keepInput && !inputPrecedesBranch) {
                             assert inputRow.isHolding();
@@ -395,7 +442,7 @@ public class BranchLookup_Nested extends Operator
         {
             super(context, bindingsCursor);
             this.cursor = adapter().newGroupCursor(group);
-            this.hKey = adapter().newHKey(outputRowType.hKey());
+            this.hKey = adapter().newHKey(outputRowTypes.get(0).hKey());
         }
 
         // For use by this class
