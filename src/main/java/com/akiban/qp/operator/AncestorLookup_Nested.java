@@ -26,6 +26,7 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.explain.*;
 import com.akiban.server.explain.std.LookUpOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
@@ -69,6 +70,9 @@ import java.util.*;
 
  <li><b>int inputBindingPosition:</b> Indicates input row's position in the query context. The hkey
  of this row will be used to locate ancestors.
+
+ <li><b>int lookaheadQuantum:</b> Number of cursors to try to keep open by looking
+  ahead in bindings stream.
 
  </ul>
 
@@ -131,7 +135,18 @@ class AncestorLookup_Nested extends Operator
     @Override
     protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, bindingsCursor);
+        if (lookaheadQuantum <= 1) {
+            return new Execution(context, bindingsCursor);
+        }
+        else {
+            // Convert to number of AncestorCursors, which hold multiple underlying
+            // cursors, rounding up.
+            int ncursors = ancestors.size();
+            int quantum = (lookaheadQuantum + ncursors - 1) / ncursors;
+            return new LookaheadExecution(context, bindingsCursor, 
+                                          context.getStore(ancestors.get(0)),
+                                          quantum);
+        }
     }
 
     @Override
@@ -145,12 +160,14 @@ class AncestorLookup_Nested extends Operator
     public AncestorLookup_Nested(Group group,
                                  RowType rowType,
                                  Collection<UserTableRowType> ancestorTypes,
-                                 int inputBindingPosition)
+                                 int inputBindingPosition,
+                                 int lookaheadQuantum)
     {
         validateArguments(group, rowType, ancestorTypes, inputBindingPosition);
         this.group = group;
         this.rowType = rowType;
         this.inputBindingPosition = inputBindingPosition;
+        this.lookaheadQuantum = lookaheadQuantum;
         // Sort ancestor types by depth
         this.ancestors = new ArrayList<>(ancestorTypes.size());
         for (UserTableRowType ancestorType : ancestorTypes) {
@@ -221,6 +238,7 @@ class AncestorLookup_Nested extends Operator
     private final RowType rowType;
     private final List<UserTable> ancestors;
     private final int inputBindingPosition;
+    private final int lookaheadQuantum;
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
@@ -230,6 +248,7 @@ class AncestorLookup_Nested extends Operator
         for (UserTable table : ancestors) {
             atts.put(Label.OUTPUT_TYPE, ((Schema)rowType.schema()).userTableRowType(table).getExplainer(context));
         }
+        atts.put(Label.PIPELINE, PrimitiveExplainer.getInstance(lookaheadQuantum));
         return new LookUpOperatorExplainer(getName(), atts, rowType, false, null, context);
     }
 
@@ -360,5 +379,146 @@ class AncestorLookup_Nested extends Operator
         private final GroupCursor ancestorCursor;
         private final PendingRows pending;
         private boolean closed = true;
+    }
+
+    private class AncestorCursor implements BindingsAwareCursor
+    {
+        // BindingsAwareCursor interface
+
+        @Override
+        public void open() {
+            Row rowFromBindings = bindings.getRow(inputBindingPosition);
+            assert rowFromBindings.rowType() == rowType : rowFromBindings;
+            for (int i = 0; i < hKeys.length; i++) {
+                hKeys[i] = rowFromBindings.ancestorHKey(ancestors.get(i));
+                cursors[i].rebind(hKeys[i], false);
+                cursors[i].open();
+            }
+            cursorIndex = 0;
+        }
+
+        @Override
+        public Row next() {
+            Row row = null;
+            while ((row == null) && (cursorIndex < cursors.length)) {
+                row = cursors[cursorIndex].next();
+                cursors[cursorIndex].close();
+                if (row != null && !hKeys[cursorIndex].equals(row.hKey())) {
+                    row = null;
+                }
+                cursorIndex++;
+            }
+            return row;
+        }
+
+        @Override
+        public void jump(Row row, ColumnSelector columnSelector) {
+            throw new UnsupportedOperationException(getClass().getName());
+        }
+
+        @Override
+        public void close() {
+            for (GroupCursor cursor : cursors) {
+                cursor.close();
+            }
+        }
+
+        @Override
+        public void destroy() {
+            for (GroupCursor cursor : cursors) {
+                cursor.destroy();
+            }
+        }
+
+        @Override
+        public boolean isIdle() {
+            return ((cursorIndex >= cursors.length) || cursors[cursorIndex].isIdle());
+        }
+
+        @Override
+        public boolean isActive() {
+            return ((cursorIndex < cursors.length) && cursors[cursorIndex].isActive());
+        }
+
+        @Override
+        public boolean isDestroyed() {
+            return cursors[0].isDestroyed();
+        }
+        
+        @Override
+        public void rebind(QueryBindings bindings) {
+            this.bindings = bindings;
+        }
+
+        // AncestorCursor interface
+        public AncestorCursor(StoreAdapter adapter) {
+            hKeys = new HKey[ancestors.size()];
+            cursors = new GroupCursor[hKeys.length];
+            for (int i = 0; i < cursors.length; i++) {
+                cursors[i] = adapter.newGroupCursor(group);
+            }
+        }
+
+        // Object state
+
+        private final HKey[] hKeys;
+        private final GroupCursor[] cursors;
+        private QueryBindings bindings;
+        private int cursorIndex;
+    }
+
+    private class LookaheadExecution extends LookaheadLeafCursor<AncestorCursor>
+    {
+        // Cursor interface
+
+        @Override
+        public void open() {
+            TAP_OPEN.in();
+            try {
+                super.open();
+            } finally {
+                TAP_OPEN.out();
+            }
+        }
+
+        @Override
+        public Row next() {
+            if (TAP_NEXT_ENABLED) {
+                TAP_NEXT.in();
+            }
+            try {
+                Row row = super.next();
+                if (LOG_EXECUTION) {
+                    LOG.debug("AncestorLookup_Nested: yield {}", row);
+                }
+                return row;
+            } finally {
+                if (TAP_NEXT_ENABLED) {
+                    TAP_NEXT.out();
+                }
+            }
+        }
+
+        // LookaheadLeafCursor interface
+
+        @Override
+        protected AncestorCursor newCursor(QueryContext context, StoreAdapter adapter) {
+            return new AncestorCursor(adapter);
+        }
+
+        @Override
+        protected AncestorCursor openACursor(QueryBindings bindings, boolean lookahead) {
+            if (LOG_EXECUTION) {
+                LOG.debug("AncestorLookup_Nested: open{} using {}", lookahead ? " lookahead" : "", bindings.getRow(inputBindingPosition));
+            }
+            return super.openACursor(bindings, lookahead);
+        }
+        
+        // LookaheadExecution interface
+
+        LookaheadExecution(QueryContext context, QueryBindingsCursor bindingsCursor, 
+                           StoreAdapter adapter, int quantum) {
+            super(context, bindingsCursor, adapter, quantum);
+        }
     }
 }

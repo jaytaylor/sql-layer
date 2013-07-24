@@ -203,7 +203,7 @@ public class FullTextIndexInfo
             ret = API.ancestorLookup_Nested(group,
                                             hKeyRowType,
                                             ancestors,
-                                            0);
+                                            0, 1);
         }
           
         return ret;

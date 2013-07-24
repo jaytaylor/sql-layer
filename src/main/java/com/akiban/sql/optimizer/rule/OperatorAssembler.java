@@ -1447,7 +1447,8 @@ public class OperatorAssembler extends BaseRule
                 stream.operator = API.ancestorLookup_Nested(group,
                                                             boundRow.getRowType(),
                                                             outputRowTypes,
-                                                            rowIndex + loopBindingsOffset);
+                                                            rowIndex + loopBindingsOffset,
+                                                            rulesContext.getPipelineConfiguration().getGroupLookupLookaheadQuantum());
             }
             else {
                 BranchLookup branchLookup = null;
