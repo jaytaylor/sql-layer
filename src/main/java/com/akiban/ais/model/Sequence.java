@@ -133,23 +133,18 @@ public class Sequence implements TreeLink {
         return treeCache.get();
     }
 
-    public long nextValueRaw(long rawSequence) {
-        long nextValue = notCycled(rawSequence);
-        if (nextValue > maxValue || nextValue < minValue) {
+    public long valueForRaw(long rawSequence) {
+        long value = rawToValue(rawSequence);
+        if(value > maxValue || value < minValue) {
             if(!cycle) {
                 throw new SequenceLimitExceededException(this);
             }
-            nextValue = cycled(nextValue);
+            value = cycled(value);
         }
-        return nextValue;
+        return value;
     }
 
-    public long currentValueRaw(long rawSequence) {
-        long notCycled = notCycled(rawSequence);
-        return cycle ? cycled(notCycled) : notCycled;
-    }
-
-    private long notCycled(long rawSequence) {
+    private long rawToValue(long rawSequence) {
         // -1 so first is startsWith, second is startsWith+inc, etc
         return startsWith + ((rawSequence - 1) * increment);
     }

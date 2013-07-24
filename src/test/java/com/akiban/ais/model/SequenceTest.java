@@ -44,7 +44,7 @@ public class SequenceTest
 
     private void expectExceeded(Sequence s, long rawValue) {
         try {
-            s.nextValueRaw(rawValue);
+            s.valueForRaw(rawValue);
             fail("Expected limit exceeded");
         } catch(SequenceLimitExceededException e) {
             // Expected
@@ -52,8 +52,7 @@ public class SequenceTest
     }
 
     private void c(Sequence s, long rawValue, long expected) {
-        assertEquals("nextValue at raw="+rawValue, expected, s.nextValueRaw(rawValue));
-        assertEquals("currentValue at raw="+rawValue, expected, s.currentValueRaw(rawValue));
+        assertEquals("valueForRaw at raw="+rawValue, expected, s.valueForRaw(rawValue));
     }
 
     @Test(expected=SequenceIntervalZeroException.class)
@@ -95,7 +94,7 @@ public class SequenceTest
         for(long i = min; i <= max; ++i) {
             c(s, 1, 1);
         }
-        assertEquals("nextValue at raw="+max+1, min, s.nextValueRaw(max+1));
+        assertEquals("nextValue at raw="+max+1, min, s.valueForRaw(max+1));
     }
 
     @Test
