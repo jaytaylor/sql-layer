@@ -12,4 +12,4 @@ PhysicalSelect[quan:int[INT], quan:int[INT]]
           Flatten_HKeyOrdered(customers - orders INNER items)
             Flatten_HKeyOrdered(customers INNER orders)
               Select_HKeyOrdered(i2.sku == '4567')
-                BranchLookup_Nested(customers -> orders)
+                BranchLookup_Nested(customers -> orders, items)

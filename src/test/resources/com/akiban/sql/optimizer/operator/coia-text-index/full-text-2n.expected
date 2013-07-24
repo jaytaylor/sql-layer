@@ -9,4 +9,4 @@ PhysicalSelect[cid:int[INT], name:varchar(32)[VARCHAR], oid:int[INT], cid:int[IN
         Filter_Default(customers - orders - items)
           Flatten_HKeyOrdered(customers - orders INNER items)
             Flatten_HKeyOrdered(customers INNER orders)
-              BranchLookup_Nested(customers -> orders)
+              BranchLookup_Nested(customers -> orders, items)
