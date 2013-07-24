@@ -281,6 +281,7 @@ class IndexScan_Default extends Operator
         for (int i = 0; i < ordering.sortColumns(); i++) {
             atts.put(Label.ORDERING, PrimitiveExplainer.getInstance(ordering.ascending(i) ? "ASC" : "DESC"));
         }
+        atts.put(Label.PIPELINE, PrimitiveExplainer.getInstance(lookaheadQuantum));
         if (context.hasExtraInfo(this))
             atts.putAll(context.getExtraInfo(this).get()); 
         return new CompoundExplainer(Type.SCAN_OPERATOR, atts);
