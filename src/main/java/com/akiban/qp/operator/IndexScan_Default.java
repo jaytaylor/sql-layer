@@ -384,7 +384,7 @@ class IndexScan_Default extends Operator
         private final RowCursor cursor;
     }
 
-    private class LookaheadExecution extends LookaheadLeafCursor<RowCursor>
+    private class LookaheadExecution extends LookaheadLeafCursor<BindingsAwareCursor>
     {
         // Cursor interface
 
@@ -419,16 +419,16 @@ class IndexScan_Default extends Operator
         // LookaheadLeafCursor interface
 
         @Override
-        protected RowCursor newCursor(QueryContext context, StoreAdapter adapter) {
-            return adapter.newIndexCursor(context, index, indexKeyRange, ordering, scanSelector, usePValues, true);
+        protected BindingsAwareCursor newCursor(QueryContext context, StoreAdapter adapter) {
+            return (BindingsAwareCursor)adapter.newIndexCursor(context, index, indexKeyRange, ordering, scanSelector, usePValues, true);
         }
 
         @Override
-        protected void rebind(RowCursor cursor, QueryBindings bindings) {
-            if (LOG_EXECUTION && (cursor != currentCursor)) {
-                LOG.debug("IndexScan: lookahead {}", bindings);
+        protected BindingsAwareCursor openACursor(QueryBindings bindings) {
+            if (LOG_EXECUTION) {
+                LOG.debug("IndexScan: open for {}", bindings);
             }
-            ((BindingsAwareCursor)cursor).rebind(bindings);
+            return super.openACursor(bindings);
         }
         
         // LookaheadExecution interface

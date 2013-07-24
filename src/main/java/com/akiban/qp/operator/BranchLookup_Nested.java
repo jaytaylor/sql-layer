@@ -25,6 +25,7 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.rowtype.*;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.explain.*;
 import com.akiban.server.explain.std.LookUpOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
@@ -158,7 +159,14 @@ public class BranchLookup_Nested extends Operator
     @Override
     public Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, bindingsCursor);
+        if (lookaheadQuantum <= 1) {
+            return new Execution(context, bindingsCursor);
+        }
+        else {
+            return new LookaheadExecution(context, bindingsCursor, 
+                                          context.getStore(commonAncestor),
+                                          lookaheadQuantum);
+        }
     }
 
     @Override
@@ -462,5 +470,162 @@ public class BranchLookup_Nested extends Operator
         private final HKey hKey;
         private ShareHolder<Row> inputRow = new ShareHolder<>();
         private boolean idle = true;
+    }
+
+    private class BranchCursor implements BindingsAwareCursor
+    {
+        // BindingsAwareCursor interface
+
+        @Override
+        public void open() {
+            Row rowFromBindings = bindings.getRow(inputBindingPosition);
+            assert rowFromBindings.rowType() == inputRowType : rowFromBindings;
+            if (inputRowType != sourceRowType) {
+                rowFromBindings = rowFromBindings.subRow(sourceRowType);
+            }
+            computeLookupRowHKey(rowFromBindings);
+            cursor.rebind(hKey, true);
+            cursor.open();
+            inputRow.hold(rowFromBindings);
+        }
+
+        @Override
+        public Row next() {
+            Row row = null;
+            if (keepInput && inputPrecedesBranch && inputRow.isHolding()) {
+                row = inputRow.get();
+                inputRow.release();
+            } else {
+                do {
+                    row = cursor.next();
+                } while ((row != null) && !outputRowTypes.contains(row.rowType()));
+                if (row == null) {
+                    if (keepInput && !inputPrecedesBranch) {
+                        assert inputRow.isHolding();
+                        row = inputRow.get();
+                        inputRow.release();
+                    }
+                    close();
+                }
+            }
+            return row;
+        }
+
+        @Override
+        public void jump(Row row, ColumnSelector columnSelector) {
+            cursor.jump(row, columnSelector);
+        }
+
+        @Override
+        public void close() {
+            inputRow.release();
+            cursor.close();
+        }
+
+        @Override
+        public void destroy() {
+            close();
+            cursor.destroy();
+        }
+
+        @Override
+        public boolean isIdle() {
+            return cursor.isIdle();
+        }
+
+        @Override
+        public boolean isActive() {
+            return cursor.isActive();
+        }
+
+        @Override
+        public boolean isDestroyed() {
+            return cursor.isDestroyed();
+        }
+        
+        @Override
+        public void rebind(QueryBindings bindings) {
+            this.bindings = bindings;
+        }
+
+        // BranchCursor interface
+        public BranchCursor(StoreAdapter adapter) {
+            this.cursor = adapter.newGroupCursor(group);
+            this.hKey = adapter.newHKey(outputRowTypes.get(0).hKey());
+        }
+
+        // For use by this class
+
+        private void computeLookupRowHKey(Row row)
+        {
+            HKey ancestorHKey = row.ancestorHKey(commonAncestor);
+            ancestorHKey.copyTo(hKey);
+            if (branchRootOrdinal != -1) {
+                hKey.extendWithOrdinal(branchRootOrdinal);
+            }
+        }
+
+        // Object state
+
+        private final GroupCursor cursor;
+        private final HKey hKey;
+        private ShareHolder<Row> inputRow = new ShareHolder<>();
+        private QueryBindings bindings;
+    }
+
+    private class LookaheadExecution extends LookaheadLeafCursor<BranchCursor>
+    {
+        // Cursor interface
+
+        @Override
+        public void open() {
+            TAP_OPEN.in();
+            try {
+                super.open();
+            } finally {
+                TAP_OPEN.out();
+            }
+        }
+
+        @Override
+        public Row next() {
+            if (TAP_NEXT_ENABLED) {
+                TAP_NEXT.in();
+            }
+            try {
+                Row row = super.next();
+                if (LOG_EXECUTION) {
+                    LOG.debug("BranchLookup_Nested: yield {}", row);
+                }
+                return row;
+            } finally {
+                if (TAP_NEXT_ENABLED) {
+                    TAP_NEXT.out();
+                }
+            }
+        }
+
+        // LookaheadLeafCursor interface
+
+        @Override
+        protected BranchCursor newCursor(QueryContext context, StoreAdapter adapter) {
+            return new BranchCursor(adapter);
+        }
+
+        @Override
+        protected BranchCursor openACursor(QueryBindings bindings) {
+            BranchCursor cursor = super.openACursor(bindings);
+            if (LOG_EXECUTION) {
+                LOG.debug("BranchLookup_Nested: open using {}", cursor.inputRow.get());
+            }
+            return cursor;
+        }
+        
+        // LookaheadExecution interface
+
+        LookaheadExecution(QueryContext context, QueryBindingsCursor bindingsCursor, 
+                           StoreAdapter adapter, int quantum) {
+            super(context, bindingsCursor, adapter, quantum);
+        }
     }
 }

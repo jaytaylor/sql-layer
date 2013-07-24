@@ -24,10 +24,10 @@ import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Queue;
 
-/** An {@link OperatorCursor} that opens a single {@link RowCursor}
+/** An {@link OperatorCursor} that opens a single {@link BindingsAwareCursor}
 * for each {@link QueryBindings} with lookahead.
 */
-public abstract class LookaheadLeafCursor<C extends RowCursor> extends OperatorCursor
+public abstract class LookaheadLeafCursor<C extends BindingsAwareCursor> extends OperatorCursor
 {
     // Cursor interface
 
@@ -199,11 +199,10 @@ public abstract class LookaheadLeafCursor<C extends RowCursor> extends OperatorC
     // Implemented by subclass
 
     protected abstract C newCursor(QueryContext context, StoreAdapter adapter);
-    protected abstract void rebind(C cursor, QueryBindings bindings);
 
     // Inner classes
 
-    protected static final class BindingsAndCursor<C extends RowCursor> {
+    protected static final class BindingsAndCursor<C extends BindingsAwareCursor> {
         QueryBindings bindings;
         C cursor;
             
@@ -228,7 +227,7 @@ public abstract class LookaheadLeafCursor<C extends RowCursor> extends OperatorC
 
     protected C openACursor(QueryBindings bindings) {
         C cursor = cursorPool.remove();
-        ((BindingsAwareCursor)cursor).rebind(bindings);
+        cursor.rebind(bindings);
         cursor.open();
         return cursor;
     }

@@ -86,6 +86,10 @@ public class Product_NestedIT extends OperatorITBase
         use(db);
     }
 
+    protected int lookaheadQuantum() {
+        return 1;
+    }
+
     // Test assumption about ordinals
 
     @Test
@@ -147,7 +151,7 @@ public class Product_NestedIT extends OperatorITBase
                 INNER_JOIN);
         Operator flattenCA =
             flatten_HKeyOrdered(
-                branchLookup_Nested(coi, flattenCO.rowType(), customerRowType, null, list(addressRowType), InputPreservationOption.KEEP_INPUT, 0, 1),
+                branchLookup_Nested(coi, flattenCO.rowType(), customerRowType, null, list(addressRowType), InputPreservationOption.KEEP_INPUT, 0, lookaheadQuantum()),
                 customerRowType,
                 addressRowType,
                 INNER_JOIN);
@@ -185,7 +189,7 @@ public class Product_NestedIT extends OperatorITBase
                 INNER_JOIN);
         Operator flattenCA =
             flatten_HKeyOrdered(
-                branchLookup_Nested(coi, flattenCO.rowType(), customerRowType, null, list(addressRowType), InputPreservationOption.KEEP_INPUT, 0, 1),
+                branchLookup_Nested(coi, flattenCO.rowType(), customerRowType, null, list(addressRowType), InputPreservationOption.KEEP_INPUT, 0, lookaheadQuantum()),
                 customerRowType,
                 addressRowType,
                 INNER_JOIN);
@@ -228,7 +232,7 @@ public class Product_NestedIT extends OperatorITBase
                     list(addressRowType),
                     InputPreservationOption.KEEP_INPUT,
                     0,
-                    1),
+                    lookaheadQuantum()),
                 customerRowType,
                 addressRowType,
                 JoinType.LEFT_JOIN);
@@ -284,7 +288,7 @@ public class Product_NestedIT extends OperatorITBase
                 INNER_JOIN);
         Operator flattenCA =
             flatten_HKeyOrdered(
-                branchLookup_Nested(coi, flattenCO.rowType(), customerRowType, null, list(addressRowType), InputPreservationOption.KEEP_INPUT, 0, 1),
+                branchLookup_Nested(coi, flattenCO.rowType(), customerRowType, null, list(addressRowType), InputPreservationOption.KEEP_INPUT, 0, lookaheadQuantum()),
                 customerRowType,
                 addressRowType,
                 INNER_JOIN);
@@ -306,6 +310,11 @@ public class Product_NestedIT extends OperatorITBase
                     row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1000L, 1L, "111 1000 st"),
                     row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1001L, 1L, "111 1001 st"),
                 };
+            }
+
+            @Override
+            public boolean reopenTopLevel() {
+                return pipelineMap();
             }
         };
         testCursorLifecycle(plan, testCase);
