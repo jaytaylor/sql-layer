@@ -16,12 +16,16 @@
  */
 package com.akiban.ais.model;
 
+import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.ais.model.validation.AISInvariants;
 import com.akiban.server.error.SequenceLimitExceededException;
 import com.akiban.server.service.tree.TreeCache;
 import com.akiban.server.service.tree.TreeLink;
+
+import static com.google.common.math.LongMath.checkedAdd;
+import static com.google.common.math.LongMath.checkedSubtract;
 
 public class Sequence implements TreeLink {
 
@@ -63,7 +67,25 @@ public class Sequence implements TreeLink {
         this.minValue = minValue;
         this.maxValue = maxValue;
         this.cycle = cycle;
-        this.range = maxValue - minValue + 1;
+
+        // Need to compute maxValue - minValue + 1 on a range that may be larger than a long
+        long maybeRange;
+        BigInteger maybeBigRange;
+        BigInteger maybeBigMin;
+        BigInteger maybeBigMax;
+        try {
+            maybeRange = checkedAdd(checkedSubtract(maxValue, minValue), 1);
+            maybeBigRange = maybeBigMin = maybeBigMax = null;
+        } catch(ArithmeticException e) {
+            maybeRange = -1;
+            maybeBigMin = BigInteger.valueOf(minValue);
+            maybeBigMax = BigInteger.valueOf(maxValue);
+            maybeBigRange = maybeBigMax.subtract(maybeBigMin).add(BigInteger.ONE);
+        }
+        this.range = maybeRange;
+        this.bigRange = maybeBigRange;
+        this.bigMinValue = maybeBigMin;
+        this.bigMaxValue = maybeBigMax;
     }
     
     public final TableName getSequenceName() {
@@ -111,6 +133,9 @@ public class Sequence implements TreeLink {
     private final boolean cycle;
 
     private final long range;
+    private final BigInteger bigMinValue;
+    private final BigInteger bigMaxValue;
+    private final BigInteger bigRange;
     private AtomicReference<TreeCache> treeCache = new AtomicReference<>();
     
    
@@ -142,7 +167,8 @@ public class Sequence implements TreeLink {
     }
 
     public long currentValueRaw(long rawSequence) {
-        return cycled(notCycled(rawSequence));
+        long notCycled = notCycled(rawSequence);
+        return cycle ? cycled(notCycled) : notCycled;
     }
 
     private long notCycled(long rawSequence) {
@@ -151,10 +177,18 @@ public class Sequence implements TreeLink {
     }
 
     private long cycled(long notCycled) {
-        long mod = (notCycled - minValue) % range;
-        if(mod < 0) {
-            mod += range;
+        if(bigRange == null) {
+            long mod = (notCycled - minValue) % range;
+            if(mod < 0) {
+                mod += range;
+            }
+            return minValue + mod;
+        } else {
+            BigInteger mod = BigInteger.valueOf(notCycled).subtract(bigMinValue).mod(bigRange);
+            if(mod.compareTo(BigInteger.ZERO) < 0) {
+                mod = mod.add(bigRange);
+            }
+            return BigInteger.valueOf(minValue).add(mod).longValue();
         }
-        return minValue + mod;
     }
 }
