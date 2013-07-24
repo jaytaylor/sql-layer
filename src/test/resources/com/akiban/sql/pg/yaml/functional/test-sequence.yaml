@@ -235,5 +235,26 @@
 ---
 - Statement: DROP SEQUENCE sequence10 RESTRICT;
 
+
+#
+# Check cycling with min and max extents
+#
+---
+- Statement: CREATE SEQUENCE sequence11 START WITH 9223372036854775807 INCREMENT BY 1 MINVALUE -9223372036854775808 MAXVALUE 9223372036854775807 NO CYCLE;
+---
+- Statement: SELECT NEXT VALUE FOR sequence11;
+- output: [[9223372036854775807]]
+---
+- Statement: SELECT CURRENT VALUE FOR sequence11;
+- output: [[9223372036854775807]]
+---
+- Statement: SELECT NEXT VALUE FOR sequence11;
+- output: [[-9223372036854775808]]
+---
+- Statement: SELECT CURRENT VALUE FOR sequence11;
+- output: [[-9223372036854775808]]
+---
+- Statement: DROP SEQUENCE sequence11 RESTRICT;
+
 ...
 
