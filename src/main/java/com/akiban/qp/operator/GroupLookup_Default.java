@@ -173,7 +173,7 @@ class GroupLookup_Default extends Operator
         this.keepInput = flag == API.InputPreservationOption.KEEP_INPUT;
         this.lookaheadQuantum = lookaheadQuantum;
 
-        ArgumentValidation.notEmpty("ancestorTypes", outputRowTypes);
+        ArgumentValidation.notEmpty("outputRowTypes", outputRowTypes);
         UserTableRowType tableRowType;
         if (inputRowType instanceof UserTableRowType) {
             tableRowType = (UserTableRowType)inputRowType;
@@ -328,6 +328,7 @@ class GroupLookup_Default extends Operator
         for (UserTableRowType outputType : outputRowTypes()) {
             atts.put(Label.OUTPUT_TYPE, outputType.getExplainer(context));
         }
+        atts.put(Label.PIPELINE, PrimitiveExplainer.getInstance(lookaheadQuantum));
         return new LookUpOperatorExplainer(getName(), atts, inputRowType, keepInput, inputOperator, context);
     }
 
