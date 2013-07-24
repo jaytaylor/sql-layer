@@ -170,7 +170,9 @@ class IndexScan_Default extends Operator
             return new Execution(context, bindingsCursor);
         }
         else {
-            return new LookaheadExecution(context, bindingsCursor, lookaheadQuantum);
+            return new LookaheadExecution(context, bindingsCursor, 
+                                          context.getStore((UserTable)index.rootMostTable()),
+                                          lookaheadQuantum);
         }
     }
 
@@ -382,17 +384,7 @@ class IndexScan_Default extends Operator
         private final RowCursor cursor;
     }
 
-    static final class BindingsAndCursor {
-        QueryBindings bindings;
-        RowCursor cursor;
-            
-        BindingsAndCursor(QueryBindings bindings, RowCursor cursor) {
-            this.bindings = bindings;
-            this.cursor = cursor;
-        }
-    }
-
-    private class LookaheadExecution extends OperatorCursor
+    private class LookaheadExecution extends LookaheadLeafCursor<RowCursor>
     {
         // Cursor interface
 
@@ -400,31 +392,7 @@ class IndexScan_Default extends Operator
         public void open() {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
-                if (currentCursor != null) {
-                    currentCursor.open();
-                }
-                else if (pendingCursor != null) {
-                    currentCursor = pendingCursor;
-                    pendingCursor = null;
-                }
-                else {
-                    // At the very beginning, the pipeline isn't started.
-                    currentCursor = openACursor(currentBindings);
-                }
-                while (!cursorPool.isEmpty() && !bindingsExhausted) {
-                    QueryBindings bindings = bindingsCursor.nextBindings();
-                    if (bindings == null) {
-                        bindingsExhausted = true;
-                        break;
-                    }
-                    RowCursor cursor = null;
-                    if (bindings.getDepth() == currentBindings.getDepth()) {
-                        cursor = openACursor(bindings);
-                        LOG.debug("IndexScan: lookahead {}", bindings);
-                    }
-                    pendingBindings.add(new BindingsAndCursor(bindings, cursor));
-                }
+                super.open();
             } finally {
                 TAP_OPEN.out();
             }
@@ -436,11 +404,7 @@ class IndexScan_Default extends Operator
                 TAP_NEXT.in();
             }
             try {
-                checkQueryCancelation();
-                Row row = currentCursor.next();
-                if (row == null) {
-                    currentCursor.close();
-                }
+                Row row = super.next();
                 if (LOG_EXECUTION) {
                     LOG.debug("IndexScan: yield {}", row);
                 }
@@ -452,162 +416,26 @@ class IndexScan_Default extends Operator
             }
         }
 
+        // LookaheadLeafCursor interface
+
         @Override
-        public void jump(Row row, ColumnSelector columnSelector) {
-            currentCursor.jump(row, columnSelector);
+        protected RowCursor newCursor(QueryContext context, StoreAdapter adapter) {
+            return adapter.newIndexCursor(context, index, indexKeyRange, ordering, scanSelector, usePValues, true);
         }
 
         @Override
-        public void close() {
-            if (currentCursor != null) {
-                currentCursor.close();
+        protected void rebind(RowCursor cursor, QueryBindings bindings) {
+            if (LOG_EXECUTION && (cursor != currentCursor)) {
+                LOG.debug("IndexScan: lookahead {}", bindings);
             }
+            ((BindingsAwareCursor)cursor).rebind(bindings);
         }
-
-        @Override
-        public void destroy() {
-            CursorLifecycle.checkIdleOrActive(this);
-            if (currentCursor != null) {
-                currentCursor.destroy();
-                currentCursor = null;
-            }
-            if (pendingCursor != null) {
-                pendingCursor.destroy();
-                pendingCursor = null;
-            }
-            recyclePending();
-            while (true) {
-                RowCursor cursor = cursorPool.poll();
-                if (cursor == null) break;
-                cursor.destroy();
-            }
-            destroyed = true;
-        }
-
-        @Override
-        public boolean isIdle() {
-            return (currentCursor != null) ? currentCursor.isIdle() : !destroyed;
-        }
-
-        @Override
-        public boolean isActive() {
-            return ((currentCursor != null) && currentCursor.isActive());
-        }
-
-        @Override
-        public boolean isDestroyed() {
-            return destroyed;
-        }
-
-        @Override
-        public void openBindings() {
-            recyclePending();
-            bindingsCursor.openBindings();
-            bindingsExhausted = false;
-            currentCursor = pendingCursor = null;
-        }
-
-        @Override
-        public QueryBindings nextBindings() {
-            if (currentCursor != null) {
-                cursorPool.add(currentCursor);
-                currentCursor = null;
-            }
-            if (pendingCursor != null) {
-                pendingCursor.close(); // Abandoning lookahead.
-                cursorPool.add(pendingCursor);
-                pendingCursor = null;
-            }
-            BindingsAndCursor bandc = pendingBindings.poll();
-            if (bandc != null) {
-                currentBindings = bandc.bindings;
-                pendingCursor = bandc.cursor;
-                return currentBindings;
-            }
-            currentBindings = bindingsCursor.nextBindings();
-            if (currentBindings == null) {
-                bindingsExhausted = true;
-            }
-            return currentBindings;
-        }
-
-        @Override
-        public void closeBindings() {
-            bindingsCursor.closeBindings();
-            recyclePending();
-        }
-
-        @Override
-        public void cancelBindings(QueryBindings bindings) {
-            if ((currentBindings != null) && currentBindings.isAncestor(bindings)) {
-                if (currentCursor != null) {
-                    currentCursor.close();
-                    cursorPool.add(currentCursor);
-                    currentCursor = null;
-                }
-                if (pendingCursor != null) {
-                    pendingCursor.close();
-                    cursorPool.add(pendingCursor);
-                    pendingCursor = null;
-                }
-                currentBindings = null;
-            }
-            while (true) {
-                BindingsAndCursor bandc = pendingBindings.peek();
-                if (bandc == null) break;
-                if (!bandc.bindings.isAncestor(bindings)) break;
-                bandc = pendingBindings.remove();
-                if (bandc.cursor != null) {
-                    bandc.cursor.close();
-                    cursorPool.add(bandc.cursor);
-                }
-            }
-            bindingsCursor.cancelBindings(bindings);
-        }
-
+        
         // LookaheadExecution interface
 
         LookaheadExecution(QueryContext context, QueryBindingsCursor bindingsCursor, 
-                           int quantum) {
-            super(context);
-            this.bindingsCursor = bindingsCursor;
-            this.pendingBindings = new ArrayDeque<>(quantum+1);
-            this.cursorPool = new ArrayDeque<>(quantum);
-            UserTable table = (UserTable)index.rootMostTable();
-            StoreAdapter adapter = adapter(table);
-            for (int i = 0; i < quantum; i++) {
-                RowCursor cursor = adapter.newIndexCursor(context, index, indexKeyRange, ordering, scanSelector, usePValues, true);
-                cursorPool.add(cursor);
-            }
+                           StoreAdapter adapter, int quantum) {
+            super(context, bindingsCursor, adapter, quantum);
         }
-
-        // For use by this class
-
-        private void recyclePending() {
-            while (true) {
-                BindingsAndCursor bandc = pendingBindings.poll();
-                if (bandc == null) break;
-                if (bandc.cursor != null) {
-                    bandc.cursor.close();
-                    cursorPool.add(bandc.cursor);
-                }
-            }
-        }
-
-        private RowCursor openACursor(QueryBindings bindings) {
-            RowCursor cursor = cursorPool.remove();
-            ((BindingsAwareCursor)cursor).rebind(bindings);
-            cursor.open();
-            return cursor;
-        }
-
-        // Object state
-
-        private final QueryBindingsCursor bindingsCursor;
-        private final Queue<BindingsAndCursor> pendingBindings;
-        private final Queue<RowCursor> cursorPool;
-        private QueryBindings currentBindings;
-        private RowCursor pendingCursor, currentCursor;
-        private boolean bindingsExhausted, destroyed;
     }
 }

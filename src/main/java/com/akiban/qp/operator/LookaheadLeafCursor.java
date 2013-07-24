@@ -203,7 +203,7 @@ public abstract class LookaheadLeafCursor<C extends RowCursor> extends OperatorC
 
     // Inner classes
 
-    static final class BindingsAndCursor<C extends RowCursor> {
+    protected static final class BindingsAndCursor<C extends RowCursor> {
         QueryBindings bindings;
         C cursor;
             
@@ -215,7 +215,7 @@ public abstract class LookaheadLeafCursor<C extends RowCursor> extends OperatorC
 
     // For use by this class
 
-    private void recyclePending() {
+    protected void recyclePending() {
         while (true) {
             BindingsAndCursor<C> bandc = pendingBindings.poll();
             if (bandc == null) break;
@@ -226,7 +226,7 @@ public abstract class LookaheadLeafCursor<C extends RowCursor> extends OperatorC
         }
     }
 
-    private C openACursor(QueryBindings bindings) {
+    protected C openACursor(QueryBindings bindings) {
         C cursor = cursorPool.remove();
         ((BindingsAwareCursor)cursor).rebind(bindings);
         cursor.open();
@@ -235,10 +235,10 @@ public abstract class LookaheadLeafCursor<C extends RowCursor> extends OperatorC
 
     // Object state
 
-    private final QueryBindingsCursor bindingsCursor;
-    private final Queue<BindingsAndCursor<C>> pendingBindings;
-    private final Queue<C> cursorPool;
-    private QueryBindings currentBindings;
-    private C pendingCursor, currentCursor;
-    private boolean bindingsExhausted, destroyed;
+    protected final QueryBindingsCursor bindingsCursor;
+    protected final Queue<BindingsAndCursor<C>> pendingBindings;
+    protected final Queue<C> cursorPool;
+    protected QueryBindings currentBindings;
+    protected C pendingCursor, currentCursor;
+    protected boolean bindingsExhausted, destroyed;
 }
