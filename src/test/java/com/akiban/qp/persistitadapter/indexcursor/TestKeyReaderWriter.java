@@ -173,11 +173,10 @@ public class TestKeyReaderWriter {
 
     static final String ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     static final Random random = new Random();
-    private static String characters(final int length) {
+    public static String characters(final int length) {
         StringBuilder sb = new StringBuilder(length);
         for( int i = 0; i < length; i++ ) 
            sb.append(ALPHA.charAt(random.nextInt(ALPHA.length())));
         return sb.toString();
      }
-
 }

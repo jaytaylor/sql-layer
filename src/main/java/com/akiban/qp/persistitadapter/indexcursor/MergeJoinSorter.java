@@ -97,7 +97,6 @@ public class MergeJoinSorter implements Sorter {
     private Ordering ordering;
     private InOutTap loadTap;
 
-    private OutputStream keyFinalFile;
     private File finalFile;
 
     private final SorterAdapter<?, ?, ?> sorterAdapter;
@@ -144,15 +143,13 @@ public class MergeJoinSorter implements Sorter {
         try {
             loadTree();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            //TODO - load tree fails - now what?
         }
         return cursor();
     }
 
     @Override
     public void close() {
-        // TODO Auto-generated method stub
     }
     
     private void loadTree() throws FileNotFoundException, IOException {
@@ -180,6 +177,12 @@ public class MergeJoinSorter implements Sorter {
     public KeyReadCursor readCursor() { 
         return new KeyReadCursor(); 
     }
+    
+    /*
+     * Base class for reading/writing bytes - 
+     * KeyState[] is list of key segments broken by ASC/DESC ordering
+     * rowKey is the whole, unaltered row of data. 
+     */
     public static class SortKey {
         public List<KeyState> sortKeys;
         public Key rowKey;
@@ -190,6 +193,13 @@ public class MergeJoinSorter implements Sorter {
             rowKey.clear();
         }
         
+        public SortKey (List<KeyState> sortKeys, Key rowKey) {
+            this.sortKeys = sortKeys;
+            this.rowKey = rowKey;
+        }
+        
+        // Sorter uses size of elements to determine when the 
+        // presort buffer is full. 
         public int getSize() {
             int size = 0;
             for (KeyState state : sortKeys) {
@@ -286,13 +296,17 @@ public class MergeJoinSorter implements Sorter {
             if (bytesRead == -1) { // EOF marker
                 return -1;
             } else if (bytesRead != 4) {
-                // TODO: pick an error to throw
+                // TODO: pick an error to throw?
                 return -1;
             }
             return length.getInt();
         }
     }
-    
+
+    /*
+     * Class to read rows from the input cursor to the Sort, 
+     * converting them to SortKey elements for the Sorter. 
+     */
     public class KeyReadCursor extends DataReader<SortKey> {
         
         private int rowCount = 0;
@@ -324,18 +338,15 @@ public class MergeJoinSorter implements Sorter {
 
         @Override
         public SortKey readNext() throws IOException {
-            
-            // TODO: FixME
             Row row = input.next();
             context.checkQueryCancelation();
 
-            SortKey sortKey = new SortKey();
+            SortKey sortKey;
             if (row == null) {
                 return null;
             } else {
                 ++rowCount;
-                sortKey.sortKeys = createKey(row, rowCount);
-                sortKey.rowKey = createValue(row);
+                sortKey = new SortKey (createKey(row, rowCount), createValue(row));
             }
             
             return sortKey;
@@ -359,7 +370,7 @@ public class MergeJoinSorter implements Sorter {
                         }
                         break;
                     } catch (KeyTooLongException e) {
-                        sortKey.setMaximumSize(sortKey.getMaximumSize() * 2);
+                        enlargeKey(sortKey);
                     }
                 }
                 states[i] = new KeyState(sortKey);
@@ -380,14 +391,19 @@ public class MergeJoinSorter implements Sorter {
                     }
                     break;
                 } catch (KeyTooLongException e) {
-                    if (convertKey.getMaximumSize() == Key.MAX_KEY_LENGTH_UPPER_BOUND) {
-                        throw e;
-                    }
-                    convertKey.setMaximumSize(Math.min((convertKey.getMaximumSize() * 2), Key.MAX_KEY_LENGTH_UPPER_BOUND));
+                    enlargeKey(convertKey);
                 }
             }
             return new Key(convertKey);
         }
+        
+        private void enlargeKey (Key key) {
+            if (key.getMaximumSize() == Key.MAX_KEY_LENGTH_UPPER_BOUND) {
+                throw new KeyTooLongException("Maximum size exceeded=" + Key.MAX_KEY_LENGTH_UPPER_BOUND);
+            }
+            key.setMaximumSize(Math.min((key.getMaximumSize() * 2), Key.MAX_KEY_LENGTH_UPPER_BOUND));
+        }
+        
         public int rowCount() {
             return rowCount;
         }
@@ -441,7 +457,11 @@ public class MergeJoinSorter implements Sorter {
             os.write(length.array());
         }
     }
-    
+
+    /*
+     * Class to provide temporary file names for inserting the 
+     * overflow buffers to disk. Implemented to the MergeJoin sort interface
+     */
     public class MergeTempFileProvider implements TempFileProvider {
         
         private final File directory;
@@ -468,6 +488,10 @@ public class MergeJoinSorter implements Sorter {
         }
     }
     
+    /*
+     * Class to create a cursor which reads the final sorted output
+     * from the file, returning each sorted item as a Row. 
+     */
     public static class KeyFinalCursor implements RowCursor {
         private boolean isIdle = true;
         private boolean isDestroyed = false;
@@ -561,6 +585,10 @@ public class MergeJoinSorter implements Sorter {
         }
     }
     
+    /*
+     * Comparison function, implemented for MergeSort to compare
+     * the KeyState lists generated by the KeyReadCursor
+     */
     public static class KeySortCompare implements Comparator<SortKey> {
         private final Comparator<KeyState>[] comparators;
 
@@ -592,5 +620,4 @@ public class MergeJoinSorter implements Sorter {
             return k2.compareTo(k1);
         }
     };
-    
 }

@@ -71,23 +71,6 @@ public class KeyFinalCursorIT extends OperatorITBase {
 
     }
 
-    /*
-    @Test
-    public void cycleSimple() throws IOException {
-        RowType rowType = schema.newValuesType(MNumeric.INT.instance(true));
-        startKey.append(1L);
-        writer.writeEntry(startKey);
-        verifyInput();
-
-        is = new ByteArrayInputStream (os.toByteArray());
-        RowCursor cursor = new KeyFinalCursor(is, rowType);
-
-        RowBase[] expected = new RowBase[]{
-            row(rowType, 1L),
-        };
-        compareRows(expected, cursor);
-    }
-    */
     @Test
     public void cycleComplete() throws IOException {
         RowType rowType = schema.newValuesType(MNumeric.INT.instance(true));
@@ -130,6 +113,22 @@ public class KeyFinalCursorIT extends OperatorITBase {
         compareRows (rows.toArray(rowArray), cursor); 
     }
     
+    @Test
+    public void cycleManyRows() throws IOException {
+        RowType rowType = schema.newValuesType(MNumeric.INT.instance(false), MNumeric.INT.instance(true), MString.varchar());
+        List<TestRow> rows = new ArrayList<>();
+        for (long i = 0; i < 100; i++) {
+            TestRow row = row (rowType, TestKeyReaderWriter.random.nextInt(), i, 
+                    TestKeyReaderWriter.characters(5+TestKeyReaderWriter.random.nextInt(1000)));
+            rows.add(row);
+            bindRows.add(BindableRow.of(row, true));
+        }
+        RowCursor cursor = cycleRows(rowType);
+        TestRow[] rowArray = new TestRow[rows.size()];
+        compareRows (rows.toArray(rowArray), cursor);
+        
+    }
+    
     private RowCursor cycleRows(RowType rowType) throws IOException {
         KeyReadCursor keyCursor = getKeyCursor(rowType , bindRows);
 
@@ -158,22 +157,4 @@ public class KeyFinalCursorIT extends OperatorITBase {
         cursor.open();
         return mergeSorter.readCursor();
     }
-
-    
-    private void verifyInput() throws IOException {
-        is = new ByteArrayInputStream (os.toByteArray());
-        KeyReader reader = new KeyReader (is);
-        SortKey endKey = reader.readNext();
-        assertTrue (startKey.rowKey.compareTo(endKey.rowKey) == 0);
-        assertTrue (startKey.sortKeys.get(0).compareTo(endKey.sortKeys.get(0)) == 0);
-    }
-/*    
-    RowType rowType = schema.newValuesType(MNumeric.INT.instance(false),MNumeric.INT.instance(true), MString.varchar());
-    List<BindableRow> rows = new ArrayList<>();
-    List<ExpressionGenerator> values = new ArrayList<>();
-    values.add(literal(1));
-    values.add(literal(1000));
-    values.add(literal("A"));
-    rows.add(BindableRow.of(rowType,  values, queryContext));
-*/
 }
