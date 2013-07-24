@@ -338,6 +338,7 @@ public class BranchLookup_Nested extends Operator
         if ((ancestorRowType != sourceRowType) && (ancestorRowType != outputRowType)) {
             atts.put(Label.ANCESTOR_TYPE, ancestorRowType.getExplainer(context));
         }
+        atts.put(Label.PIPELINE, PrimitiveExplainer.getInstance(lookaheadQuantum));
         return new LookUpOperatorExplainer(getName(), atts, sourceRowType, false, null, context);
     }
 
