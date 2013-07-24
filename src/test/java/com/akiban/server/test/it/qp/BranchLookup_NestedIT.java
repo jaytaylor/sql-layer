@@ -116,9 +116,9 @@ public class BranchLookup_NestedIT extends OperatorITBase
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testBLNOutputRowTypeNull()
+    public void testBLNOutputRowTypesEmpty()
     {
-        branchLookup_Nested(rabc, aRowType, null, InputPreservationOption.KEEP_INPUT, 0);
+        branchLookup_Nested(rabc, aRowType, aRowType, null, Collections.<UserTableRowType>emptyList(), InputPreservationOption.KEEP_INPUT, 0, 1);
     }
 
     @Test(expected = IllegalArgumentException.class)
