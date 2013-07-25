@@ -1,4 +1,4 @@
 PhysicalSelect[name:varchar(32)[VARCHAR]]
   Project_Default(customers.name)
-    AncestorLookup_Default(Index(customers.PRIMARY) -> customers)
+    GroupLookup_Default(Index(customers.PRIMARY) -> customers)
       IndexScan_Default(Index(customers.PRIMARY), cid = 1)

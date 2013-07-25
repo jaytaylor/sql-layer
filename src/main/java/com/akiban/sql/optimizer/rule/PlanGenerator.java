@@ -109,9 +109,14 @@ public class PlanGenerator {
     public static Operator generateBranchPlan (UserTable table, Operator scan, RowType scanType) {
         final Schema schema = (Schema)scanType.schema();
         final UserTableRowType tableType = schema.userTableRowType(table);
-        Operator plan = API.branchLookup_Default(scan, table.getGroup(), 
-                                                 scanType, tableType, 
-                                                 API.InputPreservationOption.DISCARD_INPUT);
+        final List<UserTableRowType> tableTypes = new ArrayList<>();
+        tableTypes.add(tableType);
+        for (RowType rowType : Schema.descendentTypes(tableType, schema.userTableTypes())) {
+            tableTypes.add((UserTableRowType)rowType);
+        }
+        Operator plan = API.groupLookup_Default(scan, table.getGroup(), 
+                                                scanType, tableTypes, 
+                                                API.InputPreservationOption.DISCARD_INPUT, 1);
                                         
         if (logger.isDebugEnabled()) {
             DefaultFormatter formatter = new DefaultFormatter(table.getName().getSchemaName());
@@ -120,7 +125,7 @@ public class PlanGenerator {
         }
         return plan;
     }
-    
+
     /**
      * Scan a table starting with the primary key and return the full data row 
      * Generates a plan like
@@ -137,11 +142,12 @@ public class PlanGenerator {
         IndexRowType indexType = schema.indexRowType(table.getPrimaryKeyIncludingInternal().getIndex());
         
         Operator indexScan = generateIndexScan (ais, table);
-        Operator lookup = API.ancestorLookup_Default(indexScan,
+        Operator lookup = API.groupLookup_Default(indexScan,
                 table.getGroup(),
                 indexType,
                 ancestorType,
-                API.InputPreservationOption.DISCARD_INPUT);
+                API.InputPreservationOption.DISCARD_INPUT,
+                1);
         if (logger.isDebugEnabled()) {
             DefaultFormatter formatter = new DefaultFormatter(table.getName().getSchemaName());
             logger.debug("Ancestor Plan for {}:\n{}", table,

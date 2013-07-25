@@ -44,13 +44,13 @@ import java.util.*;
 
  One expected usage is to locate the group row corresponding to an
  index row. For example, an index on customer.name yields index rows
- which AncestorLookup_Default can then use to locate customer
+ which AncestorLookup_Nested can then use to locate customer
  rows. (The ancestor relationship is reflexive, e.g. customer is
  considered to be an ancestor of customer.)
 
  Another expected usage is to locate ancestors higher in the group. For
  example, given either an item row or an item index row,
- AncestorLookup_Default can be used to find the corresponding order and
+ AncestorLookup_Nested can be used to find the corresponding order and
  customer.
 
  AncestorLookup_Nested always locates 0-1 row per ancestor type.
@@ -101,12 +101,12 @@ import java.util.*;
 
  <h1>Performance</h1>
 
- For each input row, AncestorLookup_Default does one random access for
+ For each input row, AncestorLookup_Nested does one random access for
  each ancestor type.
 
  <h1>Memory Requirements</h1>
 
- AncestorLookup_Default stores in memory up to (ancestorTypes.size() +
+ AncestorLookup_Nested stores in memory up to (ancestorTypes.size() +
  1) rows.
 
  */

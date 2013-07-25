@@ -3,7 +3,7 @@ PhysicalSelect[name:varchar(32)[VARCHAR], order_date:date[DATE], state:char(2)[V
     Map_NestedLoops()
       Filter_Default(customers - addresses)
         Flatten_HKeyOrdered(customers INNER addresses)
-          BranchLookup_Default(Index(customers.name) -> customers)
+          GroupLookup_Default(Index(customers.name) -> customers, addresses)
             IndexScan_Default(Index(customers.name), name = 'IBM')
       Product_Nested(customers - addresses x customers - orders)
         Filter_Default(customers - orders)

@@ -274,28 +274,26 @@ public abstract class OperatorBasedRowCollector implements RowCollector
             Operator indexScan = indexScan_Default(indexRowType,
                                                    descending,
                                                    indexKeyRange);
-            plan = branchLookup_Default(indexScan,
+            List<UserTableRowType> outputTypes = ancestorTypes();
+            outputTypes.add(predicateType);
+            for (RowType rowType : Schema.descendentTypes(predicateType, schema.userTableTypes())) {
+                outputTypes.add((UserTableRowType)rowType);
+            }
+            plan = groupLookup_Default(indexScan,
                     group,
                     indexRowType,
-                    predicateType,
+                    outputTypes,
                     InputPreservationOption.DISCARD_INPUT,
-                    limit);
+                    1);
         } else {
             assert !descending;
             plan = groupScan_Default(group);
-            if (scanLimit != ScanLimit.NONE) {
-                if (scanLimit instanceof FixedCountLimit) {
-                    plan = limit_Default(plan, ((FixedCountLimit) scanLimit).getLimit());
-                } else if (scanLimit instanceof PredicateLimit) {
-                    plan = limit_Default(plan, ((PredicateLimit) scanLimit).getLimit());
-                }
-            }
         }
-        // Fill in ancestors above predicate
-        if (queryRootType != predicateType) {
-            List<UserTableRowType> ancestorTypes = ancestorTypes();
-            if (!ancestorTypes.isEmpty()) {
-                plan = ancestorLookup_Default(plan, group, predicateType, ancestorTypes, InputPreservationOption.KEEP_INPUT);
+        if (scanLimit != ScanLimit.NONE) {
+            if (scanLimit instanceof FixedCountLimit) {
+                plan = limit_Default(plan, ((FixedCountLimit) scanLimit).getLimit());
+            } else if (scanLimit instanceof PredicateLimit) {
+                plan = limit_Default(plan, ((PredicateLimit) scanLimit).getLimit());
             }
         }
         // Get rid of everything above query root table.

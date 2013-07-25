@@ -3,7 +3,7 @@ PhysicalSelect[name:varchar(32)[VARCHAR], quan:int[INT]]
     Sort_General(items.quan DESC)
       Map_NestedLoops()
         Flatten_HKeyOrdered(customers INNER addresses)
-          AncestorLookup_Default(Index(addresses.state) -> customers, addresses)
+          GroupLookup_Default(Index(addresses.state) -> customers, addresses)
             UnionAll_Default()
               UnionAll_Default()
                 IndexScan_Default(Index(addresses.state), state = 'MA', cid ASC, aid)
