@@ -296,9 +296,10 @@ public class API
     public static Operator ancestorLookup_Nested(Group group,
                                                  RowType rowType,
                                                  Collection<UserTableRowType> ancestorTypes,
-                                                 int hKeyBindingPosition)
+                                                 int hKeyBindingPosition,
+                                                 int lookaheadQuantum)
     {
-        return new AncestorLookup_Nested(group, rowType, ancestorTypes, hKeyBindingPosition);
+        return new AncestorLookup_Nested(group, rowType, ancestorTypes, hKeyBindingPosition, lookaheadQuantum);
     }
 
     // IndexScan
