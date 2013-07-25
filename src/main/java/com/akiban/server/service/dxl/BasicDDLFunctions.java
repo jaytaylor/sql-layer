@@ -116,6 +116,7 @@ import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.akiban.server.store.statistics.IndexStatisticsService;
+import com.akiban.util.AkibanAppender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -685,7 +686,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             // NB: If sequences can ever be added through alter, need to handle those too.
             AkibanInformationSchema curAIS = getAIS(session);
             if(!success && (origAIS != curAIS)) {
-                // Be extra careful with null checks.. In a failure state, don't know what was created.
+                // Be extra careful with null checks.. In a failure state, don't know what was created.gg
                 List<TreeLink> links = new ArrayList<>();
                 if(removeOldGroupTree) {
                     UserTable newTable = curAIS.getUserTable(newDefinition.getName());
@@ -730,6 +731,52 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             }
         }
         return changeLevel;
+    }
+
+    @Override
+    public void alterSequence(Session session, TableName sequenceName, Sequence newDefinition)
+    {
+        logger.trace("altering sequence {}", sequenceName);
+
+        // Lock the table, if any, that this sequence is an identity generator for
+        // Note: If/when we have expression DEFAULT values, they will need checked too.
+        List<Integer> tableIDs = new ArrayList<>();
+        txnService.beginTransaction(session);
+        try {
+            AkibanInformationSchema ais = getAIS(session);
+            Sequence s = ais.getSequence(sequenceName);
+            if(s != null) {
+                for(UserTable table : ais.getUserTables().values()) {
+                    for(Column column : table.getColumnsIncludingInternal()) {
+                        if(column.getIdentityGenerator() == s) {
+                            tableIDs.add(table.getTableId());
+                        }
+                    }
+                }
+            }
+            // else: throw below
+            txnService.commitTransaction(session);
+        } finally {
+            txnService.rollbackTransactionIfOpen(session);
+        }
+
+        lockTables(session, tableIDs);
+        txnService.beginTransaction(session);
+        try {
+            AkibanInformationSchema ais = getAIS(session);
+            Sequence oldSeq = ais.getSequence(sequenceName);
+            if(oldSeq == null) {
+                throw new NoSuchSequenceException(sequenceName);
+            }
+            schemaManager().alterSequence(session, sequenceName, newDefinition);
+
+            // Remove old tree
+            store().removeTree(session, oldSeq);
+
+            txnService.commitTransaction(session);
+        } finally {
+            txnService.rollbackTransactionIfOpen(session);
+        }
     }
 
     @Override

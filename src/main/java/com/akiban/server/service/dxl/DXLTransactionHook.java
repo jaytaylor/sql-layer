@@ -68,6 +68,7 @@ public class DXLTransactionHook implements DXLFunctionsHook {
             // DDL modifying existing table(s), locking and manual transaction handling needed
             case DROP_TABLE:
             case ALTER_TABLE:
+            case ALTER_SEQUENCE:
             case DROP_SCHEMA:
             case DROP_GROUP:
             case CREATE_INDEXES:
