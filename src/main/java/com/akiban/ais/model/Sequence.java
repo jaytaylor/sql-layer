@@ -22,6 +22,7 @@ import com.akiban.ais.model.validation.AISInvariants;
 import com.akiban.server.error.SequenceLimitExceededException;
 import com.akiban.server.service.tree.TreeCache;
 import com.akiban.server.service.tree.TreeLink;
+import com.google.common.math.LongMath;
 
 public class Sequence implements TreeLink {
 
@@ -133,8 +134,15 @@ public class Sequence implements TreeLink {
         return treeCache.get();
     }
 
-    public long valueForRaw(long rawSequence) {
-        long value = rawToValue(rawSequence);
+    /**
+     * Compute the real sequence value for the given raw sequence number.
+     * <p>
+     *     For example, the Sequence that starts at 5 and increments by 3 will have a
+     *     real value of 5 for the raw number 1, real value of 8 for raw number 2, etc.
+     * </p>
+     */
+    public long realValueForRawNumber(long rawNumber) {
+        long value = rawToReal(rawNumber);
         if(value > maxValue || value < minValue) {
             if(!cycle) {
                 throw new SequenceLimitExceededException(this);
@@ -144,9 +152,9 @@ public class Sequence implements TreeLink {
         return value;
     }
 
-    private long rawToValue(long rawSequence) {
+    private long rawToReal(long rawNumber) {
         // -1 so first is startsWith, second is startsWith+inc, etc
-        return startsWith + ((rawSequence - 1) * increment);
+        return startsWith + ((rawNumber - 1) * increment);
     }
 
     private long cycled(long notCycled) {
