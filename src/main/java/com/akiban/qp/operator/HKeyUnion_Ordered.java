@@ -251,6 +251,7 @@ class HKeyUnion_Ordered extends Operator
                         close();
                     } else if (previousHKey == null || !previousHKey.prefixOf(nextRow.hKey())) {
                         HKey nextHKey = outputHKey(nextRow);
+                        HKeyCache<HKey> hKeyCache = new HKeyCache<>(adapter);
                         nextRow = new HKeyRow(outputHKeyRowType, nextHKey, hKeyCache);
                         previousHKey = nextHKey;
                     } else {
@@ -348,7 +349,7 @@ class HKeyUnion_Ordered extends Operator
             this.bindingsCursor = multiple;
             this.leftInput = left.cursor(context, multiple.newCursor());
             this.rightInput = right.cursor(context, multiple.newCursor());
-            hKeyCache = new HKeyCache<>(context.getStore());
+            adapter = context.getStore();
         }
         
         // For use by this class
@@ -404,7 +405,7 @@ class HKeyUnion_Ordered extends Operator
         private final Cursor rightInput;
         private final ShareHolder<Row> leftRow = new ShareHolder<>();
         private final ShareHolder<Row> rightRow = new ShareHolder<>();
-        private final HKeyCache<HKey> hKeyCache;
+        private final StoreAdapter adapter;
         private HKey previousHKey;
         private boolean closed = true;
     }
