@@ -223,11 +223,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     private void unRegisterSystemRoutines() {
         if(didRegister) {
             didRegister = false;
-            try {
-                schemaManager.unRegisterSystemRoutine(new TableName(SCHEMA, SEQ_RESTART_PROC_NAME));
-            }catch(NoSuchRoutineException e) {
-                e=e;
-            }
+            schemaManager.unRegisterSystemRoutine(new TableName(SCHEMA, SEQ_RESTART_PROC_NAME));
         }
     }
 
