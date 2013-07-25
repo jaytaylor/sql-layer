@@ -21,6 +21,7 @@ import com.akiban.server.types3.Types3Switch;
 import com.akiban.sql.NamedParamsTestBase;
 import com.akiban.sql.TestBase;
 
+import com.akiban.sql.optimizer.FunctionsTypeComputer;
 import com.akiban.sql.optimizer.NestedResultSetTypeComputer;
 import com.akiban.sql.optimizer.OptimizerTestBase;
 import com.akiban.sql.optimizer.plan.AST;
@@ -153,6 +154,9 @@ public class RulesTest extends OptimizerTestBase
                                                         "false"))) {
             binder.setAllowSubqueryMultipleColumns(true);
             typeComputer = new NestedResultSetTypeComputer(new FunctionsRegistryImpl());
+        }
+        if (!Boolean.parseBoolean(properties.getProperty("useComposers", "true"))) {
+            ((FunctionsTypeComputer)typeComputer).setUseComposers(false);
         }
     }
 
