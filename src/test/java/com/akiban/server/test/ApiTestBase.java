@@ -79,6 +79,7 @@ import com.akiban.sql.parser.AlterTableNode;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.util.AssertUtils;
+import com.akiban.util.Exceptions;
 import com.akiban.util.Strings;
 import com.akiban.util.tap.TapReport;
 import com.akiban.util.Undef;
@@ -1360,7 +1361,7 @@ public class ApiTestBase {
         try {
             return transactionally(callable);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw Exceptions.throwAlways(e);
         }
     }
     
