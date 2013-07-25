@@ -97,6 +97,7 @@ import com.akiban.sql.optimizer.rule.ConstantFolder.NewFolder;
 import com.akiban.sql.optimizer.rule.PlanContext.WhiteboardMarker;
 import com.akiban.sql.optimizer.rule.PlanContext.DefaultWhiteboardMarker;
 import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.types.TypeId;
 import com.akiban.sql.types.CharacterTypeAttributes;
 import com.akiban.util.SparseArray;
 import com.google.common.base.Objects;
@@ -576,9 +577,29 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleSubqueryResultSetExpression(SubqueryResultSetExpression expression) {
-            TPreptimeValue tpv = new TPreptimeValue(TypesTranslation.toTInstance(expression.getSQLtype()));
+            DataTypeDescriptor sqlType = expression.getSQLtype();
+            if (sqlType.isRowMultiSet()) {
+                setMissingRowMultiSetColumnTypes(sqlType, expression.getSubquery());
+            }
+            TPreptimeValue tpv = new TPreptimeValue(TypesTranslation.toTInstance(sqlType));
             expression.setPreptimeValue(tpv);
             return expression;
+        }
+
+        // If a RowMultiSet column is a function expression, it won't have an SQL type
+        // when the RowMultiSet type is built. Must get it now.
+        static void setMissingRowMultiSetColumnTypes(DataTypeDescriptor sqlType,
+                                                     Subquery subquery) {
+            if (subquery.getInput() instanceof ResultSet) {
+                List<ResultField> fields = ((ResultSet)subquery.getInput()).getFields();
+                DataTypeDescriptor[] columnTypes = ((TypeId.RowMultiSetTypeId)sqlType.getTypeId()).getColumnTypes();
+                for (int i = 0; i < columnTypes.length; i++) {
+                    if (columnTypes[i] == null) {
+                        // TInstance should have been computed earlier in walk.
+                        columnTypes[i] = fields.get(i).getSQLtype();
+                    }
+                }
+            }
         }
 
         ExpressionNode handleAnyCondition(AnyCondition expression) {
