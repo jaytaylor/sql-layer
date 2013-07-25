@@ -296,7 +296,7 @@ public class ModelBuilder {
         UserTable table = ddlFunctions.getUserTable(session, tableName);
         Schema schema = SchemaCache.globalSchema(table.getAIS());
         IndexRowType indexRowType = schema.indexRowType(table.getPrimaryKey().getIndex());
-        Operator plan = API.ancestorLookup_Default(
+        Operator plan = API.groupLookup_Default(
                 API.indexScan_Default(
                         indexRowType,
                         true,
@@ -305,7 +305,8 @@ public class ModelBuilder {
                 table.getGroup(),
                 indexRowType,
                 Collections.singleton(schema.userTableRowType(table)),
-                API.InputPreservationOption.DISCARD_INPUT
+                API.InputPreservationOption.DISCARD_INPUT,
+                1
         );
         StoreAdapter adapter = store.createAdapter(session, schema);
         QueryContext queryContext = new SimpleQueryContext(adapter);

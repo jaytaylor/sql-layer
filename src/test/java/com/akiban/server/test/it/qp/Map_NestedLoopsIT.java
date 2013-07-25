@@ -131,7 +131,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
         Operator plan =
             map_NestedLoops(
                 indexScan_Default(itemOidIndexRowType, false),
-                ancestorLookup_Nested(coi, itemOidIndexRowType, Collections.singleton(itemRowType), 0),
+                ancestorLookup_Nested(coi, itemOidIndexRowType, Collections.singleton(itemRowType), 0, 1),
                 0, pipelineMap(), 1);
         RowBase[] expected = new RowBase[]{
             row(itemRowType, 1000L, 100L),
@@ -233,7 +233,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
         Operator plan =
             map_NestedLoops(
                 indexScan_Default(itemOidIndexRowType, false),
-                ancestorLookup_Nested(coi, itemOidIndexRowType, Collections.singleton(itemRowType), 0),
+                ancestorLookup_Nested(coi, itemOidIndexRowType, Collections.singleton(itemRowType), 0, 1),
                 0, pipelineMap(), 1);
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
@@ -262,7 +262,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
             public boolean reopenTopLevel() {
                 // You cannot just re-open() a pipelined Map_NestedLoops, but you can
                 // openTopLevel() it again.
-                return true;
+                return pipelineMap();
             }
         };
         testCursorLifecycle(plan, testCase);
@@ -290,7 +290,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
                     cidValueRowType),
                 map_NestedLoops(
                     indexScan_Default(customerCidIndexRowType, false, cidRange),
-                    ancestorLookup_Nested(coi, customerCidIndexRowType, Collections.singleton(customerRowType), 0),
+                    ancestorLookup_Nested(coi, customerCidIndexRowType, Collections.singleton(customerRowType), 0, 1),
                     0, pipelineMap(), 2),
                 1, pipelineMap(), 1);
         RowBase[] expected = new RowBase[]{

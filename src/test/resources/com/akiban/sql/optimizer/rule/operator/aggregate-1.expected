@@ -4,5 +4,5 @@ PhysicalSelect@381eb0c6[name, _SQL_COL_1, _SQL_COL_2]
       Project_Default(Field(1), Field(4), Field(4))
         Filter_Default(test.customers - test.orders)
           Flatten_HKeyOrdered(test.customers INNER test.orders)
-            BranchLookup_Default(Index(test.customers.name) -> test.customers)
+            GroupLookup_Default(Index(test.customers.name) -> test.customers, test.orders)
               IndexScan_Default(Index(test.customers.name), name ASC, cid)

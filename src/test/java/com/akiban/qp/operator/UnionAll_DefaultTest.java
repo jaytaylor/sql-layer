@@ -27,8 +27,12 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
-public final class UnionAll_DefaultTest {
+public class UnionAll_DefaultTest {
     
+    protected boolean openBoth() {
+        return false;
+    }
+
     @Test
     public void unionTwoNormal() {
         DerivedTypesSchema schema = new DerivedTypesSchema();
@@ -167,7 +171,7 @@ public final class UnionAll_DefaultTest {
         DerivedTypesSchema schema = new DerivedTypesSchema();
         RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR);
         RowsBuilder second = new RowsBuilder(schema, AkType.LONG, AkType.NULL);
-        new UnionAll_Default(null, first.rowType(), new TestOperator(second), second.rowType(), Types3Switch.ON);
+        new UnionAll_Default(null, first.rowType(), new TestOperator(second), second.rowType(), Types3Switch.ON, openBoth());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -175,7 +179,7 @@ public final class UnionAll_DefaultTest {
         DerivedTypesSchema schema = new DerivedTypesSchema();
         RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR);
         RowsBuilder second = new RowsBuilder(schema, AkType.LONG, AkType.NULL);
-        new UnionAll_Default(new TestOperator(first), null, new TestOperator(second), second.rowType(), Types3Switch.ON);
+        new UnionAll_Default(new TestOperator(first), null, new TestOperator(second), second.rowType(), Types3Switch.ON, openBoth());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -183,7 +187,7 @@ public final class UnionAll_DefaultTest {
         DerivedTypesSchema schema = new DerivedTypesSchema();
         RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR);
         RowsBuilder second = new RowsBuilder(schema, AkType.LONG, AkType.NULL);
-        new UnionAll_Default(new TestOperator(first), first.rowType(), null, second.rowType(), Types3Switch.ON);
+        new UnionAll_Default(new TestOperator(first), first.rowType(), null, second.rowType(), Types3Switch.ON, openBoth());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -191,7 +195,7 @@ public final class UnionAll_DefaultTest {
         DerivedTypesSchema schema = new DerivedTypesSchema();
         RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR);
         RowsBuilder second = new RowsBuilder(schema, AkType.LONG, AkType.NULL);
-        new UnionAll_Default(new TestOperator(first), first.rowType(), new TestOperator(second), null, Types3Switch.ON);
+        new UnionAll_Default(new TestOperator(first), first.rowType(), new TestOperator(second), null, Types3Switch.ON, openBoth());
     }
 
     /**
@@ -213,7 +217,7 @@ public final class UnionAll_DefaultTest {
         OperatorTestHelper.execute(union);
     }
 
-    private static void check(Operator union, RowsBuilder expected) {
+    private void check(Operator union, RowsBuilder expected) {
         final RowType outputRowType = union.rowType();
         checkRowTypes(expected.rowType(), outputRowType);
 
@@ -225,7 +229,7 @@ public final class UnionAll_DefaultTest {
         });
     }
 
-    private static void check(RowsBuilder rb1, RowsBuilder rb2, RowsBuilder expected) {
+    private void check(RowsBuilder rb1, RowsBuilder rb2, RowsBuilder expected) {
         check(union(rb1, rb2), expected);
     }
 
@@ -239,13 +243,14 @@ public final class UnionAll_DefaultTest {
         }
     }
 
-    private static Operator union(RowsBuilder rb1, RowsBuilder rb2) {
+    private Operator union(RowsBuilder rb1, RowsBuilder rb2) {
         return new UnionAll_Default(
                     new TestOperator(rb1),
                     rb1.rowType(),
                     new TestOperator(rb2),
                     rb2.rowType(),
-                    Types3Switch.ON
+                    Types3Switch.ON,
+                    openBoth()
             );
     }
 }

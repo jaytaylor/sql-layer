@@ -54,87 +54,32 @@ import java.util.Map;
 import static com.akiban.qp.operator.API.*;
 import static com.akiban.server.test.ExpressionGenerators.*;
 
-public class GroupLookupLookaheadIT extends OperatorITBase
+public class GroupLookup_DefaultLookaheadIT extends GroupLookup_DefaultIT
 {
+    protected void moreDB() {
+        NewRow[] daves = new NewRow[]{
+            createNewRow(order, 23L, 2L, "dave"),
+            createNewRow(order, 24L, 2L, "dave"),
+            createNewRow(order, 25L, 2L, "dave")};
+        writeRows(daves);
+    }
+
     @Override
     protected boolean pipelineMap() {
         return true;
     }
 
+    @Override
     protected int lookaheadQuantum() {
         return 4;
     }
 
-    @Override
-    protected void setupPostCreateSchema() {
-        super.setupPostCreateSchema();
-        NewRow[] dbWithOrphans = new NewRow[]{
-            createNewRow(customer, 1L, "northbridge"),
-            createNewRow(customer, 2L, "foundation"),
-            createNewRow(order, 11L, 1L, "ori"),
-            createNewRow(order, 12L, 1L, "david"),
-            createNewRow(order, 21L, 2L, "tom"),
-            createNewRow(order, 22L, 2L, "jack"),
-            createNewRow(order, 23L, 2L, "dave"),
-            createNewRow(order, 24L, 2L, "dave"),
-            createNewRow(order, 25L, 2L, "dave"),
-            createNewRow(order, 31L, 3L, "peter"),
-            createNewRow(item, 111L, 11L),
-            createNewRow(item, 112L, 11L),
-            createNewRow(item, 121L, 12L),
-            createNewRow(item, 122L, 12L),
-            createNewRow(item, 211L, 21L),
-            createNewRow(item, 212L, 21L),
-            createNewRow(item, 221L, 22L),
-            createNewRow(item, 222L, 22L),
-            // orphans
-            createNewRow(item, 311L, 31L),
-            createNewRow(item, 312L, 31L)};
-        use(dbWithOrphans);
-    }
-
     @Test
-    public void testAncestorLookupCursor()
-    {
-        Operator plan =
-            ancestorLookup_Default(
-                filter_Default(
-                    groupScan_Default(coi),
-                    Collections.singleton(orderRowType)),
-                coi,
-                orderRowType,
-                Collections.singleton(customerRowType),
-                InputPreservationOption.DISCARD_INPUT,
-                lookaheadQuantum());
-        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
-        {
-            @Override
-            public RowBase[] firstExpectedRows()
-            {
-                return new RowBase[] {
-                    row(customerRowType, 1L, "northbridge"),
-                    row(customerRowType, 1L, "northbridge"),
-                    row(customerRowType, 2L, "foundation"),
-                    row(customerRowType, 2L, "foundation"),
-                    row(customerRowType, 2L, "foundation"),
-                    row(customerRowType, 2L, "foundation"),
-                    row(customerRowType, 2L, "foundation"),
-                };
-            }
-
-            @Override
-            public boolean reopenTopLevel() {
-                return true;
-            }
-        };
-        testCursorLifecycle(plan, testCase);
-    }
-
-    @Test @Ignore // Same check in testCursor
     public void testAncestorLookupSimple()
     {
+        moreDB();
         Operator plan =
-            ancestorLookup_Default(
+            groupLookup_Default(
                 filter_Default(
                     groupScan_Default(coi),
                     Collections.singleton(orderRowType)),
@@ -148,6 +93,9 @@ public class GroupLookupLookaheadIT extends OperatorITBase
             row(customerRowType, 1L, "northbridge"),
             row(customerRowType, 2L, "foundation"),
             row(customerRowType, 2L, "foundation"),
+            row(customerRowType, 2L, "foundation"),
+            row(customerRowType, 2L, "foundation"),
+            row(customerRowType, 2L, "foundation"),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
@@ -155,6 +103,7 @@ public class GroupLookupLookaheadIT extends OperatorITBase
     @Test
     public void testAncestorLookupMap()
     {
+        moreDB();
         RowType cidValueRowType = schema.newValuesType(AkType.INT);
         List<ExpressionGenerator> cidExprs = Arrays.asList(boundField(cidValueRowType, 1, 0));
         IndexBound cidBound =
@@ -169,7 +118,7 @@ public class GroupLookupLookaheadIT extends OperatorITBase
                                         intRow(cidValueRowType, 2),
                                         intRow(cidValueRowType, 10)),
                     cidValueRowType),
-                ancestorLookup_Default(
+                groupLookup_Default(
                     indexScan_Default(orderCidIndexRowType, cidRange, ordering(orderCidIndexRowType), IndexScanSelector.leftJoinAfter(orderCidIndexRowType.index(), orderRowType.userTable()), lookaheadQuantum()),
                     coi,
                     orderCidIndexRowType,

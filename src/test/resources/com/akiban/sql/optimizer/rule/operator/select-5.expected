@@ -3,7 +3,7 @@ PhysicalSelect@bd056de[name, order_date, state]
     Map_NestedLoops()
       Filter_Default(test.customers - test.addresses)
         Flatten_HKeyOrdered(test.customers INNER test.addresses)
-          BranchLookup_Default(Index(test.customers.name) -> test.customers)
+          GroupLookup_Default(Index(test.customers.name) -> test.customers, test.addresses)
             IndexScan_Default(Index(test.customers.name), name = 'IBM', cid ASC)
       Product_Nested(test.customers - test.addresses x test.customers - test.orders)
         Filter_Default(test.customers - test.orders)

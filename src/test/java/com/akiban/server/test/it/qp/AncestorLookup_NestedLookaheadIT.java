@@ -15,10 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.error;
+package com.akiban.server.test.it.qp;
 
-public class MultipleJoinsToTableException extends InvalidOperationException {
-    public MultipleJoinsToTableException (String schemaName, String tableName) {
-        super (ErrorCode.MULTIPLE_JOINS, schemaName,tableName);
+public class AncestorLookup_NestedLookaheadIT extends AncestorLookup_NestedIT
+{
+    @Override
+    protected boolean pipelineMap() {
+        return true;
+    }
+
+    @Override
+    protected int lookaheadQuantum() {
+        return 4;
     }
 }

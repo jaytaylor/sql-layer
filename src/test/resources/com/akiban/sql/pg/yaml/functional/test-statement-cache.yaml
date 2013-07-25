@@ -68,7 +68,7 @@
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
 - output: [['Project_Default(t.id)'],
-           ['  AncestorLookup_Default(Index(t.t_s) -> t)'],
+           ['  GroupLookup_Default(Index(t.t_s) -> t)'],
            ['    IndexScan_Default(Index(t.t_s), s = $1)']]
 ---
 - JMX: com.akiban:type=PostgresServer
@@ -85,7 +85,7 @@
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
 - output: [['Project_Default(t.id)'],
-           ['  AncestorLookup_Default(Index(t.t_s) -> t)'],
+           ['  GroupLookup_Default(Index(t.t_s) -> t)'],
            ['    IndexScan_Default(Index(t.t_s), s = $1)']]
 ---
 - Statement: SELECT id FROM t WHERE s = 1

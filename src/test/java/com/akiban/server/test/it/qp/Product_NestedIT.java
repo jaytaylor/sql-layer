@@ -29,6 +29,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Collections;
 import java.util.Set;
 
@@ -83,6 +84,10 @@ public class Product_NestedIT extends OperatorITBase
             createNewRow(item, 4011L, 401L),
         };
         use(db);
+    }
+
+    protected int lookaheadQuantum() {
+        return 1;
     }
 
     // Test assumption about ordinals
@@ -146,7 +151,7 @@ public class Product_NestedIT extends OperatorITBase
                 INNER_JOIN);
         Operator flattenCA =
             flatten_HKeyOrdered(
-                branchLookup_Nested(coi, flattenCO.rowType(), customerRowType, null, addressRowType, InputPreservationOption.KEEP_INPUT, 0),
+                branchLookup_Nested(coi, flattenCO.rowType(), customerRowType, null, list(addressRowType), InputPreservationOption.KEEP_INPUT, 0, lookaheadQuantum()),
                 customerRowType,
                 addressRowType,
                 INNER_JOIN);
@@ -184,7 +189,7 @@ public class Product_NestedIT extends OperatorITBase
                 INNER_JOIN);
         Operator flattenCA =
             flatten_HKeyOrdered(
-                branchLookup_Nested(coi, flattenCO.rowType(), customerRowType, null, addressRowType, InputPreservationOption.KEEP_INPUT, 0),
+                branchLookup_Nested(coi, flattenCO.rowType(), customerRowType, null, list(addressRowType), InputPreservationOption.KEEP_INPUT, 0, lookaheadQuantum()),
                 customerRowType,
                 addressRowType,
                 INNER_JOIN);
@@ -224,9 +229,10 @@ public class Product_NestedIT extends OperatorITBase
                     flattenCAOuter.rowType(),
                     customerRowType,
                     customerRowType,
-                    addressRowType,
+                    list(addressRowType),
                     InputPreservationOption.KEEP_INPUT,
-                    0),
+                    0,
+                    lookaheadQuantum()),
                 customerRowType,
                 addressRowType,
                 JoinType.LEFT_JOIN);
@@ -282,7 +288,7 @@ public class Product_NestedIT extends OperatorITBase
                 INNER_JOIN);
         Operator flattenCA =
             flatten_HKeyOrdered(
-                branchLookup_Nested(coi, flattenCO.rowType(), customerRowType, null, addressRowType, InputPreservationOption.KEEP_INPUT, 0),
+                branchLookup_Nested(coi, flattenCO.rowType(), customerRowType, null, list(addressRowType), InputPreservationOption.KEEP_INPUT, 0, lookaheadQuantum()),
                 customerRowType,
                 addressRowType,
                 INNER_JOIN);
@@ -305,6 +311,11 @@ public class Product_NestedIT extends OperatorITBase
                     row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1001L, 1L, "111 1001 st"),
                 };
             }
+
+            @Override
+            public boolean reopenTopLevel() {
+                return pipelineMap();
+            }
         };
         testCursorLifecycle(plan, testCase);
     }
@@ -314,5 +325,10 @@ public class Product_NestedIT extends OperatorITBase
         Set<UserTableRowType> keepTypes = type.schema().userTableTypes();
         keepTypes.removeAll(Schema.descendentTypes(type, keepTypes));
         return keepTypes;
+    }
+
+    private List<UserTableRowType> list(UserTableRowType... rowTypes)
+    {
+        return Arrays.asList(rowTypes);
     }
 }

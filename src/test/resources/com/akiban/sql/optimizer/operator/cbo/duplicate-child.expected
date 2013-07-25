@@ -3,6 +3,6 @@ PhysicalSelect[name:varchar(32)[VARCHAR]]
     Filter_Default(customers - orders)
       Flatten_HKeyOrdered(customers INNER orders)
         Select_HKeyOrdered(o2.order_date == DATE '2011-03-02')
-          BranchLookup_Default(customers -> orders)
-            AncestorLookup_Default(Index(orders.order_date) -> customers)
+          GroupLookup_Default(customers -> orders)
+            GroupLookup_Default(Index(orders.order_date) -> customers)
               IndexScan_Default(Index(orders.order_date), order_date = DATE '2011-03-01')

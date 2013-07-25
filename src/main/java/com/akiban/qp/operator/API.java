@@ -25,6 +25,7 @@ import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.aggregation.Aggregators;
@@ -189,17 +190,17 @@ public class API
                                                 UserTableRowType outputRowType,
                                                 InputPreservationOption flag)
     {
-        return branchLookup_Default(inputOperator, group, inputRowType, outputRowType, flag, NO_LIMIT);
+        return groupLookup_Default(inputOperator, group, inputRowType, branchOutputRowTypes(outputRowType), flag, 1);
     }
 
-    public static Operator branchLookup_Default(Operator inputOperator,
-                                                Group group,
-                                                RowType inputRowType,
-                                                UserTableRowType outputRowType,
-                                                InputPreservationOption flag,
-                                                Limit limit)
-    {
-        return new BranchLookup_Default(inputOperator, group, inputRowType, outputRowType, flag, limit);
+    protected static List<UserTableRowType> branchOutputRowTypes(UserTableRowType outputRowType) {
+        List<UserTableRowType> outputRowTypes = new ArrayList<>();
+        outputRowTypes.add(outputRowType);
+        Schema schema = (Schema)outputRowType.schema();
+        for (RowType rowType : schema.descendentTypes(outputRowType, schema.userTableTypes())) {
+            outputRowTypes.add((UserTableRowType)rowType);
+        }
+        return outputRowTypes;
     }
 
     /** deprecated */
@@ -209,13 +210,14 @@ public class API
                                                InputPreservationOption flag,
                                                int inputBindingPosition)
     {
-        return new BranchLookup_Nested(group,
-                                       inputRowType, 
-                                       inputRowType,
-                                       null,
-                                       outputRowType,
-                                       flag,
-                                       inputBindingPosition);
+        return branchLookup_Nested(group,
+                                   inputRowType, 
+                                   inputRowType,
+                                   null,
+                                   branchOutputRowTypes(outputRowType),
+                                   flag,
+                                   inputBindingPosition,
+                                   1);
     }
 
     public static Operator branchLookup_Nested(Group group,
@@ -225,30 +227,33 @@ public class API
                                                InputPreservationOption flag,
                                                int inputBindingPosition)
     {
-        return new BranchLookup_Nested(group,
-                                       inputRowType, 
-                                       inputRowType,
-                                       ancestorRowType,
-                                       outputRowType,
-                                       flag,
-                                       inputBindingPosition);
+        return branchLookup_Nested(group,
+                                   inputRowType, 
+                                   inputRowType,
+                                   ancestorRowType,
+                                   branchOutputRowTypes(outputRowType),
+                                   flag,
+                                   inputBindingPosition,
+                                   1);
     }
 
     public static Operator branchLookup_Nested(Group group,
                                                RowType inputRowType,
                                                RowType sourceRowType,
                                                UserTableRowType ancestorRowType,
-                                               UserTableRowType outputRowType,
+                                               Collection<UserTableRowType> outputRowTypes,
                                                InputPreservationOption flag,
-                                               int inputBindingPosition)
+                                               int inputBindingPosition,
+                                               int lookaheadQuantum)
     {
         return new BranchLookup_Nested(group,
                                        inputRowType, 
                                        sourceRowType,
                                        ancestorRowType,
-                                       outputRowType,
+                                       outputRowTypes,
                                        flag,
-                                       inputBindingPosition);
+                                       inputBindingPosition,
+                                       lookaheadQuantum);
     }
 
     // Limit
@@ -275,25 +280,26 @@ public class API
                                                   Collection<UserTableRowType> ancestorTypes,
                                                   InputPreservationOption flag)
     {
-        return ancestorLookup_Default(inputOperator, group, rowType, ancestorTypes, flag, 1);
+        return groupLookup_Default(inputOperator, group, rowType, ancestorTypes, flag, 1);
     }
 
-    public static Operator ancestorLookup_Default(Operator inputOperator,
-                                                  Group group,
-                                                  RowType rowType,
-                                                  Collection<UserTableRowType> ancestorTypes,
-                                                  InputPreservationOption flag,
-                                                  int lookaheadQuantum)
+    public static Operator groupLookup_Default(Operator inputOperator,
+                                               Group group,
+                                               RowType rowType,
+                                               Collection<UserTableRowType> ancestorTypes,
+                                               InputPreservationOption flag,
+                                               int lookaheadQuantum)
     {
-        return new AncestorLookup_Default(inputOperator, group, rowType, ancestorTypes, flag, lookaheadQuantum);
+        return new GroupLookup_Default(inputOperator, group, rowType, ancestorTypes, flag, lookaheadQuantum);
     }
 
     public static Operator ancestorLookup_Nested(Group group,
                                                  RowType rowType,
                                                  Collection<UserTableRowType> ancestorTypes,
-                                                 int hKeyBindingPosition)
+                                                 int hKeyBindingPosition,
+                                                 int lookaheadQuantum)
     {
-        return new AncestorLookup_Nested(group, rowType, ancestorTypes, hKeyBindingPosition);
+        return new AncestorLookup_Nested(group, rowType, ancestorTypes, hKeyBindingPosition, lookaheadQuantum);
     }
 
     // IndexScan
@@ -588,9 +594,9 @@ public class API
 
     // Union
 
-    public static Operator unionAll(Operator input1, RowType input1RowType, Operator input2, RowType input2RowType)
+    public static Operator unionAll_Default(Operator input1, RowType input1RowType, Operator input2, RowType input2RowType, boolean openBoth)
     {
-        return new UnionAll_Default(input1, input1RowType, input2, input2RowType, USE_PVALUES);
+        return new UnionAll_Default(input1, input1RowType, input2, input2RowType, USE_PVALUES, openBoth);
     }
     
     // Intersect
@@ -710,18 +716,22 @@ public class API
     public static Operator select_BloomFilter(Operator input,
                                               Operator onPositive,
                                               List<? extends ExpressionGenerator> filterFields,
-                                              int bindingPosition)
+                                              int bindingPosition,
+                                              boolean pipeline,
+                                              int depth)
     {
-        return select_BloomFilter(input, onPositive, generateOld(filterFields), generateNew(filterFields), null, bindingPosition);
+        return select_BloomFilter(input, onPositive, generateOld(filterFields), generateNew(filterFields), null, bindingPosition, pipeline, depth);
     }
 
     public static Operator select_BloomFilter(Operator input,
                                               Operator onPositive,
                                               List<? extends Expression> filterFields,
                                               List<? extends TPreparedExpression> tFilterFields,
-                                              int bindingPosition)
+                                              int bindingPosition,
+                                              boolean pipeline,
+                                              int depth)
     {
-        return select_BloomFilter(input, onPositive, filterFields, tFilterFields, null, bindingPosition);
+        return select_BloomFilter(input, onPositive, filterFields, tFilterFields, null, bindingPosition, pipeline, depth);
     }
 
     public static Operator select_BloomFilter(Operator input,
@@ -729,14 +739,18 @@ public class API
                                               List<? extends Expression> filterFields,
                                               List<? extends TPreparedExpression> tFilterFields,
                                               List<AkCollator> collators,
-                                              int bindingPosition)
+                                              int bindingPosition,
+                                              boolean pipeline,
+                                              int depth)
     {
         return new Select_BloomFilter(input,
                                       onPositive,
                                       filterFields,
                                       tFilterFields,
                                       collators,
-                                      bindingPosition);
+                                      bindingPosition,
+                                      pipeline,
+                                      depth);
     }
 
     public static Operator select_BloomFilter(Operator input,
@@ -744,6 +758,8 @@ public class API
                                               List<? extends ExpressionGenerator> filterFields,
                                               List<AkCollator> collators,
                                               int bindingPosition,
+                                              boolean pipeline,
+                                              int depth,
                                               ExpressionGenerator.ErasureMaker marker)
     {
         return new Select_BloomFilter(input,
@@ -751,7 +767,9 @@ public class API
                 generateOld(filterFields),
                 generateNew(filterFields),
                 collators,
-                bindingPosition);
+                bindingPosition,
+                pipeline,
+                depth);
     }
 
     // EmitBoundRow_Nested
@@ -969,22 +987,4 @@ public class API
         private final List<AkCollator> collators = new ArrayList<>();
     }
 
-    // Class state
-
-    private static final Limit NO_LIMIT = new Limit()
-    {
-
-        @Override
-        public boolean limitReached(RowBase row)
-        {
-            return false;
-        }
-
-        @Override
-        public String toString()
-        {
-            return "NO LIMIT";
-        }
-
-    };
 }

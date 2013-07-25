@@ -8,5 +8,5 @@ PhysicalUpdate/STEP_ISOLATE
           Filter_Default(orders - items)
             Flatten_HKeyOrdered(orders INNER items)
               Select_HKeyOrdered(orders.order_date > DATE '2011-03-02')
-                BranchLookup_Default(Index(orders.PRIMARY) -> orders)
+                GroupLookup_Default(Index(orders.PRIMARY) -> orders, items)
                   IndexScan_Default(Index(orders.PRIMARY), oid = items.oid)

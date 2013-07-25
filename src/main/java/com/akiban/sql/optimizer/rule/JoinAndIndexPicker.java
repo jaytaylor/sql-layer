@@ -47,10 +47,7 @@ public class JoinAndIndexPicker extends BaseRule
 
     @Override
     public void apply(PlanContext planContext) {
-        BaseQuery query = (BaseQuery)planContext.getPlan();
-        List<Picker> pickers = 
-            new JoinsFinder(planContext)
-            .find(query);
+        List<Picker> pickers = new JoinsFinder(planContext).find();
         for (Picker picker : pickers) {
             picker.apply();
         }
@@ -943,73 +940,39 @@ public class JoinAndIndexPicker extends BaseRule
         }
     }
     
-    // Purpose is twofold: 
     // Find top-level joins and note what query they come from; 
-    // Annotate subqueries with their outer table references.
     // Top-level queries and those used in expressions are returned directly.
     // Derived tables are deferred, since they need to be planned in
     // the context of various join orders to allow for join predicated
     // to be pushed "inside." So they are stored in a Map accessible
     // to other Pickers.
-    static class JoinsFinder implements PlanVisitor, ExpressionVisitor {
+    static class JoinsFinder extends SubqueryBoundTablesTracker {
         List<Picker> result;
         Map<SubquerySource,Picker> subpickers;
-        BaseQuery rootQuery;
-        Deque<SubqueryState> subqueries = new ArrayDeque<>();
-        PlanContext planContext;
 
         public JoinsFinder(PlanContext planContext) {
-            this.planContext = planContext;
+            super(planContext);
         }
 
-        public List<Picker> find(BaseQuery query) {
+        public List<Picker> find() {
             result = new ArrayList<>();
             subpickers = new HashMap<>();
-            rootQuery = query;
-            query.accept(this);
+            run();
             result.removeAll(subpickers.values()); // Do these in context.
             return result;
         }
 
         @Override
-        public boolean visitEnter(PlanNode n) {
-            if (n instanceof Subquery) {
-                subqueries.push(new SubqueryState((Subquery)n));
-                return true;
-            }
-            return visit(n);
-        }
-
-        @Override
-        public boolean visitLeave(PlanNode n) {
-            if (n instanceof Subquery) {
-                SubqueryState s = subqueries.pop();
-                Set<ColumnSource> outerTables = s.getTablesReferencedButNotDefined();
-                s.subquery.setOuterTables(outerTables);
-                if (!subqueries.isEmpty())
-                    subqueries.peek().tablesReferenced.addAll(outerTables);
-            }
-            return true;
-        }
-
-        @Override
         public boolean visit(PlanNode n) {
-            if (!subqueries.isEmpty() &&
-                (n instanceof ColumnSource)) {
-                boolean added = subqueries.peek().tablesDefined.add((ColumnSource)n);
-                assert added : "Table defined more than once";
-            }
+            super.visit(n);
             if ((n instanceof Joinable) && !(n instanceof TableSource)) {
                 Joinable j = (Joinable)n;
                 while (j.getOutput() instanceof Joinable)
                     j = (Joinable)j.getOutput();
-                BaseQuery query = rootQuery;
+                BaseQuery query = currentQuery();
                 SubquerySource subquerySource = null;
-                if (!subqueries.isEmpty()) {
-                    query = subqueries.peek().subquery;
-                    if (query.getOutput() instanceof SubquerySource)
-                        subquerySource = (SubquerySource)query.getOutput();
-                }
+                if (query.getOutput() instanceof SubquerySource)
+                    subquerySource = (SubquerySource)query.getOutput();
                 for (Picker picker : result) {
                     if (picker.joinable == j)
                         // Already have another set of joins to same root join.
@@ -1022,40 +985,5 @@ public class JoinAndIndexPicker extends BaseRule
             }
             return true;
         }
-
-        @Override
-        public boolean visitEnter(ExpressionNode n) {
-            return visit(n);
-        }
-
-        @Override
-        public boolean visitLeave(ExpressionNode n) {
-            return true;
-        }
-
-        @Override
-        public boolean visit(ExpressionNode n) {
-            if (!subqueries.isEmpty() &&
-                (n instanceof ColumnExpression)) {
-                subqueries.peek().tablesReferenced.add(((ColumnExpression)n).getTable());
-            }
-            return true;
-        }
     }
-
-    static class SubqueryState {
-        Subquery subquery;
-        Set<ColumnSource> tablesReferenced = new HashSet<>();
-        Set<ColumnSource> tablesDefined = new HashSet<>();
-
-        public SubqueryState(Subquery subquery) {
-            this.subquery = subquery;
-        }
-
-        public Set<ColumnSource> getTablesReferencedButNotDefined() {
-            tablesReferenced.removeAll(tablesDefined);
-            return tablesReferenced;
-        }
-    }
-
 }

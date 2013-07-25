@@ -60,6 +60,10 @@ select-11: Qualified column also in outer scope
 
 select-11u: Unqualified equivalent
 
+select-12: Correlation name reused in different context
+
+select-12x: Correlation name resued in same context
+
 update-1: Columns of target table.
 
 update-2: Returning columns and functions

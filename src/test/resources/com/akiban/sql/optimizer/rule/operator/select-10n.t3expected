@@ -9,5 +9,5 @@ PhysicalSelect@2ffd46cc[name, order_date, name]
           Select_HKeyOrdered(Field(4) > DATE '2011-01-01')
             Filter_Default(test.customers - test.orders)
               Flatten_HKeyOrdered(test.customers INNER test.orders)
-                BranchLookup_Default(Index(test.customers.name) -> test.customers)
+                GroupLookup_Default(Index(test.customers.name) -> test.customers, test.orders)
                   IndexScan_Default(Index(test.customers.name), name = Bound(1, 0), cid ASC)

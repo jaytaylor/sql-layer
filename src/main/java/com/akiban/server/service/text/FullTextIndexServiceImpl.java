@@ -284,7 +284,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                 adapter = store.createAdapter(session, indexInfo.getSchema());
             QueryContext queryContext = new SimpleQueryContext(adapter);
             QueryBindings queryBindings = queryContext.createBindings();
-            HKeyCache<com.akiban.qp.row.HKey> cache = new HKeyCache<>(adapter);
             IndexWriter writer = indexInfo.getIndexer().getWriter();
 
             Cursor cursor = null;
@@ -295,7 +294,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                 Iterator<byte[]> it = rows.iterator();
                 while(it.hasNext()) {
                     byte[] row = it.next();
-                    HKeyRow hkeyRow = toHKeyRow(row, indexInfo.getHKeyRowType(), adapter, cache);
+                    HKeyRow hkeyRow = toHKeyRow(row, indexInfo.getHKeyRowType(), adapter);
                     queryBindings.setRow(0, hkeyRow);
                     cursor = API.cursor(operator, queryContext, queryBindings);
                     rowIndexer.updateDocument(cursor, row);
@@ -699,13 +698,13 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     private volatile boolean populateEnabled = false;
 
     private HKeyRow toHKeyRow(byte rowBytes[], HKeyRowType hKeyRowType,
-                              StoreAdapter store, HKeyCache<com.akiban.qp.row.HKey> cache)
+                              StoreAdapter store)
     {
         PersistitHKey hkey = store.newHKey(hKeyRowType.hKey());
         Key key = hkey.key();
         key.setEncodedSize(rowBytes.length);
         System.arraycopy(rowBytes, 0, key.getEncodedBytes(), 0, rowBytes.length);
-        return new HKeyRow(hKeyRowType, hkey, cache);
+        return new HKeyRow(hKeyRowType, hkey, new HKeyCache<com.akiban.qp.row.HKey>(store));
     }
 
     public HKeyBytesStream getChangedRows(Session session) {
