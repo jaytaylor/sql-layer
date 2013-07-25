@@ -190,13 +190,17 @@ public class API
                                                 UserTableRowType outputRowType,
                                                 InputPreservationOption flag)
     {
+        return groupLookup_Default(inputOperator, group, inputRowType, branchOutputRowTypes(outputRowType), flag, 1);
+    }
+
+    protected static List<UserTableRowType> branchOutputRowTypes(UserTableRowType outputRowType) {
         List<UserTableRowType> outputRowTypes = new ArrayList<>();
         outputRowTypes.add(outputRowType);
         Schema schema = (Schema)outputRowType.schema();
         for (RowType rowType : schema.descendentTypes(outputRowType, schema.userTableTypes())) {
             outputRowTypes.add((UserTableRowType)rowType);
         }
-        return groupLookup_Default(inputOperator, group, inputRowType, outputRowTypes, flag, 1);
+        return outputRowTypes;
     }
 
     /** deprecated */
@@ -206,13 +210,14 @@ public class API
                                                InputPreservationOption flag,
                                                int inputBindingPosition)
     {
-        return new BranchLookup_Nested(group,
-                                       inputRowType, 
-                                       inputRowType,
-                                       null,
-                                       outputRowType,
-                                       flag,
-                                       inputBindingPosition);
+        return branchLookup_Nested(group,
+                                   inputRowType, 
+                                   inputRowType,
+                                   null,
+                                   branchOutputRowTypes(outputRowType),
+                                   flag,
+                                   inputBindingPosition,
+                                   1);
     }
 
     public static Operator branchLookup_Nested(Group group,
@@ -222,30 +227,33 @@ public class API
                                                InputPreservationOption flag,
                                                int inputBindingPosition)
     {
-        return new BranchLookup_Nested(group,
-                                       inputRowType, 
-                                       inputRowType,
-                                       ancestorRowType,
-                                       outputRowType,
-                                       flag,
-                                       inputBindingPosition);
+        return branchLookup_Nested(group,
+                                   inputRowType, 
+                                   inputRowType,
+                                   ancestorRowType,
+                                   branchOutputRowTypes(outputRowType),
+                                   flag,
+                                   inputBindingPosition,
+                                   1);
     }
 
     public static Operator branchLookup_Nested(Group group,
                                                RowType inputRowType,
                                                RowType sourceRowType,
                                                UserTableRowType ancestorRowType,
-                                               UserTableRowType outputRowType,
+                                               Collection<UserTableRowType> outputRowTypes,
                                                InputPreservationOption flag,
-                                               int inputBindingPosition)
+                                               int inputBindingPosition,
+                                               int lookaheadQuantum)
     {
         return new BranchLookup_Nested(group,
                                        inputRowType, 
                                        sourceRowType,
                                        ancestorRowType,
-                                       outputRowType,
+                                       outputRowTypes,
                                        flag,
-                                       inputBindingPosition);
+                                       inputBindingPosition,
+                                       lookaheadQuantum);
     }
 
     // Limit
