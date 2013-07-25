@@ -116,7 +116,6 @@ import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.akiban.server.store.statistics.IndexStatisticsService;
-import com.akiban.util.AkibanAppender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -686,7 +685,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             // NB: If sequences can ever be added through alter, need to handle those too.
             AkibanInformationSchema curAIS = getAIS(session);
             if(!success && (origAIS != curAIS)) {
-                // Be extra careful with null checks.. In a failure state, don't know what was created.gg
+                // Be extra careful with null checks.. In a failure state, don't know what was created.
                 List<TreeLink> links = new ArrayList<>();
                 if(removeOldGroupTree) {
                     UserTable newTable = curAIS.getUserTable(newDefinition.getName());
@@ -771,7 +770,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             schemaManager().alterSequence(session, sequenceName, newDefinition);
 
             // Remove old tree
-            store().removeTree(session, oldSeq);
+            store().deleteSequences(session, Collections.singleton(oldSeq));
 
             txnService.commitTransaction(session);
         } finally {

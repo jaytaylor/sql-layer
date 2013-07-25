@@ -145,7 +145,7 @@
 
 
 #
-# Current value for various ranges, with and without rollover.. Inspired by bug1191901.
+# Current value for various ranges, with and without cycling. Inspired by bug1191901.
 #
 ---
 - Statement: CREATE SEQUENCE sequence7 START WITH 1 INCREMENT BY 1 MINVALUE 1 MAXVALUE 255 CYCLE;

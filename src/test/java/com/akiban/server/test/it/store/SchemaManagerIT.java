@@ -59,7 +59,6 @@ import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.JoinToProtectedTableException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.TableDefinition;
 import com.akiban.server.store.statistics.IndexStatistics;

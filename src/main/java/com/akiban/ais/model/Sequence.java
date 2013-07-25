@@ -22,7 +22,6 @@ import com.akiban.ais.model.validation.AISInvariants;
 import com.akiban.server.error.SequenceLimitExceededException;
 import com.akiban.server.service.tree.TreeCache;
 import com.akiban.server.service.tree.TreeLink;
-import com.google.common.math.LongMath;
 
 public class Sequence implements TreeLink {
 

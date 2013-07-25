@@ -25,6 +25,7 @@ import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
+import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.NoSuchSequenceException;
 import com.akiban.server.error.ServiceNotStartedException;
 import com.akiban.server.error.ServiceStartupException;
@@ -61,6 +62,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     private volatile HookableDDLFunctions ddlFunctions;
     private volatile DMLFunctions dmlFunctions;
+    private volatile boolean didRegister;
     private final SchemaManager schemaManager;
     private final Store store;
     private final SessionService sessionService;
@@ -109,7 +111,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     @Override
     public void stop() {
-        deregisterSystemRoutines();
+        unRegisterSystemRoutines();
         synchronized (MONITOR) {
             if (ddlFunctions == null) {
                 throw new ServiceNotStartedException("DDL Functions stop");
@@ -216,9 +218,17 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
         AkibanInformationSchema ais = builder.ais();
         Routine routine = ais.getRoutine(SCHEMA, SEQ_RESTART_PROC_NAME);
         schemaManager.registerSystemRoutine(routine);
+        didRegister = true;
     }
-    private void deregisterSystemRoutines() {
-        schemaManager.unRegisterSystemRoutine(new TableName(SCHEMA, SEQ_RESTART_PROC_NAME));
+    private void unRegisterSystemRoutines() {
+        if(didRegister) {
+            didRegister = false;
+            try {
+                schemaManager.unRegisterSystemRoutine(new TableName(SCHEMA, SEQ_RESTART_PROC_NAME));
+            }catch(NoSuchRoutineException e) {
+                e=e;
+            }
+        }
     }
 
     @SuppressWarnings("unused") // Reflectively used
