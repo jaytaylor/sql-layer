@@ -39,6 +39,11 @@ import static org.junit.Assert.fail;
 public class QueryTimeoutIT extends OperatorITBase
 {
     @Override
+    protected Map<String, String> startupConfigProperties() {
+        return uniqueStartupConfigProperties(getClass());
+    }
+
+    @Override
     protected void setupPostCreateSchema()
     {
         super.setupPostCreateSchema();
