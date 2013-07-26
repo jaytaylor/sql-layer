@@ -1248,6 +1248,11 @@ public class OperatorAssembler extends BaseRule
                         stream.rowType = stream.operator.rowType();
                     }
                 }
+                if (stream.operator == null) {
+                    stream.operator = API.valuesScan_Default(Collections.<BindableRow>emptyList(), 
+                                                             indexRowType);
+                    stream.rowType = indexRowType;
+                }
             }
             stream.fieldOffsets = new IndexFieldOffsets(indexScan, indexRowType);
             if (explainContext != null)
