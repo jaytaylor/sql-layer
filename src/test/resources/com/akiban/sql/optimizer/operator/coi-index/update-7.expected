@@ -1,9 +1,9 @@
 PhysicalUpdate/STEP_ISOLATE
   Update_Returning(items SET quan = items.quan * 2)
     Map_NestedLoops()
-      AncestorLookup_Default(Index(items.PRIMARY) -> items)
+      GroupLookup_Default(Index(items.PRIMARY) -> items)
         IndexScan_Default(Index(items.PRIMARY), iid = 3)
       EmitBoundRow_Nested(items -> items)
-        AncestorLookup_Default(Index(items.PRIMARY) -> items)
+        GroupLookup_Default(Index(items.PRIMARY) -> items)
           Select_HKeyOrdered(items.iid == i2.iid)
             IndexScan_Default(Index(items.PRIMARY), iid = 3)

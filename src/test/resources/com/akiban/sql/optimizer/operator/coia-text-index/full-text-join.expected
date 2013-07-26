@@ -1,8 +1,8 @@
 PhysicalSelect[cid:int[INT], name:varchar(32)[VARCHAR], id:int[INT], name:varchar(256)[VARCHAR], state:char(2)[VARCHAR]]
   Map_NestedLoops()
-    AncestorLookup_Default(HKey -> customers)
+    GroupLookup_Default(HKey -> customers)
       IndexScan_FullText(test.customers.cust_ft, name:john)
     Project_Default(customers.cid, customers.name, parent.id, parent.name, parent.state)
       Select_HKeyOrdered(parent.name == 'X')
-        AncestorLookup_Default(Index(parent.PRIMARY) -> parent)
+        GroupLookup_Default(Index(parent.PRIMARY) -> parent)
           IndexScan_Default(Index(parent.PRIMARY), id = customers.cid)

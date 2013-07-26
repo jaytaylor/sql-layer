@@ -93,3 +93,5 @@ select-select-null: SELECT NULL for value is NULL if empty, NULL if not.
 
 unnecessary-all: ALL of condition that must be true is also true if empty. 
                  true either way.
+
+nested-result-set-exprs: Expressions in nested result set

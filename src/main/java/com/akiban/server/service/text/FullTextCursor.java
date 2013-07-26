@@ -20,6 +20,7 @@ package com.akiban.server.service.text;
 import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitHKey;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.HKeyRow;
@@ -52,7 +53,7 @@ public class FullTextCursor implements RowCursor
     private final SearcherManager searcherManager;
     private final Query query;
     private final int limit;
-    private final HKeyCache<HKey> hKeyCache;
+    private final StoreAdapter adapter;
     private IndexSearcher searcher;
     private TopDocs results;
     private int position;
@@ -70,8 +71,7 @@ public class FullTextCursor implements RowCursor
         this.searcherManager = searcherManager;
         this.query = query;
         this.limit = limit;
-        hKeyCache = new HKeyCache<>(context.getStore());
-
+        adapter = context.getStore();
         searcher = searcherManager.acquire();
     }
 
@@ -110,7 +110,7 @@ public class FullTextCursor implements RowCursor
             throw new AkibanInternalException("Error reading document", ex);
         }
         HKey hkey = hkey(doc.get(IndexedField.KEY_FIELD));
-        Row row = new HKeyRow(rowType, hkey, hKeyCache);
+        Row row = new HKeyRow(rowType, hkey, new HKeyCache<HKey>(adapter));
         logger.debug("FullTextCursor: yield {}", row);
         return row;
     }

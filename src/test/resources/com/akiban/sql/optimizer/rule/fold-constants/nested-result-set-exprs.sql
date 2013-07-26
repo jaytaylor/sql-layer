@@ -1,0 +1,1 @@
+SELECT 1, (SELECT 'abc'||'xyz', 1 + 1)

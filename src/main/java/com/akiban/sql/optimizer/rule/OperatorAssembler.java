@@ -1434,22 +1434,40 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleAncestorLookup(AncestorLookup ancestorLookup) {
             RowStream stream;
             Group group = ancestorLookup.getDescendant().getGroup();
-            List<UserTableRowType> ancestorTypes =
+            List<UserTableRowType> outputRowTypes =
                 new ArrayList<>(ancestorLookup.getAncestors().size());
             for (TableNode table : ancestorLookup.getAncestors()) {
-                ancestorTypes.add(tableRowType(table));
+                outputRowTypes.add(tableRowType(table));
             }
-            if (ancestorLookup.getInput() instanceof GroupLoopScan) {
+            PlanNode input = ancestorLookup.getInput();
+            if (input instanceof GroupLoopScan) {
                 stream = new RowStream();
                 int rowIndex = lookupNestedBoundRowIndex(((GroupLoopScan)ancestorLookup.getInput()));
                 ColumnExpressionToIndex boundRow = boundRows.get(rowIndex);
                 stream.operator = API.ancestorLookup_Nested(group,
                                                             boundRow.getRowType(),
-                                                            ancestorTypes,
-                                                            rowIndex + loopBindingsOffset);
+                                                            outputRowTypes,
+                                                            rowIndex + loopBindingsOffset,
+                                                            rulesContext.getPipelineConfiguration().getGroupLookupLookaheadQuantum());
             }
             else {
-                stream = assembleStream(ancestorLookup.getInput());
+                BranchLookup branchLookup = null;
+                if (input instanceof BranchLookup) {
+                    branchLookup = (BranchLookup)input;
+                    if ((branchLookup.getInput() == null) ||
+                        (branchLookup.getSource().getGroup() != group)) {
+                        branchLookup = null;
+                    }
+                }
+                if (branchLookup != null) {
+                    for (TableSource table : branchLookup.getTables()) {
+                        outputRowTypes.add(tableRowType(table));
+                    }
+                    stream = assembleStream(branchLookup.getInput());
+                    stream.unknownTypesPresent = true;
+                }
+                else
+                    stream = assembleStream(input);
                 RowType inputRowType = stream.rowType; // The index row type.
                 API.InputPreservationOption flag = API.InputPreservationOption.DISCARD_INPUT;
                 if (!isIndexRowType(inputRowType)) {
@@ -1457,12 +1475,12 @@ public class OperatorAssembler extends BaseRule
                     inputRowType = tableRowType(ancestorLookup.getDescendant());
                     flag = API.InputPreservationOption.KEEP_INPUT;
                 }
-                stream.operator = API.ancestorLookup_Default(stream.operator,
-                                                             group,
-                                                             inputRowType,
-                                                             ancestorTypes,
-                                                             flag,
-                                                             rulesContext.getPipelineConfiguration().getGroupLookupLookaheadQuantum());
+                stream.operator = API.groupLookup_Default(stream.operator,
+                                                          group,
+                                                          inputRowType,
+                                                          outputRowTypes,
+                                                          flag,
+                                                          rulesContext.getPipelineConfiguration().getGroupLookupLookaheadQuantum());
             }
             stream.rowType = null;
             stream.fieldOffsets = null;
@@ -1472,6 +1490,13 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleBranchLookup(BranchLookup branchLookup) {
             RowStream stream;
             Group group = branchLookup.getSource().getGroup();
+            List<UserTableRowType> outputRowTypes =
+                new ArrayList<>(branchLookup.getTables().size());
+            if (false)      // TODO: Any way to check that this matched?
+                outputRowTypes.add(tableRowType(branchLookup.getBranch()));
+            for (TableSource table : branchLookup.getTables()) {
+                outputRowTypes.add(tableRowType(table));
+            }
             if (branchLookup.getInput() == null) {
                 // Simple version for Product_Nested.
                 stream = new RowStream();
@@ -1481,9 +1506,10 @@ public class OperatorAssembler extends BaseRule
                                                           boundRow.getRowType(),
                                                           tableRowType(branchLookup.getSource()),
                                                           tableRowType(branchLookup.getAncestor()),
-                                                          tableRowType(branchLookup.getBranch()), 
+                                                          outputRowTypes, 
                                                           flag,
-                                                          currentBindingPosition());
+                                                          currentBindingPosition(),
+                                                          rulesContext.getPipelineConfiguration().getGroupLookupLookaheadQuantum());
                 
             }
             else if (branchLookup.getInput() instanceof GroupLoopScan) {
@@ -1496,9 +1522,10 @@ public class OperatorAssembler extends BaseRule
                                                           boundRow.getRowType(),
                                                           boundRow.getRowType(),
                                                           tableRowType(branchLookup.getAncestor()),
-                                                          tableRowType(branchLookup.getBranch()), 
+                                                          outputRowTypes, 
                                                           flag,
-                                                          rowIndex + loopBindingsOffset);
+                                                          rowIndex + loopBindingsOffset,
+                                                          rulesContext.getPipelineConfiguration().getGroupLookupLookaheadQuantum());
             }
             else {
                 // Ordinary inline version.
@@ -1510,11 +1537,12 @@ public class OperatorAssembler extends BaseRule
                     inputRowType = tableRowType(branchLookup.getSource());
                     flag = API.InputPreservationOption.KEEP_INPUT;
                 }
-                stream.operator = API.branchLookup_Default(stream.operator,
-                                                           group,
-                                                           inputRowType,
-                                                           tableRowType(branchLookup.getBranch()), 
-                                                           flag);
+                stream.operator = API.groupLookup_Default(stream.operator,
+                                                          group,
+                                                          inputRowType,
+                                                          outputRowTypes, 
+                                                          flag,
+                                                          rulesContext.getPipelineConfiguration().getGroupLookupLookaheadQuantum());
             }
             stream.rowType = null;
             stream.unknownTypesPresent = true;

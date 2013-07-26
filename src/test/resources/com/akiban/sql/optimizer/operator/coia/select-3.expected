@@ -2,6 +2,6 @@ PhysicalSelect[cid:int[INT], order_date:date[DATE]]
   Project_Default(customers.cid, orders.order_date)
     Filter_Default(customers - orders)
       Flatten_HKeyOrdered(customers INNER orders)
-        BranchLookup_Default(customers -> orders)
-          AncestorLookup_Default(Index(addresses.state) -> customers)
+        GroupLookup_Default(customers -> orders)
+          GroupLookup_Default(Index(addresses.state) -> customers)
             IndexScan_Default(Index(addresses.state), state = 'MA')
