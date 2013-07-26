@@ -15,10 +15,30 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service;
+package com.akiban.server.service.text;
 
-public interface BackgroundObserver
+import com.akiban.server.test.it.ITBase;
+import org.junit.Before;
+
+public class FullTextIndexServiceITBase extends ITBase
 {
-    public void update(BackgroundWork event);
-    public boolean backgroundFinished();
+    protected FullTextIndexServiceImpl fullTextImpl;
+
+    @Before
+    public final void castService() {
+        fullTextImpl = (FullTextIndexServiceImpl)serviceManager().getServiceByClass(FullTextIndexService.class);
+    }
+
+    protected void waitPopulate() {
+        fullTextImpl.waitPopulateCycle();
+    }
+
+    protected void waitUpdate() {
+        fullTextImpl.waitUpdateCycle();
+    }
+
+    protected void waitPopulateAndUpdate() {
+        waitPopulate();
+        waitUpdate();
+    }
 }

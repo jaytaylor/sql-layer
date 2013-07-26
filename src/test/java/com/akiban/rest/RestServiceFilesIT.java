@@ -25,7 +25,6 @@ import com.akiban.server.service.is.BasicInfoSchemaTablesService;
 import com.akiban.server.service.is.BasicInfoSchemaTablesServiceImpl;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.test.it.ITBase;
-import com.akiban.server.types3.mcompat.mfuncs.WaitFunctionHelpers;
 import com.akiban.sql.RegexFilenameFilter;
 import com.akiban.util.Strings;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -217,11 +216,10 @@ public class RestServiceFilesIT extends ITBase {
         String waitFunc = dumpFileIfExists(new File(subDir, "background.wait"));
         if (waitFunc != null)
         {
-            switch(waitFunc.trim().toLowerCase())
-            {
+            switch(waitFunc.trim().toLowerCase()) {
                 case "fulltext_maintenance_wait":
-                    WaitFunctionHelpers.waitOn(ftService.getBackgroundWorks());
-                    break;
+                    //WaitFunctionHelpers.waitOn(ftService.getBackgroundWorks());
+                break;
 
                 default:
                     throw new UnsupportedOperationException("Unknown Wait Function: " + waitFunc);

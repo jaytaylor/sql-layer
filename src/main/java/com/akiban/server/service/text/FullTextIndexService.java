@@ -20,18 +20,11 @@ package com.akiban.server.service.text;
 import com.akiban.ais.model.IndexName;
 import com.akiban.qp.operator.RowCursor;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.service.BackgroundWork;
 
-import java.util.List;
 import org.apache.lucene.search.Query;
 
 /** Full service that does index maintenance and querying. */
 public interface FullTextIndexService extends FullTextIndexInfos {
-    /**
-     * @return An array of available background works
-     */
-    public List<? extends BackgroundWork> getBackgroundWorks();
-
-    public RowCursor searchIndex(QueryContext context, IndexName name, 
+    public RowCursor searchIndex(QueryContext context, IndexName name,
                                  Query query, int limit);
 }

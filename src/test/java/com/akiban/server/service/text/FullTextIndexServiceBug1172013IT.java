@@ -32,20 +32,16 @@ import org.slf4j.LoggerFactory;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.TableName;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.error.DuplicateIndexException;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.test.it.ITBase;
-import com.akiban.server.types3.mcompat.mfuncs.WaitFunctionHelpers;
 import com.akiban.sql.embedded.EmbeddedJDBCService;
 import com.akiban.sql.embedded.EmbeddedJDBCServiceImpl;
 
-public class FullTextIndexServiceBug1172013IT extends ITBase {
+public class FullTextIndexServiceBug1172013IT extends FullTextIndexServiceITBase {
     public static final String SCHEMA = "test";
-    protected FullTextIndexService fullText;
     protected Schema schema;
     protected StoreAdapter adapter;
     protected QueryContext queryContext;
@@ -55,7 +51,7 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
     private int a;
     private static final Logger logger = LoggerFactory.getLogger(FullTextIndexServiceBug1172013IT.class);
     private final Object lock = new Object();
-    private FullTextIndexServiceImpl fullTextImpl = null;
+
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
@@ -100,16 +96,9 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
         writeRow(a, 301, 3, "MA");
         writeRow(a, 302, 3, "ME");
 
-        fullText = serviceManager().getServiceByClass(FullTextIndexService.class);
-
         schema = SchemaCache.globalSchema(ais());
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
-        
-        // This test is specifically for FullTextIndexServiceImpl.java
-        assertEquals(FullTextIndexServiceImpl.class, fullText.getClass());
-        fullTextImpl = (FullTextIndexServiceImpl)fullText;
-
     }
 
     /** Race concurrent drop vs create. */
@@ -138,7 +127,7 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
             new DropIndex().run();
         }
 
-        verifyClean(fullTextImpl);
+        verifyClean();
     }
 
     /** Race concurrent drop vs create, with lined up start. */
@@ -148,9 +137,8 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
         createFullTextIndex(
                 SCHEMA, "o", "idx3_o",
                 "oid", "c1", "c2", "c3", "c4");
-        fullTextImpl.POPULATE_BACKGROUND.forceExecution();
-        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
-        
+        waitPopulate();
+
         Thread t = new Thread(new DropIndex());
         t.start();
 
@@ -173,7 +161,7 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
             new DropIndex().run();
         }
 
-        verifyClean(fullTextImpl);
+        verifyClean();
     }
 
     /** Serial create and drop. */
@@ -185,10 +173,10 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
                 "oid", "c1", "c2", "c3", "c4");
 
         // Prevents potential rollback for deterministic test
-        WaitFunctionHelpers.waitOn(Collections.singleton(fullTextImpl.POPULATE_BACKGROUND));
+        waitPopulate();
 
         new DropIndex().run();
-        verifyClean(fullTextImpl);
+        verifyClean();
     }
 
     @Test
@@ -199,9 +187,8 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
         createFullTextIndex(
                 SCHEMA, "o", "idx3_o",
                 "oid", "c1", "c2", "c3", "c4");
-        fullTextImpl.POPULATE_BACKGROUND.forceExecution();
-        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
-        
+        waitPopulate();
+
         writeRow(o, 103, 1, "c1", "c2", "c3", "c4", "2012-12-12");
         writeRow(o, 104, 1, "c1", "c2", "c3", "c4", "2012-12-12");
         writeRow(o, 105, 1, "c1", "c2", "c3", "c4", "2012-12-12");
@@ -210,9 +197,6 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
         synchronized (lock) {
             lock.wait();
         }
-        
-        // kick start the background updater
-        fullTextImpl.UPDATE_BACKGROUND.forceExecution();
     }
     
     private static interface Visitor
@@ -235,10 +219,9 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
         }
     }
 
-    private void verifyClean(FullTextIndexServiceImpl fullTextImpl) throws InterruptedException {
-        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
-        traverse(fullTextImpl,
-                new Visitor()
+    private void verifyClean() throws InterruptedException {
+        waitPopulateAndUpdate();
+        traverse(new Visitor()
                 {
                     int n = 0;
                    
@@ -257,16 +240,16 @@ public class FullTextIndexServiceBug1172013IT extends ITBase {
 
     }
     
-    private void traverse(FullTextIndexServiceImpl serv, Visitor visitor)
+    private void traverse(Visitor visitor)
     {
         Cursor cursor = null;
         try(Session session = createNewSession();
             CloseableTransaction txn = txnService().beginCloseableTransaction(session))
         {
-            cursor = serv.populateTableCursor(session);
+            cursor = fullTextImpl.populateTableCursor(session);
             cursor.open();
             IndexName toPopulate;
-            while((toPopulate = serv.nextInQueue(session, cursor, true)) != null) {
+            while((toPopulate = fullTextImpl.nextInQueue(session, cursor, true)) != null) {
                 visitor.visit(toPopulate);
             }
             visitor.endOfTree();

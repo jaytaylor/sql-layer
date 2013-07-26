@@ -47,8 +47,6 @@ import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.NoSuchRowException;
 import com.akiban.server.error.QueryCanceledException;
 import com.akiban.server.rowdata.RowData;
-import com.akiban.server.service.BackgroundWork;
-import com.akiban.server.service.BackgroundWorkBase;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.listener.ListenerService;
@@ -59,7 +57,6 @@ import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
-import com.akiban.server.types3.mcompat.mfuncs.WaitFunctionHelpers;
 
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.search.Query;
@@ -73,9 +70,7 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -85,8 +80,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     private static final Logger logger = LoggerFactory.getLogger(FullTextIndexServiceImpl.class);
 
     public static final String INDEX_PATH_PROPERTY = "akserver.text.indexpath";
-    public static final String UPDATE_INTERVAL = "akserver.text.maintenanceInterval";
-    public static final String POPULATE_DELAY_INTERVAL = "akserver.text.populateDelayInterval";
+    public static final String BACKGROUND_INTERVAL = "akserver.text.backgroundInterval";
 
     private static final TableName POPULATE_TABLE = new TableName(TableName.INFORMATION_SCHEMA, "full_text_populate");
     private static final TableName CHANGES_TABLE = new TableName(TableName.INFORMATION_SCHEMA, "full_text_changes");
@@ -101,8 +95,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
 
     private File indexPath;
 
-    private long maintenanceInterval;
-    private long populateDelayInterval;
     private volatile IndexName updatingIndex;
     private BackgroundRunner backgroundPopulate;
     private BackgroundRunner backgroundUpdate;
@@ -139,12 +131,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         if (populatingSession != null) {
             // if the population process is running, cancel it
             populatingSession.cancelCurrentQuery(true);
-            // wait for the thread to complete 
-            try {
-                WaitFunctionHelpers.waitOn(Collections.singleton(POPULATE_BACKGROUND));
-            } catch (InterruptedException e) {
-                logger.error("waitOn populate during dropIndex failed", e);
-            }
+            backgroundPopulate.waitForCycle();
         } else {
             // delete 'promise' for population, if any
             try {
@@ -181,13 +168,10 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         }
     }
 
-    @Override
-    public List<? extends BackgroundWork> getBackgroundWorks()
-    {
-        return Arrays.asList(POPULATE_BACKGROUND, UPDATE_BACKGROUND);
-    }
     
-    /* Service */
+    //
+    // Service
+    //
     
     @Override
     public void start() {
@@ -195,17 +179,15 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         listenerService.registerTableListener(this);
         listenerService.registerRowListener(this);
 
-        maintenanceInterval = Long.parseLong(configService.getProperty(UPDATE_INTERVAL));
-        populateDelayInterval = Long.parseLong(configService.getProperty(POPULATE_DELAY_INTERVAL));
-
-        backgroundUpdate = new BackgroundRunner("FullText_Update", maintenanceInterval, new Runnable() {
+        long backgroundInterval =  Long.parseLong(configService.getProperty(BACKGROUND_INTERVAL));
+        backgroundUpdate = new BackgroundRunner("FullText_Update", backgroundInterval, new Runnable() {
             @Override
             public void run() {
                 runUpdate();
             }
         });
         backgroundUpdate.start();
-        backgroundPopulate = new BackgroundRunner("FullText_Populate", populateDelayInterval, new Runnable() {
+        backgroundPopulate = new BackgroundRunner("FullText_Populate", backgroundInterval, new Runnable() {
             @Override
             public void run() {
                 runPopulate();
@@ -399,6 +381,8 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     }
 
 
+    // ---------- mostly for testing ---------------
+
     public void disableUpdateWorker() {
         backgroundUpdate.toPaused();
     }
@@ -406,7 +390,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     public void enableUpdateWorker() {
         backgroundUpdate.toRunning();
     }
-
 
     public void disablePopulateWorker() {
         backgroundPopulate.toPaused();
@@ -416,52 +399,19 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         backgroundPopulate.toRunning();
     }
 
-    final BackgroundWork POPULATE_BACKGROUND = new BackgroundWorkBase()
-    {
-        @Override
-        public boolean forceExecution()
-        {
+    public void waitPopulateCycle() {
+        if(backgroundPopulate.state != STATE.PAUSED) {
             backgroundPopulate.sleepNotify();
-            return true;
+            backgroundPopulate.waitForCycle();
         }
+    }
 
-        @Override
-        public long getMinimumWaitTime()
-        {
-            return backgroundPopulate.state == STATE.PAUSED ? 0 : populateDelayInterval;
-        }
-
-        @Override
-        public String toString()
-        {
-            return "POPULATE";
-        }
-    };
-
-    final BackgroundWork UPDATE_BACKGROUND = new BackgroundWorkBase()
-    {
-        @Override
-        public boolean forceExecution()
-        {
+    public void waitUpdateCycle() {
+        if(backgroundUpdate.state != STATE.PAUSED) {
             backgroundUpdate.sleepNotify();
-            return true;
+            backgroundUpdate.waitForCycle();
         }
-
-        @Override
-        public long getMinimumWaitTime()
-        {
-            return backgroundUpdate.state == STATE.PAUSED ? 0 : maintenanceInterval;
-        }
-
-        @Override
-        public String toString()
-        {
-            return "UPDATE";
-        }
-    };
-
-
-    // ---------- mostly for testing ---------------
+    }
 
     Cursor populateTableCursor(Session session) {
         AkibanInformationSchema ais = getAIS(session);
@@ -523,7 +473,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         }
         finally {
             session.close();
-            POPULATE_BACKGROUND.notifyObservers();
         }
     }
     
@@ -574,7 +523,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             updatingIndex = null;
             transactionService.rollbackTransactionIfOpen(session);
             session.close();
-            UPDATE_BACKGROUND.notifyObservers();
         }
     }
 
