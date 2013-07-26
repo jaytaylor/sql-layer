@@ -1583,8 +1583,10 @@ public class OperatorAssembler extends BaseRule
             for (PlanNode subplan : product.getSubplans()) {
                 if (pstream.operator != null) {
                     pushBoundRow(flattened);
-                    nestedBindingsDepth++;
-                    nbound++;
+                    if (nbound++ == 0) {
+                        // Only one deeper for all, since nest on the outer side.
+                        nestedBindingsDepth++;
+                    }
                 }
                 RowStream stream = assembleStream(subplan);
                 if (pstream.operator == null) {
@@ -1615,9 +1617,11 @@ public class OperatorAssembler extends BaseRule
                 }
                 flattened.setRowType(pstream.rowType);
             }
+            if (nbound > 0) {
+                nestedBindingsDepth--;
+            }
             while (nbound > 0) {
                 popBoundRow();
-                nestedBindingsDepth--;
                 nbound--;
             }
             return pstream;
