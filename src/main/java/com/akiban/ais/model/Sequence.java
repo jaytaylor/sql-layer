@@ -63,9 +63,6 @@ public class Sequence implements TreeLink {
         this.minValue = minValue;
         this.maxValue = maxValue;
         this.cycle = cycle;
-        // If range is long extents, Java long addition will give us cycling.
-        this.rangeIsMinMax = (minValue == Long.MIN_VALUE) && (maxValue == Long.MAX_VALUE);
-        this.range = rangeIsMinMax ? 0 : (maxValue - minValue + 1);
     }
     
     public final TableName getSequenceName() {
@@ -112,8 +109,6 @@ public class Sequence implements TreeLink {
     private final long maxValue;
     private final boolean cycle;
 
-    private final long range;
-    private final boolean rangeIsMinMax;
     private AtomicReference<TreeCache> treeCache = new AtomicReference<>();
     
    
@@ -141,6 +136,7 @@ public class Sequence implements TreeLink {
      * </p>
      */
     public long realValueForRawNumber(long rawNumber) {
+        // Note: For Java MIN and MAX extents, addition in rawToReal takes care of cycling.
         long value = rawToReal(rawNumber);
         if(value > maxValue || value < minValue) {
             if(!cycle) {
@@ -157,9 +153,7 @@ public class Sequence implements TreeLink {
     }
 
     private long cycled(long notCycled) {
-        if(rangeIsMinMax) {
-            return notCycled;
-        }
+        long range = maxValue - minValue + 1;
         long mod = (notCycled - minValue) % range;
         if(mod < 0) {
             mod += range;
