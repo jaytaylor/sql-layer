@@ -79,6 +79,7 @@ import com.akiban.sql.parser.AlterTableNode;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.util.AssertUtils;
+import com.akiban.util.Exceptions;
 import com.akiban.util.Strings;
 import com.akiban.util.tap.TapReport;
 import com.akiban.util.Undef;
@@ -1191,6 +1192,16 @@ public class ApiTestBase {
             ddl().dropGroup(session, getUserTable(rootName).getGroup().getName());
         }
 
+        for(Sequence s : ddl().getAIS(session).getSequences().values()) {
+            String schema = s.getSequenceName().getSchemaName();
+            if(!TableName.INFORMATION_SCHEMA.equals(schema) &&
+               !TableName.SECURITY_SCHEMA.equals(schema) &&
+               !TableName.SQLJ_SCHEMA.equals(schema) &&
+               !TableName.SYS_SCHEMA.equals(schema)) {
+                ddl().dropSequence(session, s.getSequenceName());
+            }
+        }
+
         // Now sanity check
         Set<TableName> uTables = new HashSet<>(ddl().getAIS(session).getUserTables().keySet());
         for (Iterator<TableName> iter = uTables.iterator(); iter.hasNext();) {
@@ -1360,7 +1371,7 @@ public class ApiTestBase {
         try {
             return transactionally(callable);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw Exceptions.throwAlways(e);
         }
     }
     

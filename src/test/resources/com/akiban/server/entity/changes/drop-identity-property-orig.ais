@@ -42,7 +42,7 @@ schemas {
     sequenceName: "_sequence-0"
     start: 5
     increment: 10
-    minValue: -9223372036854775808
+    minValue: 5
     maxValue: 9223372036854775807
     isCycle: false
   }

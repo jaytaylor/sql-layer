@@ -52,7 +52,13 @@ public interface Store extends KeyCreator {
     /** newRow can be partial, as specified by selector, but oldRow must be fully present. */
     void updateRow(Session session, RowData oldRow, RowData newRow, ColumnSelector selector);
 
+    /** Compute and return the next value for the given sequence */
     long nextSequenceValue(Session session, Sequence sequence);
+
+    /**
+     * Retrieve the current value for the given sequence.
+     * <p><i>Note: In general, the next value has no relationship to a given transaction's current.</i></p>
+     */
     long curSequenceValue(Session session, Sequence sequence);
 
     /**

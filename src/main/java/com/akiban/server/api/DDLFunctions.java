@@ -88,6 +88,9 @@ public interface DDLFunctions {
     ChangeLevel alterTable(Session session, TableName tableName, UserTable newDefinition,
                            List<TableChange> columnChanges, List<TableChange> indexChanges, QueryContext context);
 
+    /** Alter an existing sequence's definition. */
+    void alterSequence(Session session, TableName sequenceName, Sequence newDefinition);
+
     /**
      * Drops a table if it exists, and possibly its children.
      * @param schemaName the schema to drop

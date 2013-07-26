@@ -1,0 +1,25 @@
+---
+- Statement: CREATE SEQUENCE s1 START WITH 1 INCREMENT BY 1
+---
+- Statement: SELECT NEXT VALUE FOR s1
+- output: [[1]]
+---
+- Statement: SELECT NEXT VALUE FOR s1
+- output: [[2]]
+---
+- Statement: CALL sys.alter_seq_restart('test', 's1', 42)
+---
+- Statement: SELECT NEXT VALUE FOR s1
+- output: [[42]]
+---
+- Statement: SELECT NEXT VALUE FOR s1
+- output: [[43]]
+---
+- Statement: DROP SEQUENCE s1 RESTRICT
+
+#
+# More when ALTER SEQUENCE is actually supported
+#
+
+...
+
