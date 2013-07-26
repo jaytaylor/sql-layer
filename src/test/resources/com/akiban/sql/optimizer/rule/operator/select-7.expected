@@ -1,0 +1,4 @@
+PhysicalSelect@65d036ae[name]
+  Project_Default(Field(1))
+    GroupLookup_Default(Index(test.customers.PRIMARY) -> test.customers)
+      ValuesScan_Default()
