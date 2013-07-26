@@ -28,6 +28,8 @@ select-5: index one branch, join in another
 
 select-6: index intersection with different column counts
 
+select-7: index scan with empty range (contradictory conditions)
+
 update-1: set to literal
 
 geospatial-1: compute max radius for N neighbors
