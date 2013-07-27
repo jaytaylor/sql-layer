@@ -401,14 +401,12 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
 
     public void waitPopulateCycle() {
         if(backgroundPopulate.state != STATE.PAUSED) {
-            backgroundPopulate.sleepNotify();
             backgroundPopulate.waitForCycle();
         }
     }
 
     public void waitUpdateCycle() {
         if(backgroundUpdate.state != STATE.PAUSED) {
-            backgroundUpdate.sleepNotify();
             backgroundUpdate.waitForCycle();
         }
     }
@@ -785,8 +783,10 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             if(state != STATE.RUNNING) {
                 throw new IllegalStateException("Not RUNNING");
             }
-            long oldCount = runCount;
-            while(runCount == oldCount) {
+            // +2 ensures that we've observed one full run no matter where we initially started
+            long target = runCount + 2;
+            while(runCount < target) {
+                sleepNotify();
                 waitInternal(null);
             }
         }
