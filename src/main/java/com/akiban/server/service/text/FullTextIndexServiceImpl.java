@@ -186,6 +186,12 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     
     @Override
     public void start() {
+        indexPath = new File(configService.getProperty(INDEX_PATH_PROPERTY));
+        boolean success = indexPath.mkdirs();
+        if(!success && !indexPath.exists()) {
+            throw new AkibanInternalException("Could not create indexPath directories: " + indexPath);
+        }
+
         registerSystemTables();
         listenerService.registerTableListener(this);
         listenerService.registerRowListener(this);
@@ -213,6 +219,9 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         }
 
         populating.clear();
+
+        backgroundInterval = 0;
+        indexPath = null;
     }
 
     @Override
@@ -223,14 +232,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     /* FullTextIndexInfosImpl */
 
     @Override
-    protected synchronized File getIndexPath() {
-        if (indexPath == null) {
-            indexPath = new File(configService.getProperty(INDEX_PATH_PROPERTY));
-            boolean success = indexPath.mkdirs();
-            if (!success && !indexPath.exists()) {
-                throw new AkibanInternalException("Could not create indexPath directories: " + indexPath);
-            }
-        }
+    protected File getIndexPath() {
         return indexPath;
     }
 

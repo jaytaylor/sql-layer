@@ -21,14 +21,9 @@ import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.IndexName;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import static com.akiban.qp.operator.API.cursor;
 
-import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.session.Session;
@@ -38,25 +33,13 @@ import com.akiban.server.test.it.qp.TestRow;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import static com.akiban.qp.operator.API.cursor;
 import static org.junit.Assert.*;
 
 public class FullTextIndexServiceIT extends FullTextIndexServiceITBase
 {
     public static final String SCHEMA = "test";
-    protected Schema schema;
-    protected StoreAdapter adapter;
-    protected QueryContext queryContext;
-    protected QueryBindings queryBindings;
-    private static final Logger logger = LoggerFactory.getLogger(FullTextIndexServiceIT.class);
-
-
-    private int c;
-    private int o;
-    private int i;
-    private int a;
     
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {

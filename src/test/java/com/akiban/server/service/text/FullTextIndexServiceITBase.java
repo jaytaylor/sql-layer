@@ -17,12 +17,41 @@
 
 package com.akiban.server.service.text;
 
+import com.akiban.qp.operator.QueryBindings;
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Before;
 
+import java.util.Map;
+
 public class FullTextIndexServiceITBase extends ITBase
 {
+    public static final String SCHEMA = "test";
     protected FullTextIndexServiceImpl fullTextImpl;
+    protected Schema schema;
+    protected StoreAdapter adapter;
+    protected QueryContext queryContext;
+    protected QueryBindings queryBindings;
+    protected int c;
+    protected int o;
+    protected int i;
+    protected int a;
+
+
+    @Override
+    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
+        return super.serviceBindingsProvider()
+                    .bindAndRequire(FullTextIndexService.class, FullTextIndexServiceImpl.class);
+    }
+
+    @Override
+    public Map<String, String> startupConfigProperties() {
+        return uniqueStartupConfigProperties(getClass());
+    }
+
 
     @Before
     public final void castService() {

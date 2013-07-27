@@ -21,43 +21,21 @@ import static org.junit.Assert.assertEquals;
 import java.util.Collections;
 
 import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.akiban.ais.model.IndexName;
+import com.akiban.ais.model.TableName;
+import com.akiban.qp.util.SchemaCache;
+import com.akiban.server.error.DuplicateIndexException;
+import com.akiban.server.service.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.ais.model.IndexName;
-import com.akiban.ais.model.TableName;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.error.DuplicateIndexException;
-import com.akiban.server.service.servicemanager.GuicedServiceManager;
-import com.akiban.server.service.session.Session;
-import com.akiban.sql.embedded.EmbeddedJDBCService;
-import com.akiban.sql.embedded.EmbeddedJDBCServiceImpl;
-
 public class FullTextIndexServiceBug1172013IT extends FullTextIndexServiceITBase {
-    public static final String SCHEMA = "test";
-    protected Schema schema;
-    protected StoreAdapter adapter;
-    protected QueryContext queryContext;
-    private int c;
-    private int o;
-    private int i;
-    private int a;
     private static final Logger logger = LoggerFactory.getLogger(FullTextIndexServiceBug1172013IT.class);
     private final Object lock = new Object();
-
-    @Override
-    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
-        return super.serviceBindingsProvider()
-                .bindAndRequire(FullTextIndexService.class, FullTextIndexServiceImpl.class)
-                .bindAndRequire(EmbeddedJDBCService.class, EmbeddedJDBCServiceImpl.class);
-    }
 
     @Before
     public void createData() {
@@ -135,8 +113,8 @@ public class FullTextIndexServiceBug1172013IT extends FullTextIndexServiceITBase
     public void testDelete2() throws InterruptedException {
         logger.debug("Running test delete 2");
         createFullTextIndex(
-                SCHEMA, "o", "idx3_o",
-                "oid", "c1", "c2", "c3", "c4");
+                SCHEMA, "o", "idx3_o", "oid", "c1", "c2", "c3", "c4"
+        );
         waitPopulate();
 
         Thread t = new Thread(new DropIndex());
@@ -185,18 +163,19 @@ public class FullTextIndexServiceBug1172013IT extends FullTextIndexServiceITBase
 
         // create the index, let it complete
         createFullTextIndex(
-                SCHEMA, "o", "idx3_o",
-                "oid", "c1", "c2", "c3", "c4");
+                SCHEMA, "o", "idx3_o", "oid", "c1", "c2", "c3", "c4"
+        );
         waitPopulate();
 
         writeRow(o, 103, 1, "c1", "c2", "c3", "c4", "2012-12-12");
         writeRow(o, 104, 1, "c1", "c2", "c3", "c4", "2012-12-12");
         writeRow(o, 105, 1, "c1", "c2", "c3", "c4", "2012-12-12");
 
-        new Thread(new DropIndex()).start();
-        synchronized (lock) {
-            lock.wait();
-        }
+        // Race update vs drop
+        Thread t = new Thread(new DropIndex());
+        t.start();
+        // But don't let it fall off the end
+        t.join();
     }
     
     private static interface Visitor
