@@ -22,6 +22,7 @@ import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Index.IndexType;
 import com.akiban.ais.model.IndexName;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
@@ -58,6 +59,8 @@ import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 
+import com.akiban.sql.server.ServerCallContextStack;
+import com.akiban.sql.server.ServerQueryContext;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.search.Query;
 
@@ -82,6 +85,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     public static final String INDEX_PATH_PROPERTY = "akserver.text.indexpath";
     public static final String BACKGROUND_INTERVAL = "akserver.text.backgroundInterval";
 
+    private static final TableName BACKGROUND_WAIT_PROC_NAME = new TableName(TableName.SYS_SCHEMA, "full_text_background_wait");
     private static final TableName POPULATE_TABLE = new TableName(TableName.INFORMATION_SCHEMA, "full_text_populate");
     private static final TableName CHANGES_TABLE = new TableName(TableName.INFORMATION_SCHEMA, "full_text_changes");
 
@@ -168,7 +172,13 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         }
     }
 
-    
+    @Override
+    public void backgroundWait() {
+        waitPopulateCycle();
+        waitUpdateCycle();
+    }
+
+
     //
     // Service
     //
@@ -725,9 +735,22 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                .colString("index_name", identMax, false)
                .colLong("index_id", false)
                .colVarBinary("hkey", 4096, false);
+        builder.procedure(BACKGROUND_WAIT_PROC_NAME)
+               .language("java", Routine.CallingConvention.JAVA)
+               .externalName(Routines.class.getName(), "backgroundWait");
         AkibanInformationSchema ais = builder.ais();
         schemaManager.registerStoredInformationSchemaTable(ais.getUserTable(POPULATE_TABLE), tableVersion);
         schemaManager.registerStoredInformationSchemaTable(ais.getUserTable(CHANGES_TABLE), tableVersion);
+        schemaManager.registerSystemRoutine(ais.getRoutine(BACKGROUND_WAIT_PROC_NAME));
+    }
+
+    @SuppressWarnings("unused") // Called reflectively
+    public static class Routines {
+        public static void backgroundWait() {
+            ServerQueryContext context = ServerCallContextStack.current().getContext();
+            FullTextIndexService ft = context.getServer().getServiceManager().getServiceByClass(FullTextIndexService.class);
+            ft.backgroundWait();
+        }
     }
 
 

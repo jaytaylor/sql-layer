@@ -203,27 +203,9 @@ public class RestServiceFilesIT extends ITBase {
             loadDataFile(SCHEMA_NAME, data);
         }
 
-        String postURI = dumpFileIfExists(new File(subDir, "schema.prepost"));
-        if (postURI != null) {
-            HttpExchange httpConn = openConnection(getRestURL(postURI.trim()), "POST");
-            postContents(httpConn, "[]".getBytes());
-            httpClient.send(httpConn);
-            fullyDisconnect(httpConn);
-        }
-        
-        // The file should  contain only the name of the wait function
-        // (Don't need to make a SELECT node here)
-        String waitFunc = dumpFileIfExists(new File(subDir, "background.wait"));
-        if (waitFunc != null)
-        {
-            switch(waitFunc.trim().toLowerCase()) {
-                case "fulltext_maintenance_wait":
-                    //WaitFunctionHelpers.waitOn(ftService.getBackgroundWorks());
-                break;
-
-                default:
-                    throw new UnsupportedOperationException("Unknown Wait Function: " + waitFunc);
-            }
+        String waitNeeded = dumpFileIfExists(new File(subDir, "full_text_background_wait"));
+        if(waitNeeded != null) {
+            ftService.backgroundWait();
         }
     }
     

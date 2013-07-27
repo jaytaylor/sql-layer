@@ -25,6 +25,8 @@ import org.apache.lucene.search.Query;
 
 /** Full service that does index maintenance and querying. */
 public interface FullTextIndexService extends FullTextIndexInfos {
-    public RowCursor searchIndex(QueryContext context, IndexName name,
-                                 Query query, int limit);
+    public RowCursor searchIndex(QueryContext context, IndexName name, Query query, int limit);
+
+    /** Wait for a complete run of background workers */
+    public void backgroundWait();
 }
