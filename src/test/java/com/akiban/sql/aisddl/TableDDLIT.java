@@ -383,7 +383,7 @@ public class TableDDLIT extends AISDDLITBase {
         assertEquals (1, column.getIdentityGenerator().getStartsWith());
         assertEquals (1, column.getIdentityGenerator().getIncrement());
         assertNotNull(column.getDefaultIdentity());
-        assertFalse(column.getDefaultIdentity());
+        assertTrue(column.getDefaultIdentity());
 
         assertNotNull (table.getIndex("c1"));
         Index index = table.getIndex("c1");

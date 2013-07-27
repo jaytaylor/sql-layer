@@ -360,6 +360,29 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     }
 
     @Override
+    public void alterSequence(Session session, TableName sequenceName, Sequence newDefinition) {
+        AkibanInformationSchema oldAIS = getAis(session);
+        Sequence oldSequence = oldAIS.getSequence(sequenceName);
+        if(oldSequence == null) {
+            throw new NoSuchSequenceException(sequenceName);
+        }
+
+        if(!sequenceName.equals(newDefinition.getSequenceName())) {
+            throw new UnsupportedOperationException("Renaming Sequence");
+        }
+
+        AkibanInformationSchema newAIS = AISCloner.clone(oldAIS);
+        newAIS.removeSequence(sequenceName);
+        Sequence newSequence = Sequence.create(newAIS, newDefinition);
+        newSequence.setTreeName(getNameGenerator().generateSequenceTreeName(newDefinition));
+
+        // newAIS may have mixed references to sequenceName. Re-clone to resolve.
+        newAIS = AISCloner.clone(newAIS);
+
+        saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(sequenceName.getSchemaName()));
+    }
+
+    @Override
     public TableDefinition getTableDefinition(Session session, TableName tableName) {
         final Table table = getAis(session).getTable(tableName);
         if(table == null) {

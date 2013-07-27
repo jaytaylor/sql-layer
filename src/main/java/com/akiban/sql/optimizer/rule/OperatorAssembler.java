@@ -1248,6 +1248,11 @@ public class OperatorAssembler extends BaseRule
                         stream.rowType = stream.operator.rowType();
                     }
                 }
+                if (stream.operator == null) {
+                    stream.operator = API.valuesScan_Default(Collections.<BindableRow>emptyList(), 
+                                                             indexRowType);
+                    stream.rowType = indexRowType;
+                }
             }
             stream.fieldOffsets = new IndexFieldOffsets(indexScan, indexRowType);
             if (explainContext != null)
@@ -1583,8 +1588,10 @@ public class OperatorAssembler extends BaseRule
             for (PlanNode subplan : product.getSubplans()) {
                 if (pstream.operator != null) {
                     pushBoundRow(flattened);
-                    nestedBindingsDepth++;
-                    nbound++;
+                    if (nbound++ == 0) {
+                        // Only one deeper for all, since nest on the outer side.
+                        nestedBindingsDepth++;
+                    }
                 }
                 RowStream stream = assembleStream(subplan);
                 if (pstream.operator == null) {
@@ -1615,9 +1622,11 @@ public class OperatorAssembler extends BaseRule
                 }
                 flattened.setRowType(pstream.rowType);
             }
+            if (nbound > 0) {
+                nestedBindingsDepth--;
+            }
             while (nbound > 0) {
                 popBoundRow();
-                nestedBindingsDepth--;
                 nbound--;
             }
             return pstream;

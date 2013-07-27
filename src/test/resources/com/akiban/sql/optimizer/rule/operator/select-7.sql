@@ -1,0 +1,1 @@
+SELECT name FROM customers WHERE (cid = 1 AND cid = 2) OR (cid = 3 AND cid = 4)

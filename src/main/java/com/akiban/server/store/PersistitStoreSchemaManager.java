@@ -337,7 +337,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
                     @Override
                     public AkibanInformationSchema runAndReturn(Session session) throws PersistitException {
                         // Unrelated to loading, but fine time to do it
-                        cleanupDelayedTrees(session);
+                        cleanupDelayedTrees(session, true);
 
                         SharedAIS sAIS = loadAISFromStorage(session, GenValue.SNAPSHOT, GenMap.PUT_NEW);
 
@@ -790,14 +790,16 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
     }
 
     /** Public for test only. Should not generally be called. */
-    public void cleanupDelayedTrees(final Session session) throws PersistitException {
+    public void cleanupDelayedTrees(final Session session, final boolean clearMemoryTables) throws PersistitException {
         treeService.visitStorage(
                 session,
                 new TreeVisitor() {
                     @Override
                     public void visit(final Exchange ex) throws PersistitException {
-                        // Don't reload memory table definitions
-                        ex.clear().append(AIS_MEMORY_TABLE_KEY).remove();
+                        if(clearMemoryTables) {
+                            // Don't reload memory table definitions
+                            ex.clear().append(AIS_MEMORY_TABLE_KEY).remove();
+                        }
                         // Clear old trees
                         ex.clear().append(DELAYED_TREE_KEY);
                         KeyFilter filter = new KeyFilter().append(KeyFilter.simpleTerm(DELAYED_TREE_KEY));

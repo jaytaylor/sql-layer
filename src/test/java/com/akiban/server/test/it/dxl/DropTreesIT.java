@@ -73,7 +73,7 @@ public final class DropTreesIT extends ITBase {
         if(schemaManager instanceof PersistitStoreSchemaManager) {
             PersistitStoreSchemaManager pssm = (PersistitStoreSchemaManager)schemaManager;
             try {
-                pssm.cleanupDelayedTrees(session());
+                pssm.cleanupDelayedTrees(session(), false);
             } catch(PersistitException e) {
                 throw new RuntimeException(e);
             }

@@ -400,6 +400,9 @@ public class PlanCostEstimator
                         else
                             cost = cost.union(acost);
                     }
+                    if (cost == null) {
+                        cost = new CostEstimate(0, 0); // No segments means no real scan.
+                    }
                     result = cost;
                 }
             }

@@ -176,7 +176,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         } finally {
             cache.cacheUnlock();
         }
-        long outValue = sequence.nextValueRaw(rawValue);
+        long outValue = sequence.realValueForRawNumber(rawValue);
         return outValue;
     }
 
@@ -222,7 +222,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
                 rawValue = tuple.getLong(0);
             }
         }
-        return sequence.currentValueRaw(rawValue);
+        return sequence.realValueForRawNumber(rawValue);
     }
 
     private final ReadWriteMap<String, SequenceCache> sequenceCache = 
