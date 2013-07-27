@@ -911,17 +911,30 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
     }
 
     @Override
-    public boolean hasTableChanged(Session session, int tableID) {
-        UserTable table = getAis(session).getUserTable(tableID);
-        if(table == null) {
-            throw new IllegalStateException("Unknown table: " + tableID);
+    protected void trackBumpTableVersion (Session session, AkibanInformationSchema newAIS, Collection<Integer> allTableIDs)
+    {
+        // Set the new table version  for tables in the NewAIS
+        for(Integer tableID : allTableIDs) {
+            Integer current = tableVersionMap.get(tableID);
+            Integer update = (current == null) ? 1 : current + 1;
+            UserTable table = newAIS.getUserTable(tableID);
+            if(table != null) { // From drop
+                table.setVersion(update);
+            }
         }
-        Integer curVer = tableVersionMap.get(tableID);
-        Integer tableVer = table.getVersion();
-        if(curVer == null) {
-            return tableVer != null;
+        // Schedule the update for the tableVersionMap version number on commit.
+        // Replace any existing map as we only should have one at at time.
+        // for one AIS. 
+        // There may be two of these, the first for an alter table, 
+        // the second for group indexes affected by the change. 
+        Map<AkibanInformationSchema,Collection<Integer>> map = session.get(TABLE_VERSIONS);
+        if(map == null) {
+            map = new HashMap<>();
+            session.put(TABLE_VERSIONS, map);
         }
-        return !curVer.equals(tableVer);
+        map.put(newAIS, allTableIDs);
+        txnService.addCallback(session, TransactionService.CallbackType.COMMIT, bumpTableVersionCommit);
+        txnService.addCallback(session, TransactionService.CallbackType.END, cleanTableVersion);
     }
 
     private Accumulator.SeqAccumulator getGenerationAccumulator(Session session) throws PersistitException {

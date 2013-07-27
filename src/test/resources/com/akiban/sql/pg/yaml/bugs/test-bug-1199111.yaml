@@ -1,0 +1,174 @@
+# Test 1: broken alter followed by a good alter
+---
+- CreateTable: t1 (id INT NOT NULL PRIMARY KEY);
+---
+- CreateTable: t2(id INT NOT NULL PRIMARY KEY, t1id INT NOT NULL,
+    GROUPING FOREIGN KEY (t1id) references t1 (id));
+---
+- Statement: INSERT INTO t1 VALUES (1);
+---
+- Statement: insert into t2 values (1, 1);
+---
+- Statement: ALTER TABLE t1 ADD COLUMN x INT NOT NULL;
+- error: ['23502']
+---
+- Statement: ALTER TABLE t1 ADD COLUMN x INT NULL;
+---
+- Statement: SELECT * FROM t1;
+- output: [[1, null]]
+---
+- DropTable: t2
+---
+- DropTable: t1
+# Test 2: broken alter t2 followed by a good alter t1
+---
+- CreateTable: t1 (id INT NOT NULL PRIMARY KEY);
+---
+- CreateTable: t2(id INT NOT NULL PRIMARY KEY, t1id INT NOT NULL,
+    GROUPING FOREIGN KEY (t1id) references t1 (id));
+---
+- Statement: INSERT INTO t1 VALUES (1);
+---
+- Statement: insert into t2 values (1, 1);
+---
+- Statement: ALTER TABLE t2 ADD COLUMN x INT NOT NULL;
+- error: ['23502']
+---
+- Statement: ALTER TABLE t1 ADD COLUMN x INT NULL;
+---
+- Statement: SELECT * FROM t1;
+- output: [[1, null]]
+---
+- DropTable: t2
+---
+- DropTable: t1
+# Test 3: broken alter t1 followed by a good alter t2
+---
+- CreateTable: t1 (id INT NOT NULL PRIMARY KEY);
+---
+- CreateTable: t2(id INT NOT NULL PRIMARY KEY, t1id INT NOT NULL,
+    GROUPING FOREIGN KEY (t1id) references t1 (id));
+---
+- Statement: INSERT INTO t1 VALUES (1);
+---
+- Statement: insert into t2 values (1, 1);
+---
+- Statement: ALTER TABLE t1 ADD COLUMN x INT NOT NULL;
+- error: ['23502']
+---
+- Statement: ALTER TABLE t2 ADD COLUMN x INT NULL;
+---
+- Statement: SELECT * FROM t2;
+- output: [[1, 1, null]]
+---
+- DropTable: t2
+---
+- DropTable: t1
+# Test 4: broken alter t1 then t2, followed by a good alter on t1
+---
+- CreateTable: t1 (id INT NOT NULL PRIMARY KEY);
+---
+- CreateTable: t2(id INT NOT NULL PRIMARY KEY, t1id INT NOT NULL,
+    GROUPING FOREIGN KEY (t1id) references t1 (id));
+---
+- Statement: INSERT INTO t1 VALUES (1);
+---
+- Statement: insert into t2 values (1, 1);
+---
+- Statement: ALTER TABLE t1 ADD COLUMN x INT NOT NULL;
+- error: ['23502']
+---
+- Statement: ALTER TABLE t2 ADD COLUMN x INT NOT NULL;
+- error: ['23502']
+---
+- Statement: ALTER TABLE t1 ADD COLUMN x INT NULL;
+---
+- Statement: SELECT * FROM t1;
+- output: [[1, null]]
+---
+- DropTable: t2
+---
+- DropTable: t1
+# Test 5: broken alter t2 then t1, followed by a good alter on t1
+---
+- CreateTable: t1 (id INT NOT NULL PRIMARY KEY);
+---
+- CreateTable: t2(id INT NOT NULL PRIMARY KEY, t1id INT NOT NULL,
+    GROUPING FOREIGN KEY (t1id) references t1 (id));
+---
+- Statement: INSERT INTO t1 VALUES (1);
+---
+- Statement: insert into t2 values (1, 1);
+---
+- Statement: ALTER TABLE t2 ADD COLUMN x INT NOT NULL;
+- error: ['23502']
+---
+- Statement: ALTER TABLE t1 ADD COLUMN x INT NOT NULL;
+- error: ['23502']
+---
+- Statement: ALTER TABLE t1 ADD COLUMN x INT NULL;
+---
+- Statement: SELECT * FROM t1;
+- output: [[1, null]]
+---
+- DropTable: t2
+---
+- DropTable: t1
+# Test 6: broken alter t1 then t2, followed by a good alter on t1 and t2
+---
+- CreateTable: t1 (id INT NOT NULL PRIMARY KEY);
+---
+- CreateTable: t2(id INT NOT NULL PRIMARY KEY, t1id INT NOT NULL,
+    GROUPING FOREIGN KEY (t1id) references t1 (id));
+---
+- Statement: INSERT INTO t1 VALUES (1);
+---
+- Statement: insert into t2 values (1, 1);
+---
+- Statement: ALTER TABLE t1 ADD COLUMN x INT NOT NULL;
+- error: ['23502']
+---
+- Statement: ALTER TABLE t2 ADD COLUMN x INT NOT NULL;
+- error: ['23502']
+---
+- Statement: ALTER TABLE t1 ADD COLUMN x INT NULL;
+---
+- Statement: ALTER TABLE t2 ADD COLUMN x INT NULL;
+---
+- Statement: SELECT * FROM t1;
+- output: [[1, null]]
+---
+- DropTable: t2
+---
+- DropTable: t1
+
+# Test 7: Group Index on t1/t2 , 
+---
+- CreateTable: t1 (id INT NOT NULL PRIMARY KEY);
+---
+- CreateTable: t2(id INT NOT NULL PRIMARY KEY, t1id INT NOT NULL,
+    GROUPING FOREIGN KEY (t1id) references t1 (id));
+---
+- Statement: INSERT INTO t1 VALUES (1);
+---
+- Statement: insert into t2 values (1, 1);
+---
+- Statement: ALTER TABLE t1 ADD COLUMN x INT NULL
+---
+- Statement: ALTER TABLE t2 ADD COLUMN x INT NULL
+---
+- Statement: CREATE INDEX t12 on t1 (t1.x, t2.x) USING LEFT JOIN;
+---
+- Statement: ALTER TABLE t1 ALTER COLUMN x NOT NULL
+- error: ['23502']
+---
+- Statement: UPDATE t1 set x = 1;
+---
+- Statement: ALTER TABLE t1 ALTER COLUMN x NOT NULL
+---
+- Statement: SELECT * FROM t1;
+- output: [[1, 1]]
+---
+- DropTable: t2
+---
+- DropTable: t1

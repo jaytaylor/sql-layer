@@ -62,6 +62,7 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
+import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.util.ReadWriteMap;
 import com.akiban.util.ArgumentValidation;
 import com.persistit.exception.PersistitException;
@@ -255,6 +256,12 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     @Override
     public Collection<Index> createIndexes(Session session, Collection<? extends Index> indexesToAdd, boolean keepTree) {
+        
+        // Per the interface specification, if the index list is empty do nothing
+        // Avoid doing an empty merge too. 
+        if (indexesToAdd.isEmpty()) { 
+            return Collections.emptyList();
+        }
         AISMerge merge = AISMerge.newForAddIndex(getNameGenerator(), getAis(session));
         Set<String> schemas = new HashSet<>();
 
@@ -271,14 +278,14 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         }
         merge.merge();
         AkibanInformationSchema newAIS = merge.getAIS();
-        bumpTableVersions(newAIS, tableIDs);
+        trackBumpTableVersion(session, newAIS, tableIDs);
 
         saveAISChangeWithRowDefs(session, newAIS, schemas);
         return newIndexes;
     }
 
     @Override
-    public void dropIndexes(Session session, final Collection<? extends Index> indexesToDrop) {
+    public void dropIndexes(Session session, final Collection<? extends Index> indexesToDrop, boolean temporary) {
         final AkibanInformationSchema newAIS = AISCloner.clone(
                 getAis(session),
                 new ProtobufWriter.TableSelector() {
@@ -293,12 +300,13 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
                     }
         });
 
-        Collection<Integer> tableIDs = new ArrayList<>(indexesToDrop.size());
-        for(Index index : indexesToDrop) {
-            tableIDs.addAll(index.getAllTableIDs());
+        if (!temporary) {
+            Collection<Integer> tableIDs = new ArrayList<>(indexesToDrop.size());
+            for(Index index : indexesToDrop) {
+                tableIDs.addAll(index.getAllTableIDs());
+            }
+            trackBumpTableVersion(session, newAIS, tableIDs);
         }
-        bumpTableVersions(newAIS, tableIDs);
-
         final Set<String> schemas = new HashSet<>();
         for(Index index : indexesToDrop) {
             schemas.add(DefaultNameGenerator.schemaNameForIndex(index));
@@ -338,7 +346,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         AISMerge merge = AISMerge.newForModifyTable(getNameGenerator(), getAis(session), alteredTables);
         merge.merge();
         AkibanInformationSchema newAIS = merge.getAIS();
-        bumpTableVersions(newAIS, tableIDs);
+        trackBumpTableVersion(session,newAIS, tableIDs);
 
         // This is hacky. PK trees have to be preserved because there is no way to duplicate
         // accumulator state that shouldn't change. But ordinals are stored in accumulators
@@ -622,7 +630,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
         final AkibanInformationSchema oldAIS = getAis(session);
         final AkibanInformationSchema newAIS = removeTablesFromAIS(session, tables, sequences);
-        bumpTableVersions(newAIS, tableIDs);
+        trackBumpTableVersion(session, newAIS, tableIDs);
 
         for(Integer tableID : tableIDs) {
             clearTableStatus(session, oldAIS.getUserTable(tableID));
@@ -705,6 +713,33 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         );
     }
 
+    protected abstract void trackBumpTableVersion (Session session, AkibanInformationSchema newAIS, Collection<Integer> allTableIDs);
+    protected final static Session.MapKey<AkibanInformationSchema, Collection<Integer>> TABLE_VERSIONS = 
+            Session.MapKey.mapNamed("TABLE_VERSIONS");
+
+    // If the Alter table fails, make sure to clean up the TABLE_VERSION change list on end
+    // If the Alter succeeds, the bumpTableVersionCommit process will clean up, and this does nothing. 
+    protected final TransactionService.Callback cleanTableVersion = new TransactionService.Callback() {
+        
+        @Override
+        public void run(Session session, long timestamp) {
+            session.remove(TABLE_VERSIONS);
+        }
+    };
+    
+    
+    protected final TransactionService.Callback bumpTableVersionCommit = new TransactionService.Callback() {
+        @Override
+        public void run(Session session, long timestamp) {
+            Map<AkibanInformationSchema,Collection<Integer>> tableIDs = session.remove(TABLE_VERSIONS);
+            if (tableIDs != null) {
+                for(Map.Entry<AkibanInformationSchema, Collection<Integer>> entry : tableIDs.entrySet()) {
+                    bumpTableVersions(entry.getKey(), entry.getValue());
+                }
+            }
+        }
+    };
+    
     private void bumpTableVersions(AkibanInformationSchema newAIS, Collection<Integer> allTableIDs) {
         for(Integer tableID : allTableIDs) {
             Integer current = tableVersionMap.get(tableID);
@@ -713,10 +748,6 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             // Failed CAS would indicate concurrent DDL on this table, which should not be possible
             if(!success) {
                 throw new IllegalStateException("Unexpected concurrent DDL on table: " + tableID);
-            }
-            UserTable table = newAIS.getUserTable(tableID);
-            if(table != null) { // From drop
-                table.setVersion(update);
             }
         }
     }
