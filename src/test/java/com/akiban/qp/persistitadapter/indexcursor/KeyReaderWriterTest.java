@@ -35,7 +35,7 @@ import com.persistit.Key;
 import com.persistit.KeyState;
 import com.persistit.Persistit;
 
-public class TestKeyReaderWriter {
+public class KeyReaderWriterTest {
 
     private ByteArrayOutputStream os;
     private ByteArrayInputStream is;
@@ -172,7 +172,7 @@ public class TestKeyReaderWriter {
     }
 
     static final String ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    static final Random random = new Random();
+    static final Random random = new Random(100);
     public static String characters(final int length) {
         StringBuilder sb = new StringBuilder(length);
         for( int i = 0; i < length; i++ ) 

@@ -42,6 +42,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.PersistitKeyPValueSource;
 import com.akiban.server.PersistitKeyPValueTarget;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.error.MergeSortIOException;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTargets;
@@ -143,7 +144,7 @@ public class MergeJoinSorter implements Sorter {
         try {
             loadTree();
         } catch (IOException e) {
-            //TODO - load tree fails - now what?
+            throw new MergeSortIOException(e);
         }
         return cursor();
     }
@@ -157,7 +158,7 @@ public class MergeJoinSorter implements Sorter {
         finalFile  = tmpFileProvider.provide();
         
         com.fasterxml.sort.Sorter<SortKey> s = new com.fasterxml.sort.Sorter<SortKey> (
-                new SortConfig().withTempFileProvider(tmpFileProvider),
+                getSortConfig(tmpFileProvider),
                 new KeyReaderFactory(), 
                 new KeyWriterFactory(), 
                 compare);
@@ -169,7 +170,7 @@ public class MergeJoinSorter implements Sorter {
         try {
             cursor = new KeyFinalCursor (finalFile, rowType);
         } catch (FileNotFoundException e) {
-            //TODO: Throw unexpected Operations exception or specific internal error
+            throw new MergeSortIOException(e);
         }
         return cursor;
     }
@@ -178,6 +179,10 @@ public class MergeJoinSorter implements Sorter {
         return new KeyReadCursor(); 
     }
     
+    private SortConfig getSortConfig (MergeTempFileProvider tmpFileProvider) {
+        long maxMemory = Long.parseLong(context.getServiceManager().getConfigurationService().getProperty("akserver.sort.memory"));
+        return new SortConfig().withTempFileProvider(tmpFileProvider).withMaxMemoryUsage(maxMemory);
+    }
     /*
      * Base class for reading/writing bytes - 
      * KeyState[] is list of key segments broken by ASC/DESC ordering
@@ -268,9 +273,9 @@ public class MergeJoinSorter implements Sorter {
             }
             byte[] bytes = new byte[size];
             int bytesRead = is.read(bytes);
-            if (bytesRead < size) {
-                return null;
-            }
+            
+            assert bytesRead == size: "Invalid byte count on key state read";
+            
             return new KeyState(bytes);
         }
         
@@ -282,10 +287,9 @@ public class MergeJoinSorter implements Sorter {
             Key key = new Key ((Persistit)null);
             key.setMaximumSize(size);
             int bytesRead = is.read(key.getEncodedBytes(), 0, size);
-            if (bytesRead < size) {
-                //TODO: Pick an error to throw?
-                return null;
-            }
+            
+            assert bytesRead == size : "Invalid byte count on key read";
+
             key.setEncodedSize(size);
             return key;
         }
@@ -295,10 +299,8 @@ public class MergeJoinSorter implements Sorter {
             int bytesRead = is.read(length.array());
             if (bytesRead == -1) { // EOF marker
                 return -1;
-            } else if (bytesRead != 4) {
-                // TODO: pick an error to throw?
-                return -1;
-            }
+            } 
+            assert bytesRead == 4 : "Invalid byte count on length read";
             return length.getInt();
         }
     }
@@ -338,17 +340,19 @@ public class MergeJoinSorter implements Sorter {
 
         @Override
         public SortKey readNext() throws IOException {
-            Row row = input.next();
-            context.checkQueryCancelation();
-
-            SortKey sortKey;
-            if (row == null) {
-                return null;
-            } else {
-                ++rowCount;
-                sortKey = new SortKey (createKey(row, rowCount), createValue(row));
+            SortKey sortKey = null;
+            loadTap.in();
+            try {
+                Row row = input.next();
+                context.checkQueryCancelation();
+    
+                if (row != null) {
+                    ++rowCount;
+                    sortKey = new SortKey (createKey(row, rowCount), createValue(row));
+                }
+            } finally {
+                loadTap.out();
             }
-            
             return sortKey;
         }
         
@@ -468,15 +472,10 @@ public class MergeJoinSorter implements Sorter {
         private final String prefix;
         private final String suffix;
         public MergeTempFileProvider (QueryContext context) {
-            directory = new File (context.getServiceManager().getConfigurationService().getProperty("persistit.tmpvoldir"));
+            directory = new File (context.getServiceManager().getConfigurationService().getProperty("akserver.tmp_dir"));
             suffix = ".tmp";
             String tmpPrefix;
-            try {
-                tmpPrefix = "sort-" +  context.getSessionId() + "-";
-            } catch (UnsupportedOperationException ex) {
-                // This occurs during testing when SimpleQueryContext doesn't support sessionIDs
-                tmpPrefix = "sort-1-"; 
-            }
+            tmpPrefix = "sort-" +  context.getSessionId() + "-";
             prefix = tmpPrefix;
         }
 

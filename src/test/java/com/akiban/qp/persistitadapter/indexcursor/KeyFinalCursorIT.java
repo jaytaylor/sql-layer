@@ -118,8 +118,8 @@ public class KeyFinalCursorIT extends OperatorITBase {
         RowType rowType = schema.newValuesType(MNumeric.INT.instance(false), MNumeric.INT.instance(true), MString.varchar());
         List<TestRow> rows = new ArrayList<>();
         for (long i = 0; i < 100; i++) {
-            TestRow row = row (rowType, TestKeyReaderWriter.random.nextInt(), i, 
-                    TestKeyReaderWriter.characters(5+TestKeyReaderWriter.random.nextInt(1000)));
+            TestRow row = row (rowType, KeyReaderWriterTest.random.nextInt(), i, 
+                    KeyReaderWriterTest.characters(5+KeyReaderWriterTest.random.nextInt(1000)));
             rows.add(row);
             bindRows.add(BindableRow.of(row, true));
         }

@@ -92,6 +92,7 @@ public class PersistitAdapter extends StoreAdapter
                                InOutTap loadTap)
     {
         return new PersistitSorter(context, bindings, input, rowType, ordering, sortOption, loadTap);
+        //return new MergeJoinSorter(context, bindings, input, rowType, ordering, sortOption, loadTap);
     }
 
     @Override

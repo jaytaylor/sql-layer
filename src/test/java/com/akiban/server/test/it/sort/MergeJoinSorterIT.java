@@ -35,7 +35,7 @@ public class MergeJoinSorterIT extends SorterITBase {
     public Map<String,String> startupConfigProperties() {
         Map<String,String> props = new HashMap<>();
         props.putAll(super.startupConfigProperties());
-        props.put("persistit.tmpvoldir","/tmp/akserver-junit/");
+        props.put("akserver.tmp_dir","/tmp/akserver-junit/");
         return props;
     }
 
