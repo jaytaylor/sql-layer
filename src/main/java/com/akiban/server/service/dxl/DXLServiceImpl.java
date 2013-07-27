@@ -17,8 +17,16 @@
 
 package com.akiban.server.service.dxl;
 
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Routine;
+import com.akiban.ais.model.Sequence;
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.aisb2.AISBBasedBuilder;
+import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
+import com.akiban.server.error.NoSuchRoutineException;
+import com.akiban.server.error.NoSuchSequenceException;
 import com.akiban.server.error.ServiceNotStartedException;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
@@ -33,6 +41,8 @@ import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.akiban.server.t3expressions.T3RegistryService;
+import com.akiban.sql.server.ServerCallContextStack;
+import com.akiban.sql.server.ServerQueryContext;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,10 +54,15 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     private final static String CONFIG_USE_GLOBAL_LOCK = "akserver.dxl.use_global_lock";
     private final static Logger LOG = LoggerFactory.getLogger(DXLServiceImpl.class);
 
+    // For alterSequence routine
+    private final static String SCHEMA = TableName.SYS_SCHEMA;
+    private final static String SEQ_RESTART_PROC_NAME = "alter_seq_restart";
+
     private final Object MONITOR = new Object();
 
     private volatile HookableDDLFunctions ddlFunctions;
     private volatile DMLFunctions dmlFunctions;
+    private volatile boolean didRegister;
     private final SchemaManager schemaManager;
     private final Store store;
     private final SessionService sessionService;
@@ -81,6 +96,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
             ddlFunctions = localDdlFunctions;
             dmlFunctions = localDmlFunctions;
         }
+        registerSystemRoutines();
     }
 
     DMLFunctions createDMLFunctions(BasicDXLMiddleman middleman, DDLFunctions newlyCreatedDDLF) {
@@ -95,6 +111,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     @Override
     public void stop() {
+        unRegisterSystemRoutines();
         synchronized (MONITOR) {
             if (ddlFunctions == null) {
                 throw new ServiceNotStartedException("DDL Functions stop");
@@ -186,5 +203,46 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     protected final Session session() {
         return null;
+    }
+
+
+    // TODO: Remove when ALTER SEQUENCE is supported directly
+    private void registerSystemRoutines() {
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        builder.procedure(SEQ_RESTART_PROC_NAME)
+               .language("java", Routine.CallingConvention.JAVA)
+               .paramStringIn("schema_name", 128)
+               .paramStringIn("sequence_name", 128)
+               .paramLongIn("restart_value")
+               .externalName(SequenceRoutines.class.getName(), "restartWith");
+        AkibanInformationSchema ais = builder.ais();
+        Routine routine = ais.getRoutine(SCHEMA, SEQ_RESTART_PROC_NAME);
+        schemaManager.registerSystemRoutine(routine);
+        didRegister = true;
+    }
+    private void unRegisterSystemRoutines() {
+        if(didRegister) {
+            didRegister = false;
+            schemaManager.unRegisterSystemRoutine(new TableName(SCHEMA, SEQ_RESTART_PROC_NAME));
+        }
+    }
+
+    @SuppressWarnings("unused") // Reflectively used
+    public static class SequenceRoutines {
+        public static void restartWith(String schemaName, String sequenceName, long restartValue) {
+            ServerQueryContext context = ServerCallContextStack.current().getContext();
+            DXLService dxl = context.getServer().getDXL();
+            AkibanInformationSchema ais = dxl.ddlFunctions().getAIS(context.getSession());
+            TableName fullName = new TableName(schemaName, sequenceName);
+            Sequence curSeq = ais.getSequence(fullName);
+            if(curSeq == null) {
+                throw new NoSuchSequenceException(fullName);
+            }
+            AkibanInformationSchema tempAis = new AkibanInformationSchema();
+            Sequence newSeq = Sequence.create(tempAis, schemaName, sequenceName, restartValue,
+                                              curSeq.getIncrement(), curSeq.getMinValue(), curSeq.getMaxValue(),
+                                              curSeq.isCycle());
+            dxl.ddlFunctions().alterSequence(context.getSession(), fullName, newSeq);
+        }
     }
 }

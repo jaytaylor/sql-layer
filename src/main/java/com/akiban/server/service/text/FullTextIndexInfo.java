@@ -188,11 +188,12 @@ public class FullTextIndexInfo
             if (!ancestors.isEmpty())
             {
                 
-                ret = API.ancestorLookup_Default(ret,
-                                                 group,
-                                                 indexedRowType, 
-                                                 ancestors, 
-                                                 API.InputPreservationOption.KEEP_INPUT);
+                ret = API.groupLookup_Default(ret,
+                                              group,
+                                              indexedRowType, 
+                                              ancestors, 
+                                              API.InputPreservationOption.KEEP_INPUT,
+                                              1);
             }
         }
         else
@@ -202,7 +203,7 @@ public class FullTextIndexInfo
             ret = API.ancestorLookup_Nested(group,
                                             hKeyRowType,
                                             ancestors,
-                                            0);
+                                            0, 1);
         }
           
         return ret;

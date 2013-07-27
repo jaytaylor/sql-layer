@@ -25,7 +25,7 @@ import com.akiban.server.service.tree.TreeLink;
 
 public class Sequence implements TreeLink {
 
-    public static Sequence create (AkibanInformationSchema ais, 
+    public static Sequence create (AkibanInformationSchema ais,
             String schemaName, 
             String sequenceName, 
             long start, 
@@ -63,7 +63,6 @@ public class Sequence implements TreeLink {
         this.minValue = minValue;
         this.maxValue = maxValue;
         this.cycle = cycle;
-        this.range = maxValue - minValue + 1;
     }
     
     public final TableName getSequenceName() {
@@ -110,7 +109,6 @@ public class Sequence implements TreeLink {
     private final long maxValue;
     private final boolean cycle;
 
-    private final long range;
     private AtomicReference<TreeCache> treeCache = new AtomicReference<>();
     
    
@@ -130,27 +128,32 @@ public class Sequence implements TreeLink {
         return treeCache.get();
     }
 
-    public long nextValueRaw(long rawSequence) {
-        long nextValue = notCycled(rawSequence);
-        if (nextValue > maxValue || nextValue < minValue) {
+    /**
+     * Compute the real sequence value for the given raw sequence number.
+     * <p>
+     *     For example, the Sequence that starts at 5 and increments by 3 will have a
+     *     real value of 5 for the raw number 1, real value of 8 for raw number 2, etc.
+     * </p>
+     */
+    public long realValueForRawNumber(long rawNumber) {
+        // Note: For Java MIN and MAX extents, addition in rawToReal takes care of cycling.
+        long value = rawToReal(rawNumber);
+        if(value > maxValue || value < minValue) {
             if(!cycle) {
                 throw new SequenceLimitExceededException(this);
             }
-            nextValue = cycled(nextValue);
+            value = cycled(value);
         }
-        return nextValue;
+        return value;
     }
 
-    public long currentValueRaw(long rawSequence) {
-        return cycled(notCycled(rawSequence));
-    }
-
-    private long notCycled(long rawSequence) {
+    private long rawToReal(long rawNumber) {
         // -1 so first is startsWith, second is startsWith+inc, etc
-        return startsWith + ((rawSequence - 1) * increment);
+        return startsWith + ((rawNumber - 1) * increment);
     }
 
     private long cycled(long notCycled) {
+        long range = maxValue - minValue + 1;
         long mod = (notCycled - minValue) % range;
         if(mod < 0) {
             mod += range;

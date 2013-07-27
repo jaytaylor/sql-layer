@@ -66,6 +66,11 @@ public class DDLFunctionsMockBase implements DDLFunctions {
     }
 
     @Override
+    public void alterSequence(Session session, TableName sequenceName, Sequence newDefinition) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void dropSchema(Session session, String schemaName) {
         throw new UnsupportedOperationException();
     }

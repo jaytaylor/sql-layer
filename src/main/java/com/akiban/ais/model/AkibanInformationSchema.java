@@ -590,7 +590,7 @@ public class AkibanInformationSchema implements Traversable
      * @param validations the validations to run
      * @return the result of the validations
      */
-   public AISValidationResults validate(Collection<AISValidation> validations) {
+   public AISValidationResults validate(Collection<? extends AISValidation> validations) {
        AISFailureList validationFailures = new AISFailureList();
        for (AISValidation v : validations) {
            v.validate(this, validationFailures);

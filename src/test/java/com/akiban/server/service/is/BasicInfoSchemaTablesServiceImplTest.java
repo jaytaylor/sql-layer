@@ -720,6 +720,11 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
 
         @Override
+        public void alterSequence(Session session, TableName sequenceName, Sequence newDefinition) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public TableDefinition getTableDefinition(Session session, TableName tableName) {
             throw new UnsupportedOperationException();
         }

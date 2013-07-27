@@ -25,6 +25,7 @@ import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.aggregation.Aggregators;
@@ -189,17 +190,17 @@ public class API
                                                 UserTableRowType outputRowType,
                                                 InputPreservationOption flag)
     {
-        return branchLookup_Default(inputOperator, group, inputRowType, outputRowType, flag, NO_LIMIT);
+        return groupLookup_Default(inputOperator, group, inputRowType, branchOutputRowTypes(outputRowType), flag, 1);
     }
 
-    public static Operator branchLookup_Default(Operator inputOperator,
-                                                Group group,
-                                                RowType inputRowType,
-                                                UserTableRowType outputRowType,
-                                                InputPreservationOption flag,
-                                                Limit limit)
-    {
-        return new BranchLookup_Default(inputOperator, group, inputRowType, outputRowType, flag, limit);
+    protected static List<UserTableRowType> branchOutputRowTypes(UserTableRowType outputRowType) {
+        List<UserTableRowType> outputRowTypes = new ArrayList<>();
+        outputRowTypes.add(outputRowType);
+        Schema schema = (Schema)outputRowType.schema();
+        for (RowType rowType : schema.descendentTypes(outputRowType, schema.userTableTypes())) {
+            outputRowTypes.add((UserTableRowType)rowType);
+        }
+        return outputRowTypes;
     }
 
     /** deprecated */
@@ -209,13 +210,14 @@ public class API
                                                InputPreservationOption flag,
                                                int inputBindingPosition)
     {
-        return new BranchLookup_Nested(group,
-                                       inputRowType, 
-                                       inputRowType,
-                                       null,
-                                       outputRowType,
-                                       flag,
-                                       inputBindingPosition);
+        return branchLookup_Nested(group,
+                                   inputRowType, 
+                                   inputRowType,
+                                   null,
+                                   branchOutputRowTypes(outputRowType),
+                                   flag,
+                                   inputBindingPosition,
+                                   1);
     }
 
     public static Operator branchLookup_Nested(Group group,
@@ -225,30 +227,33 @@ public class API
                                                InputPreservationOption flag,
                                                int inputBindingPosition)
     {
-        return new BranchLookup_Nested(group,
-                                       inputRowType, 
-                                       inputRowType,
-                                       ancestorRowType,
-                                       outputRowType,
-                                       flag,
-                                       inputBindingPosition);
+        return branchLookup_Nested(group,
+                                   inputRowType, 
+                                   inputRowType,
+                                   ancestorRowType,
+                                   branchOutputRowTypes(outputRowType),
+                                   flag,
+                                   inputBindingPosition,
+                                   1);
     }
 
     public static Operator branchLookup_Nested(Group group,
                                                RowType inputRowType,
                                                RowType sourceRowType,
                                                UserTableRowType ancestorRowType,
-                                               UserTableRowType outputRowType,
+                                               Collection<UserTableRowType> outputRowTypes,
                                                InputPreservationOption flag,
-                                               int inputBindingPosition)
+                                               int inputBindingPosition,
+                                               int lookaheadQuantum)
     {
         return new BranchLookup_Nested(group,
                                        inputRowType, 
                                        sourceRowType,
                                        ancestorRowType,
-                                       outputRowType,
+                                       outputRowTypes,
                                        flag,
-                                       inputBindingPosition);
+                                       inputBindingPosition,
+                                       lookaheadQuantum);
     }
 
     // Limit
@@ -275,25 +280,26 @@ public class API
                                                   Collection<UserTableRowType> ancestorTypes,
                                                   InputPreservationOption flag)
     {
-        return ancestorLookup_Default(inputOperator, group, rowType, ancestorTypes, flag, 1);
+        return groupLookup_Default(inputOperator, group, rowType, ancestorTypes, flag, 1);
     }
 
-    public static Operator ancestorLookup_Default(Operator inputOperator,
-                                                  Group group,
-                                                  RowType rowType,
-                                                  Collection<UserTableRowType> ancestorTypes,
-                                                  InputPreservationOption flag,
-                                                  int lookaheadQuantum)
+    public static Operator groupLookup_Default(Operator inputOperator,
+                                               Group group,
+                                               RowType rowType,
+                                               Collection<UserTableRowType> ancestorTypes,
+                                               InputPreservationOption flag,
+                                               int lookaheadQuantum)
     {
-        return new AncestorLookup_Default(inputOperator, group, rowType, ancestorTypes, flag, lookaheadQuantum);
+        return new GroupLookup_Default(inputOperator, group, rowType, ancestorTypes, flag, lookaheadQuantum);
     }
 
     public static Operator ancestorLookup_Nested(Group group,
                                                  RowType rowType,
                                                  Collection<UserTableRowType> ancestorTypes,
-                                                 int hKeyBindingPosition)
+                                                 int hKeyBindingPosition,
+                                                 int lookaheadQuantum)
     {
-        return new AncestorLookup_Nested(group, rowType, ancestorTypes, hKeyBindingPosition);
+        return new AncestorLookup_Nested(group, rowType, ancestorTypes, hKeyBindingPosition, lookaheadQuantum);
     }
 
     // IndexScan
@@ -981,22 +987,4 @@ public class API
         private final List<AkCollator> collators = new ArrayList<>();
     }
 
-    // Class state
-
-    private static final Limit NO_LIMIT = new Limit()
-    {
-
-        @Override
-        public boolean limitReached(RowBase row)
-        {
-            return false;
-        }
-
-        @Override
-        public String toString()
-        {
-            return "NO LIMIT";
-        }
-
-    };
 }

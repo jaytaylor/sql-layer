@@ -131,7 +131,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
         Operator plan =
             map_NestedLoops(
                 indexScan_Default(itemOidIndexRowType, false),
-                ancestorLookup_Nested(coi, itemOidIndexRowType, Collections.singleton(itemRowType), 0),
+                ancestorLookup_Nested(coi, itemOidIndexRowType, Collections.singleton(itemRowType), 0, 1),
                 0, pipelineMap(), 1);
         RowBase[] expected = new RowBase[]{
             row(itemRowType, 1000L, 100L),
@@ -233,7 +233,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
         Operator plan =
             map_NestedLoops(
                 indexScan_Default(itemOidIndexRowType, false),
-                ancestorLookup_Nested(coi, itemOidIndexRowType, Collections.singleton(itemRowType), 0),
+                ancestorLookup_Nested(coi, itemOidIndexRowType, Collections.singleton(itemRowType), 0, 1),
                 0, pipelineMap(), 1);
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
@@ -290,7 +290,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
                     cidValueRowType),
                 map_NestedLoops(
                     indexScan_Default(customerCidIndexRowType, false, cidRange),
-                    ancestorLookup_Nested(coi, customerCidIndexRowType, Collections.singleton(customerRowType), 0),
+                    ancestorLookup_Nested(coi, customerCidIndexRowType, Collections.singleton(customerRowType), 0, 1),
                     0, pipelineMap(), 2),
                 1, pipelineMap(), 1);
         RowBase[] expected = new RowBase[]{
@@ -342,6 +342,50 @@ public class Map_NestedLoopsIT extends OperatorITBase
             row(insideRowType, 200L, 10L, 2L),
             row(insideRowType, 300L, 10L, 1L),
             row(insideRowType, 300L, 10L, 2L),
+        };
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
+    }
+
+    @Test
+    public void testLeftDeepMap()
+    {
+        RowType intRowType = schema.newValuesType(AkType.INT);
+        List<ExpressionGenerator> outerExprs = Arrays.asList(boundField(intRowType, 0, 0), field(intRowType, 0));
+        Operator middle = 
+            project_Default(
+                valuesScan_Default(
+                    bindableExpressions(intRow(intRowType, 10),
+                                        intRow(intRowType, 20)),
+                    intRowType),
+                intRowType, outerExprs);
+        RowType outerRowType = middle.rowType();
+        Operator outer =
+            map_NestedLoops(
+                valuesScan_Default(
+                    bindableExpressions(intRow(intRowType, 100),
+                                        intRow(intRowType, 200)),
+                    intRowType),
+                middle,
+                0, pipelineMap(), 1);
+        List<ExpressionGenerator> innerExprs = Arrays.asList(boundField(outerRowType, 1, 0), boundField(outerRowType, 1, 1), field(intRowType, 0));
+        Operator inner =
+            project_Default(
+                valuesScan_Default(
+                    bindableExpressions(intRow(intRowType, 1),
+                                        intRow(intRowType, 2)),
+                    intRowType),
+                intRowType, innerExprs);
+        RowType innerRowType = inner.rowType();
+        Operator plan = map_NestedLoops(outer, inner, 1, pipelineMap(), 1);
+        RowBase[] expected = new RowBase[]{
+            row(innerRowType, 100L, 10L, 1L),
+            row(innerRowType, 100L, 10L, 2L),
+            row(innerRowType, 100L, 20L, 1L),
+            row(innerRowType, 100L, 20L, 2L),
+            row(innerRowType, 200L, 10L, 1L),
+            row(innerRowType, 200L, 10L, 2L),
+            row(innerRowType, 200L, 20L, 1L),
+            row(innerRowType, 200L, 20L, 2L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }

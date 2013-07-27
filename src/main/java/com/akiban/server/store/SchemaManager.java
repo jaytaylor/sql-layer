@@ -141,6 +141,9 @@ public interface SchemaManager {
      */
     void alterTableDefinitions(Session session, Collection<ChangedTableDescription> alteredTables);
 
+    /** ALTER the definition of the given Sequence */
+    void alterSequence(Session session, TableName sequenceName, Sequence newDefinition);
+
     /**
      * Generate a TableDefinition, which includes a canonical 'create table' statement,
      * schema name, table name, and table ID, for the given table.

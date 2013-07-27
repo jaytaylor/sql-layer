@@ -602,7 +602,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         // Note: Ever increasing, always incremented by 1, rollbacks will leave gaps. See bug1167045 for discussion.
         AccumulatorAdapter accum = getAdapter(sequence);
         long rawSequence = accum.seqAllocate();
-        return sequence.nextValueRaw(rawSequence);
+        return sequence.realValueForRawNumber(rawSequence);
 
     }
     
@@ -610,7 +610,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     public long curSequenceValue(Session session, Sequence sequence) {
         AccumulatorAdapter accum = getAdapter(sequence);
         try {
-            return sequence.currentValueRaw(accum.getSnapshot());
+            return sequence.realValueForRawNumber(accum.getSnapshot());
         } catch (PersistitInterruptedException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         }

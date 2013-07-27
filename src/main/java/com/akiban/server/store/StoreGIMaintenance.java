@@ -264,9 +264,8 @@ class StoreGIMaintenance {
                 rowType.userTable(),
                 branchTables.fromRoot().get(0).userTable()
         );
-        plan = API.ancestorLookup_Default(plan, group, rowType, Collections.singleton(parentRowType), API.InputPreservationOption.DISCARD_INPUT);
-        plan = API.branchLookup_Default(plan, group, parentRowType, rowType, API.InputPreservationOption.DISCARD_INPUT);
-        plan = API.filter_Default(plan, Collections.singleton(rowType));
+        plan = API.groupLookup_Default(plan, group, rowType, Collections.singleton(parentRowType), API.InputPreservationOption.DISCARD_INPUT, 1);
+        plan = API.groupLookup_Default(plan, group, parentRowType, Collections.singleton(rowType), API.InputPreservationOption.DISCARD_INPUT, 1);
         return plan;
     }
 
@@ -307,22 +306,24 @@ class StoreGIMaintenance {
         }
         if (!branchTables.leafMost().equals(rowType)) {
             // the incoming row isn't the leaf, so we have to get its ancestors along the branch
-            UserTableRowType child = branchTables.childOf(rowType);
-            plan = API.branchLookup_Default(
+            List<UserTableRowType> children = branchTables.childrenOf(rowType);
+            plan = API.groupLookup_Default(
                     plan,
                     groupIndex.getGroup(),
                     rowType,
-                    child,
-                    API.InputPreservationOption.KEEP_INPUT
+                    children,
+                    API.InputPreservationOption.KEEP_INPUT,
+                    1
             );
         }
         if (!branchTables.fromRoot().get(0).equals(rowType)) {
-            plan = API.ancestorLookup_Default(
+            plan = API.groupLookup_Default(
                     plan,
                     groupIndex.getGroup(),
                     rowType,
                     ancestors(rowType, branchTables.fromRoot()),
-                    API.InputPreservationOption.KEEP_INPUT
+                    API.InputPreservationOption.KEEP_INPUT,
+                    1
             );
         }
 
@@ -424,10 +425,10 @@ class StoreGIMaintenance {
             return onlyBranch.get(onlyBranch.size()-1);
         }
 
-        public UserTableRowType childOf(UserTableRowType rowType) {
+        public List<UserTableRowType> childrenOf(UserTableRowType rowType) {
             int inputDepth = rowType.userTable().getDepth();
             int childDepth = inputDepth + 1;
-            return allTablesForBranch.get(childDepth);
+            return allTablesForBranch.subList(childDepth, allTablesForBranch.size());
         }
 
         public UserTableRowType parentRowType(UserTableRowType rowType) {

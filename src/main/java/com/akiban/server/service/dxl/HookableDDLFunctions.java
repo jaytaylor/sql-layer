@@ -115,6 +115,21 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
+    public void alterSequence(Session session, TableName sequenceName, Sequence newDefinition) {
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunction.ALTER_SEQUENCE);
+            delegate.alterSequence(session, sequenceName, newDefinition);
+        } catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunction.ALTER_SEQUENCE, t);
+            throw throwAlways(t);
+        } finally {
+            hook.hookFunctionFinally(session, DXLFunction.ALTER_SEQUENCE, thrown);
+        }
+    }
+
+    @Override
     public void createView(Session session, View view) {
         Throwable thrown = null;
         try {
