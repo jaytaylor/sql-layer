@@ -794,10 +794,10 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         public void run() {
             state = STATE.RUNNING;
             while(state != STATE.STOPPING) {
-                runnable.run();
-                synchronized(this) {
-                    ++runCount;
-                    notifyAll();
+                try {
+                    runInternal();
+                } catch(Exception e) {
+                    logger.error("{} run failed with exception", getName(), e);
                 }
                 sleep();
             }
@@ -830,6 +830,14 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         //
         // Helpers
         //
+
+        private void runInternal() {
+            runnable.run();
+            synchronized(this) {
+                ++runCount;
+                notifyAll();
+            }
+        }
 
         private void checkRunning() {
             if(state == STATE.STOPPING || state == STATE.FINISHED) {
