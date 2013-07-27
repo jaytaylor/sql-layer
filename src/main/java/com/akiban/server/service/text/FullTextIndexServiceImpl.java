@@ -96,13 +96,14 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     private final SchemaManager schemaManager;
     private final Store store;
     private final TransactionService transactionService;
-
-    private File indexPath;
+    private final ConcurrentHashMap<IndexName,Session> populating;
+    private final Object BACKGROUND_CHANGE_LOCK = new Object();
 
     private volatile IndexName updatingIndex;
     private BackgroundRunner backgroundPopulate;
     private BackgroundRunner backgroundUpdate;
-    private ConcurrentHashMap<IndexName,Session> populating;
+    private long backgroundInterval;
+    private File indexPath;
 
 
     @Inject
@@ -135,7 +136,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         if (populatingSession != null) {
             // if the population process is running, cancel it
             populatingSession.cancelCurrentQuery(true);
-            backgroundPopulate.waitForCycle();
+            waitPopulateCycle();
         } else {
             // delete 'promise' for population, if any
             try {
@@ -148,7 +149,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         // If updatingIndex is currently equal, wait for it to change.
         // If it isn't, or once it does, it can never become equal as it now exists in the populating map.
         if(idx.getIndexName().equals(updatingIndex)) {
-            backgroundUpdate.waitForCycle();
+            waitUpdateCycle();
         }
 
         // delete documents
@@ -189,27 +190,15 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         listenerService.registerTableListener(this);
         listenerService.registerRowListener(this);
 
-        long backgroundInterval =  Long.parseLong(configService.getProperty(BACKGROUND_INTERVAL));
-        backgroundUpdate = new BackgroundRunner("FullText_Update", backgroundInterval, new Runnable() {
-            @Override
-            public void run() {
-                runUpdate();
-            }
-        });
-        backgroundUpdate.start();
-        backgroundPopulate = new BackgroundRunner("FullText_Populate", backgroundInterval, new Runnable() {
-            @Override
-            public void run() {
-                runPopulate();
-            }
-        });
-        backgroundPopulate.start();
+        backgroundInterval =  Long.parseLong(configService.getProperty(BACKGROUND_INTERVAL));
+        enableUpdateWorker();
+        enablePopulateWorker();
     }
 
     @Override
     public void stop() {
-        backgroundUpdate.toFinished();
-        backgroundPopulate.toFinished();
+        disableUpdateWorker();
+        disablePopulateWorker();
 
         listenerService.deregisterTableListener(this);
         listenerService.deregisterRowListener(this);
@@ -222,6 +211,8 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         catch (IOException ex) {
             throw new AkibanInternalException("Error closing index", ex);
         }
+
+        populating.clear();
     }
 
     @Override
@@ -394,30 +385,60 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     // ---------- mostly for testing ---------------
 
     public void disableUpdateWorker() {
-        backgroundUpdate.toPaused();
+        synchronized(BACKGROUND_CHANGE_LOCK) {
+            assert backgroundUpdate != null;
+            backgroundUpdate.toFinished();
+            backgroundUpdate = null;
+        }
     }
 
     public void enableUpdateWorker() {
-        backgroundUpdate.toRunning();
+        synchronized(BACKGROUND_CHANGE_LOCK) {
+            assert backgroundUpdate == null;
+            backgroundUpdate = new BackgroundRunner("FullText_Update", backgroundInterval, new Runnable() {
+                @Override
+                public void run() {
+                    runUpdate();
+                }
+            });
+            backgroundUpdate.start();
+        }
     }
 
     public void disablePopulateWorker() {
-        backgroundPopulate.toPaused();
+        synchronized(BACKGROUND_CHANGE_LOCK) {
+            assert backgroundPopulate != null;
+            backgroundPopulate.toFinished();
+            backgroundPopulate = null;
+        }
     }
 
     public void enablePopulateWorker() {
-        backgroundPopulate.toRunning();
+        synchronized(BACKGROUND_CHANGE_LOCK) {
+            assert backgroundPopulate == null;
+            backgroundPopulate = new BackgroundRunner("FullText_Populate", backgroundInterval, new Runnable() {
+                @Override
+                public void run() {
+                    runPopulate();
+                }
+            });
+            backgroundPopulate.start();
+        }
     }
 
     public void waitPopulateCycle() {
-        if(backgroundPopulate.state != STATE.PAUSED) {
-            backgroundPopulate.waitForCycle();
+        synchronized(BACKGROUND_CHANGE_LOCK) {
+            if(backgroundPopulate != null) {
+                backgroundPopulate.waitForCycle();
+            }
         }
     }
 
     public void waitUpdateCycle() {
-        if(backgroundUpdate.state != STATE.PAUSED) {
-            backgroundUpdate.waitForCycle();
+        synchronized(BACKGROUND_CHANGE_LOCK) {
+            if(backgroundUpdate != null) {
+                backgroundUpdate.waitForCycle();
+            }
         }
     }
 
@@ -460,7 +481,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             }
             populating.remove(toPopulate);
             logger.warn("populateNextIndex aborted : {}", e2.getMessage());
-        } catch (IOException e) {
+        } catch(IOException e) {
             throw new AkibanInternalException ("Failed to populate index ", e);
         } finally {
             transactionService.rollbackTransactionIfOpen(session);
@@ -468,18 +489,16 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         return false;
     }
     
-    protected synchronized void runPopulate() {
+    private void runPopulate() {
         Session session = sessionService.createSession();
         try {
             boolean more = true;
             while(more) {
                 more = populateNextIndex(session);
             }
-        }
-        catch(PersistitException e) {
+        } catch(PersistitException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
-        }
-        finally {
+        } finally {
             session.close();
         }
     }
@@ -491,7 +510,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         return !(table == null ||  table.getFullTextIndex(indexName.getName()) == null);
     }
     
-    private synchronized void runUpdate()
+    private void runUpdate()
     {
         Session session = sessionService.createSession();
         HKeyBytesStream rows = null;
@@ -520,11 +539,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                 }
                 transactionService.commitTransaction(session);
             }
-        }
-        catch(Exception e) {
-            logger.error("Error while maintaining full_text indices", e);
-        }
-        finally {
+        } finally {
             if(rows != null && rows.cursor != null) {
                 rows.cursor.close();
             }
@@ -756,7 +771,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
 
     public enum STATE {
         NOT_STARTED,
-        RUNNING, PAUSED,
+        RUNNING,
         STOPPING,
         FINISHED
     }
@@ -779,7 +794,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         public void run() {
             state = STATE.RUNNING;
             while(state != STATE.STOPPING) {
-                waitFor(STATE.PAUSED, true, null);
                 runnable.run();
                 synchronized(this) {
                     ++runCount;
@@ -789,28 +803,21 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             }
         }
 
-        public void toPaused() {
-            fromTo(STATE.RUNNING, false, STATE.PAUSED);
-        }
-
-        public void toRunning() {
-            fromTo(STATE.PAUSED, false, STATE.RUNNING);
-        }
-
-        public void toFinished() {
-            fromTo(null, false, STATE.STOPPING);
-            fromTo(STATE.STOPPING, false, STATE.FINISHED);
+        public synchronized void toFinished() {
+            checkRunning();
+            state = STATE.STOPPING;
+            sleepNotify();
+            waitWhile(STATE.STOPPING, STATE.FINISHED);
+            notifyAll();
         }
 
         public synchronized void waitForCycle() {
-            if(state != STATE.RUNNING) {
-                throw new IllegalStateException("Not RUNNING");
-            }
+            checkRunning();
             // +2 ensures that we've observed one full run no matter where we initially started
             long target = runCount + 2;
             while(runCount < target) {
                 sleepNotify();
-                waitInternal(null);
+                waitThenSet(null);
             }
         }
 
@@ -824,36 +831,33 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         // Helpers
         //
 
-        private synchronized void waitFor(STATE whileState, boolean equal, STATE newState) {
-            while((state == whileState) == equal) {
-                waitInternal(newState);
+        private void checkRunning() {
+            if(state == STATE.STOPPING || state == STATE.FINISHED) {
+                throw new IllegalStateException("Not RUNNING: " + state);
             }
         }
 
-        private synchronized void fromTo(STATE fromState, boolean equal, STATE newState) {
-            if(fromState != null && state != fromState) {
-                throw new IllegalStateException("Expected " + fromState);
+        private void waitWhile(STATE whileState, STATE newState) {
+            while(state == whileState) {
+                waitThenSet(newState);
             }
-            waitFor(fromState, equal, newState);
-            state = newState;
-            notifyAll();
         }
 
-        private void sleep() {
+        private void waitThenSet(STATE newState) {
             try {
-                synchronized(SLEEP_MONITOR) {
-                    SLEEP_MONITOR.wait(sleepMillis);
+                wait();
+                if(newState != null) {
+                    state = newState;
                 }
             } catch(InterruptedException e) {
                 // None
             }
         }
 
-        private void waitInternal(STATE newState) {
+        private void sleep() {
             try {
-                wait();
-                if(newState != null) {
-                    state = newState;
+                synchronized(SLEEP_MONITOR) {
+                    SLEEP_MONITOR.wait(sleepMillis);
                 }
             } catch(InterruptedException e) {
                 // None
