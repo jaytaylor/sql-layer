@@ -2136,27 +2136,21 @@ public final class NewGiUpdateIT extends ITBase {
             }
         }
 
-        private void checkIndex(final GroupIndex groupIndex, List<String> expected) {
-            StringsIndexScanner scanner;
-            try(CloseableTransaction txn = txnService().beginCloseableTransaction(session())) {
-                scanner = store().traverse(session(), groupIndex, new StringsIndexScanner());
-                txnService().commitTransaction(session());
-                txn.commit();
-            }
-            AssertUtils.assertCollectionEquals(
-                    "scan of " + groupIndex.getIndexName().getName(),
-                    expected,
-                    scanner.strings()
-            );
-            
-            long giRowCount = transactionallyUnchecked(new Callable<Long>() {
+        private void checkIndex(final GroupIndex groupIndex, final List<String> expected) {
+            transactionallyUnchecked(new Runnable() {
                 @Override
-                public Long call() throws Exception {
+                public void run() {
+                    StringsIndexScanner scanner = store().traverse(session(), groupIndex, new StringsIndexScanner());
+                    AssertUtils.assertCollectionEquals(
+                        "scan of " + groupIndex.getIndexName().getName(),
+                        expected,
+                        scanner.strings()
+                    );
                     IndexStatisticsService idxStats = serviceManager().getServiceByClass(IndexStatisticsService.class);
-                    return idxStats.countEntries(session(), groupIndex);
+                    long giRowCount = idxStats.countEntries(session(), groupIndex);
+                    assertEquals("row count for " + groupIndex.getIndexName().getName(), expected.size(), giRowCount);
                 }
             });
-            assertEquals("row count for " + groupIndex.getIndexName().getName(), expected.size(), giRowCount);
         }
 
         private GisCheckerImpl(Map<GroupIndex, List<String>> expectedStrings) {
