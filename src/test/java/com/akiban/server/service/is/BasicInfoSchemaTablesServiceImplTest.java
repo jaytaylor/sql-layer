@@ -705,7 +705,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
 
         @Override
-        public void dropIndexes(Session session, Collection<? extends Index> indexes) {
+        public void dropIndexes(Session session, Collection<? extends Index> indexes, boolean temporary) {
             throw new UnsupportedOperationException();
         }
 
