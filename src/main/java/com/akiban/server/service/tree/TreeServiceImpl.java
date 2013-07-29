@@ -42,6 +42,7 @@ import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.google.inject.Inject;
+import com.persistit.Configuration;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Persistit;
@@ -63,6 +64,8 @@ public class TreeServiceImpl
     private static final String PERSISTIT_MODULE_NAME = "persistit.";
 
     private static final String DATAPATH_PROP_NAME = "datapath";
+    
+    private static final String TEMPDIR_NAME = "akserver.tmp_dir";
 
     private static final String BUFFER_SIZE_PROP_NAME = "buffersize";
     
@@ -189,6 +192,13 @@ public class TreeServiceImpl
         properties.setProperty(DATAPATH_PROP_NAME, datapath);
         ensureDirectoryExists(datapath, false);
 
+        //
+        // Copied the akserver.tmp_dir property to the Persistit tmpvoldir 
+        // The latter is used for temporary Persistit volumes used for sorting.
+        final String tmpPath = configService.getProperty(TEMPDIR_NAME);
+        properties.setProperty(Configuration.TEMPORARY_VOLUME_DIR_PROPERTY_NAME, tmpPath);
+        ensureDirectoryExists(tmpPath, false);
+        
         // Get the configured buffer size:
         // Default is 16K. Can be overridden with
         //

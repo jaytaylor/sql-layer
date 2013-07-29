@@ -26,6 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -60,6 +61,7 @@ public class KeyFinalCursorIT extends OperatorITBase {
     private SortKey startKey; 
     private KeyWriter writer;
     private List<BindableRow> bindRows;
+    private final Random random = new Random (100);
     
     @Before
     public void createFileBuffers() {
@@ -118,8 +120,8 @@ public class KeyFinalCursorIT extends OperatorITBase {
         RowType rowType = schema.newValuesType(MNumeric.INT.instance(false), MNumeric.INT.instance(true), MString.varchar());
         List<TestRow> rows = new ArrayList<>();
         for (long i = 0; i < 100; i++) {
-            TestRow row = row (rowType, KeyReaderWriterTest.random.nextInt(), i, 
-                    KeyReaderWriterTest.characters(5+KeyReaderWriterTest.random.nextInt(1000)));
+            TestRow row = row (rowType, random.nextInt(), i, 
+                    characters(5+random.nextInt(1000)));
             rows.add(row);
             bindRows.add(BindableRow.of(row, true));
         }
@@ -157,4 +159,12 @@ public class KeyFinalCursorIT extends OperatorITBase {
         cursor.open();
         return mergeSorter.readCursor();
     }
+    static final String ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    public String characters(final int length) {
+        StringBuilder sb = new StringBuilder(length);
+        for( int i = 0; i < length; i++ ) 
+           sb.append(ALPHA.charAt(random.nextInt(ALPHA.length())));
+        return sb.toString();
+     }
+
 }

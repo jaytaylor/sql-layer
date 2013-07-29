@@ -526,8 +526,7 @@ public class MergeJoinSorter implements Sorter {
             try {
                 key = read.readNext();
             } catch (IOException e) {
-                //TODO: Rethrow this exception or simply return null?
-                key = null;
+                throw new MergeSortIOException (e);
             }
             if (key != null) {
                 row = createRow (key);
