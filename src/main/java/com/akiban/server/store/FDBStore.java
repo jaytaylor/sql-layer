@@ -509,11 +509,11 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
 
     @Override
     public void truncateIndexes(Session session, Collection<? extends Index> indexes) {
-        super.truncateIndexes(session, indexes);
         Transaction txn = txnService.getTransaction(session);
         for(Index index : indexes) {
+            truncateTree(session, index.indexDef());
             if(index.isGroupIndex()) {
-                cachedGICounter(session, (GroupIndex) index).set(txn, 0);
+                cachedGICounter(session, (GroupIndex)index).clearState(txn);
             }
         }
     }

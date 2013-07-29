@@ -192,8 +192,8 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
 
     @Override
     public void truncateIndexes(Session session, Collection<? extends Index> indexes) {
-        super.truncateIndexes(session, indexes);
         for(Index index : indexes) {
+            truncateTree(session, index.indexDef());
             if(index.isGroupIndex()) {
                 try {
                     Tree tree = index.indexDef().getTreeCache().getTree();
