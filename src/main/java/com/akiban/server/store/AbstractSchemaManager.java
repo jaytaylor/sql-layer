@@ -101,15 +101,19 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     protected final SessionService sessionService;
     protected final ConfigurationService config;
+    protected final TransactionService txnService;
+
     protected SecurityService securityService;
     protected int maxAISBufferSize;
     protected SerializationType serializationType = SerializationType.NONE;
     protected ReadWriteMap<Integer,Integer> tableVersionMap;
     protected Map<TableName,MemoryTableFactory> memoryTableFactories;
 
-    protected AbstractSchemaManager(ConfigurationService config, SessionService sessionService) {
+    protected AbstractSchemaManager(ConfigurationService config, SessionService sessionService,
+            TransactionService txnService) {
         this.config = config;
         this.sessionService = sessionService;
+        this.txnService = txnService;
     }
 
 
@@ -736,7 +740,32 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         );
     }
 
-    protected abstract void trackBumpTableVersion (Session session, AkibanInformationSchema newAIS, Collection<Integer> allTableIDs);
+    protected void trackBumpTableVersion (Session session, AkibanInformationSchema newAIS, Collection<Integer> allTableIDs)
+    {
+        // Set the new table version  for tables in the NewAIS
+        for(Integer tableID : allTableIDs) {
+            Integer current = tableVersionMap.get(tableID);
+            Integer update = (current == null) ? 1 : current + 1;
+            UserTable table = newAIS.getUserTable(tableID);
+            if(table != null) { // From drop
+                table.setVersion(update);
+            }
+        }
+        // Schedule the update for the tableVersionMap version number on commit.
+        // Replace any existing map as we only should have one at at time.
+        // for one AIS. 
+        // There may be two of these, the first for an alter table, 
+        // the second for group indexes affected by the change. 
+        Map<AkibanInformationSchema,Collection<Integer>> map = session.get(TABLE_VERSIONS);
+        if(map == null) {
+            map = new HashMap<>();
+            session.put(TABLE_VERSIONS, map);
+        }
+        map.put(newAIS, allTableIDs);
+        txnService.addCallback(session, TransactionService.CallbackType.COMMIT, bumpTableVersionCommit);
+        txnService.addCallback(session, TransactionService.CallbackType.END, cleanTableVersion);
+    }
+
     protected final static Session.MapKey<AkibanInformationSchema, Collection<Integer>> TABLE_VERSIONS = 
             Session.MapKey.mapNamed("TABLE_VERSIONS");
 

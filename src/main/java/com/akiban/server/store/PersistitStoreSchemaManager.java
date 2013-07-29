@@ -124,7 +124,7 @@ import static com.akiban.server.service.tree.TreeService.SCHEMA_TREE_NAME;
  * </p>
  * </p>
  */
-public class PersistitStoreSchemaManager extends AbstractSchemaManager implements Service {
+public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     private static enum GenValue { NEW, SNAPSHOT }
     private static enum GenMap { PUT_NEW, NO_PUT }
 
@@ -205,7 +205,6 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
     private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreSchemaManager.class.getName());
 
     private final TreeService treeService;
-    private final TransactionService txnService;
     private RowDefCache rowDefCache;
     private NameGenerator nameGenerator;
     private AtomicLong delayedTreeIDGenerator;
@@ -222,9 +221,8 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
     @Inject
     public PersistitStoreSchemaManager(ConfigurationService config, SessionService sessionService,
                                        TreeService treeService, TransactionService txnService) {
-        super(config, sessionService);
+        super(config, sessionService, txnService);
         this.treeService = treeService;
-        this.txnService = txnService;
     }
 
     @Override
@@ -910,33 +908,6 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
          } finally {
             aisMap.releaseShared();
         }
-    }
-
-    @Override
-    protected void trackBumpTableVersion (Session session, AkibanInformationSchema newAIS, Collection<Integer> allTableIDs)
-    {
-        // Set the new table version  for tables in the NewAIS
-        for(Integer tableID : allTableIDs) {
-            Integer current = tableVersionMap.get(tableID);
-            Integer update = (current == null) ? 1 : current + 1;
-            UserTable table = newAIS.getUserTable(tableID);
-            if(table != null) { // From drop
-                table.setVersion(update);
-            }
-        }
-        // Schedule the update for the tableVersionMap version number on commit.
-        // Replace any existing map as we only should have one at at time.
-        // for one AIS. 
-        // There may be two of these, the first for an alter table, 
-        // the second for group indexes affected by the change. 
-        Map<AkibanInformationSchema,Collection<Integer>> map = session.get(TABLE_VERSIONS);
-        if(map == null) {
-            map = new HashMap<>();
-            session.put(TABLE_VERSIONS, map);
-        }
-        map.put(newAIS, allTableIDs);
-        txnService.addCallback(session, TransactionService.CallbackType.COMMIT, bumpTableVersionCommit);
-        txnService.addCallback(session, TransactionService.CallbackType.END, cleanTableVersion);
     }
 
     private Accumulator.SeqAccumulator getGenerationAccumulator(Session session) throws PersistitException {
