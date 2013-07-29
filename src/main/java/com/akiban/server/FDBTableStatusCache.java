@@ -69,11 +69,13 @@ public class FDBTableStatusCache implements TableStatusCache {
 
     @Override
     public synchronized void clearTableStatus(Session session, UserTable table) {
-        FDBTableStatus status = (FDBTableStatus)table.rowDef().getTableStatus();
-        if(status != null) {
-            status.clearState(session);
+        TableStatus status = table.rowDef().getTableStatus();
+        if(status instanceof FDBTableStatus) {
+            ((FDBTableStatus)status).clearState(session);
+        } else if(status != null) {
+            assert status instanceof MemoryTableStatus : status;
+            memoryTableStatusMap.remove(table.getTableId());
         }
-        memoryTableStatusMap.remove(table.getTableId());
     }
 
 
