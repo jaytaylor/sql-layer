@@ -26,7 +26,7 @@ import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.util.AkibanAppender;
-import org.codehaus.jackson.JsonParseException;
+import com.fasterxml.jackson.core.JsonParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
