@@ -4,11 +4,11 @@
 ---
 - Statement: CREATE INDEX idx on t(full_text(name));
 ---
-- Statement: SELECT fulltext_maintenance_wait();
+- Statement: CALL sys.full_text_background_wait()
 ---
 - Statement: INSERT INTO t values (1, 'bar1'), (2, 'bar2'), (3, 'bar3'), (4, 'bar1');
 ---
-- Statement: SELECT fulltext_maintenance_wait();
+- Statement: CALL sys.full_text_background_wait()
 ---
 - Statement: SELECT id from t where full_text_search(name='bar1');
 - output: [[1], [4]]
@@ -23,7 +23,7 @@
 ---
 - Statement: CREATE INDEX t2_idx on t2(full_text(name));
 ---
-- Statement: SELECT fulltext_maintenance_wait();
+- Statement: CALL sys.full_text_background_wait()
 ---
 - Statement: SELECT * FROM t2 WHERE FULL_TEXT_SEARCH(name, 'Jo*');
 - row_count: 0
@@ -36,7 +36,7 @@
 ---
 - Statement: CREATE INDEX t2_idx on t2(full_text(name));
 ---
-- Statement: SELECT fulltext_maintenance_wait()
+- Statement: CALL sys.full_text_background_wait()
 ---
 - Statement: SELECT * FROM t2 WHERE FULL_TEXT_SEARCH(name, 'Jo*');
 - output: [[1, 'John']]

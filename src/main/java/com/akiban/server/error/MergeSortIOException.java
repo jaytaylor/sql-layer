@@ -14,11 +14,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+package com.akiban.server.error;
 
-package com.akiban.server.service;
+import java.io.IOException;
 
-public interface BackgroundObserver
-{
-    public void update(BackgroundWork event);
-    public boolean backgroundFinished();
+public class MergeSortIOException extends InvalidOperationException {
+
+    public MergeSortIOException(IOException ex) {
+        super(ErrorCode.MERGE_SORT_IO, ex.getMessage());
+    }
+
 }

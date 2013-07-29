@@ -35,7 +35,6 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.GroupCursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryBindingsCursor;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
@@ -90,7 +89,7 @@ import java.util.List;
 import java.util.Set;
 
 public abstract class AbstractStore<SDType> implements Store {
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractStore.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractStore.class);
 
     private static final InOutTap WRITE_ROW_TAP = Tap.createTimer("write: write_row");
     private static final InOutTap DELETE_ROW_TAP = Tap.createTimer("write: delete_row");
@@ -1028,10 +1027,10 @@ public abstract class AbstractStore<SDType> implements Store {
         final int tableID = rowDef.getRowDefId();
 
         // Since this is called on a per-row basis, we can't rely on re-entrancy.
-        if(lockService.isTableClaimed(session, mode, tableID)) {
+        if(lockService.isTableClaimed(session, mode, tableID) ||
+                lockService.isTableClaimed(session, LockService.Mode.EXCLUSIVE, tableID)) {
             return;
         }
-
         /*
          * No need to retry locks or back off already acquired. Other locker is DDL
          * and it performs needed backoff to prevent deadlocks.

@@ -124,7 +124,7 @@ import static com.akiban.server.service.tree.TreeService.SCHEMA_TREE_NAME;
  * </p>
  * </p>
  */
-public class PersistitStoreSchemaManager extends AbstractSchemaManager implements Service {
+public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     private static enum GenValue { NEW, SNAPSHOT }
     private static enum GenMap { PUT_NEW, NO_PUT }
 
@@ -205,7 +205,6 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
     private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreSchemaManager.class);
 
     private final TreeService treeService;
-    private final TransactionService txnService;
     private RowDefCache rowDefCache;
     private NameGenerator nameGenerator;
     private AtomicLong delayedTreeIDGenerator;
@@ -222,9 +221,8 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
     @Inject
     public PersistitStoreSchemaManager(ConfigurationService config, SessionService sessionService,
                                        TreeService treeService, TransactionService txnService) {
-        super(config, sessionService);
+        super(config, sessionService, txnService);
         this.treeService = treeService;
-        this.txnService = txnService;
     }
 
     @Override
@@ -909,20 +907,6 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager implement
          } finally {
             aisMap.releaseShared();
         }
-    }
-
-    @Override
-    public boolean hasTableChanged(Session session, int tableID) {
-        UserTable table = getAis(session).getUserTable(tableID);
-        if(table == null) {
-            throw new IllegalStateException("Unknown table: " + tableID);
-        }
-        Integer curVer = tableVersionMap.get(tableID);
-        Integer tableVer = table.getVersion();
-        if(curVer == null) {
-            return tableVer != null;
-        }
-        return !curVer.equals(tableVer);
     }
 
     private Accumulator.SeqAccumulator getGenerationAccumulator(Session session) throws PersistitException {

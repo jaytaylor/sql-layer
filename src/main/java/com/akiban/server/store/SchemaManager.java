@@ -118,8 +118,11 @@ public interface SchemaManager {
      * supported through this interface.
      * @param session Session to operate under.
      * @param indexes List of indexes to drop.
+     * @param index drop is temporary - True means indexes will be recreated in
+     *      the same transaction as part of an alter. False means this is the only
+     *      change. 
      */
-    void dropIndexes(Session session, Collection<? extends Index> indexes);
+    void dropIndexes(Session session, Collection<? extends Index> indexes, boolean temporary);
 
     /**
      * Delete the definition of the table with the given name. Throws

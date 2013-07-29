@@ -77,6 +77,10 @@ public class SimpleQueryContext extends QueryContextBase
 
     @Override
     public int getSessionId() {
+        if (adapter != null) {
+            return (int)adapter.getSession().sessionId();
+        }
+
         throw new UnsupportedOperationException();
     }
 

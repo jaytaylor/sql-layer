@@ -82,7 +82,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
 
     // TODO: versioning?
 
-    private final ServiceManager serviceManager;
     private final FDBHolder holder;
     private final FDBTransactionService txnService;
     private final Object AIS_LOCK = new Object();
@@ -95,13 +94,11 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
 
 
     @Inject
-    public FDBSchemaManager(ServiceManager serviceManager,
-                            ConfigurationService config,
+    public FDBSchemaManager(ConfigurationService config,
                             SessionService sessionService,
                             FDBHolder holder,
                             TransactionService txnService) {
-        super(config, sessionService);
-        this.serviceManager = serviceManager;
+        super(config, sessionService, txnService);
         this.holder = holder;
         if(txnService instanceof FDBTransactionService) {
             this.txnService = (FDBTransactionService)txnService;
