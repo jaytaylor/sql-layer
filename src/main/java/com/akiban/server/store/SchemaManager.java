@@ -142,40 +142,12 @@ public interface SchemaManager {
     void alterSequence(Session session, TableName sequenceName, Sequence newDefinition);
 
     /**
-     * Generate a TableDefinition, which includes a canonical 'create table' statement,
-     * schema name, table name, and table ID, for the given table.
-     * @param session Session to operate under.
-     * @param tableName The name of the requested table.
-     * @return Filled in TableDefinition.
-     */
-    TableDefinition getTableDefinition(Session session, TableName tableName);
-
-    /**
-     * Generate a 'create table' DDL statement for each table in the given schema.
-     * @param session Session to operate under.
-     * @param schemaName Schema to to query.
-     * @return Map, keyed by table name, of all TableDefinitions.
-     */
-    SortedMap<String, TableDefinition> getTableDefinitions(Session session, String schemaName);
-
-    /**
      * Returns the current and authoritative AIS, containing all metadata about
      * all known for the running system.
      * @param session Session to operate under.
      * @return The current AIS.
      */
     AkibanInformationSchema getAis(Session session);
-
-    /**
-     * Generate DDL statements for every schema and table.
-     * The format of the 'create schema' contains if not exists and will occur before
-     * any table in that schema. No other guarantees are given about ordering.
-     *
-     * @param session The Session to operate under.
-     * @param withISTables  true, include 'create table' statements for tables in the I_S.
-     * @return List of every create statement request.
-     */
-    List<String> schemaStrings(Session session, boolean withISTables);
 
     /** Add the given view to the current AIS. */
     void createView(Session session, View view);

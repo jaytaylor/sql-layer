@@ -385,52 +385,6 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     }
 
     @Override
-    public TableDefinition getTableDefinition(Session session, TableName tableName) {
-        final Table table = getAis(session).getTable(tableName);
-        if(table == null) {
-            throw new NoSuchTableException(tableName);
-        }
-        final String ddl = new DDLGenerator().createTable(table);
-        return new TableDefinition(table.getTableId(), tableName, ddl);
-    }
-
-    @Override
-    public SortedMap<String, TableDefinition> getTableDefinitions(Session session, String schemaName) {
-        final SortedMap<String, TableDefinition> result = new TreeMap<>();
-        final DDLGenerator gen = new DDLGenerator();
-        for(UserTable table : getAis(session).getUserTables().values()) {
-            final TableName name = table.getName();
-            if(name.getSchemaName().equals(schemaName)) {
-                final String ddl = gen.createTable(table);
-                final TableDefinition def = new TableDefinition(table.getTableId(), name, ddl);
-                result.put(name.getTableName(), def);
-            }
-        }
-        return result;
-    }
-
-    @Override
-    public List<String> schemaStrings(Session session, boolean withISTables) {
-        final AkibanInformationSchema ais = getAis(session);
-        final DDLGenerator generator = new DDLGenerator();
-        final List<String> ddlList = new ArrayList<>();
-        for(Schema schema : ais.getSchemas().values()) {
-            if(!withISTables &&
-                    (TableName.INFORMATION_SCHEMA.equals(schema.getName()) ||
-                            TableName.SECURITY_SCHEMA.equals(schema.getName()) ||
-                            TableName.SYS_SCHEMA.equals(schema.getName()) ||
-                            TableName.SQLJ_SCHEMA.equals(schema.getName()))) {
-                continue;
-            }
-            ddlList.add(String.format(CREATE_SCHEMA_FORMATTER, schema.getName()));
-            for(UserTable table : schema.getUserTables().values()) {
-                ddlList.add(generator.createTable(table));
-            }
-        }
-        return ddlList;
-    }
-
-    @Override
     public void createView(Session session, View view) {
         final AkibanInformationSchema oldAIS = getAis(session);
         checkSystemSchema(view.getName(), false);

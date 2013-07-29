@@ -39,7 +39,6 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
-import com.akiban.server.store.TableDefinition;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import org.junit.Before;
@@ -54,7 +53,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.SortedMap;
 
 import static com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 import static com.akiban.server.types.AkType.*;
@@ -721,21 +719,6 @@ public class BasicInfoSchemaTablesServiceImplTest {
 
         @Override
         public void alterSequence(Session session, TableName sequenceName, Sequence newDefinition) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public TableDefinition getTableDefinition(Session session, TableName tableName) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public SortedMap<String, TableDefinition> getTableDefinitions(Session session, String schemaName) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public List<String> schemaStrings(Session session, boolean withISTables) {
             throw new UnsupportedOperationException();
         }
 
