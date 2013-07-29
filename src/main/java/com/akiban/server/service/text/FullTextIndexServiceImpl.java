@@ -83,11 +83,11 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     private static final Logger logger = LoggerFactory.getLogger(FullTextIndexServiceImpl.class);
 
     public static final String INDEX_PATH_PROPERTY = "akserver.text.indexpath";
-    public static final String BACKGROUND_INTERVAL = "akserver.text.backgroundInterval";
+    public static final String BACKGROUND_INTERVAL_PROPERTY = "akserver.text.backgroundInterval";
 
-    private static final TableName BACKGROUND_WAIT_PROC_NAME = new TableName(TableName.SYS_SCHEMA, "full_text_background_wait");
     private static final TableName POPULATE_TABLE = new TableName(TableName.INFORMATION_SCHEMA, "full_text_populate");
     private static final TableName CHANGES_TABLE = new TableName(TableName.INFORMATION_SCHEMA, "full_text_changes");
+    private static final TableName BACKGROUND_WAIT_PROC_NAME = new TableName(TableName.SYS_SCHEMA, "full_text_background_wait");
 
 
     private final ConfigurationService configService;
@@ -196,7 +196,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         listenerService.registerTableListener(this);
         listenerService.registerRowListener(this);
 
-        backgroundInterval =  Long.parseLong(configService.getProperty(BACKGROUND_INTERVAL));
+        backgroundInterval =  Long.parseLong(configService.getProperty(BACKGROUND_INTERVAL_PROPERTY));
         enableUpdateWorker();
         enablePopulateWorker();
     }
@@ -453,7 +453,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         return API.cursor(plan, context, context.createBindings());
     }
 
-    protected boolean populateNextIndex(Session session) throws PersistitException
+    protected boolean populateNextIndex(Session session)
     {
         transactionService.beginTransaction(session);
         Cursor cursor = null;
@@ -484,7 +484,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             populating.remove(toPopulate);
             logger.warn("populateNextIndex aborted : {}", e2.getMessage());
         } catch(IOException e) {
-            throw new AkibanInternalException ("Failed to populate index ", e);
+            throw new AkibanInternalException("Failed to populate index ", e);
         } finally {
             transactionService.rollbackTransactionIfOpen(session);
         }
@@ -492,16 +492,11 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     }
     
     private void runPopulate() {
-        Session session = sessionService.createSession();
-        try {
+        try(Session session = sessionService.createSession()) {
             boolean more = true;
             while(more) {
                 more = populateNextIndex(session);
             }
-        } catch(PersistitException e) {
-            throw PersistitAdapter.wrapPersistitException(session, e);
-        } finally {
-            session.close();
         }
     }
     
@@ -534,7 +529,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                         }
                         rows.cursor.close();
                         rows = null;
-                        updatingIndex = null;
                     } else {
                         done = true;
                     }
@@ -542,10 +536,10 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                 transactionService.commitTransaction(session);
             }
         } finally {
+            updatingIndex = null;
             if(rows != null && rows.cursor != null) {
                 rows.cursor.close();
             }
-            updatingIndex = null;
             transactionService.rollbackTransactionIfOpen(session);
             session.close();
         }
@@ -578,7 +572,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         Key key = hkey.key();
         key.setEncodedSize(rowBytes.length);
         System.arraycopy(rowBytes, 0, key.getEncodedBytes(), 0, rowBytes.length);
-        return new HKeyRow(hKeyRowType, hkey, new HKeyCache<>(store));
+        return new HKeyRow(hKeyRowType, hkey, new HKeyCache<com.akiban.qp.row.HKey>(store));
     }
 
     public HKeyBytesStream getChangedRows(Session session) {
@@ -745,6 +739,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                .colString("table_name", identMax, false)
                .colString("index_name", identMax, false)
                .pk("schema_name", "table_name", "index_name");
+        // TODO: Hidden PK too expensive?
         builder.userTable(CHANGES_TABLE)
                .colString("schema_name", identMax, false)
                .colString("table_name", identMax, false)

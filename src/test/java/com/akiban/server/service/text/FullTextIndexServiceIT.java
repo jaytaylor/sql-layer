@@ -21,6 +21,7 @@ import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.IndexName;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import static com.akiban.qp.operator.API.cursor;
 
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
@@ -34,7 +35,6 @@ import com.akiban.server.test.it.qp.TestRow;
 import org.junit.Before;
 import org.junit.Test;
 
-import static com.akiban.qp.operator.API.cursor;
 import static org.junit.Assert.*;
 
 public class FullTextIndexServiceIT extends FullTextIndexServiceITBase

@@ -113,8 +113,8 @@ public class FullTextIndexServiceBug1172013IT extends FullTextIndexServiceITBase
     public void testDelete2() throws InterruptedException {
         logger.debug("Running test delete 2");
         createFullTextIndex(
-                SCHEMA, "o", "idx3_o", "oid", "c1", "c2", "c3", "c4"
-        );
+                SCHEMA, "o", "idx3_o",
+                "oid", "c1", "c2", "c3", "c4");
         waitPopulate();
 
         Thread t = new Thread(new DropIndex());
@@ -163,8 +163,8 @@ public class FullTextIndexServiceBug1172013IT extends FullTextIndexServiceITBase
 
         // create the index, let it complete
         createFullTextIndex(
-                SCHEMA, "o", "idx3_o", "oid", "c1", "c2", "c3", "c4"
-        );
+                SCHEMA, "o", "idx3_o",
+                "oid", "c1", "c2", "c3", "c4");
         waitPopulate();
 
         writeRow(o, 103, 1, "c1", "c2", "c3", "c4", "2012-12-12");
