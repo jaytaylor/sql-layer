@@ -793,7 +793,9 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                 try {
                     runInternal();
                 } catch(Exception e) {
-                    logger.error("{} run failed with exception", getName(), e);
+                    if(!store.isRetryableException(e)) {
+                        logger.error("{} run failed with exception", getName(), e);
+                    }
                 }
                 sleep();
             }
