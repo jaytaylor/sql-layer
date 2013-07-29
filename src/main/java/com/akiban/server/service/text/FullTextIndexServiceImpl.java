@@ -745,7 +745,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                .colString("table_name", identMax, false)
                .colString("index_name", identMax, false)
                .pk("schema_name", "table_name", "index_name");
-        // TODO: Hidden PK too expensive?
         builder.userTable(CHANGES_TABLE)
                .colString("schema_name", identMax, false)
                .colString("table_name", identMax, false)
