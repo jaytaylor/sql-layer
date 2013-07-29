@@ -21,45 +21,25 @@ import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.IndexName;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
 import static com.akiban.qp.operator.API.cursor;
 
-import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionServiceImpl;
 import com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
-import com.akiban.server.test.it.ITBase;
 import com.akiban.server.test.it.qp.TestRow;
 
-import com.akiban.server.types3.mcompat.mfuncs.WaitFunctionHelpers;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static org.junit.Assert.*;
 
-public class FullTextIndexServiceIT extends ITBase
+public class FullTextIndexServiceIT extends FullTextIndexServiceITBase
 {
     public static final String SCHEMA = "test";
-    protected FullTextIndexService fullText;
-    protected Schema schema;
-    protected StoreAdapter adapter;
-    protected QueryContext queryContext;
-    protected QueryBindings queryBindings;
-    private static final Logger logger = LoggerFactory.getLogger(FullTextIndexServiceIT.class);
-
-
-    private int c;
-    private int o;
-    private int i;
-    private int a;
     
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
@@ -100,21 +80,16 @@ public class FullTextIndexServiceIT extends ITBase
         writeRow(a, 301, 3, "MA");
         writeRow(a, 302, 3, "ME");
 
-        fullText = serviceManager().getServiceByClass(FullTextIndexService.class);
-
         schema = SchemaCache.globalSchema(ais());
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
     }
 
+
     @Test
     public void testPopulateScheduling() throws InterruptedException
     {
-        // This test is specifically for FullTextIndexServiceImpl.java
-        assertEquals(FullTextIndexServiceImpl.class, fullText.getClass());
-        FullTextIndexServiceImpl fullTextImpl = (FullTextIndexServiceImpl)fullText;
-        
         // disable the populate worker (so it doesn't read all the entries
         // out before we get a chance to look at the tree.
         fullTextImpl.disablePopulateWorker();
@@ -155,7 +130,7 @@ public class FullTextIndexServiceIT extends ITBase
         // let the worker do its job.
         // (After it is done, the tree had better be empty)
         fullTextImpl.enablePopulateWorker();
-        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
+        waitPopulate();
 
         traverse(fullTextImpl,
                  new Visitor()
@@ -180,11 +155,6 @@ public class FullTextIndexServiceIT extends ITBase
     @Test
     public void testDeleteIndex() throws InterruptedException
     {
-     
-        // This test is specifically for FullTextIndexServiceImpl.java
-        assertEquals(FullTextIndexServiceImpl.class, fullText.getClass());
-        FullTextIndexServiceImpl fullTextImpl = (FullTextIndexServiceImpl)fullText;
-         
         // <1> disable worker
         fullTextImpl.disablePopulateWorker();
 
@@ -209,7 +179,7 @@ public class FullTextIndexServiceIT extends ITBase
         deleteFullTextIndex(expecteds[0].getIndexName());
         deleteFullTextIndex(expecteds[1].getIndexName());
 
-        // <4> check that the tree only has one entry now (ie., epxecteds2[2]
+        // <4> check that the tree only has one entry now (ie. expected[2])
         traverse(fullTextImpl,
                  new Visitor()
                  {
@@ -231,8 +201,8 @@ public class FullTextIndexServiceIT extends ITBase
         
         // wake the worker up to do its job
         fullTextImpl.enablePopulateWorker();
-        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
-        
+        waitPopulate();
+
         session.close();
     }
 
@@ -287,7 +257,7 @@ public class FullTextIndexServiceIT extends ITBase
                                                   SCHEMA, "c", "idx_c", 
                                                   "name", "i.sku", "a.state");
 
-        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
+        waitPopulate();
         RowType rowType = rowType("c");
         RowBase[] expected1 = new RowBase[]
         {
@@ -304,8 +274,8 @@ public class FullTextIndexServiceIT extends ITBase
         writeRow(c, 5, "Sherlock Flintstone");
         writeRow(c, 6, "Mycroft Holmes");
         writeRow(c, 7, "Flintstone Lestrade");
-        
-        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
+
+        waitUpdate();
         RowBase expected2[] = new RowBase[]
         {
             row(rowType, 1L),
@@ -318,20 +288,20 @@ public class FullTextIndexServiceIT extends ITBase
         ftScanAndCompare(builder, "flintstone", 15, expected2);
 
         // part 3
-        ((FullTextIndexServiceImpl)fullText).disableUpdateWorker();
+        fullTextImpl.disableUpdateWorker();
         
         writeRow(c, 8, "Flintstone Hudson");
         writeRow(c, 9, "Jim Flintstone");
         
         // The worker has been disabled, waitOn should return immediately
-        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
-        
+        waitUpdate();
+
         // confirm that new rows are not found (ie., expected2 still works)
         ftScanAndCompare(builder, "flintstone", 15, expected2);
 
-        ((FullTextIndexServiceImpl)fullText).enableUpdateWorker();
-        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
-        
+        fullTextImpl.enableUpdateWorker();
+        waitUpdate();
+
         // now the rows should be seen.
         // (Because disabling the worker does not stop the changes fron being recorded)
         RowBase expected3[] = new RowBase[]
@@ -352,7 +322,7 @@ public class FullTextIndexServiceIT extends ITBase
         FullTextIndex index = createFullTextIndex(
                                                   SCHEMA, "c", "idx_c", 
                                                   "name", "i.sku", "a.state");
-        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
+        waitPopulate();
         RowType rowType = rowType("c");
         RowBase[] expected = new RowBase[] {
             row(rowType, 1L),
@@ -368,7 +338,7 @@ public class FullTextIndexServiceIT extends ITBase
         FullTextIndex index = createFullTextIndex(
                                                   SCHEMA, "o", "idx_o",
                                                   "c.name", "i.sku");
-        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
+        waitPopulate();
         RowType rowType = rowType("o");
         RowBase[] expected = new RowBase[] {
             row(rowType, 1L, 101L)
@@ -380,7 +350,7 @@ public class FullTextIndexServiceIT extends ITBase
     @Test
     public void testTruncate() throws InterruptedException {
         FullTextIndex index = createFullTextIndex(SCHEMA, "c", "idx_c", "name", "i.sku", "a.state");
-        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
+        waitPopulate();
         
         final int limit = 15;
         RowType rowType = rowType("c");
@@ -398,25 +368,25 @@ public class FullTextIndexServiceIT extends ITBase
         ftScanAndCompare(builder, skuQuery, limit, skuExpected);
 
         dml().truncateTable(session(), a);
-        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
+        waitUpdate();
         ftScanAndCompare(builder, nameQuery, limit, nameExpected);
         ftScanAndCompare(builder, stateQuery, limit, emptyExpected);
         ftScanAndCompare(builder, skuQuery, limit, skuExpected);
 
         dml().truncateTable(session(), o);
-        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
+        waitUpdate();
         ftScanAndCompare(builder, nameQuery, limit, nameExpected);
         ftScanAndCompare(builder, stateQuery, limit, emptyExpected);
         ftScanAndCompare(builder, skuQuery, limit, emptyExpected); // Non-cascading key, connection to c1 is unknown
 
         dml().truncateTable(session(), i);
-        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
+        waitUpdate();
         ftScanAndCompare(builder, nameQuery, limit, nameExpected);
         ftScanAndCompare(builder, stateQuery, limit, emptyExpected);
         ftScanAndCompare(builder, skuQuery, limit, emptyExpected);
 
         dml().truncateTable(session(), c);
-        WaitFunctionHelpers.waitOn(fullText.getBackgroundWorks());
+        waitUpdate();
         ftScanAndCompare(builder, nameQuery, limit, emptyExpected);
         ftScanAndCompare(builder, stateQuery, limit, emptyExpected);
         ftScanAndCompare(builder, skuQuery, limit, emptyExpected);
