@@ -86,7 +86,7 @@ public class FDBGroupCursor implements GroupCursor {
                 key.setEncodedSize(keyBytes.length);
                 // Value
                 RowData rowData = new RowData();
-                FDBStore.expandRowData(rowData, kv.getValue(), true);
+                FDBStore.expandRowData(rowData, kv, true);
                 // Row
                 row = new FDBGroupRow(adapter);
                 row.set(key, rowData);

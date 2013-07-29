@@ -239,6 +239,10 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         return cachedGICounter(session, index).getSnapshot(txn);
     }
 
+    public static void expandRowData(RowData rowData, KeyValue kv, boolean copyBytes) {
+        expandRowData(rowData, kv.getValue(), copyBytes);
+    }
+
     public static void expandRowData(RowData rowData, byte[] value, boolean copyBytes) {
         if(copyBytes) {
             byte[] rowBytes = rowData.getBytes();
@@ -584,7 +588,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             System.arraycopy(keyBytes, 0, key.getEncodedBytes(), 0, keyBytes.length);
             // Value
             RowData rowData = new RowData();
-            expandRowData(rowData, kv.getValue(), true);
+            expandRowData(rowData, kv, true);
             // Visit
             visitor.visit(key, rowData);
         }

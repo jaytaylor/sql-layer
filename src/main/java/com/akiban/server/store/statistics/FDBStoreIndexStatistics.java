@@ -88,8 +88,7 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
         while(it.hasNext().get()) {
             KeyValue kv = it.next().get();
             RowData rowData = new RowData();
-            rowData.reset(kv.getValue());
-            rowData.prepareRow(0);
+            FDBStore.expandRowData(rowData, kv, false);
             getStore().deleteRow(session, rowData, true, false); // TODO: Use cascade?
         }
     }
@@ -149,8 +148,7 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
                                            RowDef indexStatisticsRowDef,
                                            Index index) {
         RowData rowData = new RowData();
-        rowData.reset(kv.getValue());
-        rowData.prepareRow(0);
+        FDBStore.expandRowData(rowData, kv, false);
         return decodeIndexStatisticsRow(rowData, indexStatisticsRowDef, index);
     }
 
@@ -158,8 +156,7 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
                                RowDef indexStatisticsEntryRowDef,
                                IndexStatistics indexStatistics) {
         RowData rowData = new RowData();
-        rowData.reset(kv.getValue());
-        rowData.prepareRow(0);
+        FDBStore.expandRowData(rowData, kv, false);
         decodeIndexStatisticsEntryRow(rowData, indexStatisticsEntryRowDef, indexStatistics);
     }
 }
