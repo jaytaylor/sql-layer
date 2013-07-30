@@ -4,16 +4,17 @@ SelectQuery@47d13cd
       Flatten@7138ebd2(t3)
         GroupScan@56ff1608(Group(test.t3), rows = 1, cost = 0.00000)
           TableSource@492c032(t3 - TableGroup@4ff93d7(t3))
-      MapJoin@27430ad1()
-        Flatten@50026210(t1)
-          GroupScan@227b337a(Group(test.t1), rows = 1, cost = 0.00000)
-            TableSource@5818428c(t1 - TableGroup@4670a045(t1))
-        Project@6e313ba4[t1.id, t1.s, t2.id, t2.s, t3.id, t3.s]
-          Select@6242c480[]
-            NullIfEmpty@c2a3624
+      Project@6e313ba4[t1.id, t1.s, t2.id, t2.s, t3.id, t3.s]
+        Select@6242c480[]
+          NullIfEmpty@c2a3624
+            MapJoin@27430ad1()
+              Flatten@50026210(t1)
+                GroupScan@227b337a(Group(test.t1), rows = 1, cost = 0.00000)
+                  TableSource@5818428c(t1 - TableGroup@4670a045(t1))
               Select@4c743179[t3.id == t2.id]
-                NullIfEmpty@27487bb9
-                  Flatten@605c2625(t2)
-                    AncestorLookup@7b2c2d5(t2 -> [t2])
-                      SingleIndexScan@691531e5(Index(test.t2.PRIMARY[IndexColumn(id)]), NONE, =t1.id, rows = 1, cost = 11.9848)
-                      TableSource@3e8814f6(t2 - TableGroup@6e7ee748(t2))
+                Project@7e1c0bf9[t1.id, t2.id, t1.s, t2.s]
+                  NullIfEmpty@27487bb9
+                    Flatten@605c2625(t2)
+                      AncestorLookup@7b2c2d5(t2 -> [t2])
+                        SingleIndexScan@691531e5(Index(test.t2.PRIMARY[IndexColumn(id)]), NONE, =t1.id, rows = 1, cost = 11.9848)
+                        TableSource@3e8814f6(t2 - TableGroup@6e7ee748(t2))

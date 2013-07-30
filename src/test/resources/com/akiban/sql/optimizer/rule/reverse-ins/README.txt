@@ -38,4 +38,4 @@ nested-in: nested semi-joins
 
 nested-not-in: nested anti-joins
 
-nested-in-not: nested anti inside semi
+nested-in-not: nested semi inside anti
