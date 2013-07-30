@@ -1,0 +1,19 @@
+SelectQuery@773bf444
+  ResultSet@121d984[id, s, id, s, id, s]
+    MapJoin@14336855()
+      Flatten@12d86228(t1)
+        GroupScan@3b06aecf(Group(test.t1), rows = 1, cost = 0.00000)
+          TableSource@765bf858(t1 - TableGroup@33beb64f(t1))
+      MapJoin@2db31713()
+        Flatten@3c1439c2(t2)
+          Select@48aff7d5[t2.id == t1.id]
+            GroupScan@18b7e63b(Group(test.t2), rows = 1, cost = 0.00000)
+              TableSource@2b72af70(t2 - TableGroup@516c382a(t2))
+        Project@554f69b0[t1.id, t1.s, t2.id, t2.s, t3.id, t3.s]
+          Select@50a3cd91[]
+            NullIfEmpty@17db7729
+              Select@496c30fb[]
+                Flatten@53dc0e5e(t3)
+                  AncestorLookup@5e03d465(t3 -> [t3])
+                    SingleIndexScan@4d6d631b(Index(test.t3.PRIMARY[IndexColumn(id)]), NONE, =t2.id, rows = 1, cost = 11.9848)
+                    TableSource@4ec2506(t3 - TableGroup@4885a953(t3))

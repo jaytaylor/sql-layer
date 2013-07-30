@@ -33,3 +33,9 @@ update-semi: UPDATE with semi-join.
 map-join-project: Need both sides of outer loop.
 
 map-join-project-nested: Needed in inner loop because outer loop is like that.
+
+nested-in: nested semi-joins
+
+nested-not-in: nested anti-joins
+
+nested-in-not: nested anti inside semi
