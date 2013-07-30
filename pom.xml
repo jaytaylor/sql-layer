@@ -52,11 +52,6 @@
     
     <dependencies>
         <dependency>
-            <groupId>com.akiban</groupId>
-            <artifactId>jonquil</artifactId>
-            <version>1.0</version>
-        </dependency>
-        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-math</artifactId>
             <version>2.2</version>
