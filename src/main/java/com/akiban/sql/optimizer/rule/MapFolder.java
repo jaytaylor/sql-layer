@@ -193,6 +193,9 @@ public class MapFolder extends BaseRule
                    (parent instanceof ResultSet) ||
                    (parent instanceof AggregateSource) ||
                    (parent instanceof Sort) ||
+                   (parent instanceof NullIfEmpty) ||
+                   (parent instanceof OnlyIfEmpty) ||
+                   (parent instanceof Limit) ||
                    // Captures enough at the edge of the inside.
                    (child instanceof Project) ||
                    (child instanceof UpdateInput)));
