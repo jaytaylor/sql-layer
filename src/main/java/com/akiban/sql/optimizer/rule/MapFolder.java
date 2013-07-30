@@ -149,18 +149,7 @@ public class MapFolder extends BaseRule
             map.setInner(new NullIfEmpty(map.getInner()));
             break;
         case SEMI:
-            {
-                PlanNode inner = map.getInner();
-                if ((inner instanceof Select) && 
-                    ((Select)inner).getConditions().isEmpty())
-                    inner = ((Select)inner).getInput();
-                // Right-nested semi-joins only need one Limit, since
-                // all the effects happen inside the fastest loop.
-                if (!((inner instanceof MapJoin) && 
-                      ((MapJoin)inner).getJoinType() == JoinNode.JoinType.SEMI))
-                    inner = new Limit(map.getInner(), 1);
-                map.setInner(inner);
-            }
+            map.setInner(new Limit(map.getInner(), 1));
             break;
         case ANTI:
             map.setInner(new OnlyIfEmpty(map.getInner()));
