@@ -2,11 +2,11 @@ SelectQuery@3ba71336
   ResultSet@55de5cd2[cid]
     MapJoin@5208873f()
       SingleIndexScan@2de7632c(Index(test.customers.name[IndexColumn(name)]), covering/NONE, rows = 100, cost = 74.1740)
-      MapJoin@321ff53f()
-        SingleIndexScan@501e14ce(Index(test.parent.PRIMARY[IndexColumn(id)]), covering/NONE, rows = 100, cost = 69.9260)
-        Project@79a00b08[customers.cid]
-          Select@7a347899[]
-            OnlyIfEmpty@66e80979
+      Project@79a00b08[customers.cid]
+        Select@7a347899[]
+          OnlyIfEmpty@66e80979
+            MapJoin@321ff53f()
+              SingleIndexScan@501e14ce(Index(test.parent.PRIMARY[IndexColumn(id)]), covering/NONE, rows = 100, cost = 69.9260)
               Select@287c958f[]
                 Flatten@b3ef40d(items)
                   Select@bc61bb7[customers.name == items.sku]

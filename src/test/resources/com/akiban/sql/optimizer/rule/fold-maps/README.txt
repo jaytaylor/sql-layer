@@ -1,5 +1,23 @@
 aggregate: Aggregation with nested loops
 
+nested-inner-inner: Nested joins: inner then inner
+
+nested-inner-left: Nested joins: inner then left
+
+nested-inner-right: Nested joins: inner then right
+
+nested-left-inner: Nested joins: left then inner
+
+nested-left-left: Nested joins: left then left
+
+nested-left-right: Nested joins: left then right
+
+nested-right-inner: Nested joins: right then inner
+
+nested-right-left: Nested joins: right then left
+
+nested-right-right: Nested joins: right then right
+
 outer: Outer join across groups.
 
 outer-join-condition: Outer join with another condition.

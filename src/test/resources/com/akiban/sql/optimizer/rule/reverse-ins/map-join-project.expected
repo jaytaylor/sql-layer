@@ -3,9 +3,9 @@ SelectQuery@3badb7a0
     MapJoin@273d638c()
       SingleIndexScan@2f529074(Index(test.customers.name[IndexColumn(name)]), covering/NONE, rows = 100, cost = 74.1740)
       MapJoin@24ebb33()
-        MapJoin@7ee41273()
-          SingleIndexScan@2f777d1a(Index(test.customers.name[IndexColumn(name)]), covering/NONE, rows = 100, cost = 74.1740)
-          NullIfEmpty@4db64e4e
+        NullIfEmpty@4db64e4e
+          MapJoin@7ee41273()
+            SingleIndexScan@2f777d1a(Index(test.customers.name[IndexColumn(name)]), covering/NONE, rows = 100, cost = 74.1740)
             Select@2ec72eb4[]
               Project@7bcf0abd[c1.name, c1.cid]
                 Select@55ca3dcb[c3.name == c2.name]
