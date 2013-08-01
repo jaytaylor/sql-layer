@@ -149,18 +149,7 @@ public class MapFolder extends BaseRule
             map.setInner(new NullIfEmpty(map.getInner()));
             break;
         case SEMI:
-            {
-                PlanNode inner = map.getInner();
-                if ((inner instanceof Select) && 
-                    ((Select)inner).getConditions().isEmpty())
-                    inner = ((Select)inner).getInput();
-                // Right-nested semi-joins only need one Limit, since
-                // all the effects happen inside the fastest loop.
-                if (!((inner instanceof MapJoin) && 
-                      ((MapJoin)inner).getJoinType() == JoinNode.JoinType.SEMI))
-                    inner = new Limit(map.getInner(), 1);
-                map.setInner(inner);
-            }
+            map.setInner(new Limit(map.getInner(), 1));
             break;
         case ANTI:
             map.setInner(new OnlyIfEmpty(map.getInner()));
@@ -204,11 +193,21 @@ public class MapFolder extends BaseRule
                    (parent instanceof ResultSet) ||
                    (parent instanceof AggregateSource) ||
                    (parent instanceof Sort) ||
+                   (parent instanceof NullIfEmpty) ||
+                   (parent instanceof OnlyIfEmpty) ||
+                   (parent instanceof Limit) ||
                    // Captures enough at the edge of the inside.
                    (child instanceof Project) ||
                    (child instanceof UpdateInput)));
         if (child != map) {
             PlanNode inner = map.getInner();
+            // Add a Project to capture fields within the loop before
+            // leaving the scope of its outer binding, that is,
+            // materialize the join as a projected row. 
+            // The cases where this is needed are:
+            // (1) This loop is itself on the outer side of another loop.
+            // (2) It implements the nullable side of an outer join.
+            // (3) Nested inside and so feeding another instance of (2) or (3).
             if (parent instanceof MapJoin) {
                 MapJoinProject nested = findAddedProject((MapJoin)parent, 
                                                          mapJoinProjects);
@@ -226,12 +225,31 @@ public class MapFolder extends BaseRule
                                        nested, mapJoinProjects);
                 }
             }
+            else if (parent instanceof NullIfEmpty) {
+                // Even though we stop at the outer join, we still
+                // need to find the map that it's contained in.
+                PlanNode ancestor = parent;
+                do {
+                    ancestor = ancestor.getOutput();
+                } while ((ancestor instanceof Select) ||
+                         (ancestor instanceof Project));
+                if (ancestor instanceof MapJoin) {
+                    MapJoinProject nested = findAddedProject((MapJoin)ancestor, 
+                                                             mapJoinProjects);
+                    inner = addProject((MapJoin)ancestor, map, inner,
+                                       nested, mapJoinProjects);
+                }
+            }
             map.getOutput().replaceInput(map, inner);
             parent.replaceInput(child, map);
             map.setInner(child);
         }
     }
 
+    // A pending Project used to capture bindings inside the loop.
+    // When complete, we will walk the tree to determine which fields,
+    // if any, from its scope are used downstream and capture them or
+    // else throw the Project away.
     static class MapJoinProject implements PlanVisitor, ExpressionVisitor {
         MapJoin parentMap, childMap;
         MapJoinProject nested;
@@ -269,6 +287,7 @@ public class MapFolder extends BaseRule
             this.innerSources = innerSources;
         }
         
+        // Are any of the inner bindings used outer?
         public boolean find() {
             columns = new ArrayList<>();
             for (MapJoinProject loop = this; loop != null; loop = loop.nested) {
@@ -280,6 +299,7 @@ public class MapFolder extends BaseRule
             return foundOuter;
         }
 
+        // Actually install field expressions for this Project.
         public void install() {
             Set<ColumnExpression> seen = new HashSet<>();
             for (ColumnExpression column : columns) {
@@ -289,6 +309,7 @@ public class MapFolder extends BaseRule
             }
         }
 
+        // Splice this unneeded Project out.
         public void remove() {
             project.getOutput().replaceInput(project, project.getInput());
             project = null;

@@ -95,45 +95,6 @@ public class EntityResource {
     }
 
     @POST
-    @Path("/jonquil/to-sql")
-    @Consumes(MEDIATYPE_JSON_JAVASCRIPT)
-    public Response jonquilToSQL(@Context final HttpServletRequest request,
-                                 @PathParam("entity") String entity,
-                                 final String query) {
-        final TableName tableName = parseTableName(request, entity);
-        checkTableAccessible(reqs.securityService, request, tableName);
-        return RestResponseBuilder
-                .forRequest(request)
-                .body(new RestResponseBuilder.BodyGenerator() {
-                    @Override
-                    public void write(PrintWriter writer) throws Exception {
-                        writer.write(reqs.restDMLService.jonquilToSQL(tableName, query));
-                    }
-                })
-                .build();
-    }
-
-    @POST
-    @Path("/jonquil/query")
-    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
-    public Response jonquilQuery(@Context final HttpServletRequest request,
-                                 @PathParam("entity") String entity,
-                                 final String query) {
-        final TableName tableName = parseTableName(request, entity);
-        checkTableAccessible(reqs.securityService, request, tableName);
-        return RestResponseBuilder
-                .forRequest(request)
-                .body(new RestResponseBuilder.BodyGenerator() {
-                    @Override
-                    public void write(PrintWriter writer) throws Exception {
-                        String sql = reqs.restDMLService.jonquilToSQL(tableName, query);
-                        reqs.restDMLService.runSQL(writer, request, sql, tableName.getSchemaName());
-                    }
-                })
-                .build();
-    }
-
-    @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response createEntity(@Context HttpServletRequest request,

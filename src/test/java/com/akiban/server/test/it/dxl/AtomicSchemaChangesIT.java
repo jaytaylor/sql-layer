@@ -18,16 +18,17 @@
 package com.akiban.server.test.it.dxl;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.UserTable;
 import com.akiban.ais.protobuf.ProtobufWriter;
+import com.akiban.ais.util.DDLGenerator;
 import com.akiban.server.error.UnsupportedIndexSizeException;
-import com.akiban.server.store.SchemaManager;
-import com.akiban.server.store.TableDefinition;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.util.GrowableByteBuffer;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.Callable;
 
 import static junit.framework.Assert.*;
@@ -181,9 +182,9 @@ public class AtomicSchemaChangesIT extends ITBase
 
     private void checkInitialDDL() throws Exception
     {
-        for (Map.Entry<String, TableDefinition> entry : createTableStatements("s").entrySet()) {
+        for (Map.Entry<String, String> entry : createTableStatements("s").entrySet()) {
             String table = entry.getKey();
-            String ddl = entry.getValue().getDDL();
+            String ddl = entry.getValue();
             if (table.equals("parent")) {
                 assertEquals(PARENT_DDL, ddl);
             } else if (table.equals("child")) {
@@ -202,12 +203,17 @@ public class AtomicSchemaChangesIT extends ITBase
         return buffer;
     }
 
-    private Map<String, TableDefinition> createTableStatements(final String schema) throws Exception
+    private Map<String, String> createTableStatements(final String schema) throws Exception
     {
-        return transactionallyUnchecked(new Callable<Map<String, TableDefinition>>() {
+        return transactionallyUnchecked(new Callable<Map<String, String>>() {
             @Override
-            public Map<String, TableDefinition> call() throws Exception {
-                return serviceManager().getServiceByClass(SchemaManager.class).getTableDefinitions(session(), schema);
+            public Map<String, String> call() throws Exception {
+                DDLGenerator generator = new DDLGenerator();
+                Map<String, String> map = new TreeMap<>();
+                for(UserTable table : ais().getSchema(schema).getUserTables().values()) {
+                    map.put(table.getName().getTableName(), generator.createTable(table));
+                }
+                return map;
             }
         });
     }

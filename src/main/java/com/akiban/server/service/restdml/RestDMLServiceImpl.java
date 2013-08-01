@@ -18,27 +18,17 @@
 package com.akiban.server.service.restdml;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexName;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.jonquil.Jonquil;
-import com.akiban.jonquil.JonquilException;
-import com.akiban.jonquil.JonquilWriter;
-import com.akiban.jonquil.JoinFields;
-import com.akiban.jonquil.JoinStrategy;
-import com.akiban.jonquil.actions.Action;
 import com.akiban.server.Quote;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.explain.format.JsonFormatter;
 import com.akiban.server.service.Service;
-import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.externaldata.ExternalDataService;
 import com.akiban.server.service.externaldata.JsonRowWriter;
@@ -59,14 +49,7 @@ import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Function;
-import com.google.common.base.Functions;
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonToken;
-import org.codehaus.jackson.map.ObjectMapper;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -78,13 +61,10 @@ import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Properties;
 
 import static com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
@@ -426,74 +406,6 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         appender.append('}');
     }
 
-    @Override
-    public String jonquilToSQL(TableName tableName, String jonquil) throws IOException {
-        final AkibanInformationSchema ais;
-        try (Session session = sessionService.createSession();
-             CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
-            ais = dxlService.ddlFunctions().getAIS(session);
-            txn.commit();
-        }
-        JsonParser json = oldJsonFactory.createJsonParser(jonquil);
-        final String schema = tableName.getSchemaName();
-        // the JoinStrategy will assume all tables are in the same schema
-        JoinStrategy joinStrategy = new JoinStrategy() {
-            @Override
-            public Collection<? extends JoinFields> getJoins(String parent, String child) {
-                UserTable parentTable = ais.getUserTable(schema, parent);
-                if (parentTable == null)
-                    throw new NoSuchElementException("parent table: " + parent);
-                Join groupingJoin = findGroupingJoin(parentTable, child);
-                return Lists.transform(groupingJoin.getJoinColumns(), new Function<JoinColumn, JoinFields>() {
-                    @Override
-                    public JoinFields apply(JoinColumn input) {
-                        return new JoinFields(input.getParent().getName(), input.getChild().getName());
-                    }
-                });
-            }
-
-            private Join findGroupingJoin(UserTable parentTable, String childTable) {
-                for (Join join : parentTable.getChildJoins()) {
-                    if (join.getChild().getName().getTableName().equals(childTable))
-                        return join;
-                }
-                throw new NoSuchElementException("no child named " + childTable + " for table " + parentTable);
-            }
-        };
-        Map<String, Action> additionalActionsMap = new HashMap<>();
-        additionalActionsMap.put("fields", new Action() {
-            @Override
-            public void apply(JsonParser input, JonquilWriter output, String tableName) throws IOException {
-                JsonToken token = input.nextToken();
-                if (token == JsonToken.VALUE_STRING) {
-                    String value = input.getText();
-                    if (value.equalsIgnoreCase("all")) {
-                        UserTable table = ais.getUserTable(schema, tableName);
-                        for (Column column : table.getColumns())
-                            output.addScalar(column.getName());
-                    }
-                    else {
-                        throw new JonquilException("illegal string value for @fields (must be \"all\"): " + value);
-                    }
-                }
-                else if (token == JsonToken.START_ARRAY) {
-                    while (input.nextToken() != JsonToken.END_ARRAY) {
-                        if (input.getCurrentToken() != JsonToken.VALUE_STRING) {
-                            throw new JonquilException("illegal value for @attributes list: "
-                                    + input.getText() + " (" + token + ')');
-                        }
-                        output.addScalar(input.getText());
-                    }
-                }
-                else {
-                    throw new JonquilException("illegal value for @fields: " + input.getText() + " (" + token + ')');
-                }
-            }
-        });
-        Function<String, Action> additionalActions = Functions.forMap(additionalActionsMap, null);
-        return Jonquil.createSQL(tableName.getTableName(), json, joinStrategy, additionalActions);
-    }
-
     public interface ProcessStatement {
         public Statement processStatement (int index) throws SQLException; 
     }
@@ -693,6 +605,4 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
             ENTITY_TEXT.out();
         }
     }
-    
-     private static final JsonFactory oldJsonFactory = new JsonFactory(new ObjectMapper()); // for Jonquil
 }

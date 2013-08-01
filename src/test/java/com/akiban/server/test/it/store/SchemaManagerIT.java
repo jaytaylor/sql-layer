@@ -33,18 +33,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Routine;
+import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
+import com.akiban.ais.util.DDLGenerator;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.memoryadapter.MemoryAdapter;
 import com.akiban.qp.memoryadapter.MemoryGroupCursor;
@@ -60,7 +61,6 @@ import com.akiban.server.error.JoinToProtectedTableException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
-import com.akiban.server.store.TableDefinition;
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Assert;
@@ -115,22 +115,6 @@ public final class SchemaManagerIT extends ITBase {
         });
     }
 
-    private TableDefinition getTableDef(final String schema, final String table) throws Exception {
-        return transactionally(new Callable<TableDefinition>() {
-            public TableDefinition call() throws Exception {
-                return schemaManager.getTableDefinition(session(), new TableName(schema, table));
-            }
-        });
-    }
-
-    private List<String> getSchemaStringsWithoutAIS() throws Exception {
-        return transactionally(new Callable<List<String>>() {
-            public List<String> call() throws Exception {
-                return schemaManager.schemaStrings(session(), false);
-            }
-        });
-    }
-
     private void safeRestart() throws Exception {
         safeRestartTestServices();
         schemaManager = serviceManager().getSchemaManager();
@@ -153,36 +137,6 @@ public final class SchemaManagerIT extends ITBase {
     public void setUp() throws Exception {
         schemaManager = serviceManager().getSchemaManager();
         assertTablesInSchema(SCHEMA);
-    }
-
-    @Test(expected=NoSuchTableException.class)
-    public void getUnknownTableDefinition() throws Exception {
-        getTableDef("fooschema", "bartable1");
-    }
-
-    // Also tests createDef(), but assertTablesInSchema() uses getDef() so try and test first
-    @Test
-    public void getTableDefinition() throws Exception {
-        createTableDef(SCHEMA, T1_NAME, T1_DDL);
-        final TableDefinition def = getTableDef(SCHEMA, T1_NAME);
-        assertNotNull("Definition exists", def);
-    }
-
-    @Test
-    public void getTableDefinitionsUnknownSchema() throws Exception {
-        final SortedMap<String, TableDefinition> defs = getTableDefinitions("fooschema");
-        assertEquals("no defs", 0, defs.size());
-    }
-
-    @Test
-    public void getTableDefinitionsOneSchema() throws Exception {
-        createTableDef(SCHEMA, T1_NAME, T1_DDL);
-        createTableDef(SCHEMA, T2_NAME, T2_DDL);
-        createTableDef(SCHEMA + "_bob", T1_NAME, T1_DDL);
-        final SortedMap<String, TableDefinition> defs = getTableDefinitions(SCHEMA);
-        assertTrue("contains t1", defs.containsKey(T1_NAME));
-        assertTrue("contains t2", defs.containsKey(T2_NAME));
-        assertEquals("no defs", 2, defs.size());
     }
 
     @Test
@@ -335,45 +289,6 @@ public final class SchemaManagerIT extends ITBase {
         final long second = ais().getGeneration();
         assertTrue("timestamp changed", first != second);
     }
-    
-    @Test
-    public void schemaStringsSingleTable() throws Exception {
-        // Check 1) basic ordering 2) that the statements are 'canonicalized'
-        final String TABLE_DDL =  "id int not null primary key";
-        final String SCHEMA_DDL = "create schema if not exists `foo`;";
-        final String TABLE_CANONICAL = "create table `foo`.`bar`(`id` int NOT NULL, PRIMARY KEY(`id`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin";
-        createTableDef("foo", "bar", TABLE_DDL);
-        final List<String> ddls = getSchemaStringsWithoutAIS();
-        assertEquals("ddl count", 2, ddls.size()); // schema and table
-        assertTrue("create schema", ddls.get(0).startsWith("create schema"));
-        assertEquals("create schema is canonical", SCHEMA_DDL, ddls.get(0));
-        assertTrue("create table second", ddls.get(1).startsWith("create table"));
-        assertEquals("create table is canonical", TABLE_CANONICAL, ddls.get(1));
-    }
-
-    @Test
-    public void schemaStringsSingleGroup() throws Exception {
-        final String SCHEMA = "s1";
-        createTableDef(SCHEMA, T1_NAME, T1_DDL);
-        createTableDef(SCHEMA, T3_CHILD_T1_NAME, T3_CHILD_T1_DDL);
-        Map<String, List<String>> schemaAndTables = new HashMap<>();
-        schemaAndTables.put(SCHEMA, Arrays.asList(T1_NAME, T3_CHILD_T1_NAME));
-        assertSchemaStrings(schemaAndTables);
-    }
-
-    @Test
-    public void schemaStringsMultipleSchemas() throws Exception {
-        final Map<String, List<String>> schemaAndTables = new HashMap<>();
-        schemaAndTables.put("s1", Arrays.asList("t1", "t2"));
-        schemaAndTables.put("s2", Arrays.asList("t3"));
-        schemaAndTables.put("s3", Arrays.asList("t4"));
-        for(Map.Entry<String, List<String>> entry : schemaAndTables.entrySet()) {
-            for(String table : entry.getValue()) {
-                createTableDef(entry.getKey(), table, "id int not null primary key");
-            }
-        }
-        assertSchemaStrings(schemaAndTables);
-    }
 
     @Test
     public void manyTablesAndRestart() throws Exception {
@@ -505,13 +420,14 @@ public final class SchemaManagerIT extends ITBase {
                 "REFERENCES `index_statistics`(`table_id`, `index_id`)"+
         ") engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin";
 
-        TableDefinition statsDef = getTableDef(SCHEMA, STATS_TABLE);
-        assertNotNull("Stats table present", statsDef);
-        assertEquals("Stats DDL", STATS_DDL, statsDef.getDDL());
+        DDLGenerator generator = new DDLGenerator();
+        UserTable statsTable = ais().getUserTable(SCHEMA, STATS_TABLE);
+        assertNotNull("Stats table present", statsTable);
+        assertEquals("Stats DDL", STATS_DDL, generator.createTable(statsTable));
 
-        TableDefinition entryDef = getTableDef(SCHEMA, ENTRY_TABLE);
-        assertNotNull("Entry table present", entryDef);
-        assertEquals("Entry DDL", ENTRY_DDL, entryDef.getDDL());
+        UserTable entryTable = ais().getUserTable(SCHEMA, ENTRY_TABLE);
+        assertNotNull("Entry table present", entryTable);
+        assertEquals("Entry DDL", ENTRY_DDL, generator.createTable(entryTable));
     }
 
     @Test
@@ -789,61 +705,14 @@ public final class SchemaManagerIT extends ITBase {
         for (String name : tableNames) {
             final Table table = ais.getTable(schema, name);
             assertNotNull(schema + "." + name + " in AIS", table);
-            final TableDefinition def = getTableDefinitions(schema).get(table.getName().getTableName());
-            assertNotNull(schema + "." + name  + " has definition", def);
             expected.add(name);
         }
         final SortedSet<String> actual = new TreeSet<>();
-        for (TableDefinition def : getTableDefinitions(schema).values()) {
-            final Table table = ais.getTable(schema, def.getTableName());
-            assertNotNull(def + " in AIS", table);
-            actual.add(def.getTableName());
+        Schema schemaObj = ais.getSchema(schema);
+        if(schemaObj != null) {
+            actual.addAll(schemaObj.getUserTables().keySet());
         }
         assertEquals("tables in: " + schema, expected, actual);
-    }
-    
-    /**
-     * Check that the result of {@link SchemaManager#schemaStrings(Session, boolean)} is correct for
-     * the given tables. The only guarantees are that schemas are created with 'if not exists',
-     * a schema statement comes before any table in it, and a create table statement is fully qualified.
-     * @param schemaAndTables Map of schema names to table names that should exist
-     * @throws Exception For any internal error.
-     */
-    private void assertSchemaStrings(Map<String, List<String>> schemaAndTables) throws Exception {
-        final String CREATE_SCHEMA = "create schema if not exists `";
-        final String CREATE_TABLE = "create table `";
-        final List<String> ddls = getSchemaStringsWithoutAIS();
-        final Set<String> sawSchemas = new HashSet<>();
-        for(String statement : ddls) {
-            if(statement.startsWith(CREATE_SCHEMA)) {
-                final int offset = CREATE_SCHEMA.length();
-                final String schemaName = statement.substring(offset, offset + 2);
-                assertFalse("haven't seen schema "+schemaName,
-                            sawSchemas.contains(schemaName));
-                sawSchemas.add(schemaName);
-            }
-            else if(statement.startsWith(CREATE_TABLE)){
-                final int offset = CREATE_TABLE.length();
-                final String schemaName = statement.substring(offset, offset + 2);
-                assertTrue("schema "+schemaName+" has been seen",
-                           sawSchemas.contains(schemaName));
-                final String tableName = statement.substring(offset+5, offset+7);
-                assertTrue("table "+tableName+" is in schema "+tableName,
-                           schemaAndTables.get(schemaName).contains(tableName));
-            }
-            else {
-                Assert.fail("Unknown statement type: " + statement);
-            }
-        }
-    }
-
-    private SortedMap<String, TableDefinition> getTableDefinitions(final String schema) {
-        return transactionallyUnchecked(new Callable<SortedMap<String, TableDefinition>>() {
-            @Override
-            public SortedMap<String, TableDefinition> call() throws Exception {
-                return schemaManager.getTableDefinitions(session(), schema);
-            }
-        });
     }
 
     private static UserTable makeSimpleISTable(TableName name) {

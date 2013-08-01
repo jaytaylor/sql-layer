@@ -50,6 +50,4 @@ public interface RestDMLService {
                               TableName procName, Map<String,List<String>> queryParams, String content) throws SQLException;
 
     public void fullTextSearch(PrintWriter writer, IndexName indexName, Integer depth, String query, Integer limit);
-
-    public String jonquilToSQL(TableName tableName, String jonquil) throws IOException;
 }
