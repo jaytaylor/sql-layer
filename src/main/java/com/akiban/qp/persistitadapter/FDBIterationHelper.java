@@ -22,7 +22,6 @@ import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.util.ShareHolder;
-import com.foundationdb.AsyncIterator;
 import com.foundationdb.KeyValue;
 import com.foundationdb.tuple.Tuple;
 import com.persistit.Key;
@@ -50,7 +49,7 @@ public class FDBIterationHelper implements IterationHelper
     private KeyValue lastKV;
     private long lastKeyGen;
     private Direction itDir;
-    private AsyncIterator<KeyValue> it;
+    private Iterator<KeyValue> it;
     // Only instantiated for logical traversal
     private Key spareKey;
 
@@ -148,8 +147,8 @@ public class FDBIterationHelper implements IterationHelper
 
     /** Advance iterator with pure physical (i.e. key order) traversal. */
     private boolean advanceDeep() {
-        if(it.hasNext().get()) {
-            lastKV = it.next().get();
+        if(it.hasNext()) {
+            lastKV = it.next();
             updateKey();
             return true;
         }
@@ -166,8 +165,8 @@ public class FDBIterationHelper implements IterationHelper
         if(parentIndex < 0) {
             parentIndex = 0;
         }
-        while(it.hasNext().get()) {
-            lastKV = it.next().get();
+        while(it.hasNext()) {
+            lastKV = it.next();
             updateKey();
             boolean matches = (spareKey.compareKeyFragment(key, 0, parentIndex) == 0);
             if(matches) {

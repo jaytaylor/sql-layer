@@ -25,8 +25,8 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.store.FDBTransactionService;
 import com.akiban.util.FDBCounter;
 import com.foundationdb.Database;
-import com.foundationdb.Retryable;
 import com.foundationdb.Transaction;
+import com.foundationdb.async.Function;
 import com.foundationdb.tuple.Tuple;
 
 import java.nio.charset.Charset;
@@ -137,12 +137,13 @@ public class FDBTableStatusCache implements TableStatusCache {
             // Use new transaction to avoid conflicts. Can result in gaps, but that's OK.
             final long[] newValue = { 0 };
             try {
-                db.run(new Retryable() {
+                db.run(new Function<Transaction,Void>() {
                     @Override
-                    public void attempt(Transaction txn) {
+                    public Void apply(Transaction txn) {
                         byte[] curBytes = txn.get(uniqueKey).get();
                         newValue[0] = 1 + decodeOrZero(curBytes);
                         txn.set(uniqueKey, Tuple.from(newValue[0]).pack());
+                        return null;
                     }
                 });
             } catch(Exception e) {
@@ -180,11 +181,12 @@ public class FDBTableStatusCache implements TableStatusCache {
             // Use new transaction to avoid conflicts.
             final long[] currentValue = { 0 };
             try {
-                db.run(new Retryable() {
+                db.run(new Function<Transaction,Void>() {
                     @Override
-                    public void attempt(Transaction txn) {
-                        byte[] curBytes = txn.snapshot.get(uniqueKey).get();
+                    public Void apply(Transaction txn) {
+                        byte[] curBytes = txn.snapshot().get(uniqueKey).get();
                         currentValue[0] = decodeOrZero(curBytes);
+                        return null;
                     }
                 });
             } catch(Exception e) {

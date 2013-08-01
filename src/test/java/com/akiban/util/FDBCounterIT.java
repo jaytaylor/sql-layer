@@ -21,8 +21,8 @@ import com.akiban.server.store.FDBHolder;
 import com.akiban.server.test.it.ITBase;
 import com.foundationdb.Database;
 import com.foundationdb.FDBError;
-import com.foundationdb.Retryable;
 import com.foundationdb.Transaction;
+import com.foundationdb.async.Function;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -46,10 +46,11 @@ public class FDBCounterIT extends ITBase {
 
     @After
     public void clearCounter() throws Throwable {
-        holder.getDatabase().run(new Retryable() {
+        holder.getDatabase().run(new Function<Transaction,Void>() {
             @Override
-            public void attempt(Transaction tr) {
+            public Void apply(Transaction tr) {
                 counter.clearState(tr);
+                return null;
             }
         });
     }
@@ -153,19 +154,21 @@ public class FDBCounterIT extends ITBase {
 
 
     private void addSome(final int x) throws Throwable {
-        holder.getDatabase().run(new Retryable() {
+        holder.getDatabase().run(new Function<Transaction,Void>() {
             @Override
-            public void attempt(Transaction tr) throws Exception {
+            public Void apply(Transaction tr) throws Exception {
                 counter.add(tr, x);
+                return null;
             }
         });
     }
 
     private void setTo(final int x) throws Throwable {
-        holder.getDatabase().run(new Retryable() {
+        holder.getDatabase().run(new Function<Transaction,Void>() {
             @Override
-            public void attempt(Transaction tr) throws Exception {
+            public Void apply(Transaction tr) throws Exception {
                 counter.set(tr, x);
+                return null;
             }
         });
     }
@@ -179,14 +182,12 @@ public class FDBCounterIT extends ITBase {
     }
 
     private long get(final boolean transactional) throws Throwable {
-        final long[] value = { 0 };
-        holder.getDatabase().run(new Retryable() {
+        return holder.getDatabase().run(new Function<Transaction,Long>() {
             @Override
-            public void attempt(Transaction tr) throws Exception {
-                value[0] = transactional ? counter.getTransactional(tr) : counter.getSnapshot(tr);
+            public Long apply(Transaction tr) throws Exception {
+                return transactional ? counter.getTransactional(tr) : counter.getSnapshot(tr);
             }
         });
-        return value[0];
     }
 
 
