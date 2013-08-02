@@ -45,7 +45,7 @@ public class FDBCounterIT extends ITBase {
     }
 
     @After
-    public void clearCounter() throws Throwable {
+    public void clearCounter() throws Exception {
         holder.getDatabase().run(new Function<Transaction,Void>() {
             @Override
             public Void apply(Transaction tr) {
@@ -56,26 +56,26 @@ public class FDBCounterIT extends ITBase {
     }
 
     @Test
-    public void getTransactionalEmpty() throws Throwable {
+    public void getTransactionalEmpty() throws Exception {
         long value = getTransactional();
         assertEquals("value of empty", 0, value);
     }
 
     @Test
-    public void getSnapshotEmpty() throws Throwable {
+    public void getSnapshotEmpty() throws Exception {
         long value = getSnapshot();
         assertEquals("value of empty", 0, value);
     }
 
     @Test
-    public void addOneAndGet() throws Throwable {
+    public void addOneAndGet() throws Exception {
         addSome(1);
         long value = getTransactional();
         assertEquals("value after add", 1, value);
     }
 
     @Test
-    public void addOneTenTimesAndGet() throws Throwable {
+    public void addOneTenTimesAndGet() throws Exception {
         for(int i = 0; i < 10; ++i) {
             addSome(1);
         }
@@ -84,14 +84,14 @@ public class FDBCounterIT extends ITBase {
     }
 
     @Test
-    public void addTenAndGet() throws Throwable {
+    public void addTenAndGet() throws Exception {
         addSome(10);
         long value = getTransactional();
         assertEquals("value after add", 10, value);
     }
 
     @Test
-    public void addSubtractSetAndGet() throws Throwable {
+    public void addSubtractSetAndGet() throws Exception {
         for(int i = 0; i <= 100; ++i) {
             addSome(i);
         }
@@ -109,7 +109,7 @@ public class FDBCounterIT extends ITBase {
     // Manual only
     @Ignore
     @Test
-    public void manyThreads() throws Throwable {
+    public void manyThreads() throws Exception {
         // 50 threads adding 1 or -1, 1000 times in a row
         final int THREADS = 50;
         final int TXN_COUNT = 1000;
@@ -153,38 +153,38 @@ public class FDBCounterIT extends ITBase {
     }
 
 
-    private void addSome(final int x) throws Throwable {
+    private void addSome(final int x) throws Exception {
         holder.getDatabase().run(new Function<Transaction,Void>() {
             @Override
-            public Void apply(Transaction tr) throws Exception {
+            public Void apply(Transaction tr) {
                 counter.add(tr, x);
                 return null;
             }
         });
     }
 
-    private void setTo(final int x) throws Throwable {
+    private void setTo(final int x) throws Exception {
         holder.getDatabase().run(new Function<Transaction,Void>() {
             @Override
-            public Void apply(Transaction tr) throws Exception {
+            public Void apply(Transaction tr) {
                 counter.set(tr, x);
                 return null;
             }
         });
     }
 
-    private long getTransactional() throws Throwable {
+    private long getTransactional() throws Exception {
         return get(true);
     }
 
-    private long getSnapshot() throws Throwable {
+    private long getSnapshot() throws Exception {
         return get(false);
     }
 
-    private long get(final boolean transactional) throws Throwable {
+    private long get(final boolean transactional) throws Exception {
         return holder.getDatabase().run(new Function<Transaction,Long>() {
             @Override
-            public Long apply(Transaction tr) throws Exception {
+            public Long apply(Transaction tr) {
                 return transactional ? counter.getTransactional(tr) : counter.getSnapshot(tr);
             }
         });

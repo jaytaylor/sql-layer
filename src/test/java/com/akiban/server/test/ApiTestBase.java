@@ -256,7 +256,7 @@ public class ApiTestBase {
         return testName.getMethodName();
     }
 
-    private void clearFDBData() throws Throwable {
+    private void clearFDBData() throws Exception {
         FDBHolder holder = sm.getServiceByClass(FDBHolder.class);
         final byte[] begin = { 0x00 };
         final byte[] end = { (byte)0xFF };

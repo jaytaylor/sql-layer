@@ -229,7 +229,7 @@ public class FDBTransactionService implements TransactionService {
     }
 
 
-    public <T> T runTransaction (Function<Transaction,T> retryable) throws Throwable {
+    public <T> T runTransaction (Function<Transaction,T> retryable) throws Exception {
         return fdbHolder.getDatabase().run(retryable);
     }
     
