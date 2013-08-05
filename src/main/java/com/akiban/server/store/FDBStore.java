@@ -46,12 +46,13 @@ import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.util.ReadWriteMap;
 import com.akiban.util.FDBCounter;
-import com.foundationdb.FDBError;
+import com.foundationdb.FDBException;
 import com.foundationdb.KeySelector;
 import com.foundationdb.KeyValue;
+import com.foundationdb.Range;
 import com.foundationdb.Transaction;
 import com.foundationdb.async.Function;
-import com.foundationdb.tuple.ArrayUtil;
+import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple;
 import com.google.inject.Inject;
 import com.persistit.Key;
@@ -96,7 +97,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     public Iterator<KeyValue> groupIterator(Session session, Group group) {
         Transaction txn = txnService.getTransaction(session);
         byte[] packedPrefix = packedTuple(group);
-        return txn.getRangeStartsWith(packedPrefix).iterator();
+        return txn.getRange(Range.startsWith(packedPrefix)).iterator();
     }
 
     // TODO: Creates range for hKey and descendants, add another API to specify
@@ -113,7 +114,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     public Iterator<KeyValue> indexIterator(Session session, Index index, boolean reverse) {
         Transaction txn = txnService.getTransaction(session);
         byte[] packedPrefix = packedTuple(index);
-        return txn.getRangeStartsWith(packedPrefix, Transaction.ROW_LIMIT_UNLIMITED, reverse).iterator();
+        return txn.getRange(Range.startsWith(packedPrefix), Transaction.ROW_LIMIT_UNLIMITED, reverse).iterator();
     }
 
     public Iterator<KeyValue> indexIterator(Session session, Index index, Key key, boolean inclusive, boolean reverse) {
@@ -130,7 +131,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
                 end = KeySelector.firstGreaterThan(packedKey);
             } else {
                 begin = KeySelector.firstGreaterOrEqual(packedKey);
-                end = KeySelector.firstGreaterThan(ArrayUtil.strinc(packedEdge));
+                end = KeySelector.firstGreaterThan(ByteArrayUtil.strinc(packedEdge));
             }
         } else {
             if(reverse) {
@@ -138,7 +139,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
                 end = KeySelector.firstGreaterOrEqual(packedKey);
             } else {
                 begin = KeySelector.firstGreaterThan(packedKey);
-                end = KeySelector.firstGreaterThan(ArrayUtil.strinc(packedEdge));
+                end = KeySelector.firstGreaterThan(ByteArrayUtil.strinc(packedEdge));
             }
         }
 
@@ -443,7 +444,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             IndexRowType indexRowType = adapter.schema().indexRowType(index);
             PersistitIndexRow indexRow = adapter.takeIndexRow(indexRowType);
             constructIndexRow(session, indexKey, rowData, index, hKey, indexRow, false);
-            for(KeyValue kv : txn.getRangeStartsWith(packedTuple(index, indexKey))) {
+            for(KeyValue kv : txn.getRange(Range.startsWith(packedTuple(index, indexKey)))) {
                 // Key
                 byte[] keyBytes = Tuple.fromBytes(kv.getKey()).getBytes(2);
                 spareKey.setEncodedSize(keyBytes.length);
@@ -521,13 +522,13 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     @Override
     public boolean treeExists(Session session, String schemaName, String treeName) {
         Transaction txn = txnService.getTransaction(session);
-        return txn.getRangeStartsWith(packedTuple(treeName), 1).iterator().hasNext();
+        return txn.getRange(Range.startsWith(packedTuple(treeName)), 1).iterator().hasNext();
     }
 
     @Override
     public boolean isRetryableException(Throwable t) {
-        if(t instanceof FDBError) {
-            int code = ((FDBError)t).getCode();
+        if(t instanceof FDBException) {
+            int code = ((FDBException)t).getCode();
             // not_committed || commit_unknown_result
             return (code == 1020) || (code == 1021);
         }
@@ -564,7 +565,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         Transaction txn = txnService.getTransaction(session);
         visitor.initialize(session, this);
         Key key = createKey();
-        for(KeyValue kv : txn.getRangeStartsWith(packedTuple(group))) {
+        for(KeyValue kv : txn.getRange(Range.startsWith(packedTuple(group)))) {
             // Key
             key.clear();
             byte[] keyBytes = Tuple.fromBytes(kv.getKey()).getBytes(2);
@@ -583,7 +584,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         Key key = createKey();
         Value value = new Value((Persistit)null);
         Transaction txn = txnService.getTransaction(session);
-        Iterator<KeyValue> it = txn.getRangeStartsWith(packedTuple(index)).iterator();
+        Iterator<KeyValue> it = txn.getRange(Range.startsWith(packedTuple(index))).iterator();
         while(it.hasNext()) {
             KeyValue kv = it.next();
 

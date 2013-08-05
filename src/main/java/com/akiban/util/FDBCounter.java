@@ -18,13 +18,13 @@
 package com.akiban.util;
 
 import com.foundationdb.Database;
-import com.foundationdb.FDBError;
+import com.foundationdb.FDBException;
 import com.foundationdb.KeyValue;
+import com.foundationdb.Range;
 import com.foundationdb.ReadTransaction;
 import com.foundationdb.Transaction;
 import com.foundationdb.async.AsyncIterable;
 import com.foundationdb.async.Future;
-import com.foundationdb.tuple.Range;
 import com.foundationdb.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -148,7 +148,7 @@ public class FDBCounter {
             addWithCoalesce(tr, total, false);
 
             coalesceCommit.set(tr.commit());
-        } catch(FDBError e) {
+        } catch(FDBException e) {
             LOG.debug("Coalescing failure", e);
         }
     }

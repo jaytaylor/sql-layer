@@ -20,7 +20,7 @@ package com.akiban.util;
 import com.akiban.server.store.FDBHolder;
 import com.akiban.server.test.it.ITBase;
 import com.foundationdb.Database;
-import com.foundationdb.FDBError;
+import com.foundationdb.FDBException;
 import com.foundationdb.Transaction;
 import com.foundationdb.async.Function;
 import org.junit.After;
@@ -221,7 +221,7 @@ public class FDBCounterIT extends ITBase {
                     try {
                         tr.commit().get();
                         break;
-                    } catch(FDBError e) {
+                    } catch(FDBException e) {
                         ++retries;
                     }
                 }

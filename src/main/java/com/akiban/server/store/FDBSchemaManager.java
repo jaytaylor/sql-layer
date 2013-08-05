@@ -44,6 +44,7 @@ import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.util.GrowableByteBuffer;
 import com.foundationdb.KeyValue;
+import com.foundationdb.Range;
 import com.foundationdb.Transaction;
 import com.foundationdb.tuple.Tuple;
 import com.google.inject.Inject;
@@ -391,7 +392,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
 
         Transaction txn = txnService.getTransaction(session);
         ProtobufReader reader = new ProtobufReader(newAIS);
-        Iterator<KeyValue> iterator = txn.getRangeStartsWith(makePBTuple().pack()).iterator();
+        Iterator<KeyValue> iterator = txn.getRange(Range.startsWith(makePBTuple().pack())).iterator();
         while(iterator.hasNext()) {
             KeyValue kv = iterator.next();
             byte[] storedAIS = kv.getValue();
