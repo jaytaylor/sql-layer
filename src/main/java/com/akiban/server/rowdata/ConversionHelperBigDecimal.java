@@ -236,10 +236,21 @@ public final class ConversionHelperBigDecimal {
             from = value.toPlainString();
         }
         if (declIntDigits == 0) {
-            assert ((from.length() > 2) &&
-                    (from.charAt(0) == '0') &&
-                    (from.charAt(1) == '.'));
-            from = from.substring(1);
+            if (value.signum() < 0) {
+                assert ((from.length() > 3) &&
+                        (from.charAt(0) == '-') &&
+                        (from.charAt(1) == '0') &&
+                        (from.charAt(2) == '.')) :
+                       from;
+                from = "-" + from.substring(2);
+            }
+            else {
+                assert ((from.length() > 2) &&
+                        (from.charAt(0) == '0') &&
+                        (from.charAt(1) == '.')) :
+                       from;
+                from = from.substring(1);
+            }
         }
         return from;
     }
