@@ -189,8 +189,7 @@ public final class ConversionHelperBigDecimal {
     }
 
     static String normalizeToString(BigDecimal value, int declPrec, int declScale) {
-        // First, we have to turn the value into one that fits teh FieldDef's constraints.
-        final String from;
+        // First, we have to turn the value into one that fits the FieldDef's constraints.
         int valuePrec = value.precision();
         int valueScale = value.scale();
         assert valueScale >= 0 : value;
@@ -201,24 +200,57 @@ public final class ConversionHelperBigDecimal {
         int valueIntDigits = valuePrec - valueScale;
         int declIntDigits = declPrec - declScale;
         if (valueIntDigits > declIntDigits) {
-            // truncate to something like "99.999"
-            StringBuilder sb = new StringBuilder(declPrec+2); // one for minus sign, one for period
-            if (value.signum() < 0)
-                sb.append('-');
-            for (int i = declPrec; i > 0; --i) {
-                if (i == declScale)
-                    sb.append('.');
-                sb.append('9');
+            // A value that does not fit must have more digits, but
+            // they still might be zero.
+            boolean overflow = false;
+            switch (value.signum()) {
+            case 0:
+                break;
+            case +1:
+                overflow = value.compareTo(BigDecimal.ONE.scaleByPowerOfTen(declIntDigits)) >= 0;
+                break;
+            case -1:
+                overflow = value.compareTo(BigDecimal.valueOf(-1).scaleByPowerOfTen(declIntDigits)) <= 0;
+                break;
             }
-            from = sb.toString();
+            if (overflow) {
+                // truncate to something like "99.999"
+                StringBuilder sb = new StringBuilder(declPrec+2); // one for minus sign, one for period
+                if (value.signum() < 0)
+                    sb.append('-');
+                for (int i = declPrec; i > 0; --i) {
+                    if (i == declScale)
+                        sb.append('.');
+                    sb.append('9');
+                }
+                return sb.toString();
+            }
         }
-        else if (valueScale != declScale) {
+        String from;
+        if (valueScale != declScale) {
             // just truncate
             BigDecimal rounded = value.setScale(declScale, RoundingMode.HALF_UP);
             from = rounded.toPlainString();
         }
         else {
             from = value.toPlainString();
+        }
+        if (declIntDigits == 0) {
+            if (value.signum() < 0) {
+                assert ((from.length() > 3) &&
+                        (from.charAt(0) == '-') &&
+                        (from.charAt(1) == '0') &&
+                        (from.charAt(2) == '.')) :
+                       from;
+                from = "-" + from.substring(2);
+            }
+            else {
+                assert ((from.length() > 2) &&
+                        (from.charAt(0) == '0') &&
+                        (from.charAt(1) == '.')) :
+                       from;
+                from = from.substring(1);
+            }
         }
         return from;
     }
