@@ -17,22 +17,37 @@
 
 package com.akiban.server.test.it.qp;
 
+import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.row.BindableRow;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.SetColumnSelector;
+import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TPreparedLiteral;
+
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.List;
 
 import static com.akiban.qp.operator.API.*;
+import static com.akiban.server.test.ExpressionGenerators.boundField;
 import static com.akiban.server.test.ExpressionGenerators.field;
 
 public class Intersect_OrderedSkipScanIT extends OperatorITBase
@@ -388,6 +403,28 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
         compareRows(expectedY, cursor(intersectPxPy(13, false, false, true), queryContext, queryBindings));
     }
 
+    @Test
+    public void test4x5x()
+    {
+        int[] keys = { 44, 55 };
+        RowBase[] expectedX = new RowBase[]{
+            row(parentXIndexRowType, 44L, 44L, 4001L),
+            row(parentXIndexRowType, 44L, 44L, 4002L),
+            row(parentXIndexRowType, 55L, 55L, 5001L),
+            row(parentXIndexRowType, 55L, 55L, 5002L),
+        };
+        compareRows(expectedX, cursor(intersectPxPyMap(keys, true, true, false), queryContext, queryBindings));
+        compareRows(expectedX, cursor(intersectPxPyMap(keys, true, true, true), queryContext, queryBindings));
+        RowBase[] expectedY = new RowBase[]{
+            row(parentYIndexRowType, 44L, 4001L),
+            row(parentYIndexRowType, 44L, 4002L),
+            row(parentYIndexRowType, 55L, 5001L),
+            row(parentYIndexRowType, 55L, 5002L),
+        };
+        compareRows(expectedY, cursor(intersectPxPyMap(keys, false, true, false), queryContext, queryBindings));
+        compareRows(expectedY, cursor(intersectPxPyMap(keys, false, true, true), queryContext, queryBindings));
+    }
+
     private Operator intersectPxPy(int key, boolean leftOutput, boolean ascending, boolean skipScan)
     {
         Operator plan =
@@ -440,6 +477,57 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
                                : IntersectOption.SEQUENTIAL_SCAN,
                                IntersectOption.OUTPUT_RIGHT),
                     null);
+        return plan;
+    }
+
+    private Operator intersectPxPyMap(int[] keys, boolean leftOutput, boolean ascending, boolean skipScan)
+    {
+        TInstance intType = MNumeric.INT.instance(false);
+        RowType xyValueRowType = schema.newValuesType(intType);
+        List<BindableRow> keyRows = new ArrayList<>(keys.length);
+        for (int key : keys) {
+            List<TPreparedExpression> pExpressions =
+                Arrays.<TPreparedExpression>asList(new TPreparedLiteral(intType, new PValue(intType, key)));
+            Row row = new ExpressionRow(xyValueRowType, queryContext, queryBindings, null, pExpressions);
+            keyRows.add(BindableRow.of(row, true));
+        }
+        List<ExpressionGenerator> expressions = Arrays.asList(boundField(xyValueRowType, 0, 0));
+        IndexBound xBound =
+            new IndexBound(
+                new RowBasedUnboundExpressions(parentXIndexRowType, expressions),
+                new SetColumnSelector(0));
+        IndexKeyRange xRange = IndexKeyRange.bounded(parentXIndexRowType, xBound, true, xBound, true);
+        IndexBound yBound =
+            new IndexBound(
+                new RowBasedUnboundExpressions(parentYIndexRowType, expressions),
+                new SetColumnSelector(0));
+        IndexKeyRange yRange = IndexKeyRange.bounded(parentYIndexRowType, yBound, true, yBound, true);
+        Operator plan =
+            map_NestedLoops(
+                valuesScan_Default(keyRows, xyValueRowType),
+                intersect_Ordered(
+                    indexScan_Default(
+                        parentXIndexRowType,
+                        xRange,
+                        ordering(field(parentXIndexRowType, 1), ascending)),
+                    indexScan_Default(
+                        parentYIndexRowType,
+                        yRange,
+                        ordering(field(parentYIndexRowType, 1), ascending)),
+                    parentXIndexRowType,
+                    parentYIndexRowType,
+                    1,
+                    1,
+                    ascending(ascending),
+                    JoinType.INNER_JOIN,
+                    EnumSet.of(skipScan
+                               ? IntersectOption.SKIP_SCAN
+                               : IntersectOption.SEQUENTIAL_SCAN,
+                               leftOutput
+                               ? IntersectOption.OUTPUT_LEFT
+                               : IntersectOption.OUTPUT_RIGHT),
+                    null),
+                0, pipelineMap(), 1);
         return plan;
     }
 
