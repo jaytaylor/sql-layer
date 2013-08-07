@@ -212,6 +212,7 @@ class Union_Ordered extends Operator
                 if (leftRow.isEmpty() && rightRow.isEmpty()) {
                     close();
                 }
+                leftSkipRowFixed = rightSkipRowFixed = false; // Fixed fields are per iteration.
             } finally {
                 TAP_OPEN.out();
             }
@@ -455,10 +456,11 @@ class Union_Ordered extends Operator
 
         private ValuesHolderRow leftSkipRow()
         {
-            boolean usingPValues = Union_Ordered.this.usePValues;
-            if (leftSkipRow == null) {
+            if (!leftSkipRowFixed) {
+                boolean usingPValues = Union_Ordered.this.usePValues;
+                if (leftSkipRow == null)
+                    leftSkipRow = new ValuesHolderRow(rowType, usingPValues);
                 assert leftRow.isHolding();
-                leftSkipRow = new ValuesHolderRow(rowType, usingPValues);
                 int f = 0;
                 while (f < fixedFields) {
                     if (usingPValues)
@@ -473,16 +475,18 @@ class Union_Ordered extends Operator
                     else
                         leftSkipRow.holderAt(f++).putNull();
                 }
+                leftSkipRowFixed = true;
             }
             return leftSkipRow;
         }
 
         private ValuesHolderRow rightSkipRow()
         {
-            boolean usingPValues = Union_Ordered.this.usePValues;
-            if (rightSkipRow == null) {
+            if (!rightSkipRowFixed) {
+                boolean usingPValues = Union_Ordered.this.usePValues;
+                if (rightSkipRow == null)
+                    rightSkipRow = new ValuesHolderRow(rowType, usingPValues);
                 assert rightRow.isHolding();
-                rightSkipRow = new ValuesHolderRow(rowType, usingPValues);
                 int f = 0;
                 while (f < fixedFields) {
                     if (usingPValues)
@@ -497,6 +501,7 @@ class Union_Ordered extends Operator
                     else
                         rightSkipRow.holderAt(f++).putNull();
                 }
+                rightSkipRowFixed = true;
             }
             return rightSkipRow;
         }
@@ -514,5 +519,7 @@ class Union_Ordered extends Operator
         private final ShareHolder<Row> rightRow = new ShareHolder<>();
         private ValuesHolderRow leftSkipRow;
         private ValuesHolderRow rightSkipRow;
+        private boolean leftSkipRowFixed;
+        private boolean rightSkipRowFixed;
     }
 }
