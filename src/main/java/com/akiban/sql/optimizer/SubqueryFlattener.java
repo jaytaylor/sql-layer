@@ -221,42 +221,46 @@ public class SubqueryFlattener
         }
 
         int nodeType = 0;
-        switch (subqueryNode.getSubqueryType()) {
-            // TODO: The ALL and NOT_IN cases aren't actually supported here yet.
-        case IN:
-        case EQ_ANY:
-        case NOT_IN:
-        case NE_ALL:
-            nodeType = NodeTypes.BINARY_EQUALS_OPERATOR_NODE;
-            break;
+        if (parentComparisonOperator != null)
+            nodeType = parentComparisonOperator.getNodeType();
+        else {
+            switch (subqueryNode.getSubqueryType()) {
+                // TODO: The ALL and NOT_IN cases aren't actually supported here yet.
+            case IN:
+            case EQ_ANY:
+            case NOT_IN:
+            case NE_ALL:
+                nodeType = NodeTypes.BINARY_EQUALS_OPERATOR_NODE;
+                break;
 
-        case NE_ANY:
-        case EQ_ALL:
-            nodeType = NodeTypes.BINARY_NOT_EQUALS_OPERATOR_NODE;
-            break;
+            case NE_ANY:
+            case EQ_ALL:
+                nodeType = NodeTypes.BINARY_NOT_EQUALS_OPERATOR_NODE;
+                break;
 
-        case LE_ANY:
-        case GT_ALL:
-            nodeType = NodeTypes.BINARY_LESS_EQUALS_OPERATOR_NODE;
-            break;
+            case LE_ANY:
+            case GT_ALL:
+                nodeType = NodeTypes.BINARY_LESS_EQUALS_OPERATOR_NODE;
+                break;
 
-        case LT_ANY:
-        case GE_ALL:
-            nodeType = NodeTypes.BINARY_LESS_THAN_OPERATOR_NODE;
-            break;
+            case LT_ANY:
+            case GE_ALL:
+                nodeType = NodeTypes.BINARY_LESS_THAN_OPERATOR_NODE;
+                break;
 
-        case GE_ANY:
-        case LT_ALL:
-            nodeType = NodeTypes.BINARY_GREATER_EQUALS_OPERATOR_NODE;
-            break;
+            case GE_ANY:
+            case LT_ALL:
+                nodeType = NodeTypes.BINARY_GREATER_EQUALS_OPERATOR_NODE;
+                break;
 
-        case GT_ANY:
-        case LE_ALL:
-            nodeType = NodeTypes.BINARY_GREATER_THAN_OPERATOR_NODE;
-            break;
+            case GT_ANY:
+            case LE_ALL:
+                nodeType = NodeTypes.BINARY_GREATER_THAN_OPERATOR_NODE;
+                break;
 
-        default:
-            assert false;
+            default:
+                assert false;
+            }
         }
         ValueNode newNode = (ValueNode)nodeFactory.getNode(nodeType, leftOperand, rightOperand, parserContext);
         newNode.setType(new DataTypeDescriptor(TypeId.BOOLEAN_ID, false));
