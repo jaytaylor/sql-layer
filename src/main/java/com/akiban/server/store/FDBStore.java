@@ -17,8 +17,6 @@
 
 package com.akiban.server.store;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.CacheValueGenerator;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
@@ -30,6 +28,7 @@ import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.SchemaCache;
+import com.akiban.server.FDBTableStatusCache;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.DuplicateKeyException;
 import com.akiban.server.error.FDBAdapterException;
@@ -45,11 +44,12 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.util.ReadWriteMap;
-import com.akiban.util.FDBCounter;
 import com.foundationdb.FDBException;
 import com.foundationdb.KeySelector;
 import com.foundationdb.KeyValue;
+import com.foundationdb.MutationType;
 import com.foundationdb.Range;
+import com.foundationdb.ReadTransaction;
 import com.foundationdb.Transaction;
 import com.foundationdb.async.Function;
 import com.foundationdb.tuple.ByteArrayUtil;
@@ -214,13 +214,12 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
 
     public long getGICount(Session session, GroupIndex index) {
         Transaction txn = txnService.getTransaction(session);
-        return cachedGICounter(session, index).getTransactional(txn);
+        return getGICountInternal(txn, index);
     }
 
     public long getGICountApproximate(Session session, GroupIndex index) {
         Transaction txn = txnService.getTransaction(session);
-        // Conflict free, but not faster than transactional
-        return cachedGICounter(session, index).getSnapshot(txn);
+        return getGICountInternal(txn.snapshot(), index);
     }
 
     public static void expandRowData(RowData rowData, KeyValue kv, boolean copyBytes) {
@@ -373,9 +372,8 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
 
     @Override
     protected void sumAddGICount(Session session, FDBStoreData storeData, GroupIndex index, int count) {
-        FDBCounter counter = cachedGICounter(session, index);
         Transaction txn = txnService.getTransaction(session);
-        counter.add(txn, count);
+        txn.mutate(MutationType.ADD, packedTupleGICount(index), FDBTableStatusCache.packForAtomicOp(count));
     }
 
     @Override
@@ -486,9 +484,8 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             if(treeLink instanceof IndexDef) {
                 Index index = ((IndexDef)treeLink).getIndex();
                 if(index.isGroupIndex()) {
-                    FDBCounter counter = cachedGICounter(session, (GroupIndex) index);
                     Transaction txn = txnService.getTransaction(session);
-                    counter.clearState(txn);
+                    txn.clear(packedTupleGICount((GroupIndex)index));
                 }
             }
         }
@@ -501,7 +498,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         for(Index index : indexes) {
             truncateTree(session, index.indexDef());
             if(index.isGroupIndex()) {
-                cachedGICounter(session, (GroupIndex)index).clearState(txn);
+                txn.set(packedTupleGICount((GroupIndex)index), FDBTableStatusCache.packForAtomicOp(0));
             }
         }
     }
@@ -651,21 +648,6 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         return txn.get(packedTuple(index, key)).get() != null;
     }
 
-    private FDBCounter cachedGICounter(Session session, final GroupIndex index) {
-        AkibanInformationSchema ais = getAIS(session);
-        FDBCounter counter = ais.getCachedValue(index, null);
-        if(counter == null) {
-            // AIS attached is OK:
-            // Multiple instances use the same prefix and any truncate/drop touches counter + entry keys
-            counter = ais.getCachedValue(index, new CacheValueGenerator<FDBCounter>() {
-                @Override
-                public FDBCounter valueFor(AkibanInformationSchema ais) {
-                    return new FDBCounter(holder.getDatabase(), "indexCount", index.indexDef().getTreeName());
-                }
-            });
-        }
-        return counter;
-    }
 
     //
     // Static
@@ -696,6 +678,15 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         return Tuple.from(treeName, "/", keyBytes).pack();
     }
 
+    private static byte[] packedTupleGICount(GroupIndex index) {
+        return Tuple.from("indexCount", index.indexDef().getTreeName()).pack();
+    }
+
+    private static long getGICountInternal(ReadTransaction txn, GroupIndex index) {
+        byte[] key = packedTupleGICount(index);
+        byte[] value = txn.get(key).get();
+        return FDBTableStatusCache.unpackForAtomicOp(value);
+    }
 
     private static final ReadWriteMap.ValueCreator<String, SequenceCache> SEQUENCE_CACHE_VALUE_CREATOR =
             new ReadWriteMap.ValueCreator<String, SequenceCache>() {
