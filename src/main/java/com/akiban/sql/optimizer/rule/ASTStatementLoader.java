@@ -926,6 +926,19 @@ public class ASTStatementLoader extends BaseRule
                     plan = next;
                 }
             }
+            if ((operands == null) &&
+                (subquery instanceof ColumnSource) &&
+                (subquery instanceof TypedPlan)) {
+                int nfields = ((TypedPlan)subquery).nFields();
+                if (!multipleOperands && (nfields != 1))
+                    throw new UnsupportedSQLException("Subquery must have exactly one column", subqueryNode);
+                operands = new ArrayList<>(nfields);
+                for (int i = 0; i < nfields; i++) {
+                    operands.add(new ColumnExpression(((ColumnSource)subquery), i, null, null));
+                }
+                if (nfields > 0)
+                    operand = operands.get(0);
+            }
             ConditionExpression condition;
             if (needOperand) {
                 assert (operand != null);
