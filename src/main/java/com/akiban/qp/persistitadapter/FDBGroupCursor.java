@@ -25,7 +25,6 @@ import com.akiban.qp.row.Row;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.store.FDBStore;
-import com.foundationdb.AsyncIterator;
 import com.foundationdb.KeyValue;
 import com.foundationdb.tuple.Tuple;
 import com.persistit.Key;
@@ -136,7 +135,7 @@ public class FDBGroupCursor implements GroupCursor {
     }
 
     private class FullScan implements GroupScan {
-        private final AsyncIterator<KeyValue> it;
+        private final Iterator<KeyValue> it;
         private KeyValue current;
 
         public FullScan() {
@@ -145,8 +144,8 @@ public class FDBGroupCursor implements GroupCursor {
 
         @Override
         public void advance() {
-            if(it.hasNext().get()) {
-                current = it.next().get();
+            if(it.hasNext()) {
+                current = it.next();
             } else {
                 close();
                 current = null;
@@ -160,7 +159,7 @@ public class FDBGroupCursor implements GroupCursor {
     }
 
     private class HKeyAndDescendantScan implements GroupScan {
-        private final AsyncIterator<KeyValue> it;
+        private final Iterator<KeyValue> it;
         private KeyValue current;
 
         public HKeyAndDescendantScan(PersistitHKey hKey) {
@@ -169,8 +168,8 @@ public class FDBGroupCursor implements GroupCursor {
 
         @Override
         public void advance() {
-            if(it.hasNext().get()) {
-                current = it.next().get();
+            if(it.hasNext()) {
+                current = it.next();
             } else {
                 close();
                 current = null;
@@ -185,7 +184,7 @@ public class FDBGroupCursor implements GroupCursor {
 
     private class HKeyWithoutDescendantScan implements GroupScan
     {
-        private final AsyncIterator<KeyValue> it;
+        private final Iterator<KeyValue> it;
         boolean first = true;
         private KeyValue current;
 
@@ -194,8 +193,8 @@ public class FDBGroupCursor implements GroupCursor {
         {
             current = null;
             if(first) {
-                if(it.hasNext().get()) {
-                    current = it.next().get();
+                if(it.hasNext()) {
+                    current = it.next();
                 } else {
                     FDBGroupCursor.this.close();
                 }

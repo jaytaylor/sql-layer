@@ -43,10 +43,10 @@ public class FDBHolderImpl implements FDBHolder, Service {
     public void start() {
         // Just one FDB for whole JVM and its dispose doesn't do anything.
         if(fdb == null) {
-            fdb = FDB.selectAPIVersion(22);
-            LOG.info("Started FDB with API Version 22");
+            fdb = FDB.selectAPIVersion(23);
+            LOG.info("Started FDB with API Version 23");
         }
-        db = fdb.open().get();
+        db = fdb.open();
     }
 
     @Override

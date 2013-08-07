@@ -46,7 +46,7 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.store.FDBStore;
 import com.akiban.server.types.ValueSource;
 import com.akiban.util.tap.InOutTap;
-import com.foundationdb.FDBError;
+import com.foundationdb.FDBException;
 import com.persistit.Key;
 
 import java.io.InterruptedIOException;
@@ -231,7 +231,7 @@ public class FDBAdapter extends StoreAdapter {
     }
 
     private void rollbackIfNeeded(Session session, Exception e) {
-        if((e instanceof DuplicateKeyException) || (e instanceof FDBError) || isFromInterruption(e)) {
+        if((e instanceof DuplicateKeyException) || (e instanceof FDBException) || isFromInterruption(e)) {
             store.setRollbackPending(session);
         }
     }

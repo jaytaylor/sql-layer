@@ -17,15 +17,14 @@
 
 package com.akiban.util;
 
-import com.foundationdb.AsyncFuture;
 import com.foundationdb.Database;
-import com.foundationdb.FDBError;
+import com.foundationdb.FDBException;
 import com.foundationdb.KeyValue;
-import com.foundationdb.Nothing;
-import com.foundationdb.RangeQuery;
+import com.foundationdb.Range;
 import com.foundationdb.ReadTransaction;
 import com.foundationdb.Transaction;
-import com.foundationdb.tuple.Range;
+import com.foundationdb.async.AsyncIterable;
+import com.foundationdb.async.Future;
 import com.foundationdb.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +52,7 @@ public class FDBCounter {
     private final Tuple keyPrefix;
     private final Range range;
     private final Database db;
-    private final ThreadLocal<AsyncFuture<Nothing>> coalesceCommit = new ThreadLocal<>();
+    private final ThreadLocal<Future<Void>> coalesceCommit = new ThreadLocal<>();
 
 
     public FDBCounter(Database db, Object... keyPrefix) {
@@ -78,7 +77,7 @@ public class FDBCounter {
      * Get the value of the counter with snapshot isolation.
      */
     public long getSnapshot(Transaction tr) {
-        return computeSum(tr.snapshot);
+        return computeSum(tr.snapshot());
     }
 
     /**
@@ -132,11 +131,11 @@ public class FDBCounter {
             byte[] bound = encodeNewKey();
 
             // Go froward from begin to bound or reverse from end to bound
-            RangeQuery coalesceRange;
+            AsyncIterable<KeyValue> coalesceRange;
             if(random.nextDouble() < 0.5) {
-                coalesceRange = tr.snapshot.getRange(bound, range.end).limit(limit);
+                coalesceRange = tr.snapshot().getRange(bound, range.end, limit);
             } else {
-                coalesceRange = tr.snapshot.getRange(range.begin, bound).limit(limit).reverse();
+                coalesceRange = tr.snapshot().getRange(range.begin, bound, limit, true);
             }
 
             // Read and remove keys, add new with summed total
@@ -149,7 +148,7 @@ public class FDBCounter {
             addWithCoalesce(tr, total, false);
 
             coalesceCommit.set(tr.commit());
-        } catch(FDBError e) {
+        } catch(FDBException e) {
             LOG.debug("Coalescing failure", e);
         }
     }

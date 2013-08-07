@@ -85,8 +85,8 @@ import com.akiban.util.Exceptions;
 import com.akiban.util.Strings;
 import com.akiban.util.tap.TapReport;
 import com.akiban.util.Undef;
-import com.foundationdb.Retryable;
 import com.foundationdb.Transaction;
+import com.foundationdb.async.Function;
 import junit.framework.Assert;
 
 import org.junit.After;
@@ -256,14 +256,15 @@ public class ApiTestBase {
         return testName.getMethodName();
     }
 
-    private void clearFDBData() throws Throwable {
+    private void clearFDBData() throws Exception {
         FDBHolder holder = sm.getServiceByClass(FDBHolder.class);
         final byte[] begin = { 0x00 };
         final byte[] end = { (byte)0xFF };
-        holder.getDatabase().run(new Retryable() {
+        holder.getDatabase().run(new Function<Transaction,Void>() {
             @Override
-            public void attempt(Transaction txn) {
+            public Void apply(Transaction txn) {
                 txn.clear(begin, end);
+                return null;
             }
         });
     }
