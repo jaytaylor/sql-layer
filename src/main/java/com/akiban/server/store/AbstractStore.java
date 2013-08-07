@@ -212,6 +212,7 @@ public abstract class AbstractStore<SDType> implements Store {
                         indexToHKey = parentPkIndex.indexToHKey();
                         parentStoreData = createStoreData(session, parentPkIndex.indexDef());
                         parentPKIndexRow = readIndexRow(session, parentPkIndex, parentStoreData, rowDef, rowData);
+                        i2hPosition = hKeyColumn.positionInHKey();
                     }
                     if(indexToHKey.isOrdinal(i2hPosition)) {
                         assert indexToHKey.getOrdinal(i2hPosition) == segmentRowDef.userTable().getOrdinal() : hKeyColumn;
