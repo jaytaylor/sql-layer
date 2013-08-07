@@ -23,13 +23,12 @@ import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.FDBTransactionService;
-import com.akiban.util.FDBCounter;
 import com.foundationdb.Database;
+import com.foundationdb.MutationType;
 import com.foundationdb.Transaction;
 import com.foundationdb.async.Function;
 import com.foundationdb.tuple.Tuple;
 
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -78,13 +77,27 @@ public class FDBTableStatusCache implements TableStatusCache {
         }
     }
 
+    public static byte[] packForAtomicOp(long l) {
+        byte[] bytes = new byte[8];
+        AkServerUtil.putLong(bytes, 0, l);
+        return bytes;
+    }
+
+    public static long unpackForAtomicOp(byte[] bytes) {
+        if(bytes == null) {
+            return 0;
+        }
+        assert bytes.length == 8 : bytes.length;
+        return AkServerUtil.getLong(bytes, 0);
+    }
+
 
     /**
      * Use FDBCounter for row count and single k/v for others.
      */
     private class FDBTableStatus implements TableStatus {
         private final int tableID;
-        private volatile FDBCounter rowCounter;
+        private volatile byte[] rowCountKey;
         private volatile byte[] autoIncKey;
         private volatile byte[] uniqueKey;
 
@@ -101,14 +114,13 @@ public class FDBTableStatusCache implements TableStatusCache {
         @Override
         public void rowsWritten(Session session, long count) {
             Transaction txn = txnService.getTransaction(session);
-            rowCounter.add(txn, count);
+            txn.mutate(MutationType.ADD, rowCountKey, packForAtomicOp(count));
         }
 
         @Override
         public void truncate(Session session) {
             Transaction txn = txnService.getTransaction(session);
-            // set(0) vs clear(): both iterate the entire range but clear leaves a clean db
-            rowCounter.clearState(txn);
+            txn.set(rowCountKey, packForAtomicOp(0));
             internalSetAutoInc(session, 0, true);
         }
 
@@ -122,13 +134,13 @@ public class FDBTableStatusCache implements TableStatusCache {
             if(rowDef == null) {
                 this.autoIncKey = null;
                 this.uniqueKey = null;
-                this.rowCounter = null;
+                this.rowCountKey = null;
             } else {
                 assert rowDef.getRowDefId() == tableID;
                 String treeName = rowDef.getPKIndex().indexDef().getTreeName();
                 this.autoIncKey = Tuple.from("tableStatus", treeName, "autoInc").pack();
                 this.uniqueKey = Tuple.from("tableStatus", treeName, "unique").pack();
-                this.rowCounter = new FDBCounter(db, "tableStatus", treeName, "rowCount");
+                this.rowCountKey = Tuple.from("tableStatus", treeName, "rowCount").pack();
             }
         }
 
@@ -166,14 +178,14 @@ public class FDBTableStatusCache implements TableStatusCache {
         @Override
         public long getRowCount(Session session) {
             Transaction txn = txnService.getTransaction(session);
-            return rowCounter.getTransactional(txn);
+            return unpackForAtomicOp(txn.get(rowCountKey).get());
         }
 
         @Override
         public long getApproximateRowCount() {
             // TODO: Avoids conflicts but still round trip. Cache locally for some time frame?
             Transaction txn = db.createTransaction();
-            return rowCounter.getSnapshot(txn);
+            return unpackForAtomicOp(txn.get(rowCountKey).get());
         }
 
         @Override
@@ -207,7 +219,7 @@ public class FDBTableStatusCache implements TableStatusCache {
         @Override
         public void setRowCount(Session session, long rowCount) {
             Transaction txn = txnService.getTransaction(session);
-            rowCounter.set(txn, rowCount);
+            txn.set(rowCountKey, packForAtomicOp(rowCount));
         }
 
         @Override
@@ -220,7 +232,7 @@ public class FDBTableStatusCache implements TableStatusCache {
 
         private void clearState(Session session) {
             Transaction txn = txnService.getTransaction(session);
-            rowCounter.clearState(txn);
+            txn.clear(rowCountKey);
             txn.clear(autoIncKey);
             txn.clear(uniqueKey);
         }
