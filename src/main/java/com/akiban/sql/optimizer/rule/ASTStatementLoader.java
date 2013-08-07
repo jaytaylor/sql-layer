@@ -1545,6 +1545,24 @@ public class ASTStatementLoader extends BaseRule
                                             toExpression(cond.getElseNode(), projects),
                                             cond.getType(), cond);
             }
+            else if (valueNode instanceof SimpleCaseNode) {
+                SimpleCaseNode caseNode = (SimpleCaseNode)valueNode;
+                ExpressionNode operand = toExpression(caseNode.getOperand(), projects);
+                int ncases = caseNode.getNumberOfCases();
+                ExpressionNode expr;
+                if (caseNode.getElseValue() != null)
+                    expr = toExpression(caseNode.getElseValue(), projects);
+                else
+                    expr = new ConstantExpression(null, AkType.NULL);
+                for (int i = ncases - 1; i >= 0; i--) {
+                    ConditionList conds = new ConditionList(1);
+                    conds.add(new ComparisonCondition(Comparison.EQ, operand, toExpression(caseNode.getCaseOperand(i), projects), caseNode.getType(), caseNode));
+                    expr = new IfElseExpression(conds,
+                                                toExpression(caseNode.getResultValue(i), projects),
+                                                expr, caseNode.getType(), caseNode);
+                }
+                return expr;
+            }
             else if (valueNode instanceof NextSequenceNode) {
                 NextSequenceNode seqNode = (NextSequenceNode)valueNode;
                 List<ExpressionNode> params = new ArrayList<>(2);
