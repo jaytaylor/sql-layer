@@ -1,0 +1,1 @@
+SELECT test.child.name AS name FROM test.child, test.parent WHERE (test.parent.name = 'foo') AND ((test.child.pid > test.parent.id) AND TRUE)
