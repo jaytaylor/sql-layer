@@ -76,6 +76,8 @@ in-3: IN with aggregate subquery
 
 in-4: IN with row value subquery
 
+in-5: IN with VALUES (explicitly as subquery)
+
 insert-1: from VALUES
 
 insert-2: from SELECT
