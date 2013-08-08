@@ -1143,7 +1143,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 }
                 indexes.add(index);
             }
-            schemaManager().dropIndexes(session, indexes, false);
+            schemaManager().dropIndexes(session, indexes);
             store().deleteIndexes(session, indexes);
             for(TableListener listener : listenerService.getTableListeners()) {
                 listener.onDropIndex(session, indexes);
@@ -1195,7 +1195,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 }
                 indexes.add(index);
             }
-            schemaManager().dropIndexes(session, indexes, false);
+            schemaManager().dropIndexes(session, indexes);
             store().deleteIndexes(session, indexes);
             for(TableListener listener : listenerService.getTableListeners()) {
                 listener.onDropIndex(session, indexes);

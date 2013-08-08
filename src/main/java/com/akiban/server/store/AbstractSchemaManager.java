@@ -290,7 +290,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     }
 
     @Override
-    public void dropIndexes(Session session, final Collection<? extends Index> indexesToDrop, boolean temporary) {
+    public void dropIndexes(Session session, final Collection<? extends Index> indexesToDrop) {
         final AkibanInformationSchema newAIS = AISCloner.clone(
                 getAis(session),
                 new ProtobufWriter.TableSelector() {

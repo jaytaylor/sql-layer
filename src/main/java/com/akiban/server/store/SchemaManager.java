@@ -18,10 +18,7 @@
 package com.akiban.server.store;
 
 import java.util.Collection;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.SortedMap;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
@@ -118,11 +115,8 @@ public interface SchemaManager {
      * supported through this interface.
      * @param session Session to operate under.
      * @param indexes List of indexes to drop.
-     * @param index drop is temporary - True means indexes will be recreated in
-     *      the same transaction as part of an alter. False means this is the only
-     *      change. 
      */
-    void dropIndexes(Session session, Collection<? extends Index> indexes, boolean temporary);
+    void dropIndexes(Session session, Collection<? extends Index> indexes);
 
     /**
      * Delete the definition of the table with the given name. Throws
