@@ -77,6 +77,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -304,13 +305,12 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
                     }
         });
 
-        if (!temporary) {
-            Collection<Integer> tableIDs = new ArrayList<>(indexesToDrop.size());
-            for(Index index : indexesToDrop) {
-                tableIDs.addAll(index.getAllTableIDs());
-            }
-            trackBumpTableVersion(session, newAIS, tableIDs);
+        Collection<Integer> tableIDs = new ArrayList<>(indexesToDrop.size());
+        for(Index index : indexesToDrop) {
+            tableIDs.addAll(index.getAllTableIDs());
         }
+        trackBumpTableVersion(session, newAIS, tableIDs);
+
         final Set<String> schemas = new HashSet<>();
         for(Index index : indexesToDrop) {
             schemas.add(DefaultNameGenerator.schemaNameForIndex(index));
@@ -521,7 +521,17 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         if(table == null) {
             throw new IllegalStateException("Unknown table: " + tableID);
         }
-        Integer curVer = tableVersionMap.get(tableID);
+        // May be changed by ongoing DDL
+        Map<Integer,Integer> changedVersions = session.get(TABLE_VERSIONS);
+        Integer curVer = null;
+        if(changedVersions != null) {
+            curVer = changedVersions.get(tableID);
+        }
+        // Or not
+        if(curVer == null) {
+            curVer = tableVersionMap.get(tableID);
+        }
+        // Current may be null in pre-1.4.3 volumes
         Integer tableVer = table.getVersion();
         if(curVer == null) {
             return tableVer != null;
@@ -694,34 +704,34 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         );
     }
 
-    protected void trackBumpTableVersion (Session session, AkibanInformationSchema newAIS, Collection<Integer> allTableIDs)
+    protected void trackBumpTableVersion (Session session, AkibanInformationSchema newAIS, Collection<Integer> affectedIDs)
     {
+        // Schedule the update for the tableVersionMap version number on commit.
+        // A single DDL may trigger multiple tracks (e.g. ALTER affecting a GI), so only bump once per DDL.
+        Map<Integer,Integer> tableAndVersions = session.get(TABLE_VERSIONS);
+        if(tableAndVersions == null) {
+            tableAndVersions = new HashMap<>();
+            session.put(TABLE_VERSIONS, tableAndVersions);
+            txnService.addCallback(session, TransactionService.CallbackType.COMMIT, bumpTableVersionCommit);
+            txnService.addCallback(session, TransactionService.CallbackType.END, cleanTableVersion);
+        }
+
         // Set the new table version  for tables in the NewAIS
-        for(Integer tableID : allTableIDs) {
-            Integer current = tableVersionMap.get(tableID);
-            Integer update = (current == null) ? 1 : current + 1;
+        for(Integer tableID : affectedIDs) {
+            Integer newVersion = tableAndVersions.get(tableID);
+            if(newVersion == null) {
+                Integer current = tableVersionMap.get(tableID);
+                newVersion = (current == null) ? 1 : current + 1;
+                tableAndVersions.put(tableID, newVersion);
+            }
             UserTable table = newAIS.getUserTable(tableID);
-            if(table != null) { // From drop
-                table.setVersion(update);
+            if(table != null) { // From a drop
+                table.setVersion(newVersion);
             }
         }
-        // Schedule the update for the tableVersionMap version number on commit.
-        // Replace any existing map as we only should have one at at time.
-        // for one AIS. 
-        // There may be two of these, the first for an alter table, 
-        // the second for group indexes affected by the change. 
-        Map<AkibanInformationSchema,Collection<Integer>> map = session.get(TABLE_VERSIONS);
-        if(map == null) {
-            map = new HashMap<>();
-            session.put(TABLE_VERSIONS, map);
-        }
-        map.put(newAIS, allTableIDs);
-        txnService.addCallback(session, TransactionService.CallbackType.COMMIT, bumpTableVersionCommit);
-        txnService.addCallback(session, TransactionService.CallbackType.END, cleanTableVersion);
     }
 
-    protected final static Session.MapKey<AkibanInformationSchema, Collection<Integer>> TABLE_VERSIONS = 
-            Session.MapKey.mapNamed("TABLE_VERSIONS");
+    protected final static Session.Key<Map<Integer,Integer>> TABLE_VERSIONS = Session.Key.named("TABLE_VERSIONS");
 
     // If the Alter table fails, make sure to clean up the TABLE_VERSION change list on end
     // If the Alter succeeds, the bumpTableVersionCommit process will clean up, and this does nothing. 
@@ -737,20 +747,22 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     protected final TransactionService.Callback bumpTableVersionCommit = new TransactionService.Callback() {
         @Override
         public void run(Session session, long timestamp) {
-            Map<AkibanInformationSchema,Collection<Integer>> tableIDs = session.remove(TABLE_VERSIONS);
-            if (tableIDs != null) {
-                for(Map.Entry<AkibanInformationSchema, Collection<Integer>> entry : tableIDs.entrySet()) {
-                    bumpTableVersions(entry.getKey(), entry.getValue());
-                }
+            Map<Integer,Integer> tableAndVersions = session.remove(TABLE_VERSIONS);
+            if(tableAndVersions != null) {
+                bumpTableVersions(tableAndVersions);
             }
         }
     };
     
-    private void bumpTableVersions(AkibanInformationSchema newAIS, Collection<Integer> allTableIDs) {
-        for(Integer tableID : allTableIDs) {
-            Integer current = tableVersionMap.get(tableID);
-            Integer update = (current == null) ? 1 : current + 1;
-            boolean success = tableVersionMap.compareAndSet(tableID, current, update);
+    private void bumpTableVersions(Map<Integer,Integer> tableAndVersions) {
+        for(Entry<Integer, Integer> entry : tableAndVersions.entrySet()) {
+            int tableID = entry.getKey();
+            int newVersion = entry.getValue();
+            Integer current = tableVersionMap.get(entry.getKey());
+            if(current != null && current >= newVersion) {
+                throw new IllegalStateException("Current not < new: " + current + "," + newVersion);
+            }
+            boolean success = tableVersionMap.compareAndSet(tableID, current, newVersion);
             // Failed CAS would indicate concurrent DDL on this table, which should not be possible
             if(!success) {
                 throw new IllegalStateException("Unexpected concurrent DDL on table: " + tableID);
