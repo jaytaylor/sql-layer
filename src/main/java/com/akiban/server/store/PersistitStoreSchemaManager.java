@@ -355,7 +355,6 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
 
         this.nameGenerator = SynchronizedNameGenerator.wrap(new DefaultNameGenerator(newAIS));
         this.delayedTreeIDGenerator = new AtomicLong();
-        this.tableVersionMap = ReadWriteMap.wrapNonFair(new HashMap<Integer,Integer>());
         for(UserTable table : newAIS.getUserTables().values()) {
             // Note: table.getVersion may be null (pre-1.4.3 volumes)
             tableVersionMap.put(table.getTableId(), table.getVersion());

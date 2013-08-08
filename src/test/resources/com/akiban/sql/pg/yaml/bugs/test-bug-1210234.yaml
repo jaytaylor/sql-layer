@@ -1,0 +1,23 @@
+#
+# bug1210234: Second ALTER on a table within a group fails with concurrent DDL exception if a GI is defined
+#
+---
+- CreateTable: c(cid INT NOT NULL PRIMARY KEY, name VARCHAR(255) NOT NULL)
+---
+- CreateTable: o(oid INT NOT NULL PRIMARY KEY, cid INT NOT NULL, odate date NOT NULL, priority VARCHAR(15),
+                 GROUPING FOREIGN KEY(cid) REFERENCES c(cid))
+---
+- CreateTable: i(iid INT NOT NULL PRIMARY KEY, oid INT NOT NULL, discount FLOAT,
+                 GROUPING FOREIGN KEY(oid) REFERENCES o(oid))
+---
+- Statement: CREATE INDEX gi_ooi ON test.c (o.priority, o.odate, i.discount) USING LEFT JOIN
+---
+- Statement: INSERT INTO c VALUES (1, 'John')
+---
+- Statement: INSERT INTO o VALUES (1, 1, '1995-02-01', 'Prior 2')
+---
+- Statement: INSERT INTO i VALUES (1, 1, 0.4)
+---
+- Statement: ALTER TABLE i ALTER COLUMN discount SET DATA TYPE INT
+---
+- Statement: ALTER TABLE o ALTER COLUMN odate SET DATA TYPE CHAR(8)
