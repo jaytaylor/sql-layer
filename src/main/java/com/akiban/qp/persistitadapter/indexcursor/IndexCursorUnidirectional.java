@@ -49,6 +49,9 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     public void open()
     {
         super.open();
+        keyRange = initialKeyRange;
+        if (keyRange != null)
+            initializeCursor();
         evaluateBoundaries(context, sortKeyAdapter);
         initializeForOpen();
     }
@@ -131,7 +134,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             direction == FORWARD
             ? keyRange.resetLo(new IndexBound(row, columnSelector))
             : keyRange.resetHi(new IndexBound(row, columnSelector));
-        initializeCursor(keyRange, ordering);
+        initializeCursor();
         reevaluateBoundaries(context, sortKeyAdapter);
         initializeForOpen();
     }
@@ -159,11 +162,12 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                                         SortKeyAdapter<S, ?> sortKeyAdapter)
     {
         super(context, iterationHelper);
+        this.initialKeyRange = keyRange;
+        this.ordering = ordering;
         // end state never changes. start state can change on a jump, so it is set in initializeCursor.
         this.endBoundColumns = keyRange.boundColumns();
         this.endKey = endBoundColumns == 0 ? null : adapter.takeIndexRow(keyRange.indexRowType());
         this.sortKeyAdapter = sortKeyAdapter;
-        initializeCursor(keyRange, ordering);
     }
 
     protected void evaluateBoundaries(QueryContext context, SortKeyAdapter<S, ?> keyAdapter)
@@ -382,10 +386,8 @@ class IndexCursorUnidirectional<S> extends IndexCursor
 
     // For use by this class
 
-    private void initializeCursor(IndexKeyRange keyRange, API.Ordering ordering)
+    private void initializeCursor()
     {
-        this.keyRange = keyRange;
-        this.ordering = ordering;
         this.lo = keyRange.lo();
         this.hi = keyRange.hi();
         if (ordering.allAscending()) {
@@ -486,7 +488,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                                       SortKeyAdapter<S, ?> sortKeyAdapter)
     {
         super(context, iterationHelper);
-        this.keyRange = null;
+        this.initialKeyRange = null;
         this.ordering = ordering;
         if (ordering.allAscending()) {
             this.startBoundary = Key.BEFORE;
@@ -513,8 +515,9 @@ class IndexCursorUnidirectional<S> extends IndexCursor
 
     // Object state
 
+    private final IndexKeyRange initialKeyRange;
+    private final API.Ordering ordering;
     private IndexKeyRange keyRange;
-    private API.Ordering ordering;
     protected int direction; // +1 = ascending, -1 = descending
     protected Key.Direction keyComparison;
     protected Key.Direction initialKeyComparison;

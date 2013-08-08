@@ -18,7 +18,9 @@ between-3: OR of two BETWEEN conditions
 
 between-3: NOT BETWEEN condition
 
-case-1: CASE statement
+case-1: search CASE statement
+
+case-2: simple CASE statement
 
 cast-1: explicit CAST
 
@@ -73,6 +75,8 @@ in-2l: IN with subquery with LIMIT
 in-3: IN with aggregate subquery
 
 in-4: IN with row value subquery
+
+in-5: IN with VALUES (explicitly as subquery)
 
 insert-1: from VALUES
 

@@ -275,6 +275,7 @@ class Intersect_Ordered extends Operator
                 nextLeftRow();
                 nextRightRow();
                 closed = leftRow.isEmpty() && rightRow.isEmpty();
+                leftSkipRowFixed = rightSkipRowFixed = false; // Fixed fields are per iteration.
             } finally {
                 TAP_OPEN.out();
             }
@@ -567,10 +568,11 @@ class Intersect_Ordered extends Operator
 
         private ValuesHolderRow leftSkipRow()
         {
-            if (leftSkipRow == null) {
-                assert leftRow.isHolding();
+            if (!leftSkipRowFixed) {
                 boolean usingPValues = Intersect_Ordered.this.usePValues;
-                leftSkipRow = new ValuesHolderRow(leftRowType, usingPValues);
+                if (leftSkipRow == null)
+                    leftSkipRow = new ValuesHolderRow(leftRowType, usingPValues);
+                assert leftRow.isHolding();
                 int f = 0;
                 while (f < leftFixedFields) {
                     if (usingPValues)
@@ -589,16 +591,18 @@ class Intersect_Ordered extends Operator
                     else
                         leftSkipRow.holderAt(f++).putNull();
                 }
+                leftSkipRowFixed = true;
             }
             return leftSkipRow;
         }
 
         private ValuesHolderRow rightSkipRow()
         {
-            if (rightSkipRow == null) {
-                assert rightRow.isHolding();
+            if (!rightSkipRowFixed) {
                 boolean usingPValues = Intersect_Ordered.this.usePValues;
-                rightSkipRow = new ValuesHolderRow(rightRowType, usingPValues);
+                if (rightSkipRow == null)
+                    rightSkipRow = new ValuesHolderRow(rightRowType, usingPValues);
+                assert rightRow.isHolding();
                 int f = 0;
                 while (f < rightFixedFields) {
                     if (usingPValues)
@@ -615,6 +619,7 @@ class Intersect_Ordered extends Operator
                     else
                         rightSkipRow.holderAt(f++).putNull();
                 }
+                rightSkipRowFixed = true;
             }
             return rightSkipRow;
         }
@@ -632,5 +637,7 @@ class Intersect_Ordered extends Operator
         private final ShareHolder<Row> rightRow = new ShareHolder<>();
         private ValuesHolderRow leftSkipRow;
         private ValuesHolderRow rightSkipRow;
+        private boolean leftSkipRowFixed;
+        private boolean rightSkipRowFixed;
     }
 }

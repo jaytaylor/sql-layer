@@ -926,6 +926,19 @@ public class ASTStatementLoader extends BaseRule
                     plan = next;
                 }
             }
+            if ((operands == null) &&
+                (subquery instanceof ColumnSource) &&
+                (subquery instanceof TypedPlan)) {
+                int nfields = ((TypedPlan)subquery).nFields();
+                if (!multipleOperands && (nfields != 1))
+                    throw new UnsupportedSQLException("Subquery must have exactly one column", subqueryNode);
+                operands = new ArrayList<>(nfields);
+                for (int i = 0; i < nfields; i++) {
+                    operands.add(new ColumnExpression(((ColumnSource)subquery), i, null, null));
+                }
+                if (nfields > 0)
+                    operand = operands.get(0);
+            }
             ConditionExpression condition;
             if (needOperand) {
                 assert (operand != null);
@@ -1544,6 +1557,24 @@ public class ASTStatementLoader extends BaseRule
                                             toExpression(cond.getThenNode(), projects),
                                             toExpression(cond.getElseNode(), projects),
                                             cond.getType(), cond);
+            }
+            else if (valueNode instanceof SimpleCaseNode) {
+                SimpleCaseNode caseNode = (SimpleCaseNode)valueNode;
+                ExpressionNode operand = toExpression(caseNode.getOperand(), projects);
+                int ncases = caseNode.getNumberOfCases();
+                ExpressionNode expr;
+                if (caseNode.getElseValue() != null)
+                    expr = toExpression(caseNode.getElseValue(), projects);
+                else
+                    expr = new ConstantExpression(null, AkType.NULL);
+                for (int i = ncases - 1; i >= 0; i--) {
+                    ConditionList conds = new ConditionList(1);
+                    conds.add(new ComparisonCondition(Comparison.EQ, operand, toExpression(caseNode.getCaseOperand(i), projects), caseNode.getType(), caseNode));
+                    expr = new IfElseExpression(conds,
+                                                toExpression(caseNode.getResultValue(i), projects),
+                                                expr, caseNode.getType(), caseNode);
+                }
+                return expr;
             }
             else if (valueNode instanceof NextSequenceNode) {
                 NextSequenceNode seqNode = (NextSequenceNode)valueNode;

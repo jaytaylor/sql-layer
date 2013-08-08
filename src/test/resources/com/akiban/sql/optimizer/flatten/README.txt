@@ -23,3 +23,5 @@ select-8o: view with ORDER BY
 select-9: VALUES single row
 
 select-9x: VALUES multiple rows (no change)
+
+select-10: outer comparison instead of ANY
