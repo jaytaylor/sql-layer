@@ -731,7 +731,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         }
     }
 
-    protected final static Session.Key<Map<Integer,Integer>> TABLE_VERSIONS = Session.Key.named("TABLE_VERSIONS");
+    protected final static Session.MapKey<Integer,Integer> TABLE_VERSIONS = Session.MapKey.mapNamed("TABLE_VERSIONS");
 
     // If the Alter table fails, make sure to clean up the TABLE_VERSION change list on end
     // If the Alter succeeds, the bumpTableVersionCommit process will clean up, and this does nothing. 
