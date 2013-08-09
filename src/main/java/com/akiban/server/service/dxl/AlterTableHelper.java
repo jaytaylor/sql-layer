@@ -110,7 +110,7 @@ public class AlterTableHelper {
         for(IndexName name : affectedGroupIndexes.keySet()) {
             groupIndexes.add(origTable.getGroup().getIndex(name.getName()));
         }
-        ddl.schemaManager().dropIndexes(session, groupIndexes, true);
+        ddl.schemaManager().dropIndexes(session, groupIndexes);
     }
 
     public void createAffectedGroupIndexes(Session session, BasicDDLFunctions ddl, UserTable origTable, UserTable newTable, boolean dataChange) {
