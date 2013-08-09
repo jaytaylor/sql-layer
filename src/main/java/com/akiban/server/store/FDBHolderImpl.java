@@ -18,6 +18,7 @@
 package com.akiban.server.store;
 
 import com.akiban.server.service.Service;
+import com.akiban.server.service.config.ConfigurationService;
 import com.foundationdb.Database;
 import com.foundationdb.FDB;
 import com.google.inject.Inject;
@@ -27,11 +28,17 @@ import org.slf4j.LoggerFactory;
 public class FDBHolderImpl implements FDBHolder, Service {
     private static final Logger LOG = LoggerFactory.getLogger(FDBHolderImpl.class.getName());
 
+    private static final String CONFIG_API_VERSION = "akserver.fdb.api_version";
+    private static final String CONFIG_CLUSTER_FILE = "akserver.fdb.cluster_file";
+
+    private final ConfigurationService configService;
+
     private FDB fdb;
     private Database db;
 
     @Inject
-    public FDBHolderImpl() {
+    public FDBHolderImpl(ConfigurationService configService) {
+        this.configService = configService;
     }
 
 
@@ -43,10 +50,14 @@ public class FDBHolderImpl implements FDBHolder, Service {
     public void start() {
         // Just one FDB for whole JVM and its dispose doesn't do anything.
         if(fdb == null) {
-            fdb = FDB.selectAPIVersion(23);
-            LOG.info("Started FDB with API Version 23");
+            int apiVersion = Integer.parseInt(configService.getProperty(CONFIG_API_VERSION));
+            LOG.info("Staring with API Version {}", apiVersion);
+            fdb = FDB.selectAPIVersion(apiVersion);
         }
-        db = fdb.open();
+        String clusterFile = configService.getProperty(CONFIG_CLUSTER_FILE);
+        boolean isDefault = clusterFile.isEmpty();
+        LOG.info("Opening cluster file {}", isDefault ? "DEFAULT" : clusterFile);
+        db = isDefault ? fdb.open() : fdb.open(clusterFile);
     }
 
     @Override
