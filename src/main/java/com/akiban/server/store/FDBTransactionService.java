@@ -211,6 +211,12 @@ public class FDBTransactionService implements TransactionService {
         return 0;
     }
 
+
+    @Override
+    public void periodicallyCommit(Session session) {
+        // TODO
+    }
+
     @Override
     public void addCallback(Session session, CallbackType type, Callback callback) {
         session.push(getCallbackKey(type), callback);
