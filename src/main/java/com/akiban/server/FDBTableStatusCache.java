@@ -23,6 +23,7 @@ import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.FDBTransactionService;
+import com.akiban.server.store.FDBTransactionService.TransactionState;
 import com.foundationdb.Database;
 import com.foundationdb.MutationType;
 import com.foundationdb.Transaction;
@@ -113,14 +114,14 @@ public class FDBTableStatusCache implements TableStatusCache {
 
         @Override
         public void rowsWritten(Session session, long count) {
-            Transaction txn = txnService.getTransaction(session);
-            txn.mutate(MutationType.ADD, rowCountKey, packForAtomicOp(count));
+            TransactionState txn = txnService.getTransaction(session);
+            txn.getTransaction().mutate(MutationType.ADD, rowCountKey, packForAtomicOp(count));
         }
 
         @Override
         public void truncate(Session session) {
-            Transaction txn = txnService.getTransaction(session);
-            txn.set(rowCountKey, packForAtomicOp(0));
+            TransactionState txn = txnService.getTransaction(session);
+            txn.setBytes(rowCountKey, packForAtomicOp(0));
             internalSetAutoInc(session, 0, true);
         }
 
@@ -170,15 +171,15 @@ public class FDBTableStatusCache implements TableStatusCache {
 
         @Override
         public long getAutoIncrement(Session session) {
-            Transaction txn = txnService.getTransaction(session);
-            byte[] bytes = txn.get(autoIncKey).get();
+            TransactionState txn = txnService.getTransaction(session);
+            byte[] bytes = txn.getTransaction().get(autoIncKey).get();
             return decodeOrZero(bytes);
         }
 
         @Override
         public long getRowCount(Session session) {
-            Transaction txn = txnService.getTransaction(session);
-            return unpackForAtomicOp(txn.get(rowCountKey).get());
+            TransactionState txn = txnService.getTransaction(session);
+            return unpackForAtomicOp(txn.getTransaction().get(rowCountKey).get());
         }
 
         @Override
@@ -218,8 +219,8 @@ public class FDBTableStatusCache implements TableStatusCache {
 
         @Override
         public void setRowCount(Session session, long rowCount) {
-            Transaction txn = txnService.getTransaction(session);
-            txn.set(rowCountKey, packForAtomicOp(rowCount));
+            TransactionState txn = txnService.getTransaction(session);
+            txn.setBytes(rowCountKey, packForAtomicOp(rowCount));
         }
 
         @Override
@@ -231,17 +232,17 @@ public class FDBTableStatusCache implements TableStatusCache {
         }
 
         private void clearState(Session session) {
-            Transaction txn = txnService.getTransaction(session);
-            txn.clear(rowCountKey);
-            txn.clear(autoIncKey);
-            txn.clear(uniqueKey);
+            TransactionState txn = txnService.getTransaction(session);
+            txn.getTransaction().clear(rowCountKey);
+            txn.getTransaction().clear(autoIncKey);
+            txn.getTransaction().clear(uniqueKey);
         }
 
         private void internalSetAutoInc(Session session, long value, boolean evenIfLess) {
-            Transaction txn = txnService.getTransaction(session);
-            long current = decodeOrZero(txn.get(autoIncKey).get());
+            TransactionState txn = txnService.getTransaction(session);
+            long current = decodeOrZero(txn.getTransaction().get(autoIncKey).get());
             if(evenIfLess || value > current) {
-                txn.set(autoIncKey, Tuple.from(value).pack());
+                txn.setBytes(autoIncKey, Tuple.from(value).pack());
             }
         }
 

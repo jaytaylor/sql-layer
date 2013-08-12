@@ -42,6 +42,7 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
+import com.akiban.server.store.FDBTransactionService.TransactionState;
 import com.akiban.util.GrowableByteBuffer;
 import com.foundationdb.KeyValue;
 import com.foundationdb.Range;
@@ -294,12 +295,12 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     private void validateAndFreeze(Session session, AkibanInformationSchema newAIS, boolean isNewGeneration) {
         newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary(); // TODO: Often redundant, cleanup
 
-        Transaction txn = txnService.getTransaction(session);
+        TransactionState txn = txnService.getTransaction(session);
         long generation = getTransactionalGeneration(session);
         if(isNewGeneration) {
             ++generation;
             byte[] packedGen = Tuple.from(generation).pack();
-            txn.set(PACKED_GENERATION_KEY, packedGen);
+            txn.setBytes(PACKED_GENERATION_KEY, packedGen);
         }
 
         newAIS.setGeneration(generation);
@@ -307,11 +308,11 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
         attachToSession(session, newAIS);
     }
 
-    private void checkAndSerialize(Transaction txn, GrowableByteBuffer buffer, AkibanInformationSchema newAIS, String schema) {
+    private void checkAndSerialize(TransactionState txn, GrowableByteBuffer buffer, AkibanInformationSchema newAIS, String schema) {
         saveProtobuf(txn, buffer, newAIS, schema);
     }
 
-    private void saveProtobuf(Transaction txn,
+    private void saveProtobuf(TransactionState txn,
                               GrowableByteBuffer buffer,
                               AkibanInformationSchema newAIS,
                               final String schema) {
@@ -343,9 +344,9 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
             new ProtobufWriter(buffer, selector).save(newAIS);
             buffer.flip();
             byte[] newValue = Arrays.copyOfRange(buffer.array(), buffer.position(), buffer.limit());
-            txn.set(packed, newValue);
+            txn.setBytes(packed, newValue);
         } else {
-            txn.clear(packed);
+            txn.getTransaction().clear(packed);
         }
     }
 
@@ -390,9 +391,9 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
         // TODO: Is this vulnerable to table ID conflicts if another node creates a persisted I_S table?
         final AkibanInformationSchema newAIS = AISCloner.clone(memoryTableAIS);
 
-        Transaction txn = txnService.getTransaction(session);
+        TransactionState txn = txnService.getTransaction(session);
         ProtobufReader reader = new ProtobufReader(newAIS);
-        Iterator<KeyValue> iterator = txn.getRange(Range.startsWith(makePBTuple().pack())).iterator();
+        Iterator<KeyValue> iterator = txn.getTransaction().getRange(Range.startsWith(makePBTuple().pack())).iterator();
         while(iterator.hasNext()) {
             KeyValue kv = iterator.next();
             byte[] storedAIS = kv.getValue();
@@ -411,9 +412,9 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     }
 
     private long getTransactionalGeneration(Session session) {
-        Transaction txn = txnService.getTransaction(session);
+        TransactionState txn = txnService.getTransaction(session);
         long generation = 0;
-        byte[] packedGen = txn.get(PACKED_GENERATION_KEY).get();
+        byte[] packedGen = txn.getTransaction().get(PACKED_GENERATION_KEY).get();
         if(packedGen != null) {
             generation = Tuple.fromBytes(packedGen).getLong(0);
         }
