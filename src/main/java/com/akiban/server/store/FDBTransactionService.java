@@ -24,12 +24,17 @@ import com.foundationdb.Transaction;
 import com.foundationdb.async.Function;
 import com.google.inject.Inject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Deque;
 
 import static com.akiban.server.service.session.Session.Key;
 import static com.akiban.server.service.session.Session.StackKey;
 
 public class FDBTransactionService implements TransactionService {
+    private static final Logger LOG = LoggerFactory.getLogger(FDBTransactionService.class);
+
     private static final Key<TransactionState> TXN_KEY = Key.named("TXN_KEY");
     private static final Key<Boolean> ROLLBACK_KEY = Key.named("TXN_ROLLBACK");
     private static final StackKey<Callback> PRE_COMMIT_KEY = StackKey.stackNamed("TXN_PRE_COMMIT");
@@ -73,9 +78,14 @@ public class FDBTransactionService implements TransactionService {
             this.bytesSet = 0;
         }
 
-        public boolean isTimeToCommit() {
-            return (((System.currentTimeMillis() - startTime) > COMMIT_AFTER_MILLIS) ||
-                    (bytesSet > COMMIT_AFTER_BYTES));
+        public boolean timeToCommit() {
+            long dt = System.currentTimeMillis() - startTime;
+            if ((dt > COMMIT_AFTER_MILLIS) ||
+                (bytesSet > COMMIT_AFTER_BYTES)) {
+                LOG.debug("Commit after {} ms. / {} bytes", dt, bytesSet);
+                return true;
+            }
+            return false;
         }
     }
 
@@ -250,7 +260,7 @@ public class FDBTransactionService implements TransactionService {
     public void periodicallyCommit(Session session) {
         TransactionState txn = getTransactionInternal(session);
         requireActive(txn);
-        if (txn.isTimeToCommit()) {
+        if (txn.timeToCommit()) {
             // TODO: Better to leave callbacks until user-initiated commit?
             long startTime = txn.getTransaction().getReadVersion().get();
             runCallbacks(session, PRE_COMMIT_KEY, startTime, null);
