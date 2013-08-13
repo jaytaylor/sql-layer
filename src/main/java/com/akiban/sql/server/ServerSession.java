@@ -131,6 +131,9 @@ public interface ServerSession
     /** Set following transaction to read-only / read-write. */
     public void setTransactionDefaultReadOnly(boolean readOnly);
 
+    /** Set following transaction to commit as determined by store. */
+    public void setTransactionPeriodicallyCommit(boolean periodicallyCommit);
+
     /** Get the functions registry. */
     public FunctionsRegistry functionsRegistry();
 

@@ -29,14 +29,16 @@ public class ServerTransaction
 {
     private final Session session;
     private final TransactionService txnService;
-    private boolean readOnly;
+    private boolean readOnly, periodicallyCommit;
     private Date transactionTime;
     
     /** Begin a new transaction or signal an exception. */
-    public ServerTransaction(ServerSession server, boolean readOnly) {
+    public ServerTransaction(ServerSession server, 
+                             boolean readOnly, boolean periodicallyCommit) {
         this.session = server.getSession();
         this.txnService = server.getTransactionService();
         this.readOnly = readOnly;
+        this.periodicallyCommit = periodicallyCommit;
         txnService.beginTransaction(session);
     }
 
@@ -46,6 +48,14 @@ public class ServerTransaction
 
     public void setReadOnly(boolean readOnly) {
         this.readOnly = readOnly;
+    }
+
+    public boolean isPeriodicallyCommit() {
+        return periodicallyCommit;
+    }
+
+    public void setPeriodicallyCommit(boolean periodicallyCommit) {
+        this.periodicallyCommit = periodicallyCommit;
     }
 
     public void checkTransactionMode(ServerStatement.TransactionMode transactionMode) {
@@ -93,6 +103,12 @@ public class ServerTransaction
     
     public boolean isRollbackPending() {
         return txnService.isRollbackPending(session);
+    }
+
+    public void checkPeriodicallyCommit() {
+        if (periodicallyCommit) {
+            txnService.periodicallyCommit(session);
+        }
     }
 
     /** Return the transaction's time, which is fixed the first time
