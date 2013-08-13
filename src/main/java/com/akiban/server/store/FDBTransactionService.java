@@ -271,6 +271,7 @@ public class FDBTransactionService implements TransactionService {
             txn.getTransaction().commit().get();
             long commitTime = txn.getTransaction().getCommittedVersion();
             runCallbacks(session, AFTER_COMMIT_KEY, commitTime, null);
+            txn.getTransaction().reset();
             txn.reset();
         }
     }
