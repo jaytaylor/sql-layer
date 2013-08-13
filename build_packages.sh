@@ -82,8 +82,9 @@ if [ ${platform} == "debian" ]; then
 elif [ ${platform} == "redhat" ]; then
     mkdir -p ${PWD}/redhat/akserver/redhat
     mkdir -p ${PWD}/redhat/rpmbuild/{BUILD,SOURCES,SRPMS,RPMS/noarch}
-    tar_file=${PWD}/redhat/rpmbuild/SOURCES/akserver.tar
-    git archive --format=tar --output=$tar_file HEAD
+    tar_prefix=akserver
+    tar_file=${PWD}/redhat/rpmbuild/SOURCES/${tar_prefix}.tar
+    git archive --format=tar --output="$tar_file" --prefix="${tar_prefix}/" HEAD
     rm -f ${PWD}/redhat/akserver/redhat/* # Clear out old files
     cp -R packages-common/* ${PWD}/redhat/akserver/redhat
     pushd redhat
