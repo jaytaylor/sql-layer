@@ -29,7 +29,7 @@ git_hash=`git rev-parse --short HEAD`
 git_count=`git rev-list --merges HEAD |wc -l |tr -d ' '` # --count is newer
 server_version=$(mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version |grep -o '^[0-9.]\+')
 
-mvn_install="mvn clean install -DGIT_COUNT=${GIT_COUNT} -DGIT_HASH=${GIT_HASH} -DskipTests=true"
+mvn_install="mvn clean install -DGIT_COUNT=${git_count} -DGIT_HASH=${git_hash} -DskipTests=true"
 
 echo "Building Akiban Server"
 
