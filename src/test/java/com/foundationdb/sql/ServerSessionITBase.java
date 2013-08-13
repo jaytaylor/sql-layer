@@ -19,10 +19,13 @@ package com.foundationdb.sql;
 
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.service.functions.FunctionsRegistry;
+import com.foundationdb.server.service.security.SecurityService;
+import com.foundationdb.server.service.security.User;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.statistics.IndexStatisticsService;
+import com.foundationdb.server.t3expressions.T3RegistryService;
 import com.foundationdb.server.test.it.ITBase;
-import com.foundationdb.sql.parser.DDLStatementNode;
-import com.foundationdb.sql.parser.SQLParser;
-import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.sql.server.ServerQueryContext;
 import com.foundationdb.sql.server.ServerOperatorCompiler;
 import com.foundationdb.sql.server.ServerServiceRequirements;
@@ -61,10 +64,10 @@ public class ServerSessionITBase extends ITBase {
                                                 serviceManager().getMonitorService(),
                                                 serviceManager().getSessionService(),
                                                 store(),
-                                                serviceManager().getServiceByClass(com.akiban.server.service.functions.FunctionsRegistry.class),
+                                                serviceManager().getServiceByClass(FunctionsRegistry.class),
                                                 configService(),
-                                                serviceManager().getServiceByClass(com.akiban.server.store.statistics.IndexStatisticsService.class),
-                                                serviceManager().getServiceByClass(com.akiban.server.t3expressions.T3RegistryService.class),
+                                                serviceManager().getServiceByClass(IndexStatisticsService.class),
+                                                serviceManager().getServiceByClass(T3RegistryService.class),
                                                 routineLoader(),
                                                 txnService(),
                                                 new DummySecurityService(),
@@ -91,19 +94,19 @@ public class ServerSessionITBase extends ITBase {
         }
     }
 
-    protected static class DummySecurityService implements com.akiban.server.service.security.SecurityService {
+    protected static class DummySecurityService implements SecurityService {
         @Override
-        public com.akiban.server.service.security.User authenticate(com.akiban.server.service.session.Session session, String name, String password) {
+        public User authenticate(Session session, String name, String password) {
             return null;
         }
 
         @Override
-        public com.akiban.server.service.security.User authenticate(com.akiban.server.service.session.Session session, String name, String password, byte[] salt) {
+        public User authenticate(Session session, String name, String password, byte[] salt) {
             return null;
         }
 
         @Override
-        public boolean isAccessible(com.akiban.server.service.session.Session session, String schema) {
+        public boolean isAccessible(Session session, String schema) {
             return true;
         }
 
@@ -113,7 +116,7 @@ public class ServerSessionITBase extends ITBase {
         }
 
         @Override
-        public boolean hasRestrictedAccess(com.akiban.server.service.session.Session session) {
+        public boolean hasRestrictedAccess(Session session) {
             return true;
         }
 
@@ -128,12 +131,12 @@ public class ServerSessionITBase extends ITBase {
         }
 
         @Override
-        public com.akiban.server.service.security.User getUser(String name) {
+        public User getUser(String name) {
             return null;
         }
 
         @Override
-        public com.akiban.server.service.security.User addUser(String name, String password, java.util.Collection<String> roles) {
+        public User addUser(String name, String password, java.util.Collection<String> roles) {
             throw new UnsupportedOperationException();
         }
 
@@ -148,7 +151,7 @@ public class ServerSessionITBase extends ITBase {
         }
 
         @Override
-        public void clearAll(com.akiban.server.service.session.Session session) {
+        public void clearAll(Session session) {
         }
     }
 

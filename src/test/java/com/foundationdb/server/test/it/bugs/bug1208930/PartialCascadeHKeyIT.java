@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.test.it.bug1208930;
+package com.foundationdb.server.test.it.bugs.bug1208930;
 
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.qp.operator.API;
@@ -70,7 +70,7 @@ public class PartialCascadeHKeyIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new com.akiban.qp.rowtype.Schema(ais());
+        schema = new com.foundationdb.qp.rowtype.Schema(ais());
         wRowType = schema.userTableRowType(userTable(w));
         dRowType = schema.userTableRowType(userTable(d));
         cRowType = schema.userTableRowType(userTable(c));

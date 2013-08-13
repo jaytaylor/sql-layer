@@ -66,7 +66,7 @@ public class GroupIndexRowIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new com.akiban.qp.rowtype.Schema(ais());
+        schema = new com.foundationdb.qp.rowtype.Schema(ais());
         userRowType = schema.userTableRowType(userTable(user));
         memberInfoRowType = schema.userTableRowType(userTable(memberInfo));
         entitlementUserGroupRowType = schema.userTableRowType(userTable(entitlementUserGroup));

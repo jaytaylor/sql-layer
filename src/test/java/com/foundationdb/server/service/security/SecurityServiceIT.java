@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.service.security;
 
+import com.foundationdb.http.HttpConductor;
 import com.foundationdb.rest.RestService;
 import com.foundationdb.rest.RestServiceImpl;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
@@ -24,6 +25,7 @@ import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.sql.embedded.EmbeddedJDBCService;
 import com.foundationdb.sql.embedded.EmbeddedJDBCServiceImpl;
 
+import com.foundationdb.sql.pg.PostgresService;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.entity.ContentType;
@@ -120,8 +122,8 @@ public class SecurityServiceIT extends ITBase
 
     private URI getRestURL(String request, String query, String userInfo)
             throws Exception {
-        int port = serviceManager().getServiceByClass(com.akiban.http.HttpConductor.class).getPort();
-        String context = serviceManager().getServiceByClass(com.akiban.rest.RestService.class).getContextPath();
+        int port = serviceManager().getServiceByClass(HttpConductor.class).getPort();
+        String context = serviceManager().getServiceByClass(RestService.class).getContextPath();
         return new URI("http", userInfo, "localhost", port, context + request, query, null);
     }
 
@@ -198,7 +200,7 @@ public class SecurityServiceIT extends ITBase
 
     private Connection openPostgresConnection(String user, String password) 
             throws Exception {
-        int port = serviceManager().getServiceByClass(com.akiban.sql.pg.PostgresService.class).getPort();
+        int port = serviceManager().getServiceByClass(PostgresService.class).getPort();
         Class.forName("org.postgresql.Driver");
         String url = String.format("jdbc:postgresql://localhost:%d/%s", port, user);
         return DriverManager.getConnection(url, user, password);

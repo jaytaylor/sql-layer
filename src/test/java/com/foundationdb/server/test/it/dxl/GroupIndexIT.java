@@ -212,7 +212,7 @@ public class GroupIndexIT extends ITBase {
         assertEquals("group index count", 2, group.getIndexes().size());
         if (true)
             // TODO: Shouldn't this just happen?
-            ddl().getAIS(session()).validate(com.akiban.ais.model.validation.AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+            ddl().getAIS(session()).validate(com.foundationdb.ais.model.validation.AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
     }
 
     private void expectIndexContents(GroupIndex groupIndex, Object[]... keys) throws Exception {

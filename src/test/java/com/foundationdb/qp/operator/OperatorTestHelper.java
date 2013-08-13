@@ -158,7 +158,7 @@ public final class OperatorTestHelper {
     }
 
     public static Schema schema() {
-        return new Schema(new com.akiban.ais.model.AkibanInformationSchema());
+        return new Schema(new com.foundationdb.ais.model.AkibanInformationSchema());
     }
 
     // for use in this class
@@ -200,7 +200,7 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public <HKEY extends HKey> HKEY newHKey(com.akiban.ais.model.HKey hKeyMetadata)
+        public <HKEY extends HKey> HKEY newHKey(com.foundationdb.ais.model.HKey hKeyMetadata)
         {
             throw new UnsupportedOperationException();
         }
