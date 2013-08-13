@@ -17,6 +17,7 @@
 
 package com.akiban.server.store;
 
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.util.MultipleCauseException;
@@ -41,17 +42,18 @@ public class FDBTransactionService implements TransactionService {
     private static final StackKey<Callback> AFTER_END_KEY = StackKey.stackNamed("TXN_AFTER_END");
     private static final StackKey<Callback> AFTER_COMMIT_KEY = StackKey.stackNamed("TXN_AFTER_COMMIT");
     private static final StackKey<Callback> AFTER_ROLLBACK_KEY = StackKey .stackNamed("TXN_AFTER_ROLLBACK");
-
-    // TODO: Need to be set in config?
-    public static final long COMMIT_AFTER_MILLIS = 2 * 1000; // 2 sec
-    public static final long COMMIT_AFTER_BYTES = 2 * 1000000; // 2 MB
+    private static final String CONFIG_COMMIT_AFTER_MILLIS = "akserver.fdb.periodicallCommit.afterMillis";
+    private static final String CONFIG_COMMIT_AFTER_BYTES = "akserver.fdb.periodicallCommit.afterBytes";
 
     private final FDBHolder fdbHolder;
-
+    private final ConfigurationService configService;
+    private static long commitAfterMillis, commitAfterBytes;
 
     @Inject
-    public FDBTransactionService(FDBHolder fdbHolder) {
+    public FDBTransactionService(FDBHolder fdbHolder,
+                                 ConfigurationService configService) {
         this.fdbHolder = fdbHolder;
+        this.configService = configService;
     }
 
     public static class TransactionState {
@@ -80,8 +82,8 @@ public class FDBTransactionService implements TransactionService {
 
         public boolean timeToCommit() {
             long dt = System.currentTimeMillis() - startTime;
-            if ((dt > COMMIT_AFTER_MILLIS) ||
-                (bytesSet > COMMIT_AFTER_BYTES)) {
+            if ((dt > commitAfterMillis) ||
+                (bytesSet > commitAfterBytes)) {
                 LOG.debug("Commit after {} ms. / {} bytes", dt, bytesSet);
                 return true;
             }
@@ -106,6 +108,8 @@ public class FDBTransactionService implements TransactionService {
 
     @Override
     public void start() {
+        commitAfterMillis = Long.parseLong(configService.getProperty(CONFIG_COMMIT_AFTER_MILLIS));
+        commitAfterBytes = Long.parseLong(configService.getProperty(CONFIG_COMMIT_AFTER_BYTES));
     }
 
     @Override
