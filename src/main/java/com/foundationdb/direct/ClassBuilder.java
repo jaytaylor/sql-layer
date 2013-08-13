@@ -41,7 +41,7 @@ import com.foundationdb.server.types.AkType;
 import com.sun.jersey.core.impl.provider.entity.Inflector;
 
 public abstract class ClassBuilder {
-    final static String PACKAGE = "com.akiban.direct.entity";
+    final static String PACKAGE = "com.foundationdb.direct.entity";
     final static String[] NONE = {};
     final static String[] IMPORTS = { java.util.Date.class.getName(), com.foundationdb.direct.DirectIterable.class.getName() };
     final static String[] UNSUPPORTED = { "// TODO", "throw new UnsupportedOperationException()" };
@@ -59,7 +59,7 @@ public abstract class ClassBuilder {
     /*
      * (non-Javadoc)
      * 
-     * @see com.akiban.direct.ClassBuilder#property(java.lang.String,
+     * @see com.foundationdb.direct.ClassBuilder#property(java.lang.String,
      * java.lang.String)
      */
     public String addProperty(final String name, final String type, final String argName, final String[] getBody,
@@ -242,7 +242,7 @@ public abstract class ClassBuilder {
         String typeName = scn + "$" + asJavaName(table.getName().getTableName(), true);
         String className = PACKAGE + ".$$$" + asJavaName(schemaName, true) + "$$$"
                 + asJavaName(table.getName().getTableName(), true);
-        startClass(className, false, "com.akiban.direct.AbstractDirectObject", new String[] { typeName }, IMPORTS);
+        startClass(className, false, "com.foundationdb.direct.AbstractDirectObject", new String[] { typeName }, IMPORTS);
         addStaticInitializer(columnMetadataString(table));
         addMethods(table, scn, typeName, className, false);
         end();
@@ -250,7 +250,7 @@ public abstract class ClassBuilder {
 
     void startExtentClass(String schema, final String scn) throws CannotCompileException, NotFoundException {
         String className = PACKAGE + ".$$" + asJavaName(schema, true);
-        startClass(className, false, "com.akiban.direct.AbstractDirectObject", new String[] { scn }, IMPORTS);
+        startClass(className, false, "com.foundationdb.direct.AbstractDirectObject", new String[] { scn }, IMPORTS);
         addStaticInitializer(null);
     }
 
@@ -263,7 +263,7 @@ public abstract class ClassBuilder {
             StringBuilder sb = new StringBuilder(buildDirectIterableExpr(className, table));
             body = new String[] { "return " + sb.toString() };
         }
-        addMethod("get" + asJavaCollectionName(tableName, true), "com.akiban.direct.DirectIterable<" + className + ">",
+        addMethod("get" + asJavaCollectionName(tableName, true), "com.foundationdb.direct.DirectIterable<" + className + ">",
                 NONE, null, body);
 
         PrimaryKey pk = table.getPrimaryKey();
@@ -382,7 +382,7 @@ public abstract class ClassBuilder {
                     }
                     body = new String[] { "return " + sb.toString() };
                 }
-                addMethod("get" + asJavaCollectionName(childTableName, true), "com.akiban.direct.DirectIterable<"
+                addMethod("get" + asJavaCollectionName(childTableName, true), "com.foundationdb.direct.DirectIterable<"
                         + childClassName + ">", NONE, null, body);
             }
         }
@@ -491,7 +491,7 @@ public abstract class ClassBuilder {
     }
 
     private String buildDirectIterableExpr(final String className, final UserTable table) {
-        return String.format("(new com.akiban.direct.DirectIterableImpl" + "(%s.class, \"%s\", this))",
+        return String.format("(new com.foundationdb.direct.DirectIterableImpl" + "(%s.class, \"%s\", this))",
                 className, table.getName().getTableName());
     }
 

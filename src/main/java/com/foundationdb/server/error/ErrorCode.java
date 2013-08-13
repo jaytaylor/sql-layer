@@ -466,7 +466,7 @@ public enum ErrorCode {
     private final Class<? extends InvalidOperationException> exceptionClass;
     private final String formattedValue;
 
-    private static final ResourceBundle resourceBundle = ResourceBundle.getBundle("com.akiban.server.error.error_code");
+    private static final ResourceBundle resourceBundle = ResourceBundle.getBundle("com.foundationdb.server.error.error_code");
 
     private ErrorCode(String code, String subCode, Importance importance, 
             Class<? extends InvalidOperationException> exception) {

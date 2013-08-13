@@ -254,7 +254,6 @@ public abstract class Index implements Traversable
 
     public void indexDef(IndexDef indexDef)
     {
-        assert indexDef.getClass().getName().equals("com.akiban.server.rowdata.IndexDef") : indexDef.getClass();
         this.indexDef = indexDef;
     }
 
