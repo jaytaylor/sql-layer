@@ -15,22 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.util;
+package com.foundationdb.server.util;
 
-import com.akiban.ais.AISCloner;
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.error.NameIsNullException;
-import com.akiban.server.error.NoSuchColumnException;
-import com.akiban.server.error.NoSuchGroupException;
-import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.error.WrongNameFormatException;
+import com.foundationdb.ais.AISCloner;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.GroupIndex;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.error.NameIsNullException;
+import com.foundationdb.server.error.NoSuchColumnException;
+import com.foundationdb.server.error.NoSuchGroupException;
+import com.foundationdb.server.error.NoSuchTableException;
+import com.foundationdb.server.error.WrongNameFormatException;
 /**
  * Builds an AIS Fragment of a GroupIndex to be merged into the full AIS by DDLFunctions
  * 

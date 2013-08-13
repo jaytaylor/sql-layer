@@ -15,18 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.store;
+package com.foundationdb.server.store;
 
-import com.akiban.ais.model.HKey;
-import com.akiban.ais.model.HKeySegment;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.api.dml.scan.LegacyRowWrapper;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.ais.model.HKey;
+import com.foundationdb.ais.model.HKeySegment;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.service.session.Session;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;

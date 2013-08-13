@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.plugins;
+package com.foundationdb.server.service.plugins;
 
-import com.akiban.server.error.ServiceStartupException;
+import com.foundationdb.server.error.ServiceStartupException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

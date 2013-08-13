@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.util;
+package com.foundationdb.server.util;
 
 import static com.persistit.util.ThreadSequencer.allocate;
 import static com.persistit.util.ThreadSequencer.array;

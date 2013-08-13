@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
 import java.io.IOException;
 import java.util.List;
 
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.RowType;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.RowType;
 
 /**
  * An ordinary SQL statement.

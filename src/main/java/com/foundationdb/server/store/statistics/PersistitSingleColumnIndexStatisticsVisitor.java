@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.store.statistics;
+package com.foundationdb.server.store.statistics;
 
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.persistitadapter.TempVolume;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.tree.KeyCreator;
-import com.akiban.server.store.PersistitStore;
-import com.akiban.server.store.statistics.histograms.Sampler;
-import com.akiban.util.Flywheel;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.qp.persistitadapter.PersistitAdapter;
+import com.foundationdb.qp.persistitadapter.TempVolume;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.tree.KeyCreator;
+import com.foundationdb.server.store.PersistitStore;
+import com.foundationdb.server.store.statistics.histograms.Sampler;
+import com.foundationdb.util.Flywheel;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Value;

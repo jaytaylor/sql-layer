@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.entity.model.diff;
+package com.foundationdb.server.entity.model.diff;
 
-import com.akiban.server.entity.changes.AbstractSpaceModificationHandler;
-import com.akiban.server.entity.changes.SpaceModificationHandler;
-import com.akiban.server.entity.model.Entity;
-import com.akiban.server.entity.model.EntityField;
-import com.akiban.server.entity.model.EntityIndex;
-import com.akiban.server.entity.model.Validation;
+import com.foundationdb.server.entity.changes.AbstractSpaceModificationHandler;
+import com.foundationdb.server.entity.changes.SpaceModificationHandler;
+import com.foundationdb.server.entity.model.Entity;
+import com.foundationdb.server.entity.model.EntityField;
+import com.foundationdb.server.entity.model.EntityIndex;
+import com.foundationdb.server.entity.model.Validation;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Comparator;
@@ -33,7 +33,7 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 
-import static com.akiban.util.JsonUtils.createJsonGenerator;
+import static com.foundationdb.util.JsonUtils.createJsonGenerator;
 
 /**
  * 

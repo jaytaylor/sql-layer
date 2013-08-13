@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.model.validation;
+package com.foundationdb.ais.model.validation;
 
 import java.nio.charset.Charset;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.error.UnsupportedCharsetException;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.error.UnsupportedCharsetException;
 
 /**
  * Verify the table default character set and define character sets for each column

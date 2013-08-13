@@ -15,18 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.rowdata;
+package com.foundationdb.server.rowdata;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.BitSet;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Table;
-import com.akiban.server.AkServerUtil;
-import com.akiban.server.Quote;
-import com.akiban.server.encoding.EncodingException;
-import com.akiban.util.AkibanAppender;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.server.AkServerUtil;
+import com.foundationdb.server.Quote;
+import com.foundationdb.server.encoding.EncodingException;
+import com.foundationdb.util.AkibanAppender;
 import com.persistit.Key;
 
 /**

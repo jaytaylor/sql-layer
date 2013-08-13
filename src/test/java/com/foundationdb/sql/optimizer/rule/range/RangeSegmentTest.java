@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule.range;
+package com.foundationdb.sql.optimizer.rule.range;
 
 import org.junit.Test;
 
@@ -24,10 +24,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static com.akiban.sql.optimizer.rule.range.TUtils.exclusive;
-import static com.akiban.sql.optimizer.rule.range.TUtils.inclusive;
-import static com.akiban.sql.optimizer.rule.range.TUtils.segment;
-import static com.akiban.util.AssertUtils.assertCollectionEquals;
+import static com.foundationdb.sql.optimizer.rule.range.TUtils.exclusive;
+import static com.foundationdb.sql.optimizer.rule.range.TUtils.inclusive;
+import static com.foundationdb.sql.optimizer.rule.range.TUtils.segment;
+import static com.foundationdb.util.AssertUtils.assertCollectionEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 

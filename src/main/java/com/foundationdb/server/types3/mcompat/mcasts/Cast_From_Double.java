@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.mcompat.mcasts;
+package com.foundationdb.server.types3.mcompat.mcasts;
 
-import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TCastBase;
-import com.akiban.server.types3.TCastPath;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
+import com.foundationdb.server.types3.TCast;
+import com.foundationdb.server.types3.TCastBase;
+import com.foundationdb.server.types3.TCastPath;
+import com.foundationdb.server.types3.TExecutionContext;
+import com.foundationdb.server.types3.mcompat.mtypes.MApproximateNumber;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueTarget;
 
 public final class Cast_From_Double {
 

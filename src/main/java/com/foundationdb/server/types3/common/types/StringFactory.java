@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.common.types;
+package com.foundationdb.server.types3.common.types;
 
-import com.akiban.server.error.AkibanInternalException;
+import com.foundationdb.server.error.AkibanInternalException;
 
 import java.util.HashMap;
 import java.util.Map;

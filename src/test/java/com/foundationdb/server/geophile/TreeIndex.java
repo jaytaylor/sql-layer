@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.geophile;
+package com.foundationdb.server.geophile;
 
 import java.util.HashSet;
 import java.util.Set;

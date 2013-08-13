@@ -15,26 +15,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.operator;
+package com.foundationdb.qp.operator;
 
-import com.akiban.qp.row.AbstractRow;
-import com.akiban.qp.row.HKey;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.DerivedTypesSchema;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.ValuesRowType;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.util.ValueHolder;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueSources;
-import com.akiban.util.ArgumentValidation;
-import com.akiban.util.Strings;
+import com.foundationdb.qp.row.AbstractRow;
+import com.foundationdb.qp.row.HKey;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.DerivedTypesSchema;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.ValuesRowType;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.FromObjectValueSource;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.util.ValueHolder;
+import com.foundationdb.server.types3.TExecutionContext;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.util.ArgumentValidation;
+import com.foundationdb.util.Strings;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;

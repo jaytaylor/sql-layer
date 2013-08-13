@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.encoding;
+package com.foundationdb.server.encoding;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -23,7 +23,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.akiban.ais.model.Type;
+import com.foundationdb.ais.model.Type;
 
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;

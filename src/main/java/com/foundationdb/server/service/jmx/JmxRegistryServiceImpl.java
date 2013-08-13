@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.jmx;
+package com.foundationdb.server.service.jmx;
 
 import java.lang.management.ManagementFactory;
 import java.util.HashMap;
@@ -28,7 +28,7 @@ import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
-import com.akiban.server.service.Service;
+import com.foundationdb.server.service.Service;
 
 public class JmxRegistryServiceImpl implements JmxRegistryService, JmxManageable, Service {
     private static final String FORMATTER = "com.akiban:type=%s";

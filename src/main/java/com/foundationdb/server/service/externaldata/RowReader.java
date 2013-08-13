@@ -15,26 +15,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.externaldata;
+package com.foundationdb.server.service.externaldata;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.persistitadapter.PValueRowDataCreator;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.NiceRow;
-import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.server.types.ToObjectValueTarget;
-import com.akiban.server.types.conversion.Converters;
-import com.akiban.server.types.util.ValueHolder;
-import com.akiban.server.types3.ErrorHandlingMode;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PValue;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.persistitadapter.PValueRowDataCreator;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.api.dml.scan.NiceRow;
+import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.FromObjectValueSource;
+import com.foundationdb.server.types.ToObjectValueTarget;
+import com.foundationdb.server.types.conversion.Converters;
+import com.foundationdb.server.types.util.ValueHolder;
+import com.foundationdb.server.types3.ErrorHandlingMode;
+import com.foundationdb.server.types3.TExecutionContext;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types3.pvalue.PValue;
 
 import java.io.IOException;
 import java.io.InputStream;

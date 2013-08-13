@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.tree;
+package com.foundationdb.server.service.tree;
 
-import com.akiban.server.service.tree.TreeServiceImpl.SchemaNode;
-import com.akiban.server.test.it.PersistitITBase;
+import com.foundationdb.server.service.tree.TreeServiceImpl.SchemaNode;
+import com.foundationdb.server.test.it.PersistitITBase;
 import org.junit.Test;
 
 import java.util.HashMap;

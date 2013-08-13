@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.tree;
+package com.foundationdb.server.service.tree;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -30,17 +30,17 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import com.akiban.server.PersistitAccumulatorTableStatusCache;
-import com.akiban.server.TableStatusCache;
-import com.akiban.server.collation.AkCollatorFactory;
-import com.akiban.server.error.ConfigurationPropertiesLoadException;
-import com.akiban.server.error.InvalidVolumeException;
-import com.akiban.server.error.PersistitAdapterException;
-import com.akiban.server.service.Service;
-import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.jmx.JmxManageable;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionService;
+import com.foundationdb.server.PersistitAccumulatorTableStatusCache;
+import com.foundationdb.server.TableStatusCache;
+import com.foundationdb.server.collation.AkCollatorFactory;
+import com.foundationdb.server.error.ConfigurationPropertiesLoadException;
+import com.foundationdb.server.error.InvalidVolumeException;
+import com.foundationdb.server.error.PersistitAdapterException;
+import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.server.service.jmx.JmxManageable;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.session.SessionService;
 import com.google.inject.Inject;
 import com.persistit.Configuration;
 import com.persistit.Exchange;

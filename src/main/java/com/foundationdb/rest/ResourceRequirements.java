@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.rest;
+package com.foundationdb.rest;
 
-import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.restdml.DirectService;
-import com.akiban.server.service.restdml.RestDMLService;
-import com.akiban.server.service.security.SecurityService;
-import com.akiban.server.service.session.SessionService;
-import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.store.Store;
+import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.server.service.dxl.DXLService;
+import com.foundationdb.server.service.restdml.DirectService;
+import com.foundationdb.server.service.restdml.RestDMLService;
+import com.foundationdb.server.service.security.SecurityService;
+import com.foundationdb.server.service.session.SessionService;
+import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.store.Store;
 
 public class ResourceRequirements {
     public final DXLService dxlService;

@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types.conversion;
+package com.foundationdb.server.types.conversion;
 
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueTarget;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueTarget;
 
 abstract class ConverterForDouble extends DoubleConverter {
 

@@ -14,12 +14,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.server.service.restdml;
+package com.foundationdb.server.service.restdml;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.TableName;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Operator;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.Operator;
 
 public class DeleteGenerator extends OperatorGenerator {
 

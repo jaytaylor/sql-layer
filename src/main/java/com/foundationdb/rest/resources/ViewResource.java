@@ -14,11 +14,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.rest.resources;
+package com.foundationdb.rest.resources;
 
-import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
-import static com.akiban.rest.resources.ResourceHelper.checkTableAccessible;
-import static com.akiban.rest.resources.ResourceHelper.parseTableName;
+import static com.foundationdb.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
+import static com.foundationdb.rest.resources.ResourceHelper.checkTableAccessible;
+import static com.foundationdb.rest.resources.ResourceHelper.parseTableName;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -35,10 +35,10 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.rest.ResourceRequirements;
-import com.akiban.rest.RestResponseBuilder;
-import com.akiban.server.error.WrongExpressionArityException;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.rest.ResourceRequirements;
+import com.foundationdb.rest.RestResponseBuilder;
+import com.foundationdb.server.error.WrongExpressionArityException;
 
 @Path("/view/{view}")
 

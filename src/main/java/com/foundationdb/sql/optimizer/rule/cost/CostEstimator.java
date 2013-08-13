@@ -15,30 +15,30 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule.cost;
+package com.foundationdb.sql.optimizer.rule.cost;
 
-import com.akiban.server.store.statistics.Histogram;
-import com.akiban.server.store.statistics.HistogramEntry;
-import com.akiban.sql.optimizer.rule.SchemaRulesContext;
-import com.akiban.sql.optimizer.plan.*;
-import com.akiban.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
+import com.foundationdb.server.store.statistics.Histogram;
+import com.foundationdb.server.store.statistics.HistogramEntry;
+import com.foundationdb.sql.optimizer.rule.SchemaRulesContext;
+import com.foundationdb.sql.optimizer.plan.*;
+import com.foundationdb.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
 
-import com.akiban.ais.model.*;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.server.PersistitKeyPValueTarget;
-import com.akiban.server.PersistitKeyValueTarget;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.std.Expressions;
-import com.akiban.server.service.tree.KeyCreator;
-import com.akiban.server.store.statistics.IndexStatistics;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.conversion.Converters;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PValueSource;
+import com.foundationdb.ais.model.*;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.server.PersistitKeyPValueTarget;
+import com.foundationdb.server.PersistitKeyValueTarget;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.std.Expressions;
+import com.foundationdb.server.service.tree.KeyCreator;
+import com.foundationdb.server.store.statistics.IndexStatistics;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.conversion.Converters;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.persistit.Key;
 
 import com.google.common.primitives.UnsignedBytes;

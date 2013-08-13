@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.foundationdb.sql.optimizer.plan;
 
-import com.akiban.server.error.AkibanInternalException;
+import com.foundationdb.server.error.AkibanInternalException;
 
 /** A join between two tables / subjoins. */
 public class JoinNode extends BaseJoinable implements PlanWithInput

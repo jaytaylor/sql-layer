@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.stats;
+package com.foundationdb.server.service.stats;
 
-import com.akiban.util.tap.TapReport;
+import com.foundationdb.util.tap.TapReport;
 
 public interface StatisticsService {
 

@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.util;
+package com.foundationdb.qp.util;
 
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.types.ValueSource;
-import com.akiban.util.ByteSource;
+import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.util.ByteSource;
 
 public class ValueSourceHasher
 {

@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server;
+package com.foundationdb.server;
 
-import com.akiban.server.types.AkType;
-import com.akiban.util.AkibanAppender;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.util.AkibanAppender;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -26,7 +26,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Formatter;
 
-import static com.akiban.server.types.AkType.*;
+import static com.foundationdb.server.types.AkType.*;
 
 public enum Quote {
     NONE(null, false),

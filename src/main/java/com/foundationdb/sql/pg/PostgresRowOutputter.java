@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.qp.row.Row;
+import com.foundationdb.qp.row.Row;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

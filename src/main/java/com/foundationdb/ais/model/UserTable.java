@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.model;
+package com.foundationdb.ais.model;
 
-import com.akiban.qp.memoryadapter.MemoryTableFactory;
-import com.akiban.util.ArgumentValidation;
+import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.util.ArgumentValidation;
 
 import java.util.*;
 

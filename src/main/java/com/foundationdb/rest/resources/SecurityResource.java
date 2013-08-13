@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.rest.resources;
+package com.foundationdb.rest.resources;
 
-import com.akiban.rest.ResourceRequirements;
-import com.akiban.rest.RestResponseBuilder;
-import com.akiban.server.error.ErrorCode;
-import com.akiban.server.service.security.SecurityService;
-import com.akiban.server.service.security.User;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.rest.ResourceRequirements;
+import com.foundationdb.rest.RestResponseBuilder;
+import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.service.security.SecurityService;
+import com.foundationdb.server.service.security.User;
+import com.foundationdb.server.service.session.Session;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -41,8 +41,8 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
-import static com.akiban.util.JsonUtils.readTree;
+import static com.foundationdb.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
+import static com.foundationdb.util.JsonUtils.readTree;
 
 /**
  * Security operations via REST.

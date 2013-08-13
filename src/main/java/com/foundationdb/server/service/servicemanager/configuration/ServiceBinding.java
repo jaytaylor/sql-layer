@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.servicemanager.configuration;
+package com.foundationdb.server.service.servicemanager.configuration;
 
-import com.akiban.util.ArgumentValidation;
+import com.foundationdb.util.ArgumentValidation;
 
 public final class ServiceBinding {
 

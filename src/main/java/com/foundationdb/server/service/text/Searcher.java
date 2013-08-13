@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.text;
+package com.foundationdb.server.service.text;
 
-import com.akiban.qp.operator.RowCursor;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.rowtype.HKeyRowType;
+import com.foundationdb.qp.operator.RowCursor;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.rowtype.HKeyRowType;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;

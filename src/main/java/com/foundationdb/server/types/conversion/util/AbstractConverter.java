@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types.conversion.util;
+package com.foundationdb.server.types.conversion.util;
 
-import com.akiban.server.types.ValueSource;
+import com.foundationdb.server.types.ValueSource;
 
 public interface AbstractConverter<T>
 {

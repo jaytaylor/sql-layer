@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.session;
+package com.foundationdb.server.service.session;
 
 public interface SessionEventListener {
     void sessionClosing();

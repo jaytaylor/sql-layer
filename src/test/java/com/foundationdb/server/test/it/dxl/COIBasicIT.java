@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.dxl;
+package com.foundationdb.server.test.it.dxl;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
@@ -26,26 +26,26 @@ import static org.junit.Assert.assertNull;
 import java.util.Arrays;
 import java.util.List;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.TableName;
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.test.it.ITBase;
-import com.akiban.server.test.it.qp.TestRow;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.server.test.it.qp.TestRow;
 import org.junit.Test;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.PrimaryKey;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.NewRowBuilder;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.UnsupportedDropException;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.PrimaryKey;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.api.dml.scan.NewRowBuilder;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.error.UnsupportedDropException;
 
 public final class COIBasicIT extends ITBase {
     private static class TableIds {

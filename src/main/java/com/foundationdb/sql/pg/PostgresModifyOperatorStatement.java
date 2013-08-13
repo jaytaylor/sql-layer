@@ -15,22 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.sql.optimizer.plan.CostEstimate;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
+import com.foundationdb.sql.optimizer.plan.CostEstimate;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 import java.io.IOException;
 import java.util.List;
 
-import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.Tap;
+import com.foundationdb.util.tap.InOutTap;
+import com.foundationdb.util.tap.Tap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

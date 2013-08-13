@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.dxl;
+package com.foundationdb.server.test.it.dxl;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
 import org.junit.After;
 import org.junit.Test;
 
 import java.util.Arrays;
 
-import com.akiban.ais.util.TableChangeValidator.ChangeLevel;
+import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 

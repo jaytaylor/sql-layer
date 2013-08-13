@@ -14,11 +14,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.qp.persistitadapter.indexcursor;
+package com.foundationdb.qp.persistitadapter.indexcursor;
 
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TInstance;
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.TInstance;
 import com.persistit.Key;
 
 public interface SortKeyTarget<S> {

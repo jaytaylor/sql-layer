@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.servicemanager;
+package com.foundationdb.server.service.servicemanager;
 
-import com.akiban.server.error.CircularDependencyException;
-import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
-import com.akiban.util.ArgumentValidation;
-import com.akiban.util.Exceptions;
+import com.foundationdb.server.error.CircularDependencyException;
+import com.foundationdb.server.service.servicemanager.configuration.ServiceBinding;
+import com.foundationdb.util.ArgumentValidation;
+import com.foundationdb.util.Exceptions;
 import com.google.inject.AbstractModule;
 import com.google.inject.Binding;
 import com.google.inject.Guice;

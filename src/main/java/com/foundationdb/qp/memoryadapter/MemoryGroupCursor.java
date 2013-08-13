@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.memoryadapter;
+package com.foundationdb.qp.memoryadapter;
 
-import com.akiban.ais.model.Group;
-import com.akiban.qp.operator.CursorLifecycle;
-import com.akiban.qp.operator.GroupCursor;
-import com.akiban.qp.row.HKey;
-import com.akiban.qp.row.Row;
-import com.akiban.server.api.dml.ColumnSelector;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.qp.operator.CursorLifecycle;
+import com.foundationdb.qp.operator.GroupCursor;
+import com.foundationdb.qp.row.HKey;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.api.dml.ColumnSelector;
 
 public class MemoryGroupCursor implements GroupCursor {
 

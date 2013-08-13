@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3;
+package com.foundationdb.server.types3;
 
-import com.akiban.server.types3.common.types.NoAttrTClass;
-import com.akiban.server.types3.pvalue.PUnderlying;
+import com.foundationdb.server.types3.common.types.NoAttrTClass;
+import com.foundationdb.server.types3.pvalue.PUnderlying;
 
 public class T3TestClass extends NoAttrTClass {
 

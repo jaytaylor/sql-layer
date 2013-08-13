@@ -15,18 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.dxl;
+package com.foundationdb.server.test.it.dxl;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Sequence;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.View;
-import com.akiban.server.error.ForeignConstraintDDLException;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.NoSuchSchemaException;
-import com.akiban.server.error.ViewReferencesExist;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.View;
+import com.foundationdb.server.error.ForeignConstraintDDLException;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.error.NoSuchSchemaException;
+import com.foundationdb.server.error.ViewReferencesExist;
+import com.foundationdb.server.test.it.ITBase;
 import org.junit.Assert;
 import org.junit.Test;
 

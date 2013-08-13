@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.servicemanager.configuration.yaml;
+package com.foundationdb.server.service.servicemanager.configuration.yaml;
 
-import com.akiban.server.service.servicemanager.configuration.BindingsConfigurationLoader;
-import com.akiban.server.service.servicemanager.configuration.ServiceConfigurationHandler;
-import com.akiban.util.Enumerated;
-import com.akiban.util.EnumeratingIterator;
+import com.foundationdb.server.service.servicemanager.configuration.BindingsConfigurationLoader;
+import com.foundationdb.server.service.servicemanager.configuration.ServiceConfigurationHandler;
+import com.foundationdb.util.Enumerated;
+import com.foundationdb.util.EnumeratingIterator;
 import com.google.inject.Module;
 import org.yaml.snakeyaml.Yaml;
 

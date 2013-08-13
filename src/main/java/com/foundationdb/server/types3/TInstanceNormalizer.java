@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3;
+package com.foundationdb.server.types3;
 
-import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.foundationdb.server.types3.texpressions.TValidatedOverload;
 
 public interface TInstanceNormalizer {
     void apply(TInstanceAdjuster adapter, TValidatedOverload overload, TInputSet inputSet, int max);

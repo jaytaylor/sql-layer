@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.servicemanager;
+package com.foundationdb.server.service.servicemanager;
 
-import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
-import com.akiban.util.Strings;
+import com.foundationdb.server.service.servicemanager.configuration.ServiceBinding;
+import com.foundationdb.util.Strings;
 import com.google.inject.ProvisionException;
 import org.junit.Before;
 import org.junit.Test;

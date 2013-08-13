@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.entity.fromais;
+package com.foundationdb.server.entity.fromais;
 
 public final class InconvertibleAisException extends RuntimeException {
     public InconvertibleAisException(String message) {

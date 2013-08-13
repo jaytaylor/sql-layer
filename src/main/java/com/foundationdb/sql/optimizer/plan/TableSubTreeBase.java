@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.foundationdb.sql.optimizer.plan;
 
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.Group;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Group;
 
 import java.util.Iterator;
 

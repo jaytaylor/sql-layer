@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.entity.model;
+package com.foundationdb.server.entity.model;
 
-import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.junit.Parameterization;
-import com.akiban.util.JUnitUtils;
-import com.akiban.util.Strings;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.Parameterization;
+import com.foundationdb.util.JUnitUtils;
+import com.foundationdb.util.Strings;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -33,7 +33,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static com.akiban.util.JsonUtils.readTree;
+import static com.foundationdb.util.JsonUtils.readTree;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(NamedParameterizedRunner.class)

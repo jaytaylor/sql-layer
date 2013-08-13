@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.tree;
+package com.foundationdb.server.service.tree;
 
-import com.akiban.server.test.it.PersistitITBase;
+import com.foundationdb.server.test.it.PersistitITBase;
 import com.persistit.Exchange;
 import com.persistit.Tree;
 import com.persistit.exception.PersistitException;

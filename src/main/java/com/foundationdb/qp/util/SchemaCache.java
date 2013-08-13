@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.util;
+package com.foundationdb.qp.util;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.CacheValueGenerator;
-import com.akiban.qp.rowtype.Schema;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.CacheValueGenerator;
+import com.foundationdb.qp.rowtype.Schema;
 
 public final class SchemaCache {
 

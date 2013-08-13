@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.foundationdb.sql.optimizer.plan;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.HKeyColumn;
-import com.akiban.ais.model.HKeySegment;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.UserTable;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.HKeyColumn;
+import com.foundationdb.ais.model.HKeySegment;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.UserTable;
 
 import java.util.ArrayList;
 import java.util.Collection;

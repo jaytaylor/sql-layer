@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.server;
+package com.foundationdb.sql.server;
 
-import com.akiban.server.service.tree.KeyCreator;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.sql.optimizer.OperatorCompiler;
+import com.foundationdb.server.service.tree.KeyCreator;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.sql.optimizer.OperatorCompiler;
 
 public abstract class ServerOperatorCompiler extends OperatorCompiler
 {

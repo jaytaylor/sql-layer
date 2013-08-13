@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.operator;
+package com.foundationdb.qp.operator;
 
-import com.akiban.qp.row.RowBase;
+import com.foundationdb.qp.row.RowBase;
 
 public final class NoLimit implements Limit {
 

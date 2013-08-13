@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.bugs.bug1112940;
+package com.foundationdb.server.test.it.bugs.bug1112940;
 
-import com.akiban.server.TableStatus;
-import com.akiban.server.api.dml.ConstantColumnSelector;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.error.DuplicateKeyException;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.server.TableStatus;
+import com.foundationdb.server.api.dml.ConstantColumnSelector;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.error.DuplicateKeyException;
+import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

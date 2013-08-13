@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.server.api.dml.scan.NewRow;
+import com.foundationdb.server.api.dml.scan.NewRow;
 
 import org.junit.Before;
 import org.junit.Test;

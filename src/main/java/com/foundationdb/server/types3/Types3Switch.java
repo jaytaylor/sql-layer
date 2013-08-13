@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3;
+package com.foundationdb.server.types3;
 
 public class Types3Switch {
     public static final boolean DEFAULT = Boolean.parseBoolean(System.getProperty("newtypes", "true"));

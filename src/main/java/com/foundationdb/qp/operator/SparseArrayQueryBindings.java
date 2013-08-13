@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.operator;
+package com.foundationdb.qp.operator;
 
-import com.akiban.qp.row.HKey;
-import com.akiban.qp.row.Row;
-import com.akiban.server.error.*;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.conversion.Converters;
-import com.akiban.server.types.util.ValueHolder;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTargets;
-import com.akiban.util.BloomFilter;
-import com.akiban.util.ShareHolder;
-import com.akiban.util.SparseArray;
+import com.foundationdb.qp.row.HKey;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.error.*;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.conversion.Converters;
+import com.foundationdb.server.types.util.ValueHolder;
+import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueTargets;
+import com.foundationdb.util.BloomFilter;
+import com.foundationdb.util.ShareHolder;
+import com.foundationdb.util.SparseArray;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

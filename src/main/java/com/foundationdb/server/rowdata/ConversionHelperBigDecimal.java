@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.rowdata;
+package com.foundationdb.server.rowdata;
 
-import com.akiban.server.AkServerUtil;
-import com.akiban.server.types.ValueSourceException;
-import com.akiban.util.AkibanAppender;
+import com.foundationdb.server.AkServerUtil;
+import com.foundationdb.server.types.ValueSourceException;
+import com.foundationdb.util.AkibanAppender;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;

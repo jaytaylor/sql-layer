@@ -15,17 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.sql.server.ServerCallContextStack;
-import com.akiban.sql.server.ServerCallInvocation;
+import com.foundationdb.sql.server.ServerCallContextStack;
+import com.foundationdb.sql.server.ServerCallInvocation;
 
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
-import com.akiban.qp.loadableplan.DirectObjectPlan;
-import com.akiban.qp.loadableplan.DirectObjectCursor;
-import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.Tap;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.loadableplan.LoadableDirectObjectPlan;
+import com.foundationdb.qp.loadableplan.DirectObjectPlan;
+import com.foundationdb.qp.loadableplan.DirectObjectCursor;
+import com.foundationdb.util.tap.InOutTap;
+import com.foundationdb.util.tap.Tap;
 
 import java.util.List;
 import java.io.IOException;

@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.operator;
+package com.foundationdb.qp.operator;
 
-import com.akiban.qp.row.Row;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueSources;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueSources;
 
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;

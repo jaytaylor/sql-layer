@@ -15,22 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.qp;
+package com.foundationdb.server.test.it.qp;
 
-import com.akiban.ais.model.Group;
-import com.akiban.qp.exec.UpdatePlannable;
-import com.akiban.qp.row.BindableRow;
-import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.test.ExpressionGenerators;
-import com.akiban.server.types.AkType;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.qp.exec.UpdatePlannable;
+import com.foundationdb.qp.row.BindableRow;
+import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.test.ExpressionGenerators;
+import com.foundationdb.server.types.AkType;
 import org.junit.Test;
 
 import java.util.Arrays;
 
-import static com.akiban.qp.operator.API.*;
+import static com.foundationdb.qp.operator.API.*;
 
 public class OrphanResolutionIT extends OperatorITBase
 {

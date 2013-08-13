@@ -14,11 +14,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.types.AkType;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.ExpressionComposer;
+import com.foundationdb.server.types.AkType;
 import org.junit.*;
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;

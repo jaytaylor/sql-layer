@@ -15,20 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.model.validation;
+package com.foundationdb.ais.model.validation;
 
-import com.akiban.ais.model.*;
-import com.akiban.server.error.AISNullReferenceException;
-import com.akiban.server.error.DuplicateColumnNameException;
-import com.akiban.server.error.DuplicateGroupNameException;
-import com.akiban.server.error.DuplicateIndexColumnException;
-import com.akiban.server.error.DuplicateIndexException;
-import com.akiban.server.error.DuplicateParameterNameException;
-import com.akiban.server.error.DuplicateRoutineNameException;
-import com.akiban.server.error.DuplicateSequenceNameException;
-import com.akiban.server.error.DuplicateSQLJJarNameException;
-import com.akiban.server.error.DuplicateTableNameException;
-import com.akiban.server.error.NameIsNullException;
+import com.foundationdb.ais.model.*;
+import com.foundationdb.server.error.AISNullReferenceException;
+import com.foundationdb.server.error.DuplicateColumnNameException;
+import com.foundationdb.server.error.DuplicateGroupNameException;
+import com.foundationdb.server.error.DuplicateIndexColumnException;
+import com.foundationdb.server.error.DuplicateIndexException;
+import com.foundationdb.server.error.DuplicateParameterNameException;
+import com.foundationdb.server.error.DuplicateRoutineNameException;
+import com.foundationdb.server.error.DuplicateSequenceNameException;
+import com.foundationdb.server.error.DuplicateSQLJJarNameException;
+import com.foundationdb.server.error.DuplicateTableNameException;
+import com.foundationdb.server.error.NameIsNullException;
 
 public class AISInvariants {
 

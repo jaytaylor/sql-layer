@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types;
+package com.foundationdb.server.types;
 
 public class ValueSourceException extends RuntimeException {
     ValueSourceException() {

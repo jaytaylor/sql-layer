@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.t3expressions;
+package com.foundationdb.server.t3expressions;
 
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TKeyComparable;
-import com.akiban.server.types3.texpressions.TValidatedAggregator;
-import com.akiban.server.types3.texpressions.TValidatedScalar;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TKeyComparable;
+import com.foundationdb.server.types3.texpressions.TValidatedAggregator;
+import com.foundationdb.server.types3.texpressions.TValidatedScalar;
 
 public interface T3RegistryService {
     OverloadResolver<TValidatedScalar> getScalarsResolver();

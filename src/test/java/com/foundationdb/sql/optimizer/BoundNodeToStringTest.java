@@ -15,20 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer;
+package com.foundationdb.sql.optimizer;
 
-import com.akiban.server.rowdata.SchemaFactory;
-import com.akiban.sql.NamedParamsTestBase;
-import com.akiban.sql.TestBase;
+import com.foundationdb.server.rowdata.SchemaFactory;
+import com.foundationdb.sql.NamedParamsTestBase;
+import com.foundationdb.sql.TestBase;
 
-import com.akiban.sql.parser.SQLParser;
-import com.akiban.sql.parser.StatementNode;
+import com.foundationdb.sql.parser.SQLParser;
+import com.foundationdb.sql.parser.StatementNode;
 
-import com.akiban.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.AkibanInformationSchema;
 
-import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.junit.NamedParameterizedRunner.TestParameters;
-import com.akiban.junit.Parameterization;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.NamedParameterizedRunner.TestParameters;
+import com.foundationdb.junit.Parameterization;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

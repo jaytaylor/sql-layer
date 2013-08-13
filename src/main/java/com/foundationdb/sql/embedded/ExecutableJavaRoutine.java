@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.embedded;
+package com.foundationdb.sql.embedded;
 
-import com.akiban.sql.server.ServerCallInvocation;
-import com.akiban.sql.server.ServerJavaRoutine;
-import com.akiban.sql.server.ServerCallContextStack;
+import com.foundationdb.sql.server.ServerCallInvocation;
+import com.foundationdb.sql.server.ServerJavaRoutine;
+import com.foundationdb.sql.server.ServerCallContextStack;
 
-import com.akiban.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryBindings;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

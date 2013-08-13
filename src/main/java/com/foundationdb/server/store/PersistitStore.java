@@ -15,30 +15,30 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.store;
+package com.foundationdb.server.store;
 
-import com.akiban.ais.model.*;
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.persistitadapter.PersistitHKey;
-import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
-import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.*;
-import com.akiban.server.AccumulatorAdapter.AccumInfo;
-import com.akiban.server.collation.CString;
-import com.akiban.server.collation.CStringKeyCoder;
-import com.akiban.server.error.*;
-import com.akiban.server.error.DuplicateKeyException;
-import com.akiban.server.rowdata.*;
-import com.akiban.server.service.Service;
-import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.listener.ListenerService;
-import com.akiban.server.service.lock.LockService;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.tree.TreeLink;
-import com.akiban.server.service.tree.TreeService;
+import com.foundationdb.ais.model.*;
+import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.persistitadapter.PersistitAdapter;
+import com.foundationdb.qp.persistitadapter.PersistitHKey;
+import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRow;
+import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.server.*;
+import com.foundationdb.server.AccumulatorAdapter.AccumInfo;
+import com.foundationdb.server.collation.CString;
+import com.foundationdb.server.collation.CStringKeyCoder;
+import com.foundationdb.server.error.*;
+import com.foundationdb.server.error.DuplicateKeyException;
+import com.foundationdb.server.rowdata.*;
+import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.server.service.listener.ListenerService;
+import com.foundationdb.server.service.lock.LockService;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.tree.TreeLink;
+import com.foundationdb.server.service.tree.TreeService;
 import com.google.inject.Inject;
 import com.persistit.*;
 import com.persistit.Management.DisplayFilter;

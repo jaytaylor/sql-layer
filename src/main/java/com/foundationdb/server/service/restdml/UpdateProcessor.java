@@ -14,15 +14,15 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.server.service.restdml;
+package com.foundationdb.server.service.restdml;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.TableName;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.store.Store;
-import com.akiban.server.t3expressions.T3RegistryService;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.Store;
+import com.foundationdb.server.t3expressions.T3RegistryService;
 
 public class UpdateProcessor extends DMLProcessor {
 

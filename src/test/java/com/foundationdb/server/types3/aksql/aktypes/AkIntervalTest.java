@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.aksql.aktypes;
+package com.foundationdb.server.types3.aksql.aktypes;
 
-import com.akiban.server.types3.aksql.aktypes.AkInterval.AkIntervalMonthsFormat;
-import com.akiban.server.types3.aksql.aktypes.AkInterval.AkIntervalSecondsFormat;
-import com.akiban.server.types3.aksql.aktypes.AkInterval.IntervalFormat;
+import com.foundationdb.server.types3.aksql.aktypes.AkInterval.AkIntervalMonthsFormat;
+import com.foundationdb.server.types3.aksql.aktypes.AkInterval.AkIntervalSecondsFormat;
+import com.foundationdb.server.types3.aksql.aktypes.AkInterval.IntervalFormat;
 import com.google.common.collect.Sets;
 import org.junit.AfterClass;
 import org.junit.Test;

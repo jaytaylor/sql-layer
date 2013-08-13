@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.operator;
+package com.foundationdb.qp.operator;
 
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.UserTable;
+import com.foundationdb.ais.model.GroupIndex;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.ais.model.UserTable;
 
 import java.util.ArrayList;
 import java.util.Collection;

@@ -15,36 +15,36 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer;
+package com.foundationdb.sql.optimizer;
 
-import com.akiban.server.error.AmbiguousColumNameException;
-import com.akiban.server.error.CorrelationNameAlreadyUsedException;
-import com.akiban.server.error.DuplicateTableNameException;
-import com.akiban.server.error.JoinNodeAdditionException;
-import com.akiban.server.error.NoSuchColumnException;
-import com.akiban.server.error.NoSuchFunctionException;
-import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.error.ProcedureCalledAsFunctionException;
-import com.akiban.server.error.SQLParserInternalException;
-import com.akiban.server.error.SelectExistsErrorException;
-import com.akiban.server.error.SubqueryOneColumnException;
-import com.akiban.server.error.TableIsBadSubqueryException;
-import com.akiban.server.error.ViewHasBadSubqueryException;
-import com.akiban.server.error.WholeGroupQueryException;
+import com.foundationdb.server.error.AmbiguousColumNameException;
+import com.foundationdb.server.error.CorrelationNameAlreadyUsedException;
+import com.foundationdb.server.error.DuplicateTableNameException;
+import com.foundationdb.server.error.JoinNodeAdditionException;
+import com.foundationdb.server.error.NoSuchColumnException;
+import com.foundationdb.server.error.NoSuchFunctionException;
+import com.foundationdb.server.error.NoSuchTableException;
+import com.foundationdb.server.error.ProcedureCalledAsFunctionException;
+import com.foundationdb.server.error.SQLParserInternalException;
+import com.foundationdb.server.error.SelectExistsErrorException;
+import com.foundationdb.server.error.SubqueryOneColumnException;
+import com.foundationdb.server.error.TableIsBadSubqueryException;
+import com.foundationdb.server.error.ViewHasBadSubqueryException;
+import com.foundationdb.server.error.WholeGroupQueryException;
 
-import com.akiban.sql.StandardException;
-import com.akiban.sql.parser.*;
-import com.akiban.sql.views.ViewDefinition;
+import com.foundationdb.sql.StandardException;
+import com.foundationdb.sql.parser.*;
+import com.foundationdb.sql.views.ViewDefinition;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Columnar;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.JoinColumn;
-import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.View;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Columnar;
+import com.foundationdb.ais.model.Join;
+import com.foundationdb.ais.model.JoinColumn;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.View;
 
 import java.util.*;
 

@@ -15,28 +15,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.rowdata;
+package com.foundationdb.server.rowdata;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Type;
-import com.akiban.ais.model.Types;
-import com.akiban.ais.model.aisb2.AISBBasedBuilder;
-import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.junit.Parameterization;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ValueTarget;
-import com.akiban.server.types.extract.ConverterTestUtils;
-import com.akiban.server.types.extract.Extractors;
-import com.akiban.server.types.extract.LongExtractor;
-import com.akiban.server.types.typestests.ConversionSuite;
-import com.akiban.server.types.typestests.ConversionTestBase;
-import com.akiban.server.types.typestests.LinkedConversion;
-import com.akiban.server.types.typestests.TestCase;
-import com.akiban.util.ByteSource;
-import com.akiban.util.Strings;
-import com.akiban.util.WrappingByteSource;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Type;
+import com.foundationdb.ais.model.Types;
+import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.Parameterization;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.ValueTarget;
+import com.foundationdb.server.types.extract.ConverterTestUtils;
+import com.foundationdb.server.types.extract.Extractors;
+import com.foundationdb.server.types.extract.LongExtractor;
+import com.foundationdb.server.types.typestests.ConversionSuite;
+import com.foundationdb.server.types.typestests.ConversionTestBase;
+import com.foundationdb.server.types.typestests.LinkedConversion;
+import com.foundationdb.server.types.typestests.TestCase;
+import com.foundationdb.util.ByteSource;
+import com.foundationdb.util.Strings;
+import com.foundationdb.util.WrappingByteSource;
 import org.junit.runner.RunWith;
 
 import java.lang.reflect.Field;
@@ -47,7 +47,7 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Set;
 
-import static com.akiban.util.Strings.parseHex;
+import static com.foundationdb.util.Strings.parseHex;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;

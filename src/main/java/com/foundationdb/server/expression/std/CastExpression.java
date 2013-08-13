@@ -15,24 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
-import com.akiban.qp.exec.Plannable;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.error.InconvertibleTypesException;
-import com.akiban.server.error.InvalidCharToNumException;
-import com.akiban.server.error.InvalidDateFormatException;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.explain.CompoundExplainer;
-import com.akiban.server.explain.ExplainContext;
-import com.akiban.server.explain.Label;
-import com.akiban.server.explain.PrimitiveExplainer;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.NullValueSource;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.conversion.Converters;
+import com.foundationdb.qp.exec.Plannable;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.server.error.InconvertibleTypesException;
+import com.foundationdb.server.error.InvalidCharToNumException;
+import com.foundationdb.server.error.InvalidDateFormatException;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.explain.CompoundExplainer;
+import com.foundationdb.server.explain.ExplainContext;
+import com.foundationdb.server.explain.Label;
+import com.foundationdb.server.explain.PrimitiveExplainer;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.ExpressionEvaluation;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.NullValueSource;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.conversion.Converters;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Map;

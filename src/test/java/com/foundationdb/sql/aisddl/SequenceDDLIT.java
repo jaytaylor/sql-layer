@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.aisddl;
+package com.foundationdb.sql.aisddl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
-import com.akiban.ais.model.Sequence;
+import com.foundationdb.ais.model.Sequence;
 import org.junit.Test;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.error.ErrorCode;
-import com.akiban.server.error.NoSuchSequenceException;
-import com.akiban.sql.parser.SQLParserException;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.util.SchemaCache;
+import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.error.NoSuchSequenceException;
+import com.foundationdb.sql.parser.SQLParserException;
 import com.ibm.icu.text.MessageFormat;
 import java.util.Collections;
 

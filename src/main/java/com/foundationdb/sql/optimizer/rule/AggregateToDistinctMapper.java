@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.foundationdb.sql.optimizer.rule;
 
-import com.akiban.sql.optimizer.plan.*;
-import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
+import com.foundationdb.sql.optimizer.plan.*;
+import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

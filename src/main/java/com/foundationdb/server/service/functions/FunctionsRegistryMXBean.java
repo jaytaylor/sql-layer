@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.functions;
+package com.foundationdb.server.service.functions;
 
-import com.akiban.server.types.AkType;
+import com.foundationdb.server.types.AkType;
 
 import java.util.List;
 import java.util.Map;

@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.monitor;
+package com.foundationdb.server.service.monitor;
 
-import com.akiban.server.error.QueryLogCloseException;
-import com.akiban.server.service.Service;
-import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.jmx.JmxManageable;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.server.error.QueryLogCloseException;
+import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.server.service.jmx.JmxManageable;
+import com.foundationdb.server.service.session.Session;
 
 import com.google.inject.Inject;
 import org.slf4j.Logger;

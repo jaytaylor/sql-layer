@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.direct;
+package com.foundationdb.direct;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -34,14 +34,14 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.direct.COIDirectClasses.Iface.Customer;
-import com.akiban.direct.COIDirectClasses.Iface.Order;
-import com.akiban.server.service.servicemanager.GuicedServiceManager;
-import com.akiban.server.test.it.ITBase;
-import com.akiban.sql.RegexFilenameFilter;
-import com.akiban.sql.embedded.EmbeddedJDBCService;
-import com.akiban.sql.embedded.EmbeddedJDBCServiceImpl;
-import com.akiban.sql.embedded.JDBCConnection;
+import com.foundationdb.direct.COIDirectClasses.Iface.Customer;
+import com.foundationdb.direct.COIDirectClasses.Iface.Order;
+import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
+import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.sql.RegexFilenameFilter;
+import com.foundationdb.sql.embedded.EmbeddedJDBCService;
+import com.foundationdb.sql.embedded.EmbeddedJDBCServiceImpl;
+import com.foundationdb.sql.embedded.JDBCConnection;
 
 public final class DirectUpdateIT extends ITBase {
 

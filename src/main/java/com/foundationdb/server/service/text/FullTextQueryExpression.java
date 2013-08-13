@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.text;
+package com.foundationdb.server.service.text;
 
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.explain.Explainable;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.server.explain.Explainable;
 
 import org.apache.lucene.search.Query;
 

@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.externaldata;
+package com.foundationdb.server.service.externaldata;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.util.SchemaCache;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
 
 
 import java.util.HashMap;

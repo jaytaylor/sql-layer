@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types.conversion;
+package com.foundationdb.server.types.conversion;
 
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ValueTarget;
-import com.akiban.server.types.extract.Extractors;
-import com.akiban.server.types.extract.LongExtractor;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.ValueTarget;
+import com.foundationdb.server.types.extract.Extractors;
+import com.foundationdb.server.types.extract.LongExtractor;
 
 abstract class LongConverter extends AbstractConverter {
 

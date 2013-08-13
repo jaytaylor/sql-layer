@@ -15,39 +15,39 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.foundationdb.sql.optimizer.rule;
 
-import com.akiban.sql.optimizer.plan.AggregateFunctionExpression;
-import com.akiban.sql.optimizer.plan.AggregateSource;
-import com.akiban.sql.optimizer.plan.BooleanOperationExpression;
-import com.akiban.sql.optimizer.plan.CastExpression;
-import com.akiban.sql.optimizer.plan.ColumnExpression;
-import com.akiban.sql.optimizer.plan.ComparisonCondition;
-import com.akiban.sql.optimizer.plan.ConstantExpression;
-import com.akiban.sql.optimizer.plan.ExpressionNode;
-import com.akiban.sql.optimizer.plan.FunctionExpression;
-import com.akiban.sql.optimizer.plan.IfElseExpression;
-import com.akiban.sql.optimizer.plan.InListCondition;
-import com.akiban.sql.optimizer.plan.ParameterExpression;
-import com.akiban.sql.optimizer.plan.RoutineExpression;
-import com.akiban.sql.optimizer.plan.SubqueryExpression;
+import com.foundationdb.sql.optimizer.plan.AggregateFunctionExpression;
+import com.foundationdb.sql.optimizer.plan.AggregateSource;
+import com.foundationdb.sql.optimizer.plan.BooleanOperationExpression;
+import com.foundationdb.sql.optimizer.plan.CastExpression;
+import com.foundationdb.sql.optimizer.plan.ColumnExpression;
+import com.foundationdb.sql.optimizer.plan.ComparisonCondition;
+import com.foundationdb.sql.optimizer.plan.ConstantExpression;
+import com.foundationdb.sql.optimizer.plan.ExpressionNode;
+import com.foundationdb.sql.optimizer.plan.FunctionExpression;
+import com.foundationdb.sql.optimizer.plan.IfElseExpression;
+import com.foundationdb.sql.optimizer.plan.InListCondition;
+import com.foundationdb.sql.optimizer.plan.ParameterExpression;
+import com.foundationdb.sql.optimizer.plan.RoutineExpression;
+import com.foundationdb.sql.optimizer.plan.SubqueryExpression;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.TableName;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.error.UnsupportedSQLException;
-import com.akiban.server.explain.CompoundExplainer;
-import com.akiban.server.explain.Explainable;
-import com.akiban.server.explain.ExplainContext;
-import com.akiban.server.explain.Label;
-import com.akiban.server.explain.PrimitiveExplainer;
-import com.akiban.server.explain.Type;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.std.Comparison;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.UnsupportedSQLException;
+import com.foundationdb.server.explain.CompoundExplainer;
+import com.foundationdb.server.explain.Explainable;
+import com.foundationdb.server.explain.ExplainContext;
+import com.foundationdb.server.explain.Label;
+import com.foundationdb.server.explain.PrimitiveExplainer;
+import com.foundationdb.server.explain.Type;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.std.Comparison;
 
 import org.slf4j.Logger;
 

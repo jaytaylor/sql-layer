@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.dxl;
+package com.foundationdb.server.test.it.dxl;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.util.DDLGenerator;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.error.NoSuchIndexException;
-import com.akiban.server.error.ProtectedIndexException;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.util.DDLGenerator;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.error.NoSuchTableException;
+import com.foundationdb.server.error.NoSuchIndexException;
+import com.foundationdb.server.error.ProtectedIndexException;
 
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;

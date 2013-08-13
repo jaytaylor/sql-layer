@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.store.statistics;
+package com.foundationdb.server.store.statistics;
 
-import com.akiban.server.service.tree.KeyCreator;
-import com.akiban.util.Flywheel;
+import com.foundationdb.server.service.tree.KeyCreator;
+import com.foundationdb.util.Flywheel;
 import com.persistit.Key;
 
 public class PersistitKeyFlywheel extends Flywheel<Key> {

@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types.util;
+package com.foundationdb.server.types.util;
 
-import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.junit.Parameterization;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ValueTarget;
-import com.akiban.server.types.typestests.ConversionSuite;
-import com.akiban.server.types.typestests.ConversionTestBase;
-import com.akiban.server.types.typestests.SimpleLinkedConversion;
-import com.akiban.server.types.typestests.TestCase;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.Parameterization;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.ValueTarget;
+import com.foundationdb.server.types.typestests.ConversionSuite;
+import com.foundationdb.server.types.typestests.ConversionTestBase;
+import com.foundationdb.server.types.typestests.SimpleLinkedConversion;
+import com.foundationdb.server.types.typestests.TestCase;
 
 import java.util.Collection;
 

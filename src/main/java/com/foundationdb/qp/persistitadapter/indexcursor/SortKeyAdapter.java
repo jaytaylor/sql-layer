@@ -15,17 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.persistitadapter.indexcursor;
+package com.foundationdb.qp.persistitadapter.indexcursor;
 
-import com.akiban.ais.model.Column;
-import com.akiban.qp.expression.BoundExpressions;
-import com.akiban.qp.operator.API.Ordering;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.row.Row;
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.expression.std.Comparison;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TInstance;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.qp.expression.BoundExpressions;
+import com.foundationdb.qp.operator.API.Ordering;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.expression.std.Comparison;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.TInstance;
 
 public abstract class SortKeyAdapter<S, E> {
     public abstract AkType[] createAkTypes(int size);

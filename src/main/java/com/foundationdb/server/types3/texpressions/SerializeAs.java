@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.texpressions;
+package com.foundationdb.server.types3.texpressions;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

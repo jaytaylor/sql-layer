@@ -15,20 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.text;
+package com.foundationdb.server.service.text;
 
-import com.akiban.qp.operator.RowCursor;
-import com.akiban.qp.operator.CursorLifecycle;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.persistitadapter.PersistitHKey;
-import com.akiban.qp.row.HKey;
-import com.akiban.qp.row.HKeyRow;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.HKeyRowType;
-import com.akiban.qp.util.HKeyCache;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.error.AkibanInternalException;
+import com.foundationdb.qp.operator.RowCursor;
+import com.foundationdb.qp.operator.CursorLifecycle;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.persistitadapter.PersistitHKey;
+import com.foundationdb.qp.row.HKey;
+import com.foundationdb.qp.row.HKeyRow;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.HKeyRowType;
+import com.foundationdb.qp.util.HKeyCache;
+import com.foundationdb.server.api.dml.ColumnSelector;
+import com.foundationdb.server.error.AkibanInternalException;
 import com.persistit.Key;
 
 import org.apache.lucene.document.Document;

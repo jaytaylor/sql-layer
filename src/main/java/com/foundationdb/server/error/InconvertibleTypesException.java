@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.error;
+package com.foundationdb.server.error;
 
-import com.akiban.server.types.AkType;
+import com.foundationdb.server.types.AkType;
 
 public final class InconvertibleTypesException extends InvalidOperationException {
     public InconvertibleTypesException(AkType sourceType, AkType targetType) {

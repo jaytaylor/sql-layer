@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.persistitadapter.indexcursor;
+package com.foundationdb.qp.persistitadapter.indexcursor;
 
-import static com.akiban.qp.persistitadapter.indexcursor.IndexCursor.INDEX_TRAVERSE;
+import static com.foundationdb.qp.persistitadapter.indexcursor.IndexCursor.INDEX_TRAVERSE;
 
 abstract class MixedOrderScanState<S>
 {

@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server;
+package com.foundationdb.server;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.pvalue.PValueTarget;
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.pvalue.PValueTarget;
 import com.persistit.Key;
 
 public class PersistitKeyPValueTarget implements PValueTarget {

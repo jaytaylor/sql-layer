@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.http;
+package com.foundationdb.http;
 
 import org.eclipse.jetty.http.HttpMethods;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;

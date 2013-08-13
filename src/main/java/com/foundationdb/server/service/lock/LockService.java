@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.lock;
+package com.foundationdb.server.service.lock;
 
-import com.akiban.server.service.Service;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.session.Session;
 
 public interface LockService extends Service {
     enum Mode { SHARED, EXCLUSIVE }

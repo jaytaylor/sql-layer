@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
 import static junit.framework.Assert.assertNotNull;
 
@@ -25,8 +25,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.api.DDLFunctions;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.server.api.DDLFunctions;
 import org.postgresql.util.PSQLException;
 
 public class PostgresServerSessionIT extends PostgresServerFilesITBase {

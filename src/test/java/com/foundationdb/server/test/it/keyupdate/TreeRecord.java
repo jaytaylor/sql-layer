@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.keyupdate;
+package com.foundationdb.server.test.it.keyupdate;
 
-import com.akiban.server.api.dml.scan.NewRow;
+import com.foundationdb.server.api.dml.scan.NewRow;
 
 public class TreeRecord
 {

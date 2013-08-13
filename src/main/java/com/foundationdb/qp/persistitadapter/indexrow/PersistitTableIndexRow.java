@@ -14,15 +14,15 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.qp.persistitadapter.indexrow;
+package com.foundationdb.qp.persistitadapter.indexrow;
 
-import com.akiban.ais.model.IndexToHKey;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.persistitadapter.PersistitHKey;
-import com.akiban.qp.row.HKey;
-import com.akiban.qp.rowtype.IndexRowType;
+import com.foundationdb.ais.model.IndexToHKey;
+import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.persistitadapter.PersistitHKey;
+import com.foundationdb.qp.row.HKey;
+import com.foundationdb.qp.rowtype.IndexRowType;
 
 public class PersistitTableIndexRow extends PersistitIndexRow
 {

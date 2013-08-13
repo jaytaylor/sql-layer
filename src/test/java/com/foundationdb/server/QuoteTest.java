@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server;
+package com.foundationdb.server;
 
-import com.akiban.util.AkibanAppender;
-import com.akiban.util.ArgumentValidation;
+import com.foundationdb.util.AkibanAppender;
+import com.foundationdb.util.ArgumentValidation;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;

@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.foundationdb.sql.optimizer.plan;
 
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.collation.AkCollatorFactory;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.CharacterTypeAttributes;
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.collation.AkCollatorFactory;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.types.CharacterTypeAttributes;
 
 import java.util.List;
 

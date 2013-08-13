@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.rest.resources;
+package com.foundationdb.rest.resources;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.server.service.security.SecurityService;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.service.security.SecurityService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.WebApplicationException;

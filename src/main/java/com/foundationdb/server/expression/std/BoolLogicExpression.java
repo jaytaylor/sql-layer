@@ -15,28 +15,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
-import com.akiban.qp.exec.Plannable;
-import com.akiban.server.error.WrongExpressionArityException;
-import com.akiban.server.explain.CompoundExplainer;
-import com.akiban.server.explain.ExplainContext;
-import com.akiban.server.explain.Label;
-import com.akiban.server.explain.PrimitiveExplainer;
-import com.akiban.server.explain.Type;
-import com.akiban.server.explain.std.ExpressionExplainer;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.expression.ExpressionType;
-import com.akiban.server.expression.TypesList;
-import com.akiban.server.service.functions.Scalar;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.extract.BooleanExtractor;
-import com.akiban.server.types.extract.Extractors;
-import com.akiban.server.types.util.BoolValueSource;
-import com.akiban.sql.StandardException;
+import com.foundationdb.qp.exec.Plannable;
+import com.foundationdb.server.error.WrongExpressionArityException;
+import com.foundationdb.server.explain.CompoundExplainer;
+import com.foundationdb.server.explain.ExplainContext;
+import com.foundationdb.server.explain.Label;
+import com.foundationdb.server.explain.PrimitiveExplainer;
+import com.foundationdb.server.explain.Type;
+import com.foundationdb.server.explain.std.ExpressionExplainer;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.ExpressionComposer;
+import com.foundationdb.server.expression.ExpressionEvaluation;
+import com.foundationdb.server.expression.ExpressionType;
+import com.foundationdb.server.expression.TypesList;
+import com.foundationdb.server.service.functions.Scalar;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.extract.BooleanExtractor;
+import com.foundationdb.server.types.extract.Extractors;
+import com.foundationdb.server.types.util.BoolValueSource;
+import com.foundationdb.sql.StandardException;
 
 import java.util.List;
 import java.util.Map;

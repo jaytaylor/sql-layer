@@ -15,27 +15,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server;
+package com.foundationdb.server;
 
-import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.servicemanager.GuicedServiceManager;
-import com.akiban.server.service.session.SessionService;
-import com.akiban.server.store.Store;
-import com.akiban.util.GCMonitor;
-import com.akiban.util.OsUtils;
-import com.akiban.util.Strings;
+import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.server.service.dxl.DXLService;
+import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
+import com.foundationdb.server.service.session.SessionService;
+import com.foundationdb.server.store.Store;
+import com.foundationdb.util.GCMonitor;
+import com.foundationdb.util.OsUtils;
+import com.foundationdb.util.Strings;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.server.error.TapBeanFailureException;
-import com.akiban.server.manage.ManageMXBean;
-import com.akiban.server.manage.ManageMXBeanImpl;
-import com.akiban.server.service.Service;
-import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.jmx.JmxManageable;
-import com.akiban.util.tap.Tap;
+import com.foundationdb.server.error.TapBeanFailureException;
+import com.foundationdb.server.manage.ManageMXBean;
+import com.foundationdb.server.manage.ManageMXBeanImpl;
+import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.ServiceManager;
+import com.foundationdb.server.service.jmx.JmxManageable;
+import com.foundationdb.util.tap.Tap;
 
 import javax.management.ObjectName;
 

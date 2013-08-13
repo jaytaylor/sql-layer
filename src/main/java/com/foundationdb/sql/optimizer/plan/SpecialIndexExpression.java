@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.foundationdb.sql.optimizer.plan;
 
-import com.akiban.server.types.AkType;
+import com.foundationdb.server.types.AkType;
 
 import java.util.List;
 

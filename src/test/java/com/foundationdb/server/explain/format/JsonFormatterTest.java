@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.explain.format;
+package com.foundationdb.server.explain.format;
 
-import com.akiban.server.explain.*;
+import com.foundationdb.server.explain.*;
 
 import org.junit.*;
 import static org.junit.Assert.assertEquals;

@@ -15,18 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.qp;
+package com.foundationdb.server.test.it.qp;
 
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.ExpressionGenerator;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.row.BindableRow;
-import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.AkType;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.expression.Expression;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.ExpressionGenerator;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.row.BindableRow;
+import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.expression.Expression;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -35,8 +35,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static com.akiban.server.test.ExpressionGenerators.*;
-import static com.akiban.qp.operator.API.*;
+import static com.foundationdb.server.test.ExpressionGenerators.*;
+import static com.foundationdb.qp.operator.API.*;
 
 public class Sort_InsertionLimitedIT extends OperatorITBase
 {

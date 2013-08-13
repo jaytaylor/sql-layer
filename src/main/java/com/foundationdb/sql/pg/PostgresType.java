@@ -15,22 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.sql.server.ServerType;
+import com.foundationdb.sql.server.ServerType;
 
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.types.TypeId;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Parameter;
-import com.akiban.ais.model.Type;
-import com.akiban.ais.model.Types;
-import com.akiban.server.error.UnknownDataTypeException;
-import com.akiban.server.error.UnknownTypeSizeException;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Parameter;
+import com.foundationdb.ais.model.Type;
+import com.foundationdb.ais.model.Types;
+import com.foundationdb.server.error.UnknownDataTypeException;
+import com.foundationdb.server.error.UnknownTypeSizeException;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

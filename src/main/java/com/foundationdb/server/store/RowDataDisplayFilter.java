@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.store;
+package com.foundationdb.server.store;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.protobuf.AISProtobuf;
-import com.akiban.ais.protobuf.ProtobufReader;
-import com.akiban.server.service.tree.TreeService;
-import com.akiban.util.GrowableByteBuffer;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.protobuf.AISProtobuf;
+import com.foundationdb.ais.protobuf.ProtobufReader;
+import com.foundationdb.server.service.tree.TreeService;
+import com.foundationdb.util.GrowableByteBuffer;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Management.DisplayFilter;

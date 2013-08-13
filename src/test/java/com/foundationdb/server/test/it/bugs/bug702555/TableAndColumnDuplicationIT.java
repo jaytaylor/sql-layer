@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.bugs.bug702555;
+package com.foundationdb.server.test.it.bugs.bug702555;
 
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
 
 public final class TableAndColumnDuplicationIT extends ITBase {

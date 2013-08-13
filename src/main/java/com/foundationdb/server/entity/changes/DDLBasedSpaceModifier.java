@@ -15,22 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.entity.changes;
+package com.foundationdb.server.entity.changes;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.NopVisitor;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.util.TableChange;
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.entity.model.Entity;
-import com.akiban.server.entity.model.EntityCollection;
-import com.akiban.server.entity.model.EntityIndex;
-import com.akiban.server.entity.model.Space;
-import com.akiban.server.entity.model.Validation;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Join;
+import com.foundationdb.ais.model.NopVisitor;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.util.TableChange;
+import com.foundationdb.server.api.DDLFunctions;
+import com.foundationdb.server.entity.model.Entity;
+import com.foundationdb.server.entity.model.EntityCollection;
+import com.foundationdb.server.entity.model.EntityIndex;
+import com.foundationdb.server.entity.model.Space;
+import com.foundationdb.server.entity.model.Validation;
+import com.foundationdb.server.service.session.Session;
 
 import java.util.ArrayList;
 import java.util.HashMap;

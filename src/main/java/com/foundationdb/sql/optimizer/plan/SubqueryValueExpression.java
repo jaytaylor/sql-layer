@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.foundationdb.sql.optimizer.plan;
 
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.parser.ValueNode;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.parser.ValueNode;
 
 /** An expression evaluated by a subquery: first column of first row
  * or <code>NULL</code>.

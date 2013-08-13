@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.foundationdb.sql.optimizer.plan;
 
 /** The inside-tip of an anti join. */
 public class OnlyIfEmpty extends BasePlanWithInput

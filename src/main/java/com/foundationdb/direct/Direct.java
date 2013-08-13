@@ -14,14 +14,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.direct;
+package com.foundationdb.direct;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.CacheValueGenerator;
-import com.akiban.sql.embedded.JDBCConnection;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.CacheValueGenerator;
+import com.foundationdb.sql.embedded.JDBCConnection;
 
 /**
  * TODO - Total hack that this is static - need to a way to get this into the

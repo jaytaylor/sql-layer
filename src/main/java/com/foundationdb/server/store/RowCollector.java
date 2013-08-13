@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.store;
+package com.foundationdb.server.store;
 
-import com.akiban.server.rowdata.IndexDef;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.util.GrowableByteBuffer;
+import com.foundationdb.server.rowdata.IndexDef;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.util.GrowableByteBuffer;
 
 public interface RowCollector {
 

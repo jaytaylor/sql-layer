@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.foundationdb.sql.optimizer.plan;
 
-import static com.akiban.server.service.text.FullTextQueryBuilder.BooleanType;
+import static com.foundationdb.server.service.text.FullTextQueryBuilder.BooleanType;
 
 import java.util.ArrayList;
 import java.util.List;

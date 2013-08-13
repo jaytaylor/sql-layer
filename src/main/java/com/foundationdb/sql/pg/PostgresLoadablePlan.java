@@ -15,27 +15,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.sql.server.ServerCallExplainer;
-import com.akiban.sql.server.ServerCallInvocation;
+import com.foundationdb.sql.server.ServerCallExplainer;
+import com.foundationdb.sql.server.ServerCallInvocation;
 
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.SparseArrayQueryBindings;
-import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
-import com.akiban.qp.loadableplan.LoadableOperator;
-import com.akiban.qp.loadableplan.LoadablePlan;
-import com.akiban.server.explain.Attributes;
-import com.akiban.server.explain.CompoundExplainer;
-import com.akiban.server.explain.ExplainContext;
-import com.akiban.server.explain.Explainable;
-import com.akiban.server.explain.Label;
-import com.akiban.server.explain.PrimitiveExplainer;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.sql.optimizer.TypesTranslation;
-import com.akiban.sql.types.DataTypeDescriptor;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.SparseArrayQueryBindings;
+import com.foundationdb.qp.loadableplan.LoadableDirectObjectPlan;
+import com.foundationdb.qp.loadableplan.LoadableOperator;
+import com.foundationdb.qp.loadableplan.LoadablePlan;
+import com.foundationdb.server.explain.Attributes;
+import com.foundationdb.server.explain.CompoundExplainer;
+import com.foundationdb.server.explain.ExplainContext;
+import com.foundationdb.server.explain.Explainable;
+import com.foundationdb.server.explain.Label;
+import com.foundationdb.server.explain.PrimitiveExplainer;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.sql.optimizer.TypesTranslation;
+import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import java.util.ArrayList;
 import java.util.List;

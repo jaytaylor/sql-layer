@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.error;
+package com.foundationdb.server.error;
 
-import com.akiban.server.service.session.Session;
+import com.foundationdb.server.service.session.Session;
 
 public class QueryCanceledException extends InvalidOperationException
 {

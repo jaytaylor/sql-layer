@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.persistitadapter;
+package com.foundationdb.qp.persistitadapter;
 
-import com.akiban.qp.operator.Limit;
-import com.akiban.qp.row.RowBase;
-import com.akiban.server.api.dml.scan.ScanLimit;
+import com.foundationdb.qp.operator.Limit;
+import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.server.api.dml.scan.ScanLimit;
 
 public class PersistitRowLimit implements Limit
 {

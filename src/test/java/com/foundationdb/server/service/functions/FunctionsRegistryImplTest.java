@@ -15,17 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.functions;
+package com.foundationdb.server.service.functions;
 
-import com.akiban.server.aggregation.Aggregator;
-import com.akiban.server.aggregation.AggregatorFactory;
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.expression.ExpressionType;
-import com.akiban.server.types.AkType;
-import com.akiban.sql.StandardException;
-import com.akiban.server.expression.TypesList;
+import com.foundationdb.server.aggregation.Aggregator;
+import com.foundationdb.server.aggregation.AggregatorFactory;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.ExpressionComposer;
+import com.foundationdb.server.expression.ExpressionType;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.sql.StandardException;
+import com.foundationdb.server.expression.TypesList;
 import org.junit.Test;
 
 import java.util.Arrays;

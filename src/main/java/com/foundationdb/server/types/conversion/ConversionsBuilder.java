@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types.conversion;
+package com.foundationdb.server.types.conversion;
 
-import com.akiban.server.types.AkType;
+import com.foundationdb.server.types.AkType;
 
 import java.util.Collections;
 import java.util.EnumMap;

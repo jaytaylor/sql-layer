@@ -15,20 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.persistitadapter;
+package com.foundationdb.qp.persistitadapter;
 
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.row.HKey;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueSources;
+import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.row.HKey;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.rowdata.FieldDef;
+import com.foundationdb.server.types.FromObjectValueSource;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueSources;
 
 public class NewRowBackedIndexRow implements RowBase
 {

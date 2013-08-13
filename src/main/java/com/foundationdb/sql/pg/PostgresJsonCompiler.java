@@ -15,23 +15,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.server.service.tree.KeyCreator;
-import com.akiban.sql.optimizer.NestedResultSetTypeComputer;
-import com.akiban.sql.optimizer.TypesTranslation;
-import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
-import com.akiban.sql.optimizer.plan.PhysicalSelect;
-import com.akiban.sql.optimizer.plan.PhysicalUpdate;
-import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
+import com.foundationdb.server.service.tree.KeyCreator;
+import com.foundationdb.sql.optimizer.NestedResultSetTypeComputer;
+import com.foundationdb.sql.optimizer.TypesTranslation;
+import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
+import com.foundationdb.sql.optimizer.plan.PhysicalSelect;
+import com.foundationdb.sql.optimizer.plan.PhysicalUpdate;
+import com.foundationdb.sql.optimizer.plan.ResultSet.ResultField;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.types.TypeId;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.qp.operator.Operator;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.service.functions.FunctionsRegistry;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.service.functions.FunctionsRegistry;
 
 import java.util.*;
 

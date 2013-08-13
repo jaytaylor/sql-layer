@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.embedded;
+package com.foundationdb.sql.embedded;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,17 +26,17 @@ import java.sql.*;
 import java.util.Calendar;
 import java.util.Map;
 
-import com.akiban.direct.AbstractDirectObject;
-import com.akiban.direct.Direct;
-import com.akiban.direct.DirectResultSet;
-import com.akiban.qp.operator.RowCursor;
-import com.akiban.qp.row.Row;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.sql.server.ServerJavaValues;
-import com.akiban.sql.server.ServerQueryContext;
+import com.foundationdb.direct.AbstractDirectObject;
+import com.foundationdb.direct.Direct;
+import com.foundationdb.direct.DirectResultSet;
+import com.foundationdb.qp.operator.RowCursor;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.sql.server.ServerJavaValues;
+import com.foundationdb.sql.server.ServerQueryContext;
 
 public class JDBCResultSet implements DirectResultSet
 {

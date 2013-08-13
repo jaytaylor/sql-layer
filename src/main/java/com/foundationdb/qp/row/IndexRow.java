@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.row;
+package com.foundationdb.qp.row;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Index;
-import com.akiban.qp.expression.BoundExpressions;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.store.PersistitKeyAppender;
-import com.akiban.server.store.Store;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types3.TInstance;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.qp.expression.BoundExpressions;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.rowdata.FieldDef;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.PersistitKeyAppender;
+import com.foundationdb.server.store.Store;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types3.TInstance;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 

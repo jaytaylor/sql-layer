@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.operator;
+package com.foundationdb.qp.operator;
 
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.explain.*;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.types.extract.Extractors;
-import com.akiban.server.types3.aksql.aktypes.AkBool;
-import com.akiban.server.types3.texpressions.TEvaluatableExpression;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.util.ArgumentValidation;
-import com.akiban.util.ShareHolder;
-import com.akiban.util.tap.InOutTap;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.explain.*;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.ExpressionEvaluation;
+import com.foundationdb.server.types.extract.Extractors;
+import com.foundationdb.server.types3.aksql.aktypes.AkBool;
+import com.foundationdb.server.types3.texpressions.TEvaluatableExpression;
+import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.util.ArgumentValidation;
+import com.foundationdb.util.ShareHolder;
+import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
 import org.junit.Before;
 import java.text.ParseException;
 import org.joda.time.DateTime;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.extract.ConverterTestUtils;
-import com.akiban.server.types.extract.Extractors;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.ExpressionComposer;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.extract.ConverterTestUtils;
+import com.foundationdb.server.types.extract.Extractors;
 import java.util.Arrays;
 import org.joda.time.DateTimeZone;
 import org.junit.Test;

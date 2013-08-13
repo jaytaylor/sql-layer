@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.api.dml.scan;
+package com.foundationdb.server.api.dml.scan;
 
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.api.LegacyUtils;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.error.TableDefinitionMismatchException;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.api.LegacyUtils;
+import com.foundationdb.server.api.dml.ColumnSelector;
+import com.foundationdb.server.error.TableDefinitionMismatchException;
 
 public class LegacyScanRange implements ScanRange {
     final RowData start;

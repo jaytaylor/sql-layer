@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.plugins;
+package com.foundationdb.server.service.plugins;
 
 import com.google.common.base.Supplier;
 

@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.foundationdb.sql.optimizer.plan;
 
-import com.akiban.ais.model.Routine;
-import com.akiban.server.error.WrongExpressionArityException;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.parser.ValueNode;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.server.error.WrongExpressionArityException;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.parser.ValueNode;
 
 import java.util.List;
 

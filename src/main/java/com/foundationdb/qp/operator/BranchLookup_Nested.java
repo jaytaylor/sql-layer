@@ -15,22 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.operator;
+package com.foundationdb.qp.operator;
 
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.row.HKey;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.qp.rowtype.*;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.explain.*;
-import com.akiban.server.explain.std.LookUpOperatorExplainer;
-import com.akiban.util.ArgumentValidation;
-import com.akiban.util.ShareHolder;
-import com.akiban.util.tap.InOutTap;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.row.HKey;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.*;
+import com.foundationdb.server.api.dml.ColumnSelector;
+import com.foundationdb.server.explain.*;
+import com.foundationdb.server.explain.std.LookUpOperatorExplainer;
+import com.foundationdb.util.ArgumentValidation;
+import com.foundationdb.util.ShareHolder;
+import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

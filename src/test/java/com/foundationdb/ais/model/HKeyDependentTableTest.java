@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.model;
+package com.foundationdb.ais.model;
 
-import com.akiban.server.rowdata.SchemaFactory;
+import com.foundationdb.server.rowdata.SchemaFactory;
 import org.junit.Test;
 
 import java.util.*;

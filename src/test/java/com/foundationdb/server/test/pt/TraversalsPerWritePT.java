@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.pt;
+package com.foundationdb.server.test.pt;
 
-import com.akiban.ais.model.Index;
-import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.junit.Parameterization;
-import com.akiban.junit.ParameterizationBuilder;
-import com.akiban.server.api.dml.scan.NewRow;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.Parameterization;
+import com.foundationdb.junit.ParameterizationBuilder;
+import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 

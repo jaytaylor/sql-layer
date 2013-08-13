@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.protobuf;
+package com.foundationdb.ais.protobuf;
 
-import com.akiban.ais.model.*;
-import com.akiban.ais.util.TableChange;
-import com.akiban.server.error.ProtobufReadException;
-import com.akiban.server.geophile.Space;
-import com.akiban.util.GrowableByteBuffer;
+import com.foundationdb.ais.model.*;
+import com.foundationdb.ais.util.TableChange;
+import com.foundationdb.server.error.ProtobufReadException;
+import com.foundationdb.server.geophile.Space;
+import com.foundationdb.util.GrowableByteBuffer;
 import com.google.protobuf.AbstractMessage;
 import com.google.protobuf.CodedInputStream;
 import com.google.protobuf.Descriptors;

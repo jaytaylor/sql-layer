@@ -15,19 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.manage;
+package com.foundationdb.server.manage;
 
 import java.util.Collection;
 import java.util.HashSet;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.AkServer;
-import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionService;
-import com.akiban.server.store.Store;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.AkServer;
+import com.foundationdb.server.service.dxl.DXLService;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.session.SessionService;
+import com.foundationdb.server.store.Store;
 
 public class ManageMXBeanImpl implements ManageMXBean {
     private final Store store;

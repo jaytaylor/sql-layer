@@ -14,38 +14,38 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.server.service.restdml;
+package com.foundationdb.server.service.restdml;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Sequence;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.server.t3expressions.OverloadResolver;
-import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSources;
-import com.akiban.server.types3.texpressions.TCastExpression;
-import com.akiban.server.types3.texpressions.TNullExpression;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.server.types3.texpressions.TPreparedField;
-import com.akiban.server.types3.texpressions.TPreparedFunction;
-import com.akiban.server.types3.texpressions.TPreparedLiteral;
-import com.akiban.server.types3.texpressions.TValidatedScalar;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.server.t3expressions.OverloadResolver;
+import com.foundationdb.server.t3expressions.OverloadResolver.OverloadResult;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.TCast;
+import com.foundationdb.server.types3.TExecutionContext;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types3.texpressions.TCastExpression;
+import com.foundationdb.server.types3.texpressions.TNullExpression;
+import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types3.texpressions.TPreparedField;
+import com.foundationdb.server.types3.texpressions.TPreparedFunction;
+import com.foundationdb.server.types3.texpressions.TPreparedLiteral;
+import com.foundationdb.server.types3.texpressions.TValidatedScalar;
 
 public class InsertGenerator extends OperatorGenerator{
 

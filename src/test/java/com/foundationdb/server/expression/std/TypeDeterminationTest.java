@@ -16,18 +16,18 @@
  */
 
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
 import java.util.List;
 import java.util.EnumSet;
-import com.akiban.server.error.InvalidArgumentTypeException;
-import com.akiban.junit.OnlyIf;
-import com.akiban.junit.OnlyIfNot;
-import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.junit.Parameterization;
-import com.akiban.junit.ParameterizationBuilder;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.types.AkType;
+import com.foundationdb.server.error.InvalidArgumentTypeException;
+import com.foundationdb.junit.OnlyIf;
+import com.foundationdb.junit.OnlyIfNot;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.Parameterization;
+import com.foundationdb.junit.ParameterizationBuilder;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.types.AkType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;

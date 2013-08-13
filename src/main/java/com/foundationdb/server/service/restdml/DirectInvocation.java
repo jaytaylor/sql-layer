@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.restdml;
+package com.foundationdb.server.service.restdml;
 
 import java.sql.SQLException;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.sql.embedded.JDBCConnection;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.sql.embedded.JDBCConnection;
 
 
 public class DirectInvocation {

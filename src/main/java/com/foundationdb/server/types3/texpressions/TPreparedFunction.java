@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.texpressions;
+package com.foundationdb.server.types3.texpressions;
 
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.row.Row;
-import com.akiban.server.explain.*;
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.LazyListBase;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeContext;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.util.SparseArray;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.explain.*;
+import com.foundationdb.server.types3.LazyList;
+import com.foundationdb.server.types3.LazyListBase;
+import com.foundationdb.server.types3.TExecutionContext;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.TPreptimeContext;
+import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.util.SparseArray;
 
 import java.util.ArrayList;
 import java.util.Arrays;

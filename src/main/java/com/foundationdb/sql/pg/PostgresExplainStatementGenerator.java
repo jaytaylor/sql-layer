@@ -15,20 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.qp.exec.Plannable;
-import com.akiban.server.error.UnableToExplainException;
-import com.akiban.server.error.UnsupportedExplainException;
-import com.akiban.sql.optimizer.OperatorCompiler;
-import com.akiban.sql.optimizer.plan.BasePlannable;
-import com.akiban.sql.optimizer.rule.ExplainPlanContext;
+import com.foundationdb.qp.exec.Plannable;
+import com.foundationdb.server.error.UnableToExplainException;
+import com.foundationdb.server.error.UnsupportedExplainException;
+import com.foundationdb.sql.optimizer.OperatorCompiler;
+import com.foundationdb.sql.optimizer.plan.BasePlannable;
+import com.foundationdb.sql.optimizer.rule.ExplainPlanContext;
 
-import com.akiban.sql.parser.DMLStatementNode;
-import com.akiban.sql.parser.ExplainStatementNode;
-import com.akiban.sql.parser.NodeTypes;
-import com.akiban.sql.parser.StatementNode;
-import com.akiban.sql.parser.ParameterNode;
+import com.foundationdb.sql.parser.DMLStatementNode;
+import com.foundationdb.sql.parser.ExplainStatementNode;
+import com.foundationdb.sql.parser.NodeTypes;
+import com.foundationdb.sql.parser.StatementNode;
+import com.foundationdb.sql.parser.ParameterNode;
 
 import java.util.Collections;
 import java.util.HashMap;

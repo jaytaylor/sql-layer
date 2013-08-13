@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.server;
+package com.foundationdb.sql.server;
 
 import java.util.concurrent.atomic.AtomicInteger;
 

@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.routines;
+package com.foundationdb.server.service.routines;
 
-import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.TableName;
-import com.akiban.server.error.ExternalRoutineInvocationException;
-import com.akiban.server.error.NoSuchRoutineException;
-import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.error.ExternalRoutineInvocationException;
+import com.foundationdb.server.error.NoSuchRoutineException;
+import com.foundationdb.server.service.dxl.DXLService;
+import com.foundationdb.server.service.session.Session;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

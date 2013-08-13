@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.config;
+package com.foundationdb.server.service.config;
 
 public final class PropertyNotDefinedException extends RuntimeException {
     PropertyNotDefinedException(String message) {

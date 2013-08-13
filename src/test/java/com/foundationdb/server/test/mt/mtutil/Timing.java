@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.mt.mtutil;
+package com.foundationdb.server.test.mt.mtutil;
 
 public class Timing {
     private final static Timing instance = new Timing();

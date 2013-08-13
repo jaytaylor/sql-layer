@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.rowdata;
+package com.foundationdb.server.rowdata;
 
-import com.akiban.server.types.conversion.Converters;
-import com.akiban.server.types.ToObjectValueTarget;
+import com.foundationdb.server.types.conversion.Converters;
+import com.foundationdb.server.types.ToObjectValueTarget;
 
 public final class RowDataExtractor {
 

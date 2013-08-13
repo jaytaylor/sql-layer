@@ -15,19 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
-import com.akiban.server.error.WrongExpressionArityException;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.expression.ExpressionType;
-import com.akiban.server.expression.TypesList;
-import com.akiban.server.expression.std.ArithOps.ArithOpComposer;
-import com.akiban.server.expression.std.NumericToIntervalMillis.TargetType;
-import com.akiban.server.service.functions.Scalar;
-import com.akiban.server.types.AkType;
-import com.akiban.sql.StandardException;
+import com.foundationdb.server.error.WrongExpressionArityException;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.ExpressionComposer;
+import com.foundationdb.server.expression.ExpressionEvaluation;
+import com.foundationdb.server.expression.ExpressionType;
+import com.foundationdb.server.expression.TypesList;
+import com.foundationdb.server.expression.std.ArithOps.ArithOpComposer;
+import com.foundationdb.server.expression.std.NumericToIntervalMillis.TargetType;
+import com.foundationdb.server.service.functions.Scalar;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.sql.StandardException;
 
 public class DateTimeArithExpression extends ArithExpression
 {

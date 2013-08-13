@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.encoding;
+package com.foundationdb.server.encoding;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.server.error.UnsupportedCharsetException;
-import com.akiban.server.rowdata.FieldDef;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.error.UnsupportedCharsetException;
+import com.foundationdb.server.rowdata.FieldDef;
 
 import java.io.UnsupportedEncodingException;
 

@@ -16,16 +16,16 @@
  */
 
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
 import org.junit.runner.RunWith;
-import com.akiban.server.types.AkType;
-import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.junit.Parameterization;
-import com.akiban.junit.ParameterizationBuilder;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.types.ValueSource;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.Parameterization;
+import com.foundationdb.junit.ParameterizationBuilder;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.ExpressionComposer;
+import com.foundationdb.server.types.ValueSource;
 import java.util.Collection;
 import org.junit.Test;
 import static org.junit.Assert.assertTrue;

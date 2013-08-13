@@ -15,19 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.server;
+package com.foundationdb.sql.server;
 
 import java.sql.ResultSet;
 import java.util.Queue;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.CacheValueGenerator;
-import com.akiban.ais.model.Parameter;
-import com.akiban.direct.Direct;
-import com.akiban.direct.DirectClassLoader;
-import com.akiban.direct.DirectContextImpl;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.server.explain.Explainable;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.CacheValueGenerator;
+import com.foundationdb.ais.model.Parameter;
+import com.foundationdb.direct.Direct;
+import com.foundationdb.direct.DirectClassLoader;
+import com.foundationdb.direct.DirectContextImpl;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.server.explain.Explainable;
 
 /** A Routine that uses Java native data types in its invocation API. */
 public abstract class ServerJavaRoutine implements Explainable

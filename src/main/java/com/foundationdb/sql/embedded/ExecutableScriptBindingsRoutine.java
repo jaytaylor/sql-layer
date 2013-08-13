@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.embedded;
+package com.foundationdb.sql.embedded;
 
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.server.service.routines.ScriptEvaluator;
-import com.akiban.server.service.routines.ScriptPool;
-import com.akiban.sql.script.ScriptBindingsRoutine;
-import com.akiban.sql.server.ServerCallInvocation;
-import com.akiban.sql.server.ServerJavaMethod;
-import com.akiban.sql.server.ServerJavaRoutine;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.server.service.routines.ScriptEvaluator;
+import com.foundationdb.server.service.routines.ScriptPool;
+import com.foundationdb.sql.script.ScriptBindingsRoutine;
+import com.foundationdb.sql.server.ServerCallInvocation;
+import com.foundationdb.sql.server.ServerJavaMethod;
+import com.foundationdb.sql.server.ServerJavaRoutine;
 
 class ExecutableScriptBindingsRoutine extends ExecutableJavaRoutine
 {

@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.model;
+package com.foundationdb.ais.model;
 
-import com.akiban.ais.model.validation.SequenceValuesValid;
-import com.akiban.server.error.SequenceIntervalZeroException;
-import com.akiban.server.error.SequenceLimitExceededException;
-import com.akiban.server.error.SequenceMinGEMaxException;
-import com.akiban.server.error.SequenceStartInRangeException;
+import com.foundationdb.ais.model.validation.SequenceValuesValid;
+import com.foundationdb.server.error.SequenceIntervalZeroException;
+import com.foundationdb.server.error.SequenceLimitExceededException;
+import com.foundationdb.server.error.SequenceMinGEMaxException;
+import com.foundationdb.server.error.SequenceStartInRangeException;
 import org.junit.Test;
 
 import java.util.Arrays;

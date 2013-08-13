@@ -15,25 +15,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.rest.resources;
+package com.foundationdb.rest.resources;
 
-import com.akiban.ais.AISCloner;
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.protobuf.ProtobufWriter;
-import com.akiban.ais.util.UuidAssigner;
-import com.akiban.rest.ResourceRequirements;
-import com.akiban.rest.RestResponseBuilder;
-import com.akiban.server.entity.changes.DDLBasedSpaceModifier;
-import com.akiban.server.entity.changes.EntityParser;
-import com.akiban.server.entity.changes.SpaceDiff;
-import com.akiban.server.entity.fromais.AisToSpace;
-import com.akiban.server.entity.model.Space;
-import com.akiban.server.entity.model.diff.JsonDiffPreview;
-import com.akiban.server.service.session.Session;
-import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.Tap;
+import com.foundationdb.ais.AISCloner;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.protobuf.ProtobufWriter;
+import com.foundationdb.ais.util.UuidAssigner;
+import com.foundationdb.rest.ResourceRequirements;
+import com.foundationdb.rest.RestResponseBuilder;
+import com.foundationdb.server.entity.changes.DDLBasedSpaceModifier;
+import com.foundationdb.server.entity.changes.EntityParser;
+import com.foundationdb.server.entity.changes.SpaceDiff;
+import com.foundationdb.server.entity.fromais.AisToSpace;
+import com.foundationdb.server.entity.model.Space;
+import com.foundationdb.server.entity.model.diff.JsonDiffPreview;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.util.tap.InOutTap;
+import com.foundationdb.util.tap.Tap;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,11 +54,11 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.security.Principal;
 
-import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
-import static com.akiban.rest.resources.ResourceHelper.checkSchemaAccessible;
-import static com.akiban.rest.resources.ResourceHelper.checkTableAccessible;
-import static com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
-import static com.akiban.util.JsonUtils.readTree;
+import static com.foundationdb.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
+import static com.foundationdb.rest.resources.ResourceHelper.checkSchemaAccessible;
+import static com.foundationdb.rest.resources.ResourceHelper.checkTableAccessible;
+import static com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
+import static com.foundationdb.util.JsonUtils.readTree;
 
 @Path("/model")
 public final class ModelResource {

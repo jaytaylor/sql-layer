@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.sql.NamedParamsTestBase;
-import com.akiban.sql.TestBase;
+import com.foundationdb.sql.NamedParamsTestBase;
+import com.foundationdb.sql.TestBase;
 
-import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.junit.NamedParameterizedRunner.TestParameters;
-import com.akiban.junit.Parameterization;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.NamedParameterizedRunner.TestParameters;
+import com.foundationdb.junit.Parameterization;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

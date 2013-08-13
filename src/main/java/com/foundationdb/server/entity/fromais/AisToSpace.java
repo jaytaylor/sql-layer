@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.entity.fromais;
+package com.foundationdb.server.entity.fromais;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.entity.model.Entity;
-import com.akiban.server.entity.model.Space;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.entity.model.Entity;
+import com.foundationdb.server.entity.model.Space;
 import com.google.common.base.Function;
 
 import java.util.ArrayList;

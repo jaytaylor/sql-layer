@@ -15,25 +15,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.sort;
+package com.foundationdb.server.test.it.sort;
 
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.RowCursor;
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.persistitadapter.TempVolume;
-import com.akiban.qp.persistitadapter.indexcursor.PersistitSorter;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.error.PersistitAdapterException;
-import com.akiban.server.test.ExpressionGenerators;
-import com.akiban.server.test.it.PersistitITBase;
-import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.Tap;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.RowCursor;
+import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.persistitadapter.TempVolume;
+import com.foundationdb.qp.persistitadapter.indexcursor.PersistitSorter;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
+import com.foundationdb.server.error.PersistitAdapterException;
+import com.foundationdb.server.test.ExpressionGenerators;
+import com.foundationdb.server.test.it.PersistitITBase;
+import com.foundationdb.util.tap.InOutTap;
+import com.foundationdb.util.tap.Tap;
 import com.persistit.exception.PersistitIOException;
 import com.persistit.exception.VolumeFullException;
 import org.junit.Test;

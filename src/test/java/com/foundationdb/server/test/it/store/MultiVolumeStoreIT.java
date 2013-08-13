@@ -15,17 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.store;
+package com.foundationdb.server.test.it.store;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.akiban.server.api.dml.scan.LegacyRowWrapper;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.test.it.ITBase;
-import com.akiban.server.test.it.PersistitITBase;
+import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.server.test.it.PersistitITBase;
 import org.junit.Before;
 import org.junit.Test;
 

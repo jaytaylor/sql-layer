@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.expression;
+package com.foundationdb.qp.expression;
 
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.explain.ExplainContext;
-import com.akiban.server.explain.CompoundExplainer;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.server.explain.ExplainContext;
+import com.foundationdb.server.explain.CompoundExplainer;
 
 public interface UnboundExpressions {
     BoundExpressions get(QueryContext context, QueryBindings bindings);

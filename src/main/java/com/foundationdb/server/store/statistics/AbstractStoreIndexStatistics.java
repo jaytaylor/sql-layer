@@ -15,20 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.store.statistics;
+package com.foundationdb.server.store.statistics;
 
-import com.akiban.ais.model.Index;
-import com.akiban.server.api.dml.scan.LegacyRowWrapper;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.store.Store;
-import com.akiban.util.WrappingByteSource;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.Store;
+import com.foundationdb.util.WrappingByteSource;
 
 import java.util.ArrayList;
 
-import static com.akiban.server.store.statistics.IndexStatisticsService.INDEX_STATISTICS_ENTRY_TABLE_NAME;
-import static com.akiban.server.store.statistics.IndexStatisticsService.INDEX_STATISTICS_TABLE_NAME;
+import static com.foundationdb.server.store.statistics.IndexStatisticsService.INDEX_STATISTICS_ENTRY_TABLE_NAME;
+import static com.foundationdb.server.store.statistics.IndexStatisticsService.INDEX_STATISTICS_TABLE_NAME;
 
 /** Manage index statistics for a Store
  *

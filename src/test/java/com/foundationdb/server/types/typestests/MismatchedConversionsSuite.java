@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types.typestests;
+package com.foundationdb.server.types.typestests;
 
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ValueTarget;
-import com.akiban.util.WrappingByteSource;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.ValueTarget;
+import com.foundationdb.util.WrappingByteSource;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.akiban.server.types.AkType.*;
+import static com.foundationdb.server.types.AkType.*;
 
 public final class MismatchedConversionsSuite {
 

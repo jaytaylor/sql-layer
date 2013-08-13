@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.foundationdb.sql.optimizer.rule;
 
-import com.akiban.sql.optimizer.plan.*;
+import com.foundationdb.sql.optimizer.plan.*;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.JoinColumn;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.Join;
+import com.foundationdb.ais.model.JoinColumn;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

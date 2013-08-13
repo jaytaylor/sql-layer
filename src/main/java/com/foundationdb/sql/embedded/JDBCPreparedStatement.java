@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.embedded;
+package com.foundationdb.sql.embedded;
 
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.sql.server.ServerJavaValues;
-import com.akiban.sql.server.ServerQueryContext;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.sql.server.ServerJavaValues;
+import com.foundationdb.sql.server.ServerQueryContext;
 
 import java.math.BigDecimal;
 import java.net.URL;

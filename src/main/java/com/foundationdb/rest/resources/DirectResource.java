@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.rest.resources;
+package com.foundationdb.rest.resources;
 
-import static com.akiban.rest.resources.ResourceHelper.JSONP_ARG_NAME;
+import static com.foundationdb.rest.resources.ResourceHelper.JSONP_ARG_NAME;
 
 import java.io.PrintWriter;
 
@@ -36,18 +36,18 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.TableName;
-import com.akiban.direct.ClassBuilder;
-import com.akiban.direct.ClassSourceWriter;
-import com.akiban.direct.ClassXRefWriter;
-import com.akiban.rest.ResourceRequirements;
-import com.akiban.rest.RestResponseBuilder;
-import com.akiban.rest.RestResponseBuilder.BodyGenerator;
-import com.akiban.server.error.NoSuchSchemaException;
-import com.akiban.server.service.restdml.DirectInvocation;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.transaction.TransactionService;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.direct.ClassBuilder;
+import com.foundationdb.direct.ClassSourceWriter;
+import com.foundationdb.direct.ClassXRefWriter;
+import com.foundationdb.rest.ResourceRequirements;
+import com.foundationdb.rest.RestResponseBuilder;
+import com.foundationdb.rest.RestResponseBuilder.BodyGenerator;
+import com.foundationdb.server.error.NoSuchSchemaException;
+import com.foundationdb.server.service.restdml.DirectInvocation;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.transaction.TransactionService;
 
 /**
  * Easy access to the server version

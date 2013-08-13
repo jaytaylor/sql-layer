@@ -15,20 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.rowtests;
+package com.foundationdb.server.test.it.rowtests;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Table;
-import com.akiban.server.PersistitKeyValueSource;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.error.UnsupportedIndexDataTypeException;
-import com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
-import com.akiban.server.store.IndexVisitor;
-import com.akiban.server.test.it.ITBase;
-import com.akiban.server.types.ToObjectValueTarget;
-import com.akiban.util.WrappingByteSource;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.server.PersistitKeyValueSource;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.error.UnsupportedIndexDataTypeException;
+import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
+import com.foundationdb.server.store.IndexVisitor;
+import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.server.types.ToObjectValueTarget;
+import com.foundationdb.util.WrappingByteSource;
 import com.persistit.Key;
 import com.persistit.Value;
 import junit.framework.Assert;

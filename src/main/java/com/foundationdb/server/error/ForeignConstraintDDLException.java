@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.error;
+package com.foundationdb.server.error;
 
-import com.akiban.ais.model.TableName;
+import com.foundationdb.ais.model.TableName;
 
 public final class ForeignConstraintDDLException extends InvalidOperationException {
     public ForeignConstraintDDLException(TableName parent, TableName child) {

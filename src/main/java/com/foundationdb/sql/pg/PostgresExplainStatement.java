@@ -15,26 +15,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.sql.optimizer.OperatorCompiler;
-import com.akiban.sql.optimizer.plan.BasePlannable;
-import com.akiban.sql.optimizer.plan.CostEstimate;
-import com.akiban.sql.optimizer.rule.ExplainPlanContext;
-import com.akiban.sql.parser.CallStatementNode;
-import com.akiban.sql.parser.DMLStatementNode;
-import com.akiban.sql.parser.ExplainStatementNode;
-import com.akiban.sql.parser.ParameterNode;
-import com.akiban.sql.parser.StatementNode;
-import com.akiban.sql.server.ServerValueEncoder;
+import com.foundationdb.sql.optimizer.OperatorCompiler;
+import com.foundationdb.sql.optimizer.plan.BasePlannable;
+import com.foundationdb.sql.optimizer.plan.CostEstimate;
+import com.foundationdb.sql.optimizer.rule.ExplainPlanContext;
+import com.foundationdb.sql.parser.CallStatementNode;
+import com.foundationdb.sql.parser.DMLStatementNode;
+import com.foundationdb.sql.parser.ExplainStatementNode;
+import com.foundationdb.sql.parser.ParameterNode;
+import com.foundationdb.sql.parser.StatementNode;
+import com.foundationdb.sql.server.ServerValueEncoder;
 
-import com.akiban.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryBindings;
 
-import com.akiban.server.explain.Explainable;
-import com.akiban.server.explain.format.DefaultFormatter;
-import com.akiban.server.explain.format.JsonFormatter;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.explain.Explainable;
+import com.foundationdb.server.explain.format.DefaultFormatter;
+import com.foundationdb.server.explain.format.JsonFormatter;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
 
 import java.util.Collections;
 import java.util.List;

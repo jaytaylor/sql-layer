@@ -15,20 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.store;
+package com.foundationdb.server.store;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.TableName;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.transaction.TransactionService;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.transaction.TransactionService;
 
 import org.junit.Test;
 
 import java.util.Set;
 import java.util.concurrent.CyclicBarrier;
 
-import static com.akiban.server.store.PersistitStoreSchemaManager.SerializationType;
+import static com.foundationdb.server.store.PersistitStoreSchemaManager.SerializationType;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 

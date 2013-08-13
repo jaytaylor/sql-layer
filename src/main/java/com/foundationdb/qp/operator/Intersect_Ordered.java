@@ -15,33 +15,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.operator;
+package com.foundationdb.qp.operator;
 
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TKeyComparable;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.t3expressions.T3RegistryService;
-import com.akiban.server.types3.TComparison;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.row.ValuesHolderRow;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.api.dml.IndexRowPrefixSelector;
-import com.akiban.server.explain.*;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PValueTargets;
-import com.akiban.util.ArgumentValidation;
-import com.akiban.util.ShareHolder;
-import com.akiban.util.tap.InOutTap;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TKeyComparable;
+import com.foundationdb.server.types3.pvalue.PValueTarget;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.server.types3.TComparison;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesHolderRow;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.api.dml.ColumnSelector;
+import com.foundationdb.server.api.dml.IndexRowPrefixSelector;
+import com.foundationdb.server.explain.*;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.pvalue.PValueTargets;
+import com.foundationdb.util.ArgumentValidation;
+import com.foundationdb.util.ShareHolder;
+import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-import static com.akiban.qp.operator.API.IntersectOption;
-import static com.akiban.qp.operator.API.JoinType;
+import static com.foundationdb.qp.operator.API.IntersectOption;
+import static com.foundationdb.qp.operator.API.JoinType;
 import static java.lang.Math.abs;
 import static java.lang.Math.min;
 

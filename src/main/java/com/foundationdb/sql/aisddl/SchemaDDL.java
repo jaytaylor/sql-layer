@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.aisddl;
+package com.foundationdb.sql.aisddl;
 
-import com.akiban.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.AkibanInformationSchema;
 
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.error.DropSchemaNotAllowedException;
-import com.akiban.server.error.DuplicateSchemaException;
-import com.akiban.server.error.NoSuchSchemaException;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.server.api.DDLFunctions;
+import com.foundationdb.server.error.DropSchemaNotAllowedException;
+import com.foundationdb.server.error.DuplicateSchemaException;
+import com.foundationdb.server.error.NoSuchSchemaException;
+import com.foundationdb.server.service.session.Session;
 
-import com.akiban.sql.parser.CreateSchemaNode;
-import com.akiban.sql.parser.DropSchemaNode;
-import com.akiban.sql.parser.ExistenceCheck;
-import com.akiban.sql.parser.StatementType;
-import com.akiban.qp.operator.QueryContext;
+import com.foundationdb.sql.parser.CreateSchemaNode;
+import com.foundationdb.sql.parser.DropSchemaNode;
+import com.foundationdb.sql.parser.ExistenceCheck;
+import com.foundationdb.sql.parser.StatementType;
+import com.foundationdb.qp.operator.QueryContext;
 
 public class SchemaDDL {
     private SchemaDDL () {

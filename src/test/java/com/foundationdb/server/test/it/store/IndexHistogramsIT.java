@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.store;
+package com.foundationdb.server.test.it.store;
 
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableName;
-import com.akiban.server.store.statistics.*;
-import com.akiban.server.store.statistics.histograms.Sampler;
-import com.akiban.server.test.it.ITBase;
-import com.akiban.util.AssertUtils;
+import com.foundationdb.ais.model.GroupIndex;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.store.statistics.*;
+import com.foundationdb.server.store.statistics.histograms.Sampler;
+import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.util.AssertUtils;
 import org.junit.Before;
 import org.junit.Test;
 

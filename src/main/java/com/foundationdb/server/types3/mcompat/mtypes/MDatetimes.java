@@ -15,29 +15,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.mcompat.mtypes;
+package com.foundationdb.server.types3.mcompat.mtypes;
 
-import com.akiban.server.error.InvalidDateFormatException;
-import com.akiban.server.error.InvalidParameterValueException;
-import com.akiban.server.types3.TBundleID;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TClassFormatter;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TParsers;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.aksql.AkCategory;
-import com.akiban.server.types3.common.types.NoAttrTClass;
-import com.akiban.server.types3.mcompat.MBundle;
-import com.akiban.server.types3.mcompat.mcasts.CastUtils;
-import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.error.InvalidDateFormatException;
+import com.foundationdb.server.error.InvalidParameterValueException;
+import com.foundationdb.server.types3.TBundleID;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TClassFormatter;
+import com.foundationdb.server.types3.TExecutionContext;
+import com.foundationdb.server.types3.TParsers;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.aksql.AkCategory;
+import com.foundationdb.server.types3.common.types.NoAttrTClass;
+import com.foundationdb.server.types3.mcompat.MBundle;
+import com.foundationdb.server.types3.mcompat.mcasts.CastUtils;
+import com.foundationdb.server.types3.pvalue.PUnderlying;
+import com.foundationdb.server.types3.pvalue.PValueSource;
 import java.text.DateFormatSymbols;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.akiban.sql.types.TypeId;
-import com.akiban.util.AkibanAppender;
+import com.foundationdb.sql.types.TypeId;
+import com.foundationdb.util.AkibanAppender;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.IllegalFieldValueException;

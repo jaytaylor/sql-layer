@@ -15,20 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.server;
+package com.foundationdb.sql.server;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContextBase;
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.server.error.ErrorCode;
-import com.akiban.server.error.QueryCanceledException;
-import com.akiban.server.error.QueryTimedOutException;
-import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.dxl.DXLReadWriteLockHook;
-import com.akiban.server.service.session.Session;
-import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContextBase;
+import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.error.QueryCanceledException;
+import com.foundationdb.server.error.QueryTimedOutException;
+import com.foundationdb.server.service.ServiceManager;
+import com.foundationdb.server.service.dxl.DXLReadWriteLockHook;
+import com.foundationdb.server.service.session.Session;
+import static com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 import java.io.IOException;
 

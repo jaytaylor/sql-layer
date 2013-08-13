@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.functions;
+package com.foundationdb.server.service.functions;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

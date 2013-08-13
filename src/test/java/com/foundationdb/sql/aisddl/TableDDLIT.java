@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.aisddl;
+package com.foundationdb.sql.aisddl;
 
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
@@ -25,17 +25,17 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.FullTextIndex;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.Types;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.error.DuplicateSequenceNameException;
-import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.service.servicemanager.GuicedServiceManager;
-import com.akiban.server.service.text.FullTextIndexService;
-import com.akiban.server.service.text.FullTextIndexServiceImpl;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.FullTextIndex;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.ais.model.Types;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.error.DuplicateSequenceNameException;
+import com.foundationdb.server.error.NoSuchTableException;
+import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
+import com.foundationdb.server.service.text.FullTextIndexService;
+import com.foundationdb.server.service.text.FullTextIndexServiceImpl;
 
 import java.util.Map;
 

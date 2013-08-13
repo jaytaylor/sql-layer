@@ -14,9 +14,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.server.error;
+package com.foundationdb.server.error;
 
-import com.akiban.ais.model.SQLJJar;
+import com.foundationdb.ais.model.SQLJJar;
 
 public class ReferencedSQLJJarException extends InvalidOperationException {
     public ReferencedSQLJJarException(SQLJJar sqljJar) {

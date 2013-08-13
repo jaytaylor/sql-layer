@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.geophile;
+package com.foundationdb.server.geophile;
 
 /*
 
@@ -35,7 +35,7 @@ before the decimal place. So we'll scale both by 10**6.
 
  */
 
-import com.akiban.server.error.OutOfRangeException;
+import com.foundationdb.server.error.OutOfRangeException;
 
 import java.math.BigDecimal;
 

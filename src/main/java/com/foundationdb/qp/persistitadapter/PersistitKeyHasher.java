@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.persistitadapter;
+package com.foundationdb.qp.persistitadapter;
 
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;

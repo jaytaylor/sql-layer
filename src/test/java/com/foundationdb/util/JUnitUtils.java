@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.util;
+package com.foundationdb.util;
 
 import com.google.common.base.Functions;
 import com.google.common.collect.Lists;

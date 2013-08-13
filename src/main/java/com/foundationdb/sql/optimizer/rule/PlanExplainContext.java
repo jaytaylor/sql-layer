@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.foundationdb.sql.optimizer.rule;
 
-import com.akiban.server.explain.ExplainContext;
+import com.foundationdb.server.explain.ExplainContext;
 
 public class PlanExplainContext extends ExplainContext
 {

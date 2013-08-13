@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.lock;
+package com.foundationdb.server.service.lock;
 
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.util.ReadWriteMap;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.util.ReadWriteMap;
 import com.google.inject.Inject;
 
 import java.util.HashMap;
@@ -29,7 +29,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import static com.akiban.server.util.ReadWriteMap.ValueCreator;
+import static com.foundationdb.server.util.ReadWriteMap.ValueCreator;
 
 public class LockServiceImpl implements LockService {
     private final static boolean TABLE_LOCK_FAIRENESS = false;

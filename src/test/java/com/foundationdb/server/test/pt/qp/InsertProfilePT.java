@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.pt.qp;
+package com.foundationdb.server.test.pt.qp;
 
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.TableName;
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.error.InvalidOperationException;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.server.error.InvalidOperationException;
 import org.junit.Before;
 import org.junit.Test;
 

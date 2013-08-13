@@ -15,24 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.foundationdb.sql.optimizer.plan;
 
-import com.akiban.sql.NamedParamsTestBase;
+import com.foundationdb.sql.NamedParamsTestBase;
 
-import com.akiban.sql.optimizer.OptimizerTestBase;
-import com.akiban.sql.optimizer.rule.ASTStatementLoader;
-import com.akiban.sql.optimizer.rule.BaseRule;
-import com.akiban.sql.optimizer.rule.PlanContext;
-import com.akiban.sql.optimizer.rule.RulesTestContext;
+import com.foundationdb.sql.optimizer.OptimizerTestBase;
+import com.foundationdb.sql.optimizer.rule.ASTStatementLoader;
+import com.foundationdb.sql.optimizer.rule.BaseRule;
+import com.foundationdb.sql.optimizer.rule.PlanContext;
+import com.foundationdb.sql.optimizer.rule.RulesTestContext;
 
-import com.akiban.sql.parser.DMLStatementNode;
-import com.akiban.sql.parser.StatementNode;
+import com.foundationdb.sql.parser.DMLStatementNode;
+import com.foundationdb.sql.parser.StatementNode;
 
-import com.akiban.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.AkibanInformationSchema;
 
-import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.junit.NamedParameterizedRunner.TestParameters;
-import com.akiban.junit.Parameterization;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.NamedParameterizedRunner.TestParameters;
+import com.foundationdb.junit.Parameterization;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.tree;
+package com.foundationdb.server.service.tree;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import com.akiban.server.test.it.PersistitITBase;
+import com.foundationdb.server.test.it.PersistitITBase;
 import org.junit.Test;
 
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionService;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.session.SessionService;
 import com.persistit.Exchange;
 import com.persistit.Tree;
 

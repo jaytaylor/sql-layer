@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.aggregation;
+package com.foundationdb.server.aggregation;
 
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ValueTarget;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.ValueTarget;
 
 public interface Aggregator {
     void input(ValueSource input);

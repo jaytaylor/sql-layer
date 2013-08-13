@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.loadableplan;
+package com.foundationdb.qp.loadableplan;
 
-import com.akiban.qp.operator.CursorBase;
+import com.foundationdb.qp.operator.CursorBase;
 import java.util.List;
 
 /** A cursor that returns column values directly.

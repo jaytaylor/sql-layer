@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.model;
+package com.foundationdb.ais.model;
 
 import java.util.*;
 
-import com.akiban.server.rowdata.RowDef;
+import com.foundationdb.server.rowdata.RowDef;
 
 public abstract class Table extends Columnar implements Traversable, HasGroup
 {

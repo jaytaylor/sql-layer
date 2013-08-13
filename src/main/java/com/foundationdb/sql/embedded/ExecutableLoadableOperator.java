@@ -15,22 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.embedded;
+package com.foundationdb.sql.embedded;
 
-import com.akiban.sql.embedded.JDBCResultSetMetaData.ResultColumn;
+import com.foundationdb.sql.embedded.JDBCResultSetMetaData.ResultColumn;
 
-import com.akiban.qp.loadableplan.LoadableOperator;
-import com.akiban.qp.loadableplan.LoadablePlan;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.SparseArrayQueryBindings;
-import com.akiban.server.error.UnsupportedSQLException;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.sql.optimizer.TypesTranslation;
-import com.akiban.sql.parser.CallStatementNode;
-import com.akiban.sql.server.ServerCallContextStack;
-import com.akiban.sql.server.ServerCallInvocation;
-import com.akiban.sql.types.DataTypeDescriptor;
+import com.foundationdb.qp.loadableplan.LoadableOperator;
+import com.foundationdb.qp.loadableplan.LoadablePlan;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.SparseArrayQueryBindings;
+import com.foundationdb.server.error.UnsupportedSQLException;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.sql.optimizer.TypesTranslation;
+import com.foundationdb.sql.parser.CallStatementNode;
+import com.foundationdb.sql.server.ServerCallContextStack;
+import com.foundationdb.sql.server.ServerCallInvocation;
+import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import java.util.ArrayList;
 import java.util.List;

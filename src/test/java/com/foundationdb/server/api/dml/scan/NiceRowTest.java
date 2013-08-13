@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.api.dml.scan;
+package com.foundationdb.server.api.dml.scan;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -25,9 +25,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
 
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.rowdata.SchemaFactory;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.rowdata.SchemaFactory;
 import org.junit.Test;
 
 public final class NiceRowTest {

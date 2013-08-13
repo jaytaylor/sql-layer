@@ -15,26 +15,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
-import com.akiban.junit.OnlyIf;
-import com.akiban.server.error.WrongExpressionArityException;
-import com.akiban.server.expression.ExpressionComposer;
+import com.foundationdb.junit.OnlyIf;
+import com.foundationdb.server.error.WrongExpressionArityException;
+import com.foundationdb.server.expression.ExpressionComposer;
 import org.junit.Test;
-import com.akiban.junit.OnlyIfNot;
-import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.junit.NamedParameterizedRunner.TestParameters;
-import com.akiban.junit.Parameterization;
-import com.akiban.junit.ParameterizationBuilder;
-import com.akiban.server.expression.Expression;
+import com.foundationdb.junit.OnlyIfNot;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.NamedParameterizedRunner.TestParameters;
+import com.foundationdb.junit.Parameterization;
+import com.foundationdb.junit.ParameterizationBuilder;
+import com.foundationdb.server.expression.Expression;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.*;
-import static com.akiban.server.expression.std.ExprUtil.*;
-import static com.akiban.server.types.AkType.*;
+import static com.foundationdb.server.expression.std.ExprUtil.*;
+import static com.foundationdb.server.types.AkType.*;
 
 @RunWith(NamedParameterizedRunner.class)
 public class FieldFunctionExpressionTest extends ComposedExpressionTestBase

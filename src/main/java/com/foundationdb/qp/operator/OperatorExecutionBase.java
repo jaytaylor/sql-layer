@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.operator;
+package com.foundationdb.qp.operator;
 
-import com.akiban.qp.row.Row;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.error.QueryCanceledException;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.api.dml.ColumnSelector;
+import com.foundationdb.server.error.QueryCanceledException;
 
 public abstract class OperatorExecutionBase extends ExecutionBase implements RowOrientedCursorBase<Row>
 {

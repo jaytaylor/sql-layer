@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.row;
+package com.foundationdb.qp.row;
 
 
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.util.ValueHolder;
-import com.akiban.server.types3.pvalue.PValue;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.types.util.ValueHolder;
+import com.foundationdb.server.types3.pvalue.PValue;
 
 public class ValuesHolderRow extends AbstractValuesHolderRow {
 

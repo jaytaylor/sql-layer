@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
-import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.types.ValueSource;
+import com.foundationdb.server.expression.ExpressionEvaluation;
+import com.foundationdb.server.types.ValueSource;
 
 import java.util.List;
 

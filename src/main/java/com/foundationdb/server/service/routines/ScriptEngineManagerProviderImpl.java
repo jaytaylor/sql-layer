@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.routines;
+package com.foundationdb.server.service.routines;
 
-import com.akiban.server.error.ServiceStartupException;
-import com.akiban.server.service.Service;
-import com.akiban.server.service.config.ConfigurationService;
+import com.foundationdb.server.error.ServiceStartupException;
+import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.config.ConfigurationService;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

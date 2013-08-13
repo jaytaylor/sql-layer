@@ -15,18 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.costmodel;
+package com.foundationdb.server.test.costmodel;
 
-import com.akiban.ais.model.Group;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.TimeOperator;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.server.error.InvalidOperationException;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.operator.TimeOperator;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.server.error.InvalidOperationException;
 import org.junit.Test;
 
-import static com.akiban.qp.operator.API.*;
+import static com.foundationdb.qp.operator.API.*;
 
 public class MapCT extends CostModelBase
 {

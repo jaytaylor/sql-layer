@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.rowdata;
+package com.foundationdb.server.rowdata;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,23 +25,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.qp.memoryadapter.MemoryTableFactory;
-import com.akiban.server.TableStatus;
-import com.akiban.server.TableStatusCache;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.GroupIndex;
+import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.server.TableStatus;
+import com.foundationdb.server.TableStatusCache;
+import com.foundationdb.server.service.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.JoinColumn;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.UserTable;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.Join;
+import com.foundationdb.ais.model.JoinColumn;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.UserTable;
 
 /**
  * Caches RowDef instances. In this incarnation, this class also constructs

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.loadableplan;
+package com.foundationdb.qp.loadableplan;
 
 /** A loadable plan that implements a cursor on simple Java objects. */
 public abstract class LoadableDirectObjectPlan extends LoadablePlan<DirectObjectPlan>

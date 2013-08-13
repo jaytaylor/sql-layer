@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.model;
+package com.foundationdb.ais.model;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -27,7 +27,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import com.akiban.util.Strings;
+import com.foundationdb.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.foundationdb.sql.optimizer.plan;
 
-import com.akiban.server.types.AkType;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.parser.ValueNode;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.parser.ValueNode;
 
 /** An indicator that an index equality operand is actually IS NULL. 
  * <code>null</code> could be confused with the absence of an operand.

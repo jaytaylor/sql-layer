@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.persistitadapter.indexcursor;
+package com.foundationdb.qp.persistitadapter.indexcursor;
 
-import com.akiban.qp.expression.BoundExpressions;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.util.ValueHolder;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSource;
+import com.foundationdb.qp.expression.BoundExpressions;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.util.ValueHolder;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types3.pvalue.PValueSource;
 
 class SpatialIndexBoundExpressions implements BoundExpressions
 {

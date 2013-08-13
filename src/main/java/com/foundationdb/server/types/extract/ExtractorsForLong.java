@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types.extract;
+package com.foundationdb.server.types.extract;
 
-import com.akiban.server.error.InvalidCharToNumException;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ValueSourceIsNullException;
+import com.foundationdb.server.error.InvalidCharToNumException;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.ValueSourceIsNullException;
 import java.math.RoundingMode;
 import org.joda.time.DateTimeZone;
 

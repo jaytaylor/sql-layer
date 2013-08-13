@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.http;
+package com.foundationdb.http;
 
-import com.akiban.server.service.security.SecurityService;
-import com.akiban.server.service.security.SecurityServiceImpl;
-import com.akiban.server.service.servicemanager.GuicedServiceManager;
+import com.foundationdb.server.service.security.SecurityService;
+import com.foundationdb.server.service.security.SecurityServiceImpl;
+import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import org.junit.After;
 import org.junit.Before;
 

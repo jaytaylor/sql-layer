@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.bugs.bug1145249;
+package com.foundationdb.server.test.it.bugs.bug1145249;
 
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.ais.model.AISBuilder;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
 
 public class ManyLongTextFieldsIT extends ITBase {

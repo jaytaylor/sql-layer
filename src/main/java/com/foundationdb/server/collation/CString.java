@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.collation;
+package com.foundationdb.server.collation;
 
 /**
  * Holds a String and a collationId. Akiban Server registers a custom KeyCoder

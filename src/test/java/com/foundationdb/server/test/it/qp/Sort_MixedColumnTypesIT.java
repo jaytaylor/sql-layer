@@ -15,33 +15,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.qp;
+package com.foundationdb.server.test.it.qp;
 
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.ExpressionGenerator;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.RowsBuilder;
-import com.akiban.qp.operator.SimpleQueryContext;
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.server.test.it.ITBase;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.ExpressionGenerator;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.RowsBuilder;
+import com.foundationdb.qp.operator.SimpleQueryContext;
+import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
 import org.junit.Before;
 import org.junit.Test;
 
 
-import static com.akiban.qp.operator.API.*;
-import static com.akiban.server.test.ExpressionGenerators.field;
+import static com.foundationdb.qp.operator.API.*;
+import static com.foundationdb.server.test.ExpressionGenerators.field;
 
 public final class Sort_MixedColumnTypesIT extends ITBase {
     @Before

@@ -15,25 +15,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.pvalue;
+package com.foundationdb.server.types3.pvalue;
 
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.aksql.aktypes.AkBool;
-import com.akiban.server.types3.common.types.StringFactory;
-import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
-import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
-import com.akiban.server.types3.mcompat.mtypes.MBinary;
-import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.util.ByteSource;
-import com.akiban.util.WrappingByteSource;
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TExecutionContext;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.server.types3.aksql.aktypes.AkBool;
+import com.foundationdb.server.types3.common.types.StringFactory;
+import com.foundationdb.server.types3.mcompat.mtypes.MApproximateNumber;
+import com.foundationdb.server.types3.mcompat.mtypes.MBigDecimalWrapper;
+import com.foundationdb.server.types3.mcompat.mtypes.MBinary;
+import com.foundationdb.server.types3.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.util.ByteSource;
+import com.foundationdb.util.WrappingByteSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

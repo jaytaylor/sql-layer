@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types.typestests;
+package com.foundationdb.server.types.typestests;
 
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.extract.ConverterTestUtils;
-import com.akiban.server.types.extract.Extractors;
-import com.akiban.server.types.extract.LongExtractor;
-import com.akiban.util.ByteSource;
-import com.akiban.util.WrappingByteSource;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.extract.ConverterTestUtils;
+import com.foundationdb.server.types.extract.Extractors;
+import com.foundationdb.server.types.extract.LongExtractor;
+import com.foundationdb.util.ByteSource;
+import com.foundationdb.util.WrappingByteSource;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -33,7 +33,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.akiban.server.types.typestests.TestCase.NO_STATE;
+import static com.foundationdb.server.types.typestests.TestCase.NO_STATE;
 
 final class StandardTestCases {
     static Collection<TestCase<?>> get() {

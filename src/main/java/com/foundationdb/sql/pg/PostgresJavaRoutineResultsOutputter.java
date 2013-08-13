@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.ais.model.Parameter;
-import com.akiban.ais.model.Routine;
-import com.akiban.sql.server.ServerJavaRoutine;
-import com.akiban.sql.server.ServerJavaValues;
+import com.foundationdb.ais.model.Parameter;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.sql.server.ServerJavaRoutine;
+import com.foundationdb.sql.server.ServerJavaValues;
 
 import java.util.List;
 import java.io.ByteArrayOutputStream;

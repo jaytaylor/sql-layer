@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.foundationdb.sql.optimizer.rule;
 
-import com.akiban.sql.optimizer.plan.PlanNode;
-import com.akiban.sql.optimizer.plan.PlanVisitor;
+import com.foundationdb.sql.optimizer.plan.PlanNode;
+import com.foundationdb.sql.optimizer.plan.PlanVisitor;
 
-import com.akiban.qp.exec.Plannable;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.SimpleQueryContext;
-import com.akiban.server.explain.ExplainContext;
-import com.akiban.server.expression.Expression;
+import com.foundationdb.qp.exec.Plannable;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.SimpleQueryContext;
+import com.foundationdb.server.explain.ExplainContext;
+import com.foundationdb.server.expression.Expression;
 
 import java.util.Map;
 import java.util.HashMap;

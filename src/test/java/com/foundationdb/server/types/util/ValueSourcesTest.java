@@ -14,17 +14,17 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.server.types.util;
+package com.foundationdb.server.types.util;
 
-import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.junit.NamedParameterizedRunner.TestParameters;
-import com.akiban.junit.Parameterization;
-import com.akiban.junit.ParameterizationBuilder;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.extract.Extractors;
-import static com.akiban.server.types.AkType.*;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.extract.ConverterTestUtils;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.NamedParameterizedRunner.TestParameters;
+import com.foundationdb.junit.Parameterization;
+import com.foundationdb.junit.ParameterizationBuilder;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.extract.Extractors;
+import static com.foundationdb.server.types.AkType.*;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.extract.ConverterTestUtils;
 import static org.junit.Assert.*;
 import java.util.Collection;
 import java.util.EnumSet;

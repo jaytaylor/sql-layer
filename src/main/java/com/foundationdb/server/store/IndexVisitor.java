@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.store;
+package com.foundationdb.server.store;
 
 public abstract class IndexVisitor<K, V> {
     protected abstract void visit(K key, V value);

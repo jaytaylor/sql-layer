@@ -15,28 +15,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.pt.gi;
+package com.foundationdb.server.test.pt.gi;
 
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.api.dml.scan.NiceRow;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.test.pt.PTBase;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ToObjectValueTarget;
-import com.akiban.util.tap.Tap;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.server.api.dml.scan.NiceRow;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.test.pt.PTBase;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ToObjectValueTarget;
+import com.foundationdb.util.tap.Tap;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -45,7 +45,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static com.akiban.qp.operator.API.*;
+import static com.foundationdb.qp.operator.API.*;
 
 public class GIUpdateProfilePT extends PTBase
 {

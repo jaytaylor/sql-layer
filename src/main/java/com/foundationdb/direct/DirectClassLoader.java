@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.direct;
+package com.foundationdb.direct;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -26,7 +26,7 @@ import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
 
-import com.akiban.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.AkibanInformationSchema;
 
 /**
  * ClassLoader that generates Akiban Direct classes. There is one instance of

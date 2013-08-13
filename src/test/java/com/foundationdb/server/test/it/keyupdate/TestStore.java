@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.keyupdate;
+package com.foundationdb.server.test.it.keyupdate;
 
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.Index;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.store.IndexKeyVisitor;
-import com.akiban.server.store.Store;
-import com.akiban.server.store.TreeRecordVisitor;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.server.api.dml.ColumnSelector;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.IndexKeyVisitor;
+import com.foundationdb.server.store.Store;
+import com.foundationdb.server.store.TreeRecordVisitor;
 
 import java.util.Map;
 import java.util.SortedMap;

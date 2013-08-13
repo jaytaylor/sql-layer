@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.server.error.NoSuchSchemaException;
-import com.akiban.server.error.UnsupportedConfigurationException;
-import com.akiban.server.error.UnsupportedSQLException;
-import com.akiban.sql.aisddl.SchemaDDL;
-import com.akiban.sql.optimizer.plan.CostEstimate;
-import com.akiban.sql.parser.AccessMode;
-import com.akiban.sql.parser.ParameterNode;
-import com.akiban.sql.parser.SetConfigurationNode;
-import com.akiban.sql.parser.SetSchemaNode;
-import com.akiban.sql.parser.SetTransactionAccessNode;
-import com.akiban.sql.parser.StatementNode;
-import com.akiban.sql.parser.StatementType;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.server.error.NoSuchSchemaException;
+import com.foundationdb.server.error.UnsupportedConfigurationException;
+import com.foundationdb.server.error.UnsupportedSQLException;
+import com.foundationdb.sql.aisddl.SchemaDDL;
+import com.foundationdb.sql.optimizer.plan.CostEstimate;
+import com.foundationdb.sql.parser.AccessMode;
+import com.foundationdb.sql.parser.ParameterNode;
+import com.foundationdb.sql.parser.SetConfigurationNode;
+import com.foundationdb.sql.parser.SetSchemaNode;
+import com.foundationdb.sql.parser.SetTransactionAccessNode;
+import com.foundationdb.sql.parser.StatementNode;
+import com.foundationdb.sql.parser.StatementType;
 
 import java.util.Arrays;
 import java.io.IOException;

@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.routines;
+package com.foundationdb.server.test.it.routines;
 
-import com.akiban.qp.loadableplan.DirectObjectCursor;
-import com.akiban.qp.loadableplan.DirectObjectPlan;
-import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.BindingNotSetException;
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.error.QueryCanceledException;
+import com.foundationdb.qp.loadableplan.DirectObjectCursor;
+import com.foundationdb.qp.loadableplan.DirectObjectPlan;
+import com.foundationdb.qp.loadableplan.LoadableDirectObjectPlan;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.BindingNotSetException;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.QueryCanceledException;
 
 import java.sql.Types;
 

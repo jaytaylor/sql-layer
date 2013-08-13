@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.server;
+package com.foundationdb.sql.server;
 
-import com.akiban.ais.model.Parameter;
-import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.TableName;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TInstance;
+import com.foundationdb.ais.model.Parameter;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.TInstance;
 
 public abstract class ServerRoutineInvocation
 {

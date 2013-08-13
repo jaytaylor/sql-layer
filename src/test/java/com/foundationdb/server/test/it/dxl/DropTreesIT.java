@@ -15,22 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.dxl;
+package com.foundationdb.server.test.it.dxl;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.error.UnsupportedDropException;
-import com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
-import com.akiban.server.service.tree.TreeLink;
-import com.akiban.server.store.PersistitStoreSchemaManager;
-import com.akiban.server.store.SchemaManager;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.error.UnsupportedDropException;
+import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
+import com.foundationdb.server.service.tree.TreeLink;
+import com.foundationdb.server.store.PersistitStoreSchemaManager;
+import com.foundationdb.server.store.SchemaManager;
+import com.foundationdb.server.test.it.ITBase;
 import com.persistit.exception.PersistitException;
 import org.junit.Ignore;
 import org.junit.Test;

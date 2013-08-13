@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.dxl;
+package com.foundationdb.server.test.it.dxl;
 
-import com.akiban.server.api.FixedCountLimit;
-import com.akiban.server.api.dml.scan.ColumnSet;
-import com.akiban.server.api.dml.scan.CursorId;
-import com.akiban.server.api.dml.scan.LegacyRowWrapper;
-import com.akiban.server.api.dml.scan.ScanAllRequest;
-import com.akiban.server.api.dml.scan.ScanRequest;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.server.api.FixedCountLimit;
+import com.foundationdb.server.api.dml.scan.ColumnSet;
+import com.foundationdb.server.api.dml.scan.CursorId;
+import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
+import com.foundationdb.server.api.dml.scan.ScanAllRequest;
+import com.foundationdb.server.api.dml.scan.ScanRequest;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
 
 import static junit.framework.Assert.assertEquals;

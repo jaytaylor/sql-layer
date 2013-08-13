@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.t3expressions;
+package com.foundationdb.server.t3expressions;
 
 // TODO replace with InvalidOperationExceptions
 class OverloadException extends RuntimeException {

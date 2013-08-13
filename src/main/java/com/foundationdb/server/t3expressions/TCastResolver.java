@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.t3expressions;
+package com.foundationdb.server.t3expressions;
 
-import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TInstance;
+import com.foundationdb.server.types3.TCast;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TInstance;
 import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
 

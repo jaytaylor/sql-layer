@@ -15,23 +15,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.store;
+package com.foundationdb.server.store;
 
 import java.util.Collection;
 import java.util.Set;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.Sequence;
-import com.akiban.ais.model.SQLJJar;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.View;
-import com.akiban.ais.util.ChangedTableDescription;
-import com.akiban.qp.memoryadapter.MemoryTableFactory;
-import com.akiban.server.service.security.SecurityService;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.SQLJJar;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.View;
+import com.foundationdb.ais.util.ChangedTableDescription;
+import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.server.service.security.SecurityService;
+import com.foundationdb.server.service.session.Session;
 
 public interface SchemaManager {
     /** Flags indicating behavior regarding contained objects in DROP calls **/

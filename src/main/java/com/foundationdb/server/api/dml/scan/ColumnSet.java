@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.api.dml.scan;
+package com.foundationdb.server.api.dml.scan;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -24,7 +24,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.akiban.util.ArgumentValidation;
+import com.foundationdb.util.ArgumentValidation;
 
 public final class ColumnSet {
 

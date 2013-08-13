@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3;
+package com.foundationdb.server.types3;
 
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.collation.AkCollatorFactory;
-import com.akiban.server.types3.common.types.StringAttribute;
-import com.akiban.server.types3.common.types.TString;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueSources;
-import com.akiban.util.ArgumentValidation;
-import com.akiban.util.Equality;
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.collation.AkCollatorFactory;
+import com.foundationdb.server.types3.common.types.StringAttribute;
+import com.foundationdb.server.types3.common.types.TString;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.util.ArgumentValidation;
+import com.foundationdb.util.Equality;
 
 public final class TPreptimeValue {
 

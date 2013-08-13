@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.embedded;
+package com.foundationdb.sql.embedded;
 
-import com.akiban.ais.model.Column;
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TInstance;
-import com.akiban.sql.optimizer.TypesTranslation;
-import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
-import com.akiban.sql.types.DataTypeDescriptor;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.sql.optimizer.TypesTranslation;
+import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
+import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;

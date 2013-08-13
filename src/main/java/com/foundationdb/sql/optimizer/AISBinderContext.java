@@ -15,23 +15,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer;
+package com.foundationdb.sql.optimizer;
 
-import com.akiban.sql.StandardException;
-import com.akiban.sql.compiler.TypeComputer;
-import com.akiban.sql.parser.CreateViewNode;
-import com.akiban.sql.parser.FromSubquery;
-import com.akiban.sql.parser.SQLParser;
-import com.akiban.sql.parser.SQLParserFeature;
+import com.foundationdb.sql.StandardException;
+import com.foundationdb.sql.compiler.TypeComputer;
+import com.foundationdb.sql.parser.CreateViewNode;
+import com.foundationdb.sql.parser.FromSubquery;
+import com.foundationdb.sql.parser.SQLParser;
+import com.foundationdb.sql.parser.SQLParserFeature;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.View;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.View;
 
-import com.akiban.server.error.InvalidParameterValueException;
-import com.akiban.server.error.ViewHasBadSubqueryException;
+import com.foundationdb.server.error.InvalidParameterValueException;
+import com.foundationdb.server.error.ViewHasBadSubqueryException;
 
-import com.akiban.server.service.functions.FunctionsRegistryImpl;
+import com.foundationdb.server.service.functions.FunctionsRegistryImpl;
 
 import java.util.*;
 

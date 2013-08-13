@@ -15,18 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.store.statistics;
+package com.foundationdb.server.store.statistics;
 
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.server.api.dml.scan.LegacyRowWrapper;
-import com.akiban.server.rowdata.IndexDef;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.store.IndexVisitor;
-import com.akiban.server.store.PersistitStore;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.qp.persistitadapter.PersistitAdapter;
+import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
+import com.foundationdb.server.rowdata.IndexDef;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.IndexVisitor;
+import com.foundationdb.server.store.PersistitStore;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Value;
@@ -34,7 +34,7 @@ import com.persistit.exception.PersistitException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.akiban.server.store.statistics.IndexStatisticsVisitor.VisitorCreator;
+import static com.foundationdb.server.store.statistics.IndexStatisticsVisitor.VisitorCreator;
 
 public class PersistitStoreIndexStatistics extends AbstractStoreIndexStatistics<PersistitStore> implements VisitorCreator<Key,Value> {
     private static final Logger logger = LoggerFactory.getLogger(PersistitStoreIndexStatistics.class);

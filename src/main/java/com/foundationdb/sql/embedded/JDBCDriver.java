@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.embedded;
+package com.foundationdb.sql.embedded;
 
-import com.akiban.sql.server.ServerServiceRequirements;
-import com.akiban.server.service.monitor.ServerMonitor;
+import com.foundationdb.sql.server.ServerServiceRequirements;
+import com.foundationdb.server.service.monitor.ServerMonitor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

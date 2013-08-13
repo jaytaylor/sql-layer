@@ -15,28 +15,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.entity.changes;
+package com.foundationdb.server.entity.changes;
 
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.CharsetAndCollation;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.Type;
-import com.akiban.ais.model.Types;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.entity.model.Entity;
-import com.akiban.server.entity.model.EntityCollection;
-import com.akiban.server.entity.model.EntityField;
-import com.akiban.server.entity.model.EntityVisitor;
-import com.akiban.server.entity.model.FieldProperty;
-import com.akiban.server.entity.model.IndexField;
-import com.akiban.server.entity.model.EntityIndex;
-import com.akiban.server.entity.model.Validation;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.texpressions.Serialization;
+import com.foundationdb.ais.model.AISBuilder;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.CharsetAndCollation;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.Type;
+import com.foundationdb.ais.model.Types;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.entity.model.Entity;
+import com.foundationdb.server.entity.model.EntityCollection;
+import com.foundationdb.server.entity.model.EntityField;
+import com.foundationdb.server.entity.model.EntityVisitor;
+import com.foundationdb.server.entity.model.FieldProperty;
+import com.foundationdb.server.entity.model.IndexField;
+import com.foundationdb.server.entity.model.EntityIndex;
+import com.foundationdb.server.entity.model.Validation;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.texpressions.Serialization;
 import com.google.common.base.Function;
 import com.google.common.collect.BiMap;
 import org.slf4j.Logger;

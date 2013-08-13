@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.dxl;
+package com.foundationdb.server.service.dxl;
 
-import com.akiban.server.service.session.Session;
-import com.akiban.server.error.AkibanInternalException;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.error.AkibanInternalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

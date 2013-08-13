@@ -15,37 +15,37 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.embedded;
+package com.foundationdb.sql.embedded;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.TableName;
-import com.akiban.server.AkServerInterface;
-import com.akiban.sql.optimizer.rule.ExplainPlanContext;
-import com.akiban.sql.server.ServerServiceRequirements;
-import com.akiban.sql.server.ServerSessionBase;
-import com.akiban.sql.server.ServerSessionMonitor;
-import com.akiban.sql.server.ServerTransaction;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.AkServerInterface;
+import com.foundationdb.sql.optimizer.rule.ExplainPlanContext;
+import com.foundationdb.sql.server.ServerServiceRequirements;
+import com.foundationdb.sql.server.ServerSessionBase;
+import com.foundationdb.sql.server.ServerSessionMonitor;
+import com.foundationdb.sql.server.ServerTransaction;
 
-import com.akiban.sql.StandardException;
-import com.akiban.sql.parser.CallStatementNode;
-import com.akiban.sql.parser.DDLStatementNode;
-import com.akiban.sql.parser.DMLStatementNode;
-import com.akiban.sql.parser.SQLParser;
-import com.akiban.sql.parser.SQLParserException;
-import com.akiban.sql.parser.StatementNode;
+import com.foundationdb.sql.StandardException;
+import com.foundationdb.sql.parser.CallStatementNode;
+import com.foundationdb.sql.parser.DDLStatementNode;
+import com.foundationdb.sql.parser.DMLStatementNode;
+import com.foundationdb.sql.parser.SQLParser;
+import com.foundationdb.sql.parser.SQLParserException;
+import com.foundationdb.sql.parser.StatementNode;
 
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.error.ErrorCode;
-import com.akiban.server.error.SQLParseException;
-import com.akiban.server.error.SQLParserInternalException;
-import com.akiban.server.error.UnsupportedSQLException;
-import com.akiban.server.explain.Explainable;
-import com.akiban.server.explain.Explainer;
-import com.akiban.server.service.monitor.MonitorStage;
-import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.server.api.DDLFunctions;
+import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.error.SQLParseException;
+import com.foundationdb.server.error.SQLParserInternalException;
+import com.foundationdb.server.error.UnsupportedSQLException;
+import com.foundationdb.server.explain.Explainable;
+import com.foundationdb.server.explain.Explainer;
+import com.foundationdb.server.service.monitor.MonitorStage;
+import static com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

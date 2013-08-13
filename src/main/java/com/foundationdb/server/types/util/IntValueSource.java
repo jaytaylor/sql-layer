@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types.util;
+package com.foundationdb.server.types.util;
 
-import com.akiban.server.types.AbstractValueSource;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ValueSourceIsNullException;
+import com.foundationdb.server.types.AbstractValueSource;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.ValueSourceIsNullException;
 
 public final class IntValueSource extends AbstractValueSource {
 

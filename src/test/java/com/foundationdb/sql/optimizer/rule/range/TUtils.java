@@ -15,23 +15,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule.range;
+package com.foundationdb.sql.optimizer.rule.range;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.aisb2.AISBBasedBuilder;
-import com.akiban.server.expression.std.Comparison;
-import com.akiban.server.types.AkType;
-import com.akiban.sql.optimizer.plan.ColumnExpression;
-import com.akiban.sql.optimizer.plan.ComparisonCondition;
-import com.akiban.sql.optimizer.plan.ConditionExpression;
-import com.akiban.sql.optimizer.plan.ConstantExpression;
-import com.akiban.sql.optimizer.plan.ExpressionNode;
-import com.akiban.sql.optimizer.plan.FunctionCondition;
-import com.akiban.sql.optimizer.plan.LogicalFunctionCondition;
-import com.akiban.sql.optimizer.plan.TableNode;
-import com.akiban.sql.optimizer.plan.TableSource;
-import com.akiban.sql.optimizer.plan.TableTree;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.server.expression.std.Comparison;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.sql.optimizer.plan.ColumnExpression;
+import com.foundationdb.sql.optimizer.plan.ComparisonCondition;
+import com.foundationdb.sql.optimizer.plan.ConditionExpression;
+import com.foundationdb.sql.optimizer.plan.ConstantExpression;
+import com.foundationdb.sql.optimizer.plan.ExpressionNode;
+import com.foundationdb.sql.optimizer.plan.FunctionCondition;
+import com.foundationdb.sql.optimizer.plan.LogicalFunctionCondition;
+import com.foundationdb.sql.optimizer.plan.TableNode;
+import com.foundationdb.sql.optimizer.plan.TableSource;
+import com.foundationdb.sql.optimizer.plan.TableTree;
 
 import java.util.Arrays;
 import java.util.Collections;

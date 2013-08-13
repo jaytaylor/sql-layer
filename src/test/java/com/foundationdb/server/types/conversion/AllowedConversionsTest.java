@@ -15,23 +15,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types.conversion;
+package com.foundationdb.server.types.conversion;
 
-import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.junit.OnlyIf;
-import com.akiban.junit.OnlyIfNot;
-import com.akiban.junit.Parameterization;
-import com.akiban.junit.ParameterizationBuilder;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.server.Quote;
-import com.akiban.server.error.InconvertibleTypesException;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ValueSourceHelper;
-import com.akiban.server.types.ValueTarget;
-import com.akiban.util.AkibanAppender;
-import com.akiban.util.ByteSource;
-import com.akiban.util.WrappingByteSource;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.OnlyIf;
+import com.foundationdb.junit.OnlyIfNot;
+import com.foundationdb.junit.Parameterization;
+import com.foundationdb.junit.ParameterizationBuilder;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.server.Quote;
+import com.foundationdb.server.error.InconvertibleTypesException;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.ValueSourceHelper;
+import com.foundationdb.server.types.ValueTarget;
+import com.foundationdb.util.AkibanAppender;
+import com.foundationdb.util.ByteSource;
+import com.foundationdb.util.WrappingByteSource;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 

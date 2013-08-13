@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.util;
+package com.foundationdb.ais.util;
 
 public class TableChange {
     public static enum ChangeType { ADD, DROP, MODIFY }

@@ -15,18 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.entity.fromais;
+package com.foundationdb.server.entity.fromais;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.NopVisitor;
-import com.akiban.ais.model.UserTable;
-import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.junit.Parameterization;
-import com.akiban.server.entity.model.Space;
-import com.akiban.server.rowdata.SchemaFactory;
-import com.akiban.util.JUnitUtils;
-import com.akiban.util.JsonUtils;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.NopVisitor;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.Parameterization;
+import com.foundationdb.server.entity.model.Space;
+import com.foundationdb.server.rowdata.SchemaFactory;
+import com.foundationdb.util.JUnitUtils;
+import com.foundationdb.util.JsonUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
@@ -43,8 +43,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.akiban.util.JsonUtils.normalizeJson;
-import static com.akiban.util.JsonUtils.readValue;
+import static com.foundationdb.util.JsonUtils.normalizeJson;
+import static com.foundationdb.util.JsonUtils.readValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 

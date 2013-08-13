@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server;
+package com.foundationdb.server;
 
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.server.types3.TInstance;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.server.types3.TInstance;
 import com.persistit.Key;
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.types3.pvalue.PUnderlying;
+import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types3.pvalue.PValueSource;
 
 import java.util.EnumMap;
 

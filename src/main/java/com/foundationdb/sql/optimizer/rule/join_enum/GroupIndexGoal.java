@@ -15,33 +15,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule.join_enum;
+package com.foundationdb.sql.optimizer.rule.join_enum;
 
-import com.akiban.sql.optimizer.rule.EquivalenceFinder;
-import com.akiban.sql.optimizer.rule.PlanContext;
-import com.akiban.sql.optimizer.rule.cost.CostEstimator.SelectivityConditions;
-import com.akiban.sql.optimizer.rule.cost.PlanCostEstimator;
-import com.akiban.sql.optimizer.rule.join_enum.DPhyp.JoinOperator;
-import com.akiban.sql.optimizer.rule.range.ColumnRanges;
+import com.foundationdb.sql.optimizer.rule.EquivalenceFinder;
+import com.foundationdb.sql.optimizer.rule.PlanContext;
+import com.foundationdb.sql.optimizer.rule.cost.CostEstimator.SelectivityConditions;
+import com.foundationdb.sql.optimizer.rule.cost.PlanCostEstimator;
+import com.foundationdb.sql.optimizer.rule.join_enum.DPhyp.JoinOperator;
+import com.foundationdb.sql.optimizer.rule.range.ColumnRanges;
 
-import com.akiban.sql.optimizer.plan.*;
-import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
-import com.akiban.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
+import com.foundationdb.sql.optimizer.plan.*;
+import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
+import com.foundationdb.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
 
-import com.akiban.ais.model.*;
-import com.akiban.ais.model.Index.JoinType;
-import com.akiban.server.error.UnsupportedSQLException;
-import com.akiban.server.expression.std.Comparison;
-import com.akiban.server.types.AkType;
-import com.akiban.server.geophile.Space;
-import com.akiban.server.service.text.FullTextQueryBuilder;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.aksql.aktypes.AkBool;
-import com.akiban.sql.optimizer.TypesTranslation;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
+import com.foundationdb.ais.model.*;
+import com.foundationdb.ais.model.Index.JoinType;
+import com.foundationdb.server.error.UnsupportedSQLException;
+import com.foundationdb.server.expression.std.Comparison;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.geophile.Space;
+import com.foundationdb.server.service.text.FullTextQueryBuilder;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.server.types3.aksql.aktypes.AkBool;
+import com.foundationdb.sql.optimizer.TypesTranslation;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.types.TypeId;
 
 import com.google.common.base.Function;
 import org.slf4j.Logger;

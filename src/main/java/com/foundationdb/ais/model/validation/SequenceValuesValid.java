@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.model.validation;
+package com.foundationdb.ais.model.validation;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Sequence;
-import com.akiban.server.error.SequenceIntervalZeroException;
-import com.akiban.server.error.SequenceMinGEMaxException;
-import com.akiban.server.error.SequenceStartInRangeException;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.server.error.SequenceIntervalZeroException;
+import com.foundationdb.server.error.SequenceMinGEMaxException;
+import com.foundationdb.server.error.SequenceStartInRangeException;
 
 public class SequenceValuesValid implements AISValidation {
 

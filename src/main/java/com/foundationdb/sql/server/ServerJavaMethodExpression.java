@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.server;
+package com.foundationdb.sql.server;
 
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.ais.model.Routine;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionEvaluation;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.ExpressionEvaluation;
 
 import java.lang.reflect.Method;
 import java.util.List;

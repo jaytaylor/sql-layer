@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.rowdata;
+package com.foundationdb.server.rowdata;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import com.akiban.ais.model.*;
-import com.akiban.server.AkServerUtil;
-import com.akiban.server.TableStatus;
+import com.foundationdb.ais.model.*;
+import com.foundationdb.server.AkServerUtil;
+import com.foundationdb.server.TableStatus;
 
 /**
  * Contain the relevant schema information for one version of a table

@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.mcompat.mfuncs;
+package com.foundationdb.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.TScalar;
-import com.akiban.server.types3.common.funcs.TPow;
-import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
+import com.foundationdb.server.types3.TScalar;
+import com.foundationdb.server.types3.common.funcs.TPow;
+import com.foundationdb.server.types3.mcompat.mtypes.MApproximateNumber;
 
 public class MPow {
     public static final TScalar INSTANCE = new TPow(MApproximateNumber.DOUBLE) {};

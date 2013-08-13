@@ -15,17 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test;
+package com.foundationdb.server.test;
 
-import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.listener.ListenerService;
-import com.akiban.server.service.lock.LockService;
-import com.akiban.server.service.servicemanager.GuicedServiceManager;
-import com.akiban.server.service.tree.TreeService;
-import com.akiban.server.store.PersistitStore;
-import com.akiban.server.store.SchemaManager;
-import com.akiban.server.store.Store;
-import com.akiban.server.test.it.PersistitITBase;
+import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.server.service.listener.ListenerService;
+import com.foundationdb.server.service.lock.LockService;
+import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
+import com.foundationdb.server.service.tree.TreeService;
+import com.foundationdb.server.store.PersistitStore;
+import com.foundationdb.server.store.SchemaManager;
+import com.foundationdb.server.store.Store;
+import com.foundationdb.server.test.it.PersistitITBase;
 import com.google.inject.Inject;
 import org.junit.Test;
 import java.util.Map;

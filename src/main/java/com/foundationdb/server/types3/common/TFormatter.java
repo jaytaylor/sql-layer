@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.common;
+package com.foundationdb.server.types3.common;
 
-import com.akiban.server.types3.TClassFormatter;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.util.AkibanAppender;
+import com.foundationdb.server.types3.TClassFormatter;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.util.AkibanAppender;
 
 public class TFormatter {
 

@@ -15,19 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule.range;
+package com.foundationdb.sql.optimizer.rule.range;
 
-import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.junit.Parameterization;
-import com.akiban.junit.ParameterizationBuilder;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.Parameterization;
+import com.foundationdb.junit.ParameterizationBuilder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
 
-import static com.akiban.sql.optimizer.rule.range.ComparisonResult.*;
-import static com.akiban.sql.optimizer.rule.range.TUtils.exclusive;
-import static com.akiban.sql.optimizer.rule.range.TUtils.inclusive;
+import static com.foundationdb.sql.optimizer.rule.range.ComparisonResult.*;
+import static com.foundationdb.sql.optimizer.rule.range.TUtils.exclusive;
+import static com.foundationdb.sql.optimizer.rule.range.TUtils.inclusive;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(NamedParameterizedRunner.class)

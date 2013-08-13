@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.http;
+package com.foundationdb.http;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -28,8 +28,8 @@ import org.eclipse.jetty.http.HttpMethods;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.server.Request;
 
-import com.akiban.rest.RestResponseBuilder;
-import com.akiban.server.error.ErrorCode;
+import com.foundationdb.rest.RestResponseBuilder;
+import com.foundationdb.server.error.ErrorCode;
 import org.eclipse.jetty.server.handler.ErrorHandler;
 
 public class JsonErrorHandler extends ErrorHandler {

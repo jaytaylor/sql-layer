@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.qp;
+package com.foundationdb.server.test.it.qp;
 
-import com.akiban.qp.row.AbstractRow;
-import com.akiban.qp.row.HKey;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.NullValueSource;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueSources;
+import com.foundationdb.qp.row.AbstractRow;
+import com.foundationdb.qp.row.HKey;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.types.NullValueSource;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueSources;
 
 public final class NullsRow extends AbstractRow {
     @Override

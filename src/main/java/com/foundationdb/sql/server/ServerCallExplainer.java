@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.server;
+package com.foundationdb.sql.server;
 
-import com.akiban.server.explain.*;
+import com.foundationdb.server.explain.*;
 
 public class ServerCallExplainer extends CompoundExplainer
 {

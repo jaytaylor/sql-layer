@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.server.service.is;
+package com.foundationdb.server.service.is;
 
 public interface StorageSchemaTablesService {
 }

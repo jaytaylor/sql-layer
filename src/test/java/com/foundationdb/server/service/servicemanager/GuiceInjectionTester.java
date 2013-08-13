@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.servicemanager;
+package com.foundationdb.server.service.servicemanager;
 
-import com.akiban.server.service.servicemanager.configuration.DefaultServiceConfigurationHandler;
-import com.akiban.util.JUnitUtils;
+import com.foundationdb.server.service.servicemanager.configuration.DefaultServiceConfigurationHandler;
+import com.foundationdb.util.JUnitUtils;
 import com.google.inject.Module;
 
 import java.util.ArrayList;

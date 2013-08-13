@@ -15,19 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.explain.format;
+package com.foundationdb.server.explain.format;
 
-import com.akiban.server.explain.Explainer;
-import com.akiban.server.explain.ExplainContext;
-import com.akiban.server.explain.std.ExpressionExplainer;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.expression.ExpressionType;
-import com.akiban.server.expression.std.ArithOps;
-import com.akiban.server.expression.std.FromUnixExpression;
-import com.akiban.server.expression.std.LiteralExpression;
-import com.akiban.server.expression.std.SubStringExpression;
-import com.akiban.server.types.AkType;
+import com.foundationdb.server.explain.Explainer;
+import com.foundationdb.server.explain.ExplainContext;
+import com.foundationdb.server.explain.std.ExpressionExplainer;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.ExpressionComposer;
+import com.foundationdb.server.expression.ExpressionType;
+import com.foundationdb.server.expression.std.ArithOps;
+import com.foundationdb.server.expression.std.FromUnixExpression;
+import com.foundationdb.server.expression.std.LiteralExpression;
+import com.foundationdb.server.expression.std.SubStringExpression;
+import com.foundationdb.server.types.AkType;
 import java.util.Arrays;
 import java.util.Collections;
 import static org.junit.Assert.assertEquals;

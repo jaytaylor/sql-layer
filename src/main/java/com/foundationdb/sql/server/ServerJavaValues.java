@@ -15,33 +15,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.server;
+package com.foundationdb.sql.server;
 
-import com.akiban.server.error.NoSuchCastException;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.server.types.ToObjectValueTarget;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.extract.Extractors;
-import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.aksql.aktypes.AkBool;
-import com.akiban.server.types3.aksql.aktypes.AkResultSet;
-import com.akiban.server.types3.common.BigDecimalWrapper;
-import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
-import com.akiban.server.types3.mcompat.mtypes.MBinary;
-import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueSources;
-import com.akiban.util.AkibanAppender;
-import com.akiban.util.WrappingByteSource;
+import com.foundationdb.server.error.NoSuchCastException;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.FromObjectValueSource;
+import com.foundationdb.server.types.ToObjectValueTarget;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.extract.Extractors;
+import com.foundationdb.server.types3.TCast;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TExecutionContext;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.server.types3.aksql.aktypes.AkBool;
+import com.foundationdb.server.types3.aksql.aktypes.AkResultSet;
+import com.foundationdb.server.types3.common.BigDecimalWrapper;
+import com.foundationdb.server.types3.mcompat.mtypes.MApproximateNumber;
+import com.foundationdb.server.types3.mcompat.mtypes.MBinary;
+import com.foundationdb.server.types3.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.util.AkibanAppender;
+import com.foundationdb.util.WrappingByteSource;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;

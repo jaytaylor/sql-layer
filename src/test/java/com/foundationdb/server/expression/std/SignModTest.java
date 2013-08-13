@@ -15,17 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
 import java.util.EnumSet;
-import com.akiban.server.types.extract.Extractors;
+import com.foundationdb.server.types.extract.Extractors;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import com.akiban.server.expression.Expression;
-import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.junit.Parameterization;
-import com.akiban.junit.ParameterizationBuilder;
-import com.akiban.server.types.AkType;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.Parameterization;
+import com.foundationdb.junit.ParameterizationBuilder;
+import com.foundationdb.server.types.AkType;
 import java.util.Collection;
 import org.junit.Test;
 import org.junit.runner.RunWith;

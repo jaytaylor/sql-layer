@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.operator;
+package com.foundationdb.qp.operator;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.row.Row;
-import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.error.ErrorCode;
-import com.akiban.server.error.InvalidOperationException;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.service.ServiceManager;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.error.InvalidOperationException;
 
 import java.util.Date;
 

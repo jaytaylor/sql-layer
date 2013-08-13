@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.ui;
+package com.foundationdb.server.service.ui;
 
-import com.akiban.server.service.Service;
-import com.akiban.server.service.ServiceManager;
+import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.ServiceManager;
 
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;

@@ -15,26 +15,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.entity.fromais;
+package com.foundationdb.server.entity.fromais;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.FullTextIndex;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.JoinColumn;
-import com.akiban.ais.model.PrimaryKey;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.entity.model.Entity;
-import com.akiban.server.entity.model.EntityCollection;
-import com.akiban.server.entity.model.FieldProperty;
-import com.akiban.server.entity.model.IndexField;
-import com.akiban.server.entity.model.EntityField;
-import com.akiban.server.entity.model.EntityIndex;
-import com.akiban.server.entity.model.Validation;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TInstance;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.FullTextIndex;
+import com.foundationdb.ais.model.GroupIndex;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.Join;
+import com.foundationdb.ais.model.JoinColumn;
+import com.foundationdb.ais.model.PrimaryKey;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.entity.model.Entity;
+import com.foundationdb.server.entity.model.EntityCollection;
+import com.foundationdb.server.entity.model.FieldProperty;
+import com.foundationdb.server.entity.model.IndexField;
+import com.foundationdb.server.entity.model.EntityField;
+import com.foundationdb.server.entity.model.EntityIndex;
+import com.foundationdb.server.entity.model.Validation;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TInstance;
 import com.google.common.base.Predicate;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.Collections2;

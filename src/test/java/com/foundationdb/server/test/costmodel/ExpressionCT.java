@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.costmodel;
+package com.foundationdb.server.test.costmodel;
 
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.expression.std.ArithExpression;
-import com.akiban.server.expression.std.ArithOps;
-import com.akiban.server.expression.std.LiteralExpression;
-import com.akiban.server.types.AkType;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.ExpressionEvaluation;
+import com.foundationdb.server.expression.std.ArithExpression;
+import com.foundationdb.server.expression.std.ArithOps;
+import com.foundationdb.server.expression.std.LiteralExpression;
+import com.foundationdb.server.types.AkType;
 import org.junit.Test;
 
 public class ExpressionCT extends CostModelBase

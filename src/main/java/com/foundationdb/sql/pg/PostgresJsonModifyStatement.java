@@ -15,18 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.sql.optimizer.plan.CostEstimate;
-import static com.akiban.sql.pg.PostgresJsonCompiler.JsonResultColumn;
-import static com.akiban.sql.pg.PostgresJsonStatement.jsonColumnNames;
-import static com.akiban.sql.pg.PostgresJsonStatement.jsonColumnTypes;
+import com.foundationdb.sql.optimizer.plan.CostEstimate;
+import static com.foundationdb.sql.pg.PostgresJsonCompiler.JsonResultColumn;
+import static com.foundationdb.sql.pg.PostgresJsonStatement.jsonColumnNames;
+import static com.foundationdb.sql.pg.PostgresJsonStatement.jsonColumnTypes;
 
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
 
 import java.util.*;
 

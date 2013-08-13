@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.persistitadapter.indexcursor;
+package com.foundationdb.qp.persistitadapter.indexcursor;
 
-import com.akiban.qp.row.Row;
+import com.foundationdb.qp.row.Row;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Key.Direction;

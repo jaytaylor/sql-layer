@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.model.aisb2;
+package com.foundationdb.ais.model.aisb2;
 
-import static com.akiban.ais.model.Routine.*;
+import static com.foundationdb.ais.model.Routine.*;
 
 public interface NewRoutineBuilder {
     NewRoutineBuilder language(String language, CallingConvention callingConvention);

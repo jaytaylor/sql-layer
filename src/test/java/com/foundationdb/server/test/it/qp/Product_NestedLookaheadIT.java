@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.qp;
+package com.foundationdb.server.test.it.qp;
 
 public class Product_NestedLookaheadIT extends Product_NestedIT
 {

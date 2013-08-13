@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.embedded;
+package com.foundationdb.sql.embedded;
 
 import java.sql.SQLWarning;
 
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.error.ErrorCode;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.server.error.ErrorCode;
 
 public class JDBCWarning extends SQLWarning
 {

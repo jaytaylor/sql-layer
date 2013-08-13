@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.server;
+package com.foundationdb.sql.server;
 
-import com.akiban.ais.model.Routine;
+import com.foundationdb.ais.model.Routine;
 
 import java.util.ArrayDeque;
 import java.util.Deque;

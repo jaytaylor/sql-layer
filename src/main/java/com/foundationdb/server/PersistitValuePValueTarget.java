@@ -14,11 +14,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.server;
+package com.foundationdb.server;
 
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.pvalue.PValueTarget;
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.pvalue.PValueTarget;
 import com.persistit.Value;
 
 public final class PersistitValuePValueTarget implements PValueTarget {

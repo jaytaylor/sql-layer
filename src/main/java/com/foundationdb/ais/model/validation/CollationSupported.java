@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.model.validation;
+package com.foundationdb.ais.model.validation;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.collation.AkCollatorFactory;
-import com.akiban.server.collation.InvalidCollationException;
-import com.akiban.server.error.UnsupportedCollationException;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.collation.AkCollatorFactory;
+import com.foundationdb.server.collation.InvalidCollationException;
+import com.foundationdb.server.error.UnsupportedCollationException;
 
 /**
  * Verify the table default collation set for each table and column are valid

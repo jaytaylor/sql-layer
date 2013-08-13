@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.ais.model.Parameter;
-import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.Types;
-import com.akiban.server.Quote;
-import com.akiban.server.error.ExternalRoutineInvocationException;
-import com.akiban.server.error.SQLParserInternalException;
-import com.akiban.sql.StandardException;
-import com.akiban.sql.optimizer.TypesTranslation;
-import com.akiban.sql.server.ServerJavaRoutine;
-import com.akiban.sql.server.ServerJavaValues;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
-import com.akiban.util.AkibanAppender;
+import com.foundationdb.ais.model.Parameter;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.Types;
+import com.foundationdb.server.Quote;
+import com.foundationdb.server.error.ExternalRoutineInvocationException;
+import com.foundationdb.server.error.SQLParserInternalException;
+import com.foundationdb.sql.StandardException;
+import com.foundationdb.sql.optimizer.TypesTranslation;
+import com.foundationdb.sql.server.ServerJavaRoutine;
+import com.foundationdb.sql.server.ServerJavaValues;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.types.TypeId;
+import com.foundationdb.util.AkibanAppender;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;

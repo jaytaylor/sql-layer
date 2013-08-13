@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
-import com.akiban.server.expression.Expression;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.extract.ConverterTestUtils;
-import com.akiban.server.types.extract.Extractors;
-import com.akiban.server.types.extract.LongExtractor;
-import com.akiban.server.types.util.BoolValueSource;
-import com.akiban.server.types.util.ValueHolder;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.extract.ConverterTestUtils;
+import com.foundationdb.server.types.extract.Extractors;
+import com.foundationdb.server.types.extract.LongExtractor;
+import com.foundationdb.server.types.util.BoolValueSource;
+import com.foundationdb.server.types.util.ValueHolder;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

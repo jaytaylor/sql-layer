@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.store;
+package com.foundationdb.server.store;
 
-import com.akiban.util.Undef;
+import com.foundationdb.util.Undef;
 import com.persistit.Key;
 import com.persistit.Value;
 

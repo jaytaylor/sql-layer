@@ -15,19 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.persistitadapter;
+package com.foundationdb.qp.persistitadapter;
 
-import com.akiban.ais.model.TableIndex;
-import com.akiban.qp.expression.IndexBound;
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.api.dml.scan.LegacyRowWrapper;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.store.Store;
+import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.qp.expression.IndexBound;
+import com.foundationdb.qp.expression.IndexKeyRange;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.server.api.dml.ColumnSelector;
+import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.Store;
 
 public class OneTableRowCollector extends OperatorBasedRowCollector
 {

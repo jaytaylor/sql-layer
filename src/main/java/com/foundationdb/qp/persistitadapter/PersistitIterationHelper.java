@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.persistitadapter;
+package com.foundationdb.qp.persistitadapter;
 
-import com.akiban.qp.persistitadapter.indexcursor.IterationHelper;
-import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.util.ShareHolder;
+import com.foundationdb.qp.persistitadapter.indexcursor.IterationHelper;
+import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRow;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.util.ShareHolder;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Key.Direction;

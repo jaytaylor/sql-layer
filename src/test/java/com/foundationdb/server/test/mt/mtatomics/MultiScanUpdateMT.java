@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.mt.mtatomics;
+package com.foundationdb.server.test.mt.mtatomics;
 
-import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.junit.Parameterization;
-import com.akiban.server.api.DMLFunctions;
-import com.akiban.server.api.dml.ConstantColumnSelector;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.test.it.multiscan_update.MultiScanUpdateIT;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.Parameterization;
+import com.foundationdb.server.api.DMLFunctions;
+import com.foundationdb.server.api.dml.ConstantColumnSelector;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.test.it.multiscan_update.MultiScanUpdateIT;
 import org.junit.After;
 import org.junit.Before;
 

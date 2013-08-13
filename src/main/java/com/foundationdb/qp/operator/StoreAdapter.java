@@ -15,36 +15,36 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.operator;
+package com.foundationdb.qp.operator;
 
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.HKey;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.PrimaryKey;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.persistitadapter.RowDataCreator;
-import com.akiban.qp.persistitadapter.Sorter;
-import com.akiban.qp.persistitadapter.indexcursor.IterationHelper;
-import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
-import com.akiban.qp.row.AbstractRow;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.NiceRow;
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.tree.KeyCreator;
-import com.akiban.server.store.Store;
-import com.akiban.server.types.ValueSource;
-import com.akiban.util.tap.InOutTap;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.HKey;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.PrimaryKey;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.expression.IndexKeyRange;
+import com.foundationdb.qp.persistitadapter.RowDataCreator;
+import com.foundationdb.qp.persistitadapter.Sorter;
+import com.foundationdb.qp.persistitadapter.indexcursor.IterationHelper;
+import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRow;
+import com.foundationdb.qp.row.AbstractRow;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.api.dml.scan.NiceRow;
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.tree.KeyCreator;
+import com.foundationdb.server.store.Store;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.util.tap.InOutTap;
 
 import java.util.concurrent.atomic.AtomicLong;
 

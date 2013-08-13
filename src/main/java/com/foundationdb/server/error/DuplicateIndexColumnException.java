@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.error;
+package com.foundationdb.server.error;
 
-import com.akiban.ais.model.Index;
+import com.foundationdb.ais.model.Index;
 
 public class DuplicateIndexColumnException extends InvalidOperationException {
     public DuplicateIndexColumnException (Index index, String columnName) {

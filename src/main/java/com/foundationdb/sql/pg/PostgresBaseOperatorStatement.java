@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TInstance;
-import com.akiban.sql.optimizer.TypesTranslation;
-import com.akiban.sql.optimizer.plan.BasePlannable;
-import com.akiban.sql.optimizer.plan.PhysicalSelect;
-import com.akiban.sql.optimizer.plan.PhysicalUpdate;
-import com.akiban.sql.optimizer.rule.PlanContext;
-import com.akiban.sql.parser.DMLStatementNode;
-import com.akiban.sql.parser.ParameterNode;
-import com.akiban.sql.parser.StatementNode;
-import com.akiban.sql.server.ServerPlanContext;
-import com.akiban.sql.types.DataTypeDescriptor;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.sql.optimizer.TypesTranslation;
+import com.foundationdb.sql.optimizer.plan.BasePlannable;
+import com.foundationdb.sql.optimizer.plan.PhysicalSelect;
+import com.foundationdb.sql.optimizer.plan.PhysicalUpdate;
+import com.foundationdb.sql.optimizer.rule.PlanContext;
+import com.foundationdb.sql.parser.DMLStatementNode;
+import com.foundationdb.sql.parser.ParameterNode;
+import com.foundationdb.sql.parser.StatementNode;
+import com.foundationdb.sql.server.ServerPlanContext;
+import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import java.util.List;
 import java.util.Set;

@@ -15,23 +15,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule.cost;
+package com.foundationdb.sql.optimizer.rule.cost;
 
-import com.akiban.server.geophile.BoxLatLon;
-import com.akiban.sql.optimizer.rule.cost.CostEstimator.IndexIntersectionCoster;
-import com.akiban.sql.optimizer.rule.cost.CostEstimator.SelectivityConditions;
-import com.akiban.sql.optimizer.rule.range.RangeSegment;
-import static com.akiban.sql.optimizer.rule.OperatorAssembler.INSERTION_SORT_MAX_LIMIT;
-import static com.akiban.sql.optimizer.rule.cost.CostEstimator.simpleRound;
+import com.foundationdb.server.geophile.BoxLatLon;
+import com.foundationdb.sql.optimizer.rule.cost.CostEstimator.IndexIntersectionCoster;
+import com.foundationdb.sql.optimizer.rule.cost.CostEstimator.SelectivityConditions;
+import com.foundationdb.sql.optimizer.rule.range.RangeSegment;
+import static com.foundationdb.sql.optimizer.rule.OperatorAssembler.INSERTION_SORT_MAX_LIMIT;
+import static com.foundationdb.sql.optimizer.rule.cost.CostEstimator.simpleRound;
 
-import com.akiban.sql.optimizer.plan.*;
+import com.foundationdb.sql.optimizer.plan.*;
 
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.geophile.SpaceLatLon;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.common.BigDecimalWrapper;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.geophile.SpaceLatLon;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.common.BigDecimalWrapper;
 
 import java.math.BigDecimal;
 import java.util.*;

@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.mcompat.aggr;
+package com.foundationdb.server.types3.mcompat.aggr;
 
-import com.akiban.server.types3.TAggregator;
-import com.akiban.server.types3.TFixedTypeAggregator;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
+import com.foundationdb.server.types3.TAggregator;
+import com.foundationdb.server.types3.TFixedTypeAggregator;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueTarget;
 
 public class MGroupConcat extends TFixedTypeAggregator
 {

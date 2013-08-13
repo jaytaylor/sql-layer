@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression;
+package com.foundationdb.server.expression;
 
-import com.akiban.qp.exec.Plannable;
-import com.akiban.server.explain.Explainable;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
+import com.foundationdb.qp.exec.Plannable;
+import com.foundationdb.server.explain.Explainable;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
 import java.util.Map;
 
 public interface Expression extends Explainable {

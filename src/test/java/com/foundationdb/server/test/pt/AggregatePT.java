@@ -15,51 +15,51 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.pt;
+package com.foundationdb.server.test.pt;
 
-import com.akiban.qp.operator.ExpressionGenerator;
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.server.service.servicemanager.GuicedServiceManager.BindingsConfigurationProvider;
-import com.akiban.server.store.PersistitStore;
-import com.akiban.server.test.ApiTestBase;
+import com.foundationdb.qp.operator.ExpressionGenerator;
+import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.server.service.servicemanager.GuicedServiceManager.BindingsConfigurationProvider;
+import com.foundationdb.server.store.PersistitStore;
+import com.foundationdb.server.test.ApiTestBase;
 
-import com.akiban.ais.model.TableIndex;
-import com.akiban.qp.expression.IndexBound;
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.expression.RowBasedUnboundExpressions;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.LeafCursor;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.OperatorCursor;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryBindingsCursor;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.row.ValuesHolderRow;
-import com.akiban.qp.row.ValuesRow;
-import com.akiban.qp.rowtype.DerivedTypesSchema;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.ValuesRowType;
-import com.akiban.server.api.dml.SetColumnSelector;
-import com.akiban.server.error.QueryCanceledException;
-import com.akiban.server.explain.CompoundExplainer;
-import com.akiban.server.explain.ExplainContext;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.expression.std.Expressions;
-import com.akiban.server.expression.std.ExpressionTypes;
-import com.akiban.server.service.functions.FunctionsRegistry;
-import com.akiban.server.service.functions.FunctionsRegistryImpl;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.test.ExpressionGenerators;
-import com.akiban.server.test.it.PersistitITBase;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.qp.expression.IndexBound;
+import com.foundationdb.qp.expression.IndexKeyRange;
+import com.foundationdb.qp.expression.RowBasedUnboundExpressions;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.LeafCursor;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.operator.OperatorCursor;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryBindingsCursor;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesHolderRow;
+import com.foundationdb.qp.row.ValuesRow;
+import com.foundationdb.qp.rowtype.DerivedTypesSchema;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.rowtype.ValuesRowType;
+import com.foundationdb.server.api.dml.SetColumnSelector;
+import com.foundationdb.server.error.QueryCanceledException;
+import com.foundationdb.server.explain.CompoundExplainer;
+import com.foundationdb.server.explain.ExplainContext;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.ExpressionComposer;
+import com.foundationdb.server.expression.std.Expressions;
+import com.foundationdb.server.expression.std.ExpressionTypes;
+import com.foundationdb.server.service.functions.FunctionsRegistry;
+import com.foundationdb.server.service.functions.FunctionsRegistryImpl;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.test.ExpressionGenerators;
+import com.foundationdb.server.test.it.PersistitITBase;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -73,8 +73,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.LockSupport;
 
-import static com.akiban.server.test.ExpressionGenerators.boundField;
-import static com.akiban.server.test.ExpressionGenerators.field;
+import static com.foundationdb.server.test.ExpressionGenerators.boundField;
+import static com.foundationdb.server.test.ExpressionGenerators.field;
 
 public class AggregatePT extends ApiTestBase {
     public static final int NKEYS = 10;

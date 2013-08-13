@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql;
+package com.foundationdb.sql;
 
-import com.akiban.junit.Parameterization;
+import com.foundationdb.junit.Parameterization;
 
 import org.junit.Ignore;
 

@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.mcompat.mtypes;
+package com.foundationdb.server.types3.mcompat.mtypes;
 
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.collation.AkCollatorFactory;
-import com.akiban.server.types3.PValueIO;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.common.types.StringAttribute;
-import com.akiban.server.types3.common.types.StringFactory;
-import com.akiban.server.types3.common.types.TString;
-import com.akiban.server.types3.mcompat.MBundle;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.sql.types.TypeId;
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.collation.AkCollatorFactory;
+import com.foundationdb.server.types3.PValueIO;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TExecutionContext;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.common.types.StringAttribute;
+import com.foundationdb.server.types3.common.types.StringFactory;
+import com.foundationdb.server.types3.common.types.TString;
+import com.foundationdb.server.types3.mcompat.MBundle;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueTarget;
+import com.foundationdb.sql.types.TypeId;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 

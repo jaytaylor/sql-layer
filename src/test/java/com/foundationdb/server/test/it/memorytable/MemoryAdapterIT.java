@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.memorytable;
+package com.foundationdb.server.test.it.memorytable;
 
 import static org.junit.Assert.*;
 
@@ -24,26 +24,26 @@ import java.sql.Statement;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
-import com.akiban.qp.memoryadapter.MemoryGroupCursor;
+import com.foundationdb.qp.memoryadapter.MemoryGroupCursor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.aisb2.AISBBasedBuilder;
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.memoryadapter.MemoryAdapter;
-import com.akiban.qp.memoryadapter.MemoryTableFactory;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.IndexScanSelector;
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.operator.API.Ordering;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.store.SchemaManager;
-import com.akiban.server.store.statistics.IndexStatistics;
-import com.akiban.sql.ServerSessionITBase;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.qp.expression.IndexKeyRange;
+import com.foundationdb.qp.memoryadapter.MemoryAdapter;
+import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.IndexScanSelector;
+import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.operator.API.Ordering;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.SchemaManager;
+import com.foundationdb.server.store.statistics.IndexStatistics;
+import com.foundationdb.sql.ServerSessionITBase;
 
 public class MemoryAdapterIT extends ServerSessionITBase {
     private static final TableName TEST_NAME = new TableName (TableName.INFORMATION_SCHEMA, "test");

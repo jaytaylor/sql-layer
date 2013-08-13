@@ -15,34 +15,34 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.mcompat.mtypes;
+package com.foundationdb.server.types3.mcompat.mtypes;
 
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.rowdata.ConversionHelperBigDecimal;
-import com.akiban.server.types3.Attribute;
-import com.akiban.server.types3.IllegalNameException;
-import com.akiban.server.types3.PValueIO;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TClassBase;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TParsers;
-import com.akiban.server.types3.aksql.AkCategory;
-import com.akiban.server.types3.common.BigDecimalWrapper;
-import com.akiban.server.types3.common.NumericFormatter;
-import com.akiban.server.types3.mcompat.MBundle;
-import com.akiban.server.types3.pvalue.PBasicValueSource;
-import com.akiban.server.types3.pvalue.PBasicValueTarget;
-import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValueCacher;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.Serialization;
-import com.akiban.server.types3.texpressions.SerializeAs;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
-import com.akiban.util.AkibanAppender;
-import com.akiban.util.ByteSource;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.rowdata.ConversionHelperBigDecimal;
+import com.foundationdb.server.types3.Attribute;
+import com.foundationdb.server.types3.IllegalNameException;
+import com.foundationdb.server.types3.PValueIO;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TClassBase;
+import com.foundationdb.server.types3.TExecutionContext;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.TParsers;
+import com.foundationdb.server.types3.aksql.AkCategory;
+import com.foundationdb.server.types3.common.BigDecimalWrapper;
+import com.foundationdb.server.types3.common.NumericFormatter;
+import com.foundationdb.server.types3.mcompat.MBundle;
+import com.foundationdb.server.types3.pvalue.PBasicValueSource;
+import com.foundationdb.server.types3.pvalue.PBasicValueTarget;
+import com.foundationdb.server.types3.pvalue.PUnderlying;
+import com.foundationdb.server.types3.pvalue.PValueCacher;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueTarget;
+import com.foundationdb.server.types3.texpressions.Serialization;
+import com.foundationdb.server.types3.texpressions.SerializeAs;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.types.TypeId;
+import com.foundationdb.util.AkibanAppender;
+import com.foundationdb.util.ByteSource;
 
 import java.math.BigDecimal;
 

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.http;
+package com.foundationdb.http;
 
 public class IllegalPathRequest extends HttpConductorException {
     public IllegalPathRequest(String message) {

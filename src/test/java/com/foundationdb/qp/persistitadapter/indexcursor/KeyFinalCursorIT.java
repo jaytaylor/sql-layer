@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.persistitadapter.indexcursor;
+package com.foundationdb.qp.persistitadapter.indexcursor;
 
-import static com.akiban.qp.operator.API.cursor;
-import static com.akiban.qp.operator.API.valuesScan_Default;
+import static com.foundationdb.qp.operator.API.cursor;
+import static com.foundationdb.qp.operator.API.valuesScan_Default;
 import static org.junit.Assert.*;
 
 import java.io.ByteArrayInputStream;
@@ -31,25 +31,25 @@ import java.util.Random;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.RowCursor;
-import com.akiban.qp.persistitadapter.indexcursor.MergeJoinSorter.KeyReadCursor;
-import com.akiban.qp.persistitadapter.indexcursor.MergeJoinSorter.KeyReader;
-import com.akiban.qp.persistitadapter.indexcursor.MergeJoinSorter.KeyWriter;
-import com.akiban.qp.persistitadapter.indexcursor.MergeJoinSorter.KeyFinalCursor;
-import com.akiban.qp.persistitadapter.indexcursor.MergeJoinSorter.SortKey;
-import com.akiban.qp.row.BindableRow;
-import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.test.it.qp.OperatorITBase;
-import com.akiban.server.test.it.qp.TestRow;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.texpressions.TPreparedField;
-import com.akiban.util.tap.Tap;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.operator.RowCursor;
+import com.foundationdb.qp.persistitadapter.indexcursor.MergeJoinSorter.KeyReadCursor;
+import com.foundationdb.qp.persistitadapter.indexcursor.MergeJoinSorter.KeyReader;
+import com.foundationdb.qp.persistitadapter.indexcursor.MergeJoinSorter.KeyWriter;
+import com.foundationdb.qp.persistitadapter.indexcursor.MergeJoinSorter.KeyFinalCursor;
+import com.foundationdb.qp.persistitadapter.indexcursor.MergeJoinSorter.SortKey;
+import com.foundationdb.qp.row.BindableRow;
+import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.server.test.it.qp.OperatorITBase;
+import com.foundationdb.server.test.it.qp.TestRow;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types3.texpressions.TPreparedField;
+import com.foundationdb.util.tap.Tap;
 import com.persistit.Key;
 
 public class KeyFinalCursorIT extends OperatorITBase {

@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.server.types.extract.ConverterTestUtils;
+import com.foundationdb.server.types.extract.ConverterTestUtils;
 import static org.junit.Assert.fail;
 
 import java.util.Calendar;
@@ -25,8 +25,8 @@ import java.util.TimeZone;
 
 import org.junit.Test;
 
-import com.akiban.sql.pg.YamlTester.DateTimeChecker;
-import com.akiban.sql.pg.YamlTester.TimeChecker;
+import com.foundationdb.sql.pg.YamlTester.DateTimeChecker;
+import com.foundationdb.sql.pg.YamlTester.TimeChecker;
 
 /*
  * This tests the !date, !time underpinnings to insure they are accurate

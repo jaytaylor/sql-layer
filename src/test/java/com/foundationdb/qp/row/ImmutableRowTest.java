@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.row;
+package com.foundationdb.qp.row;
 
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.ValuesRowType;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.util.ValueHolder;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.ValuesRowType;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.util.ValueHolder;
 import org.junit.Test;
 
 import java.util.Arrays;

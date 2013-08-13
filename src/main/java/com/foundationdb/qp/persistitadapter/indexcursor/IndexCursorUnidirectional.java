@@ -15,26 +15,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.persistitadapter.indexcursor;
+package com.foundationdb.qp.persistitadapter.indexcursor;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.qp.expression.BoundExpressions;
-import com.akiban.qp.expression.IndexBound;
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.persistitadapter.SpatialHelper;
-import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
-import com.akiban.qp.row.Row;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.qp.expression.BoundExpressions;
+import com.foundationdb.qp.expression.IndexBound;
+import com.foundationdb.qp.expression.IndexKeyRange;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.persistitadapter.SpatialHelper;
+import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRow;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.api.dml.ColumnSelector;
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 import com.persistit.Key;
 import com.persistit.Key.Direction;
 import com.persistit.exception.PersistitException;

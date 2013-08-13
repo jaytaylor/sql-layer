@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.geophile;
+package com.foundationdb.server.geophile;
 
-import com.akiban.server.error.OutOfRangeException;
+import com.foundationdb.server.error.OutOfRangeException;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 
-import static com.akiban.server.geophile.SpaceLatLon.*;
+import static com.foundationdb.server.geophile.SpaceLatLon.*;
 
 public abstract class BoxLatLon implements SpatialObject
 {

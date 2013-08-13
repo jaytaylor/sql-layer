@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule.range;
+package com.foundationdb.sql.optimizer.rule.range;
 
-import com.akiban.server.expression.std.Comparison;
-import com.akiban.sql.optimizer.plan.ColumnExpression;
-import com.akiban.sql.optimizer.plan.ConditionExpression;
-import com.akiban.sql.optimizer.plan.ConstantExpression;
+import com.foundationdb.server.expression.std.Comparison;
+import com.foundationdb.sql.optimizer.plan.ColumnExpression;
+import com.foundationdb.sql.optimizer.plan.ConditionExpression;
+import com.foundationdb.sql.optimizer.plan.ConstantExpression;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -28,7 +28,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.akiban.sql.optimizer.rule.range.TUtils.*;
+import static com.foundationdb.sql.optimizer.rule.range.TUtils.*;
 import static org.junit.Assert.assertEquals;
 
 public final class ColumnRangesTest {

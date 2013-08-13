@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.error;
+package com.foundationdb.server.error;
 
-import com.akiban.ais.model.GroupIndex;
+import com.foundationdb.ais.model.GroupIndex;
 
 public final class GroupIndexDepthException extends InvalidOperationException {
     public GroupIndexDepthException(GroupIndex index, int depth) {

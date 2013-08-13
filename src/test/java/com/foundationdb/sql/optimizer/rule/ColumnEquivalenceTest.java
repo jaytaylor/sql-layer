@@ -15,25 +15,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.foundationdb.sql.optimizer.rule;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.junit.NamedParameterizedRunner.TestParameters;
-import com.akiban.junit.Parameterization;
-import com.akiban.junit.ParameterizationBuilder;
-import com.akiban.sql.optimizer.OptimizerTestBase;
-import com.akiban.sql.optimizer.plan.AST;
-import com.akiban.sql.optimizer.plan.ColumnExpression;
-import com.akiban.sql.optimizer.plan.ExpressionNode;
-import com.akiban.sql.optimizer.plan.ExpressionVisitor;
-import com.akiban.sql.optimizer.plan.PlanNode;
-import com.akiban.sql.optimizer.plan.PlanVisitor;
-import com.akiban.sql.optimizer.rule.PlanContext;
-import com.akiban.sql.parser.DMLStatementNode;
-import com.akiban.sql.parser.StatementNode;
-import com.akiban.util.AssertUtils;
-import com.akiban.util.Strings;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.NamedParameterizedRunner.TestParameters;
+import com.foundationdb.junit.Parameterization;
+import com.foundationdb.junit.ParameterizationBuilder;
+import com.foundationdb.sql.optimizer.OptimizerTestBase;
+import com.foundationdb.sql.optimizer.plan.AST;
+import com.foundationdb.sql.optimizer.plan.ColumnExpression;
+import com.foundationdb.sql.optimizer.plan.ExpressionNode;
+import com.foundationdb.sql.optimizer.plan.ExpressionVisitor;
+import com.foundationdb.sql.optimizer.plan.PlanNode;
+import com.foundationdb.sql.optimizer.plan.PlanVisitor;
+import com.foundationdb.sql.optimizer.rule.PlanContext;
+import com.foundationdb.sql.parser.DMLStatementNode;
+import com.foundationdb.sql.parser.StatementNode;
+import com.foundationdb.util.AssertUtils;
+import com.foundationdb.util.Strings;
 import com.google.common.collect.Sets;
 import org.junit.Before;
 import org.junit.Test;
@@ -57,8 +57,8 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.akiban.util.AssertUtils.assertCollectionEquals;
-import static com.akiban.util.Strings.stripr;
+import static com.foundationdb.util.AssertUtils.assertCollectionEquals;
+import static com.foundationdb.util.Strings.stripr;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;

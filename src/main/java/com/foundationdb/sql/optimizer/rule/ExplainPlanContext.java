@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.foundationdb.sql.optimizer.rule;
 
-import com.akiban.sql.optimizer.OperatorCompiler;
+import com.foundationdb.sql.optimizer.OperatorCompiler;
 
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.SimpleQueryContext;
-import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.SimpleQueryContext;
+import com.foundationdb.server.service.ServiceManager;
+import com.foundationdb.server.service.session.Session;
 
 public class ExplainPlanContext extends PlanContext
 {

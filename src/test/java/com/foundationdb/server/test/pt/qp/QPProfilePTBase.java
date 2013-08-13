@@ -15,31 +15,31 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.pt.qp;
+package com.foundationdb.server.test.pt.qp;
 
-import com.akiban.ais.model.*;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.Limit;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.persistitadapter.PersistitGroupRow;
-import com.akiban.qp.persistitadapter.PersistitRowLimit;
-import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.NiceRow;
-import com.akiban.server.api.dml.scan.ScanLimit;
-import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.service.servicemanager.GuicedServiceManager.BindingsConfigurationProvider;
-import com.akiban.server.store.PersistitStore;
-import com.akiban.server.test.it.PersistitITBase;
-import com.akiban.server.test.it.qp.TestRow;
-import com.akiban.server.test.pt.PTBase;
-import com.akiban.server.types.ToObjectValueTarget;
+import com.foundationdb.ais.model.*;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.Limit;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.persistitadapter.PersistitAdapter;
+import com.foundationdb.qp.persistitadapter.PersistitGroupRow;
+import com.foundationdb.qp.persistitadapter.PersistitRowLimit;
+import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.server.api.dml.ColumnSelector;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.api.dml.scan.NiceRow;
+import com.foundationdb.server.api.dml.scan.ScanLimit;
+import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.service.servicemanager.GuicedServiceManager.BindingsConfigurationProvider;
+import com.foundationdb.server.store.PersistitStore;
+import com.foundationdb.server.test.it.PersistitITBase;
+import com.foundationdb.server.test.it.qp.TestRow;
+import com.foundationdb.server.test.pt.PTBase;
+import com.foundationdb.server.types.ToObjectValueTarget;
 
 import java.util.ArrayList;
 import java.util.Arrays;

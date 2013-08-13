@@ -15,25 +15,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.loadableplan.std;
+package com.foundationdb.qp.loadableplan.std;
 
 import static org.junit.Assert.*;
 
 import java.util.List;
 
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.server.test.it.PersistitITBase;
-import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.server.test.it.PersistitITBase;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
 import org.junit.Test;
 
-import com.akiban.qp.loadableplan.DirectObjectCursor;
-import com.akiban.qp.loadableplan.DirectObjectPlan;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.pvalue.PValue;
+import com.foundationdb.qp.loadableplan.DirectObjectCursor;
+import com.foundationdb.qp.loadableplan.DirectObjectPlan;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.server.types.FromObjectValueSource;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.server.types3.pvalue.PValue;
 
 public class PersistitCLILoadablePlanIT extends PersistitITBase
 {

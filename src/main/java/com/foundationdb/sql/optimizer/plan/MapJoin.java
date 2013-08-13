@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.foundationdb.sql.optimizer.plan;
 
-import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
+import com.foundationdb.sql.optimizer.plan.JoinNode.JoinType;
 
 import java.util.*;
 

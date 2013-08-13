@@ -15,27 +15,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.dxl;
+package com.foundationdb.server.service.dxl;
 
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.TableStatistics;
-import com.akiban.server.api.DMLFunctions;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.api.dml.scan.BufferFullException;
-import com.akiban.server.api.dml.scan.CursorId;
-import com.akiban.server.api.dml.scan.CursorState;
-import com.akiban.server.api.dml.scan.LegacyRowOutput;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.RowOutput;
-import com.akiban.server.api.dml.scan.ScanRequest;
-import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionService;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.TableStatistics;
+import com.foundationdb.server.api.DMLFunctions;
+import com.foundationdb.server.api.dml.ColumnSelector;
+import com.foundationdb.server.api.dml.scan.BufferFullException;
+import com.foundationdb.server.api.dml.scan.CursorId;
+import com.foundationdb.server.api.dml.scan.CursorState;
+import com.foundationdb.server.api.dml.scan.LegacyRowOutput;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.api.dml.scan.RowOutput;
+import com.foundationdb.server.api.dml.scan.ScanRequest;
+import com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.session.SessionService;
 
 import java.util.List;
 import java.util.Set;
 
-import static com.akiban.util.Exceptions.throwAlways;
+import static com.foundationdb.util.Exceptions.throwAlways;
 
 public final class HookableDMLFunctions implements DMLFunctions {
 

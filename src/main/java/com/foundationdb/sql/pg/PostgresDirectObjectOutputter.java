@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.server.types3.Types3Switch;
+import com.foundationdb.server.types3.Types3Switch;
 import java.util.List;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

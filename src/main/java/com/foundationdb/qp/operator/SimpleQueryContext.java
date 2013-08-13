@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.operator;
+package com.foundationdb.qp.operator;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.error.ErrorCode;
-import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.service.ServiceManager;
+import com.foundationdb.server.service.session.Session;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

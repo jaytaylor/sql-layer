@@ -14,11 +14,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.server.service.security;
+package com.foundationdb.server.service.security;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.akiban.server.service.monitor.UserMonitor;
+import com.foundationdb.server.service.monitor.UserMonitor;
 
 public class UserMonitorImpl implements UserMonitor {
     private final String userName;

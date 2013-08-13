@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
-import com.akiban.server.error.WrongExpressionArityException;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.types.AkType;
+import com.foundationdb.server.error.WrongExpressionArityException;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.types.AkType;
 import java.util.List;
 
 public abstract class AbstractTernaryExpression extends AbstractCompositeExpression

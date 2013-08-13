@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.model.validation;
+package com.foundationdb.ais.model.validation;
 
-import com.akiban.server.error.ErrorCode;
-import com.akiban.server.error.InvalidOperationException;
+import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.error.InvalidOperationException;
 
 public class AISValidationFailure {
     public AISValidationFailure (InvalidOperationException ex) {

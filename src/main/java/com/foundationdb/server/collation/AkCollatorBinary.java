@@ -14,9 +14,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.server.collation;
+package com.foundationdb.server.collation;
 
-import com.akiban.server.types.ValueSource;
+import com.foundationdb.server.types.ValueSource;
 import com.persistit.Key;
 
 public class AkCollatorBinary extends AkCollator {

@@ -14,20 +14,20 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.server.types3.mcompat.mtypes;
+package com.foundationdb.server.types3.mcompat.mtypes;
 
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TClassFormatter;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TParser;
-import com.akiban.server.types3.TParsers;
-import com.akiban.server.types3.aksql.AkCategory;
-import com.akiban.server.types3.common.types.DoubleAttribute;
-import com.akiban.server.types3.common.NumericFormatter;
-import com.akiban.server.types3.common.types.SimpleDtdTClass;
-import com.akiban.server.types3.mcompat.MBundle;
-import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.sql.types.TypeId;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TClassFormatter;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.TParser;
+import com.foundationdb.server.types3.TParsers;
+import com.foundationdb.server.types3.aksql.AkCategory;
+import com.foundationdb.server.types3.common.types.DoubleAttribute;
+import com.foundationdb.server.types3.common.NumericFormatter;
+import com.foundationdb.server.types3.common.types.SimpleDtdTClass;
+import com.foundationdb.server.types3.mcompat.MBundle;
+import com.foundationdb.server.types3.pvalue.PUnderlying;
+import com.foundationdb.sql.types.TypeId;
 
 public class MApproximateNumber extends SimpleDtdTClass
 {

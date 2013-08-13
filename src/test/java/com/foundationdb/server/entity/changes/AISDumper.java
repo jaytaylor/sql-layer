@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.entity.changes;
+package com.foundationdb.server.entity.changes;
 
-import com.akiban.ais.AISCloner;
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Sequence;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.protobuf.ProtobufWriter;
+import com.foundationdb.ais.AISCloner;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.protobuf.ProtobufWriter;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,8 +32,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.akiban.ais.protobuf.ProtobufWriter.WriteSelector;
-import static com.akiban.ais.protobuf.ProtobufWriter.SingleSchemaSelector;
+import static com.foundationdb.ais.protobuf.ProtobufWriter.WriteSelector;
+import static com.foundationdb.ais.protobuf.ProtobufWriter.SingleSchemaSelector;
 
 public class AISDumper {
     public static String dumpDeterministicAIS(AkibanInformationSchema ais, String schema) {

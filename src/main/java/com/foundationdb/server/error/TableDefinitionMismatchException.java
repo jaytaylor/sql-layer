@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.error;
+package com.foundationdb.server.error;
 
-import com.akiban.server.encoding.EncodingException;
+import com.foundationdb.server.encoding.EncodingException;
 
 public final class TableDefinitionMismatchException extends InvalidOperationException {
     public TableDefinitionMismatchException (Integer rowTableID, Integer tableID) {

@@ -15,23 +15,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.expression;
+package com.foundationdb.qp.expression;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.row.AbstractRow;
-import com.akiban.qp.row.HKey;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.texpressions.TEvaluatableExpression;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.row.AbstractRow;
+import com.foundationdb.qp.row.HKey;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.ExpressionEvaluation;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.texpressions.TEvaluatableExpression;
+import com.foundationdb.server.types3.texpressions.TPreparedExpression;
 
 public class ExpressionRow extends AbstractRow
 {

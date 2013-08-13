@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.row.Row;
-import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.types.util.ValueHolder;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.expression.ExpressionEvaluation;
+import com.foundationdb.server.types.util.ValueHolder;
 
 public abstract class AbstractNoArgExpressionEvaluation extends ExpressionEvaluation.Base {
     @Override

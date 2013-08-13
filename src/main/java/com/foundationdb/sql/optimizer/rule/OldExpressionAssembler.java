@@ -15,35 +15,35 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.foundationdb.sql.optimizer.rule;
 
-import com.akiban.ais.model.Routine;
-import com.akiban.server.collation.AkCollator;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.expression.std.Comparison;
-import com.akiban.server.expression.std.Expressions;
-import com.akiban.server.expression.std.InExpression;
-import com.akiban.sql.optimizer.TypesTranslation;
-import com.akiban.sql.optimizer.plan.*;
-import com.akiban.sql.script.ScriptBindingsRoutineExpression;
-import com.akiban.sql.script.ScriptFunctionJavaRoutineExpression;
-import com.akiban.sql.server.ServerJavaMethodExpression;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.expression.std.Comparison;
+import com.foundationdb.server.expression.std.Expressions;
+import com.foundationdb.server.expression.std.InExpression;
+import com.foundationdb.sql.optimizer.TypesTranslation;
+import com.foundationdb.sql.optimizer.plan.*;
+import com.foundationdb.sql.script.ScriptBindingsRoutineExpression;
+import com.foundationdb.sql.script.ScriptFunctionJavaRoutineExpression;
+import com.foundationdb.sql.server.ServerJavaMethodExpression;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.types.TypeId;
 
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.expression.ExpressionType;
-import com.akiban.server.expression.std.ExpressionTypes;
-import com.akiban.server.expression.std.IntervalCastExpression;
-import static com.akiban.server.expression.std.Expressions.*;
-import com.akiban.server.service.functions.FunctionsRegistry;
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.extract.Extractors;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.ExpressionEvaluation;
+import com.foundationdb.server.expression.ExpressionType;
+import com.foundationdb.server.expression.std.ExpressionTypes;
+import com.foundationdb.server.expression.std.IntervalCastExpression;
+import static com.foundationdb.server.expression.std.Expressions.*;
+import com.foundationdb.server.service.functions.FunctionsRegistry;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.extract.Extractors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

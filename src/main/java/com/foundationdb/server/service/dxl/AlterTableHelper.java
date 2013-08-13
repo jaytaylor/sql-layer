@@ -15,26 +15,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.dxl;
+package com.foundationdb.server.service.dxl;
 
-import com.akiban.ais.AISCloner;
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.IndexName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.util.TableChange;
-import com.akiban.ais.util.TableChange.ChangeType;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.ais.AISCloner;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.GroupIndex;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.IndexName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.util.TableChange;
+import com.foundationdb.ais.util.TableChange.ChangeType;
+import com.foundationdb.server.service.session.Session;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static com.akiban.ais.util.TableChangeValidator.TableColumnNames;
+import static com.foundationdb.ais.util.TableChangeValidator.TableColumnNames;
 
 public class AlterTableHelper {
     final List<TableChange> columnChanges;

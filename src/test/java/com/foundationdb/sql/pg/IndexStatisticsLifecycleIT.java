@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.ais.model.*;
-import com.akiban.server.store.statistics.IndexStatisticsService;
-import com.akiban.server.store.statistics.IndexStatisticsYamlTest;
+import com.foundationdb.ais.model.*;
+import com.foundationdb.server.store.statistics.IndexStatisticsService;
+import com.foundationdb.server.store.statistics.IndexStatisticsYamlTest;
 
 import org.junit.After;
 import org.junit.Before;

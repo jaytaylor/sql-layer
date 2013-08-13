@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.restdml;
+package com.foundationdb.server.service.restdml;
 
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.server.error.KeyColumnMismatchException;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.server.error.KeyColumnMismatchException;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;

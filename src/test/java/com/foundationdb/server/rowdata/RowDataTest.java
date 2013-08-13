@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.rowdata;
+package com.foundationdb.server.rowdata;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.google.common.base.Strings;
 import org.junit.Test;
 

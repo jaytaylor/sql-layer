@@ -14,10 +14,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.ais.model;
+package com.foundationdb.ais.model;
 
-import com.akiban.ais.model.validation.AISInvariants;
-import com.akiban.server.error.InvalidRoutineException;
+import com.foundationdb.ais.model.validation.AISInvariants;
+import com.foundationdb.server.error.InvalidRoutineException;
 
 import java.util.*;
 

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.is;
+package com.foundationdb.server.service.is;
 
 import java.lang.management.ManagementFactory;
 import java.rmi.RemoteException;
@@ -32,21 +32,21 @@ import javax.management.ReflectionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.aisb2.AISBBasedBuilder;
-import com.akiban.ais.model.aisb2.NewAISBuilder;
-import com.akiban.qp.memoryadapter.BasicFactoryBase;
-import com.akiban.qp.memoryadapter.MemoryAdapter;
-import com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.row.ValuesRow;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.service.Service;
-import com.akiban.server.service.tree.TreeService;
-import com.akiban.server.store.SchemaManager;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.FromObjectValueSource;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.ais.model.aisb2.NewAISBuilder;
+import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
+import com.foundationdb.qp.memoryadapter.MemoryAdapter;
+import com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesRow;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.tree.TreeService;
+import com.foundationdb.server.store.SchemaManager;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.FromObjectValueSource;
 import com.google.inject.Inject;
 import com.persistit.Management;
 import com.persistit.Management.BufferPoolInfo;

@@ -15,24 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.loadableplan.std;
+package com.foundationdb.qp.loadableplan.std;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.loadableplan.DirectObjectCursor;
-import com.akiban.qp.loadableplan.DirectObjectPlan;
-import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
-import com.akiban.qp.operator.BindingNotSetException;
-import com.akiban.qp.operator.RowCursor;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.types.util.SqlLiteralValueFormatter;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.util.AkibanAppender;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.loadableplan.DirectObjectCursor;
+import com.foundationdb.qp.loadableplan.DirectObjectPlan;
+import com.foundationdb.qp.loadableplan.LoadableDirectObjectPlan;
+import com.foundationdb.qp.operator.BindingNotSetException;
+import com.foundationdb.qp.operator.RowCursor;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.NoSuchTableException;
+import com.foundationdb.server.types.util.SqlLiteralValueFormatter;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.util.AkibanAppender;
 
 import java.sql.Types;
 

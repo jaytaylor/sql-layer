@@ -15,25 +15,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.security;
+package com.foundationdb.server.service.security;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.aisb2.AISBBasedBuilder;
-import com.akiban.ais.model.aisb2.NewAISBuilder;
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.error.AuthenticationFailedException;
-import com.akiban.server.error.SecurityException;
-import com.akiban.server.service.Service;
-import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.monitor.MonitorService;
-import com.akiban.server.service.monitor.UserMonitor;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.store.SchemaManager;
-import com.akiban.sql.server.ServerCallContextStack;
-import com.akiban.sql.server.ServerQueryContext;
-import com.akiban.util.Strings;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.ais.model.aisb2.NewAISBuilder;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.AuthenticationFailedException;
+import com.foundationdb.server.error.SecurityException;
+import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.server.service.monitor.MonitorService;
+import com.foundationdb.server.service.monitor.UserMonitor;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.SchemaManager;
+import com.foundationdb.sql.server.ServerCallContextStack;
+import com.foundationdb.sql.server.ServerQueryContext;
+import com.foundationdb.util.Strings;
 
 import com.google.inject.Inject;
 import org.slf4j.Logger;

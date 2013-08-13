@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.explain.format;
+package com.foundationdb.server.explain.format;
 
 // NOTE: Should only depend on explain objects and standard Java.
 // Should theoretically be able to run outside of server.
 
-import com.akiban.server.explain.*;
+import com.foundationdb.server.explain.*;
 
 import java.util.ArrayList;
 import java.util.List;

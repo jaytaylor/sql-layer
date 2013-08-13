@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types.extract;
+package com.foundationdb.server.types.extract;
 
-import com.akiban.qp.operator.Cursor;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
 
 final class ExtractorForResultSet extends ObjectExtractor<Cursor> {
 

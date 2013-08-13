@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.row;
+package com.foundationdb.qp.row;
 
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.pvalue.PValueSource;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.pvalue.PValueSource;
 
 import java.util.Arrays;
 

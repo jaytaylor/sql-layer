@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.exec;
+package com.foundationdb.qp.exec;
 
-import com.akiban.qp.operator.Operator;
+import com.foundationdb.qp.operator.Operator;
 
-import com.akiban.server.explain.Explainable;
+import com.foundationdb.server.explain.Explainable;
 import java.util.List;
 import java.util.Map;
 

@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.keyupdate;
+package com.foundationdb.server.test.it.keyupdate;
 
-import com.akiban.server.error.ErrorCode;
-import com.akiban.server.error.InvalidOperationException;
+import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.error.InvalidOperationException;
 import org.junit.Test;
 
-import static com.akiban.server.test.it.keyupdate.Schema.*;
+import static com.foundationdb.server.test.it.keyupdate.Schema.*;
 import static junit.framework.Assert.*;
 
 public abstract class KeyUpdateSingleColumnBase extends KeyUpdateBase

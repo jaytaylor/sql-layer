@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.store;
+package com.foundationdb.server.test.it.store;
 
-import com.akiban.ais.CAOIBuilderFiller;
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.aisb2.NewAISBuilder;
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.ais.CAOIBuilderFiller;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.aisb2.NewAISBuilder;
+import com.foundationdb.server.api.DDLFunctions;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.service.session.Session;
 
-import static com.akiban.ais.CAOIBuilderFiller.*;
+import static com.foundationdb.ais.CAOIBuilderFiller.*;
 
 public class DataDictionaryDDL {
     public final static String SCHEMA = "data_dictionary_test";

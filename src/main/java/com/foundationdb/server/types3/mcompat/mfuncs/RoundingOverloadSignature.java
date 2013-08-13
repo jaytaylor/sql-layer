@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.mcompat.mfuncs;
+package com.foundationdb.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
+import com.foundationdb.server.types3.LazyList;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.texpressions.TInputSetBuilder;
 
 import java.util.List;
 

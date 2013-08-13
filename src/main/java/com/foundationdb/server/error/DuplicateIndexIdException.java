@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.error;
+package com.foundationdb.server.error;
 
-import com.akiban.ais.model.IndexName;
+import com.foundationdb.ais.model.IndexName;
 
 public class DuplicateIndexIdException extends InvalidOperationException {
     public DuplicateIndexIdException (IndexName name1, IndexName name2) {

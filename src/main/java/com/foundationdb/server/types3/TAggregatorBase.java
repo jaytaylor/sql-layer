@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3;
+package com.foundationdb.server.types3;
 
-import com.akiban.util.BitSets;
+import com.foundationdb.util.BitSets;
 import com.google.common.base.Predicate;
 
 import java.util.Collections;

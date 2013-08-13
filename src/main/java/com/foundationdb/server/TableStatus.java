@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server;
+package com.foundationdb.server;
 
-import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.service.session.Session;
 import com.persistit.exception.PersistitInterruptedException;
 
 /**

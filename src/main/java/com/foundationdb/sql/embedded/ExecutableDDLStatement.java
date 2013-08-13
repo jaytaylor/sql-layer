@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.embedded;
+package com.foundationdb.sql.embedded;
 
-import com.akiban.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryBindings;
 
-import com.akiban.sql.aisddl.AISDDL;
-import com.akiban.sql.parser.DDLStatementNode;
-import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
+import com.foundationdb.sql.aisddl.AISDDL;
+import com.foundationdb.sql.parser.DDLStatementNode;
+import static com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 class ExecutableDDLStatement extends ExecutableStatement
 {

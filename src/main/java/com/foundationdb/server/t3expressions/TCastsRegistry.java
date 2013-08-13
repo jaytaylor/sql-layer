@@ -15,24 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.t3expressions;
+package com.foundationdb.server.t3expressions;
 
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TCastIdentifier;
-import com.akiban.server.types3.TCastPath;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.TStrongCasts;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.service.InstanceFinder;
-import com.akiban.server.types3.texpressions.Constantness;
-import com.akiban.util.DagChecker;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.types3.TCast;
+import com.foundationdb.server.types3.TCastIdentifier;
+import com.foundationdb.server.types3.TCastPath;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TExecutionContext;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.server.types3.TStrongCasts;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueTarget;
+import com.foundationdb.server.types3.service.InstanceFinder;
+import com.foundationdb.server.types3.texpressions.Constantness;
+import com.foundationdb.util.DagChecker;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;

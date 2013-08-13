@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.foundationdb.sql.optimizer.rule;
 
-import com.akiban.util.AssertUtils;
+import com.foundationdb.util.AssertUtils;
 import org.junit.Test;
 
 import java.util.Collections;

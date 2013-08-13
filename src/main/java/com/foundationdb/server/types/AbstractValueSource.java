@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types;
+package com.foundationdb.server.types;
 
-import com.akiban.qp.operator.Cursor;
-import com.akiban.server.Quote;
-import com.akiban.server.types.extract.Extractors;
-import com.akiban.util.AkibanAppender;
-import com.akiban.util.ByteSource;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.server.Quote;
+import com.foundationdb.server.types.extract.Extractors;
+import com.foundationdb.util.AkibanAppender;
+import com.foundationdb.util.ByteSource;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

@@ -15,23 +15,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.model.validation;
+package com.foundationdb.ais.model.validation;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.HKey;
-import com.akiban.ais.model.HKeyColumn;
-import com.akiban.ais.model.HKeySegment;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Type;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.encoding.EncoderFactory;
-import com.akiban.server.error.JoinParentNoExplicitPK;
-import com.akiban.server.error.UnsupportedIndexPrefixException;
-import com.akiban.server.error.UnsupportedIndexSizeException;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.GroupIndex;
+import com.foundationdb.ais.model.HKey;
+import com.foundationdb.ais.model.HKeyColumn;
+import com.foundationdb.ais.model.HKeySegment;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.Type;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.encoding.EncoderFactory;
+import com.foundationdb.server.error.JoinParentNoExplicitPK;
+import com.foundationdb.server.error.UnsupportedIndexPrefixException;
+import com.foundationdb.server.error.UnsupportedIndexSizeException;
 
 import com.persistit.Key;
 import com.persistit.Transaction;

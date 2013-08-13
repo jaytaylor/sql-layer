@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais;
+package com.foundationdb.ais;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
 
 import java.util.Collection;
 import java.util.TreeSet;

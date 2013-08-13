@@ -15,22 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.mt.mtatomics;
+package com.foundationdb.server.test.mt.mtatomics;
 
-import com.akiban.server.api.DMLFunctions;
-import com.akiban.server.api.dml.scan.CursorId;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.ScanAllRequest;
-import com.akiban.server.api.dml.scan.ScanFlag;
-import com.akiban.server.api.dml.scan.ScanLimit;
-import com.akiban.server.service.ServiceManagerImpl;
-import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.test.ApiTestBase;
-import com.akiban.server.test.mt.mtutil.TimePoints;
-import com.akiban.server.test.mt.mtutil.TimedCallable;
-import com.akiban.server.test.mt.mtutil.Timing;
-import com.akiban.server.service.dxl.ConcurrencyAtomicsDXLService;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.server.api.DMLFunctions;
+import com.foundationdb.server.api.dml.scan.CursorId;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.api.dml.scan.ScanAllRequest;
+import com.foundationdb.server.api.dml.scan.ScanFlag;
+import com.foundationdb.server.api.dml.scan.ScanLimit;
+import com.foundationdb.server.service.ServiceManagerImpl;
+import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.test.ApiTestBase;
+import com.foundationdb.server.test.mt.mtutil.TimePoints;
+import com.foundationdb.server.test.mt.mtutil.TimedCallable;
+import com.foundationdb.server.test.mt.mtutil.Timing;
+import com.foundationdb.server.service.dxl.ConcurrencyAtomicsDXLService;
+import com.foundationdb.server.service.session.Session;
 
 import java.util.Arrays;
 import java.util.Collections;

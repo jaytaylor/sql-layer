@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.dxl;
+package com.foundationdb.server.service.dxl;
 
 import static org.junit.Assert.assertEquals;
 
@@ -23,22 +23,22 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.akiban.server.rowdata.IndexDef;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.api.FixedCountLimit;
-import com.akiban.server.api.dml.scan.BufferFullException;
-import com.akiban.server.api.dml.scan.ScanLimit;
-import com.akiban.util.GrowableByteBuffer;
+import com.foundationdb.server.rowdata.IndexDef;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.api.FixedCountLimit;
+import com.foundationdb.server.api.dml.scan.BufferFullException;
+import com.foundationdb.server.api.dml.scan.ScanLimit;
+import com.foundationdb.util.GrowableByteBuffer;
 import com.persistit.exception.PersistitException;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.akiban.server.api.dml.scan.Cursor;
-import com.akiban.server.api.dml.scan.CursorId;
-import com.akiban.server.api.dml.scan.LegacyRowOutput;
-import com.akiban.server.error.CursorIsFinishedException;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.store.RowCollector;
+import com.foundationdb.server.api.dml.scan.Cursor;
+import com.foundationdb.server.api.dml.scan.CursorId;
+import com.foundationdb.server.api.dml.scan.LegacyRowOutput;
+import com.foundationdb.server.error.CursorIsFinishedException;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.store.RowCollector;
 
 public final class BasicDMLFunctionsTest {
     

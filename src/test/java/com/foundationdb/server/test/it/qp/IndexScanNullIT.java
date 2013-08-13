@@ -15,24 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.qp;
+package com.foundationdb.server.test.it.qp;
 
-import com.akiban.qp.expression.IndexBound;
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.api.dml.SetColumnSelector;
-import com.akiban.server.api.dml.scan.NewRow;
+import com.foundationdb.qp.expression.IndexBound;
+import com.foundationdb.qp.expression.IndexKeyRange;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.server.api.dml.SetColumnSelector;
+import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import static com.akiban.qp.operator.API.cursor;
-import static com.akiban.qp.operator.API.indexScan_Default;
-import static com.akiban.server.test.ExpressionGenerators.field;
+import static com.foundationdb.qp.operator.API.cursor;
+import static com.foundationdb.qp.operator.API.indexScan_Default;
+import static com.foundationdb.server.test.ExpressionGenerators.field;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 

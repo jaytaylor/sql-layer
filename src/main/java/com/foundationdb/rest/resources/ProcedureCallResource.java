@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.rest.resources;
+package com.foundationdb.rest.resources;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.rest.ResourceRequirements;
-import com.akiban.rest.RestResponseBuilder;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.rest.ResourceRequirements;
+import com.foundationdb.rest.RestResponseBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -33,8 +33,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.PrintWriter;
 
-import static com.akiban.rest.resources.ResourceHelper.JSONP_ARG_NAME;
-import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
+import static com.foundationdb.rest.resources.ResourceHelper.JSONP_ARG_NAME;
+import static com.foundationdb.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
 
 /**
  * Allows calling stored procedures directly.

@@ -15,22 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.util;
+package com.foundationdb.ais.util;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import com.akiban.ais.model.CharsetAndCollation;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.JoinColumn;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.Type;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.Types;
-import com.akiban.ais.model.UserTable;
+import com.foundationdb.ais.model.CharsetAndCollation;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.JoinColumn;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.Type;
+import com.foundationdb.ais.model.Join;
+import com.foundationdb.ais.model.Types;
+import com.foundationdb.ais.model.UserTable;
 
 public class DDLGenerator
 {

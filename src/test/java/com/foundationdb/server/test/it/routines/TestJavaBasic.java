@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.routines;
+package com.foundationdb.server.test.it.routines;
 
 /** Basic Java stored procedures
  * <code><pre>

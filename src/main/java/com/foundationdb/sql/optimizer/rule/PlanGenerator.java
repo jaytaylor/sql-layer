@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.foundationdb.sql.optimizer.rule;
 
-import static com.akiban.util.Strings.join;
+import static com.foundationdb.util.Strings.join;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,27 +25,27 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.NopVisitor;
-import com.akiban.ais.model.PrimaryKey;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.expression.IndexBound;
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.expression.RowBasedUnboundExpressions;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.API.Ordering;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.explain.ExplainContext;
-import com.akiban.server.explain.format.DefaultFormatter;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.server.types3.texpressions.TPreparedField;
-import com.akiban.server.types3.texpressions.TPreparedParameter;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.NopVisitor;
+import com.foundationdb.ais.model.PrimaryKey;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.expression.IndexBound;
+import com.foundationdb.qp.expression.IndexKeyRange;
+import com.foundationdb.qp.expression.RowBasedUnboundExpressions;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.operator.API.Ordering;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
+import com.foundationdb.server.api.dml.ColumnSelector;
+import com.foundationdb.server.explain.ExplainContext;
+import com.foundationdb.server.explain.format.DefaultFormatter;
+import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types3.texpressions.TPreparedField;
+import com.foundationdb.server.types3.texpressions.TPreparedParameter;
 
 /**
  * Generate one of a static set of internally used operator plans. 

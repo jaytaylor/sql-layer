@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.http;
+package com.foundationdb.http;
 
 import java.util.List;
 
-import com.akiban.server.service.security.SecurityService;
-import com.akiban.server.service.security.User;
-import com.akiban.util.ArgumentValidation;
+import com.foundationdb.server.service.security.SecurityService;
+import com.foundationdb.server.service.security.User;
+import com.foundationdb.util.ArgumentValidation;
 import org.eclipse.jetty.security.MappedLoginService;
 import org.eclipse.jetty.server.UserIdentity;
 import org.eclipse.jetty.util.security.Credential;

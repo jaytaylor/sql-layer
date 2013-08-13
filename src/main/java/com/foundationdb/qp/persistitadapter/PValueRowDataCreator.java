@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.persistitadapter;
+package com.foundationdb.qp.persistitadapter;
 
-import com.akiban.qp.row.RowBase;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.pvalue.PValueSource;
+import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.rowdata.FieldDef;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.pvalue.PValueSource;
 
 public final class PValueRowDataCreator implements RowDataCreator<PValueSource> {
     @Override

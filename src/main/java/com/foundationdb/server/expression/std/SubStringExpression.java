@@ -16,18 +16,18 @@
  */
 
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
-import com.akiban.server.error.WrongExpressionArityException;
-import com.akiban.server.expression.*;
-import com.akiban.server.service.functions.Scalar;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.NullValueSource;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.extract.Extractors;
-import com.akiban.server.types.extract.LongExtractor;
-import com.akiban.server.types.extract.ObjectExtractor;
-import com.akiban.sql.StandardException;
+import com.foundationdb.server.error.WrongExpressionArityException;
+import com.foundationdb.server.expression.*;
+import com.foundationdb.server.service.functions.Scalar;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.NullValueSource;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.extract.Extractors;
+import com.foundationdb.server.types.extract.LongExtractor;
+import com.foundationdb.server.types.extract.ObjectExtractor;
+import com.foundationdb.sql.StandardException;
 import java.util.List;
 
 public class SubStringExpression extends AbstractCompositeExpression

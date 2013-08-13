@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.mcompat.mfuncs;
+package com.foundationdb.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.TScalar;
+import com.foundationdb.server.types3.TScalar;
 
 public class MFloor {
     public static final TScalar[] INSTANCES = MRoundBase.create(MRoundBase.RoundType.FLOOR);

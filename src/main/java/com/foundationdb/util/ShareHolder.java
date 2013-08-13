@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.util;
+package com.foundationdb.util;
 
 public final class ShareHolder<T extends Shareable> {
 

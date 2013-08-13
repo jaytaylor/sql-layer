@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.rowtype;
+package com.foundationdb.qp.rowtype;
 
-import com.akiban.ais.model.HKey;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TInstance;
+import com.foundationdb.ais.model.HKey;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.TInstance;
 
 public class HKeyRowType extends DerivedRowType
 {

@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.foundationdb.sql.optimizer.rule;
 
-import com.akiban.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.AkibanInformationSchema;
 
-import com.akiban.server.rowdata.SchemaFactory;
+import com.foundationdb.server.rowdata.SchemaFactory;
 
 import org.yaml.snakeyaml.Yaml;
 

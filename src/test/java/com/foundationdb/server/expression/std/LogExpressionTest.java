@@ -15,27 +15,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
 import java.util.Arrays;
-import com.akiban.junit.ParameterizationBuilder;
-import com.akiban.junit.Parameterization;
+import com.foundationdb.junit.ParameterizationBuilder;
+import com.foundationdb.junit.Parameterization;
 import java.util.Collection;
-import com.akiban.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.NamedParameterizedRunner;
 import org.junit.runner.RunWith;
-import com.akiban.junit.OnlyIfNot;
-import com.akiban.junit.OnlyIf;
-import com.akiban.server.error.WrongExpressionArityException;
+import com.foundationdb.junit.OnlyIfNot;
+import com.foundationdb.junit.OnlyIf;
+import com.foundationdb.server.error.WrongExpressionArityException;
 import org.junit.Test;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.ExpressionComposer;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.*;
-import static com.akiban.server.expression.std.LogExpression.*;
+import static com.foundationdb.server.expression.std.LogExpression.*;
 
 @RunWith(NamedParameterizedRunner.class)
 public class LogExpressionTest extends ComposedExpressionTestBase

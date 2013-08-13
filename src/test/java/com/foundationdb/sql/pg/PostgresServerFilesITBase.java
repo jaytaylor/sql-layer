@@ -15,18 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.sql.TestBase;
+import com.foundationdb.sql.TestBase;
 
-import com.akiban.server.rowdata.RowDef;
+import com.foundationdb.server.rowdata.RowDef;
 
-import com.akiban.server.api.dml.scan.CursorId;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.RowOutput;
-import com.akiban.server.api.dml.scan.ScanAllRequest;
-import com.akiban.server.api.dml.scan.ScanFlag;
-import com.akiban.sql.RegexFilenameFilter;
+import com.foundationdb.server.api.dml.scan.CursorId;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.api.dml.scan.RowOutput;
+import com.foundationdb.server.api.dml.scan.ScanAllRequest;
+import com.foundationdb.server.api.dml.scan.ScanFlag;
+import com.foundationdb.sql.RegexFilenameFilter;
 
 import org.junit.Ignore;
 

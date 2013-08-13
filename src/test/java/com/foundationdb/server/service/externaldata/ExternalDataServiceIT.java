@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.externaldata;
+package com.foundationdb.server.service.externaldata;
 
-import com.akiban.server.service.servicemanager.GuicedServiceManager;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
+import com.foundationdb.server.test.it.ITBase;
 
 import org.junit.Before;
 import org.junit.Test;

@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types;
+package com.foundationdb.server.types;
 
-import com.akiban.util.ByteSource;
-import com.akiban.util.WrappingByteSource;
+import com.foundationdb.util.ByteSource;
+import com.foundationdb.util.WrappingByteSource;
 
 import java.util.EnumMap;
 import java.util.Map;

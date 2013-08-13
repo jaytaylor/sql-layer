@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.api.dml.scan;
+package com.foundationdb.server.api.dml.scan;
 
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.api.DMLFunctions;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.service.session.Session;
-import com.akiban.util.GrowableByteBuffer;
-import com.akiban.util.ListUtils;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.api.DMLFunctions;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.util.GrowableByteBuffer;
+import com.foundationdb.util.ListUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

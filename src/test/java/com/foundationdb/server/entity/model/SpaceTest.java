@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.entity.model;
+package com.foundationdb.server.entity.model;
 
 import org.junit.Test;
 
@@ -27,10 +27,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.akiban.util.AssertUtils.assertCollectionEquals;
-import static com.akiban.util.JUnitUtils.equalsIncludingHash;
-import static com.akiban.util.JUnitUtils.isUnmodifiable;
-import static com.akiban.util.JUnitUtils.map;
+import static com.foundationdb.util.AssertUtils.assertCollectionEquals;
+import static com.foundationdb.util.JUnitUtils.equalsIncludingHash;
+import static com.foundationdb.util.JUnitUtils.isUnmodifiable;
+import static com.foundationdb.util.JUnitUtils.map;
 import static com.google.common.collect.Sets.newHashSet;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;

@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.bugs.bug696096;
+package com.foundationdb.server.test.it.bugs.bug696096;
 
 import java.text.MessageFormat;
 
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.error.DuplicateKeyException;
-import com.akiban.server.error.ErrorCode;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.error.DuplicateKeyException;
+import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.test.it.ITBase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

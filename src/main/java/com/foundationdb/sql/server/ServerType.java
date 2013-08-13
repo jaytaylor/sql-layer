@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.server;
+package com.foundationdb.sql.server;
 
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TInstance;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.TInstance;
 
 /** A type according to the server's regime.
  */

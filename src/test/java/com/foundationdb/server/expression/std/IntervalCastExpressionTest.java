@@ -15,19 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
 import java.util.Arrays;
-import com.akiban.server.error.InvalidIntervalFormatException;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.std.IntervalCastExpression.EndPoint;
-import com.akiban.server.types.AkType;
+import com.foundationdb.server.error.InvalidIntervalFormatException;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.std.IntervalCastExpression.EndPoint;
+import com.foundationdb.server.types.AkType;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
-import static com.akiban.server.types.AkType.*;
-import static com.akiban.server.expression.std.IntervalCastExpression.EndPoint.*;
+import static com.foundationdb.server.types.AkType.*;
+import static com.foundationdb.server.expression.std.IntervalCastExpression.EndPoint.*;
 public class IntervalCastExpressionTest 
 {
     @Test

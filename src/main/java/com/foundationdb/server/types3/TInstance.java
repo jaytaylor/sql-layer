@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3;
+package com.foundationdb.server.types3;
 
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.util.AkibanAppender;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.types3.pvalue.PUnderlying;
+import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueTarget;
+import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.util.AkibanAppender;
 
 import java.util.ArrayList;
 import java.util.List;

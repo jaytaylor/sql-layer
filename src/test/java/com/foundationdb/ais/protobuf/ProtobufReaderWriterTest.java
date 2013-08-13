@@ -15,33 +15,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.protobuf;
+package com.foundationdb.ais.protobuf;
 
-import com.akiban.ais.CAOIBuilderFiller;
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.CharsetAndCollation;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.JoinColumn;
-import com.akiban.ais.model.Parameter;
-import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.Sequence;
-import com.akiban.ais.model.SQLJJar;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.Types;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.aisb2.AISBBasedBuilder;
-import com.akiban.ais.model.aisb2.NewAISBuilder;
-import com.akiban.server.error.ProtobufReadException;
-import com.akiban.server.error.ProtobufWriteException;
-import com.akiban.util.GrowableByteBuffer;
+import com.foundationdb.ais.CAOIBuilderFiller;
+import com.foundationdb.ais.model.AISBuilder;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.CharsetAndCollation;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.Join;
+import com.foundationdb.ais.model.JoinColumn;
+import com.foundationdb.ais.model.Parameter;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.SQLJJar;
+import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.Types;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.ais.model.aisb2.NewAISBuilder;
+import com.foundationdb.server.error.ProtobufReadException;
+import com.foundationdb.server.error.ProtobufWriteException;
+import com.foundationdb.util.GrowableByteBuffer;
 import org.junit.Test;
 
-import static com.akiban.ais.AISComparator.compareAndAssert;
+import static com.foundationdb.ais.AISComparator.compareAndAssert;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;

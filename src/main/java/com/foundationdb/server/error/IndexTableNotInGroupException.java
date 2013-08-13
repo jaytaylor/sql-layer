@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.error;
+package com.foundationdb.server.error;
 
 public class IndexTableNotInGroupException extends InvalidOperationException {
     public IndexTableNotInGroupException(String indexName, String column, String tableName) {

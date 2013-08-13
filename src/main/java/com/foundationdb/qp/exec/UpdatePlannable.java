@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.exec;
+package com.foundationdb.qp.exec;
 
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
 
 public interface UpdatePlannable extends Plannable {
     UpdateResult run(QueryContext context, QueryBindings bindings);

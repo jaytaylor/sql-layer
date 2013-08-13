@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.sql.server.ServerCallContextStack;
-import com.akiban.sql.server.ServerCallInvocation;
+import com.foundationdb.sql.server.ServerCallContextStack;
+import com.foundationdb.sql.server.ServerCallInvocation;
 
-import com.akiban.qp.loadableplan.LoadableOperator;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.Tap;
+import com.foundationdb.qp.loadableplan.LoadableOperator;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.util.tap.InOutTap;
+import com.foundationdb.util.tap.Tap;
 
 import java.io.IOException;
 import java.util.List;

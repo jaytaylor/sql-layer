@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.foundationdb.sql.optimizer.plan;
 
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.server.types.ToObjectValueTarget;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.util.ValueHolder;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueSources;
-import com.akiban.sql.optimizer.TypesTranslation;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.parser.ValueNode;
-import com.akiban.util.AkibanAppender;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.FromObjectValueSource;
+import com.foundationdb.server.types.ToObjectValueTarget;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.util.ValueHolder;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.sql.optimizer.TypesTranslation;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.parser.ValueNode;
+import com.foundationdb.util.AkibanAppender;
 
 /** An operand with a constant value. */
 public class ConstantExpression extends BaseExpression 

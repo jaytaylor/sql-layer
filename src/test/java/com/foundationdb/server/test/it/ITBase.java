@@ -15,27 +15,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it;
+package com.foundationdb.server.test.it;
 
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.RowCursor;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.geophile.Space;
-import com.akiban.server.test.ApiTestBase;
-import com.akiban.server.test.it.qp.TestRow;
-import com.akiban.server.types.ToObjectValueTarget;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueSources;
-import com.akiban.util.ShareHolder;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.RowCursor;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.geophile.Space;
+import com.foundationdb.server.test.ApiTestBase;
+import com.foundationdb.server.test.it.qp.TestRow;
+import com.foundationdb.server.types.ToObjectValueTarget;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.util.ShareHolder;
 
 import java.util.ArrayList;
 import java.util.List;

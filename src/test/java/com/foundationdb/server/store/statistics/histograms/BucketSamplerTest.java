@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.store.statistics.histograms;
+package com.foundationdb.server.store.statistics.histograms;
 
-import com.akiban.util.AssertUtils;
+import com.foundationdb.util.AssertUtils;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.akiban.server.store.statistics.histograms.BucketTestUtils.bucket;
+import static com.foundationdb.server.store.statistics.histograms.BucketTestUtils.bucket;
 import static org.junit.Assert.assertEquals;
 
 public final class BucketSamplerTest {

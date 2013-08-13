@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.transaction;
+package com.foundationdb.server.service.transaction;
 
-import com.akiban.server.service.Service;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.session.Session;
 
 public interface TransactionService extends Service {
     interface Callback {

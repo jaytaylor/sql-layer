@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.store;
+package com.foundationdb.server.test.it.store;
 
 import static org.junit.Assert.assertEquals;
 
-import com.akiban.ais.model.Index;
-import com.akiban.server.rowdata.RowDef;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.server.rowdata.RowDef;
 import org.junit.Test;
 
-import com.akiban.server.TableStatistics;
+import com.foundationdb.server.TableStatistics;
 
 public class AnalyzeIndexIT extends AbstractScanBase {
 

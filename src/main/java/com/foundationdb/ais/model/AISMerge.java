@@ -15,26 +15,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.model;
+package com.foundationdb.ais.model;
 
-import com.akiban.ais.AISCloner;
-import com.akiban.ais.protobuf.ProtobufWriter;
-import com.akiban.ais.util.ChangedTableDescription;
-import com.akiban.server.error.DuplicateIndexException;
-import com.akiban.server.error.IndexLacksColumnsException;
-import com.akiban.server.error.JoinColumnTypesMismatchException;
-import com.akiban.server.error.NoSuchColumnException;
-import com.akiban.server.error.NoSuchGroupException;
-import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.error.ProtectedIndexException;
-import com.akiban.server.error.TableNotInGroupException;
+import com.foundationdb.ais.AISCloner;
+import com.foundationdb.ais.protobuf.ProtobufWriter;
+import com.foundationdb.ais.util.ChangedTableDescription;
+import com.foundationdb.server.error.DuplicateIndexException;
+import com.foundationdb.server.error.IndexLacksColumnsException;
+import com.foundationdb.server.error.JoinColumnTypesMismatchException;
+import com.foundationdb.server.error.NoSuchColumnException;
+import com.foundationdb.server.error.NoSuchGroupException;
+import com.foundationdb.server.error.NoSuchTableException;
+import com.foundationdb.server.error.ProtectedIndexException;
+import com.foundationdb.server.error.TableNotInGroupException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.ais.model.validation.AISValidations;
-import com.akiban.server.error.JoinToMultipleParentsException;
-import com.akiban.server.error.JoinToUnknownTableException;
-import com.akiban.server.error.JoinToWrongColumnsException;
+import com.foundationdb.ais.model.validation.AISValidations;
+import com.foundationdb.server.error.JoinToMultipleParentsException;
+import com.foundationdb.server.error.JoinToUnknownTableException;
+import com.foundationdb.server.error.JoinToWrongColumnsException;
 
 import java.util.ArrayList;
 import java.util.Collection;

@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.sql.server.ServerValueEncoder;
+import com.foundationdb.sql.server.ServerValueEncoder;
 
-import com.akiban.qp.row.Row;
-import com.akiban.server.service.externaldata.CsvFormat;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.service.externaldata.CsvFormat;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;

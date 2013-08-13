@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3;
+package com.foundationdb.server.types3;
 
-import com.akiban.server.error.InvalidDateFormatException;
-import com.akiban.server.types3.mcompat.mcasts.CastUtils;
-import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
-import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
+import com.foundationdb.server.error.InvalidDateFormatException;
+import com.foundationdb.server.types3.mcompat.mcasts.CastUtils;
+import com.foundationdb.server.types3.mcompat.mtypes.MBigDecimalWrapper;
+import com.foundationdb.server.types3.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueTarget;
 
 import java.math.BigDecimal;
 

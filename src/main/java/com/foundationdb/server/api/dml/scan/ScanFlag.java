@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.api.dml.scan;
+package com.foundationdb.server.api.dml.scan;
 
 import java.util.EnumSet;
 import java.util.Set;
 
-import com.akiban.util.ArgumentValidation;
+import com.foundationdb.util.ArgumentValidation;
 
 public enum ScanFlag {
     DESCENDING (0),

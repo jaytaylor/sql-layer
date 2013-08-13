@@ -15,18 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.restdml;
+package com.foundationdb.server.service.restdml;
 
-import com.akiban.qp.operator.RowCursor;
-import com.akiban.qp.row.DelegateRow;
-import com.akiban.qp.row.Row;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.service.externaldata.GenericRowTracker;
-import com.akiban.server.service.externaldata.JsonRowWriter;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.sql.embedded.JDBCResultSet;
-import com.akiban.sql.embedded.JDBCResultSetMetaData;
-import com.akiban.util.AkibanAppender;
+import com.foundationdb.qp.operator.RowCursor;
+import com.foundationdb.qp.row.DelegateRow;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.api.dml.ColumnSelector;
+import com.foundationdb.server.service.externaldata.GenericRowTracker;
+import com.foundationdb.server.service.externaldata.JsonRowWriter;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.sql.embedded.JDBCResultSet;
+import com.foundationdb.sql.embedded.JDBCResultSetMetaData;
+import com.foundationdb.util.AkibanAppender;
 
 import java.sql.SQLException;
 import java.util.ArrayDeque;

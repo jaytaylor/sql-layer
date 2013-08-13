@@ -15,36 +15,36 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.dxl;
+package com.foundationdb.server.test.it.dxl;
 
-import com.akiban.ais.AISCloner;
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.DefaultNameGenerator;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Sequence;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.aisb2.AISBBasedBuilder;
-import com.akiban.ais.model.aisb2.NewAISBuilder;
-import com.akiban.ais.util.TableChange;
+import com.foundationdb.ais.AISCloner;
+import com.foundationdb.ais.model.AISBuilder;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.DefaultNameGenerator;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.ais.model.aisb2.NewAISBuilder;
+import com.foundationdb.ais.util.TableChange;
 
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.SimpleQueryContext;
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.error.InvalidAlterException;
-import com.akiban.server.error.NotNullViolationException;
-import com.akiban.sql.StandardException;
+import com.foundationdb.qp.expression.IndexKeyRange;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.SimpleQueryContext;
+import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.error.InvalidAlterException;
+import com.foundationdb.server.error.NotNullViolationException;
+import com.foundationdb.sql.StandardException;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,7 +54,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static com.akiban.ais.util.TableChangeValidator.ChangeLevel;
+import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;

@@ -15,22 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types.typestests;
+package com.foundationdb.server.types.typestests;
 
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ValueTarget;
-import com.akiban.server.types.extract.Extractors;
-import com.akiban.server.types.extract.LongExtractor;
-import com.akiban.util.ByteSource;
-import com.akiban.util.Undef;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.ValueTarget;
+import com.foundationdb.server.types.extract.Extractors;
+import com.foundationdb.server.types.extract.LongExtractor;
+import com.foundationdb.util.ByteSource;
+import com.foundationdb.util.Undef;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 
-import static com.akiban.server.types.AkType.*;
-import static com.akiban.server.types.typestests.TestCase.TestCaseType.*;
+import static com.foundationdb.server.types.AkType.*;
+import static com.foundationdb.server.types.typestests.TestCase.TestCaseType.*;
 
 import static org.junit.Assert.assertEquals;
 

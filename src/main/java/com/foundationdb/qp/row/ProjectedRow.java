@@ -15,22 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.row;
+package com.foundationdb.qp.row;
 
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.rowtype.ProjectedRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.Quote;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.util.ValueHolder;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.texpressions.TEvaluatableExpression;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.util.AkibanAppender;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.rowtype.ProjectedRowType;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.Quote;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.ExpressionEvaluation;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.util.ValueHolder;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.texpressions.TEvaluatableExpression;
+import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.util.AkibanAppender;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Iterators;

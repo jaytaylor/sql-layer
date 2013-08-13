@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.log4jconfig;
+package com.foundationdb.server.service.log4jconfig;
 
-import com.akiban.server.service.Service;
-import com.akiban.server.service.jmx.JmxManageable;
+import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.jmx.JmxManageable;
 
 public final class Log4JConfigurationServiceImpl
         implements Log4JConfigurationService, Service, JmxManageable {

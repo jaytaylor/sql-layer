@@ -14,20 +14,20 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.sql.aisddl;
+package com.foundationdb.sql.aisddl;
 
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.Sequence;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.error.DropSequenceNotAllowedException;
-import com.akiban.server.error.NoSuchSequenceException;
-import com.akiban.server.service.session.Session;
-import com.akiban.sql.parser.CreateSequenceNode;
-import com.akiban.sql.parser.DropSequenceNode;
-import com.akiban.sql.parser.ExistenceCheck;
-import com.akiban.qp.operator.QueryContext;
+import com.foundationdb.ais.model.AISBuilder;
+import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.api.DDLFunctions;
+import com.foundationdb.server.error.DropSequenceNotAllowedException;
+import com.foundationdb.server.error.NoSuchSequenceException;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.sql.parser.CreateSequenceNode;
+import com.foundationdb.sql.parser.DropSequenceNode;
+import com.foundationdb.sql.parser.ExistenceCheck;
+import com.foundationdb.qp.operator.QueryContext;
 
 public class SequenceDDL {
     private SequenceDDL() { }

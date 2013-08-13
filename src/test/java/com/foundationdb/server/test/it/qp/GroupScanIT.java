@@ -15,24 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.qp;
+package com.foundationdb.server.test.it.qp;
 
-import com.akiban.qp.expression.IndexBound;
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowBase;
-import com.akiban.server.api.dml.SetColumnSelector;
-import com.akiban.server.types.ValueSource;
-import com.akiban.util.tap.Tap;
-import com.akiban.util.tap.TapReport;
+import com.foundationdb.qp.expression.IndexBound;
+import com.foundationdb.qp.expression.IndexKeyRange;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.server.api.dml.SetColumnSelector;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.util.tap.Tap;
+import com.foundationdb.util.tap.TapReport;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
 
-import static com.akiban.qp.operator.API.*;
+import static com.foundationdb.qp.operator.API.*;
 import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 

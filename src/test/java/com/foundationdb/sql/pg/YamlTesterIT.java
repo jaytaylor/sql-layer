@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.server.types.extract.ConverterTestUtils;
+import com.foundationdb.server.types.extract.ConverterTestUtils;
 
 import java.io.File;
 import java.io.FileWriter;

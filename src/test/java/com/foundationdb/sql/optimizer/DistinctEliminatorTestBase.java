@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer;
+package com.foundationdb.sql.optimizer;
 
-import com.akiban.sql.parser.DMLStatementNode;
-import com.akiban.sql.parser.StatementNode;
+import com.foundationdb.sql.parser.DMLStatementNode;
+import com.foundationdb.sql.parser.StatementNode;
 import org.junit.Before;
 
 import java.io.File;

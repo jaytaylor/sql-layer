@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression;
+package com.foundationdb.server.expression;
 
-import com.akiban.server.t3expressions.T3RegistryServiceImpl;
-import com.akiban.server.t3expressions.TCastResolver;
-import com.akiban.server.types3.Types3Switch;
+import com.foundationdb.server.t3expressions.T3RegistryServiceImpl;
+import com.foundationdb.server.t3expressions.TCastResolver;
+import com.foundationdb.server.types3.Types3Switch;
 import org.junit.After;
 import org.junit.Before;
 

@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import static com.akiban.util.AssertUtils.assertCollectionEquals;
+import static com.foundationdb.util.AssertUtils.assertCollectionEquals;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.not;
@@ -60,7 +60,7 @@ import java.util.Map.Entry;
 import java.util.Stack;
 import java.util.regex.Pattern;
 
-import com.akiban.server.types3.Types3Switch;
+import com.foundationdb.server.types3.Types3Switch;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

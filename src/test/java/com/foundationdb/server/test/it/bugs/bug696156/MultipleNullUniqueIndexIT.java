@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.bugs.bug696156;
+package com.foundationdb.server.test.it.bugs.bug696156;
 
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.server.api.dml.scan.ScanAllRequest;
-import com.akiban.server.error.DuplicateKeyException;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.ais.model.AISBuilder;
+import com.foundationdb.server.api.dml.scan.ScanAllRequest;
+import com.foundationdb.server.error.DuplicateKeyException;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.test.it.ITBase;
 import org.junit.Assert;
 import org.junit.Test;
 

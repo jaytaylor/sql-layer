@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.dxl;
+package com.foundationdb.server.service.dxl;
 
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.api.DMLFunctions;
+import com.foundationdb.server.api.DDLFunctions;
+import com.foundationdb.server.api.DMLFunctions;
 
 public interface DXLService {
     DDLFunctions ddlFunctions();

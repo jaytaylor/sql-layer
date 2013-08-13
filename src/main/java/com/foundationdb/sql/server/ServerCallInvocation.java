@@ -15,30 +15,30 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.server;
+package com.foundationdb.sql.server;
 
-import com.akiban.sql.parser.ConstantNode;
-import com.akiban.sql.parser.JavaValueNode;
-import com.akiban.sql.parser.ParameterNode;
-import com.akiban.sql.parser.SQLToJavaValueNode;
-import com.akiban.sql.parser.StaticMethodCallNode;
-import com.akiban.sql.parser.ValueNode;
+import com.foundationdb.sql.parser.ConstantNode;
+import com.foundationdb.sql.parser.JavaValueNode;
+import com.foundationdb.sql.parser.ParameterNode;
+import com.foundationdb.sql.parser.SQLToJavaValueNode;
+import com.foundationdb.sql.parser.StaticMethodCallNode;
+import com.foundationdb.sql.parser.ValueNode;
 
-import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.TableName;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.server.error.NoSuchRoutineException;
-import com.akiban.server.error.UnsupportedSQLException;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueSources;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.server.error.NoSuchRoutineException;
+import com.foundationdb.server.error.UnsupportedSQLException;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.FromObjectValueSource;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TExecutionContext;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueSources;
 
 import java.util.Arrays;
 

@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.aggregation.std;
+package com.foundationdb.server.aggregation.std;
 
-import com.akiban.junit.OnlyIfNot;
-import com.akiban.server.types.NullValueSource;
+import com.foundationdb.junit.OnlyIfNot;
+import com.foundationdb.server.types.NullValueSource;
 import java.util.EnumSet;
-import com.akiban.junit.Parameterization;
+import com.foundationdb.junit.Parameterization;
 import java.util.Collection;
-import com.akiban.junit.ParameterizationBuilder;
+import com.foundationdb.junit.ParameterizationBuilder;
 import org.junit.runner.RunWith;
-import com.akiban.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.NamedParameterizedRunner;
 import java.math.BigInteger;
 import java.math.BigDecimal;
-import com.akiban.server.aggregation.Aggregator;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.util.ValueHolder;
+import com.foundationdb.server.aggregation.Aggregator;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.util.ValueHolder;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

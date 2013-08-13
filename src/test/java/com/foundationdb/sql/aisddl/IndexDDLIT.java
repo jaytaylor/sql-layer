@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.aisddl;
+package com.foundationdb.sql.aisddl;
 
 import static junit.framework.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
@@ -26,24 +26,24 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import com.akiban.ais.model.FullTextIndex;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.Index.JoinType;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.error.BranchingGroupIndexException;
-import com.akiban.server.error.IndexTableNotInGroupException;
-import com.akiban.server.error.IndistinguishableIndexException;
-import com.akiban.server.error.MissingGroupIndexJoinTypeException;
-import com.akiban.server.error.NoSuchColumnException;
-import com.akiban.server.error.NoSuchIndexException;
-import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.error.ProtectedIndexException;
-import com.akiban.server.error.TableIndexJoinTypeException;
-import com.akiban.server.error.UnsupportedUniqueGroupIndexException;
-import com.akiban.server.service.servicemanager.GuicedServiceManager;
-import com.akiban.server.service.text.FullTextIndexService;
-import com.akiban.server.service.text.FullTextIndexServiceImpl;
+import com.foundationdb.ais.model.FullTextIndex;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.Index.JoinType;
+import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.error.BranchingGroupIndexException;
+import com.foundationdb.server.error.IndexTableNotInGroupException;
+import com.foundationdb.server.error.IndistinguishableIndexException;
+import com.foundationdb.server.error.MissingGroupIndexJoinTypeException;
+import com.foundationdb.server.error.NoSuchColumnException;
+import com.foundationdb.server.error.NoSuchIndexException;
+import com.foundationdb.server.error.NoSuchTableException;
+import com.foundationdb.server.error.ProtectedIndexException;
+import com.foundationdb.server.error.TableIndexJoinTypeException;
+import com.foundationdb.server.error.UnsupportedUniqueGroupIndexException;
+import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
+import com.foundationdb.server.service.text.FullTextIndexService;
+import com.foundationdb.server.service.text.FullTextIndexServiceImpl;
 
 import java.util.Map;
 

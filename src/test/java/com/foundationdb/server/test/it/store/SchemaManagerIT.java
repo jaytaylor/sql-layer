@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.store;
+package com.foundationdb.server.test.it.store;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -37,38 +37,38 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.Schema;
-import com.akiban.ais.model.Sequence;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.aisb2.AISBBasedBuilder;
-import com.akiban.ais.model.aisb2.NewAISBuilder;
-import com.akiban.ais.util.DDLGenerator;
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.memoryadapter.MemoryAdapter;
-import com.akiban.qp.memoryadapter.MemoryGroupCursor;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.IndexScanSelector;
-import com.akiban.qp.memoryadapter.MemoryTableFactory;
-import com.akiban.server.error.DuplicateTableNameException;
-import com.akiban.server.error.ErrorCode;
-import com.akiban.server.error.ISTableVersionMismatchException;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.JoinToProtectedTableException;
-import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.store.SchemaManager;
-import com.akiban.server.store.statistics.IndexStatistics;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.Schema;
+import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.ais.model.aisb2.NewAISBuilder;
+import com.foundationdb.ais.util.DDLGenerator;
+import com.foundationdb.qp.expression.IndexKeyRange;
+import com.foundationdb.qp.memoryadapter.MemoryAdapter;
+import com.foundationdb.qp.memoryadapter.MemoryGroupCursor;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.IndexScanSelector;
+import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.server.error.DuplicateTableNameException;
+import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.error.ISTableVersionMismatchException;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.error.JoinToProtectedTableException;
+import com.foundationdb.server.error.NoSuchTableException;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.SchemaManager;
+import com.foundationdb.server.store.statistics.IndexStatistics;
+import com.foundationdb.server.test.it.ITBase;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.UserTable;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.UserTable;
 
 public final class SchemaManagerIT extends ITBase {
     final static String SCHEMA = "my_schema";

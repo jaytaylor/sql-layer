@@ -15,19 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.dxl;
+package com.foundationdb.server.test.it.dxl;
 
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.api.dml.scan.CursorId;
-import com.akiban.server.api.dml.scan.LegacyScanRequest;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.ScanLimit;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.store.RowCollector;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.api.dml.scan.CursorId;
+import com.foundationdb.server.api.dml.scan.LegacyScanRequest;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.api.dml.scan.ScanLimit;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.store.RowCollector;
+import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
 
 import java.util.Iterator;

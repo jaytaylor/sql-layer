@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.foundationdb.sql.optimizer.rule;
 
-import com.akiban.sql.optimizer.plan.BaseQuery;
-import com.akiban.sql.optimizer.plan.ColumnExpression;
-import com.akiban.sql.optimizer.plan.PlanNode;
+import com.foundationdb.sql.optimizer.plan.BaseQuery;
+import com.foundationdb.sql.optimizer.plan.ColumnExpression;
+import com.foundationdb.sql.optimizer.plan.PlanNode;
 
 import java.util.ArrayDeque;
 import java.util.Deque;

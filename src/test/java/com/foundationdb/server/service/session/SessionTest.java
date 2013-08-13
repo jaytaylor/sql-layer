@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.session;
+package com.foundationdb.server.service.session;
 
 import org.junit.After;
 import org.junit.Before;

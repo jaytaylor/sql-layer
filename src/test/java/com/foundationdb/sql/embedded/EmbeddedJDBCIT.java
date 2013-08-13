@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.embedded;
+package com.foundationdb.sql.embedded;
 
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.server.test.it.ITBase;
 
-import com.akiban.server.types3.Types3Switch;
+import com.foundationdb.server.types3.Types3Switch;
 import org.junit.Before;
 import org.junit.Test;
 import static junit.framework.Assert.*;
@@ -29,7 +29,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.sql.*;
 
-import com.akiban.server.service.servicemanager.GuicedServiceManager;
+import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.Map;

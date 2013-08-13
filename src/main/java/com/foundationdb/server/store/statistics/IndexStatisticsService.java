@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.store.statistics;
+package com.foundationdb.server.store.statistics;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.TableStatistics;
-import com.akiban.server.service.session.Session;
-import com.akiban.ais.model.Index;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.TableStatistics;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.ais.model.Index;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
 

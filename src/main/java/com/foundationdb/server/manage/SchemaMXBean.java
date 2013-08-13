@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.manage;
+package com.foundationdb.server.manage;
 
 import java.util.List;
 import java.util.Map;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.service.session.Session;
 
 @SuppressWarnings("unused")
 public interface SchemaMXBean {

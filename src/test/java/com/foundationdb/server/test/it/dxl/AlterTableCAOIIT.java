@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.dxl;
+package com.foundationdb.server.test.it.dxl;
 
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.util.TableChange;
-import com.akiban.server.error.NotNullViolationException;
-import com.akiban.server.error.PrimaryKeyNullColumnException;
+import com.foundationdb.ais.model.AISBuilder;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.util.TableChange;
+import com.foundationdb.server.error.NotNullViolationException;
+import com.foundationdb.server.error.PrimaryKeyNullColumnException;
 import org.junit.After;
 import org.junit.Test;
 
 import java.util.Arrays;
 
-import com.akiban.ais.util.TableChangeValidator.ChangeLevel;
+import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;

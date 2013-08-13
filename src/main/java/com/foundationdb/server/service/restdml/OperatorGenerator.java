@@ -14,34 +14,34 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.server.service.restdml;
+package com.foundationdb.server.service.restdml;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.PrimaryKey;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.Types;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.SimpleQueryContext;
-import com.akiban.qp.row.BindableRow;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.t3expressions.T3RegistryService;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.server.types3.texpressions.TPreparedField;
-import com.akiban.server.types3.texpressions.TPreparedParameter;
-import com.akiban.sql.optimizer.rule.PlanGenerator;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.PrimaryKey;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.Types;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.SimpleQueryContext;
+import com.foundationdb.qp.row.BindableRow;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
+import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types3.texpressions.TPreparedField;
+import com.foundationdb.server.types3.texpressions.TPreparedParameter;
+import com.foundationdb.sql.optimizer.rule.PlanGenerator;
 
 public abstract class OperatorGenerator {
     

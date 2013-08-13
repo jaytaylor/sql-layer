@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.dxl;
+package com.foundationdb.server.test.it.dxl;
 
-import com.akiban.ais.model.Table;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.ScanAllRequest;
-import com.akiban.server.api.dml.scan.ScanFlag;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.api.dml.scan.ScanAllRequest;
+import com.foundationdb.server.api.dml.scan.ScanFlag;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
 
 import java.util.EnumSet;

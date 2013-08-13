@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.rest.resources;
+package com.foundationdb.rest.resources;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.rest.ResourceRequirements;
-import com.akiban.rest.RestResponseBuilder;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.rest.ResourceRequirements;
+import com.foundationdb.rest.RestResponseBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javax.servlet.http.HttpServletRequest;
@@ -38,12 +38,12 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.PrintWriter;
 
-import static com.akiban.rest.resources.ResourceHelper.IDENTIFIERS_MULTI;
-import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
-import static com.akiban.rest.resources.ResourceHelper.checkTableAccessible;
-import static com.akiban.rest.resources.ResourceHelper.getPKString;
-import static com.akiban.rest.resources.ResourceHelper.parseTableName;
-import static com.akiban.util.JsonUtils.readTree;
+import static com.foundationdb.rest.resources.ResourceHelper.IDENTIFIERS_MULTI;
+import static com.foundationdb.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
+import static com.foundationdb.rest.resources.ResourceHelper.checkTableAccessible;
+import static com.foundationdb.rest.resources.ResourceHelper.getPKString;
+import static com.foundationdb.rest.resources.ResourceHelper.parseTableName;
+import static com.foundationdb.util.JsonUtils.readTree;
 
 /**
  * Entity based access (GET), creation (PUT, POST), and modification (PUT, DELETE)

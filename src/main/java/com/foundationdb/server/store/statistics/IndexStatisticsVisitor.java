@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.store.statistics;
+package com.foundationdb.server.store.statistics;
 
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.tree.KeyCreator;
-import com.akiban.server.store.IndexVisitor;
-import com.akiban.server.store.Store;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.tree.KeyCreator;
+import com.foundationdb.server.store.IndexVisitor;
+import com.foundationdb.server.store.Store;
 
 import java.util.ArrayList;
 import java.util.List;

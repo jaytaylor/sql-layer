@@ -15,17 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.sql.server.ServerCallInvocation;
+import com.foundationdb.sql.server.ServerCallInvocation;
 
-import com.akiban.sql.parser.CallStatementNode;
-import com.akiban.sql.parser.ParameterNode;
-import com.akiban.sql.parser.StatementNode;
-import com.akiban.sql.parser.StaticMethodCallNode;
+import com.foundationdb.sql.parser.CallStatementNode;
+import com.foundationdb.sql.parser.ParameterNode;
+import com.foundationdb.sql.parser.StatementNode;
+import com.foundationdb.sql.parser.StaticMethodCallNode;
 
-import com.akiban.server.error.CantCallScriptLibraryException;
-import com.akiban.server.explain.Explainable;
+import com.foundationdb.server.error.CantCallScriptLibraryException;
+import com.foundationdb.server.explain.Explainable;
 
 import java.util.List;
 

@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.persistitadapter.indexcursor;
+package com.foundationdb.qp.persistitadapter.indexcursor;
 
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.RowCursor;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.persistitadapter.Sorter;
-import com.akiban.qp.persistitadapter.TempVolume;
-import com.akiban.qp.persistitadapter.indexcursor.SorterAdapter.PersistitValueSourceAdapter;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.row.ValuesHolderRow;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.util.tap.InOutTap;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.RowCursor;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.persistitadapter.PersistitAdapter;
+import com.foundationdb.qp.persistitadapter.Sorter;
+import com.foundationdb.qp.persistitadapter.TempVolume;
+import com.foundationdb.qp.persistitadapter.indexcursor.SorterAdapter.PersistitValueSourceAdapter;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesHolderRow;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.util.tap.InOutTap;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Key.Direction;

@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.direct;
+package com.foundationdb.direct;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,16 +28,16 @@ import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.NotFoundException;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.JoinColumn;
-import com.akiban.ais.model.PrimaryKey;
-import com.akiban.ais.model.Schema;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.types.AkType;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Join;
+import com.foundationdb.ais.model.JoinColumn;
+import com.foundationdb.ais.model.PrimaryKey;
+import com.foundationdb.ais.model.Schema;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.error.NoSuchTableException;
+import com.foundationdb.server.types.AkType;
 import com.sun.jersey.core.impl.provider.entity.Inflector;
 
 public abstract class ClassBuilder {

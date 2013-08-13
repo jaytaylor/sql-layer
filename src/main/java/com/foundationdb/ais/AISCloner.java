@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais;
+package com.foundationdb.ais;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Schema;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.protobuf.AISProtobuf;
-import com.akiban.ais.protobuf.ProtobufReader;
-import com.akiban.ais.protobuf.ProtobufWriter;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Schema;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.protobuf.AISProtobuf;
+import com.foundationdb.ais.protobuf.ProtobufReader;
+import com.foundationdb.ais.protobuf.ProtobufWriter;
 
 public class AISCloner {
     public static AkibanInformationSchema clone(AkibanInformationSchema ais) {

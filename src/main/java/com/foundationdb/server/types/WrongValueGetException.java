@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types;
+package com.foundationdb.server.types;
 
 public final class WrongValueGetException extends ValueSourceException {
     public WrongValueGetException(AkType expectedType, AkType actualType) {

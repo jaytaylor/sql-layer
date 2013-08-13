@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.junit;
+package com.foundationdb.junit;
 
-import com.akiban.junit.NamedParameterizedRunner.ReifiedParamRunner;
+import com.foundationdb.junit.NamedParameterizedRunner.ReifiedParamRunner;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

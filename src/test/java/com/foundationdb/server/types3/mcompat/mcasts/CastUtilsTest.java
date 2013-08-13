@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.mcompat.mcasts;
+package com.foundationdb.server.types3.mcompat.mcasts;
 
-import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.junit.Parameterization;
-import com.akiban.junit.ParameterizationBuilder;
-import com.akiban.server.types3.ErrorHandlingMode;
-import com.akiban.server.types3.TExecutionContext;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.Parameterization;
+import com.foundationdb.junit.ParameterizationBuilder;
+import com.foundationdb.server.types3.ErrorHandlingMode;
+import com.foundationdb.server.types3.TExecutionContext;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 

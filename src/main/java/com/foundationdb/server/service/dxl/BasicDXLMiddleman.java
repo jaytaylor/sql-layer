@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.dxl;
+package com.foundationdb.server.service.dxl;
 
-import com.akiban.server.api.dml.scan.ColumnSet;
-import com.akiban.server.api.dml.scan.Cursor;
-import com.akiban.server.api.dml.scan.CursorId;
-import com.akiban.server.api.dml.scan.ScanRequest;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.server.api.dml.scan.ColumnSet;
+import com.foundationdb.server.api.dml.scan.Cursor;
+import com.foundationdb.server.api.dml.scan.CursorId;
+import com.foundationdb.server.api.dml.scan.ScanRequest;
+import com.foundationdb.server.service.session.Session;
 
 import java.util.Map;
 import java.util.Set;

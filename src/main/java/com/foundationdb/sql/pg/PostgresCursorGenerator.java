@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.qp.operator.CursorBase;
-import com.akiban.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.CursorBase;
+import com.foundationdb.qp.operator.QueryBindings;
 
 public interface PostgresCursorGenerator<T extends CursorBase> {
     public boolean canSuspend(PostgresServerSession server);

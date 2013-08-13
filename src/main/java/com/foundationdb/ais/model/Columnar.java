@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.model;
+package com.foundationdb.ais.model;
 
 import java.util.*;
 
-import com.akiban.ais.model.validation.AISInvariants;
+import com.foundationdb.ais.model.validation.AISInvariants;
 
 /** Common base class for tables and views, which both have columns. */
 public abstract class Columnar

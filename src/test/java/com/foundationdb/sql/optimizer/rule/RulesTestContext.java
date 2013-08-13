@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.foundationdb.sql.optimizer.rule;
 
-import com.akiban.server.t3expressions.T3RegistryServiceImpl;
-import com.akiban.sql.optimizer.OptimizerTestBase;
-import com.akiban.sql.optimizer.rule.cost.TestCostEstimator;
+import com.foundationdb.server.t3expressions.T3RegistryServiceImpl;
+import com.foundationdb.sql.optimizer.OptimizerTestBase;
+import com.foundationdb.sql.optimizer.rule.cost.TestCostEstimator;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.service.functions.FunctionsRegistryImpl;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.server.service.functions.FunctionsRegistryImpl;
 
 import java.util.List;
 import java.util.Properties;

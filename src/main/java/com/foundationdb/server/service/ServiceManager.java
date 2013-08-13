@@ -15,19 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service;
+package com.foundationdb.server.service;
 
-import com.akiban.server.AkServerInterface;
-import com.akiban.server.error.ServiceStartupException;
-import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.monitor.MonitorService;
-import com.akiban.server.service.jmx.JmxRegistryService;
-import com.akiban.server.service.servicemanager.ServiceManagerBase;
-import com.akiban.server.service.session.SessionService;
-import com.akiban.server.service.stats.StatisticsService;
-import com.akiban.server.store.SchemaManager;
-import com.akiban.server.store.Store;
+import com.foundationdb.server.AkServerInterface;
+import com.foundationdb.server.error.ServiceStartupException;
+import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.server.service.dxl.DXLService;
+import com.foundationdb.server.service.monitor.MonitorService;
+import com.foundationdb.server.service.jmx.JmxRegistryService;
+import com.foundationdb.server.service.servicemanager.ServiceManagerBase;
+import com.foundationdb.server.service.session.SessionService;
+import com.foundationdb.server.service.stats.StatisticsService;
+import com.foundationdb.server.store.SchemaManager;
+import com.foundationdb.server.store.Store;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

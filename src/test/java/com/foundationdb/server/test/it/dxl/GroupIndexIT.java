@@ -15,17 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.dxl;
+package com.foundationdb.server.test.it.dxl;
 
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableName;
-import com.akiban.server.error.BranchingGroupIndexException;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
-import com.akiban.server.store.IndexKeyVisitor;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.GroupIndex;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.error.BranchingGroupIndexException;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
+import com.foundationdb.server.store.IndexKeyVisitor;
+import com.foundationdb.server.test.it.ITBase;
 import junit.framework.Assert;
 import org.junit.After;
 import org.junit.Before;

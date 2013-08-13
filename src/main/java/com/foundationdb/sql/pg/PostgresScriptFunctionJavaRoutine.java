@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.server.service.routines.ScriptInvoker;
-import com.akiban.server.service.routines.ScriptPool;
-import com.akiban.sql.script.ScriptFunctionJavaRoutine;
-import com.akiban.sql.server.ServerCallInvocation;
-import com.akiban.sql.server.ServerJavaMethod;
-import com.akiban.sql.server.ServerJavaRoutine;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.server.service.routines.ScriptInvoker;
+import com.foundationdb.server.service.routines.ScriptPool;
+import com.foundationdb.sql.script.ScriptFunctionJavaRoutine;
+import com.foundationdb.sql.server.ServerCallInvocation;
+import com.foundationdb.sql.server.ServerJavaMethod;
+import com.foundationdb.sql.server.ServerJavaRoutine;
 
 import java.util.List;
 import java.io.IOException;

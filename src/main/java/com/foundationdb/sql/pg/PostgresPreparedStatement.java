@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.sql.optimizer.plan.CostEstimate;
-import com.akiban.server.service.monitor.PreparedStatementMonitor;
+import com.foundationdb.sql.optimizer.plan.CostEstimate;
+import com.foundationdb.server.service.monitor.PreparedStatementMonitor;
 
 public class PostgresPreparedStatement implements PreparedStatementMonitor
 {

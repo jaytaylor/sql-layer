@@ -15,37 +15,37 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.persistitadapter;
+package com.foundationdb.qp.persistitadapter;
 
-import com.akiban.ais.model.*;
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.Limit;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.SimpleQueryContext;
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.row.AbstractRow;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.*;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.api.FixedCountLimit;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.api.dml.scan.PredicateLimit;
-import com.akiban.server.api.dml.scan.ScanLimit;
-import com.akiban.server.rowdata.IndexDef;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.store.PersistitStore;
-import com.akiban.server.store.RowCollector;
-import com.akiban.server.store.Store;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.util.GrowableByteBuffer;
-import com.akiban.util.ShareHolder;
+import com.foundationdb.ais.model.*;
+import com.foundationdb.qp.expression.IndexKeyRange;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.Limit;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.SimpleQueryContext;
+import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.row.AbstractRow;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.*;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
+import com.foundationdb.server.api.FixedCountLimit;
+import com.foundationdb.server.api.dml.ColumnSelector;
+import com.foundationdb.server.api.dml.scan.PredicateLimit;
+import com.foundationdb.server.api.dml.scan.ScanLimit;
+import com.foundationdb.server.rowdata.IndexDef;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.PersistitStore;
+import com.foundationdb.server.store.RowCollector;
+import com.foundationdb.server.store.Store;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.util.GrowableByteBuffer;
+import com.foundationdb.util.ShareHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,7 +56,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.akiban.qp.operator.API.*;
+import static com.foundationdb.qp.operator.API.*;
 
 public abstract class OperatorBasedRowCollector implements RowCollector
 {

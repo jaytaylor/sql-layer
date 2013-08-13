@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.aisddl;
+package com.foundationdb.sql.aisddl;
 
-import com.akiban.ais.model.TableName;
+import com.foundationdb.ais.model.TableName;
 
 public class DDLHelper {
     private DDLHelper() {}

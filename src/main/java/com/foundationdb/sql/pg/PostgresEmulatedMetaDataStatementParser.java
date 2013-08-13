@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.sql.pg.PostgresEmulatedMetaDataStatement.Query;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.sql.pg.PostgresEmulatedMetaDataStatement.Query;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

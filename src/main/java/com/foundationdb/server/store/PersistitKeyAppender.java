@@ -15,24 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.store;
+package com.foundationdb.server.store;
 
-import com.akiban.ais.model.Column;
-import com.akiban.qp.util.PersistitKey;
-import com.akiban.server.PersistitKeyPValueTarget;
-import com.akiban.server.PersistitKeyValueTarget;
-import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDataPValueSource;
-import com.akiban.server.rowdata.RowDataValueSource;
-import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.conversion.Converters;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueSources;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.qp.util.PersistitKey;
+import com.foundationdb.server.PersistitKeyPValueTarget;
+import com.foundationdb.server.PersistitKeyValueTarget;
+import com.foundationdb.server.rowdata.FieldDef;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.rowdata.RowDataPValueSource;
+import com.foundationdb.server.rowdata.RowDataValueSource;
+import com.foundationdb.server.types.FromObjectValueSource;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.conversion.Converters;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueSources;
 import com.persistit.Key;
 
 public abstract class PersistitKeyAppender {

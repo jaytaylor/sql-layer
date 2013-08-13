@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.qp.persistitadapter.indexcursor;
+package com.foundationdb.qp.persistitadapter.indexcursor;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -29,24 +29,24 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.API.Ordering;
-import com.akiban.qp.operator.CursorLifecycle;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.RowCursor;
-import com.akiban.qp.persistitadapter.Sorter;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.row.ValuesHolderRow;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.PersistitKeyPValueSource;
-import com.akiban.server.PersistitKeyPValueTarget;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.error.MergeSortIOException;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTargets;
-import com.akiban.util.tap.InOutTap;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.API.Ordering;
+import com.foundationdb.qp.operator.CursorLifecycle;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.RowCursor;
+import com.foundationdb.qp.persistitadapter.Sorter;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesHolderRow;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.PersistitKeyPValueSource;
+import com.foundationdb.server.PersistitKeyPValueTarget;
+import com.foundationdb.server.api.dml.ColumnSelector;
+import com.foundationdb.server.error.MergeSortIOException;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueTargets;
+import com.foundationdb.util.tap.InOutTap;
 import com.persistit.Key;
 import com.persistit.KeyState;
 import com.persistit.Persistit;

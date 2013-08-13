@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.api.dml.scan;
+package com.foundationdb.server.api.dml.scan;
 
 import java.nio.ByteBuffer;
 
-import com.akiban.server.api.common.WrongByteAllocationException;
+import com.foundationdb.server.api.common.WrongByteAllocationException;
 
 public final class CursorId {
     private static final int SIZE_ON_BUFFER = 2 * (Long.SIZE / 8) + Integer.SIZE / 8;

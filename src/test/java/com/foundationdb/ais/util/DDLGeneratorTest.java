@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.util;
+package com.foundationdb.ais.util;
 
 import static junit.framework.Assert.assertEquals;
 
 import org.junit.Test;
 
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.AISBuilder;
+import com.foundationdb.ais.model.AkibanInformationSchema;
 
 public final class DDLGeneratorTest {
 

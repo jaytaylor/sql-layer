@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.api.dml.scan;
+package com.foundationdb.server.api.dml.scan;
 
-import com.akiban.server.store.RowCollector;
+import com.foundationdb.server.store.RowCollector;
 
 public final class Cursor {
 

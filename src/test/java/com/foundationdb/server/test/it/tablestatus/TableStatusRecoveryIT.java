@@ -15,19 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.tablestatus;
+package com.foundationdb.server.test.it.tablestatus;
 
 import static org.junit.Assert.assertEquals;
 
 import java.util.concurrent.Callable;
 
-import com.akiban.ais.model.aisb2.AISBBasedBuilder;
-import com.akiban.ais.model.aisb2.NewAISBuilder;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.ais.model.aisb2.NewAISBuilder;
+import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
 
-import com.akiban.server.TableStatistics;
-import com.akiban.server.TableStatus;
+import com.foundationdb.server.TableStatistics;
+import com.foundationdb.server.TableStatus;
 
 public class TableStatusRecoveryIT extends ITBase {
     private final static int ROW_COUNT = 100;

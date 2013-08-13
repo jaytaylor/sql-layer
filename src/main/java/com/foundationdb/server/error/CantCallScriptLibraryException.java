@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.error;
+package com.foundationdb.server.error;
 
-import com.akiban.sql.parser.QueryTreeNode;
+import com.foundationdb.sql.parser.QueryTreeNode;
 
 public class CantCallScriptLibraryException extends BaseSQLException {
     public CantCallScriptLibraryException(QueryTreeNode node) {

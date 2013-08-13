@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.sql.server.ServerValueEncoder;
+import com.foundationdb.sql.server.ServerValueEncoder;
 
 import java.util.List;
 import java.io.IOException;

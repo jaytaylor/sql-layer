@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.persistitadapter;
+package com.foundationdb.qp.persistitadapter;
 
-import com.akiban.qp.operator.RowCursor;
+import com.foundationdb.qp.operator.RowCursor;
 import com.persistit.exception.PersistitException;
 
 public interface Sorter {

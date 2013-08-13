@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.junit;
+package com.foundationdb.junit;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule.cost;
+package com.foundationdb.sql.optimizer.rule.cost;
 
-import com.akiban.sql.optimizer.OptimizerTestBase;
-import com.akiban.sql.optimizer.plan.*;
-import com.akiban.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
-import com.akiban.sql.optimizer.rule.RulesTestHelper;
+import com.foundationdb.sql.optimizer.OptimizerTestBase;
+import com.foundationdb.sql.optimizer.plan.*;
+import com.foundationdb.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
+import com.foundationdb.sql.optimizer.rule.RulesTestHelper;
 
-import com.akiban.ais.model.*;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.types.AkType;
+import com.foundationdb.ais.model.*;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.server.types.AkType;
 
 import org.junit.Before;
 import org.junit.Test;

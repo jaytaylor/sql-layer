@@ -15,36 +15,36 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.mt.mtatomics;
+package com.foundationdb.server.test.mt.mtatomics;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.aisb2.AISBBasedBuilder;
-import com.akiban.ais.model.aisb2.NewAISBuilder;
-import com.akiban.ais.util.TableChange;
-import com.akiban.ais.util.TableChangeValidator;
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.api.dml.scan.CursorId;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.ScanAllRequest;
-import com.akiban.server.api.dml.scan.ScanFlag;
-import com.akiban.server.api.dml.scan.ScanLimit;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.OldAISException;
-import com.akiban.server.error.TableChangedByDDLException;
-import com.akiban.server.service.ServiceManagerImpl;
-import com.akiban.server.service.dxl.DXLReadWriteLockHook;
-import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.test.mt.mtutil.TimePoints;
-import com.akiban.server.test.mt.mtutil.TimePointsComparison;
-import com.akiban.server.test.mt.mtutil.TimedCallable;
-import com.akiban.server.test.mt.mtutil.TimedExceptionCatcher;
-import com.akiban.server.test.mt.mtutil.Timing;
-import com.akiban.server.test.mt.mtutil.TimedResult;
-import com.akiban.server.service.dxl.ConcurrencyAtomicsDXLService;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.ais.model.aisb2.NewAISBuilder;
+import com.foundationdb.ais.util.TableChange;
+import com.foundationdb.ais.util.TableChangeValidator;
+import com.foundationdb.server.api.DDLFunctions;
+import com.foundationdb.server.api.dml.scan.CursorId;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.api.dml.scan.ScanAllRequest;
+import com.foundationdb.server.api.dml.scan.ScanFlag;
+import com.foundationdb.server.api.dml.scan.ScanLimit;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.error.OldAISException;
+import com.foundationdb.server.error.TableChangedByDDLException;
+import com.foundationdb.server.service.ServiceManagerImpl;
+import com.foundationdb.server.service.dxl.DXLReadWriteLockHook;
+import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.test.mt.mtutil.TimePoints;
+import com.foundationdb.server.test.mt.mtutil.TimePointsComparison;
+import com.foundationdb.server.test.mt.mtutil.TimedCallable;
+import com.foundationdb.server.test.mt.mtutil.TimedExceptionCatcher;
+import com.foundationdb.server.test.mt.mtutil.Timing;
+import com.foundationdb.server.test.mt.mtutil.TimedResult;
+import com.foundationdb.server.service.dxl.ConcurrencyAtomicsDXLService;
+import com.foundationdb.server.service.session.Session;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -69,7 +69,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import static com.akiban.server.test.mt.mtatomics.DelayableIUDCallable.IUDType;
+import static com.foundationdb.server.test.mt.mtatomics.DelayableIUDCallable.IUDType;
 import static org.junit.Assert.fail;
 
 public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {

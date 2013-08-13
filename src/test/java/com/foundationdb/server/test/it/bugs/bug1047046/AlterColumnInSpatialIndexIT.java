@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.bugs.bug1047046;
+package com.foundationdb.server.test.it.bugs.bug1047046;
 
-import com.akiban.ais.model.TableIndex;
-import com.akiban.server.test.it.dxl.AlterTableITBase;
+import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.server.test.it.dxl.AlterTableITBase;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

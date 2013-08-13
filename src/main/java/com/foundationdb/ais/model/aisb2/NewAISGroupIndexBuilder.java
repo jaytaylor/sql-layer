@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.model.aisb2;
+package com.foundationdb.ais.model.aisb2;
 
 public interface NewAISGroupIndexBuilder extends NewAISProvider {
 

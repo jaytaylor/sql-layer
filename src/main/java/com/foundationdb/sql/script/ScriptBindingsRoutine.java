@@ -15,22 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.script;
+package com.foundationdb.sql.script;
 
-import com.akiban.ais.model.Parameter;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.sql.server.ServerCallExplainer;
-import com.akiban.sql.server.ServerJavaRoutine;
-import com.akiban.sql.server.ServerJavaValues;
-import com.akiban.sql.server.ServerQueryContext;
-import com.akiban.sql.server.ServerRoutineInvocation;
-import com.akiban.server.explain.Attributes;
-import com.akiban.server.explain.CompoundExplainer;
-import com.akiban.server.explain.ExplainContext;
-import com.akiban.server.explain.Label;
-import com.akiban.server.explain.PrimitiveExplainer;
-import com.akiban.server.service.routines.ScriptEvaluator;
-import com.akiban.server.service.routines.ScriptPool;
+import com.foundationdb.ais.model.Parameter;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.sql.server.ServerCallExplainer;
+import com.foundationdb.sql.server.ServerJavaRoutine;
+import com.foundationdb.sql.server.ServerJavaValues;
+import com.foundationdb.sql.server.ServerQueryContext;
+import com.foundationdb.sql.server.ServerRoutineInvocation;
+import com.foundationdb.server.explain.Attributes;
+import com.foundationdb.server.explain.CompoundExplainer;
+import com.foundationdb.server.explain.ExplainContext;
+import com.foundationdb.server.explain.Label;
+import com.foundationdb.server.explain.PrimitiveExplainer;
+import com.foundationdb.server.service.routines.ScriptEvaluator;
+import com.foundationdb.server.service.routines.ScriptPool;
 
 import javax.script.Bindings;
 import java.sql.ResultSet;

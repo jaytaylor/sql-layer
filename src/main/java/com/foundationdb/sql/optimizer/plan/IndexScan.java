@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.foundationdb.sql.optimizer.plan;
 
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
-import com.akiban.util.Strings;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
+import com.foundationdb.util.Strings;
 import java.util.*;
 
 public abstract class IndexScan extends BaseScan implements IndexIntersectionNode<ConditionExpression,IndexScan>

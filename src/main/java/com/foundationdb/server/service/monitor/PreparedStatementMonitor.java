@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.monitor;
+package com.foundationdb.server.service.monitor;
 
 public interface PreparedStatementMonitor {
     /** The id of the session owning the prepared statement. */

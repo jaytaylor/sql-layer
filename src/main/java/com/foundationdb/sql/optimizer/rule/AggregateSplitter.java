@@ -15,17 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.foundationdb.sql.optimizer.rule;
 
-import com.akiban.sql.optimizer.rule.AggregateMapper.AggregateSourceFinder;
-import com.akiban.sql.optimizer.rule.AggregateMapper.AggregateSourceState;
+import com.foundationdb.sql.optimizer.rule.AggregateMapper.AggregateSourceFinder;
+import com.foundationdb.sql.optimizer.rule.AggregateMapper.AggregateSourceState;
 
-import com.akiban.server.error.UnsupportedSQLException;
+import com.foundationdb.server.error.UnsupportedSQLException;
 
-import com.akiban.sql.optimizer.plan.*;
-import com.akiban.sql.optimizer.plan.AggregateSource.Implementation;
+import com.foundationdb.sql.optimizer.plan.*;
+import com.foundationdb.sql.optimizer.plan.AggregateSource.Implementation;
 
-import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
+import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

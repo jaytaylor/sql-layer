@@ -15,24 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.aisddl;
+package com.foundationdb.sql.aisddl;
 
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.assertNotNull;
 import org.junit.Test;
 import org.junit.Before;
 
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Index;
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.sql.parser.SQLParser;
-import com.akiban.sql.parser.StatementNode;
-import com.akiban.sql.parser.CreateSchemaNode;
-import com.akiban.sql.parser.DropSchemaNode;
-import com.akiban.server.error.DuplicateSchemaException;
-import com.akiban.server.error.DropSchemaNotAllowedException;
-import com.akiban.server.error.NoSuchSchemaException;
+import com.foundationdb.ais.model.AISBuilder;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.server.api.DDLFunctions;
+import com.foundationdb.sql.parser.SQLParser;
+import com.foundationdb.sql.parser.StatementNode;
+import com.foundationdb.sql.parser.CreateSchemaNode;
+import com.foundationdb.sql.parser.DropSchemaNode;
+import com.foundationdb.server.error.DuplicateSchemaException;
+import com.foundationdb.server.error.DropSchemaNotAllowedException;
+import com.foundationdb.server.error.NoSuchSchemaException;
 
 
 public class SchemaDDLTest {

@@ -15,35 +15,35 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.api;
+package com.foundationdb.server.api;
 
 import java.util.List;
 import java.util.Set;
 
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.TableStatistics;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.api.dml.scan.BufferFullException;
-import com.akiban.server.api.dml.scan.CursorId;
-import com.akiban.server.api.dml.scan.CursorState;
-import com.akiban.server.api.dml.scan.LegacyRowOutput;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.RowOutput;
-import com.akiban.server.api.dml.scan.ScanRequest;
-import com.akiban.server.error.ConcurrentScanAndUpdateException;
-import com.akiban.server.error.CursorIsFinishedException;
-import com.akiban.server.error.CursorIsUnknownException;
-import com.akiban.server.error.DuplicateKeyException;
-import com.akiban.server.error.ForeignKeyConstraintDMLException;
-import com.akiban.server.error.NoSuchColumnException;
-import com.akiban.server.error.NoSuchIndexException;
-import com.akiban.server.error.NoSuchRowException;
-import com.akiban.server.error.OldAISException;
-import com.akiban.server.error.RowOutputException;
-import com.akiban.server.error.TableDefinitionChangedException;
-import com.akiban.server.error.TableDefinitionMismatchException;
-import com.akiban.server.error.UnsupportedModificationException;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.TableStatistics;
+import com.foundationdb.server.api.dml.ColumnSelector;
+import com.foundationdb.server.api.dml.scan.BufferFullException;
+import com.foundationdb.server.api.dml.scan.CursorId;
+import com.foundationdb.server.api.dml.scan.CursorState;
+import com.foundationdb.server.api.dml.scan.LegacyRowOutput;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.api.dml.scan.RowOutput;
+import com.foundationdb.server.api.dml.scan.ScanRequest;
+import com.foundationdb.server.error.ConcurrentScanAndUpdateException;
+import com.foundationdb.server.error.CursorIsFinishedException;
+import com.foundationdb.server.error.CursorIsUnknownException;
+import com.foundationdb.server.error.DuplicateKeyException;
+import com.foundationdb.server.error.ForeignKeyConstraintDMLException;
+import com.foundationdb.server.error.NoSuchColumnException;
+import com.foundationdb.server.error.NoSuchIndexException;
+import com.foundationdb.server.error.NoSuchRowException;
+import com.foundationdb.server.error.OldAISException;
+import com.foundationdb.server.error.RowOutputException;
+import com.foundationdb.server.error.TableDefinitionChangedException;
+import com.foundationdb.server.error.TableDefinitionMismatchException;
+import com.foundationdb.server.error.UnsupportedModificationException;
+import com.foundationdb.server.service.session.Session;
 import com.persistit.exception.PersistitException;
 
 @SuppressWarnings("unused")

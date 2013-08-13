@@ -15,20 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.persistitadapter;
+package com.foundationdb.qp.persistitadapter;
 
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.row.AbstractRow;
-import com.akiban.qp.row.HKey;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.qp.util.HKeyCache;
-import com.akiban.server.api.dml.scan.LegacyRowWrapper;
-import com.akiban.server.encoding.EncodingException;
-import com.akiban.server.rowdata.*;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.util.SparseArray;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.row.AbstractRow;
+import com.foundationdb.qp.row.HKey;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.util.HKeyCache;
+import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
+import com.foundationdb.server.encoding.EncodingException;
+import com.foundationdb.server.rowdata.*;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.util.SparseArray;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 import org.slf4j.Logger;

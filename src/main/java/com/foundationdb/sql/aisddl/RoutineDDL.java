@@ -14,28 +14,28 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.sql.aisddl;
+package com.foundationdb.sql.aisddl;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.Parameter;
-import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.SQLJJar;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.Type;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.error.InvalidRoutineException;
-import com.akiban.server.error.NoSuchRoutineException;
-import com.akiban.server.error.NoSuchSQLJJarException;
-import com.akiban.server.service.routines.RoutineLoader;
-import com.akiban.server.service.session.Session;
-import com.akiban.sql.parser.CreateAliasNode;
-import com.akiban.sql.parser.DropAliasNode;
-import com.akiban.sql.parser.ExistenceCheck;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.AISBuilder;
+import com.foundationdb.ais.model.Parameter;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.SQLJJar;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.Type;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.server.api.DDLFunctions;
+import com.foundationdb.server.error.InvalidRoutineException;
+import com.foundationdb.server.error.NoSuchRoutineException;
+import com.foundationdb.server.error.NoSuchSQLJJarException;
+import com.foundationdb.server.service.routines.RoutineLoader;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.sql.parser.CreateAliasNode;
+import com.foundationdb.sql.parser.DropAliasNode;
+import com.foundationdb.sql.parser.ExistenceCheck;
 
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.RoutineAliasInfo;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.types.RoutineAliasInfo;
 import java.sql.ParameterMetaData;
 
 public class RoutineDDL {

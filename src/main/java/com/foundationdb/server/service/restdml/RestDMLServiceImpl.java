@@ -15,38 +15,38 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.restdml;
+package com.foundationdb.server.service.restdml;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexName;
-import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.Quote;
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.error.InvalidArgumentTypeException;
-import com.akiban.server.error.WrongExpressionArityException;
-import com.akiban.server.explain.format.JsonFormatter;
-import com.akiban.server.service.Service;
-import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.externaldata.ExternalDataService;
-import com.akiban.server.service.externaldata.JsonRowWriter;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionService;
-import com.akiban.server.service.text.FullTextIndexService;
-import com.akiban.server.service.text.FullTextQueryBuilder;
-import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.store.Store;
-import com.akiban.server.t3expressions.T3RegistryService;
-import com.akiban.sql.embedded.EmbeddedJDBCService;
-import com.akiban.sql.embedded.JDBCCallableStatement;
-import com.akiban.sql.embedded.JDBCConnection;
-import com.akiban.sql.embedded.JDBCParameterMetaData;
-import com.akiban.sql.embedded.JDBCResultSet;
-import com.akiban.util.AkibanAppender;
-import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.Tap;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexName;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.Quote;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.InvalidArgumentTypeException;
+import com.foundationdb.server.error.WrongExpressionArityException;
+import com.foundationdb.server.explain.format.JsonFormatter;
+import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.dxl.DXLService;
+import com.foundationdb.server.service.externaldata.ExternalDataService;
+import com.foundationdb.server.service.externaldata.JsonRowWriter;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.session.SessionService;
+import com.foundationdb.server.service.text.FullTextIndexService;
+import com.foundationdb.server.service.text.FullTextQueryBuilder;
+import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.store.Store;
+import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.sql.embedded.EmbeddedJDBCService;
+import com.foundationdb.sql.embedded.JDBCCallableStatement;
+import com.foundationdb.sql.embedded.JDBCConnection;
+import com.foundationdb.sql.embedded.JDBCParameterMetaData;
+import com.foundationdb.sql.embedded.JDBCResultSet;
+import com.foundationdb.util.AkibanAppender;
+import com.foundationdb.util.tap.InOutTap;
+import com.foundationdb.util.tap.Tap;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
@@ -67,9 +67,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import static com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
-import static com.akiban.util.JsonUtils.createJsonGenerator;
-import static com.akiban.util.JsonUtils.jsonParser;
+import static com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
+import static com.foundationdb.util.JsonUtils.createJsonGenerator;
+import static com.foundationdb.util.JsonUtils.jsonParser;
 
 public class RestDMLServiceImpl implements Service, RestDMLService {
     private final SessionService sessionService;

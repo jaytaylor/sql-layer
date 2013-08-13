@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.common.types;
+package com.foundationdb.server.types3.common.types;
 
-import com.akiban.server.types3.Attribute;
-import com.akiban.server.types3.texpressions.Serialization;
-import com.akiban.server.types3.texpressions.SerializeAs;
+import com.foundationdb.server.types3.Attribute;
+import com.foundationdb.server.types3.texpressions.Serialization;
+import com.foundationdb.server.types3.texpressions.SerializeAs;
 
 public enum NumericAttribute implements Attribute
 {

@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.store;
+package com.foundationdb.server.test.it.store;
 
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.Index;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.ais.model.AISBuilder;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
 
 import java.util.ArrayList;

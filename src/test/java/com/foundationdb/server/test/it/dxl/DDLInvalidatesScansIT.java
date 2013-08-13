@@ -15,19 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.dxl;
+package com.foundationdb.server.test.it.dxl;
 
-import com.akiban.ais.AISCloner;
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.api.dml.scan.CursorId;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.TableDefinitionChangedException;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.ais.AISCloner;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.api.dml.scan.CursorId;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.error.TableDefinitionChangedException;
+import com.foundationdb.server.test.it.ITBase;
 import org.junit.Before;
 import org.junit.Test;
 

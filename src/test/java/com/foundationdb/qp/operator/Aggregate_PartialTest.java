@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.operator;
+package com.foundationdb.qp.operator;
 
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.AggregatedRowType;
-import com.akiban.server.aggregation.Aggregator;
-import com.akiban.server.aggregation.AggregatorFactory;
-import com.akiban.server.error.InconvertibleTypesException;
-import com.akiban.server.expression.OldExpressionTestBase;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ValueTarget;
-import com.akiban.server.types.conversion.Converters;
-import com.akiban.server.types.extract.Extractors;
-import com.akiban.server.types.util.ValueHolder;
-import com.akiban.util.WrappingByteSource;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.AggregatedRowType;
+import com.foundationdb.server.aggregation.Aggregator;
+import com.foundationdb.server.aggregation.AggregatorFactory;
+import com.foundationdb.server.error.InconvertibleTypesException;
+import com.foundationdb.server.expression.OldExpressionTestBase;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.ValueTarget;
+import com.foundationdb.server.types.conversion.Converters;
+import com.foundationdb.server.types.extract.Extractors;
+import com.foundationdb.server.types.util.ValueHolder;
+import com.foundationdb.util.WrappingByteSource;
 import org.junit.Test;
 
 import java.util.ArrayDeque;

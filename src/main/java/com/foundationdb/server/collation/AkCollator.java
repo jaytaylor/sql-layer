@@ -14,13 +14,13 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.server.collation;
+package com.foundationdb.server.collation;
 
-import com.akiban.server.PersistitKeyPValueSource;
-import com.akiban.server.PersistitKeyValueSource;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.util.WrappingByteSource;
+import com.foundationdb.server.PersistitKeyPValueSource;
+import com.foundationdb.server.PersistitKeyValueSource;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.util.WrappingByteSource;
 import com.persistit.Key;
 
 public abstract class AkCollator {

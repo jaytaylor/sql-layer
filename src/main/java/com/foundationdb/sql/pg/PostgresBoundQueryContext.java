@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.qp.operator.CursorBase;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.server.types.AkType;
-import com.akiban.server.service.monitor.CursorMonitor;
+import com.foundationdb.qp.operator.CursorBase;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.service.monitor.CursorMonitor;
 
 public class PostgresBoundQueryContext extends PostgresQueryContext 
                                        implements CursorMonitor

@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
-import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.junit.Parameterization;
-import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.types.AkType;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.Parameterization;
+import com.foundationdb.server.expression.ExpressionComposer;
+import com.foundationdb.server.types.AkType;
 import org.junit.runner.RunWith;
 
 import java.util.Arrays;

@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.daily;
+package com.foundationdb.server.test.daily;
 
-import com.akiban.server.test.ApiTestBase;
+import com.foundationdb.server.test.ApiTestBase;
 
 public abstract class DailyBase extends ApiTestBase {
     public DailyBase() {

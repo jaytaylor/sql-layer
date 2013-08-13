@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule.join_enum;
+package com.foundationdb.sql.optimizer.rule.join_enum;
 
-import com.akiban.sql.optimizer.plan.Joinable;
+import com.foundationdb.sql.optimizer.plan.Joinable;
 
 import java.util.List;
 

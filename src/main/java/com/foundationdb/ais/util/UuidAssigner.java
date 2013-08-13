@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.util;
+package com.foundationdb.ais.util;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.NopVisitor;
-import com.akiban.ais.model.UserTable;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.NopVisitor;
+import com.foundationdb.ais.model.UserTable;
 
 import java.util.UUID;
 

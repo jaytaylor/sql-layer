@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.externaldata;
+package com.foundationdb.server.service.externaldata;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.RowCursor;
-import com.akiban.qp.row.Row;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.util.AkibanAppender;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.RowCursor;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.util.AkibanAppender;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

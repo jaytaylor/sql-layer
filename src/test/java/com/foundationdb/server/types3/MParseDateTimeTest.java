@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3;
+package com.foundationdb.server.types3;
 
-import com.akiban.server.error.InvalidDateFormatException;
-import com.akiban.server.types3.mcompat.mtypes.MDatetimes.StringType;
+import com.foundationdb.server.error.InvalidDateFormatException;
+import com.foundationdb.server.types3.mcompat.mtypes.MDatetimes.StringType;
 import java.util.ArrayList;
 import java.util.List;
-import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types3.mcompat.mtypes.MDatetimes;
 import org.junit.Test;
 
-import static com.akiban.server.types3.mcompat.mtypes.MDatetimes.StringType.*;
+import static com.foundationdb.server.types3.mcompat.mtypes.MDatetimes.StringType.*;
 import static org.junit.Assert.*;
 
 

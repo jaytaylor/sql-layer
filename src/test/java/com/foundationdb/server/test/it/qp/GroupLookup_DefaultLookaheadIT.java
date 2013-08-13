@@ -15,29 +15,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.qp;
+package com.foundationdb.server.test.it.qp;
 
-import com.akiban.qp.expression.ExpressionRow;
-import com.akiban.qp.expression.IndexBound;
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.expression.RowBasedUnboundExpressions;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.ExpressionGenerator;
-import com.akiban.qp.operator.IndexScanSelector;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.row.BindableRow;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.server.api.dml.SetColumnSelector;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.server.types3.texpressions.TPreparedLiteral;
+import com.foundationdb.qp.expression.ExpressionRow;
+import com.foundationdb.qp.expression.IndexBound;
+import com.foundationdb.qp.expression.IndexKeyRange;
+import com.foundationdb.qp.expression.RowBasedUnboundExpressions;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.ExpressionGenerator;
+import com.foundationdb.qp.operator.IndexScanSelector;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.row.BindableRow;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.server.api.dml.SetColumnSelector;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types3.texpressions.TPreparedLiteral;
 
 import org.junit.Before;
 import org.junit.Ignore;
@@ -51,8 +51,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.akiban.qp.operator.API.*;
-import static com.akiban.server.test.ExpressionGenerators.*;
+import static com.foundationdb.qp.operator.API.*;
+import static com.foundationdb.server.test.ExpressionGenerators.*;
 
 public class GroupLookup_DefaultLookaheadIT extends GroupLookup_DefaultIT
 {

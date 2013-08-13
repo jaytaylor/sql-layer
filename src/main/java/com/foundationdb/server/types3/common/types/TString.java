@@ -15,36 +15,36 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.common.types;
+package com.foundationdb.server.types3.common.types;
 
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.collation.AkCollatorFactory;
-import com.akiban.server.error.InvalidArgumentTypeException;
-import com.akiban.server.error.UnsupportedCharsetException;
-import com.akiban.server.expression.std.ExpressionTypes;
-import com.akiban.server.types3.TBundle;
-import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TClassFormatter;
-import com.akiban.server.types3.TInputSet;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TInstanceAdjuster;
-import com.akiban.server.types3.TInstanceBuilder;
-import com.akiban.server.types3.TInstanceNormalizer;
-import com.akiban.server.types3.aksql.AkCategory;
-import com.akiban.server.types3.pvalue.PBasicValueSource;
-import com.akiban.server.types3.pvalue.PBasicValueTarget;
-import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValueCacher;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.texpressions.TValidatedOverload;
-import com.akiban.sql.types.CharacterTypeAttributes;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
-import com.akiban.util.AkibanAppender;
-import com.akiban.util.ByteSource;
-import com.akiban.util.Strings;
-import com.akiban.util.WrappingByteSource;
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.collation.AkCollatorFactory;
+import com.foundationdb.server.error.InvalidArgumentTypeException;
+import com.foundationdb.server.error.UnsupportedCharsetException;
+import com.foundationdb.server.expression.std.ExpressionTypes;
+import com.foundationdb.server.types3.TBundle;
+import com.foundationdb.server.types3.TCast;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TClassFormatter;
+import com.foundationdb.server.types3.TInputSet;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.TInstanceAdjuster;
+import com.foundationdb.server.types3.TInstanceBuilder;
+import com.foundationdb.server.types3.TInstanceNormalizer;
+import com.foundationdb.server.types3.aksql.AkCategory;
+import com.foundationdb.server.types3.pvalue.PBasicValueSource;
+import com.foundationdb.server.types3.pvalue.PBasicValueTarget;
+import com.foundationdb.server.types3.pvalue.PUnderlying;
+import com.foundationdb.server.types3.pvalue.PValueCacher;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.texpressions.TValidatedOverload;
+import com.foundationdb.sql.types.CharacterTypeAttributes;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.types.TypeId;
+import com.foundationdb.util.AkibanAppender;
+import com.foundationdb.util.ByteSource;
+import com.foundationdb.util.Strings;
+import com.foundationdb.util.WrappingByteSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

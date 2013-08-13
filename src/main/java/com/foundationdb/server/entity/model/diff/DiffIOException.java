@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.entity.model.diff;
+package com.foundationdb.server.entity.model.diff;
 
 public class DiffIOException extends RuntimeException
 {

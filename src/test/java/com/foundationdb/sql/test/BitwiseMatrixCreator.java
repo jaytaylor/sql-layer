@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.test;
+package com.foundationdb.sql.test;
 
 import java.io.BufferedWriter;
 import java.io.File;

@@ -15,23 +15,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.store;
+package com.foundationdb.server.store;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Sequence;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.api.dml.scan.ScanLimit;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.tree.KeyCreator;
-import com.akiban.server.service.tree.TreeLink;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.server.api.dml.ColumnSelector;
+import com.foundationdb.server.api.dml.scan.ScanLimit;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.tree.KeyCreator;
+import com.foundationdb.server.service.tree.TreeLink;
 import com.persistit.Key;
 import com.persistit.Value;
 

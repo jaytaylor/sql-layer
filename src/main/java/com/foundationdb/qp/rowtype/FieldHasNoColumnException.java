@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.rowtype;
+package com.foundationdb.qp.rowtype;
 
 public final class FieldHasNoColumnException extends RuntimeException {
     public FieldHasNoColumnException(int i) {

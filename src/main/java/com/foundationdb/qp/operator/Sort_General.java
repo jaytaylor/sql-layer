@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.operator;
+package com.foundationdb.qp.operator;
 
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.explain.CompoundExplainer;
-import com.akiban.server.explain.ExplainContext;
-import com.akiban.server.explain.std.SortOperatorExplainer;
-import com.akiban.util.ArgumentValidation;
-import com.akiban.util.tap.InOutTap;
-import com.akiban.qp.persistitadapter.Sorter;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.explain.CompoundExplainer;
+import com.foundationdb.server.explain.ExplainContext;
+import com.foundationdb.server.explain.std.SortOperatorExplainer;
+import com.foundationdb.util.ArgumentValidation;
+import com.foundationdb.util.tap.InOutTap;
+import com.foundationdb.qp.persistitadapter.Sorter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

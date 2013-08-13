@@ -15,18 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.memoryadapter;
+package com.foundationdb.qp.memoryadapter;
 
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableName;
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.IndexScanSelector;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.store.statistics.IndexStatistics;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.qp.expression.IndexKeyRange;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.IndexScanSelector;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.statistics.IndexStatistics;
 
-import static com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
+import static com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 
 public interface MemoryTableFactory {
     public TableName getName();

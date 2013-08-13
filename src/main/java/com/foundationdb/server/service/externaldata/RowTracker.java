@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.externaldata;
+package com.foundationdb.server.service.externaldata;
 
-import com.akiban.qp.row.Row;
+import com.foundationdb.qp.row.Row;
 
 public interface RowTracker {
     void reset();

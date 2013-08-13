@@ -15,32 +15,32 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.qp;
+package com.foundationdb.server.test.it.qp;
 
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableName;
-import com.akiban.qp.expression.IndexBound;
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.server.api.dml.SetColumnSelector;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.geophile.Space;
-import com.akiban.server.geophile.SpaceLatLon;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.qp.expression.IndexBound;
+import com.foundationdb.qp.expression.IndexKeyRange;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.server.api.dml.SetColumnSelector;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.geophile.Space;
+import com.foundationdb.server.geophile.SpaceLatLon;
 import org.junit.Test;
 
 import java.math.BigDecimal;
 import java.util.*;
 
-import static com.akiban.qp.operator.API.cursor;
-import static com.akiban.qp.operator.API.indexScan_Default;
+import static com.foundationdb.qp.operator.API.cursor;
+import static com.foundationdb.qp.operator.API.indexScan_Default;
 import static java.lang.Math.abs;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;

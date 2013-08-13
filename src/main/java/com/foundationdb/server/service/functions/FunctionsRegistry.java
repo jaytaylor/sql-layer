@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.functions;
+package com.foundationdb.server.service.functions;
 
-import com.akiban.server.aggregation.AggregatorRegistry;
-import com.akiban.server.expression.ExpressionRegistry;
+import com.foundationdb.server.aggregation.AggregatorRegistry;
+import com.foundationdb.server.expression.ExpressionRegistry;
 
 public interface FunctionsRegistry extends AggregatorRegistry, ExpressionRegistry {
     public enum FunctionKind { SCALAR, AGGREGATE };

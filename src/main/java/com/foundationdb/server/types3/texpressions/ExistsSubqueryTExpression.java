@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.texpressions;
+package com.foundationdb.server.types3.texpressions;
 
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.explain.*;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.aksql.aktypes.AkBool;
-import com.akiban.server.types3.pvalue.PValueTarget;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.explain.*;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.aksql.aktypes.AkBool;
+import com.foundationdb.server.types3.pvalue.PValueTarget;
 
 public class ExistsSubqueryTExpression extends SubqueryTExpression
 {

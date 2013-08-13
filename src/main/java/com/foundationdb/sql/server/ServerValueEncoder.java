@@ -15,26 +15,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.server;
+package com.foundationdb.sql.server;
 
-import com.akiban.server.Quote;
-import com.akiban.server.error.UnsupportedCharsetException;
-import com.akiban.server.error.ZeroDateTimeException;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.extract.Extractors;
-import com.akiban.server.types.util.ValueHolder;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
-import com.akiban.server.types3.mcompat.mtypes.MBinary;
-import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueSources;
-import com.akiban.util.AkibanAppender;
-import com.akiban.util.ByteSource;
+import com.foundationdb.server.Quote;
+import com.foundationdb.server.error.UnsupportedCharsetException;
+import com.foundationdb.server.error.ZeroDateTimeException;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.FromObjectValueSource;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.extract.Extractors;
+import com.foundationdb.server.types.util.ValueHolder;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.mcompat.mtypes.MBigDecimal;
+import com.foundationdb.server.types3.mcompat.mtypes.MBinary;
+import com.foundationdb.server.types3.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.util.AkibanAppender;
+import com.foundationdb.util.ByteSource;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;

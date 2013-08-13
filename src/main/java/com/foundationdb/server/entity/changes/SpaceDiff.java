@@ -15,17 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.entity.changes;
+package com.foundationdb.server.entity.changes;
 
-import com.akiban.server.entity.model.Entity;
-import com.akiban.server.entity.model.EntityCollection;
-import com.akiban.server.entity.model.EntityElement;
-import com.akiban.server.entity.model.EntityField;
-import com.akiban.server.entity.model.EntityIndex;
-import com.akiban.server.entity.model.Space;
-import com.akiban.server.entity.model.Validation;
-import com.akiban.util.MapDiff;
-import com.akiban.util.MapDiffHandler;
+import com.foundationdb.server.entity.model.Entity;
+import com.foundationdb.server.entity.model.EntityCollection;
+import com.foundationdb.server.entity.model.EntityElement;
+import com.foundationdb.server.entity.model.EntityField;
+import com.foundationdb.server.entity.model.EntityIndex;
+import com.foundationdb.server.entity.model.Space;
+import com.foundationdb.server.entity.model.Validation;
+import com.foundationdb.util.MapDiff;
+import com.foundationdb.util.MapDiffHandler;
 
 import java.util.ArrayList;
 import java.util.Collection;

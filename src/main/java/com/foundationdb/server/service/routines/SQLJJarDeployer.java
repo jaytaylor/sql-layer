@@ -15,22 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.routines;
+package com.foundationdb.server.service.routines;
 
-import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.SQLJJar;
-import com.akiban.ais.model.TableName;
-import com.akiban.server.error.InvalidSQLJDeploymentDescriptorException;
-import com.akiban.sql.StandardException;
-import com.akiban.sql.aisddl.AISDDL;
-import com.akiban.sql.aisddl.DDLHelper;
-import com.akiban.sql.parser.CreateAliasNode;
-import com.akiban.sql.parser.DDLStatementNode;
-import com.akiban.sql.parser.DropAliasNode;
-import com.akiban.sql.parser.SQLParserException;
-import com.akiban.sql.parser.StatementNode;
-import com.akiban.sql.server.ServerQueryContext;
-import com.akiban.sql.server.ServerSession;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.SQLJJar;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.error.InvalidSQLJDeploymentDescriptorException;
+import com.foundationdb.sql.StandardException;
+import com.foundationdb.sql.aisddl.AISDDL;
+import com.foundationdb.sql.aisddl.DDLHelper;
+import com.foundationdb.sql.parser.CreateAliasNode;
+import com.foundationdb.sql.parser.DDLStatementNode;
+import com.foundationdb.sql.parser.DropAliasNode;
+import com.foundationdb.sql.parser.SQLParserException;
+import com.foundationdb.sql.parser.StatementNode;
+import com.foundationdb.sql.server.ServerQueryContext;
+import com.foundationdb.sql.server.ServerSession;
 
 import java.io.BufferedReader;
 import java.io.IOException;

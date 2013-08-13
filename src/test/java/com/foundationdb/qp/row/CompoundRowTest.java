@@ -15,24 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.row;
+package com.foundationdb.qp.row;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import com.akiban.server.test.ApiTestBase;
+import com.foundationdb.server.test.ApiTestBase;
 import org.junit.Test;
 
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.rowtype.FlattenedRowType;
-import com.akiban.qp.rowtype.ProductRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.server.rowdata.SchemaFactory;
+import com.foundationdb.ais.model.AISBuilder;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.rowtype.FlattenedRowType;
+import com.foundationdb.qp.rowtype.ProductRowType;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.server.rowdata.SchemaFactory;
 
 public class CompoundRowTest {
 

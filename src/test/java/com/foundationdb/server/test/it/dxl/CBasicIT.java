@@ -15,28 +15,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.dxl;
+package com.foundationdb.server.test.it.dxl;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.aisb2.AISBBasedBuilder;
-import com.akiban.ais.model.aisb2.NewAISBuilder;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.api.FixedCountLimit;
-import com.akiban.server.api.dml.scan.*;
-import com.akiban.server.error.CursorIsFinishedException;
-import com.akiban.server.error.InvalidCharToNumException;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.NoSuchRowException;
-import com.akiban.server.error.OldAISException;
-import com.akiban.server.error.TableDefinitionMismatchException;
-import com.akiban.server.error.RowDefNotFoundException;
-import com.akiban.server.error.NoRowsUpdatedException;
-import com.akiban.server.test.it.ITBase;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.util.GrowableByteBuffer;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.ais.model.aisb2.NewAISBuilder;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.api.FixedCountLimit;
+import com.foundationdb.server.api.dml.scan.*;
+import com.foundationdb.server.error.CursorIsFinishedException;
+import com.foundationdb.server.error.InvalidCharToNumException;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.error.NoSuchRowException;
+import com.foundationdb.server.error.OldAISException;
+import com.foundationdb.server.error.TableDefinitionMismatchException;
+import com.foundationdb.server.error.RowDefNotFoundException;
+import com.foundationdb.server.error.NoRowsUpdatedException;
+import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.util.GrowableByteBuffer;
 import org.junit.Test;
 
 import java.util.*;

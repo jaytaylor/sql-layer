@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer;
+package com.foundationdb.sql.optimizer;
 
-import com.akiban.ais.model.Columnar;
+import com.foundationdb.ais.model.Columnar;
 
 /**
  * A table binding: stored in the UserData of a FromBaseTable and

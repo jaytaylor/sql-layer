@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.util;
+package com.foundationdb.util;
 
 import org.junit.Test;
 
@@ -23,7 +23,7 @@ import java.nio.BufferOverflowException;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
-import static com.akiban.util.GrowableByteBuffer.computeNewSize;
+import static com.foundationdb.util.GrowableByteBuffer.computeNewSize;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

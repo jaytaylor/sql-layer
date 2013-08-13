@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.restdml;
+package com.foundationdb.server.service.restdml;
 
 import java.io.PrintWriter;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.MultivaluedMap;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.service.session.Session;
 
 public interface DirectService {
 

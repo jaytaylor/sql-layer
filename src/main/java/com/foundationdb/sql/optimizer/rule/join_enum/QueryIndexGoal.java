@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule.join_enum;
+package com.foundationdb.sql.optimizer.rule.join_enum;
 
-import com.akiban.sql.optimizer.plan.*;
-import com.akiban.sql.optimizer.plan.IndexScan.OrderEffectiveness;
-import com.akiban.sql.optimizer.rule.SchemaRulesContext;
-import com.akiban.sql.optimizer.rule.cost.CostEstimator;
+import com.foundationdb.sql.optimizer.plan.*;
+import com.foundationdb.sql.optimizer.plan.IndexScan.OrderEffectiveness;
+import com.foundationdb.sql.optimizer.rule.SchemaRulesContext;
+import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
 
 /** The overall goal of a query: WHERE conditions, ORDER BY, etc. */
 public class QueryIndexGoal

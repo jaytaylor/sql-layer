@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.error;
+package com.foundationdb.server.error;
 
 import static junit.framework.Assert.fail;
 import static org.junit.Assert.assertNotNull;
@@ -25,7 +25,7 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import com.akiban.server.error.ErrorCode;
+import com.foundationdb.server.error.ErrorCode;
 
 public final class ErrorCodeTest {
 

@@ -15,17 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.persistitadapter;
+package com.foundationdb.qp.persistitadapter;
 
-import com.akiban.ais.model.Index;
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.operator.*;
-import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
-import com.akiban.qp.persistitadapter.indexcursor.IndexCursor;
-import com.akiban.qp.persistitadapter.indexcursor.IterationHelper;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.server.api.dml.ColumnSelector;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.qp.expression.IndexKeyRange;
+import com.foundationdb.qp.operator.*;
+import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRow;
+import com.foundationdb.qp.persistitadapter.indexcursor.IndexCursor;
+import com.foundationdb.qp.persistitadapter.indexcursor.IterationHelper;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.server.api.dml.ColumnSelector;
 import com.persistit.exception.PersistitException;
 
 class PersistitIndexCursor implements BindingsAwareCursor

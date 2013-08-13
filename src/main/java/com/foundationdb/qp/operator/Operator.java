@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.operator;
+package com.foundationdb.qp.operator;
 
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.exec.Plannable;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.Tap;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.exec.Plannable;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.util.tap.InOutTap;
+import com.foundationdb.util.tap.Tap;
 
 import java.util.Collections;
 import java.util.List;

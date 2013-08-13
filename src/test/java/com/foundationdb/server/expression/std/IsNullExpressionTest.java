@@ -16,13 +16,13 @@
  */
 
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
-import com.akiban.server.types.AkType;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionComposer;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.ExpressionComposer;
 
-import com.akiban.server.types.ValueSource;
+import com.foundationdb.server.types.ValueSource;
 import org.junit.Test;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;

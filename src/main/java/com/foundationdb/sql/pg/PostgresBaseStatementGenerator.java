@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.server.error.SQLParseException;
-import com.akiban.server.error.SQLParserInternalException;
-import com.akiban.sql.StandardException;
-import com.akiban.sql.parser.SQLParser;
-import com.akiban.sql.parser.SQLParserException;
+import com.foundationdb.server.error.SQLParseException;
+import com.foundationdb.server.error.SQLParserInternalException;
+import com.foundationdb.sql.StandardException;
+import com.foundationdb.sql.parser.SQLParser;
+import com.foundationdb.sql.parser.SQLParserException;
 
 public abstract class PostgresBaseStatementGenerator 
                 implements PostgresStatementGenerator

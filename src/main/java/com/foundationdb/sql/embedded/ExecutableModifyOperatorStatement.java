@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.embedded;
+package com.foundationdb.sql.embedded;
 
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.CursorLifecycle;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.RowCursor;
-import com.akiban.qp.row.ImmutableRow;
-import com.akiban.qp.row.ProjectedRow;
-import com.akiban.qp.row.Row;
-import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
-import com.akiban.sql.server.ServerSession;
-import com.akiban.sql.server.ServerTransaction;
-import com.akiban.util.ShareHolder;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.CursorLifecycle;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.RowCursor;
+import com.foundationdb.qp.row.ImmutableRow;
+import com.foundationdb.qp.row.ProjectedRow;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
+import com.foundationdb.sql.server.ServerSession;
+import com.foundationdb.sql.server.ServerTransaction;
+import com.foundationdb.util.ShareHolder;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

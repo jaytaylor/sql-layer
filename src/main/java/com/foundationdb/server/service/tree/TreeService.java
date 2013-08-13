@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.tree;
+package com.foundationdb.server.service.tree;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.server.TableStatusCache;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.server.TableStatusCache;
+import com.foundationdb.server.service.session.Session;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Persistit;

@@ -15,22 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.dxl;
+package com.foundationdb.server.test.it.dxl;
 
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.api.FixedCountLimit;
-import com.akiban.server.api.dml.scan.BufferFullException;
-import com.akiban.server.api.dml.scan.CursorId;
-import com.akiban.server.api.dml.scan.LegacyRowOutput;
-import com.akiban.server.api.dml.scan.ScanAllRequest;
-import com.akiban.server.api.dml.scan.ScanFlag;
-import com.akiban.server.api.dml.scan.ScanRequest;
-import com.akiban.server.api.dml.scan.WrappingRowOutput;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.test.it.ITBase;
-import com.akiban.util.GrowableByteBuffer;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.api.FixedCountLimit;
+import com.foundationdb.server.api.dml.scan.BufferFullException;
+import com.foundationdb.server.api.dml.scan.CursorId;
+import com.foundationdb.server.api.dml.scan.LegacyRowOutput;
+import com.foundationdb.server.api.dml.scan.ScanAllRequest;
+import com.foundationdb.server.api.dml.scan.ScanFlag;
+import com.foundationdb.server.api.dml.scan.ScanRequest;
+import com.foundationdb.server.api.dml.scan.WrappingRowOutput;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.util.GrowableByteBuffer;
 import org.junit.Before;
 import org.junit.Test;
 

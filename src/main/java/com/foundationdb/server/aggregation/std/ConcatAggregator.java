@@ -15,19 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.aggregation.std;
+package com.foundationdb.server.aggregation.std;
 
-import com.akiban.server.aggregation.Aggregator;
-import com.akiban.server.aggregation.AggregatorFactory;
-import com.akiban.server.service.functions.Aggregate;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.NullValueSource;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ValueTarget;
-import com.akiban.server.types.conversion.Converters;
-import com.akiban.server.types.extract.Extractors;
-import com.akiban.server.types.extract.ObjectExtractor;
-import com.akiban.server.types.util.ValueHolder;
+import com.foundationdb.server.aggregation.Aggregator;
+import com.foundationdb.server.aggregation.AggregatorFactory;
+import com.foundationdb.server.service.functions.Aggregate;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.NullValueSource;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.ValueTarget;
+import com.foundationdb.server.types.conversion.Converters;
+import com.foundationdb.server.types.extract.Extractors;
+import com.foundationdb.server.types.extract.ObjectExtractor;
+import com.foundationdb.server.types.util.ValueHolder;
 
 /**
  * GROUP_CONCAT([DISTINCT] expr [,expr ...]

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.util;
+package com.foundationdb.util;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

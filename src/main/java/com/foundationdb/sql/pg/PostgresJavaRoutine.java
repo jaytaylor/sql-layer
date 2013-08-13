@@ -15,26 +15,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import static com.akiban.sql.pg.PostgresJsonStatement.jsonColumnNames;
-import static com.akiban.sql.pg.PostgresJsonStatement.jsonColumnTypes;
-import static com.akiban.sql.pg.PostgresServerSession.OutputFormat;
+import static com.foundationdb.sql.pg.PostgresJsonStatement.jsonColumnNames;
+import static com.foundationdb.sql.pg.PostgresJsonStatement.jsonColumnTypes;
+import static com.foundationdb.sql.pg.PostgresServerSession.OutputFormat;
 
-import com.akiban.sql.parser.ParameterNode;
-import com.akiban.sql.parser.StatementNode;
-import com.akiban.sql.server.ServerCallContextStack;
-import com.akiban.sql.server.ServerCallInvocation;
-import com.akiban.sql.server.ServerJavaRoutine;
+import com.foundationdb.sql.parser.ParameterNode;
+import com.foundationdb.sql.parser.StatementNode;
+import com.foundationdb.sql.server.ServerCallContextStack;
+import com.foundationdb.sql.server.ServerCallInvocation;
+import com.foundationdb.sql.server.ServerJavaRoutine;
 
-import com.akiban.ais.model.Parameter;
-import com.akiban.ais.model.Routine;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.server.error.ExternalRoutineInvocationException;
-import com.akiban.server.explain.Explainable;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.Tap;
+import com.foundationdb.ais.model.Parameter;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.server.error.ExternalRoutineInvocationException;
+import com.foundationdb.server.explain.Explainable;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.util.tap.InOutTap;
+import com.foundationdb.util.tap.Tap;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.session;
+package com.foundationdb.server.service.session;
 
-import com.akiban.server.service.Service;
-import com.akiban.server.service.jmx.JmxManageable;
+import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.jmx.JmxManageable;
 import java.util.concurrent.atomic.AtomicLong;
 
 public final class SessionServiceImpl implements SessionService, Service, SessionEventListener, JmxManageable {

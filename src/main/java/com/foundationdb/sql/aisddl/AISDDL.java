@@ -15,32 +15,32 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.aisddl;
+package com.foundationdb.sql.aisddl;
 
-import com.akiban.sql.parser.AlterTableNode;
-import com.akiban.sql.parser.CreateAliasNode;
-import com.akiban.sql.parser.CreateIndexNode;
-import com.akiban.sql.parser.CreateSequenceNode;
-import com.akiban.sql.parser.CreateTableNode;
-import com.akiban.sql.parser.CreateSchemaNode;
-import com.akiban.sql.parser.CreateViewNode;
-import com.akiban.sql.parser.DropAliasNode;
-import com.akiban.sql.parser.DropGroupNode;
-import com.akiban.sql.parser.DropIndexNode;
-import com.akiban.sql.parser.DropSequenceNode;
-import com.akiban.sql.parser.DropTableNode;
-import com.akiban.sql.parser.DropSchemaNode;
-import com.akiban.sql.parser.DDLStatementNode;
-import com.akiban.sql.parser.DropViewNode;
-import com.akiban.sql.parser.NodeTypes;
-import com.akiban.sql.parser.RenameNode;
-import com.akiban.sql.server.ServerQueryContext;
-import com.akiban.sql.server.ServerSession;
+import com.foundationdb.sql.parser.AlterTableNode;
+import com.foundationdb.sql.parser.CreateAliasNode;
+import com.foundationdb.sql.parser.CreateIndexNode;
+import com.foundationdb.sql.parser.CreateSequenceNode;
+import com.foundationdb.sql.parser.CreateTableNode;
+import com.foundationdb.sql.parser.CreateSchemaNode;
+import com.foundationdb.sql.parser.CreateViewNode;
+import com.foundationdb.sql.parser.DropAliasNode;
+import com.foundationdb.sql.parser.DropGroupNode;
+import com.foundationdb.sql.parser.DropIndexNode;
+import com.foundationdb.sql.parser.DropSequenceNode;
+import com.foundationdb.sql.parser.DropTableNode;
+import com.foundationdb.sql.parser.DropSchemaNode;
+import com.foundationdb.sql.parser.DDLStatementNode;
+import com.foundationdb.sql.parser.DropViewNode;
+import com.foundationdb.sql.parser.NodeTypes;
+import com.foundationdb.sql.parser.RenameNode;
+import com.foundationdb.sql.server.ServerQueryContext;
+import com.foundationdb.sql.server.ServerSession;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.error.UnsupportedSQLException;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.server.api.DDLFunctions;
+import com.foundationdb.server.error.UnsupportedSQLException;
+import com.foundationdb.server.service.session.Session;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

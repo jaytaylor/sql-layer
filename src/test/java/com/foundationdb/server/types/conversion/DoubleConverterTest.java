@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types.conversion;
+package com.foundationdb.server.types.conversion;
 
-import com.akiban.server.error.InvalidCharToNumException;
-import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.server.types.extract.Extractors;
+import com.foundationdb.server.error.InvalidCharToNumException;
+import com.foundationdb.server.types.FromObjectValueSource;
+import com.foundationdb.server.types.extract.Extractors;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

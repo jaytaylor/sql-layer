@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server;
+package com.foundationdb.server;
 
-import com.akiban.server.AkServer;
+import com.foundationdb.server.AkServer;
 
 public class GetVersion{
 

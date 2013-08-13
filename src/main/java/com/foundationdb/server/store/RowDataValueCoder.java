@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.store;
+package com.foundationdb.server.store;
 
-import com.akiban.server.AkServerUtil;
-import com.akiban.server.rowdata.CorruptRowDataException;
-import com.akiban.server.rowdata.RowData;
+import com.foundationdb.server.AkServerUtil;
+import com.foundationdb.server.rowdata.CorruptRowDataException;
+import com.foundationdb.server.rowdata.RowData;
 import com.persistit.Value;
 import com.persistit.encoding.CoderContext;
 import com.persistit.encoding.HandleCache;

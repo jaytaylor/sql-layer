@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.mcompat.mcasts;
+package com.foundationdb.server.types3.mcompat.mcasts;
 
-import com.akiban.server.types3.TCastPath;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.TCastPath;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 
 public final class Paths {
 

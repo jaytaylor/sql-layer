@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.error;
+package com.foundationdb.server.error;
 
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDef;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.rowdata.RowDef;
 
 public class NoRowsUpdatedException extends InvalidOperationException {
     public NoRowsUpdatedException (RowData rowData, RowDef rowDef) {

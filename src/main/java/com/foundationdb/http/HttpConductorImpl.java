@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.http;
+package com.foundationdb.http;
 
-import com.akiban.server.service.Service;
-import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.monitor.MonitorService;
-import com.akiban.server.service.monitor.ServerMonitor;
-import com.akiban.server.service.security.SecurityService;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionService;
-import com.akiban.sql.server.ServerSessionMonitor;
+import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.server.service.monitor.MonitorService;
+import com.foundationdb.server.service.monitor.ServerMonitor;
+import com.foundationdb.server.service.security.SecurityService;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.session.SessionService;
+import com.foundationdb.sql.server.ServerSessionMonitor;
 import com.google.inject.Inject;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHandler;
@@ -67,7 +67,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.akiban.http.SecurityServiceLoginService.CredentialType;
+import static com.foundationdb.http.SecurityServiceLoginService.CredentialType;
 
 public final class HttpConductorImpl implements HttpConductor, Service {
     private static final Logger logger = LoggerFactory.getLogger(HttpConductorImpl.class);

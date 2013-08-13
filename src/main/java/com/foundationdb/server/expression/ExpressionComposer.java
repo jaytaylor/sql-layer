@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression;
+package com.foundationdb.server.expression;
 
-import com.akiban.sql.StandardException;
+import com.foundationdb.sql.StandardException;
 
 import java.util.List;
 

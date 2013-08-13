@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.loadableplan;
+package com.foundationdb.qp.loadableplan;
 
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
 
 /** A plan that uses a {@link DirectObjectCursor}. */
 public abstract class DirectObjectPlan

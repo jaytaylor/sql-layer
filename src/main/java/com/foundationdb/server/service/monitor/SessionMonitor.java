@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.monitor;
+package com.foundationdb.server.service.monitor;
 
 import java.util.List;
 

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.aisddl;
+package com.foundationdb.sql.aisddl;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -24,47 +24,47 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.DefaultIndexNameGenerator;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.IndexNameGenerator;
-import com.akiban.ais.model.PrimaryKey;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.Type;
-import com.akiban.ais.model.Types;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.error.*;
-import com.akiban.server.service.session.Session;
-import com.akiban.sql.optimizer.FunctionsTypeComputer;
-import com.akiban.sql.parser.ColumnDefinitionNode;
-import com.akiban.sql.parser.ConstantNode;
-import com.akiban.sql.parser.ConstraintDefinitionNode;
-import com.akiban.sql.parser.CreateTableNode;
-import com.akiban.sql.parser.CurrentDatetimeOperatorNode;
-import com.akiban.sql.parser.DropGroupNode;
-import com.akiban.sql.parser.DropTableNode;
-import com.akiban.sql.parser.ExistenceCheck;
-import com.akiban.sql.parser.FKConstraintDefinitionNode;
-import com.akiban.sql.parser.IndexColumnList;
-import com.akiban.sql.parser.IndexConstraintDefinitionNode;
-import com.akiban.sql.parser.IndexDefinition;
-import com.akiban.sql.parser.RenameNode;
-import com.akiban.sql.parser.ResultColumn;
-import com.akiban.sql.parser.ResultColumnList;
-import com.akiban.sql.parser.SpecialFunctionNode;
-import com.akiban.sql.parser.TableElementNode;
-import com.akiban.sql.parser.ValueNode;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
+import com.foundationdb.ais.model.AISBuilder;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.DefaultIndexNameGenerator;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.IndexNameGenerator;
+import com.foundationdb.ais.model.PrimaryKey;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.Type;
+import com.foundationdb.ais.model.Types;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.server.api.DDLFunctions;
+import com.foundationdb.server.error.*;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.sql.optimizer.FunctionsTypeComputer;
+import com.foundationdb.sql.parser.ColumnDefinitionNode;
+import com.foundationdb.sql.parser.ConstantNode;
+import com.foundationdb.sql.parser.ConstraintDefinitionNode;
+import com.foundationdb.sql.parser.CreateTableNode;
+import com.foundationdb.sql.parser.CurrentDatetimeOperatorNode;
+import com.foundationdb.sql.parser.DropGroupNode;
+import com.foundationdb.sql.parser.DropTableNode;
+import com.foundationdb.sql.parser.ExistenceCheck;
+import com.foundationdb.sql.parser.FKConstraintDefinitionNode;
+import com.foundationdb.sql.parser.IndexColumnList;
+import com.foundationdb.sql.parser.IndexConstraintDefinitionNode;
+import com.foundationdb.sql.parser.IndexDefinition;
+import com.foundationdb.sql.parser.RenameNode;
+import com.foundationdb.sql.parser.ResultColumn;
+import com.foundationdb.sql.parser.ResultColumnList;
+import com.foundationdb.sql.parser.SpecialFunctionNode;
+import com.foundationdb.sql.parser.TableElementNode;
+import com.foundationdb.sql.parser.ValueNode;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.types.TypeId;
 
-import static com.akiban.sql.aisddl.DDLHelper.convertName;
+import static com.foundationdb.sql.aisddl.DDLHelper.convertName;
 
 /** DDL operations on Tables */
 public class TableDDL

@@ -14,24 +14,24 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.qp.persistitadapter.indexcursor;
+package com.foundationdb.qp.persistitadapter.indexcursor;
 
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.row.ValuesHolderRow;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.PersistitValueValueSource;
-import com.akiban.server.PersistitValueValueTarget;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.expression.std.LiteralExpression;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.conversion.Converters;
-import com.akiban.server.types.util.ValueHolder;
-import com.akiban.server.types3.TInstance;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesHolderRow;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.PersistitValueValueSource;
+import com.foundationdb.server.PersistitValueValueTarget;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.ExpressionEvaluation;
+import com.foundationdb.server.expression.std.LiteralExpression;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.conversion.Converters;
+import com.foundationdb.server.types.util.ValueHolder;
+import com.foundationdb.server.types3.TInstance;
 import com.persistit.Value;
 
 final class OldSorterAdapter extends SorterAdapter<ValueSource, Expression, ExpressionEvaluation> {

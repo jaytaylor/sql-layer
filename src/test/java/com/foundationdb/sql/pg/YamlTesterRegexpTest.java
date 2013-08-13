@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.sql.pg.YamlTester.Regexp;
+import com.foundationdb.sql.pg.YamlTester.Regexp;
 
 import static org.junit.Assert.fail;
 import org.junit.Test;

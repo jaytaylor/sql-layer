@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.model.aisb2;
+package com.foundationdb.ais.model.aisb2;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
 import org.junit.Test;
 
 import static org.junit.Assert.*;

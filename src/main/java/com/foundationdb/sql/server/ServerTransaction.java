@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.server;
+package com.foundationdb.sql.server;
 
-import com.akiban.server.error.TransactionInProgressException;
-import com.akiban.server.error.TransactionReadOnlyException;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.server.error.TransactionInProgressException;
+import com.foundationdb.server.error.TransactionReadOnlyException;
+import com.foundationdb.server.service.session.Session;
 
-import com.akiban.server.service.transaction.TransactionService;
+import com.foundationdb.server.service.transaction.TransactionService;
 
 import java.util.Date;
 

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types.extract;
+package com.foundationdb.server.types.extract;
 
 public final class ConverterTestUtils {
     public static void setGlobalTimezone(String timezone) {

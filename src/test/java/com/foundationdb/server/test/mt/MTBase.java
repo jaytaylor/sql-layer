@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.mt;
+package com.foundationdb.server.test.mt;
 
-import com.akiban.server.test.ApiTestBase;
+import com.foundationdb.server.test.ApiTestBase;
 
 public abstract class MTBase extends ApiTestBase {
     public MTBase() {

@@ -15,23 +15,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.util;
+package com.foundationdb.ais.util;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.IndexName;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.JoinColumn;
-import com.akiban.ais.model.NopVisitor;
-import com.akiban.ais.model.Sequence;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.util.ArgumentValidation;
-import com.akiban.util.MultipleCauseException;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.GroupIndex;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.IndexName;
+import com.foundationdb.ais.model.Join;
+import com.foundationdb.ais.model.JoinColumn;
+import com.foundationdb.ais.model.NopVisitor;
+import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.util.ArgumentValidation;
+import com.foundationdb.util.MultipleCauseException;
 import com.google.common.base.Objects;
 
 import java.util.ArrayList;
@@ -45,8 +45,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import static com.akiban.ais.util.ChangedTableDescription.ParentChange;
-import static com.akiban.ais.util.TableChangeValidatorException.*;
+import static com.foundationdb.ais.util.ChangedTableDescription.ParentChange;
+import static com.foundationdb.ais.util.TableChangeValidatorException.*;
 
 public class TableChangeValidator {
     private static final Map<String,String> EMPTY_STRING_MAP = Collections.emptyMap();

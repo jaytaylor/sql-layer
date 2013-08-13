@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.manage;
+package com.foundationdb.server.manage;
 
 @SuppressWarnings("unused") // used via JMX
 public interface ManageMXBean {

@@ -16,9 +16,9 @@
  */
 
 
-package com.akiban.server.error;
+package com.foundationdb.server.error;
 
-import com.akiban.ais.model.TableName;
+import com.foundationdb.ais.model.TableName;
 
 public class SQLJInstanceException extends InvalidOperationException
 {

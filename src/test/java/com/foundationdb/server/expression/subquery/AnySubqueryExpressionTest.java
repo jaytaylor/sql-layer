@@ -15,22 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression.subquery;
+package com.foundationdb.server.expression.subquery;
 
-import com.akiban.qp.operator.ExpressionGenerator;
-import com.akiban.server.expression.OldExpressionTestBase;
-import com.akiban.server.expression.std.Comparison;
-import static com.akiban.server.test.ExpressionGenerators.*;
+import com.foundationdb.qp.operator.ExpressionGenerator;
+import com.foundationdb.server.expression.OldExpressionTestBase;
+import com.foundationdb.server.expression.std.Comparison;
+import static com.foundationdb.server.test.ExpressionGenerators.*;
 
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.OperatorTestHelper;
-import com.akiban.qp.operator.RowsBuilder;
-import com.akiban.qp.operator.TestOperator;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.Schema;
-import static com.akiban.qp.operator.API.*;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.operator.OperatorTestHelper;
+import com.foundationdb.qp.operator.RowsBuilder;
+import com.foundationdb.qp.operator.TestOperator;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.Schema;
+import static com.foundationdb.qp.operator.API.*;
 
-import com.akiban.server.types.AkType;
+import com.foundationdb.server.types.AkType;
 
 import org.junit.Test;
 

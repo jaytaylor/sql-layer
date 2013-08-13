@@ -15,37 +15,37 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.store.statistics;
+package com.foundationdb.server.store.statistics;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableName;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TableName;
 
-import com.akiban.server.PersistitKeyPValueSource;
-import com.akiban.server.PersistitKeyPValueTarget;
-import com.akiban.server.PersistitKeyValueSource;
-import com.akiban.server.PersistitKeyValueTarget;
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.service.tree.KeyCreator;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.server.types.ToObjectValueTarget;
-import com.akiban.server.types.conversion.Converters;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSources;
-import com.akiban.util.AkibanAppender;
+import com.foundationdb.server.PersistitKeyPValueSource;
+import com.foundationdb.server.PersistitKeyPValueTarget;
+import com.foundationdb.server.PersistitKeyValueSource;
+import com.foundationdb.server.PersistitKeyValueTarget;
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.service.tree.KeyCreator;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.FromObjectValueSource;
+import com.foundationdb.server.types.ToObjectValueTarget;
+import com.foundationdb.server.types.conversion.Converters;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.server.types3.TExecutionContext;
+import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.util.AkibanAppender;
 import com.persistit.Key;
 
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.error.NoSuchIndexException;
-import com.akiban.server.error.NoSuchTableException;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.NoSuchIndexException;
+import com.foundationdb.server.error.NoSuchTableException;
 
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;

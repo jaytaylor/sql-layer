@@ -15,26 +15,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.operator;
+package com.foundationdb.qp.operator;
 
-import com.akiban.qp.exec.Plannable;
-import com.akiban.qp.row.ImmutableRow;
-import com.akiban.qp.row.ProjectedRow;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.explain.*;
-import com.akiban.server.explain.std.SortOperatorExplainer;
-import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.types.ToObjectValueTarget;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.conversion.Converters;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueSources;
-import com.akiban.server.types3.texpressions.TEvaluatableExpression;
-import com.akiban.util.ArgumentValidation;
-import com.akiban.util.ShareHolder;
-import com.akiban.util.WrappingByteSource;
-import com.akiban.util.tap.InOutTap;
+import com.foundationdb.qp.exec.Plannable;
+import com.foundationdb.qp.row.ImmutableRow;
+import com.foundationdb.qp.row.ProjectedRow;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.explain.*;
+import com.foundationdb.server.explain.std.SortOperatorExplainer;
+import com.foundationdb.server.expression.ExpressionEvaluation;
+import com.foundationdb.server.types.ToObjectValueTarget;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.conversion.Converters;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types3.texpressions.TEvaluatableExpression;
+import com.foundationdb.util.ArgumentValidation;
+import com.foundationdb.util.ShareHolder;
+import com.foundationdb.util.WrappingByteSource;
+import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

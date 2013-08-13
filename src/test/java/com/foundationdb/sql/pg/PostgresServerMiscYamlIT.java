@@ -15,19 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.junit.NamedParameterizedRunner.TestParameters;
-import com.akiban.junit.Parameterization;
-import com.akiban.server.service.is.BasicInfoSchemaTablesService;
-import com.akiban.server.service.is.BasicInfoSchemaTablesServiceImpl;
-import com.akiban.server.service.servicemanager.GuicedServiceManager;
-import com.akiban.server.service.text.FullTextIndexService;
-import com.akiban.server.service.text.FullTextIndexServiceImpl;
-import com.akiban.sql.NamedParamsTestBase;
-import com.akiban.sql.embedded.EmbeddedJDBCService;
-import com.akiban.sql.embedded.EmbeddedJDBCServiceImpl;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.NamedParameterizedRunner.TestParameters;
+import com.foundationdb.junit.Parameterization;
+import com.foundationdb.server.service.is.BasicInfoSchemaTablesService;
+import com.foundationdb.server.service.is.BasicInfoSchemaTablesServiceImpl;
+import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
+import com.foundationdb.server.service.text.FullTextIndexService;
+import com.foundationdb.server.service.text.FullTextIndexServiceImpl;
+import com.foundationdb.sql.NamedParamsTestBase;
+import com.foundationdb.sql.embedded.EmbeddedJDBCService;
+import com.foundationdb.sql.embedded.EmbeddedJDBCServiceImpl;
 
 import java.io.File;
 import java.io.FileFilter;

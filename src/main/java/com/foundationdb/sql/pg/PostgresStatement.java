@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.sql.optimizer.plan.CostEstimate;
-import com.akiban.sql.parser.ParameterNode;
-import com.akiban.sql.parser.StatementNode;
-import com.akiban.sql.server.ServerStatement;
+import com.foundationdb.sql.optimizer.plan.CostEstimate;
+import com.foundationdb.sql.parser.ParameterNode;
+import com.foundationdb.sql.parser.StatementNode;
+import com.foundationdb.sql.server.ServerStatement;
 
-import com.akiban.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryBindings;
 
 import java.io.IOException;
 import java.util.List;

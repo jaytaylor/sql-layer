@@ -15,17 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.operator;
+package com.foundationdb.qp.operator;
 
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.row.HKey;
-import com.akiban.qp.row.Row;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.explain.*;
-import com.akiban.util.ArgumentValidation;
-import com.akiban.util.tap.InOutTap;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.row.HKey;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.api.dml.ColumnSelector;
+import com.foundationdb.server.explain.*;
+import com.foundationdb.util.ArgumentValidation;
+import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

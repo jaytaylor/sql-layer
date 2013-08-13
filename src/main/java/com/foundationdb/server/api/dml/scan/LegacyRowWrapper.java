@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.api.dml.scan;
+package com.foundationdb.server.api.dml.scan;
 
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDataExtractor;
-import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.api.dml.DMLError;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.store.Store;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.rowdata.RowDataExtractor;
+import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.api.dml.ColumnSelector;
+import com.foundationdb.server.api.dml.DMLError;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.Store;
 
 import java.util.Map;
 

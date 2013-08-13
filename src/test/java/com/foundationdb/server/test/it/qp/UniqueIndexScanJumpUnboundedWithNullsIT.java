@@ -15,29 +15,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.qp;
+package com.foundationdb.server.test.it.qp;
 
-import com.akiban.util.ShareHolder;
-import com.akiban.qp.operator.Operator;
+import com.foundationdb.util.ShareHolder;
+import com.foundationdb.qp.operator.Operator;
 import org.junit.Test;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.api.dml.SetColumnSelector;
-import com.akiban.server.api.dml.scan.NewRow;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.expression.IndexKeyRange;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.api.dml.SetColumnSelector;
+import com.foundationdb.server.api.dml.scan.NewRow;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.akiban.qp.rowtype.Schema;
+import com.foundationdb.qp.rowtype.Schema;
 
-import static com.akiban.qp.operator.API.cursor;
-import static com.akiban.qp.operator.API.indexScan_Default;
-import static com.akiban.server.test.ExpressionGenerators.field;
+import static com.foundationdb.qp.operator.API.cursor;
+import static com.foundationdb.qp.operator.API.indexScan_Default;
+import static com.foundationdb.server.test.ExpressionGenerators.field;
 import static org.junit.Assert.*;
 
 public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase

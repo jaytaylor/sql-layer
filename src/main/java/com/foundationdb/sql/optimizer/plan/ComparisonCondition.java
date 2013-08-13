@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.foundationdb.sql.optimizer.plan;
 
-import com.akiban.server.expression.std.Comparison;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TKeyComparable;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.parser.ValueNode;
+import com.foundationdb.server.expression.std.Comparison;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.TKeyComparable;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.parser.ValueNode;
 
 /** A binary comparison (equality / inequality) between two expressions.
  */

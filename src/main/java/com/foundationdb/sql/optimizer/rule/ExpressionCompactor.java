@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.foundationdb.sql.optimizer.rule;
 
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.aksql.aktypes.AkBool;
-import com.akiban.sql.optimizer.plan.*;
-import com.akiban.sql.optimizer.plan.BooleanOperationExpression.Operation;
+import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.server.types3.aksql.aktypes.AkBool;
+import com.foundationdb.sql.optimizer.plan.*;
+import com.foundationdb.sql.optimizer.plan.BooleanOperationExpression.Operation;
 
-import com.akiban.server.expression.std.Comparison;
+import com.foundationdb.server.expression.std.Comparison;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

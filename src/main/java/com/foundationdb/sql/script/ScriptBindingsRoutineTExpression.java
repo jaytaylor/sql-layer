@@ -15,17 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.script;
+package com.foundationdb.sql.script;
 
-import com.akiban.ais.model.Routine;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.server.service.routines.ScriptEvaluator;
-import com.akiban.server.service.routines.ScriptPool;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.sql.server.ServerJavaRoutine;
-import com.akiban.sql.server.ServerJavaRoutineTExpression;
-import com.akiban.sql.server.ServerQueryContext;
-import com.akiban.sql.server.ServerRoutineInvocation;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.server.service.routines.ScriptEvaluator;
+import com.foundationdb.server.service.routines.ScriptPool;
+import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.sql.server.ServerJavaRoutine;
+import com.foundationdb.sql.server.ServerJavaRoutineTExpression;
+import com.foundationdb.sql.server.ServerQueryContext;
+import com.foundationdb.sql.server.ServerRoutineInvocation;
 
 import java.util.List;
 

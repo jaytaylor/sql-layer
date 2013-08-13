@@ -15,24 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.qp;
+package com.foundationdb.server.test.it.qp;
 
-import com.akiban.ais.model.Group;
-import com.akiban.qp.operator.ExpressionGenerator;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.collation.AkCollator;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.qp.operator.ExpressionGenerator;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.collation.AkCollator;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static com.akiban.qp.operator.API.*;
-import static com.akiban.server.test.ExpressionGenerators.*;
+import static com.foundationdb.qp.operator.API.*;
+import static com.foundationdb.server.test.ExpressionGenerators.*;
 
 // Inspired by bug 1026668, but also tests various ways of enforcing distinctness, in addition to Distinct_Partial.
 

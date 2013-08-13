@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.model;
+package com.foundationdb.ais.model;
 
-import com.akiban.ais.model.validation.AISInvariants;
-import com.akiban.server.error.BranchingGroupIndexException;
-import com.akiban.server.error.IndexColNotInGroupException;
+import com.foundationdb.ais.model.validation.AISInvariants;
+import com.foundationdb.server.error.BranchingGroupIndexException;
+import com.foundationdb.server.error.IndexColNotInGroupException;
 
 import java.util.*;
 

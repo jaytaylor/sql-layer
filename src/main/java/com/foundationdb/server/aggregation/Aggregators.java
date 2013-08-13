@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.aggregation;
+package com.foundationdb.server.aggregation;
 
-import com.akiban.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.RowType;
 
 import java.util.ArrayList;
 import java.util.List;

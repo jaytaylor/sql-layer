@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.restdml;
+package com.foundationdb.server.service.restdml;
 
-import com.akiban.ais.model.IndexName;
-import com.akiban.ais.model.TableName;
+import com.foundationdb.ais.model.IndexName;
+import com.foundationdb.ais.model.TableName;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javax.servlet.http.HttpServletRequest;
@@ -28,7 +28,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
-import com.akiban.server.service.session.Session;
+import com.foundationdb.server.service.session.Session;
 
 public interface RestDMLService {
     public void getAllEntities(PrintWriter writer, TableName tableName, Integer depth);

@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.pvalue;
+package com.foundationdb.server.types3.pvalue;
 
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.types3.DeepCopiable;
-import com.akiban.server.types3.TInstance;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.types3.DeepCopiable;
+import com.foundationdb.server.types3.TInstance;
 
 public final class PValueTargets {
     private PValueTargets() {}

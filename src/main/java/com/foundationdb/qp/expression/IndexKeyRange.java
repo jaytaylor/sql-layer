@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.expression;
+package com.foundationdb.qp.expression;
 
-import com.akiban.qp.row.ValuesHolderRow;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.api.dml.ConstantColumnSelector;
-import com.akiban.server.types3.Types3Switch;
+import com.foundationdb.qp.row.ValuesHolderRow;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.server.api.dml.ColumnSelector;
+import com.foundationdb.server.api.dml.ConstantColumnSelector;
+import com.foundationdb.server.types3.Types3Switch;
 
 public class IndexKeyRange
 {

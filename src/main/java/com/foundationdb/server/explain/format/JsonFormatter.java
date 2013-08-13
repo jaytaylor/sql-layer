@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.explain.format;
+package com.foundationdb.server.explain.format;
 
-import com.akiban.server.explain.CompoundExplainer;
-import com.akiban.server.explain.Explainer;
-import com.akiban.server.explain.PrimitiveExplainer;
-import com.akiban.server.explain.Label;
+import com.foundationdb.server.explain.CompoundExplainer;
+import com.foundationdb.server.explain.Explainer;
+import com.foundationdb.server.explain.PrimitiveExplainer;
+import com.foundationdb.server.explain.Label;
 
-import com.akiban.server.error.AkibanInternalException;
+import com.foundationdb.server.error.AkibanInternalException;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -34,7 +34,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
 
-import static com.akiban.util.JsonUtils.createJsonGenerator;
+import static com.foundationdb.util.JsonUtils.createJsonGenerator;
 
 public class JsonFormatter
 {

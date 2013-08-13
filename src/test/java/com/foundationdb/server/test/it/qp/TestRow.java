@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.qp;
+package com.foundationdb.server.test.it.qp;
 
-import com.akiban.qp.row.AbstractRow;
-import com.akiban.qp.row.HKey;
-import com.akiban.qp.row.RowValuesHolder;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.ValueSource;
+import com.foundationdb.qp.row.AbstractRow;
+import com.foundationdb.qp.row.HKey;
+import com.foundationdb.qp.row.RowValuesHolder;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.types.ValueSource;
 
 public class TestRow extends AbstractRow
 {

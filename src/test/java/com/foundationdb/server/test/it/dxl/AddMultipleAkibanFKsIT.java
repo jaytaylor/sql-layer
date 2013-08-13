@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.dxl;
+package com.foundationdb.server.test.it.dxl;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Join;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

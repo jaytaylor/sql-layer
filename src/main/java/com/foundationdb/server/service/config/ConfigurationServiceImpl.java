@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.config;
+package com.foundationdb.server.service.config;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -29,15 +29,15 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
 
-import com.akiban.server.error.BadConfigDirectoryException;
-import com.akiban.server.error.ConfigurationPropertiesLoadException;
-import com.akiban.server.error.ServiceNotStartedException;
-import com.akiban.server.error.ServiceStartupException;
-import com.akiban.server.service.Service;
-import com.akiban.server.service.jmx.JmxManageable;
-import com.akiban.server.service.plugins.Plugin;
-import com.akiban.server.service.plugins.PluginsFinder;
-import com.akiban.util.tap.Tap;
+import com.foundationdb.server.error.BadConfigDirectoryException;
+import com.foundationdb.server.error.ConfigurationPropertiesLoadException;
+import com.foundationdb.server.error.ServiceNotStartedException;
+import com.foundationdb.server.error.ServiceStartupException;
+import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.jmx.JmxManageable;
+import com.foundationdb.server.service.plugins.Plugin;
+import com.foundationdb.server.service.plugins.PluginsFinder;
+import com.foundationdb.util.tap.Tap;
 import com.google.inject.Inject;
 
 public class ConfigurationServiceImpl implements ConfigurationService,

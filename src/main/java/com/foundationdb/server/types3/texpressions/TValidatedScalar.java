@@ -15,20 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.texpressions;
+package com.foundationdb.server.types3.texpressions;
 
-import com.akiban.server.explain.*;
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.ReversedLazyList;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInputSet;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TScalar;
-import com.akiban.server.types3.TPreptimeContext;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
+import com.foundationdb.server.explain.*;
+import com.foundationdb.server.types3.LazyList;
+import com.foundationdb.server.types3.ReversedLazyList;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TExecutionContext;
+import com.foundationdb.server.types3.TInputSet;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.TScalar;
+import com.foundationdb.server.types3.TPreptimeContext;
+import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueTarget;
 
 import java.util.List;
 

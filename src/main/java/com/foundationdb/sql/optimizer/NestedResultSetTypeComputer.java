@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer;
+package com.foundationdb.sql.optimizer;
 
-import com.akiban.sql.parser.*;
+import com.foundationdb.sql.parser.*;
 
-import com.akiban.sql.StandardException;
-import com.akiban.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.StandardException;
+import com.foundationdb.sql.types.DataTypeDescriptor;
 
-import com.akiban.server.service.functions.FunctionsRegistry;
+import com.foundationdb.server.service.functions.FunctionsRegistry;
 
 public class NestedResultSetTypeComputer extends FunctionsTypeComputer
 {

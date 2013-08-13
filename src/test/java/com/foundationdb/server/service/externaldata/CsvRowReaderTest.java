@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.externaldata;
+package com.foundationdb.server.service.externaldata;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.rowdata.SchemaFactory;
-import com.akiban.util.Strings;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.rowdata.SchemaFactory;
+import com.foundationdb.util.Strings;
 
 import org.junit.Test;
 import static org.junit.Assert.*;

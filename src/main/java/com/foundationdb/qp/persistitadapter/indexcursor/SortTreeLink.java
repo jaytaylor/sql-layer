@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.persistitadapter.indexcursor;
+package com.foundationdb.qp.persistitadapter.indexcursor;
 
-import com.akiban.server.service.tree.TreeCache;
-import com.akiban.server.service.tree.TreeLink;
+import com.foundationdb.server.service.tree.TreeCache;
+import com.foundationdb.server.service.tree.TreeLink;
 
 class SortTreeLink implements TreeLink
 {

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.loadableplan.std;
+package com.foundationdb.qp.loadableplan.std;
 
 import java.rmi.RemoteException;
 import java.sql.Types;
@@ -23,17 +23,17 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.akiban.qp.loadableplan.DirectObjectCursor;
-import com.akiban.qp.loadableplan.DirectObjectPlan;
-import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
-import com.akiban.qp.operator.BindingNotSetException;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.error.QueryCanceledException;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.types3.Types3Switch;
+import com.foundationdb.qp.loadableplan.DirectObjectCursor;
+import com.foundationdb.qp.loadableplan.DirectObjectPlan;
+import com.foundationdb.qp.loadableplan.LoadableDirectObjectPlan;
+import com.foundationdb.qp.operator.BindingNotSetException;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.persistitadapter.PersistitAdapter;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.QueryCanceledException;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.types3.Types3Switch;
 import com.persistit.Management.TaskStatus;
 import com.persistit.Persistit;
 import com.persistit.Task;

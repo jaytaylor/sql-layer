@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.test;
+package com.foundationdb.sql.test;
 
 import org.joda.time.DateTime;
 import static org.joda.time.DateTimeZone.UTC;

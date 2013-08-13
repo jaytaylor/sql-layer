@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.t3expressions;
+package com.foundationdb.server.t3expressions;
 
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.texpressions.TValidatedOverload;
 
 import java.util.Collection;
 

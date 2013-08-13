@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.explain.std;
+package com.foundationdb.server.explain.std;
 
-import com.akiban.qp.exec.Plannable;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.explain.*;
+import com.foundationdb.qp.exec.Plannable;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.explain.*;
 import java.util.Arrays;
 import java.util.List;
 

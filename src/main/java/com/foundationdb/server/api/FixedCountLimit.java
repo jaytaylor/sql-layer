@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.api;
+package com.foundationdb.server.api;
 
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.api.dml.scan.ScanLimit;
-import com.akiban.util.ArgumentValidation;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.api.dml.scan.ScanLimit;
+import com.foundationdb.util.ArgumentValidation;
 
 public class FixedCountLimit implements ScanLimit {
     private final int limit;

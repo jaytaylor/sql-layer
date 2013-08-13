@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.store;
+package com.foundationdb.server.test.it.store;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -24,27 +24,27 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableName;
-import com.akiban.server.AkServer;
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.api.DMLFunctions;
-import com.akiban.server.api.dml.scan.LegacyRowWrapper;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.rowdata.SchemaFactory;
-import com.akiban.util.GrowableByteBuffer;
-import com.akiban.util.MySqlStatementSplitter;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.AkServer;
+import com.foundationdb.server.api.DDLFunctions;
+import com.foundationdb.server.api.DMLFunctions;
+import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.rowdata.SchemaFactory;
+import com.foundationdb.util.GrowableByteBuffer;
+import com.foundationdb.util.MySqlStatementSplitter;
 import org.junit.After;
 import org.junit.Before;
 
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.AkServerUtil;
-import com.akiban.server.store.RowCollector;
-import com.akiban.server.test.it.ITBase;
-import com.akiban.util.ByteBufferFactory;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.AkServerUtil;
+import com.foundationdb.server.store.RowCollector;
+import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.util.ByteBufferFactory;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 

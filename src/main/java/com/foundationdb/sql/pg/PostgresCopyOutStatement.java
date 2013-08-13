@@ -15,22 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.sql.StandardException;
-import com.akiban.sql.parser.CopyStatementNode;
-import com.akiban.sql.parser.ParameterNode;
-import com.akiban.sql.parser.StatementNode;
+import com.foundationdb.sql.StandardException;
+import com.foundationdb.sql.parser.CopyStatementNode;
+import com.foundationdb.sql.parser.ParameterNode;
+import com.foundationdb.sql.parser.StatementNode;
 
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.row.Row;
-import com.akiban.server.error.SQLParserInternalException;
-import com.akiban.server.error.UnsupportedSQLException;
-import com.akiban.server.service.externaldata.CsvFormat;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.error.SQLParserInternalException;
+import com.foundationdb.server.error.UnsupportedSQLException;
+import com.foundationdb.server.service.externaldata.CsvFormat;
 
-import static com.akiban.sql.pg.PostgresCopyInStatement.csvFormat;
-import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
+import static com.foundationdb.sql.pg.PostgresCopyInStatement.csvFormat;
+import static com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 import java.io.*;
 import java.util.*;

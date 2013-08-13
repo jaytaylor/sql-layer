@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer;
+package com.foundationdb.sql.optimizer;
 
-import com.akiban.server.expression.ExpressionType;
-import com.akiban.server.expression.TypesList;
-import com.akiban.server.types.AkType;
-import com.akiban.sql.StandardException;
-import com.akiban.sql.optimizer.FunctionsTypeComputer.ArgumentsAccess;
+import com.foundationdb.server.expression.ExpressionType;
+import com.foundationdb.server.expression.TypesList;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.sql.StandardException;
+import com.foundationdb.sql.optimizer.FunctionsTypeComputer.ArgumentsAccess;
 
 class ArgTypesList extends TypesList
 {

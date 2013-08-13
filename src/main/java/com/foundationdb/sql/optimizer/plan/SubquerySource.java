@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.foundationdb.sql.optimizer.plan;
 
 /** A join to a subquery result. */
 public class SubquerySource extends BaseJoinable implements ColumnSource, PlanWithInput

@@ -15,17 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3;
+package com.foundationdb.server.types3;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.QueryContext.NotificationLevel;
-import com.akiban.server.error.ErrorCode;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.InvalidParameterValueException;
-import com.akiban.server.error.OverflowException;
-import com.akiban.server.error.StringTruncationException;
-import com.akiban.util.SparseArray;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.QueryContext.NotificationLevel;
+import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.error.InvalidParameterValueException;
+import com.foundationdb.server.error.OverflowException;
+import com.foundationdb.server.error.StringTruncationException;
+import com.foundationdb.util.SparseArray;
 import com.google.common.base.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

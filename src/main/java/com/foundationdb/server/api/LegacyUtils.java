@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.api;
+package com.foundationdb.server.api;
 
-import com.akiban.server.error.TableDefinitionMismatchException;
-import com.akiban.server.rowdata.RowData;
+import com.foundationdb.server.error.TableDefinitionMismatchException;
+import com.foundationdb.server.rowdata.RowData;
 
 public final class LegacyUtils {
     public static Integer matchRowDatas(RowData one, RowData two) {

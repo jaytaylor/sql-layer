@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.dxl;
+package com.foundationdb.server.service.dxl;
 
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.TestSessionFactory;
-import com.akiban.util.MultipleCauseException;
-import com.akiban.util.Strings;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.session.TestSessionFactory;
+import com.foundationdb.util.MultipleCauseException;
+import com.foundationdb.util.Strings;
 import org.junit.Before;
 import org.junit.Test;
 

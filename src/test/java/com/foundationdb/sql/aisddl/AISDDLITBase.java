@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.aisddl;
+package com.foundationdb.sql.aisddl;
 
-import com.akiban.sql.ServerSessionITBase;
-import com.akiban.sql.parser.DDLStatementNode;
-import com.akiban.sql.parser.StatementNode;
+import com.foundationdb.sql.ServerSessionITBase;
+import com.foundationdb.sql.parser.DDLStatementNode;
+import com.foundationdb.sql.parser.StatementNode;
 
 public class AISDDLITBase extends ServerSessionITBase {
     protected void executeDDL(String sql) throws Exception {

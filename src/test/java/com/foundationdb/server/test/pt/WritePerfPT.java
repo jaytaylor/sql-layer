@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.pt;
+package com.foundationdb.server.test.pt;
 
-import com.akiban.server.api.dml.scan.LegacyRowWrapper;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDef;
+import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.rowdata.RowDef;
 import org.junit.Test;
 
 import java.util.ArrayList;

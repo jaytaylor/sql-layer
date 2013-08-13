@@ -15,36 +15,36 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.externaldata;
+package com.foundationdb.server.service.externaldata;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.CacheValueGenerator;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.memoryadapter.MemoryAdapter;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.SimpleQueryContext;
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.DMLFunctions;
-import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.service.Service;
-import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.externaldata.JsonRowWriter.WriteTableRow;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.store.Store;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.util.AkibanAppender;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.CacheValueGenerator;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.memoryadapter.MemoryAdapter;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.SimpleQueryContext;
+import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.api.DMLFunctions;
+import com.foundationdb.server.error.NoSuchTableException;
+import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.ServiceManager;
+import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.server.service.dxl.DXLService;
+import com.foundationdb.server.service.externaldata.JsonRowWriter.WriteTableRow;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.store.Store;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.util.AkibanAppender;
 
 import com.google.inject.Inject;
 import org.slf4j.Logger;

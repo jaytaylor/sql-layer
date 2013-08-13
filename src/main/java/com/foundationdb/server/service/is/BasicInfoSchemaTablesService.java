@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.is;
+package com.foundationdb.server.service.is;
 
 public interface BasicInfoSchemaTablesService {
 }

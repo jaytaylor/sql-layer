@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer;
+package com.foundationdb.sql.optimizer;
 
-import com.akiban.server.rowdata.SchemaFactory;
-import com.akiban.sql.compiler.ASTTransformTestBase;
-import com.akiban.sql.compiler.BooleanNormalizer;
-import com.akiban.sql.compiler.TypeComputer;
-import com.akiban.sql.parser.SQLParser;
+import com.foundationdb.server.rowdata.SchemaFactory;
+import com.foundationdb.sql.compiler.ASTTransformTestBase;
+import com.foundationdb.sql.compiler.BooleanNormalizer;
+import com.foundationdb.sql.compiler.TypeComputer;
+import com.foundationdb.sql.parser.SQLParser;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.functions.FunctionsRegistryImpl;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.server.service.ServiceManager;
+import com.foundationdb.server.service.functions.FunctionsRegistryImpl;
 
-import com.akiban.server.service.servicemanager.GuicedServiceManager;
-import com.akiban.server.service.text.FullTextIndexService;
-import com.akiban.server.service.text.FullTextIndexServiceImpl;
+import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
+import com.foundationdb.server.service.text.FullTextIndexService;
+import com.foundationdb.server.service.text.FullTextIndexServiceImpl;
 import org.junit.Before;
 import org.junit.Ignore;
 

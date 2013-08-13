@@ -15,25 +15,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
-import com.akiban.server.expression.ExpressionComposer.NullTreating;
-import com.akiban.junit.OnlyIfNot;
-import com.akiban.qp.exec.Plannable;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.SparseArrayQueryBindings;
-import com.akiban.qp.row.Row;
-import com.akiban.server.explain.CompoundExplainer;
-import com.akiban.server.explain.ExplainContext;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionType;
-import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.test.it.qp.NullsRow;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.NullValueSource;
-import com.akiban.server.types.ValueSource;
+import com.foundationdb.server.expression.ExpressionComposer.NullTreating;
+import com.foundationdb.junit.OnlyIfNot;
+import com.foundationdb.qp.exec.Plannable;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.SparseArrayQueryBindings;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.explain.CompoundExplainer;
+import com.foundationdb.server.explain.ExplainContext;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.ExpressionType;
+import com.foundationdb.server.expression.ExpressionComposer;
+import com.foundationdb.server.expression.ExpressionEvaluation;
+import com.foundationdb.server.test.it.qp.NullsRow;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.NullValueSource;
+import com.foundationdb.server.types.ValueSource;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -42,7 +42,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.akiban.server.expression.std.ComposedExpressionTestBase.ExpressionAttribute.*;
+import static com.foundationdb.server.expression.std.ComposedExpressionTestBase.ExpressionAttribute.*;
 import java.util.*;
 import static org.junit.Assert.*;
 

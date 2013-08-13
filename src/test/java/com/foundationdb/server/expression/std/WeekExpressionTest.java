@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
-import com.akiban.server.types.ValueSourceIsNullException;
-import com.akiban.server.error.WrongExpressionArityException;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.extract.Extractors;
+import com.foundationdb.server.types.ValueSourceIsNullException;
+import com.foundationdb.server.error.WrongExpressionArityException;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.ExpressionComposer;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.extract.Extractors;
 import java.util.Arrays;
 import org.junit.Test;
 

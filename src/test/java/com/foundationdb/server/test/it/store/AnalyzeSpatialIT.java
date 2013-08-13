@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.store;
+package com.foundationdb.server.test.it.store;
 
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableName;
-import com.akiban.server.geophile.Space;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.geophile.Space;
+import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
 
 import java.util.Collections;

@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer;
+package com.foundationdb.sql.optimizer;
 
-import com.akiban.sql.parser.*;
+import com.foundationdb.sql.parser.*;
 
-import com.akiban.sql.StandardException;
+import com.foundationdb.sql.StandardException;
 
 import java.util.*;
 

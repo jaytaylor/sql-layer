@@ -16,7 +16,7 @@
  */
 
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
 import java.text.DateFormatSymbols;
 import java.util.HashMap;

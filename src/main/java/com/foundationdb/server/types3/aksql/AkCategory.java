@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.aksql;
+package com.foundationdb.server.types3.aksql;
 
 public enum AkCategory {
     LOGIC,

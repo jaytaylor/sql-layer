@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.mcompat.mtypes;
+package com.foundationdb.server.types3.mcompat.mtypes;
 
-import com.akiban.server.types3.common.BigDecimalWrapper;
+import com.foundationdb.server.types3.common.BigDecimalWrapper;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;

@@ -15,33 +15,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.test;
+package com.foundationdb.sql.test;
 
-import com.akiban.server.rowdata.SchemaFactory;
-import com.akiban.sql.StandardException;
-import com.akiban.sql.compiler.BooleanNormalizer;
-import com.akiban.sql.optimizer.AISBinder;
-import com.akiban.sql.optimizer.AISTypeComputer;
-import com.akiban.sql.optimizer.BindingNodeFactory;
-import com.akiban.sql.optimizer.BoundNodeToString;
-import com.akiban.sql.optimizer.DistinctEliminator;
-import com.akiban.sql.optimizer.OperatorCompiler;
-import com.akiban.sql.optimizer.OperatorCompilerTest;
-import com.akiban.sql.optimizer.SubqueryFlattener;
-import com.akiban.sql.optimizer.plan.AST;
-import com.akiban.sql.optimizer.plan.PlanToString;
-import com.akiban.sql.optimizer.rule.BaseRule;
-import static com.akiban.sql.optimizer.rule.DefaultRules.*;
-import com.akiban.sql.optimizer.rule.PlanContext;
-import com.akiban.sql.optimizer.rule.RulesContext;
-import com.akiban.sql.optimizer.rule.RulesTestContext;
-import com.akiban.sql.optimizer.rule.RulesTestHelper;
-import com.akiban.sql.parser.DMLStatementNode;
-import com.akiban.sql.parser.SQLParser;
-import com.akiban.sql.parser.StatementNode;
-import com.akiban.sql.views.ViewDefinition;
+import com.foundationdb.server.rowdata.SchemaFactory;
+import com.foundationdb.sql.StandardException;
+import com.foundationdb.sql.compiler.BooleanNormalizer;
+import com.foundationdb.sql.optimizer.AISBinder;
+import com.foundationdb.sql.optimizer.AISTypeComputer;
+import com.foundationdb.sql.optimizer.BindingNodeFactory;
+import com.foundationdb.sql.optimizer.BoundNodeToString;
+import com.foundationdb.sql.optimizer.DistinctEliminator;
+import com.foundationdb.sql.optimizer.OperatorCompiler;
+import com.foundationdb.sql.optimizer.OperatorCompilerTest;
+import com.foundationdb.sql.optimizer.SubqueryFlattener;
+import com.foundationdb.sql.optimizer.plan.AST;
+import com.foundationdb.sql.optimizer.plan.PlanToString;
+import com.foundationdb.sql.optimizer.rule.BaseRule;
+import static com.foundationdb.sql.optimizer.rule.DefaultRules.*;
+import com.foundationdb.sql.optimizer.rule.PlanContext;
+import com.foundationdb.sql.optimizer.rule.RulesContext;
+import com.foundationdb.sql.optimizer.rule.RulesTestContext;
+import com.foundationdb.sql.optimizer.rule.RulesTestHelper;
+import com.foundationdb.sql.parser.DMLStatementNode;
+import com.foundationdb.sql.parser.SQLParser;
+import com.foundationdb.sql.parser.StatementNode;
+import com.foundationdb.sql.views.ViewDefinition;
 
-import com.akiban.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.AkibanInformationSchema;
 
 import java.util.*;
 import java.io.*;

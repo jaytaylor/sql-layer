@@ -14,39 +14,39 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.server.service.restdml;
+package com.foundationdb.server.service.restdml;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.CacheValueGenerator;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.PrimaryKey;
-import com.akiban.ais.model.TableName;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.row.Row;
-import com.akiban.server.error.InvalidChildCollectionException;
-import com.akiban.server.error.KeyColumnMissingException;
-import com.akiban.server.error.NoSuchIndexException;
-import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.externaldata.ExternalDataService;
-import com.akiban.server.service.externaldata.ExternalDataServiceImpl;
-import com.akiban.server.service.externaldata.JsonRowWriter;
-import com.akiban.server.service.externaldata.PlanGenerator;
-import com.akiban.server.service.externaldata.TableRowTracker;
-import com.akiban.server.service.externaldata.JsonRowWriter.WriteCapturePKRow;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.store.Store;
-import com.akiban.server.t3expressions.T3RegistryService;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.util.AkibanAppender;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.CacheValueGenerator;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.PrimaryKey;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.error.InvalidChildCollectionException;
+import com.foundationdb.server.error.KeyColumnMissingException;
+import com.foundationdb.server.error.NoSuchIndexException;
+import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.server.service.externaldata.ExternalDataService;
+import com.foundationdb.server.service.externaldata.ExternalDataServiceImpl;
+import com.foundationdb.server.service.externaldata.JsonRowWriter;
+import com.foundationdb.server.service.externaldata.PlanGenerator;
+import com.foundationdb.server.service.externaldata.TableRowTracker;
+import com.foundationdb.server.service.externaldata.JsonRowWriter.WriteCapturePKRow;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.Store;
+import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.util.AkibanAppender;
 import com.fasterxml.jackson.databind.JsonNode;
 
 public class UpsertProcessor extends DMLProcessor {

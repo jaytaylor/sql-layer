@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.collation;
+package com.foundationdb.server.collation;
 
-import com.akiban.server.service.tree.KeyCreator;
+import com.foundationdb.server.service.tree.KeyCreator;
 import com.persistit.Key;
 import com.persistit.Persistit;
 

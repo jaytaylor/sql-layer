@@ -14,36 +14,36 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.server.service.restdml;
+package com.foundationdb.server.service.restdml;
 
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.akiban.server.service.externaldata.TableRowTracker;
+import com.foundationdb.server.service.externaldata.TableRowTracker;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.CacheValueGenerator;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.TableName;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.Operator;
-import com.akiban.server.error.FKValueMismatchException;
-import com.akiban.server.service.externaldata.JsonRowWriter;
-import com.akiban.server.service.externaldata.JsonRowWriter.WriteCapturePKRow;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.store.Store;
-import com.akiban.server.t3expressions.T3RegistryService;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.util.AkibanAppender;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.CacheValueGenerator;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Join;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.server.error.FKValueMismatchException;
+import com.foundationdb.server.service.externaldata.JsonRowWriter;
+import com.foundationdb.server.service.externaldata.JsonRowWriter.WriteCapturePKRow;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.Store;
+import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.util.AkibanAppender;
 
 public class InsertProcessor extends DMLProcessor {
     private OperatorGenerator insertGenerator;

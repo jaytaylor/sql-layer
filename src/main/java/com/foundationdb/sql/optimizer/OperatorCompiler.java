@@ -15,30 +15,30 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer;
+package com.foundationdb.sql.optimizer;
 
-import com.akiban.server.t3expressions.T3RegistryService;
-import com.akiban.sql.optimizer.plan.AST;
-import com.akiban.sql.optimizer.plan.BasePlannable;
-import com.akiban.sql.optimizer.rule.BaseRule;
-import com.akiban.sql.optimizer.rule.PlanContext;
-import com.akiban.sql.optimizer.rule.SchemaRulesContext;
-import com.akiban.sql.optimizer.rule.cost.CostEstimator;
-import static com.akiban.sql.optimizer.rule.DefaultRules.*;
+import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.sql.optimizer.plan.AST;
+import com.foundationdb.sql.optimizer.plan.BasePlannable;
+import com.foundationdb.sql.optimizer.rule.BaseRule;
+import com.foundationdb.sql.optimizer.rule.PlanContext;
+import com.foundationdb.sql.optimizer.rule.SchemaRulesContext;
+import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
+import static com.foundationdb.sql.optimizer.rule.DefaultRules.*;
 
-import com.akiban.sql.StandardException;
-import com.akiban.sql.compiler.BooleanNormalizer;
-import com.akiban.sql.parser.DMLStatementNode;
-import com.akiban.sql.parser.NodeFactory;
-import com.akiban.sql.parser.ParameterNode;
-import com.akiban.sql.parser.SQLParser;
-import com.akiban.sql.parser.SQLParserContext;
+import com.foundationdb.sql.StandardException;
+import com.foundationdb.sql.compiler.BooleanNormalizer;
+import com.foundationdb.sql.parser.DMLStatementNode;
+import com.foundationdb.sql.parser.NodeFactory;
+import com.foundationdb.sql.parser.ParameterNode;
+import com.foundationdb.sql.parser.SQLParser;
+import com.foundationdb.sql.parser.SQLParserContext;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.error.SQLParserInternalException;
-import com.akiban.server.service.functions.FunctionsRegistry;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.server.error.SQLParserInternalException;
+import com.foundationdb.server.service.functions.FunctionsRegistry;
 
-import com.akiban.sql.IncomparableException;
+import com.foundationdb.sql.IncomparableException;
 import java.util.List;
 
 /**

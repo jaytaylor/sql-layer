@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.rowtype;
+package com.foundationdb.qp.rowtype;
 
 import java.util.List;
 
-import com.akiban.ais.model.HKey;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.explain.*;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.ais.model.HKey;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.explain.*;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.texpressions.TPreparedExpression;
 
 public class ProjectedUserTableRowType extends ProjectedRowType {
 

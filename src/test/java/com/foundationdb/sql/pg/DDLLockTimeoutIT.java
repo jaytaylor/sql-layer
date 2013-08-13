@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.server.error.ErrorCode;
-import com.akiban.server.service.dxl.DXLReadWriteLockHook;
-import com.akiban.server.service.lock.LockService;
-import com.akiban.server.service.session.Session;
-import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.service.dxl.DXLReadWriteLockHook;
+import com.foundationdb.server.service.lock.LockService;
+import com.foundationdb.server.service.session.Session;
+import static com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 import java.sql.SQLException;
 import java.sql.Statement;

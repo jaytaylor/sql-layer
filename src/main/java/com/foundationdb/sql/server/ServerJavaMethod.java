@@ -15,17 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.server;
+package com.foundationdb.sql.server;
 
-import com.akiban.ais.model.Parameter;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.server.error.ExternalRoutineInvocationException;
-import com.akiban.server.explain.Attributes;
-import com.akiban.server.explain.CompoundExplainer;
-import com.akiban.server.explain.ExplainContext;
-import com.akiban.server.explain.Explainable;
-import com.akiban.server.explain.Label;
-import com.akiban.server.explain.PrimitiveExplainer;
+import com.foundationdb.ais.model.Parameter;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.server.error.ExternalRoutineInvocationException;
+import com.foundationdb.server.explain.Attributes;
+import com.foundationdb.server.explain.CompoundExplainer;
+import com.foundationdb.server.explain.ExplainContext;
+import com.foundationdb.server.explain.Explainable;
+import com.foundationdb.server.explain.Label;
+import com.foundationdb.server.explain.PrimitiveExplainer;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;

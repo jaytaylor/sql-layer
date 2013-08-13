@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.model;
+package com.foundationdb.ais.model;
 
-import com.akiban.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import org.junit.Test;
 
 import java.util.ArrayList;

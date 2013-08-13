@@ -15,19 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.t3expressions;
+package com.foundationdb.server.t3expressions;
 
-import com.akiban.server.types3.T3TestClass;
-import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TCastBase;
-import com.akiban.server.types3.TCastPath;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.service.InstanceFinder;
-import com.akiban.server.types3.texpressions.Constantness;
+import com.foundationdb.server.types3.T3TestClass;
+import com.foundationdb.server.types3.TCast;
+import com.foundationdb.server.types3.TCastBase;
+import com.foundationdb.server.types3.TCastPath;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TExecutionContext;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueTarget;
+import com.foundationdb.server.types3.service.InstanceFinder;
+import com.foundationdb.server.types3.texpressions.Constantness;
 import org.junit.Test;
 
 import java.util.ArrayList;

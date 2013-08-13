@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.keyupdate;
+package com.foundationdb.server.test.it.keyupdate;
 
-import com.akiban.ais.model.Index;
-import com.akiban.server.api.dml.scan.NewRow;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
 
 public final class GroupIndexLjUpdateIT extends GIUpdateITBase {

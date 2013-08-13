@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.memoryadapter;
+package com.foundationdb.qp.memoryadapter;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.row.ValuesRow;
-import com.akiban.qp.rowtype.RowType;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesRow;
+import com.foundationdb.qp.rowtype.RowType;
 
 import java.util.Iterator;
 

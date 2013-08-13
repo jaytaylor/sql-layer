@@ -15,42 +15,42 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.foundationdb.sql.optimizer.rule;
 
-import com.akiban.server.expression.std.Comparison;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.sql.optimizer.plan.*;
-import com.akiban.sql.optimizer.plan.JoinNode;
-import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
-import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
-import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
-import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
-import static com.akiban.sql.optimizer.rule.PlanContext.*;
+import com.foundationdb.server.expression.std.Comparison;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.sql.optimizer.plan.*;
+import com.foundationdb.sql.optimizer.plan.JoinNode;
+import com.foundationdb.sql.optimizer.plan.JoinNode.JoinType;
+import com.foundationdb.sql.optimizer.plan.ResultSet.ResultField;
+import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
+import com.foundationdb.sql.optimizer.plan.UpdateStatement.UpdateColumn;
+import static com.foundationdb.sql.optimizer.rule.PlanContext.*;
 
-import com.akiban.sql.optimizer.*;
+import com.foundationdb.sql.optimizer.*;
 
-import com.akiban.sql.StandardException;
-import com.akiban.sql.parser.*;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
+import com.foundationdb.sql.StandardException;
+import com.foundationdb.sql.parser.*;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.types.TypeId;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.UserTable;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.UserTable;
 
-import com.akiban.server.error.InsertWrongCountException;
-import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.error.ProtectedTableDDLException;
-import com.akiban.server.error.SQLParserInternalException;
-import com.akiban.server.error.UnsupportedSQLException;
-import com.akiban.server.error.OrderGroupByNonIntegerConstant;
-import com.akiban.server.error.OrderGroupByIntegerOutOfRange;
-import com.akiban.server.error.WrongExpressionArityException;
+import com.foundationdb.server.error.InsertWrongCountException;
+import com.foundationdb.server.error.NoSuchTableException;
+import com.foundationdb.server.error.ProtectedTableDDLException;
+import com.foundationdb.server.error.SQLParserInternalException;
+import com.foundationdb.server.error.UnsupportedSQLException;
+import com.foundationdb.server.error.OrderGroupByNonIntegerConstant;
+import com.foundationdb.server.error.OrderGroupByIntegerOutOfRange;
+import com.foundationdb.server.error.WrongExpressionArityException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

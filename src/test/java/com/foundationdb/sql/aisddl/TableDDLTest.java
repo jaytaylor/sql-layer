@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.aisddl;
+package com.foundationdb.sql.aisddl;
 
-import com.akiban.server.api.ddl.DDLFunctionsMockBase;
-import com.akiban.sql.StandardException;
+import com.foundationdb.server.api.ddl.DDLFunctionsMockBase;
+import com.foundationdb.sql.StandardException;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -26,23 +26,23 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.JoinColumn;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.error.DuplicateIndexException;
-import com.akiban.server.error.DuplicateSequenceNameException;
-import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.service.session.Session;
-import com.akiban.sql.parser.SQLParser;
-import com.akiban.sql.parser.StatementNode;
-import com.akiban.sql.parser.DropTableNode;
-import com.akiban.sql.parser.CreateTableNode;
+import com.foundationdb.ais.model.AISBuilder;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.Join;
+import com.foundationdb.ais.model.JoinColumn;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.error.DuplicateIndexException;
+import com.foundationdb.server.error.DuplicateSequenceNameException;
+import com.foundationdb.server.error.NoSuchTableException;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.sql.parser.SQLParser;
+import com.foundationdb.sql.parser.StatementNode;
+import com.foundationdb.sql.parser.DropTableNode;
+import com.foundationdb.sql.parser.CreateTableNode;
 
 
 public class TableDDLTest {

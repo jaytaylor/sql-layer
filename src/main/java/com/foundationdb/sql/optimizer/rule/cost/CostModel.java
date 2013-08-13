@@ -15,18 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule.cost;
+package com.foundationdb.sql.optimizer.rule.cost;
 
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.rowtype.*;
+import com.foundationdb.ais.model.Join;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.rowtype.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.akiban.sql.optimizer.rule.cost.CostModelMeasurements.*;
+import static com.foundationdb.sql.optimizer.rule.cost.CostModelMeasurements.*;
 
 public class CostModel
 {

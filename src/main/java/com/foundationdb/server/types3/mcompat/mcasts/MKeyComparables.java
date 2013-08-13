@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.mcompat.mcasts;
+package com.foundationdb.server.types3.mcompat.mcasts;
 
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TComparison;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TKeyComparable;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.pvalue.PValueTargets;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TComparison;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.TKeyComparable;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueTarget;
+import com.foundationdb.server.types3.pvalue.PValueTargets;
 import com.google.common.primitives.Longs;
 
 import java.util.ArrayList;
@@ -33,7 +33,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.akiban.server.types3.pvalue.PValueSources.getLong;
+import static com.foundationdb.server.types3.pvalue.PValueSources.getLong;
 
 public final class MKeyComparables {
 

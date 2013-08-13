@@ -15,28 +15,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.dxl;
+package com.foundationdb.server.service.dxl;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.api.DMLFunctions;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.api.dml.scan.BufferFullException;
-import com.akiban.server.api.dml.scan.CursorId;
-import com.akiban.server.api.dml.scan.LegacyRowOutput;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.RowOutput;
-import com.akiban.server.error.CursorIsUnknownException;
-import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.listener.ListenerService;
-import com.akiban.server.service.lock.LockService;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionService;
-import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.store.SchemaManager;
-import com.akiban.server.store.Store;
-import com.akiban.server.store.statistics.IndexStatisticsService;
-import com.akiban.server.t3expressions.T3RegistryService;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.api.DDLFunctions;
+import com.foundationdb.server.api.DMLFunctions;
+import com.foundationdb.server.api.dml.ColumnSelector;
+import com.foundationdb.server.api.dml.scan.BufferFullException;
+import com.foundationdb.server.api.dml.scan.CursorId;
+import com.foundationdb.server.api.dml.scan.LegacyRowOutput;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.api.dml.scan.RowOutput;
+import com.foundationdb.server.error.CursorIsUnknownException;
+import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.server.service.listener.ListenerService;
+import com.foundationdb.server.service.lock.LockService;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.session.SessionService;
+import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.store.SchemaManager;
+import com.foundationdb.server.store.Store;
+import com.foundationdb.server.store.statistics.IndexStatisticsService;
+import com.foundationdb.server.t3expressions.T3RegistryService;
 import com.google.inject.Inject;
 
 import java.util.Collection;

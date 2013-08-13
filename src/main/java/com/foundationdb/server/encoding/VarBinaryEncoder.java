@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.encoding;
+package com.foundationdb.server.encoding;
 
 import java.nio.ByteBuffer;
 
-import com.akiban.server.rowdata.FieldDef;
-import com.akiban.util.ByteSource;
+import com.foundationdb.server.rowdata.FieldDef;
+import com.foundationdb.util.ByteSource;
 
 public final class VarBinaryEncoder extends VariableWidthEncoding {
 

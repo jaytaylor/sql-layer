@@ -15,18 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.foundationdb.sql.optimizer.plan;
 
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.expression.std.Comparison;
-import com.akiban.sql.optimizer.plan.ConditionsCount.HowMany;
-import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
-import com.akiban.sql.optimizer.rule.OverloadAndTInstanceResolver;
-import com.akiban.sql.optimizer.rule.PlanContext;
-import com.akiban.sql.optimizer.rule.ConstantFolder.NewFolder;
-import com.akiban.sql.optimizer.rule.range.ColumnRanges;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.expression.std.Comparison;
+import com.foundationdb.sql.optimizer.plan.ConditionsCount.HowMany;
+import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
+import com.foundationdb.sql.optimizer.rule.OverloadAndTInstanceResolver;
+import com.foundationdb.sql.optimizer.rule.PlanContext;
+import com.foundationdb.sql.optimizer.rule.ConstantFolder.NewFolder;
+import com.foundationdb.sql.optimizer.rule.range.ColumnRanges;
 
 import java.util.ArrayList;
 import java.util.List;

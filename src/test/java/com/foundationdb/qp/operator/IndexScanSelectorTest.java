@@ -15,17 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.operator;
+package com.foundationdb.qp.operator;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.aisb2.AISBBasedBuilder;
-import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.junit.OnlyIf;
-import com.akiban.junit.OnlyIfNot;
-import com.akiban.junit.Parameterization;
-import com.akiban.junit.ParameterizationBuilder;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.OnlyIf;
+import com.foundationdb.junit.OnlyIfNot;
+import com.foundationdb.junit.Parameterization;
+import com.foundationdb.junit.ParameterizationBuilder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 

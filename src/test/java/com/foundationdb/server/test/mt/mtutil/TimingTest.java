@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.mt.mtutil;
+package com.foundationdb.server.test.mt.mtutil;
 
 import org.junit.Test;
 

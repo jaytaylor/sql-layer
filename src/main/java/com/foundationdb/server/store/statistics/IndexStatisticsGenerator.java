@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.store.statistics;
+package com.foundationdb.server.store.statistics;
 
-import com.akiban.ais.model.Index;
-import com.akiban.server.store.statistics.histograms.Bucket;
-import com.akiban.server.store.statistics.histograms.Sampler;
-import com.akiban.util.Flywheel;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.server.store.statistics.histograms.Bucket;
+import com.foundationdb.server.store.statistics.histograms.Sampler;
+import com.foundationdb.util.Flywheel;
 
 import java.util.ArrayList;
 import java.util.List;

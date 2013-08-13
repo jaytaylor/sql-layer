@@ -14,20 +14,20 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.server.test.it.sort;
+package com.foundationdb.server.test.it.sort;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import com.akiban.qp.operator.API.Ordering;
-import com.akiban.qp.operator.API.SortOption;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.persistitadapter.Sorter;
-import com.akiban.qp.persistitadapter.indexcursor.MergeJoinSorter;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.util.tap.InOutTap;
+import com.foundationdb.qp.operator.API.Ordering;
+import com.foundationdb.qp.operator.API.SortOption;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.persistitadapter.Sorter;
+import com.foundationdb.qp.persistitadapter.indexcursor.MergeJoinSorter;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.util.tap.InOutTap;
 
 public class MergeJoinSorterIT extends SorterITBase {
 

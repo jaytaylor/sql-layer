@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.rowdata;
+package com.foundationdb.server.rowdata;
 
 import java.util.Arrays;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.AkServerUtil;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.server.AkServerUtil;
 import junit.framework.TestCase;
 
 public class RowDefTest extends TestCase {

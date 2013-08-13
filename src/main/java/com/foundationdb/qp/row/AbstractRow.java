@@ -15,22 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.row;
+package com.foundationdb.qp.row;
 
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.expression.BoundExpressions;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.Quote;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.util.ValueSources;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueSources;
-import com.akiban.util.AkibanAppender;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.expression.BoundExpressions;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.Quote;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.util.ValueSources;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.util.AkibanAppender;
 
 public abstract class AbstractRow implements Row
 {

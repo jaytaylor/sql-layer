@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.operator;
+package com.foundationdb.qp.operator;
 
-import com.akiban.qp.expression.BoundExpressions;
-import com.akiban.server.api.dml.ColumnSelector;
+import com.foundationdb.qp.expression.BoundExpressions;
+import com.foundationdb.server.api.dml.ColumnSelector;
 
 public interface RowOrientedCursorBase<T extends BoundExpressions> extends CursorBase<T>
 {

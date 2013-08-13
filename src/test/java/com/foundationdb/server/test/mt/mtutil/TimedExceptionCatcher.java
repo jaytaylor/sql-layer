@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.mt.mtutil;
+package com.foundationdb.server.test.mt.mtutil;
 
-import com.akiban.server.service.session.Session;
+import com.foundationdb.server.service.session.Session;
 
 public abstract class TimedExceptionCatcher extends TimedCallable<Throwable> {
 

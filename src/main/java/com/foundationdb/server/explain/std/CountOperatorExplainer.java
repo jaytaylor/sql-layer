@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.explain.std;
+package com.foundationdb.server.explain.std;
 
-import com.akiban.qp.exec.Plannable;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.ValuesRowType;
-import com.akiban.server.explain.*;
+import com.foundationdb.qp.exec.Plannable;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.ValuesRowType;
+import com.foundationdb.server.explain.*;
 
 public class CountOperatorExplainer extends CompoundExplainer
 {

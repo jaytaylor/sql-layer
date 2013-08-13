@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
-import com.akiban.server.error.InconvertibleTypesException;
-import com.akiban.junit.OnlyIfNot;
-import com.akiban.junit.OnlyIf;
-import com.akiban.server.types.extract.Extractors;
-import com.akiban.junit.ParameterizationBuilder;
-import com.akiban.junit.Parameterization;
+import com.foundationdb.server.error.InconvertibleTypesException;
+import com.foundationdb.junit.OnlyIfNot;
+import com.foundationdb.junit.OnlyIf;
+import com.foundationdb.server.types.extract.Extractors;
+import com.foundationdb.junit.ParameterizationBuilder;
+import com.foundationdb.junit.Parameterization;
 import java.util.Collection;
 import org.junit.runner.RunWith;
-import com.akiban.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.NamedParameterizedRunner;
 import java.math.BigDecimal;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.types.util.ValueHolder;
-import com.akiban.server.types.AkType;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.types.util.ValueHolder;
+import com.foundationdb.server.types.AkType;
 import java.math.BigInteger;
 import java.util.Arrays;
 import org.junit.Test;

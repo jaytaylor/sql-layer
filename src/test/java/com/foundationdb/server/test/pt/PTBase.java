@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.pt;
+package com.foundationdb.server.test.pt;
 
-import com.akiban.server.test.ApiTestBase;
-import com.akiban.util.tap.Tap;
-import com.akiban.util.tap.TapReport;
+import com.foundationdb.server.test.ApiTestBase;
+import com.foundationdb.util.tap.Tap;
+import com.foundationdb.util.tap.TapReport;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;

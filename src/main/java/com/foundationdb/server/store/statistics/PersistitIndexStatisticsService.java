@@ -15,19 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.store.statistics;
+package com.foundationdb.server.store.statistics;
 
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.server.AccumulatorAdapter;
-import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.listener.ListenerService;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionService;
-import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.store.PersistitStore;
-import com.akiban.server.store.SchemaManager;
-import com.akiban.server.store.Store;
+import com.foundationdb.ais.model.GroupIndex;
+import com.foundationdb.qp.persistitadapter.PersistitAdapter;
+import com.foundationdb.server.AccumulatorAdapter;
+import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.server.service.listener.ListenerService;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.session.SessionService;
+import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.store.PersistitStore;
+import com.foundationdb.server.store.SchemaManager;
+import com.foundationdb.server.store.Store;
 import com.google.inject.Inject;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitInterruptedException;

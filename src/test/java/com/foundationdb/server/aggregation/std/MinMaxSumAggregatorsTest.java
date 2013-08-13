@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.aggregation.std;
+package com.foundationdb.server.aggregation.std;
 
 
-import com.akiban.server.error.InvalidArgumentTypeException;
-import com.akiban.server.error.OverflowException;
+import com.foundationdb.server.error.InvalidArgumentTypeException;
+import com.foundationdb.server.error.OverflowException;
 import java.math.BigInteger;
 import java.math.BigDecimal;
-import com.akiban.server.aggregation.Aggregator;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.util.ValueHolder;
+import com.foundationdb.server.aggregation.Aggregator;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.util.ValueHolder;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

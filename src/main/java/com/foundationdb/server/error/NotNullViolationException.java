@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.error;
+package com.foundationdb.server.error;
 
 public final class NotNullViolationException extends InvalidOperationException {
     public NotNullViolationException(String schemaName, String tableName, String columnName) {

@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.aksql.akfuncs;
+package com.foundationdb.server.types3.aksql.akfuncs;
 
-import com.akiban.server.types3.TScalar;
-import com.akiban.server.types3.aksql.aktypes.AkBool;
-import com.akiban.server.types3.common.funcs.IsTrueFalseUnknown;
+import com.foundationdb.server.types3.TScalar;
+import com.foundationdb.server.types3.aksql.aktypes.AkBool;
+import com.foundationdb.server.types3.common.funcs.IsTrueFalseUnknown;
 
 public class AkIsTrueFalseUnknown
 {

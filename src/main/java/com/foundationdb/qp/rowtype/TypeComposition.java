@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.rowtype;
+package com.foundationdb.qp.rowtype;
 
 
-import com.akiban.ais.model.UserTable;
-import com.akiban.util.ArgumentValidation;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.util.ArgumentValidation;
 
 import java.util.*;
 

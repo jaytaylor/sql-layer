@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.rest.resources;
+package com.foundationdb.rest.resources;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DELETE;
@@ -26,10 +26,10 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
-import com.akiban.rest.RestResponseBuilder;
-import com.akiban.server.error.ErrorCode;
+import com.foundationdb.rest.RestResponseBuilder;
+import com.foundationdb.server.error.ErrorCode;
 
-import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
+import static com.foundationdb.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
 
 @Path("{other:.*}")
 public class DefaultResource {

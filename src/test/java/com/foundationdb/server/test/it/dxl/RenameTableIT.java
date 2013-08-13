@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.dxl;
+package com.foundationdb.server.test.it.dxl;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.error.DuplicateTableNameException;
-import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.error.ProtectedTableDDLException;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.error.DuplicateTableNameException;
+import com.foundationdb.server.error.NoSuchTableException;
+import com.foundationdb.server.error.ProtectedTableDDLException;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.test.it.ITBase;
 import junit.framework.Assert;
 import org.junit.Test;
 

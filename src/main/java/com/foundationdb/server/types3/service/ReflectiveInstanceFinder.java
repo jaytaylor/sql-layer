@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.service;
+package com.foundationdb.server.types3.service;
 
-import com.akiban.server.service.functions.FunctionsRegistryImpl.FunctionsRegistryException;
+import com.foundationdb.server.service.functions.FunctionsRegistryImpl.FunctionsRegistryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

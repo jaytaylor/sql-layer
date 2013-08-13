@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.embedded;
+package com.foundationdb.sql.embedded;
 
-import com.akiban.qp.operator.RowCursor;
+import com.foundationdb.qp.operator.RowCursor;
 
 import java.sql.ResultSet;
 import java.util.Queue;

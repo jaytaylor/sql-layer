@@ -15,27 +15,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.foundationdb.sql.optimizer.rule;
 
-import com.akiban.sql.optimizer.plan.*;
-import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
-import com.akiban.sql.optimizer.rule.OverloadAndTInstanceResolver.ResolvingVisitor;
+import com.foundationdb.sql.optimizer.plan.*;
+import com.foundationdb.sql.optimizer.plan.ExpressionsSource.DistinctState;
+import com.foundationdb.sql.optimizer.rule.OverloadAndTInstanceResolver.ResolvingVisitor;
 
-import com.akiban.server.expression.std.Comparison;
+import com.foundationdb.server.expression.std.Comparison;
 
-import com.akiban.ais.model.Routine;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.t3expressions.T3RegistryService;
-import com.akiban.server.t3expressions.TCastResolver;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSource;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.server.t3expressions.TCastResolver;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TExecutionContext;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types3.pvalue.PValueSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3;
+package com.foundationdb.server.types3;
 
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.util.SparseArray;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.util.SparseArray;
 
 import java.util.List;
 import java.util.TimeZone;

@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.rowdata;
+package com.foundationdb.server.rowdata;
 
-import com.akiban.server.types.AkType;
+import com.foundationdb.server.types.AkType;
 
 public final class RowDataValueSource extends AbstractRowDataValueSource implements RowDataSource {
 

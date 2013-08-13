@@ -15,17 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.t3expressions;
+package com.foundationdb.server.t3expressions;
 
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.types3.InputSetFlags;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TCommutativeOverloads;
-import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.aksql.AkBundle;
-import com.akiban.server.types3.common.types.NoAttrTClass;
-import com.akiban.server.types3.service.InstanceFinder;
-import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.types3.InputSetFlags;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TCommutativeOverloads;
+import com.foundationdb.server.types3.TOverload;
+import com.foundationdb.server.types3.aksql.AkBundle;
+import com.foundationdb.server.types3.common.types.NoAttrTClass;
+import com.foundationdb.server.types3.service.InstanceFinder;
+import com.foundationdb.server.types3.texpressions.TValidatedOverload;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ArrayListMultimap;

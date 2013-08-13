@@ -14,15 +14,15 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.qp.row;
+package com.foundationdb.qp.row;
 
-import com.akiban.qp.rowtype.CompoundRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.NullValueSource;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueSources;
-import com.akiban.util.ShareHolder;
+import com.foundationdb.qp.rowtype.CompoundRowType;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.types.NullValueSource;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.util.ShareHolder;
 
 public class CompoundRow extends AbstractRow {
 

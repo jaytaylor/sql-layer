@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.security;
+package com.foundationdb.server.service.security;
 
-import com.akiban.server.service.session.Session;
+import com.foundationdb.server.service.session.Session;
 
 import javax.servlet.http.HttpServletRequest;
 

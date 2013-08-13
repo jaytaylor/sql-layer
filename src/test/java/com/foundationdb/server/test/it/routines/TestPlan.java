@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.routines;
+package com.foundationdb.server.test.it.routines;
 
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.loadableplan.LoadableOperator;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.test.ExpressionGenerators;
-import com.akiban.server.types.AkType;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.loadableplan.LoadableOperator;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.test.ExpressionGenerators;
+import com.foundationdb.server.types.AkType;
 
 import java.sql.Types;
 import java.util.Arrays;
 
-import static com.akiban.qp.operator.API.groupScan_Default;
-import static com.akiban.qp.operator.API.project_Default;
+import static com.foundationdb.qp.operator.API.groupScan_Default;
+import static com.foundationdb.qp.operator.API.project_Default;
 
 /** A loadable operator plan.
  * <code><pre>

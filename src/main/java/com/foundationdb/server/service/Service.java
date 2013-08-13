@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service;
+package com.foundationdb.server.service;
 
 /**
  * Defines the interface by which services can be started and stopped. Each Service is tied to a specific service

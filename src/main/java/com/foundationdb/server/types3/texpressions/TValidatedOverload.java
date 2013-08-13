@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.texpressions;
+package com.foundationdb.server.types3.texpressions;
 
-import com.akiban.server.types3.InputSetFlags;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TInputSet;
-import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.util.SparseArray;
+import com.foundationdb.server.types3.InputSetFlags;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TInputSet;
+import com.foundationdb.server.types3.TOverloadResult;
+import com.foundationdb.server.types3.TOverload;
+import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.util.SparseArray;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 

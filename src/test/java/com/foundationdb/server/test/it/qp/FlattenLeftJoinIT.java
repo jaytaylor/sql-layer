@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.qp;
+package com.foundationdb.server.test.it.qp;
 
 /*
  * This test is inspired by Bug 837706, in which a left join row was not being ordered correctly relative
@@ -29,25 +29,25 @@ package com.akiban.server.test.it.qp;
  * of before_child and after_child rows.
  */
 
-import com.akiban.ais.model.Group;
-import com.akiban.qp.operator.ExpressionGenerator;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.expression.std.Comparison;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.qp.operator.ExpressionGenerator;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.expression.std.Comparison;
 import org.junit.Test;
 
-import static com.akiban.qp.operator.API.FlattenOption.KEEP_PARENT;
-import static com.akiban.qp.operator.API.JoinType.LEFT_JOIN;
-import static com.akiban.qp.operator.API.*;
-import static com.akiban.server.test.ExpressionGenerators.*;
+import static com.foundationdb.qp.operator.API.FlattenOption.KEEP_PARENT;
+import static com.foundationdb.qp.operator.API.JoinType.LEFT_JOIN;
+import static com.foundationdb.qp.operator.API.*;
+import static com.foundationdb.server.test.ExpressionGenerators.*;
 
-import static com.akiban.qp.rowtype.RowTypeChecks.checkRowTypeFields;
-import static com.akiban.server.types.AkType.*;
+import static com.foundationdb.qp.rowtype.RowTypeChecks.checkRowTypeFields;
+import static com.foundationdb.server.types.AkType.*;
 
 public class FlattenLeftJoinIT extends OperatorITBase
 {

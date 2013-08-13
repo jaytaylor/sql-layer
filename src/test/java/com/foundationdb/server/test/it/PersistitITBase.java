@@ -15,19 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it;
+package com.foundationdb.server.test.it;
 
-import com.akiban.server.service.servicemanager.GuicedServiceManager.BindingsConfigurationProvider;
-import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.service.tree.TreeService;
-import com.akiban.server.service.tree.TreeServiceImpl;
-import com.akiban.server.store.PersistitStore;
-import com.akiban.server.store.PersistitStoreSchemaManager;
-import com.akiban.server.store.PersistitTransactionService;
-import com.akiban.server.store.SchemaManager;
-import com.akiban.server.store.Store;
-import com.akiban.server.store.statistics.IndexStatisticsService;
-import com.akiban.server.store.statistics.PersistitIndexStatisticsService;
+import com.foundationdb.server.service.servicemanager.GuicedServiceManager.BindingsConfigurationProvider;
+import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.service.tree.TreeService;
+import com.foundationdb.server.service.tree.TreeServiceImpl;
+import com.foundationdb.server.store.PersistitStore;
+import com.foundationdb.server.store.PersistitStoreSchemaManager;
+import com.foundationdb.server.store.PersistitTransactionService;
+import com.foundationdb.server.store.SchemaManager;
+import com.foundationdb.server.store.Store;
+import com.foundationdb.server.store.statistics.IndexStatisticsService;
+import com.foundationdb.server.store.statistics.PersistitIndexStatisticsService;
 
 import java.util.Map;
 

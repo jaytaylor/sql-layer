@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.model;
+package com.foundationdb.ais.model;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -28,10 +28,10 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import com.akiban.ais.model.validation.AISValidation;
-import com.akiban.ais.model.validation.AISValidationFailure;
-import com.akiban.ais.model.validation.AISValidationOutput;
-import com.akiban.ais.model.validation.AISValidationResults;
+import com.foundationdb.ais.model.validation.AISValidation;
+import com.foundationdb.ais.model.validation.AISValidationFailure;
+import com.foundationdb.ais.model.validation.AISValidationOutput;
+import com.foundationdb.ais.model.validation.AISValidationResults;
 
 public class AkibanInformationSchema implements Traversable
 {

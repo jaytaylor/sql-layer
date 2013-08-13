@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.operator;
+package com.foundationdb.qp.operator;
 
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.util.ValueSourceHasher;
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.explain.*;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.types3.pvalue.PValueSources;
-import com.akiban.server.types3.texpressions.TEvaluatableExpression;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.util.ArgumentValidation;
-import com.akiban.util.BloomFilter;
-import com.akiban.util.tap.InOutTap;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.util.ValueSourceHasher;
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.explain.*;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.ExpressionEvaluation;
+import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types3.texpressions.TEvaluatableExpression;
+import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.util.ArgumentValidation;
+import com.foundationdb.util.BloomFilter;
+import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

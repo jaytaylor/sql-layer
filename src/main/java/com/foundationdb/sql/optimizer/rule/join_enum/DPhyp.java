@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule.join_enum;
+package com.foundationdb.sql.optimizer.rule.join_enum;
 
-import com.akiban.sql.optimizer.plan.*;
-import static com.akiban.sql.optimizer.plan.JoinNode.JoinType;
+import com.foundationdb.sql.optimizer.plan.*;
+import static com.foundationdb.sql.optimizer.plan.JoinNode.JoinType;
 
-import com.akiban.server.error.UnsupportedSQLException;
+import com.foundationdb.server.error.UnsupportedSQLException;
 
 import java.util.*;
 

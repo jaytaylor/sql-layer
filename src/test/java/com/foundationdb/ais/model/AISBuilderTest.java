@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.model;
+package com.foundationdb.ais.model;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -28,11 +28,11 @@ import junit.framework.Assert;
 
 import org.junit.Test;
 
-import com.akiban.ais.model.validation.AISValidationFailure;
-import com.akiban.ais.model.validation.AISValidationResults;
-import com.akiban.ais.model.validation.AISValidations;
-import com.akiban.server.error.BranchingGroupIndexException;
-import com.akiban.server.error.ErrorCode;
+import com.foundationdb.ais.model.validation.AISValidationFailure;
+import com.foundationdb.ais.model.validation.AISValidationResults;
+import com.foundationdb.ais.model.validation.AISValidations;
+import com.foundationdb.server.error.BranchingGroupIndexException;
+import com.foundationdb.server.error.ErrorCode;
 
 public class AISBuilderTest
 {

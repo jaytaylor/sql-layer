@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.bugs.bug1081621;
+package com.foundationdb.server.test.it.bugs.bug1081621;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.util.TableChangeValidator;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.util.TableChangeValidator;
+import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
 
 public class AlterAffectingPKLosesTreeIT extends ITBase {

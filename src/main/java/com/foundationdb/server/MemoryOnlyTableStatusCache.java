@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server;
+package com.foundationdb.server;
 
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.memoryadapter.MemoryTableFactory;
-import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.service.session.Session;
 
 import java.util.HashMap;
 import java.util.Map;

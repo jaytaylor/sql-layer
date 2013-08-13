@@ -15,18 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql;
+package com.foundationdb.sql;
 
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.error.ErrorCode;
-import com.akiban.server.test.it.ITBase;
-import com.akiban.sql.parser.DDLStatementNode;
-import com.akiban.sql.parser.SQLParser;
-import com.akiban.sql.parser.StatementNode;
-import com.akiban.sql.server.ServerQueryContext;
-import com.akiban.sql.server.ServerOperatorCompiler;
-import com.akiban.sql.server.ServerServiceRequirements;
-import com.akiban.sql.server.ServerSessionBase;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.sql.parser.DDLStatementNode;
+import com.foundationdb.sql.parser.SQLParser;
+import com.foundationdb.sql.parser.StatementNode;
+import com.foundationdb.sql.server.ServerQueryContext;
+import com.foundationdb.sql.server.ServerOperatorCompiler;
+import com.foundationdb.sql.server.ServerServiceRequirements;
+import com.foundationdb.sql.server.ServerSessionBase;
 
 import java.util.ArrayList;
 import java.util.List;

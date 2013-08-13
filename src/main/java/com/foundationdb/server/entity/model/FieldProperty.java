@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.entity.model;
+package com.foundationdb.server.entity.model;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Sequence;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Sequence;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 import java.util.HashMap;

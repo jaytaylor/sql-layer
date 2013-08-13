@@ -15,19 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.operator;
+package com.foundationdb.qp.operator;
 
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.OperatorTestHelper;
-import com.akiban.qp.operator.RowsBuilder;
-import com.akiban.qp.operator.TestOperator;
-import com.akiban.qp.row.Row;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.texpressions.TPreparedField;
-import static com.akiban.qp.operator.API.*;
-import static com.akiban.server.test.ExpressionGenerators.*;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.operator.OperatorTestHelper;
+import com.foundationdb.qp.operator.RowsBuilder;
+import com.foundationdb.qp.operator.TestOperator;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.server.types3.texpressions.TPreparedField;
+import static com.foundationdb.qp.operator.API.*;
+import static com.foundationdb.server.test.ExpressionGenerators.*;
 
-import com.akiban.server.types.AkType;
+import com.foundationdb.server.types.AkType;
 
 import org.junit.Test;
 

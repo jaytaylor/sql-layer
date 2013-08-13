@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.texpressions;
+package com.foundationdb.server.types3.texpressions;
 
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.explain.*;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.util.ArgumentValidation;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.explain.*;
+import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.util.ArgumentValidation;
 
 abstract class SubqueryTExpression implements TPreparedExpression {
     @Override

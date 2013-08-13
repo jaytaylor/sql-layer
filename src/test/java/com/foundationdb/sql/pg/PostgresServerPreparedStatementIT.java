@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.server.error.ErrorCode;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.error.ErrorCode;
 import org.junit.Before;
 import org.junit.Test;
 import org.postgresql.PGStatement;

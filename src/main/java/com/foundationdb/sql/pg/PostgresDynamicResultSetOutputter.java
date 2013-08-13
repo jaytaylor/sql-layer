@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.server.error.ExternalRoutineInvocationException;
-import com.akiban.server.error.SQLParserInternalException;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TInstance;
-import com.akiban.sql.StandardException;
-import com.akiban.sql.optimizer.TypesTranslation;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
+import com.foundationdb.server.error.ExternalRoutineInvocationException;
+import com.foundationdb.server.error.SQLParserInternalException;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.sql.StandardException;
+import com.foundationdb.sql.optimizer.TypesTranslation;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.types.TypeId;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;

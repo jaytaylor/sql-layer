@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.error;
+package com.foundationdb.server.error;
 
-import com.akiban.qp.exec.UpdateResult;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDef;
+import com.foundationdb.qp.exec.UpdateResult;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.rowdata.RowDef;
 
 public class TooManyRowsUpdatedException extends InvalidOperationException {
     public TooManyRowsUpdatedException (RowData rowData, RowDef rowDef, UpdateResult result) {

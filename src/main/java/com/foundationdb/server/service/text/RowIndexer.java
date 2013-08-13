@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.text;
+package com.foundationdb.server.service.text;
 
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.persistitadapter.PersistitHKey;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.util.ShareHolder;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.persistitadapter.PersistitHKey;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.util.ShareHolder;
 import com.persistit.Key;
 
 import org.apache.lucene.document.Document;

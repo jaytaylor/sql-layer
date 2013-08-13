@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.config;
+package com.foundationdb.server.service.config;
 
-import com.akiban.server.error.ConfigurationPropertiesLoadException;
-import com.akiban.server.service.plugins.Plugin;
-import com.akiban.server.service.plugins.PluginsFinder;
+import com.foundationdb.server.error.ConfigurationPropertiesLoadException;
+import com.foundationdb.server.service.plugins.Plugin;
+import com.foundationdb.server.service.plugins.PluginsFinder;
 
-import com.akiban.server.service.text.FullTextIndexServiceImpl;
+import com.foundationdb.server.service.text.FullTextIndexServiceImpl;
 import java.io.File;
 import java.util.Collection;
 import java.util.Collections;

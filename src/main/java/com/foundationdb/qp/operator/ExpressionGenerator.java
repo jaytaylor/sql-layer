@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.operator;
+package com.foundationdb.qp.operator;
 
-import com.akiban.server.expression.Expression;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.types3.texpressions.TPreparedExpression;
 
 public interface ExpressionGenerator {
     Expression getExpression();

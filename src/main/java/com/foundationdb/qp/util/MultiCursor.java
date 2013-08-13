@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.util;
+package com.foundationdb.qp.util;
 
-import com.akiban.qp.operator.BindingsAwareCursor;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.RowCursor;
-import com.akiban.qp.row.Row;
-import com.akiban.server.api.dml.ColumnSelector;
+import com.foundationdb.qp.operator.BindingsAwareCursor;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.RowCursor;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.api.dml.ColumnSelector;
 
 import java.util.ArrayList;
 import java.util.Iterator;

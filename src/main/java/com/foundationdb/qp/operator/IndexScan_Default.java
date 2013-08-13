@@ -15,19 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.operator;
+package com.foundationdb.qp.operator;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.explain.*;
-import com.akiban.util.ArgumentValidation;
-import com.akiban.util.tap.InOutTap;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.expression.IndexKeyRange;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.server.api.dml.ColumnSelector;
+import com.foundationdb.server.explain.*;
+import com.foundationdb.util.ArgumentValidation;
+import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

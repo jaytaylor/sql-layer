@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.util.tap;
+package com.foundationdb.util.tap;
 
 /**
  * A {@link com.akiban.util.tap.Tap} subclass that does nothing. This is the initial target of

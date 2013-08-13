@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.util;
+package com.foundationdb.util;
 
 public final class Enums {
     public static <T extends Enum<T>> int ordinalOf(Class<T> enumClass, String name) {

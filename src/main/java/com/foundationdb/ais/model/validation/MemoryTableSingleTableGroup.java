@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.model.validation;
+package com.foundationdb.ais.model.validation;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Join;
-import com.akiban.server.error.GroupMultipleMemoryTables;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Join;
+import com.foundationdb.server.error.GroupMultipleMemoryTables;
 
 /**
  * Validate the current assumption of groups with a memory table contain only one 

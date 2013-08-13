@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.mcompat.mcasts;
+package com.foundationdb.server.types3.mcompat.mcasts;
 
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.types3.*;
-import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
-import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.Constantness;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.types3.*;
+import com.foundationdb.server.types3.mcompat.mtypes.MBigDecimalWrapper;
+import com.foundationdb.server.types3.pvalue.PUnderlying;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueTarget;
+import com.foundationdb.server.types3.texpressions.Constantness;
 import com.google.common.primitives.UnsignedLongs;
 
 public class MNumericCastBase

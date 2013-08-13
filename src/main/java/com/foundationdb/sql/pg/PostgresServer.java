@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.sql.server.CacheCounters;
-import com.akiban.sql.server.ServerServiceRequirements;
-import com.akiban.sql.server.ServerStatementCache;
+import com.foundationdb.sql.server.CacheCounters;
+import com.foundationdb.sql.server.ServerServiceRequirements;
+import com.foundationdb.sql.server.ServerStatementCache;
 
-import com.akiban.server.error.InvalidPortException;
-import com.akiban.server.service.monitor.MonitorStage;
-import com.akiban.server.service.monitor.ServerMonitor;
+import com.foundationdb.server.error.InvalidPortException;
+import com.foundationdb.server.service.monitor.MonitorStage;
+import com.foundationdb.server.service.monitor.ServerMonitor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

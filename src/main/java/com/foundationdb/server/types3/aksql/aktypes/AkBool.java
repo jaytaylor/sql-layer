@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.aksql.aktypes;
+package com.foundationdb.server.types3.aksql.aktypes;
 
-import com.akiban.server.types3.TParsers;
-import com.akiban.server.types3.aksql.AkCategory;
-import com.akiban.server.types3.common.TFormatter;
-import com.akiban.server.types3.aksql.AkBundle;
-import com.akiban.server.types3.common.types.NoAttrTClass;
-import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.sql.types.TypeId;
+import com.foundationdb.server.types3.TParsers;
+import com.foundationdb.server.types3.aksql.AkCategory;
+import com.foundationdb.server.types3.common.TFormatter;
+import com.foundationdb.server.types3.aksql.AkBundle;
+import com.foundationdb.server.types3.common.types.NoAttrTClass;
+import com.foundationdb.server.types3.pvalue.PUnderlying;
+import com.foundationdb.sql.types.TypeId;
 
 /**
  * 

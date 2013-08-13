@@ -15,34 +15,34 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.mt.mtatomics;
+package com.foundationdb.server.test.mt.mtatomics;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.server.api.DMLFunctions;
-import com.akiban.server.api.FixedCountLimit;
-import com.akiban.server.api.dml.SetColumnSelector;
-import com.akiban.server.api.dml.scan.BufferFullException;
-import com.akiban.server.api.dml.scan.BufferedLegacyOutputRouter;
-import com.akiban.server.api.dml.scan.CursorId;
-import com.akiban.server.api.dml.scan.LegacyOutputConverter;
-import com.akiban.server.api.dml.scan.LegacyRowOutput;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.NiceRow;
-import com.akiban.server.api.dml.scan.ScanAllRequest;
-import com.akiban.server.api.dml.scan.ScanFlag;
-import com.akiban.server.api.dml.scan.ScanLimit;
-import com.akiban.server.api.dml.scan.WrappingRowOutput;
-import com.akiban.server.error.ConcurrentScanAndUpdateException;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.NoSuchIndexException;
-import com.akiban.server.service.ServiceManagerImpl;
-import com.akiban.server.test.mt.mtutil.TimePoints;
-import com.akiban.server.test.mt.mtutil.TimePointsComparison;
-import com.akiban.server.test.mt.mtutil.TimedCallable;
-import com.akiban.server.test.mt.mtutil.TimedResult;
-import com.akiban.server.test.mt.mtutil.Timing;
-import com.akiban.server.service.session.Session;
-import com.akiban.util.GrowableByteBuffer;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.api.DMLFunctions;
+import com.foundationdb.server.api.FixedCountLimit;
+import com.foundationdb.server.api.dml.SetColumnSelector;
+import com.foundationdb.server.api.dml.scan.BufferFullException;
+import com.foundationdb.server.api.dml.scan.BufferedLegacyOutputRouter;
+import com.foundationdb.server.api.dml.scan.CursorId;
+import com.foundationdb.server.api.dml.scan.LegacyOutputConverter;
+import com.foundationdb.server.api.dml.scan.LegacyRowOutput;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.api.dml.scan.NiceRow;
+import com.foundationdb.server.api.dml.scan.ScanAllRequest;
+import com.foundationdb.server.api.dml.scan.ScanFlag;
+import com.foundationdb.server.api.dml.scan.ScanLimit;
+import com.foundationdb.server.api.dml.scan.WrappingRowOutput;
+import com.foundationdb.server.error.ConcurrentScanAndUpdateException;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.error.NoSuchIndexException;
+import com.foundationdb.server.service.ServiceManagerImpl;
+import com.foundationdb.server.test.mt.mtutil.TimePoints;
+import com.foundationdb.server.test.mt.mtutil.TimePointsComparison;
+import com.foundationdb.server.test.mt.mtutil.TimedCallable;
+import com.foundationdb.server.test.mt.mtutil.TimedResult;
+import com.foundationdb.server.test.mt.mtutil.Timing;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.util.GrowableByteBuffer;
 import org.junit.Ignore;
 import org.junit.Test;
 

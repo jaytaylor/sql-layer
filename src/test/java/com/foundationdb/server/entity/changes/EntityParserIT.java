@@ -14,9 +14,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.server.entity.changes;
+package com.foundationdb.server.entity.changes;
 
-import static com.akiban.util.JsonUtils.readTree;
+import static com.foundationdb.util.JsonUtils.readTree;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -29,12 +29,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.Types;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Join;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.Types;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.test.it.ITBase;
 
 public class EntityParserIT extends ITBase {
 

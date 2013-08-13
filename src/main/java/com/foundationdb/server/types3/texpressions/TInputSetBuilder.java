@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.texpressions;
+package com.foundationdb.server.types3.texpressions;
 
-import com.akiban.server.types3.InputSetFlags;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TInputSet;
-import com.akiban.server.types3.TInstanceNormalizer;
-import com.akiban.util.BitSets;
+import com.foundationdb.server.types3.InputSetFlags;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TInputSet;
+import com.foundationdb.server.types3.TInstanceNormalizer;
+import com.foundationdb.util.BitSets;
 
 import java.util.ArrayList;
 import java.util.List;

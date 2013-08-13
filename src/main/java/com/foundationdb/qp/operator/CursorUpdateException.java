@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.operator;
+package com.foundationdb.qp.operator;
 
 public final class CursorUpdateException extends RuntimeException {
     public CursorUpdateException(Throwable cause) {

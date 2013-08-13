@@ -15,22 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.qp;
+package com.foundationdb.server.test.it.qp;
 
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.ExpressionGenerator;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.row.RowBase;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.std.Comparison;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.ExpressionGenerator;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.std.Comparison;
 import org.junit.Before;
 import org.junit.Test;
 
-import static com.akiban.server.test.ExpressionGenerators.compare;
-import static com.akiban.server.test.ExpressionGenerators.field;
-import static com.akiban.server.test.ExpressionGenerators.literal;
-import static com.akiban.qp.operator.API.*;
+import static com.foundationdb.server.test.ExpressionGenerators.compare;
+import static com.foundationdb.server.test.ExpressionGenerators.field;
+import static com.foundationdb.server.test.ExpressionGenerators.literal;
+import static com.foundationdb.qp.operator.API.*;
 
 public class SelectIT extends OperatorITBase
 {

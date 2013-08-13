@@ -16,7 +16,7 @@
  */
 
 
-package com.akiban.server.error;
+package com.foundationdb.server.error;
 
 public class InvalidRoutineException extends InvalidOperationException
 {

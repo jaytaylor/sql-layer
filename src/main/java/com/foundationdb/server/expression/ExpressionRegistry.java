@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression;
+package com.foundationdb.server.expression;
 
-import com.akiban.server.error.NoSuchFunctionException;
+import com.foundationdb.server.error.NoSuchFunctionException;
 
 public interface ExpressionRegistry {
     ExpressionComposer composer(String name);

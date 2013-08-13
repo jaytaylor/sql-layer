@@ -14,12 +14,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.server.types3.common.types;
+package com.foundationdb.server.types3.common.types;
 
-import com.akiban.server.types3.*;
-import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
+import com.foundationdb.server.types3.*;
+import com.foundationdb.server.types3.pvalue.PUnderlying;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.types.TypeId;
 
 public abstract class SimpleDtdTClass extends TClassBase {
 

@@ -15,27 +15,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
-import com.akiban.server.error.InvalidArgumentTypeException;
-import com.akiban.server.error.InvalidParameterValueException;
-import com.akiban.server.explain.CompoundExplainer;
-import com.akiban.server.explain.ExplainContext;
-import com.akiban.server.explain.Label;
-import com.akiban.server.explain.PrimitiveExplainer;
-import com.akiban.server.explain.Type;
-import com.akiban.server.explain.std.ExpressionExplainer;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.expression.ExpressionType;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.NullValueSource;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ValueSourceIsNullException;
-import com.akiban.server.types.extract.Extractors;
-import com.akiban.server.types.extract.LongExtractor;
-import com.akiban.server.types.util.AbstractArithValueSource;
-import com.akiban.util.ArgumentValidation;
+import com.foundationdb.server.error.InvalidArgumentTypeException;
+import com.foundationdb.server.error.InvalidParameterValueException;
+import com.foundationdb.server.explain.CompoundExplainer;
+import com.foundationdb.server.explain.ExplainContext;
+import com.foundationdb.server.explain.Label;
+import com.foundationdb.server.explain.PrimitiveExplainer;
+import com.foundationdb.server.explain.Type;
+import com.foundationdb.server.explain.std.ExpressionExplainer;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.ExpressionEvaluation;
+import com.foundationdb.server.expression.ExpressionType;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.NullValueSource;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.ValueSourceIsNullException;
+import com.foundationdb.server.types.extract.Extractors;
+import com.foundationdb.server.types.extract.LongExtractor;
+import com.foundationdb.server.types.util.AbstractArithValueSource;
+import com.foundationdb.util.ArgumentValidation;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;

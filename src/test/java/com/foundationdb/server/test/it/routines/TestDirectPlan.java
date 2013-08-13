@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.routines;
+package com.foundationdb.server.test.it.routines;
 
-import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
-import com.akiban.qp.loadableplan.DirectObjectPlan;
-import com.akiban.qp.loadableplan.DirectObjectCursor;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
+import com.foundationdb.qp.loadableplan.LoadableDirectObjectPlan;
+import com.foundationdb.qp.loadableplan.DirectObjectPlan;
+import com.foundationdb.qp.loadableplan.DirectObjectCursor;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
 
 import java.sql.Types;
 

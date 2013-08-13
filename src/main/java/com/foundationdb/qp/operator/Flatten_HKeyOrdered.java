@@ -15,19 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.operator;
+package com.foundationdb.qp.operator;
 
-import com.akiban.ais.model.HKeySegment;
-import com.akiban.qp.row.FlattenedRow;
-import com.akiban.qp.row.HKey;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.FlattenedRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.explain.*;
-import com.akiban.server.rowdata.RowDef;
-import com.akiban.util.ArgumentValidation;
-import com.akiban.util.ShareHolder;
-import com.akiban.util.tap.InOutTap;
+import com.foundationdb.ais.model.HKeySegment;
+import com.foundationdb.qp.row.FlattenedRow;
+import com.foundationdb.qp.row.HKey;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.FlattenedRowType;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.explain.*;
+import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.util.ArgumentValidation;
+import com.foundationdb.util.ShareHolder;
+import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,8 +35,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import static com.akiban.qp.operator.API.FlattenOption.KEEP_CHILD;
-import static com.akiban.qp.operator.API.FlattenOption.KEEP_PARENT;
+import static com.foundationdb.qp.operator.API.FlattenOption.KEEP_CHILD;
+import static com.foundationdb.qp.operator.API.FlattenOption.KEEP_PARENT;
 
 /**
 

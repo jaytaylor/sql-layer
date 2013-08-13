@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.error;
+package com.foundationdb.server.error;
 
-import com.akiban.ais.model.IndexName;
+import com.foundationdb.ais.model.IndexName;
 
 public class DuplicateIndexTreeNamesException extends InvalidOperationException {
     public DuplicateIndexTreeNamesException (IndexName index, IndexName index2, String treeName) {

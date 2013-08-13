@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.server;
+package com.foundationdb.sql.server;
 
-import com.akiban.ais.model.Routine;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.std.AbstractCompositeExpression;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.std.AbstractCompositeExpression;
 
 import java.util.List;
 

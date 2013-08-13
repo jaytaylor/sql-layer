@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.bugs.bug1043377;
+package com.foundationdb.server.test.it.bugs.bug1043377;
 
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.service.listener.ListenerService;
-import com.akiban.server.service.listener.TableListener;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.service.listener.ListenerService;
+import com.foundationdb.server.service.listener.TableListener;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.test.it.ITBase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

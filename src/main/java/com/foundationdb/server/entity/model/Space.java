@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.entity.model;
+package com.foundationdb.server.entity.model;
 
-import com.akiban.util.MessageDigestWriter;
+import com.foundationdb.util.MessageDigestWriter;
 import com.google.common.base.Function;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -38,8 +38,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.akiban.util.JsonUtils.createJsonGenerator;
-import static com.akiban.util.JsonUtils.readValue;
+import static com.foundationdb.util.JsonUtils.createJsonGenerator;
+import static com.foundationdb.util.JsonUtils.readValue;
 
 public final class Space {
 

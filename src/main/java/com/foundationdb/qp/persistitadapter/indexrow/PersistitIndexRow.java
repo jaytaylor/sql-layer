@@ -15,25 +15,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.persistitadapter.indexrow;
+package com.foundationdb.qp.persistitadapter.indexrow;
 
-import com.akiban.ais.model.IndexToHKey;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.persistitadapter.PersistitHKey;
-import com.akiban.qp.row.HKey;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.util.HKeyCache;
-import com.akiban.server.PersistitKeyPValueSource;
-import com.akiban.server.PersistitKeyValueSource;
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.conversion.Converters;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.util.AkibanAppender;
+import com.foundationdb.ais.model.IndexToHKey;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.persistitadapter.PersistitHKey;
+import com.foundationdb.qp.row.HKey;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.util.HKeyCache;
+import com.foundationdb.server.PersistitKeyPValueSource;
+import com.foundationdb.server.PersistitKeyValueSource;
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.conversion.Converters;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.util.AkibanAppender;
 import com.persistit.Key;
 import com.persistit.Value;
 

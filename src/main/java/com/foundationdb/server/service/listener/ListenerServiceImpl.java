@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.listener;
+package com.foundationdb.server.service.listener;
 
-import com.akiban.server.service.Service;
+import com.foundationdb.server.service.Service;
 
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;

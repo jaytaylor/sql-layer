@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.expression.ExpressionType;
-import com.akiban.server.service.functions.Scalar;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.ExpressionComposer;
+import com.foundationdb.server.expression.ExpressionEvaluation;
+import com.foundationdb.server.expression.ExpressionType;
+import com.foundationdb.server.service.functions.Scalar;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
 
 public abstract class CurrentUserExpression extends AbstractNoArgExpression
 {

@@ -15,18 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.ais.model.*;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.aksql.aktypes.AkBool;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.sql.optimizer.plan.CostEstimate;
-import com.akiban.sql.parser.ParameterNode;
-import com.akiban.sql.parser.StatementNode;
-import com.akiban.sql.server.ServerValueEncoder;
+import com.foundationdb.ais.model.*;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.aksql.aktypes.AkBool;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.sql.optimizer.plan.CostEstimate;
+import com.foundationdb.sql.parser.ParameterNode;
+import com.foundationdb.sql.parser.StatementNode;
+import com.foundationdb.sql.server.ServerValueEncoder;
 
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;

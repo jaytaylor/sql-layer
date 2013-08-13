@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.aisddl;
+package com.foundationdb.sql.aisddl;
 
 import org.junit.After;
 import org.junit.Before;
@@ -25,11 +25,11 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.View;
-import com.akiban.server.error.UndefinedViewException;
-import com.akiban.server.error.ViewReferencesExist;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.View;
+import com.foundationdb.server.error.UndefinedViewException;
+import com.foundationdb.server.error.ViewReferencesExist;
 
 import java.util.Collection;
 

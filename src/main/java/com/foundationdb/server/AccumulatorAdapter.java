@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server;
+package com.foundationdb.server;
 
-import com.akiban.server.error.PersistitAdapterException;
+import com.foundationdb.server.error.PersistitAdapterException;
 import com.persistit.Accumulator;
 import com.persistit.Exchange;
 import com.persistit.Tree;

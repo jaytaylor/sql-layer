@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.geophile;
+package com.foundationdb.server.geophile;
 
-import com.akiban.server.geophile.Region;
-import com.akiban.server.geophile.RegionComparison;
-import com.akiban.server.geophile.SpatialObject;
+import com.foundationdb.server.geophile.Region;
+import com.foundationdb.server.geophile.RegionComparison;
+import com.foundationdb.server.geophile.SpatialObject;
 
 public class Box2 implements SpatialObject
 {

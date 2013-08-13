@@ -15,23 +15,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer;
+package com.foundationdb.sql.optimizer;
 
-import com.akiban.sql.StandardException;
-import com.akiban.sql.parser.ColumnReference;
-import com.akiban.sql.parser.FromTable;
-import com.akiban.sql.parser.SQLParser;
-import com.akiban.sql.parser.SQLParserContext;
-import com.akiban.sql.parser.StatementNode;
-import com.akiban.sql.parser.Visitable;
-import com.akiban.sql.parser.Visitor;
-import com.akiban.sql.views.ViewDefinition;
+import com.foundationdb.sql.StandardException;
+import com.foundationdb.sql.parser.ColumnReference;
+import com.foundationdb.sql.parser.FromTable;
+import com.foundationdb.sql.parser.SQLParser;
+import com.foundationdb.sql.parser.SQLParserContext;
+import com.foundationdb.sql.parser.StatementNode;
+import com.foundationdb.sql.parser.Visitable;
+import com.foundationdb.sql.parser.Visitor;
+import com.foundationdb.sql.views.ViewDefinition;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Columnar;
-import com.akiban.ais.model.TableName;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Columnar;
+import com.foundationdb.ais.model.TableName;
 
-import com.akiban.server.error.SQLParserInternalException;
+import com.foundationdb.server.error.SQLParserInternalException;
 
 import java.util.*;
 

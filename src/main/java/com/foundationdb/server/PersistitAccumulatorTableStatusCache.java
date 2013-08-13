@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server;
+package com.foundationdb.server;
 
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.memoryadapter.MemoryTableFactory;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.server.error.PersistitAdapterException;
-import com.akiban.server.rowdata.IndexDef;
-import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.tree.TreeService;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.qp.persistitadapter.PersistitAdapter;
+import com.foundationdb.server.error.PersistitAdapterException;
+import com.foundationdb.server.rowdata.IndexDef;
+import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.tree.TreeService;
 import com.persistit.Tree;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;

@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.servicemanager;
+package com.foundationdb.server.service.servicemanager;
 
 import org.junit.Test;
 
-import com.akiban.server.error.CircularDependencyException;
+import com.foundationdb.server.error.CircularDependencyException;
 
 import javax.inject.Inject;
 import java.util.ArrayList;

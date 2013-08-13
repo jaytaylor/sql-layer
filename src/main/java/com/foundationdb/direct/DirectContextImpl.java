@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.direct;
+package com.foundationdb.direct;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import com.akiban.sql.embedded.JDBCConnection;
+import com.foundationdb.sql.embedded.JDBCConnection;
 
 public class DirectContextImpl implements DirectContext {
     public static final String CONNECTION_URL = "jdbc:default:connection";

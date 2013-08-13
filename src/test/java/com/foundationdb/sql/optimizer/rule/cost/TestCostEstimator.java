@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule.cost;
+package com.foundationdb.sql.optimizer.rule.cost;
 
-import com.akiban.ais.model.*;
-import com.akiban.sql.optimizer.OptimizerTestBase;
+import com.foundationdb.ais.model.*;
+import com.foundationdb.sql.optimizer.OptimizerTestBase;
 
-import com.akiban.qp.rowtype.Schema;
+import com.foundationdb.qp.rowtype.Schema;
 
-import com.akiban.server.collation.TestKeyCreator;
-import com.akiban.server.store.statistics.IndexStatistics;
-import com.akiban.server.store.statistics.IndexStatisticsYamlLoader;
+import com.foundationdb.server.collation.TestKeyCreator;
+import com.foundationdb.server.store.statistics.IndexStatistics;
+import com.foundationdb.server.store.statistics.IndexStatisticsYamlLoader;
 
 import java.io.File;
 import java.io.IOException;

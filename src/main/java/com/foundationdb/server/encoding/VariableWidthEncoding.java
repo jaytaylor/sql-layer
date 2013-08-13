@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.encoding;
+package com.foundationdb.server.encoding;
 
-import com.akiban.ais.model.Column;
+import com.foundationdb.ais.model.Column;
 
 abstract class VariableWidthEncoding implements Encoding {
     /**

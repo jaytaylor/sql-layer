@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.mcompat.mcasts;
+package com.foundationdb.server.types3.mcompat.mcasts;
 
-import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.texpressions.Constantness;
+import com.foundationdb.server.types3.TCast;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.texpressions.Constantness;
 
-import static com.akiban.server.types3.mcompat.mcasts.MNumericCastBase.*;
-import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
+import static com.foundationdb.server.types3.mcompat.mcasts.MNumericCastBase.*;
+import com.foundationdb.server.types3.mcompat.mtypes.MApproximateNumber;
 
 public class Cast_From_Unsigned_Bigint
 {

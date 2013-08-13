@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.collation;
+package com.foundationdb.server.collation;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -28,7 +28,7 @@ import java.util.TreeMap;
 
 import org.junit.Test;
 
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.server.test.it.ITBase;
 import com.persistit.Key;
 import com.persistit.KeyState;
 import com.persistit.Persistit;

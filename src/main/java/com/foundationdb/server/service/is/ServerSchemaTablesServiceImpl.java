@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.server.service.is;
+package com.foundationdb.server.service.is;
 
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
@@ -24,34 +24,34 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.aisb2.AISBBasedBuilder;
-import com.akiban.ais.model.aisb2.NewAISBuilder;
-import com.akiban.qp.memoryadapter.BasicFactoryBase;
-import com.akiban.qp.memoryadapter.MemoryAdapter;
-import com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.row.ValuesRow;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.AkServerInterface;
-import com.akiban.server.error.ErrorCode;
-import com.akiban.server.service.Service;
-import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.monitor.CursorMonitor;
-import com.akiban.server.service.monitor.MonitorService;
-import com.akiban.server.service.monitor.MonitorStage;
-import com.akiban.server.service.monitor.PreparedStatementMonitor;
-import com.akiban.server.service.monitor.ServerMonitor;
-import com.akiban.server.service.monitor.SessionMonitor;
-import com.akiban.server.service.monitor.UserMonitor;
-import com.akiban.server.service.security.SecurityService;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.store.SchemaManager;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.util.tap.Tap;
-import com.akiban.util.tap.TapReport;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.ais.model.aisb2.NewAISBuilder;
+import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
+import com.foundationdb.qp.memoryadapter.MemoryAdapter;
+import com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesRow;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.AkServerInterface;
+import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.server.service.monitor.CursorMonitor;
+import com.foundationdb.server.service.monitor.MonitorService;
+import com.foundationdb.server.service.monitor.MonitorStage;
+import com.foundationdb.server.service.monitor.PreparedStatementMonitor;
+import com.foundationdb.server.service.monitor.ServerMonitor;
+import com.foundationdb.server.service.monitor.SessionMonitor;
+import com.foundationdb.server.service.monitor.UserMonitor;
+import com.foundationdb.server.service.security.SecurityService;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.SchemaManager;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.FromObjectValueSource;
+import com.foundationdb.util.tap.Tap;
+import com.foundationdb.util.tap.TapReport;
 import com.google.inject.Inject;
 
 public class ServerSchemaTablesServiceImpl

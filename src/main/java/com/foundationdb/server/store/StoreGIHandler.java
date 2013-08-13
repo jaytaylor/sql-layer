@@ -15,25 +15,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.store;
+package com.foundationdb.server.store;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.IndexRowComposition;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
-import com.akiban.qp.row.Row;
-import com.akiban.server.geophile.Space;
-import com.akiban.server.geophile.SpaceLatLon;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.util.ArgumentValidation;
-import com.akiban.util.tap.PointTap;
-import com.akiban.util.tap.Tap;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.GroupIndex;
+import com.foundationdb.ais.model.IndexRowComposition;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.geophile.Space;
+import com.foundationdb.server.geophile.SpaceLatLon;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.util.ArgumentValidation;
+import com.foundationdb.util.tap.PointTap;
+import com.foundationdb.util.tap.Tap;
 
 import java.math.BigDecimal;
 

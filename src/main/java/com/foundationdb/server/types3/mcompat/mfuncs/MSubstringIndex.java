@@ -14,17 +14,17 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.server.types3.mcompat.mfuncs;
+package com.foundationdb.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.expression.std.Matchers.Index;
-import com.akiban.server.types3.*;
-import com.akiban.server.types3.common.types.StringAttribute;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TScalarBase;
+import com.foundationdb.server.expression.std.Matchers.Index;
+import com.foundationdb.server.types3.*;
+import com.foundationdb.server.types3.common.types.StringAttribute;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueTarget;
+import com.foundationdb.server.types3.texpressions.TInputSetBuilder;
+import com.foundationdb.server.types3.texpressions.TScalarBase;
 import java.util.List;
 
 public class MSubstringIndex extends TScalarBase {

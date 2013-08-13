@@ -15,20 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.qp;
+package com.foundationdb.server.test.it.qp;
 
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.row.RowBase;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.error.NegativeLimitException;
-import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PValue;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.error.NegativeLimitException;
+import com.foundationdb.server.types.FromObjectValueSource;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.pvalue.PValue;
 import org.junit.Test;
 
-import static com.akiban.qp.operator.API.*;
+import static com.foundationdb.qp.operator.API.*;
 
 public class LimitIT extends OperatorITBase
 {

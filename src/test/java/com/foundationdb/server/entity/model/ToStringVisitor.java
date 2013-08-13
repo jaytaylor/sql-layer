@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.entity.model;
+package com.foundationdb.server.entity.model;
 
-import com.akiban.util.JUnitUtils;
+import com.foundationdb.util.JUnitUtils;
 import com.google.common.collect.BiMap;
 
 import java.util.Map;

@@ -15,25 +15,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.model;
+package com.foundationdb.ais.model;
 
-import com.akiban.ais.model.validation.AISInvariants;
-import com.akiban.server.collation.AkCollatorFactory;
-import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.aksql.aktypes.AkBool;
-import com.akiban.server.types3.common.types.StringFactory;
-import com.akiban.server.types3.mcompat.mtypes.MBinary;
-import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
-import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.ais.model.validation.AISInvariants;
+import com.foundationdb.server.collation.AkCollatorFactory;
+import com.foundationdb.server.rowdata.FieldDef;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.aksql.aktypes.AkBool;
+import com.foundationdb.server.types3.common.types.StringFactory;
+import com.foundationdb.server.types3.mcompat.mtypes.MBinary;
+import com.foundationdb.server.types3.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types3.mcompat.mtypes.MApproximateNumber;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
 
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.akiban.server.collation.AkCollator;
+import com.foundationdb.server.collation.AkCollator;
 
 public class Column implements ColumnContainer
 {

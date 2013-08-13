@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.model.validation;
+package com.foundationdb.ais.model.validation;
 
-import com.akiban.server.error.DuplicateIndexColumnException;
+import com.foundationdb.server.error.DuplicateIndexColumnException;
 import org.junit.Test;
 
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.Index;
-import com.akiban.server.error.InvalidOperationException;
+import com.foundationdb.ais.model.AISBuilder;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.server.error.InvalidOperationException;
 
 public class AISInvariantsTest {
 

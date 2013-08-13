@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.bug1208930;
+package com.foundationdb.server.test.it.bug1208930;
 
-import com.akiban.ais.model.Group;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.test.it.qp.OperatorITBase;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.test.it.qp.OperatorITBase;
 
 import org.junit.Test;
 

@@ -15,20 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.qp;
+package com.foundationdb.server.test.it.qp;
 
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.server.api.dml.scan.NewRow;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
 
-import static com.akiban.qp.operator.API.cursor;
-import static com.akiban.qp.operator.API.indexScan_Default;
+import static com.foundationdb.qp.operator.API.cursor;
+import static com.foundationdb.qp.operator.API.indexScan_Default;
 import static org.junit.Assert.*;
 
 public class UniqueIndexUpdateIT extends OperatorITBase

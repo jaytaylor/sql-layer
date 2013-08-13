@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.aksql;
+package com.foundationdb.server.types3.aksql;
 
-import com.akiban.server.types3.TBundle;
-import com.akiban.server.types3.TBundleID;
-import com.akiban.server.types3.TClass;
+import com.foundationdb.server.types3.TBundle;
+import com.foundationdb.server.types3.TBundleID;
+import com.foundationdb.server.types3.TClass;
 
 import java.util.Map;
 

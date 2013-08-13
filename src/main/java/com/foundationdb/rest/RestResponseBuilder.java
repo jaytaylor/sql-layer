@@ -15,17 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.rest;
+package com.foundationdb.rest;
 
-import com.akiban.rest.resources.ResourceHelper;
-import com.akiban.server.Quote;
-import com.akiban.server.error.DirectEndpointNotFoundException;
-import com.akiban.server.error.DirectTransactionFailedException;
-import com.akiban.server.error.ErrorCode;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.NoSuchRoutineException;
-import com.akiban.server.error.NoSuchTableException;
-import com.akiban.util.AkibanAppender;
+import com.foundationdb.rest.resources.ResourceHelper;
+import com.foundationdb.server.Quote;
+import com.foundationdb.server.error.DirectEndpointNotFoundException;
+import com.foundationdb.server.error.DirectTransactionFailedException;
+import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.error.NoSuchRoutineException;
+import com.foundationdb.server.error.NoSuchTableException;
+import com.foundationdb.util.AkibanAppender;
 import com.fasterxml.jackson.core.JsonParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.store;
+package com.foundationdb.server.store;
 
-import com.akiban.server.test.it.PersistitITBase;
+import com.foundationdb.server.test.it.PersistitITBase;
 import org.junit.Before;
 
 import java.util.Map;

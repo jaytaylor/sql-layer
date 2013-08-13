@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.model;
+package com.foundationdb.ais.model;
 
-import com.akiban.server.types.AkType;
+import com.foundationdb.server.types.AkType;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;

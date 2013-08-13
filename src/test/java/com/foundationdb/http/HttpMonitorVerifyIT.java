@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.http;
+package com.foundationdb.http;
 
 import static org.junit.Assert.assertEquals;
 
@@ -33,15 +33,15 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.rest.RestService;
-import com.akiban.rest.RestServiceImpl;
-import com.akiban.server.service.monitor.MonitorService;
-import com.akiban.server.service.security.SecurityService;
-import com.akiban.server.service.security.SecurityServiceImpl;
-import com.akiban.server.service.servicemanager.GuicedServiceManager;
-import com.akiban.server.test.it.ITBase;
-import com.akiban.sql.embedded.EmbeddedJDBCService;
-import com.akiban.sql.embedded.EmbeddedJDBCServiceImpl;
+import com.foundationdb.rest.RestService;
+import com.foundationdb.rest.RestServiceImpl;
+import com.foundationdb.server.service.monitor.MonitorService;
+import com.foundationdb.server.service.security.SecurityService;
+import com.foundationdb.server.service.security.SecurityServiceImpl;
+import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
+import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.sql.embedded.EmbeddedJDBCService;
+import com.foundationdb.sql.embedded.EmbeddedJDBCServiceImpl;
 
 public class HttpMonitorVerifyIT extends ITBase {
     

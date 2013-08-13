@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.rowtype;
+package com.foundationdb.qp.rowtype;
 
-import com.akiban.ais.model.*;
-import com.akiban.server.explain.*;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.ais.model.*;
+import com.foundationdb.server.explain.*;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 
 import java.util.*;
 

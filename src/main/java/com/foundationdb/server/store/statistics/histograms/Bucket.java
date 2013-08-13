@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.store.statistics.histograms;
+package com.foundationdb.server.store.statistics.histograms;
 
-import com.akiban.util.Equality;
+import com.foundationdb.util.Equality;
 
 public final class Bucket<T> {
 

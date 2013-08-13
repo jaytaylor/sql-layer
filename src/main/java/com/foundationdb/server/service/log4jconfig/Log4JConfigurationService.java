@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.log4jconfig;
+package com.foundationdb.server.service.log4jconfig;
 
 public interface Log4JConfigurationService {
 }

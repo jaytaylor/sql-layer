@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.keyupdate;
+package com.foundationdb.server.test.it.keyupdate;
 
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.error.DuplicateKeyException;
-import com.akiban.server.store.statistics.IndexStatisticsService;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.error.DuplicateKeyException;
+import com.foundationdb.server.store.statistics.IndexStatisticsService;
+import com.foundationdb.server.test.it.ITBase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

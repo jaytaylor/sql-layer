@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.rowtests;
+package com.foundationdb.server.test.it.rowtests;
 
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.test.it.ITBase;
 import junit.framework.Assert;
 import org.junit.Test;
 

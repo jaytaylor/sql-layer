@@ -15,24 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.qp;
+package com.foundationdb.server.test.it.qp;
 
-import com.akiban.ais.model.Group;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.*;
-import com.akiban.server.api.dml.scan.NewRow;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.rowtype.*;
+import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-import static com.akiban.qp.operator.API.JoinType.INNER_JOIN;
-import static com.akiban.qp.operator.API.InputPreservationOption.DISCARD_INPUT;
-import static com.akiban.qp.operator.API.InputPreservationOption.KEEP_INPUT;
-import static com.akiban.qp.operator.API.*;
+import static com.foundationdb.qp.operator.API.JoinType.INNER_JOIN;
+import static com.foundationdb.qp.operator.API.InputPreservationOption.DISCARD_INPUT;
+import static com.foundationdb.qp.operator.API.InputPreservationOption.KEEP_INPUT;
+import static com.foundationdb.qp.operator.API.*;
 import static org.junit.Assert.assertTrue;
 
 public class Product3WayIT extends OperatorITBase

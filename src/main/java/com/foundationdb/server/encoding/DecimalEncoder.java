@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.encoding;
+package com.foundationdb.server.encoding;
 
-import com.akiban.server.rowdata.FieldDef;
+import com.foundationdb.server.rowdata.FieldDef;
 
 public final class DecimalEncoder extends VariableWidthEncoding {
 

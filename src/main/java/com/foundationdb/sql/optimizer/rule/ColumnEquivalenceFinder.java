@@ -15,19 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.foundationdb.sql.optimizer.rule;
 
-import com.akiban.server.expression.std.Comparison;
-import com.akiban.sql.optimizer.plan.ColumnExpression;
-import com.akiban.sql.optimizer.plan.ComparisonCondition;
-import com.akiban.sql.optimizer.plan.ConditionExpression;
-import com.akiban.sql.optimizer.plan.ExpressionNode;
-import com.akiban.sql.optimizer.plan.ExpressionVisitor;
-import com.akiban.sql.optimizer.plan.JoinNode;
-import com.akiban.sql.optimizer.plan.PlanNode;
-import com.akiban.sql.optimizer.plan.PlanVisitor;
-import com.akiban.sql.optimizer.plan.Select;
-import com.akiban.sql.types.DataTypeDescriptor;
+import com.foundationdb.server.expression.std.Comparison;
+import com.foundationdb.sql.optimizer.plan.ColumnExpression;
+import com.foundationdb.sql.optimizer.plan.ComparisonCondition;
+import com.foundationdb.sql.optimizer.plan.ConditionExpression;
+import com.foundationdb.sql.optimizer.plan.ExpressionNode;
+import com.foundationdb.sql.optimizer.plan.ExpressionVisitor;
+import com.foundationdb.sql.optimizer.plan.JoinNode;
+import com.foundationdb.sql.optimizer.plan.PlanNode;
+import com.foundationdb.sql.optimizer.plan.PlanVisitor;
+import com.foundationdb.sql.optimizer.plan.Select;
+import com.foundationdb.sql.types.DataTypeDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

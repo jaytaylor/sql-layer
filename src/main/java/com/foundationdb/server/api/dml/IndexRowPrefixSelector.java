@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.api.dml;
+package com.foundationdb.server.api.dml;
 
 // For selecting a prefix of an index row
 

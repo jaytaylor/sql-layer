@@ -15,38 +15,38 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.sql.parser.SetConfigurationNode;
-import com.akiban.sql.server.ServerServiceRequirements;
-import com.akiban.sql.server.ServerSessionBase;
-import com.akiban.sql.server.ServerSessionMonitor;
-import com.akiban.sql.server.ServerStatement;
-import com.akiban.sql.server.ServerStatementCache;
-import com.akiban.sql.server.ServerTransaction;
-import com.akiban.sql.server.ServerValueDecoder;
-import com.akiban.sql.server.ServerValueEncoder;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.sql.parser.SetConfigurationNode;
+import com.foundationdb.sql.server.ServerServiceRequirements;
+import com.foundationdb.sql.server.ServerSessionBase;
+import com.foundationdb.sql.server.ServerSessionMonitor;
+import com.foundationdb.sql.server.ServerStatement;
+import com.foundationdb.sql.server.ServerStatementCache;
+import com.foundationdb.sql.server.ServerTransaction;
+import com.foundationdb.sql.server.ServerValueDecoder;
+import com.foundationdb.sql.server.ServerValueEncoder;
 
-import com.akiban.sql.StandardException;
-import com.akiban.sql.parser.ParameterNode;
-import com.akiban.sql.parser.SQLParserException;
-import com.akiban.sql.parser.StatementNode;
+import com.foundationdb.sql.StandardException;
+import com.foundationdb.sql.parser.ParameterNode;
+import com.foundationdb.sql.parser.SQLParserException;
+import com.foundationdb.sql.parser.StatementNode;
 
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.error.*;
-import com.akiban.server.service.monitor.CursorMonitor;
-import com.akiban.server.service.monitor.MonitorStage;
-import com.akiban.server.service.monitor.PreparedStatementMonitor;
-import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.server.api.DDLFunctions;
+import com.foundationdb.server.error.*;
+import com.foundationdb.server.service.monitor.CursorMonitor;
+import com.foundationdb.server.service.monitor.MonitorStage;
+import com.foundationdb.server.service.monitor.PreparedStatementMonitor;
+import static com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
-import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.Tap;
+import com.foundationdb.util.tap.InOutTap;
+import com.foundationdb.util.tap.Tap;
 
 import com.persistit.exception.RollbackException;
 import org.slf4j.Logger;

@@ -15,20 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer;
+package com.foundationdb.sql.optimizer;
 
-import com.akiban.sql.parser.FromTable;
-import com.akiban.sql.parser.ResultColumn;
+import com.foundationdb.sql.parser.FromTable;
+import com.foundationdb.sql.parser.ResultColumn;
 
-import com.akiban.sql.StandardException;
-import com.akiban.sql.types.CharacterTypeAttributes;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
+import com.foundationdb.sql.StandardException;
+import com.foundationdb.sql.types.CharacterTypeAttributes;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.types.TypeId;
 
-import com.akiban.ais.model.CharsetAndCollation;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Parameter;
-import com.akiban.ais.model.Type;
+import com.foundationdb.ais.model.CharsetAndCollation;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Parameter;
+import com.foundationdb.ais.model.Type;
 
 /**
  * A column binding: stored in the UserData of a ColumnReference and

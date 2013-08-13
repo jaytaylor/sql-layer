@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.model.aisb2;
+package com.foundationdb.ais.model.aisb2;
 
-import com.akiban.ais.model.Routine.CallingConvention;
+import com.foundationdb.ais.model.Routine.CallingConvention;
 
 public interface NewSQLJJarBuilder {
     NewSQLJJarBuilder url(String url, boolean checkReadable);

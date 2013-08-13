@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.dxl;
+package com.foundationdb.server.test.it.dxl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,30 +24,30 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.Types;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.util.DDLGenerator;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.error.DuplicateIndexException;
-import com.akiban.server.error.DuplicateKeyException;
-import com.akiban.server.error.IndexLacksColumnsException;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.JoinColumnTypesMismatchException;
-import com.akiban.server.error.NoSuchColumnException;
-import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.error.ProtectedIndexException;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.GroupIndex;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.Types;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.util.DDLGenerator;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.error.DuplicateIndexException;
+import com.foundationdb.server.error.DuplicateKeyException;
+import com.foundationdb.server.error.IndexLacksColumnsException;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.error.JoinColumnTypesMismatchException;
+import com.foundationdb.server.error.NoSuchColumnException;
+import com.foundationdb.server.error.NoSuchTableException;
+import com.foundationdb.server.error.ProtectedIndexException;
 
-import com.akiban.server.test.it.ITBase;
-import com.akiban.server.util.GroupIndexCreator;
+import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.server.util.GroupIndexCreator;
 import org.junit.Assert;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;

@@ -15,23 +15,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.row;
+package com.foundationdb.qp.row;
 
-import com.akiban.qp.expression.ExpressionRow;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.ExpressionGenerator;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.explain.*;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.util.SqlLiteralValueFormatter;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.util.AkibanAppender;
-import com.akiban.util.ArgumentValidation;
+import com.foundationdb.qp.expression.ExpressionRow;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.ExpressionGenerator;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.explain.*;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.util.SqlLiteralValueFormatter;
+import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.util.AkibanAppender;
+import com.foundationdb.util.ArgumentValidation;
 
 import java.util.Collection;
 import java.util.Iterator;

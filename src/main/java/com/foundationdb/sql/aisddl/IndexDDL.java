@@ -15,27 +15,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.aisddl;
+package com.foundationdb.sql.aisddl;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.akiban.ais.AISCloner;
-import com.akiban.ais.model.*;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.protobuf.ProtobufWriter;
-import com.akiban.server.error.*;
-import com.akiban.sql.parser.*;
-import com.akiban.sql.parser.IndexColumn;
+import com.foundationdb.ais.AISCloner;
+import com.foundationdb.ais.model.*;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.protobuf.ProtobufWriter;
+import com.foundationdb.server.error.*;
+import com.foundationdb.sql.parser.*;
+import com.foundationdb.sql.parser.IndexColumn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.server.api.DDLFunctions;
+import com.foundationdb.server.service.session.Session;
 
-import com.akiban.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.QueryContext;
 
 /** DDL operations on Indices */
 public class IndexDDL

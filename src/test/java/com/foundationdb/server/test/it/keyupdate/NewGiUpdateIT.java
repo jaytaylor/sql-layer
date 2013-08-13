@@ -15,22 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.keyupdate;
+package com.foundationdb.server.test.it.keyupdate;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
-import com.akiban.server.store.IndexRecordVisitor;
-import com.akiban.server.store.statistics.IndexStatisticsService;
-import com.akiban.server.test.it.ITBase;
-import com.akiban.util.AssertUtils;
-import com.akiban.util.Strings;
-import com.akiban.util.tap.Tap;
-import com.akiban.util.tap.TapReport;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.GroupIndex;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
+import com.foundationdb.server.store.IndexRecordVisitor;
+import com.foundationdb.server.store.statistics.IndexStatisticsService;
+import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.util.AssertUtils;
+import com.foundationdb.util.Strings;
+import com.foundationdb.util.tap.Tap;
+import com.foundationdb.util.tap.TapReport;
 import com.persistit.exception.PersistitException;
 import org.junit.After;
 import org.junit.AfterClass;

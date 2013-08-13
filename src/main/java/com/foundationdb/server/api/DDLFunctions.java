@@ -15,29 +15,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.api;
+package com.foundationdb.server.api;
 
 import java.util.Collection;
 import java.util.List;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.Sequence;
-import com.akiban.ais.model.SQLJJar;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.View;
-import com.akiban.ais.util.TableChange;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.error.NoSuchTableIdException;
-import com.akiban.server.error.RowDefNotFoundException;
-import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.SQLJJar;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.View;
+import com.foundationdb.ais.util.TableChange;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.server.error.NoSuchTableException;
+import com.foundationdb.server.error.NoSuchTableIdException;
+import com.foundationdb.server.error.RowDefNotFoundException;
+import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.service.session.Session;
 
-import static com.akiban.ais.util.TableChangeValidator.ChangeLevel;
+import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 
 public interface DDLFunctions {
     /**

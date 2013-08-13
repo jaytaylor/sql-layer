@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.bugs.bug1033617;
+package com.foundationdb.server.test.it.bugs.bug1033617;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
 
 import java.util.Collection;

@@ -14,26 +14,26 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
 import org.junit.Before;
-import com.akiban.junit.ParameterizationBuilder;
-import com.akiban.junit.Parameterization;
+import com.foundationdb.junit.ParameterizationBuilder;
+import com.foundationdb.junit.Parameterization;
 import java.util.Collection;
-import com.akiban.junit.NamedParameterizedRunner.TestParameters;
-import com.akiban.server.expression.Expression;
-import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.extract.ConverterTestUtils;
-import com.akiban.sql.parser.TernaryOperatorNode;
+import com.foundationdb.junit.NamedParameterizedRunner.TestParameters;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.server.expression.ExpressionComposer;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.extract.ConverterTestUtils;
+import com.foundationdb.sql.parser.TernaryOperatorNode;
 import java.util.Arrays;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static com.akiban.server.expression.std.ExprUtil.*;
+import static com.foundationdb.server.expression.std.ExprUtil.*;
 import static org.junit.Assert.*;
-import static com.akiban.server.expression.std.TimestampDiffExpressionTest.Type.*;
+import static com.foundationdb.server.expression.std.TimestampDiffExpressionTest.Type.*;
 
 @RunWith(NamedParameterizedRunner.class)
 public class TimestampDiffExpressionTest extends ComposedExpressionTestBase

@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.rowdata;
+package com.foundationdb.server.rowdata;
 
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.server.service.tree.TreeCache;
-import com.akiban.server.service.tree.TreeLink;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.server.service.tree.TreeCache;
+import com.foundationdb.server.service.tree.TreeLink;
 
 import java.util.concurrent.atomic.AtomicReference;
 

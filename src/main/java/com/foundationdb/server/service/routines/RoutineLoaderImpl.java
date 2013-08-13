@@ -15,27 +15,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.routines;
+package com.foundationdb.server.service.routines;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.SQLJJar;
-import com.akiban.ais.model.aisb2.AISBBasedBuilder;
-import com.akiban.ais.model.aisb2.NewAISBuilder;
-import com.akiban.ais.model.aisb2.NewRoutineBuilder;
-import com.akiban.qp.loadableplan.LoadablePlan;
-import com.akiban.server.error.SQLJInstanceException;
-import com.akiban.server.error.NoSuchSQLJJarException;
-import com.akiban.server.error.NoSuchRoutineException;
-import com.akiban.server.service.Service;
-import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.store.SchemaManager;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.SQLJJar;
+import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.ais.model.aisb2.NewAISBuilder;
+import com.foundationdb.ais.model.aisb2.NewRoutineBuilder;
+import com.foundationdb.qp.loadableplan.LoadablePlan;
+import com.foundationdb.server.error.SQLJInstanceException;
+import com.foundationdb.server.error.NoSuchSQLJJarException;
+import com.foundationdb.server.error.NoSuchRoutineException;
+import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.server.service.dxl.DXLService;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.SchemaManager;
 
-import com.akiban.qp.loadableplan.std.DumpGroupLoadablePlan;
-import com.akiban.qp.loadableplan.std.PersistitCLILoadablePlan;
+import com.foundationdb.qp.loadableplan.std.DumpGroupLoadablePlan;
+import com.foundationdb.qp.loadableplan.std.PersistitCLILoadablePlan;
 
 import com.google.inject.Singleton;
 import javax.inject.Inject;

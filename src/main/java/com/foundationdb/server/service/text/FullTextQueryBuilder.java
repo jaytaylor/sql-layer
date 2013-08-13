@@ -15,23 +15,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.text;
+package com.foundationdb.server.service.text;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.FullTextIndex;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.IndexName;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.explain.*;
-import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.types3.texpressions.TEvaluatableExpression;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.FullTextIndex;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.IndexName;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.explain.*;
+import com.foundationdb.server.service.ServiceManager;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.types3.texpressions.TEvaluatableExpression;
+import com.foundationdb.server.types3.texpressions.TPreparedExpression;
 
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause;

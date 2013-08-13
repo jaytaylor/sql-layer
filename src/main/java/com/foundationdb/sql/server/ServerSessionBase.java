@@ -15,33 +15,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.server;
+package com.foundationdb.sql.server;
 
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.memoryadapter.MemoryAdapter;
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.InvalidParameterValueException;
-import com.akiban.server.error.NoTransactionInProgressException;
-import com.akiban.server.error.TransactionAbortedException;
-import com.akiban.server.error.TransactionInProgressException;
-import com.akiban.server.error.TransactionReadOnlyException;
-import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.externaldata.ExternalDataService;
-import com.akiban.server.service.functions.FunctionsRegistry;
-import com.akiban.server.service.monitor.SessionMonitor;
-import com.akiban.server.service.routines.RoutineLoader;
-import com.akiban.server.service.security.SecurityService;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.service.tree.KeyCreator;
-import com.akiban.server.t3expressions.T3RegistryService;
-import com.akiban.sql.optimizer.AISBinderContext;
-import com.akiban.sql.optimizer.rule.PipelineConfiguration;
-import com.akiban.sql.optimizer.rule.cost.CostEstimator;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.memoryadapter.MemoryAdapter;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.error.InvalidParameterValueException;
+import com.foundationdb.server.error.NoTransactionInProgressException;
+import com.foundationdb.server.error.TransactionAbortedException;
+import com.foundationdb.server.error.TransactionInProgressException;
+import com.foundationdb.server.error.TransactionReadOnlyException;
+import com.foundationdb.server.service.ServiceManager;
+import com.foundationdb.server.service.dxl.DXLService;
+import com.foundationdb.server.service.externaldata.ExternalDataService;
+import com.foundationdb.server.service.functions.FunctionsRegistry;
+import com.foundationdb.server.service.monitor.SessionMonitor;
+import com.foundationdb.server.service.routines.RoutineLoader;
+import com.foundationdb.server.service.security.SecurityService;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.service.tree.KeyCreator;
+import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.sql.optimizer.AISBinderContext;
+import com.foundationdb.sql.optimizer.rule.PipelineConfiguration;
+import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
 
 import java.util.*;
 

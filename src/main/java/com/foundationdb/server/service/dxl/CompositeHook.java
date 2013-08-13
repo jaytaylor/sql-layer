@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.dxl;
+package com.foundationdb.server.service.dxl;
 
-import com.akiban.server.service.session.Session;
-import com.akiban.util.MultipleCauseException;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.util.MultipleCauseException;
 
 import java.util.ArrayList;
 import java.util.Collections;

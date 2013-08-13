@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.row;
+package com.foundationdb.qp.row;
 
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.expression.BoundExpressions;
-import com.akiban.qp.rowtype.RowType;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.expression.BoundExpressions;
+import com.foundationdb.qp.rowtype.RowType;
 
 public interface RowBase extends BoundExpressions
 {

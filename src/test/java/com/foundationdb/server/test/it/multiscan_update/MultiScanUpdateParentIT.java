@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.multiscan_update;
+package com.foundationdb.server.test.it.multiscan_update;
 
-import com.akiban.server.api.dml.ConstantColumnSelector;
-import com.akiban.server.api.dml.scan.CursorId;
-import com.akiban.server.error.ConcurrentScanAndUpdateException;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.server.api.dml.ConstantColumnSelector;
+import com.foundationdb.server.api.dml.scan.CursorId;
+import com.foundationdb.server.error.ConcurrentScanAndUpdateException;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.test.it.ITBase;
 import org.junit.Before;
 import org.junit.Test;
 

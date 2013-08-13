@@ -15,18 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.rest;
+package com.foundationdb.rest;
 
-import com.akiban.server.service.text.FullTextIndexService;
-import com.akiban.http.HttpConductor;
-import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.junit.Parameterization;
-import com.akiban.server.service.is.BasicInfoSchemaTablesService;
-import com.akiban.server.service.is.BasicInfoSchemaTablesServiceImpl;
-import com.akiban.server.service.servicemanager.GuicedServiceManager;
-import com.akiban.server.test.it.ITBase;
-import com.akiban.sql.RegexFilenameFilter;
-import com.akiban.util.Strings;
+import com.foundationdb.server.service.text.FullTextIndexService;
+import com.foundationdb.http.HttpConductor;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.Parameterization;
+import com.foundationdb.server.service.is.BasicInfoSchemaTablesService;
+import com.foundationdb.server.service.is.BasicInfoSchemaTablesServiceImpl;
+import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
+import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.sql.RegexFilenameFilter;
+import com.foundationdb.util.Strings;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.eclipse.jetty.client.ContentExchange;
@@ -52,7 +52,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
 
-import static com.akiban.util.JsonUtils.readTree;
+import static com.foundationdb.util.JsonUtils.readTree;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(NamedParameterizedRunner.class)

@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.loadableplan;
+package com.foundationdb.qp.loadableplan;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.util.SchemaCache;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
 
 import java.util.ArrayList;
 import java.util.List;

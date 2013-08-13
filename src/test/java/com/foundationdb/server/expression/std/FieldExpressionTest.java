@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
-import com.akiban.qp.row.Row;
-import com.akiban.qp.row.ValuesRow;
-import com.akiban.qp.rowtype.ValuesRowType;
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.util.ValueHolder;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesRow;
+import com.foundationdb.qp.rowtype.ValuesRowType;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.ExpressionEvaluation;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.util.ValueHolder;
 import org.junit.Ignore;
 import org.junit.Test;
 

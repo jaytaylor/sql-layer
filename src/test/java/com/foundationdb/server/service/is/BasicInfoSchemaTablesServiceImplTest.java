@@ -15,32 +15,32 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.is;
+package com.foundationdb.server.service.is;
 
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.Parameter;
-import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.SQLJJar;
-import com.akiban.ais.model.Sequence;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.View;
-import com.akiban.ais.util.ChangedTableDescription;
-import com.akiban.qp.memoryadapter.MemoryAdapter;
-import com.akiban.qp.memoryadapter.MemoryTableFactory;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.service.security.SecurityService;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.store.SchemaManager;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
+import com.foundationdb.ais.model.AISBuilder;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Join;
+import com.foundationdb.ais.model.Parameter;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.SQLJJar;
+import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.View;
+import com.foundationdb.ais.util.ChangedTableDescription;
+import com.foundationdb.qp.memoryadapter.MemoryAdapter;
+import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.server.service.security.SecurityService;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.SchemaManager;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -54,8 +54,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
-import static com.akiban.server.types.AkType.*;
+import static com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
+import static com.foundationdb.server.types.AkType.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;

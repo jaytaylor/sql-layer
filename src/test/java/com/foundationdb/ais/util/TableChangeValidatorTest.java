@@ -15,17 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.util;
+package com.foundationdb.ais.util;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.CharsetAndCollation;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexName;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.aisb2.AISBBasedBuilder;
-import com.akiban.ais.model.aisb2.NewAISBuilder;
-import com.akiban.ais.model.aisb2.NewUserTableBuilder;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.CharsetAndCollation;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexName;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.ais.model.aisb2.NewAISBuilder;
+import com.foundationdb.ais.model.aisb2.NewUserTableBuilder;
 import org.junit.After;
 import org.junit.Test;
 
@@ -36,9 +36,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static com.akiban.ais.util.ChangedTableDescription.ParentChange;
-import static com.akiban.ais.util.TableChangeValidator.ChangeLevel;
-import static com.akiban.ais.util.TableChangeValidatorException.*;
+import static com.foundationdb.ais.util.ChangedTableDescription.ParentChange;
+import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
+import static com.foundationdb.ais.util.TableChangeValidatorException.*;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

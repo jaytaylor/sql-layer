@@ -15,22 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.server;
+package com.foundationdb.sql.server;
 
-import com.akiban.server.AkServerInterface;
-import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.externaldata.ExternalDataService;
-import com.akiban.server.service.functions.FunctionsRegistry;
-import com.akiban.server.service.monitor.MonitorService;
-import com.akiban.server.service.routines.RoutineLoader;
-import com.akiban.server.service.security.SecurityService;
-import com.akiban.server.service.session.SessionService;
-import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.store.Store;
-import com.akiban.server.store.statistics.IndexStatisticsService;
-import com.akiban.server.t3expressions.T3RegistryService;
+import com.foundationdb.server.AkServerInterface;
+import com.foundationdb.server.service.ServiceManager;
+import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.server.service.dxl.DXLService;
+import com.foundationdb.server.service.externaldata.ExternalDataService;
+import com.foundationdb.server.service.functions.FunctionsRegistry;
+import com.foundationdb.server.service.monitor.MonitorService;
+import com.foundationdb.server.service.routines.RoutineLoader;
+import com.foundationdb.server.service.security.SecurityService;
+import com.foundationdb.server.service.session.SessionService;
+import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.store.Store;
+import com.foundationdb.server.store.statistics.IndexStatisticsService;
+import com.foundationdb.server.t3expressions.T3RegistryService;
 
 public final class ServerServiceRequirements {
 

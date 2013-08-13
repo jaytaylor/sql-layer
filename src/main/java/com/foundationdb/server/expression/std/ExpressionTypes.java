@@ -16,18 +16,18 @@
  */
 
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
-import com.akiban.server.expression.ExpressionType;
+import com.foundationdb.server.expression.ExpressionType;
 
-import com.akiban.server.types.AkType;
+import com.foundationdb.server.types.AkType;
 
-import com.akiban.sql.types.CharacterTypeAttributes;
-import com.akiban.sql.StandardException;
-import com.akiban.server.error.SQLParserInternalException;
+import com.foundationdb.sql.types.CharacterTypeAttributes;
+import com.foundationdb.sql.StandardException;
+import com.foundationdb.server.error.SQLParserInternalException;
 
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.collation.AkCollatorFactory;
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.collation.AkCollatorFactory;
 
 public class ExpressionTypes
 {

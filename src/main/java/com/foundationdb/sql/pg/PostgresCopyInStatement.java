@@ -15,27 +15,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.sql.parser.ColumnReference;
-import com.akiban.sql.parser.CopyStatementNode;
-import com.akiban.sql.parser.ParameterNode;
-import com.akiban.sql.parser.ResultColumn;
-import com.akiban.sql.parser.StatementNode;
-import com.akiban.sql.server.ServerTransaction;
+import com.foundationdb.sql.parser.ColumnReference;
+import com.foundationdb.sql.parser.CopyStatementNode;
+import com.foundationdb.sql.parser.ParameterNode;
+import com.foundationdb.sql.parser.ResultColumn;
+import com.foundationdb.sql.parser.StatementNode;
+import com.foundationdb.sql.server.ServerTransaction;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.server.error.NoSuchColumnException;
-import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.error.UnsupportedSQLException;
-import com.akiban.server.service.externaldata.CsvFormat;
-import com.akiban.server.service.externaldata.ExternalDataService;
-import com.akiban.server.service.session.Session;
-import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.Tap;
-import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.server.error.NoSuchColumnException;
+import com.foundationdb.server.error.NoSuchTableException;
+import com.foundationdb.server.error.UnsupportedSQLException;
+import com.foundationdb.server.service.externaldata.CsvFormat;
+import com.foundationdb.server.service.externaldata.ExternalDataService;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.util.tap.InOutTap;
+import com.foundationdb.util.tap.Tap;
+import static com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

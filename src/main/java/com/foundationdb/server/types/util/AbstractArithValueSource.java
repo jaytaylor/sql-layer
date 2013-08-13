@@ -15,18 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types.util;
+package com.foundationdb.server.types.util;
 
-import com.akiban.qp.operator.Cursor;
-import com.akiban.server.Quote;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ValueSourceHelper;
-import com.akiban.server.types.ValueSourceIsNullException;
-import com.akiban.server.types.WrongValueGetException;
-import com.akiban.server.types.extract.Extractors;
-import com.akiban.util.AkibanAppender;
-import com.akiban.util.ByteSource;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.server.Quote;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.ValueSourceHelper;
+import com.foundationdb.server.types.ValueSourceIsNullException;
+import com.foundationdb.server.types.WrongValueGetException;
+import com.foundationdb.server.types.extract.Extractors;
+import com.foundationdb.util.AkibanAppender;
+import com.foundationdb.util.ByteSource;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 

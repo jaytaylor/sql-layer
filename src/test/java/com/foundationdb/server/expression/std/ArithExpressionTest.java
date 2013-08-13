@@ -16,17 +16,17 @@
  */
 
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
-import com.akiban.server.error.InvalidArgumentTypeException;
-import com.akiban.server.types.extract.Extractors;
-import com.akiban.server.error.OverflowException;
-import com.akiban.server.error.DivisionByZeroException;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.util.ValueHolder;
+import com.foundationdb.server.error.InvalidArgumentTypeException;
+import com.foundationdb.server.types.extract.Extractors;
+import com.foundationdb.server.error.OverflowException;
+import com.foundationdb.server.error.DivisionByZeroException;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.ExpressionComposer;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.util.ValueHolder;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import org.junit.Test;

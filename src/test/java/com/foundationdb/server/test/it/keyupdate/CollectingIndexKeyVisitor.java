@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.keyupdate;
+package com.foundationdb.server.test.it.keyupdate;
 
-import com.akiban.server.store.IndexKeyVisitor;
+import com.foundationdb.server.store.IndexKeyVisitor;
 
 import java.util.ArrayList;
 import java.util.List;

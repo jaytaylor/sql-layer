@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.is;
+package com.foundationdb.server.service.is;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.memoryadapter.BasicFactoryBase;
-import com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.store.SchemaManager;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
+import com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.store.SchemaManager;
 
 public class SchemaTablesService {
     

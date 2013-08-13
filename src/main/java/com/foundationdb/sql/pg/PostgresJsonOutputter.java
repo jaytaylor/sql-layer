@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import static com.akiban.sql.pg.PostgresJsonCompiler.JsonResultColumn;
+import static com.foundationdb.sql.pg.PostgresJsonCompiler.JsonResultColumn;
 
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.row.Row;
-import com.akiban.server.Quote;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.aksql.aktypes.AkResultSet;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
-import com.akiban.util.AkibanAppender;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.Quote;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.aksql.aktypes.AkResultSet;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.types.TypeId;
+import com.foundationdb.util.AkibanAppender;
 
 import java.util.*;
 import java.io.ByteArrayOutputStream;

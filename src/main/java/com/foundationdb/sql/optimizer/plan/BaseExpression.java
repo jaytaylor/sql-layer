@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.foundationdb.sql.optimizer.plan;
 
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.collation.AkCollatorFactory;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.sql.optimizer.TypesTranslation;
-import com.akiban.server.types.AkType;
-import com.akiban.sql.types.CharacterTypeAttributes;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.parser.ValueNode;
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.collation.AkCollatorFactory;
+import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.sql.optimizer.TypesTranslation;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.sql.types.CharacterTypeAttributes;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.parser.ValueNode;
 
 /** An evaluated value. 
  * Usually part of a larger expression tree.

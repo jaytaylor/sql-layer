@@ -15,33 +15,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer;
+package com.foundationdb.sql.optimizer;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Type;
-import com.akiban.ais.model.Types;
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.error.UnknownDataTypeException;
-import com.akiban.server.expression.ExpressionType;
-import com.akiban.server.expression.std.ExpressionTypes;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.aksql.aktypes.AkBool;
-import com.akiban.server.types3.aksql.aktypes.AkInterval;
-import com.akiban.server.types3.aksql.aktypes.AkResultSet;
-import com.akiban.server.types3.common.types.StringFactory.Charset;
-import com.akiban.server.types3.common.types.StringFactory;
-import com.akiban.server.types3.common.types.TString;
-import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
-import com.akiban.server.types3.mcompat.mtypes.MBinary;
-import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.sql.StandardException;
-import com.akiban.sql.types.CharacterTypeAttributes;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Type;
+import com.foundationdb.ais.model.Types;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.UnknownDataTypeException;
+import com.foundationdb.server.expression.ExpressionType;
+import com.foundationdb.server.expression.std.ExpressionTypes;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.server.types3.aksql.aktypes.AkBool;
+import com.foundationdb.server.types3.aksql.aktypes.AkInterval;
+import com.foundationdb.server.types3.aksql.aktypes.AkResultSet;
+import com.foundationdb.server.types3.common.types.StringFactory.Charset;
+import com.foundationdb.server.types3.common.types.StringFactory;
+import com.foundationdb.server.types3.common.types.TString;
+import com.foundationdb.server.types3.mcompat.mtypes.MApproximateNumber;
+import com.foundationdb.server.types3.mcompat.mtypes.MBinary;
+import com.foundationdb.server.types3.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.sql.StandardException;
+import com.foundationdb.sql.types.CharacterTypeAttributes;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.types.TypeId;
 import java.util.ArrayList;
 import java.util.List;
 

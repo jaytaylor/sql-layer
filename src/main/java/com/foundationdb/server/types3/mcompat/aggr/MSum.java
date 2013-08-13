@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.mcompat.aggr;
+package com.foundationdb.server.types3.mcompat.aggr;
 
-import com.akiban.server.error.OverflowException;
-import com.akiban.server.types3.TAggregator;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TFixedTypeAggregator;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.common.BigDecimalWrapper;
-import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
-import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.pvalue.PValueTargets;
+import com.foundationdb.server.error.OverflowException;
+import com.foundationdb.server.types3.TAggregator;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TFixedTypeAggregator;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.common.BigDecimalWrapper;
+import com.foundationdb.server.types3.mcompat.mtypes.MApproximateNumber;
+import com.foundationdb.server.types3.mcompat.mtypes.MBigDecimal;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueTarget;
+import com.foundationdb.server.types3.pvalue.PValueTargets;
 
 public class MSum extends TFixedTypeAggregator {
 

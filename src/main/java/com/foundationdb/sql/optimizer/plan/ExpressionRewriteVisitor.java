@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.foundationdb.sql.optimizer.plan;
 
 /** A visitor that can rewrite portions of the expression as it goes. */
 public interface ExpressionRewriteVisitor

@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.row;
+package com.foundationdb.qp.row;
 
-import com.akiban.qp.rowtype.ProductRowType;
-import com.akiban.server.types.ValueTarget;
-import com.akiban.server.types.conversion.Converters;
-import com.akiban.util.AkibanAppender;
+import com.foundationdb.qp.rowtype.ProductRowType;
+import com.foundationdb.server.types.ValueTarget;
+import com.foundationdb.server.types.conversion.Converters;
+import com.foundationdb.util.AkibanAppender;
 
 public class ProductRow extends CompoundRow
 {

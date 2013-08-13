@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.util;
+package com.foundationdb.qp.util;
 
 import com.persistit.Key;
 

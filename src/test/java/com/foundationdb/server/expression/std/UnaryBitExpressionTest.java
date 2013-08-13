@@ -16,22 +16,22 @@
  */
 
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
-import com.akiban.server.expression.std.UnaryBitExpression.UnaryBitOperator;
+import com.foundationdb.server.expression.std.UnaryBitExpression.UnaryBitOperator;
 import org.junit.runner.RunWith;
-import com.akiban.server.types.util.ValueHolder;
-import com.akiban.junit.ParameterizationBuilder;
-import com.akiban.junit.Parameterization;
+import com.foundationdb.server.types.util.ValueHolder;
+import com.foundationdb.junit.ParameterizationBuilder;
+import com.foundationdb.junit.Parameterization;
 import java.util.Collection;
-import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.server.types.ValueSource;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.server.types.ValueSource;
 import java.math.BigInteger;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.types.AkType;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.ExpressionComposer;
+import com.foundationdb.server.types.AkType;
 
-import com.akiban.server.types.NullValueSource;
+import com.foundationdb.server.types.NullValueSource;
 import java.util.Arrays;
 import org.junit.Test;
 

@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.store.statistics.histograms;
+package com.foundationdb.server.store.statistics.histograms;
 
-import com.akiban.util.ArgumentValidation;
-import com.akiban.util.Flywheel;
-import com.akiban.util.Recycler;
+import com.foundationdb.util.ArgumentValidation;
+import com.foundationdb.util.Flywheel;
+import com.foundationdb.util.Recycler;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.PeekingIterator;
 

@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.persistitadapter.indexrow;
+package com.foundationdb.qp.persistitadapter.indexrow;
 
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.rowtype.IndexRowType;
 
 import java.util.*;
 

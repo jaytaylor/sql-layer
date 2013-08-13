@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.server;
+package com.foundationdb.sql.server;
 
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.error.UnsupportedCharsetException;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueSources;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.UnsupportedCharsetException;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.FromObjectValueSource;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueSources;
 
 import org.joda.time.DateTimeZone;
 import java.math.BigDecimal;

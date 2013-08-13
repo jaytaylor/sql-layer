@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.dxl;
+package com.foundationdb.server.service.dxl;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.protobuf.ProtobufWriter;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionService;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.protobuf.ProtobufWriter;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.session.SessionService;
 
 class DXLMXBeanImpl implements DXLMXBean {
     private final DXLServiceImpl dxlService;

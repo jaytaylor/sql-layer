@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.operator;
+package com.foundationdb.qp.operator;
 
-import com.akiban.qp.exec.UpdateResult;
+import com.foundationdb.qp.exec.UpdateResult;
 
 
 public final class StandardUpdateResult implements UpdateResult {

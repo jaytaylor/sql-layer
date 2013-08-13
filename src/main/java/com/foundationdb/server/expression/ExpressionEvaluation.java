@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression;
+package com.foundationdb.server.expression;
 
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.row.Row;
-import com.akiban.server.types.ValueSource;
-import com.akiban.util.Shareable;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.util.Shareable;
 
 /**
  * <p>A statement run-time instance of a compiled {@link Expression}. Roughly speaking, ExpressionEvaluation is to

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.rowtype;
+package com.foundationdb.qp.rowtype;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -24,11 +24,11 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.rowdata.SchemaFactory;
-import com.akiban.server.types.AkType;
+import com.foundationdb.ais.model.AISBuilder;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.rowdata.SchemaFactory;
+import com.foundationdb.server.types.AkType;
 
 public class CompoundRowTypeTest {
     @Test

@@ -15,17 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule.range;
+package com.foundationdb.sql.optimizer.rule.range;
 
-import com.akiban.server.expression.std.Comparison;
-import com.akiban.sql.optimizer.plan.ColumnExpression;
-import com.akiban.sql.optimizer.plan.ComparisonCondition;
-import com.akiban.sql.optimizer.plan.ConditionExpression;
-import com.akiban.sql.optimizer.plan.ConstantExpression;
-import com.akiban.sql.optimizer.plan.ExpressionNode;
-import com.akiban.sql.optimizer.plan.FunctionCondition;
-import com.akiban.sql.optimizer.plan.InListCondition;
-import com.akiban.sql.optimizer.plan.LogicalFunctionCondition;
+import com.foundationdb.server.expression.std.Comparison;
+import com.foundationdb.sql.optimizer.plan.ColumnExpression;
+import com.foundationdb.sql.optimizer.plan.ComparisonCondition;
+import com.foundationdb.sql.optimizer.plan.ConditionExpression;
+import com.foundationdb.sql.optimizer.plan.ConstantExpression;
+import com.foundationdb.sql.optimizer.plan.ExpressionNode;
+import com.foundationdb.sql.optimizer.plan.FunctionCondition;
+import com.foundationdb.sql.optimizer.plan.InListCondition;
+import com.foundationdb.sql.optimizer.plan.LogicalFunctionCondition;
 
 import java.util.ArrayList;
 import java.util.Collection;

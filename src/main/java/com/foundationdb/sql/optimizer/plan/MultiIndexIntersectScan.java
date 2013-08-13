@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.foundationdb.sql.optimizer.plan;
 
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.UserTable;
-import com.akiban.util.Strings;
-import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.util.Strings;
+import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
 
 import java.util.List;
 

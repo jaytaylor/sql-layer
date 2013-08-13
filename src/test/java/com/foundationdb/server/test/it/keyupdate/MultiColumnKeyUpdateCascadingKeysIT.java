@@ -15,17 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.keyupdate;
+package com.foundationdb.server.test.it.keyupdate;
 
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.error.ErrorCode;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.rowdata.RowDef;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.rowdata.RowDef;
 import org.junit.Test;
 
 import java.util.List;
 
-import static com.akiban.server.test.it.keyupdate.Schema.*;
+import static com.foundationdb.server.test.it.keyupdate.Schema.*;
 import static junit.framework.Assert.*;
 
 // Like KeyUpdateCascadingIT, but with multi-column keys

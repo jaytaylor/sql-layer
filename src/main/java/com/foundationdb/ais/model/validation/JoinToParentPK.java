@@ -15,18 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.model.validation;
+package com.foundationdb.ais.model.validation;
 
 import java.util.Iterator;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.JoinColumn;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.server.error.JoinColumnMismatchException;
-import com.akiban.server.error.JoinParentNoExplicitPK;
-import com.akiban.server.error.JoinToWrongColumnsException;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.Join;
+import com.foundationdb.ais.model.JoinColumn;
+import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.server.error.JoinColumnMismatchException;
+import com.foundationdb.server.error.JoinParentNoExplicitPK;
+import com.foundationdb.server.error.JoinToWrongColumnsException;
 
 class JoinToParentPK implements AISValidation {
 

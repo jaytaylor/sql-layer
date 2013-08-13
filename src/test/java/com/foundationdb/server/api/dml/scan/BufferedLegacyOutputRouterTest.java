@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.api.dml.scan;
+package com.foundationdb.server.api.dml.scan;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
@@ -25,10 +25,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.akiban.util.GrowableByteBuffer;
+import com.foundationdb.util.GrowableByteBuffer;
 import org.junit.Test;
 
-import com.akiban.server.error.RowOutputException;
+import com.foundationdb.server.error.RowOutputException;
 
 public final class BufferedLegacyOutputRouterTest {
     private final static int bytesPerInt = Integer.SIZE / 8;

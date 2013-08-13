@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression.subquery;
+package com.foundationdb.server.expression.subquery;
 
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.explain.*;
-import com.akiban.server.expression.Expression;
-import com.akiban.util.ArgumentValidation;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.explain.*;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.util.ArgumentValidation;
 import java.util.Map;
 
 public abstract class SubqueryExpression implements Expression {

@@ -14,16 +14,16 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.server.test.daily.slap;
+package com.foundationdb.server.test.daily.slap;
 
 import java.util.Collections;
 import java.util.Map;
 
 import org.junit.Test;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.server.store.PersistitStoreSchemaManager;
-import com.akiban.server.test.daily.DailyBase;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.store.PersistitStoreSchemaManager;
+import com.foundationdb.server.test.daily.DailyBase;
 
 public class LotsOfColumnsDT extends DailyBase {
     private final static int COLUMN_COUNT = 10000;

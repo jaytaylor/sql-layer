@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression;
+package com.foundationdb.server.expression;
 
-import com.akiban.server.types.AkType;
-import com.akiban.sql.types.CharacterTypeAttributes;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.sql.types.CharacterTypeAttributes;
 
 public interface ExpressionType {
     /**

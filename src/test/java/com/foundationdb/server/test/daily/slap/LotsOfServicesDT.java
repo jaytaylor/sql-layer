@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.daily.slap;
+package com.foundationdb.server.test.daily.slap;
 
-import com.akiban.server.test.daily.DailyBase;
-import com.akiban.server.test.mt.mtutil.Timing;
+import com.foundationdb.server.test.daily.DailyBase;
+import com.foundationdb.server.test.mt.mtutil.Timing;
 import org.junit.Test;
 
 public final class LotsOfServicesDT extends DailyBase {

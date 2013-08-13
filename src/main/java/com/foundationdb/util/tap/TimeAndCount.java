@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.util.tap;
+package com.foundationdb.util.tap;
 
 /**
  * A Tap subclass that counts and times the intervals between calls to

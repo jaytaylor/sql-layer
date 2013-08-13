@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
@@ -25,20 +25,20 @@ import java.util.List;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
-import com.akiban.sql.optimizer.plan.CostEstimate;
-import com.akiban.sql.parser.ParameterNode;
-import com.akiban.sql.parser.StatementNode;
+import com.foundationdb.sql.optimizer.plan.CostEstimate;
+import com.foundationdb.sql.parser.ParameterNode;
+import com.foundationdb.sql.parser.StatementNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryBindings;
 
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.error.ConnectionTerminatedException;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.SecurityException;
-import com.akiban.server.error.UnsupportedConfigurationException;
-import com.akiban.sql.parser.AlterServerNode;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.ConnectionTerminatedException;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.error.SecurityException;
+import com.foundationdb.server.error.UnsupportedConfigurationException;
+import com.foundationdb.sql.parser.AlterServerNode;
 
 public class PostgresServerStatement implements PostgresStatement {
     private static final Logger LOG = LoggerFactory.getLogger(PostgresServerStatement.class);

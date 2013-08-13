@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.ui;
+package com.foundationdb.server.service.ui;
 
-import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.monitor.MonitorService;
-import com.akiban.server.service.monitor.ServerMonitor;
+import com.foundationdb.server.service.ServiceManager;
+import com.foundationdb.server.service.monitor.MonitorService;
+import com.foundationdb.server.service.monitor.ServerMonitor;
 
 import java.awt.*;
 import java.awt.event.*;

@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.util;
+package com.foundationdb.qp.util;
 
 // Caches HKeys. The caching isn't to cache the values -- operators take care of that. The purpose of this
 // class is to maximize reuse of HKey objects.
 
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.row.HKey;
-import com.akiban.util.SparseArray;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.row.HKey;
+import com.foundationdb.util.SparseArray;
 
 public class HKeyCache<HKEY extends HKey>
 {

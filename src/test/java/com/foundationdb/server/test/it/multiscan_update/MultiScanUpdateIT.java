@@ -15,29 +15,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.multiscan_update;
+package com.foundationdb.server.test.it.multiscan_update;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.junit.OnlyIf;
-import com.akiban.junit.OnlyIfNot;
-import com.akiban.junit.Parameterization;
-import com.akiban.junit.ParameterizationBuilder;
-import com.akiban.server.api.DMLFunctions;
-import com.akiban.server.api.dml.ConstantColumnSelector;
-import com.akiban.server.api.dml.scan.BufferFullException;
-import com.akiban.server.api.dml.scan.BufferedLegacyOutputRouter;
-import com.akiban.server.api.dml.scan.CursorId;
-import com.akiban.server.api.dml.scan.LegacyOutputConverter;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.NiceRow;
-import com.akiban.server.api.dml.scan.ScanAllRequest;
-import com.akiban.server.api.dml.scan.ScanLimit;
-import com.akiban.server.api.dml.scan.ScanRequest;
-import com.akiban.server.error.ConcurrentScanAndUpdateException;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.OnlyIf;
+import com.foundationdb.junit.OnlyIfNot;
+import com.foundationdb.junit.Parameterization;
+import com.foundationdb.junit.ParameterizationBuilder;
+import com.foundationdb.server.api.DMLFunctions;
+import com.foundationdb.server.api.dml.ConstantColumnSelector;
+import com.foundationdb.server.api.dml.scan.BufferFullException;
+import com.foundationdb.server.api.dml.scan.BufferedLegacyOutputRouter;
+import com.foundationdb.server.api.dml.scan.CursorId;
+import com.foundationdb.server.api.dml.scan.LegacyOutputConverter;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.api.dml.scan.NiceRow;
+import com.foundationdb.server.api.dml.scan.ScanAllRequest;
+import com.foundationdb.server.api.dml.scan.ScanLimit;
+import com.foundationdb.server.api.dml.scan.ScanRequest;
+import com.foundationdb.server.error.ConcurrentScanAndUpdateException;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.test.it.ITBase;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

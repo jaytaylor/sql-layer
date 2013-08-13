@@ -15,19 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.texpressions;
+package com.foundationdb.server.types3.texpressions;
 
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TCustomOverloadResult;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.TPreptimeContext;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.types3.LazyList;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TCustomOverloadResult;
+import com.foundationdb.server.types3.TExecutionContext;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.TOverloadResult;
+import com.foundationdb.server.types3.TPreptimeContext;
+import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueTarget;
 
 import java.util.List;
 

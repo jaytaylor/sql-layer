@@ -15,26 +15,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.pt.qp;
+package com.foundationdb.server.test.pt.qp;
 
-import com.akiban.ais.model.Group;
-import com.akiban.qp.exec.UpdatePlannable;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.UpdateFunction;
-import com.akiban.qp.row.OverlayingRow;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.util.tap.Tap;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.qp.exec.UpdatePlannable;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.UpdateFunction;
+import com.foundationdb.qp.row.OverlayingRow;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.util.tap.Tap;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Collections;
 import java.util.concurrent.Callable;
 
-import static com.akiban.qp.operator.API.*;
+import static com.foundationdb.qp.operator.API.*;
 
 public class HKeyChangePropagationProfilePT extends QPProfilePTBase
 {

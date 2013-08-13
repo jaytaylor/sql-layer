@@ -15,26 +15,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.aksql.aktypes;
+package com.foundationdb.server.types3.aksql.aktypes;
 
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.types3.Attribute;
-import com.akiban.server.types3.IllegalNameException;
-import com.akiban.server.types3.TBundleID;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TClassBase;
-import com.akiban.server.types3.TClassFormatter;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TParser;
-import com.akiban.server.types3.aksql.AkBundle;
-import com.akiban.server.types3.aksql.AkCategory;
-import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
-import com.akiban.util.AkibanAppender;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.types3.Attribute;
+import com.foundationdb.server.types3.IllegalNameException;
+import com.foundationdb.server.types3.TBundleID;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TClassBase;
+import com.foundationdb.server.types3.TClassFormatter;
+import com.foundationdb.server.types3.TExecutionContext;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.TParser;
+import com.foundationdb.server.types3.aksql.AkBundle;
+import com.foundationdb.server.types3.aksql.AkCategory;
+import com.foundationdb.server.types3.pvalue.PUnderlying;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueTarget;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.types.TypeId;
+import com.foundationdb.util.AkibanAppender;
 import com.google.common.math.LongMath;
 
 import java.util.ArrayList;

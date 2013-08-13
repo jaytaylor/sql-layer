@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.persistitadapter;
+package com.foundationdb.qp.persistitadapter;
 
-import com.akiban.qp.row.RowBase;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.server.types.ToObjectValueTarget;
-import com.akiban.server.types.ValueSource;
+import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.rowdata.FieldDef;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.FromObjectValueSource;
+import com.foundationdb.server.types.ToObjectValueTarget;
+import com.foundationdb.server.types.ValueSource;
 
 final class OldRowDataCreator implements RowDataCreator<ValueSource> {
 

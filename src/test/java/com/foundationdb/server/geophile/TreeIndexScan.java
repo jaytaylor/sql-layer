@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.geophile;
+package com.foundationdb.server.geophile;
 
-import com.akiban.server.geophile.Scan;
-import com.akiban.server.geophile.Space;
-import com.akiban.server.geophile.SpatialObject;
+import com.foundationdb.server.geophile.Scan;
+import com.foundationdb.server.geophile.Space;
+import com.foundationdb.server.geophile.SpatialObject;
 
 import java.util.Iterator;
 import java.util.Map;

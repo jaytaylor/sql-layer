@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.server.service.restdml;
+package com.foundationdb.server.service.restdml;
 
 import static org.junit.Assert.assertEquals;
 
@@ -22,13 +22,13 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.qp.operator.Operator;
-import com.akiban.server.explain.ExplainContext;
-import com.akiban.server.explain.format.DefaultFormatter;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.t3expressions.T3RegistryService;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.server.explain.ExplainContext;
+import com.foundationdb.server.explain.format.DefaultFormatter;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.server.test.it.ITBase;
 
 public class DeleteGeneratorIT extends ITBase {
 

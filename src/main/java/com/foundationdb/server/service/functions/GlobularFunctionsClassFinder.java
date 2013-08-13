@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.functions;
+package com.foundationdb.server.service.functions;
 
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.util.Strings;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

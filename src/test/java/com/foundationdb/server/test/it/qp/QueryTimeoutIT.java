@@ -15,23 +15,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.qp;
+package com.foundationdb.server.test.it.qp;
 
-import com.akiban.qp.exec.Plannable;
-import com.akiban.qp.operator.*;
-import com.akiban.qp.row.Row;
-import com.akiban.server.AkServer;
-import com.akiban.server.error.QueryCanceledException;
-import com.akiban.server.error.QueryTimedOutException;
-import com.akiban.server.explain.CompoundExplainer;
-import com.akiban.server.explain.ExplainContext;
+import com.foundationdb.qp.exec.Plannable;
+import com.foundationdb.qp.operator.*;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.AkServer;
+import com.foundationdb.server.error.QueryCanceledException;
+import com.foundationdb.server.error.QueryTimedOutException;
+import com.foundationdb.server.explain.CompoundExplainer;
+import com.foundationdb.server.explain.ExplainContext;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.akiban.qp.operator.API.cursor;
+import static com.foundationdb.qp.operator.API.cursor;
 import java.util.Map;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;

@@ -14,12 +14,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.sql.optimizer.plan;
+package com.foundationdb.sql.optimizer.plan;
 
 import java.util.List;
 
-import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
-import com.akiban.sql.optimizer.rule.EquivalenceFinder;
+import com.foundationdb.sql.optimizer.plan.ResultSet.ResultField;
+import com.foundationdb.sql.optimizer.rule.EquivalenceFinder;
 
 public class DMLStatement extends BaseStatement {
 

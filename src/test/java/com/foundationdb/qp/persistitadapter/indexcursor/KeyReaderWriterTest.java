@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.qp.persistitadapter.indexcursor;
+package com.foundationdb.qp.persistitadapter.indexcursor;
 
 import static org.junit.Assert.*;
 
@@ -28,9 +28,9 @@ import java.util.Random;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.akiban.qp.persistitadapter.indexcursor.MergeJoinSorter.KeyReader;
-import com.akiban.qp.persistitadapter.indexcursor.MergeJoinSorter.KeyWriter;
-import com.akiban.qp.persistitadapter.indexcursor.MergeJoinSorter.SortKey;
+import com.foundationdb.qp.persistitadapter.indexcursor.MergeJoinSorter.KeyReader;
+import com.foundationdb.qp.persistitadapter.indexcursor.MergeJoinSorter.KeyWriter;
+import com.foundationdb.qp.persistitadapter.indexcursor.MergeJoinSorter.SortKey;
 import com.persistit.Key;
 import com.persistit.KeyState;
 import com.persistit.Persistit;

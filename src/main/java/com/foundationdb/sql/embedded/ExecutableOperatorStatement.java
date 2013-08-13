@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.embedded;
+package com.foundationdb.sql.embedded;
 
-import com.akiban.qp.operator.Operator;
+import com.foundationdb.qp.operator.Operator;
 
 abstract class ExecutableOperatorStatement extends ExecutableStatement
 {

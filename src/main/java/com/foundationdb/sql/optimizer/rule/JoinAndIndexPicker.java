@@ -15,19 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.foundationdb.sql.optimizer.rule;
 
-import com.akiban.sql.optimizer.rule.cost.CostEstimator;
-import com.akiban.sql.optimizer.rule.join_enum.*;
-import com.akiban.sql.optimizer.rule.join_enum.DPhyp.JoinOperator;
+import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
+import com.foundationdb.sql.optimizer.rule.join_enum.*;
+import com.foundationdb.sql.optimizer.rule.join_enum.DPhyp.JoinOperator;
 
-import com.akiban.sql.optimizer.plan.*;
-import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
-import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
+import com.foundationdb.sql.optimizer.plan.*;
+import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
+import com.foundationdb.sql.optimizer.plan.JoinNode.JoinType;
 
-import com.akiban.server.expression.std.Comparison;
+import com.foundationdb.server.expression.std.Comparison;
 
-import com.akiban.server.error.AkibanInternalException;
+import com.foundationdb.server.error.AkibanInternalException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

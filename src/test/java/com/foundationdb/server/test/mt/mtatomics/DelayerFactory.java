@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.mt.mtatomics;
+package com.foundationdb.server.test.mt.mtatomics;
 
-import com.akiban.server.test.mt.mtutil.TimePoints;
+import com.foundationdb.server.test.mt.mtutil.TimePoints;
 
 interface DelayerFactory {
     Delayer delayer(TimePoints timePoints);

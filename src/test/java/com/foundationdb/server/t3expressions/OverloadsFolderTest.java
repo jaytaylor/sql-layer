@@ -15,22 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.t3expressions;
+package com.foundationdb.server.t3expressions;
 
-import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.junit.Parameterization;
-import com.akiban.junit.ParameterizationBuilder;
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.T3TestClass;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TScalar;
-import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TScalarBase;
-import com.akiban.server.types3.texpressions.TValidatedScalar;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.Parameterization;
+import com.foundationdb.junit.ParameterizationBuilder;
+import com.foundationdb.server.types3.LazyList;
+import com.foundationdb.server.types3.T3TestClass;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TExecutionContext;
+import com.foundationdb.server.types3.TScalar;
+import com.foundationdb.server.types3.TOverloadResult;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueTarget;
+import com.foundationdb.server.types3.texpressions.TInputSetBuilder;
+import com.foundationdb.server.types3.texpressions.TScalarBase;
+import com.foundationdb.server.types3.texpressions.TValidatedScalar;
 import com.google.common.base.Function;
 import org.junit.Test;
 import org.junit.runner.RunWith;

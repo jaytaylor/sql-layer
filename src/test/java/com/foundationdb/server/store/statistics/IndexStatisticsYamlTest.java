@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.store.statistics;
+package com.foundationdb.server.store.statistics;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Index;
-import com.akiban.server.collation.TestKeyCreator;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.server.collation.TestKeyCreator;
 
-import static com.akiban.sql.TestBase.*;
-import static com.akiban.sql.optimizer.OptimizerTestBase.*;
+import static com.foundationdb.sql.TestBase.*;
+import static com.foundationdb.sql.optimizer.OptimizerTestBase.*;
 
 import org.junit.Before;
 import org.junit.Test;

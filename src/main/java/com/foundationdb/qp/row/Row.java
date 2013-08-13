@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.row;
+package com.foundationdb.qp.row;
 
 // Row and RowHolder implement a reference-counting scheme for rows. Operators should hold onto
 // Rows using a RowHolder. Assignments to RowHolder (using RowHolder.set) cause reference counting
@@ -29,7 +29,7 @@ package com.akiban.qp.row;
 // and the reference count could be zero. As long as we're in one thread, the cursor can't be writing new data into
 // the row while this is happening.
 
-import com.akiban.util.Shareable;
+import com.foundationdb.util.Shareable;
 
 public interface Row extends RowBase, Shareable
 {

@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.model.validation;
+package com.foundationdb.ais.model.validation;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.PrimaryKey;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.error.PrimaryKeyNullColumnException;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.PrimaryKey;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.error.PrimaryKeyNullColumnException;
 
 /**
  * Validates that the columns used in the primary key are all not null. 

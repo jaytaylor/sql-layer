@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.rowdata;
+package com.foundationdb.server.rowdata;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.util.AkibanAppender;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.util.AkibanAppender;
 import org.junit.Test;
 
 import java.math.BigDecimal;

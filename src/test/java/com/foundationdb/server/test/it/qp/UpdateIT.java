@@ -15,30 +15,30 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.qp;
+package com.foundationdb.server.test.it.qp;
 
-import com.akiban.qp.exec.UpdatePlannable;
-import com.akiban.qp.exec.UpdateResult;
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.UpdateFunction;
-import com.akiban.qp.row.OverlayingRow;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowBase;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ToObjectValueTarget;
-import com.akiban.server.types.conversion.Converters;
-import static com.akiban.qp.operator.API.*;
+import com.foundationdb.qp.exec.UpdatePlannable;
+import com.foundationdb.qp.exec.UpdateResult;
+import com.foundationdb.qp.expression.IndexKeyRange;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.UpdateFunction;
+import com.foundationdb.qp.row.OverlayingRow;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ToObjectValueTarget;
+import com.foundationdb.server.types.conversion.Converters;
+import static com.foundationdb.qp.operator.API.*;
 
 import com.persistit.Transaction;
 
 import org.junit.Test;
 
-import static com.akiban.qp.operator.API.indexScan_Default;
+import static com.foundationdb.qp.operator.API.indexScan_Default;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;

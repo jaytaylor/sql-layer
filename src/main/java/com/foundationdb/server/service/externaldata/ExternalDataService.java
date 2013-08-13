@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.externaldata;
+package com.foundationdb.server.service.externaldata;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.service.session.Session;
 
 import java.io.IOException;
 import java.io.InputStream;

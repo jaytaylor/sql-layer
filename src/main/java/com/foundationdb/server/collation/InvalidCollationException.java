@@ -16,7 +16,7 @@
  */
 
 
-package com.akiban.server.collation;
+package com.foundationdb.server.collation;
 
 @SuppressWarnings("serial")
 public class InvalidCollationException extends RuntimeException {

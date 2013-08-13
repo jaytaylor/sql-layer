@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.aggregation;
+package com.foundationdb.server.aggregation;
 
-import com.akiban.server.types.AkType;
-import com.akiban.util.ArgumentValidation;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.util.ArgumentValidation;
 
 public final class AggregatorId {
 

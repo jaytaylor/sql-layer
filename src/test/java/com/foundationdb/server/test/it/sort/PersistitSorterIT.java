@@ -15,18 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.sort;
+package com.foundationdb.server.test.it.sort;
 
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.persistitadapter.Sorter;
-import com.akiban.qp.persistitadapter.indexcursor.PersistitSorter;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.service.servicemanager.GuicedServiceManager.BindingsConfigurationProvider;
-import com.akiban.server.test.it.PersistitITBase;
-import com.akiban.util.tap.InOutTap;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.persistitadapter.Sorter;
+import com.foundationdb.qp.persistitadapter.indexcursor.PersistitSorter;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.service.servicemanager.GuicedServiceManager.BindingsConfigurationProvider;
+import com.foundationdb.server.test.it.PersistitITBase;
+import com.foundationdb.util.tap.InOutTap;
 
 import java.util.Map;
 

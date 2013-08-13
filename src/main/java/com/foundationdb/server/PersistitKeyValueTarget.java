@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server;
+package com.foundationdb.server;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-import com.akiban.ais.model.CharsetAndCollation;
-import com.akiban.ais.model.Column;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ValueSourceHelper;
-import com.akiban.server.types.ValueTarget;
-import com.akiban.server.types.conversion.Converters;
-import com.akiban.util.ByteSource;
+import com.foundationdb.ais.model.CharsetAndCollation;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.ValueSourceHelper;
+import com.foundationdb.server.types.ValueTarget;
+import com.foundationdb.server.types.conversion.Converters;
+import com.foundationdb.util.ByteSource;
 import com.persistit.Key;
 
 public final class PersistitKeyValueTarget implements ValueTarget {

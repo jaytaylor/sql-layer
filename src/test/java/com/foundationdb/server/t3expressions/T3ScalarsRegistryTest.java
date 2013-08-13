@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.t3expressions;
+package com.foundationdb.server.t3expressions;
 
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.T3TestClass;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInputSet;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.TScalar;
-import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TScalarBase;
-import com.akiban.server.types3.texpressions.TValidatedScalar;
+import com.foundationdb.server.types3.LazyList;
+import com.foundationdb.server.types3.T3TestClass;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TExecutionContext;
+import com.foundationdb.server.types3.TInputSet;
+import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.server.types3.TScalar;
+import com.foundationdb.server.types3.TOverloadResult;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueTarget;
+import com.foundationdb.server.types3.texpressions.TInputSetBuilder;
+import com.foundationdb.server.types3.texpressions.TScalarBase;
+import com.foundationdb.server.types3.texpressions.TValidatedScalar;
 import com.google.common.collect.ObjectArrays;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;

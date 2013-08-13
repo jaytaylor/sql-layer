@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.rowdata;
+package com.foundationdb.server.rowdata;
 
-import com.akiban.ais.model.*;
+import com.foundationdb.ais.model.*;
 import junit.framework.Assert;
 import org.junit.Test;
 

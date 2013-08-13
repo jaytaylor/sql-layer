@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.rowtests;
+package com.foundationdb.server.test.it.rowtests;
 
-import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.store.PersistitKeyAppender;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.server.rowdata.FieldDef;
+import com.foundationdb.server.store.PersistitKeyAppender;
+import com.foundationdb.server.test.it.ITBase;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 import org.junit.Test;

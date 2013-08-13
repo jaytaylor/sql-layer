@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.dxl;
+package com.foundationdb.server.service.dxl;
 
-import com.akiban.ais.model.IndexName;
+import com.foundationdb.ais.model.IndexName;
 
 import java.io.Serializable;
 

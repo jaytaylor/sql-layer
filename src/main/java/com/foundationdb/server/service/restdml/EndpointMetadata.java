@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.restdml;
+package com.foundationdb.server.service.restdml;
 
-import static com.akiban.util.JsonUtils.readTree;
+import static com.foundationdb.util.JsonUtils.readTree;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -35,8 +35,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response.Status;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.rest.RestResponseBuilder;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.rest.RestResponseBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**

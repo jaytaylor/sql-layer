@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.rowdata;
+package com.foundationdb.server.rowdata;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Type;
-import com.akiban.server.AkServerUtil;
-import com.akiban.server.encoding.EncoderFactory;
-import com.akiban.server.encoding.Encoding;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Type;
+import com.foundationdb.server.AkServerUtil;
+import com.foundationdb.server.encoding.EncoderFactory;
+import com.foundationdb.server.encoding.Encoding;
 
 public class FieldDef {
     private final Column column;

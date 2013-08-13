@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.encoding;
+package com.foundationdb.server.encoding;
 
 public final class EncodingException extends RuntimeException {
     EncodingException(String message, Throwable e) {

@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.error;
+package com.foundationdb.server.error;
 
-import com.akiban.sql.StandardException;
-import com.akiban.sql.parser.QueryTreeNode;
-import com.akiban.sql.unparser.NodeToString;
+import com.foundationdb.sql.StandardException;
+import com.foundationdb.sql.parser.QueryTreeNode;
+import com.foundationdb.sql.unparser.NodeToString;
 
 public class BaseSQLException extends InvalidOperationException 
 {

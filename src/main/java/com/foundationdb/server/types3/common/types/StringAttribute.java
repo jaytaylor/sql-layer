@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.common.types;
+package com.foundationdb.server.types3.common.types;
 
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.collation.AkCollatorFactory;
-import com.akiban.server.types3.Attribute;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.texpressions.Serialization;
-import com.akiban.server.types3.texpressions.SerializeAs;
-import com.akiban.sql.types.CharacterTypeAttributes;
-import com.akiban.sql.types.CharacterTypeAttributes.CollationDerivation;
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.collation.AkCollatorFactory;
+import com.foundationdb.server.types3.Attribute;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.texpressions.Serialization;
+import com.foundationdb.server.types3.texpressions.SerializeAs;
+import com.foundationdb.sql.types.CharacterTypeAttributes;
+import com.foundationdb.sql.types.CharacterTypeAttributes.CollationDerivation;
 
 public enum StringAttribute implements Attribute
 {

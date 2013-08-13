@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.util;
+package com.foundationdb.util;
 
-import com.akiban.qp.operator.Cursor;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueTarget;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueTarget;
 
 import java.io.IOException;
 import java.io.OutputStream;

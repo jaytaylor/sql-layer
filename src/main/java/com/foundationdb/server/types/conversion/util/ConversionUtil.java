@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types.conversion.util;
+package com.foundationdb.server.types.conversion.util;
 
 import org.joda.time.MutableDateTime;
 

@@ -15,17 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.keyupdate;
+package com.foundationdb.server.test.it.keyupdate;
 
-import com.akiban.server.api.dml.SetColumnSelector;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.ScanAllRequest;
-import com.akiban.server.api.dml.scan.ScanFlag;
-import com.akiban.server.api.dml.scan.ScanLimit;
-import com.akiban.server.api.dml.scan.ScanRequest;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.server.api.dml.SetColumnSelector;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.api.dml.scan.ScanAllRequest;
+import com.foundationdb.server.api.dml.scan.ScanFlag;
+import com.foundationdb.server.api.dml.scan.ScanLimit;
+import com.foundationdb.server.api.dml.scan.ScanRequest;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.error.NoSuchTableException;
+import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
 
 import java.util.Arrays;

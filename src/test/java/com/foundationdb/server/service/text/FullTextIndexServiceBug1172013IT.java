@@ -14,22 +14,22 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.server.service.text;
+package com.foundationdb.server.service.text;
 
 import static org.junit.Assert.assertEquals;
 
 import java.util.Collections;
 
-import com.akiban.qp.operator.Cursor;
-import com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.akiban.ais.model.IndexName;
-import com.akiban.ais.model.TableName;
-import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.error.DuplicateIndexException;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.ais.model.IndexName;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.qp.util.SchemaCache;
+import com.foundationdb.server.error.DuplicateIndexException;
+import com.foundationdb.server.service.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -15,19 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.foundationdb.sql.optimizer.rule;
 
-import com.akiban.sql.optimizer.plan.Duplicatable;
-import com.akiban.sql.optimizer.plan.DuplicateMap;
-import com.akiban.sql.optimizer.plan.IndexScan;
-import com.akiban.sql.optimizer.plan.PlanNode;
-import com.akiban.sql.optimizer.plan.PlanVisitor;
-import com.akiban.sql.optimizer.plan.PlanWithInput;
-import com.akiban.sql.optimizer.rule.PlanContext;
-import com.akiban.sql.optimizer.rule.PlanContext.DefaultWhiteboardMarker;
-import com.akiban.sql.optimizer.rule.PlanContext.WhiteboardMarker;
-import com.akiban.sql.optimizer.rule.join_enum.GroupIndexGoalHooks;
-import com.akiban.util.Strings;
+import com.foundationdb.sql.optimizer.plan.Duplicatable;
+import com.foundationdb.sql.optimizer.plan.DuplicateMap;
+import com.foundationdb.sql.optimizer.plan.IndexScan;
+import com.foundationdb.sql.optimizer.plan.PlanNode;
+import com.foundationdb.sql.optimizer.plan.PlanVisitor;
+import com.foundationdb.sql.optimizer.plan.PlanWithInput;
+import com.foundationdb.sql.optimizer.rule.PlanContext;
+import com.foundationdb.sql.optimizer.rule.PlanContext.DefaultWhiteboardMarker;
+import com.foundationdb.sql.optimizer.rule.PlanContext.WhiteboardMarker;
+import com.foundationdb.sql.optimizer.rule.join_enum.GroupIndexGoalHooks;
+import com.foundationdb.util.Strings;
 import com.google.common.base.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

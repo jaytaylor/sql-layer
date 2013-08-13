@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.dxl;
+package com.foundationdb.server.test.it.dxl;
 
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.server.test.it.ITBase;
 import com.google.common.base.Strings;
 import org.junit.Test;
 

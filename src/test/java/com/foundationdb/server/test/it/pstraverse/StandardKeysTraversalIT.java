@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.pstraverse;
+package com.foundationdb.server.test.it.pstraverse;
 
 public final class StandardKeysTraversalIT extends KeysBase {
     @Override

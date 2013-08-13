@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.plugins;
+package com.foundationdb.server.service.plugins;
 
 public final class PluginException extends RuntimeException {
     public PluginException(String message) {

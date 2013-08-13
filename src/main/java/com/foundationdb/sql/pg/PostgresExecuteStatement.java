@@ -15,24 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.sql.optimizer.TypesTranslation;
-import com.akiban.sql.parser.ConstantNode;
-import com.akiban.sql.parser.ExecuteStatementNode;
-import com.akiban.sql.parser.ParameterNode;
-import com.akiban.sql.parser.StatementNode;
-import com.akiban.sql.parser.ValueNode;
+import com.foundationdb.sql.optimizer.TypesTranslation;
+import com.foundationdb.sql.parser.ConstantNode;
+import com.foundationdb.sql.parser.ExecuteStatementNode;
+import com.foundationdb.sql.parser.ParameterNode;
+import com.foundationdb.sql.parser.StatementNode;
+import com.foundationdb.sql.parser.ValueNode;
 
-import com.akiban.qp.operator.QueryBindings;
-import com.akiban.server.error.UnsupportedSQLException;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.util.ValueHolder;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.pvalue.PValueSources;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.server.error.UnsupportedSQLException;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.FromObjectValueSource;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.util.ValueHolder;
+import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.server.types3.pvalue.PValueSources;
 
 import java.util.ArrayList;
 import java.util.List;

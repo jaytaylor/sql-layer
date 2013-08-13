@@ -15,17 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.embedded;
+package com.foundationdb.sql.embedded;
 
-import com.akiban.sql.embedded.JDBCParameterMetaData.ParameterType;
+import com.foundationdb.sql.embedded.JDBCParameterMetaData.ParameterType;
 
-import com.akiban.ais.model.Parameter;
-import com.akiban.ais.model.TableName;
-import com.akiban.server.error.UnsupportedSQLException;
-import com.akiban.sql.parser.CallStatementNode;
-import com.akiban.sql.parser.ParameterNode;
-import com.akiban.sql.parser.StaticMethodCallNode;
-import com.akiban.sql.server.ServerCallInvocation;
+import com.foundationdb.ais.model.Parameter;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.error.UnsupportedSQLException;
+import com.foundationdb.sql.parser.CallStatementNode;
+import com.foundationdb.sql.parser.ParameterNode;
+import com.foundationdb.sql.parser.StaticMethodCallNode;
+import com.foundationdb.sql.server.ServerCallInvocation;
 
 import java.util.ArrayList;
 import java.util.Arrays;

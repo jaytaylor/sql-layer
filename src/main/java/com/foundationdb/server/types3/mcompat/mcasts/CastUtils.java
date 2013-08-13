@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3.mcompat.mcasts;
+package com.foundationdb.server.types3.mcompat.mcasts;
 
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.common.BigDecimalWrapper;
-import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
-import com.akiban.server.types3.mcompat.mtypes.MBigDecimal.Attrs;
-import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
-import com.akiban.server.types3.pvalue.PValueTarget;
+import com.foundationdb.server.types3.TExecutionContext;
+import com.foundationdb.server.types3.common.BigDecimalWrapper;
+import com.foundationdb.server.types3.mcompat.mtypes.MBigDecimal;
+import com.foundationdb.server.types3.mcompat.mtypes.MBigDecimal.Attrs;
+import com.foundationdb.server.types3.mcompat.mtypes.MBigDecimalWrapper;
+import com.foundationdb.server.types3.pvalue.PValueTarget;
 import com.google.common.primitives.UnsignedLongs;
 import java.math.BigDecimal;
 import java.math.RoundingMode;

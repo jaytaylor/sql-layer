@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.entity.model;
+package com.foundationdb.server.entity.model;
 
 public final class IllegalEntityDefinition extends RuntimeException {
     public IllegalEntityDefinition(String message) {

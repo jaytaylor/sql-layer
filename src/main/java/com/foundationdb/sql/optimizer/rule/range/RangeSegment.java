@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule.range;
+package com.foundationdb.sql.optimizer.rule.range;
 
-import com.akiban.server.expression.std.Comparison;
-import com.akiban.sql.optimizer.plan.ConstantExpression;
-import com.akiban.util.ArgumentValidation;
+import com.foundationdb.server.expression.std.Comparison;
+import com.foundationdb.sql.optimizer.plan.ConstantExpression;
+import com.foundationdb.util.ArgumentValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

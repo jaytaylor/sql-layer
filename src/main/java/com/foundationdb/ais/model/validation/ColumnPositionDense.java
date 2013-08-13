@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.ais.model.validation;
+package com.foundationdb.ais.model.validation;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Table;
-import com.akiban.server.error.ColumnPositionNotOrderedException;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.server.error.ColumnPositionNotOrderedException;
 
 class ColumnPositionDense implements AISValidation {
 

@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.foundationdb.sql.optimizer.plan;
 
-import com.akiban.ais.model.UserTable;
-import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
-import com.akiban.sql.types.DataTypeDescriptor;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
+import com.foundationdb.sql.types.DataTypeDescriptor;
 
-import com.akiban.qp.exec.UpdatePlannable;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.explain.ExplainContext;
+import com.foundationdb.qp.exec.UpdatePlannable;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.explain.ExplainContext;
 
 import java.util.Arrays;
 import java.util.List;

@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.server.entity.changes;
+package com.foundationdb.server.entity.changes;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -27,14 +27,14 @@ import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.ais.model.NopVisitor;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.aisb2.AISBBasedBuilder;
-import com.akiban.ais.model.aisb2.NewAISBuilder;
-import com.akiban.ais.model.aisb2.NewUserTableBuilder;
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.ais.model.NopVisitor;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.ais.model.aisb2.NewAISBuilder;
+import com.foundationdb.ais.model.aisb2.NewUserTableBuilder;
+import com.foundationdb.server.api.DDLFunctions;
+import com.foundationdb.server.service.session.Session;
 
 public final class EntityParser {
     public static final String PK_COL_NAME = "_id";

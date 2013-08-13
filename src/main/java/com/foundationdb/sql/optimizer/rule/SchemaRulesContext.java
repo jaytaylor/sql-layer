@@ -15,18 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.foundationdb.sql.optimizer.rule;
 
-import com.akiban.server.service.functions.FunctionsRegistry;
-import com.akiban.server.t3expressions.T3RegistryService;
-import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
-import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
-import com.akiban.sql.optimizer.rule.cost.CostEstimator;
+import com.foundationdb.server.service.functions.FunctionsRegistry;
+import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
+import com.foundationdb.sql.optimizer.plan.ResultSet.ResultField;
+import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
 
-import com.akiban.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.AkibanInformationSchema;
 
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.util.SchemaCache;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
 
 /** The context associated with an AIS schema. */
 public abstract class SchemaRulesContext extends RulesContext

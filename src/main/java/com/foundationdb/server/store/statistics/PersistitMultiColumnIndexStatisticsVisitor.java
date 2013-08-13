@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.store.statistics;
+package com.foundationdb.server.store.statistics;
 
-import com.akiban.ais.model.Index;
-import com.akiban.server.service.tree.KeyCreator;
-import com.akiban.server.store.statistics.histograms.Sampler;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.server.service.tree.KeyCreator;
+import com.foundationdb.server.store.statistics.histograms.Sampler;
 import com.persistit.Key;
 import com.persistit.Value;
 

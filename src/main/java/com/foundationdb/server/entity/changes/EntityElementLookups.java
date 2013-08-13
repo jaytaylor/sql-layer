@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.entity.changes;
+package com.foundationdb.server.entity.changes;
 
-import com.akiban.server.entity.model.AbstractEntityVisitor;
-import com.akiban.server.entity.model.Entity;
-import com.akiban.server.entity.model.EntityElement;
-import com.akiban.server.entity.model.Space;
+import com.foundationdb.server.entity.model.AbstractEntityVisitor;
+import com.foundationdb.server.entity.model.Entity;
+import com.foundationdb.server.entity.model.EntityElement;
+import com.foundationdb.server.entity.model.Space;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayDeque;

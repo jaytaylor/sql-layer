@@ -15,37 +15,37 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.embedded;
+package com.foundationdb.sql.embedded;
 
-import com.akiban.server.service.tree.KeyCreator;
-import com.akiban.sql.embedded.JDBCResultSetMetaData.ResultColumn;
-import com.akiban.sql.embedded.JDBCParameterMetaData.ParameterType;
+import com.foundationdb.server.service.tree.KeyCreator;
+import com.foundationdb.sql.embedded.JDBCResultSetMetaData.ResultColumn;
+import com.foundationdb.sql.embedded.JDBCParameterMetaData.ParameterType;
 
-import com.akiban.sql.server.ServerOperatorCompiler;
-import com.akiban.sql.server.ServerPlanContext;
+import com.foundationdb.sql.server.ServerOperatorCompiler;
+import com.foundationdb.sql.server.ServerPlanContext;
 
-import com.akiban.sql.optimizer.NestedResultSetTypeComputer;
-import com.akiban.sql.optimizer.TypesTranslation;
-import com.akiban.sql.optimizer.plan.BasePlannable;
-import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
-import com.akiban.sql.optimizer.plan.PhysicalSelect;
-import com.akiban.sql.optimizer.plan.PhysicalUpdate;
-import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
-import com.akiban.sql.optimizer.rule.PlanContext;
+import com.foundationdb.sql.optimizer.NestedResultSetTypeComputer;
+import com.foundationdb.sql.optimizer.TypesTranslation;
+import com.foundationdb.sql.optimizer.plan.BasePlannable;
+import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
+import com.foundationdb.sql.optimizer.plan.PhysicalSelect;
+import com.foundationdb.sql.optimizer.plan.PhysicalUpdate;
+import com.foundationdb.sql.optimizer.plan.ResultSet.ResultField;
+import com.foundationdb.sql.optimizer.rule.PlanContext;
 
-import com.akiban.sql.StandardException;
-import com.akiban.sql.parser.*;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
+import com.foundationdb.sql.StandardException;
+import com.foundationdb.sql.parser.*;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.types.TypeId;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.Operator;
-import com.akiban.server.error.SQLParserInternalException;
-import com.akiban.server.error.UnsupportedSQLException;
-import com.akiban.server.service.functions.FunctionsRegistry;
-import com.akiban.server.types3.TInstance;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.server.error.SQLParserInternalException;
+import com.foundationdb.server.error.UnsupportedSQLException;
+import com.foundationdb.server.service.functions.FunctionsRegistry;
+import com.foundationdb.server.types3.TInstance;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

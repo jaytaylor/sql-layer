@@ -15,22 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.text;
+package com.foundationdb.server.service.text;
 
-import com.akiban.ais.model.FullTextIndex;
-import com.akiban.ais.model.IndexName;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.Operator;
-import static com.akiban.qp.operator.API.cursor;
+import com.foundationdb.ais.model.FullTextIndex;
+import com.foundationdb.ais.model.IndexName;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.Operator;
+import static com.foundationdb.qp.operator.API.cursor;
 
-import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.service.servicemanager.GuicedServiceManager;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionServiceImpl;
-import com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
-import com.akiban.server.test.it.qp.TestRow;
+import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.util.SchemaCache;
+import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.session.SessionServiceImpl;
+import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
+import com.foundationdb.server.test.it.qp.TestRow;
 
 import org.junit.Before;
 import org.junit.Test;

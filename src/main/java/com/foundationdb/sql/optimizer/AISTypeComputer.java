@@ -15,17 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer;
+package com.foundationdb.sql.optimizer;
 
-import com.akiban.sql.compiler.TypeComputer;
+import com.foundationdb.sql.compiler.TypeComputer;
 
-import com.akiban.sql.parser.*;
+import com.foundationdb.sql.parser.*;
 
-import com.akiban.sql.StandardException;
-import com.akiban.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.StandardException;
+import com.foundationdb.sql.types.DataTypeDescriptor;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.UserTable;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.UserTable;
 
 import java.util.ArrayList;
 import java.util.List;

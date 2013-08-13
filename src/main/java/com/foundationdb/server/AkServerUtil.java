@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server;
+package com.foundationdb.server;
 
-import com.akiban.server.rowdata.FieldDef;
-import com.akiban.util.AkibanAppender;
-import com.akiban.util.ByteSource;
-import com.akiban.util.WrappingByteSource;
+import com.foundationdb.server.rowdata.FieldDef;
+import com.foundationdb.util.AkibanAppender;
+import com.foundationdb.util.ByteSource;
+import com.foundationdb.util.WrappingByteSource;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;

@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types.extract;
+package com.foundationdb.server.types.extract;
 
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.conversion.Converters;
-import com.akiban.util.ByteSource;
-import com.akiban.util.WrappingByteSource;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types.conversion.Converters;
+import com.foundationdb.util.ByteSource;
+import com.foundationdb.util.WrappingByteSource;
 import java.io.UnsupportedEncodingException;
 
 final class ExtractorForVarBinary extends ObjectExtractor<ByteSource> {

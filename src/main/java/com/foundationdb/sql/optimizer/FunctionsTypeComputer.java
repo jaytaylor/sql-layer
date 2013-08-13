@@ -15,27 +15,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer;
+package com.foundationdb.sql.optimizer;
 
-import com.akiban.sql.parser.*;
+import com.foundationdb.sql.parser.*;
 
-import com.akiban.sql.StandardException;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
+import com.foundationdb.sql.StandardException;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.types.TypeId;
 
-import com.akiban.ais.model.Routine;
-import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.expression.ExpressionType;
-import com.akiban.server.expression.TypesList;
-import com.akiban.server.expression.std.ExpressionTypes;
-import com.akiban.server.service.functions.FunctionsRegistry;
-import com.akiban.server.types.AkType;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.server.expression.ExpressionComposer;
+import com.foundationdb.server.expression.ExpressionType;
+import com.foundationdb.server.expression.TypesList;
+import com.foundationdb.server.expression.std.ExpressionTypes;
+import com.foundationdb.server.service.functions.FunctionsRegistry;
+import com.foundationdb.server.types.AkType;
 
-import com.akiban.server.error.NoSuchFunctionException;
+import com.foundationdb.server.error.NoSuchFunctionException;
 
-import com.akiban.sql.optimizer.plan.AggregateFunctionExpression;
+import com.foundationdb.sql.optimizer.plan.AggregateFunctionExpression;
 
-import static com.akiban.sql.optimizer.TypesTranslation.*;
+import static com.foundationdb.sql.optimizer.TypesTranslation.*;
 
 /** Calculate types from expression composers. */
 public class FunctionsTypeComputer extends AISTypeComputer

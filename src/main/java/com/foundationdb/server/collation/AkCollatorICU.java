@@ -14,11 +14,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.server.collation;
+package com.foundationdb.server.collation;
 
 import java.util.Arrays;
 
-import com.akiban.server.types.ValueSource;
+import com.foundationdb.server.types.ValueSource;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.ibm.icu.text.Collator;

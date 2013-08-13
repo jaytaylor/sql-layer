@@ -15,22 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.foundationdb.sql.optimizer.rule;
 
-import com.akiban.server.error.UnsupportedSQLException;
+import com.foundationdb.server.error.UnsupportedSQLException;
 
-import com.akiban.sql.optimizer.plan.*;
-import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
-import com.akiban.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
+import com.foundationdb.sql.optimizer.plan.*;
+import com.foundationdb.sql.optimizer.plan.JoinNode.JoinType;
+import com.foundationdb.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
 
-import com.akiban.server.expression.std.Comparison;
+import com.foundationdb.server.expression.std.Comparison;
 
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.JoinColumn;
-import com.akiban.ais.model.UserTable;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.Join;
+import com.foundationdb.ais.model.JoinColumn;
+import com.foundationdb.ais.model.UserTable;
 
-import com.akiban.util.ListUtils;
+import com.foundationdb.util.ListUtils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

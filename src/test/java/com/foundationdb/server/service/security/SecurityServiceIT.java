@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.security;
+package com.foundationdb.server.service.security;
 
-import com.akiban.rest.RestService;
-import com.akiban.rest.RestServiceImpl;
-import com.akiban.server.service.servicemanager.GuicedServiceManager;
-import com.akiban.server.test.it.ITBase;
-import com.akiban.sql.embedded.EmbeddedJDBCService;
-import com.akiban.sql.embedded.EmbeddedJDBCServiceImpl;
+import com.foundationdb.rest.RestService;
+import com.foundationdb.rest.RestServiceImpl;
+import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
+import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.sql.embedded.EmbeddedJDBCService;
+import com.foundationdb.sql.embedded.EmbeddedJDBCServiceImpl;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -39,7 +39,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static com.akiban.util.JsonUtils.readTree;
+import static com.foundationdb.util.JsonUtils.readTree;
 import static org.junit.Assert.*;
 
 import java.net.URI;

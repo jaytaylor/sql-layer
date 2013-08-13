@@ -16,17 +16,17 @@
  */
 
 
-package com.akiban.server.types.conversion;
+package com.foundationdb.server.types.conversion;
 
-import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.junit.NamedParameterizedRunner.TestParameters;
-import com.akiban.junit.Parameterization;
-import com.akiban.junit.ParameterizationBuilder;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.extract.Extractors;
-import com.akiban.server.types.util.ValueHolder;
-import com.akiban.util.ByteSource;
-import com.akiban.util.WrappingByteSource;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.junit.NamedParameterizedRunner.TestParameters;
+import com.foundationdb.junit.Parameterization;
+import com.foundationdb.junit.ParameterizationBuilder;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.extract.Extractors;
+import com.foundationdb.server.types.util.ValueHolder;
+import com.foundationdb.util.ByteSource;
+import com.foundationdb.util.WrappingByteSource;
 import java.util.Collection;
 import org.junit.Test;
 

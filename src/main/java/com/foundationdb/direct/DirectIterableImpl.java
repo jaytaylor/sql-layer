@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.direct;
+package com.foundationdb.direct;
 
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import com.akiban.sql.embedded.JDBCResultSet;
+import com.foundationdb.sql.embedded.JDBCResultSet;
 
 /**
  * Very kludgey implementation by constructing SQL strings.

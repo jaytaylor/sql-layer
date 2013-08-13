@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.error;
+package com.foundationdb.server.error;
 
-import com.akiban.ais.model.Type;
+import com.foundationdb.ais.model.Type;
 
 public class TypesAreStaticException extends InvalidOperationException {
     public TypesAreStaticException (Type type) {

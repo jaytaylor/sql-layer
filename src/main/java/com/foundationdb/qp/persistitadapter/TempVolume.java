@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.persistitadapter;
+package com.foundationdb.qp.persistitadapter;
 
-import com.akiban.server.service.session.Session;
-import com.akiban.server.store.PersistitStore;
-import com.akiban.util.Shareable;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.PersistitStore;
+import com.foundationdb.util.Shareable;
 import com.persistit.Exchange;
 import com.persistit.Persistit;
 import com.persistit.Volume;

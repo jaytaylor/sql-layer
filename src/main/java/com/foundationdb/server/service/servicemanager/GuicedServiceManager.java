@@ -15,28 +15,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.servicemanager;
+package com.foundationdb.server.service.servicemanager;
 
-import com.akiban.server.AkServerInterface;
-import com.akiban.server.error.ServiceStartupException;
-import com.akiban.server.service.Service;
-import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.monitor.MonitorService;
-import com.akiban.server.service.jmx.JmxManageable;
-import com.akiban.server.service.jmx.JmxRegistryService;
-import com.akiban.server.service.plugins.Plugin;
-import com.akiban.server.service.plugins.PluginsFinder;
-import com.akiban.server.service.servicemanager.configuration.BindingsConfigurationLoader;
-import com.akiban.server.service.servicemanager.configuration.DefaultServiceConfigurationHandler;
-import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
-import com.akiban.server.service.servicemanager.configuration.ServiceConfigurationHandler;
-import com.akiban.server.service.servicemanager.configuration.yaml.YamlConfiguration;
-import com.akiban.server.service.session.SessionService;
-import com.akiban.server.service.stats.StatisticsService;
-import com.akiban.server.store.SchemaManager;
-import com.akiban.server.store.Store;
+import com.foundationdb.server.AkServerInterface;
+import com.foundationdb.server.error.ServiceStartupException;
+import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.ServiceManager;
+import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.server.service.dxl.DXLService;
+import com.foundationdb.server.service.monitor.MonitorService;
+import com.foundationdb.server.service.jmx.JmxManageable;
+import com.foundationdb.server.service.jmx.JmxRegistryService;
+import com.foundationdb.server.service.plugins.Plugin;
+import com.foundationdb.server.service.plugins.PluginsFinder;
+import com.foundationdb.server.service.servicemanager.configuration.BindingsConfigurationLoader;
+import com.foundationdb.server.service.servicemanager.configuration.DefaultServiceConfigurationHandler;
+import com.foundationdb.server.service.servicemanager.configuration.ServiceBinding;
+import com.foundationdb.server.service.servicemanager.configuration.ServiceConfigurationHandler;
+import com.foundationdb.server.service.servicemanager.configuration.yaml.YamlConfiguration;
+import com.foundationdb.server.service.session.SessionService;
+import com.foundationdb.server.service.stats.StatisticsService;
+import com.foundationdb.server.store.SchemaManager;
+import com.foundationdb.server.store.Store;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

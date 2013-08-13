@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.servicemanager.configuration.yaml;
+package com.foundationdb.server.service.servicemanager.configuration.yaml;
 
-import com.akiban.server.service.servicemanager.configuration.ServiceConfigurationHandler;
+import com.foundationdb.server.service.servicemanager.configuration.ServiceConfigurationHandler;
 import com.google.inject.Module;
 
 import java.util.ArrayList;

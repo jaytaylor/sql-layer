@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.store;
+package com.foundationdb.server.store;
 
-import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.service.tree.TreeService;
-import com.akiban.util.MultipleCauseException;
+import com.foundationdb.qp.persistitadapter.PersistitAdapter;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.service.tree.TreeService;
+import com.foundationdb.util.MultipleCauseException;
 import com.google.inject.Inject;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 
 import java.util.Deque;
 
-import static com.akiban.server.service.session.Session.Key;
-import static com.akiban.server.service.session.Session.StackKey;
+import static com.foundationdb.server.service.session.Session.Key;
+import static com.foundationdb.server.service.session.Session.StackKey;
 
 public class PersistitTransactionService implements TransactionService {
     private static final Key<Transaction> TXN_KEY = Key.named("TXN_KEY");

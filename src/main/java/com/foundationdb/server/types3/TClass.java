@@ -15,18 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types3;
+package com.foundationdb.server.types3;
 
-import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValueCacher;
-import com.akiban.server.types3.pvalue.PValueTargets;
-import com.akiban.server.types3.texpressions.Serialization;
-import com.akiban.server.types3.texpressions.SerializeAs;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.util.AkibanAppender;
-import com.akiban.util.ArgumentValidation;
+import com.foundationdb.server.types3.pvalue.PUnderlying;
+import com.foundationdb.server.types3.pvalue.PValueCacher;
+import com.foundationdb.server.types3.pvalue.PValueTargets;
+import com.foundationdb.server.types3.texpressions.Serialization;
+import com.foundationdb.server.types3.texpressions.SerializeAs;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueTarget;
+import com.foundationdb.util.AkibanAppender;
+import com.foundationdb.util.ArgumentValidation;
 import com.google.common.primitives.Booleans;
 import com.google.common.primitives.Doubles;
 import com.google.common.primitives.Floats;

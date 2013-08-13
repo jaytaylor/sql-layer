@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.rest;
+package com.foundationdb.rest;
 
 public interface RestService {
     String getContextPath();

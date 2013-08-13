@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.foundationdb.sql.optimizer.plan;
 
-import com.akiban.sql.StandardException;
-import com.akiban.sql.parser.DMLStatementNode;
-import com.akiban.sql.parser.ParameterNode;
-import com.akiban.sql.unparser.NodeToString;
+import com.foundationdb.sql.StandardException;
+import com.foundationdb.sql.parser.DMLStatementNode;
+import com.foundationdb.sql.parser.ParameterNode;
+import com.foundationdb.sql.unparser.NodeToString;
 
 import java.util.List;
 

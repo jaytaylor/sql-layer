@@ -14,14 +14,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.ais.model;
+package com.foundationdb.ais.model;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.akiban.ais.model.validation.AISInvariants;
-import com.akiban.server.error.SequenceLimitExceededException;
-import com.akiban.server.service.tree.TreeCache;
-import com.akiban.server.service.tree.TreeLink;
+import com.foundationdb.ais.model.validation.AISInvariants;
+import com.foundationdb.server.error.SequenceLimitExceededException;
+import com.foundationdb.server.service.tree.TreeCache;
+import com.foundationdb.server.service.tree.TreeLink;
 
 public class Sequence implements TreeLink {
 

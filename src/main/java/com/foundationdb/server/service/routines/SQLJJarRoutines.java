@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.routines;
+package com.foundationdb.server.service.routines;
 
-import com.akiban.ais.model.SQLJJar;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.aisb2.AISBBasedBuilder;
-import com.akiban.ais.model.aisb2.NewAISBuilder;
-import com.akiban.sql.server.ServerQueryContext;
-import com.akiban.sql.server.ServerCallContextStack;
-import com.akiban.sql.server.ServerSession;
+import com.foundationdb.ais.model.SQLJJar;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.ais.model.aisb2.NewAISBuilder;
+import com.foundationdb.sql.server.ServerQueryContext;
+import com.foundationdb.sql.server.ServerCallContextStack;
+import com.foundationdb.sql.server.ServerSession;
 
 /** SQL/J DDL commands are implemented as procedures in the SQLJ schema. */
 public class SQLJJarRoutines

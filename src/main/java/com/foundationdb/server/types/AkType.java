@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.types;
+package com.foundationdb.server.types;
 
-import com.akiban.server.error.AkibanInternalException;
+import com.foundationdb.server.error.AkibanInternalException;
 
-import static com.akiban.server.types.AkType.UnderlyingType.*;
+import static com.foundationdb.server.types.AkType.UnderlyingType.*;
 
 public enum AkType {
     DATE(LONG_AKTYPE),

@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
-import com.akiban.server.expression.ExpressionType;
+import com.foundationdb.server.expression.ExpressionType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 

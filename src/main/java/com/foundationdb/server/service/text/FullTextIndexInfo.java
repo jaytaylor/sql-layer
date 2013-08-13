@@ -15,27 +15,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.text;
+package com.foundationdb.server.service.text;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.FullTextIndex;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.IndexName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.row.HKeyRow;
-import com.akiban.qp.rowtype.HKeyRowType;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.error.NoSuchIndexException;
-import com.akiban.server.error.NoSuchTableException;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.FullTextIndex;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.IndexName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.expression.IndexKeyRange;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.row.HKeyRow;
+import com.foundationdb.qp.rowtype.HKeyRowType;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.util.SchemaCache;
+import com.foundationdb.server.error.NoSuchIndexException;
+import com.foundationdb.server.error.NoSuchTableException;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.queryparser.flexible.standard.StandardQueryParser;

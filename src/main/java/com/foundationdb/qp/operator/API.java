@@ -15,28 +15,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.operator;
+package com.foundationdb.qp.operator;
 
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.exec.UpdatePlannable;
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.row.BindableRow;
-import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.server.aggregation.AggregatorRegistry;
-import com.akiban.server.aggregation.Aggregators;
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.types3.TAggregator;
-import com.akiban.server.types3.TComparison;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.server.types3.texpressions.TPreparedField;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.exec.UpdatePlannable;
+import com.foundationdb.qp.expression.IndexKeyRange;
+import com.foundationdb.qp.row.BindableRow;
+import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.server.aggregation.AggregatorRegistry;
+import com.foundationdb.server.aggregation.Aggregators;
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.types3.TAggregator;
+import com.foundationdb.server.types3.TComparison;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types3.texpressions.TPreparedField;
 
 import java.util.*;
 

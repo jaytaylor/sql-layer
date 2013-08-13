@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service;
+package com.foundationdb.server.service;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.akiban.server.error.ServiceNotStartedException;
-import com.akiban.server.service.servicemanager.DelegatingServiceManager;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.server.error.ServiceNotStartedException;
+import com.foundationdb.server.service.servicemanager.DelegatingServiceManager;
+import com.foundationdb.server.service.session.Session;
 
 public final class ServiceManagerImpl extends DelegatingServiceManager
 {

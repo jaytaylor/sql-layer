@@ -15,29 +15,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.aisddl;
+package com.foundationdb.sql.aisddl;
 
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.error.*;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.server.api.DDLFunctions;
+import com.foundationdb.server.error.*;
+import com.foundationdb.server.service.session.Session;
 
-import com.akiban.sql.optimizer.AISBinderContext;
-import com.akiban.sql.optimizer.AISViewDefinition;
-import com.akiban.sql.parser.CreateViewNode;
-import com.akiban.sql.parser.DropViewNode;
-import com.akiban.sql.parser.ExistenceCheck;
-import com.akiban.sql.parser.NodeTypes;
-import com.akiban.sql.parser.ResultColumn;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
+import com.foundationdb.sql.optimizer.AISBinderContext;
+import com.foundationdb.sql.optimizer.AISViewDefinition;
+import com.foundationdb.sql.parser.CreateViewNode;
+import com.foundationdb.sql.parser.DropViewNode;
+import com.foundationdb.sql.parser.ExistenceCheck;
+import com.foundationdb.sql.parser.NodeTypes;
+import com.foundationdb.sql.parser.ResultColumn;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.types.TypeId;
 
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Columnar;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.View;
+import com.foundationdb.ais.model.AISBuilder;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Columnar;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.View;
 
-import com.akiban.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.QueryContext;
 import java.util.Collection;
 import java.util.Map;
 

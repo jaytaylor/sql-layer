@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.functions;
+package com.foundationdb.server.service.functions;
 
-import com.akiban.server.aggregation.AggregatorFactory;
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.error.NoSuchFunctionException;
-import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.service.Service;
-import com.akiban.server.service.jmx.JmxManageable;
-import com.akiban.server.types.AkType;
+import com.foundationdb.server.aggregation.AggregatorFactory;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.NoSuchFunctionException;
+import com.foundationdb.server.expression.ExpressionComposer;
+import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.jmx.JmxManageable;
+import com.foundationdb.server.types.AkType;
 import com.google.inject.Singleton;
 
 import javax.inject.Inject;

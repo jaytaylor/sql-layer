@@ -14,28 +14,28 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.akiban.server.t3expressions;
+package com.foundationdb.server.t3expressions;
 
-import com.akiban.server.error.NoSuchFunctionException;
-import com.akiban.server.error.WrongExpressionArityException;
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TBundleID;
-import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TCastBase;
-import com.akiban.server.types3.TCastIdentifier;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TScalar;
-import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.TStrongCasts;
-import com.akiban.server.types3.common.types.NoAttrTClass;
-import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.Constantness;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TScalarBase;
+import com.foundationdb.server.error.NoSuchFunctionException;
+import com.foundationdb.server.error.WrongExpressionArityException;
+import com.foundationdb.server.types3.LazyList;
+import com.foundationdb.server.types3.TBundleID;
+import com.foundationdb.server.types3.TCast;
+import com.foundationdb.server.types3.TCastBase;
+import com.foundationdb.server.types3.TCastIdentifier;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TExecutionContext;
+import com.foundationdb.server.types3.TScalar;
+import com.foundationdb.server.types3.TOverloadResult;
+import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.server.types3.TStrongCasts;
+import com.foundationdb.server.types3.common.types.NoAttrTClass;
+import com.foundationdb.server.types3.pvalue.PUnderlying;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueTarget;
+import com.foundationdb.server.types3.texpressions.Constantness;
+import com.foundationdb.server.types3.texpressions.TInputSetBuilder;
+import com.foundationdb.server.types3.texpressions.TScalarBase;
 import org.junit.Test;
 
 import java.util.Arrays;

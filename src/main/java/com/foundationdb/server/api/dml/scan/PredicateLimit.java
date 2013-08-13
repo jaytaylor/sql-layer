@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.api.dml.scan;
+package com.foundationdb.server.api.dml.scan;
 
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.api.dml.scan.ScanLimit;
-import com.akiban.util.ArgumentValidation;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.api.dml.scan.ScanLimit;
+import com.foundationdb.util.ArgumentValidation;
 
 public final class PredicateLimit implements ScanLimit {
     private final int rowDefId;

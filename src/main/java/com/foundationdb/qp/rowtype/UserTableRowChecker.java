@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.qp.rowtype;
+package com.foundationdb.qp.rowtype;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.row.Row;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.NotNullViolationException;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.error.NotNullViolationException;
 
 import java.util.BitSet;
 

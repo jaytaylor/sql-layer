@@ -15,19 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.tree;
+package com.foundationdb.server.service.tree;
 
 import static org.junit.Assert.assertNotNull;
 
 import java.util.Properties;
 
-import com.akiban.server.service.config.TestConfigService;
+import com.foundationdb.server.service.config.TestConfigService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.akiban.server.service.Service;
-import com.akiban.server.service.config.ConfigurationService;
+import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.config.ConfigurationService;
 
 public class TreeServiceImplTest {
 

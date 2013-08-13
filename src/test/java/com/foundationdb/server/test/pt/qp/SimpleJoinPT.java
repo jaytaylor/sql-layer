@@ -15,24 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.pt.qp;
+package com.foundationdb.server.test.pt.qp;
 
-import com.akiban.ais.model.Group;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.util.tap.Tap;
-import com.akiban.util.tap.TapReport;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.util.tap.Tap;
+import com.foundationdb.util.tap.TapReport;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
 
-import static com.akiban.qp.operator.API.*;
+import static com.foundationdb.qp.operator.API.*;
 
 @Ignore
 public class SimpleJoinPT extends QPProfilePTBase

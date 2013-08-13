@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.mt.mtutil;
+package com.foundationdb.server.test.mt.mtutil;
 
-import com.akiban.server.service.ServiceManagerImpl;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.server.service.ServiceManagerImpl;
+import com.foundationdb.server.service.session.Session;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;

@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.expression.std;
+package com.foundationdb.server.expression.std;
 
-import com.akiban.junit.ParameterizationBuilder;
-import com.akiban.junit.Parameterization;
-import com.akiban.server.expression.ExpressionComposer;
+import com.foundationdb.junit.ParameterizationBuilder;
+import com.foundationdb.junit.Parameterization;
+import com.foundationdb.server.expression.ExpressionComposer;
 import java.util.Collection;
-import com.akiban.junit.NamedParameterizedRunner.TestParameters;
+import com.foundationdb.junit.NamedParameterizedRunner.TestParameters;
 import org.junit.runner.RunWith;
-import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.types.AkType;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.types.AkType;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
-import static com.akiban.server.expression.std.ExprUtil.*;
+import static com.foundationdb.server.expression.std.ExprUtil.*;
 
 @RunWith(NamedParameterizedRunner.class)
 public class HexExpressionTest extends ComposedExpressionTestBase

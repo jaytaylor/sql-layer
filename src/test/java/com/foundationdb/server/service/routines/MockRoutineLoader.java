@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.routines;
+package com.foundationdb.server.service.routines;
 
-import com.akiban.ais.model.TableName;
+import com.foundationdb.ais.model.TableName;
 
-import com.akiban.qp.loadableplan.LoadablePlan;
-import com.akiban.server.service.session.Session;
+import com.foundationdb.qp.loadableplan.LoadablePlan;
+import com.foundationdb.server.service.session.Session;
 import java.lang.reflect.Method;
 
 /** All this does is say that every language is a script language. */

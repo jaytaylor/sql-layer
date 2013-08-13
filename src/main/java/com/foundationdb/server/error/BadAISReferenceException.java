@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.error;
+package com.foundationdb.server.error;
 
 public class BadAISReferenceException extends InvalidOperationException {
     public BadAISReferenceException (String object, String objName, String reference, String refName) {

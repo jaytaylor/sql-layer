@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.server.test.it.ITBase;
-import com.akiban.server.service.servicemanager.GuicedServiceManager;
+import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 
 import static org.junit.Assert.fail;
 

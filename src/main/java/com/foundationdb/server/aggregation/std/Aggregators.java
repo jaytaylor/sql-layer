@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.aggregation.std;
+package com.foundationdb.server.aggregation.std;
 
-import com.akiban.server.aggregation.Aggregator;
-import com.akiban.server.aggregation.AggregatorFactory;
-import com.akiban.server.service.functions.Aggregate;
-import com.akiban.server.types.AkType;
+import com.foundationdb.server.aggregation.Aggregator;
+import com.foundationdb.server.aggregation.AggregatorFactory;
+import com.foundationdb.server.service.functions.Aggregate;
+import com.foundationdb.server.types.AkType;
 
 public class Aggregators
 {

@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server;
+package com.foundationdb.server;
 
-import com.akiban.ais.model.Column;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSourceHelper;
-import com.akiban.server.types.ValueTarget;
-import com.akiban.util.ByteSource;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSourceHelper;
+import com.foundationdb.server.types.ValueTarget;
+import com.foundationdb.util.ByteSource;
 import com.persistit.Value;
 
 import java.math.BigDecimal;

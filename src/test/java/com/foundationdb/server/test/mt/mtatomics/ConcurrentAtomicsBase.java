@@ -15,24 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.mt.mtatomics;
+package com.foundationdb.server.test.mt.mtatomics;
 
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.aisb2.AISBBasedBuilder;
-import com.akiban.ais.model.aisb2.NewAISBuilder;
-import com.akiban.ais.model.aisb2.NewUserTableBuilder;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.service.dxl.DXLReadWriteLockHook;
-import com.akiban.server.service.servicemanager.GuicedServiceManager;
-import com.akiban.server.test.mt.MTBase;
-import com.akiban.server.test.mt.mtutil.TimePointsComparison;
-import com.akiban.server.test.mt.mtutil.TimedCallable;
-import com.akiban.server.test.mt.mtutil.TimedResult;
-import com.akiban.server.service.dxl.ConcurrencyAtomicsDXLService;
-import com.akiban.server.service.dxl.DXLService;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
+import com.foundationdb.ais.model.aisb2.NewAISBuilder;
+import com.foundationdb.ais.model.aisb2.NewUserTableBuilder;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.service.dxl.DXLReadWriteLockHook;
+import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
+import com.foundationdb.server.test.mt.MTBase;
+import com.foundationdb.server.test.mt.mtutil.TimePointsComparison;
+import com.foundationdb.server.test.mt.mtutil.TimedCallable;
+import com.foundationdb.server.test.mt.mtutil.TimedResult;
+import com.foundationdb.server.service.dxl.ConcurrencyAtomicsDXLService;
+import com.foundationdb.server.service.dxl.DXLService;
 
 import java.util.ArrayList;
 import java.util.Arrays;

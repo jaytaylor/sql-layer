@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.test.it.bugs.bug701614;
+package com.foundationdb.server.test.it.bugs.bug701614;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.test.it.ITBase;
-import com.akiban.util.Strings;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.util.Strings;
 import org.junit.Test;
 
 import java.io.IOException;

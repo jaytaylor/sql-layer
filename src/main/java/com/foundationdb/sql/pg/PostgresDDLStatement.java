@@ -15,22 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.pg;
+package com.foundationdb.sql.pg;
 
-import com.akiban.sql.aisddl.AISDDL;
-import com.akiban.sql.parser.DDLStatementNode;
+import com.foundationdb.sql.aisddl.AISDDL;
+import com.foundationdb.sql.parser.DDLStatementNode;
 
-import com.akiban.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryBindings;
 
-import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.Tap;
+import com.foundationdb.util.tap.InOutTap;
+import com.foundationdb.util.tap.Tap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
+import static com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 /** SQL DDL statements. */
 public class PostgresDDLStatement extends PostgresBaseStatement

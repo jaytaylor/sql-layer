@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.sql.aisddl;
+package com.foundationdb.sql.aisddl;
 
 import org.junit.After;
 import org.junit.Before;
@@ -25,13 +25,13 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.Parameter;
-import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.Types;
-import com.akiban.server.error.ErrorCode;
-import com.akiban.server.error.NoSuchRoutineException;
+import com.foundationdb.ais.model.AISBuilder;
+import com.foundationdb.ais.model.Parameter;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.Types;
+import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.error.NoSuchRoutineException;
 
 import com.ibm.icu.text.MessageFormat;
 import java.net.URL;
