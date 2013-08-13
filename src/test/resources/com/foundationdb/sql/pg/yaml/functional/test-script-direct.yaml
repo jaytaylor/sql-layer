@@ -9,7 +9,7 @@
 ---
 - Statement: >
     CREATE PROCEDURE test_direct(IN n INTEGER, OUT d INTEGER) AS $$
-      importPackage(com.akiban.direct);
+      importPackage(com.foundationdb.direct);
       var extent = Direct.context.extent;
       var obj = {};
       var i = 0;
@@ -35,7 +35,7 @@
 ---
 - Statement: >
     CREATE PROCEDURE test_all_types(OUT errors VARCHAR(256)) AS $$
-      importPackage(com.akiban.direct);
+      importPackage(com.foundationdb.direct);
       var extent = Direct.context.extent;
       var obj = {};
       var i = 0;

@@ -1,2 +1,2 @@
 - bind:
-    com.akiban.server.service.config.ConfigurationService : com.akiban.server.service.config.TestConfigService
+    com.foundationdb.server.service.config.ConfigurationService : com.foundationdb.server.service.config.TestConfigService
