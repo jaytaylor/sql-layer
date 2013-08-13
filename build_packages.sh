@@ -80,6 +80,7 @@ if [ ${platform} == "debian" ]; then
     cp -R packages-common/plugins/ ${platform}/
     debuild
 elif [ ${platform} == "redhat" ]; then
+    rm -rf ${PWD}/redhat/{akserver,rpmbuild}
     mkdir -p ${PWD}/redhat/akserver/redhat
     mkdir -p ${PWD}/redhat/rpmbuild/{BUILD,SOURCES,SRPMS,RPMS/noarch}
     tar_prefix=akserver
@@ -96,7 +97,7 @@ elif [ ${platform} == "redhat" ]; then
     popd
     gzip $tar_file
     cat ${PWD}/redhat/akiban-server.spec | \
-        sed -e -e "10,10s/_EPOCH/${epoch}/g" \
+        sed -e "10,10s/_EPOCH/${epoch}/g" \
             -e "s/_GIT_COUNT/${git_count}/g" -e "s/_GIT_HASH/${git_hash}/g" \
         > ${PWD}/redhat/akiban-server-${git_count}.spec
     rpmbuild --target=noarch --define "_topdir ${PWD}/redhat/rpmbuild" -ba ${PWD}/redhat/akiban-server-${git_count}.spec
