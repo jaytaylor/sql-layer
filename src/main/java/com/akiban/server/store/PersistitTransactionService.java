@@ -165,6 +165,11 @@ public class PersistitTransactionService implements TransactionService {
     }
 
     @Override
+    public void periodicallyCommit(Session session) {
+        // Persistit can mostly manage with a long-running transaction.
+    }
+
+    @Override
     public void addCallback(Session session, CallbackType type, Callback callback) {
         session.push(getCallbackKey(type), callback);
     }

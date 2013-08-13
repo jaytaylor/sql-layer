@@ -86,6 +86,9 @@ public interface TransactionService extends Service {
      */
     int incrementTransactionStep(Session session);
 
+    /** Commit the transaction if this is a good time. */
+    void periodicallyCommit(Session session);
+
     /** Add a callback to transaction. */
     void addCallback(Session session, CallbackType type, Callback callback);
 

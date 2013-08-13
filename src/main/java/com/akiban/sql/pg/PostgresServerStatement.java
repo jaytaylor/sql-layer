@@ -150,7 +150,7 @@ public class PostgresServerStatement implements PostgresStatement {
          */
         switch (statement.getAlterSessionType()) {
         case SET_SERVER_VARIABLE:
-            setVariable (session, statement.getVariable(), statement.getValue());
+            setVariable (server, statement.getVariable(), statement.getValue());
             sendComplete (session.getMessenger());
             break;
         case INTERRUPT_SESSION:
@@ -224,10 +224,18 @@ public class PostgresServerStatement implements PostgresStatement {
             throw new ConnectionTerminatedException(completeCurrent);
     }
 
-    protected void setVariable(PostgresServerSession server, String variable, String value) {
+    protected void setVariable(PostgresServer server, String variable, String value) {
         if (!Arrays.asList(PostgresSessionStatement.ALLOWED_CONFIGURATION).contains(variable))
             throw new UnsupportedConfigurationException (variable);
-        server.setProperty(variable, value);
+        if (value == null)
+            server.getProperties().remove(variable);
+        else
+            server.getProperties().setProperty(variable, value);
+        for (PostgresServerConnection conn : server.getConnections()) {
+            if (!conn.getProperties().containsKey(variable)) {
+                conn.setProperty(variable, null); // As though SET x TO DEFAULT.
+            }
+        }
     }
     
     protected void sendComplete (PostgresMessenger messenger) throws IOException {

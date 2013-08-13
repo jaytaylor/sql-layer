@@ -43,6 +43,7 @@ import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeLink;
+import com.akiban.server.store.FDBTransactionService.TransactionState;
 import com.akiban.server.util.ReadWriteMap;
 import com.foundationdb.FDBException;
 import com.foundationdb.KeySelector;
@@ -95,30 +96,30 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     }
 
     public Iterator<KeyValue> groupIterator(Session session, Group group) {
-        Transaction txn = txnService.getTransaction(session);
+        TransactionState txn = txnService.getTransaction(session);
         byte[] packedPrefix = packedTuple(group);
-        return txn.getRange(Range.startsWith(packedPrefix)).iterator();
+        return txn.getTransaction().getRange(Range.startsWith(packedPrefix)).iterator();
     }
 
     // TODO: Creates range for hKey and descendants, add another API to specify
     public Iterator<KeyValue> groupIterator(Session session, Group group, Key hKey) {
-        Transaction txn = txnService.getTransaction(session);
+        TransactionState txn = txnService.getTransaction(session);
         byte[] packedPrefix = packedTuple(group, hKey);
         Key after = createKey();
         hKey.copyTo(after);
         after.append(Key.AFTER);
         byte[] packedAfter = packedTuple(group, after);
-        return txn.getRange(packedPrefix, packedAfter).iterator();
+        return txn.getTransaction().getRange(packedPrefix, packedAfter).iterator();
     }
 
     public Iterator<KeyValue> indexIterator(Session session, Index index, boolean reverse) {
-        Transaction txn = txnService.getTransaction(session);
+        TransactionState txn = txnService.getTransaction(session);
         byte[] packedPrefix = packedTuple(index);
-        return txn.getRange(Range.startsWith(packedPrefix), Transaction.ROW_LIMIT_UNLIMITED, reverse).iterator();
+        return txn.getTransaction().getRange(Range.startsWith(packedPrefix), Transaction.ROW_LIMIT_UNLIMITED, reverse).iterator();
     }
 
     public Iterator<KeyValue> indexIterator(Session session, Index index, Key key, boolean inclusive, boolean reverse) {
-        Transaction txn = txnService.getTransaction(session);
+        TransactionState txn = txnService.getTransaction(session);
         byte[] packedEdge = packedTuple(index);
         byte[] packedKey = packedTuple(index, key);
 
@@ -143,7 +144,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             }
         }
 
-        return txn.getRange(begin, end, Transaction.ROW_LIMIT_UNLIMITED, reverse).iterator();
+        return txn.getTransaction().getRange(begin, end, Transaction.ROW_LIMIT_UNLIMITED, reverse).iterator();
     }
 
     @Override
@@ -199,8 +200,8 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         if (cache != null) {
             rawValue = cache.currentValue();
         } else {
-            Transaction txn = txnService.getTransaction(session);
-            byte[] byteValue = txn.get(packedTuple(sequence)).get();
+            TransactionState txn = txnService.getTransaction(session);
+            byte[] byteValue = txn.getTransaction().get(packedTuple(sequence)).get();
             if(byteValue != null) {
                 Tuple tuple = Tuple.fromBytes(byteValue);
                 rawValue = tuple.getLong(0);
@@ -213,13 +214,13 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             ReadWriteMap.wrapFair(new TreeMap<String, SequenceCache>());
 
     public long getGICount(Session session, GroupIndex index) {
-        Transaction txn = txnService.getTransaction(session);
-        return getGICountInternal(txn, index);
+        TransactionState txn = txnService.getTransaction(session);
+        return getGICountInternal(txn.getTransaction(), index);
     }
 
     public long getGICountApproximate(Session session, GroupIndex index) {
-        Transaction txn = txnService.getTransaction(session);
-        return getGICountInternal(txn.snapshot(), index);
+        TransactionState txn = txnService.getTransaction(session);
+        return getGICountInternal(txn.getTransaction().snapshot(), index);
     }
 
     public static void expandRowData(RowData rowData, KeyValue kv, boolean copyBytes) {
@@ -287,7 +288,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
 
     @Override
     protected void store(Session session, FDBStoreData storeData) {
-        Transaction txn = txnService.getTransaction(session);
+        TransactionState txn = txnService.getTransaction(session);
         byte[] packedKey = packedTuple(storeData.link, storeData.key);
         byte[] value;
         if(storeData.persistitValue != null) {
@@ -295,24 +296,24 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         } else {
             value = storeData.value;
         }
-        txn.set(packedKey, value);
+        txn.setBytes(packedKey, value);
     }
 
     @Override
     protected boolean fetch(Session session, FDBStoreData storeData) {
-        Transaction txn = txnService.getTransaction(session);
+        TransactionState txn = txnService.getTransaction(session);
         byte[] packedKey = packedTuple(storeData.link, storeData.key);
-        storeData.value = txn.get(packedKey).get();
+        storeData.value = txn.getTransaction().get(packedKey).get();
         return (storeData.value != null);
     }
 
     @Override
     protected boolean clear(Session session, FDBStoreData storeData) {
-        Transaction txn = txnService.getTransaction(session);
+        TransactionState txn = txnService.getTransaction(session);
         byte[] packed = packedTuple(storeData.link, storeData.key);
         // TODO: Remove get when clear() API changes
-        boolean existed = (txn.get(packed).get() != null);
-        txn.clear(packed);
+        boolean existed = (txn.getTransaction().get(packed).get() != null);
+        txn.getTransaction().clear(packed);
         return existed;
     }
 
@@ -336,14 +337,14 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
 
     @Override
     protected Iterator<Void> createDescendantIterator(Session session, final FDBStoreData storeData) {
-        Transaction txn = txnService.getTransaction(session);
+        TransactionState txn = txnService.getTransaction(session);
         int prevDepth = storeData.key.getDepth();
         storeData.key.append(Key.BEFORE);
         byte[] packedBegin = packedTuple(storeData.link, storeData.key);
         storeData.key.to(Key.AFTER);
         byte[] packedEnd = packedTuple(storeData.link, storeData.key);
         storeData.key.setDepth(prevDepth);
-        storeData.it = txn.getRange(packedBegin, packedEnd).iterator();
+        storeData.it = txn.getTransaction().getRange(packedBegin, packedEnd).iterator();
         return new Iterator<Void>() {
             @Override
             public boolean hasNext() {
@@ -372,8 +373,8 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
 
     @Override
     protected void sumAddGICount(Session session, FDBStoreData storeData, GroupIndex index, int count) {
-        Transaction txn = txnService.getTransaction(session);
-        txn.mutate(MutationType.ADD, packedTupleGICount(index), FDBTableStatusCache.packForAtomicOp(count));
+        TransactionState txn = txnService.getTransaction(session);
+        txn.getTransaction().mutate(MutationType.ADD, packedTupleGICount(index), FDBTableStatusCache.packForAtomicOp(count));
     }
 
     @Override
@@ -390,8 +391,8 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             keyAppender.append(fieldDef, childRowData);
         }
 
-        Transaction txn = txnService.getTransaction(session);
-        byte[] pkValue = txn.get(packedTuple(parentPKIndex, parentPkKey)).get();
+        TransactionState txn = txnService.getTransaction(session);
+        byte[] pkValue = txn.getTransaction().get(packedTuple(parentPKIndex, parentPkKey)).get();
         PersistitIndexRowBuffer indexRow = null;
         if (pkValue != null) {
             Value value = new Value((Persistit)null);
@@ -408,14 +409,14 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
                                  RowData rowData,
                                  Key hKey,
                                  PersistitIndexRowBuffer indexRow) {
-        Transaction txn = txnService.getTransaction(session);
+        TransactionState txn = txnService.getTransaction(session);
         Key indexKey = createKey();
         constructIndexRow(session, indexKey, rowData, index, hKey, indexRow, true);
         checkUniqueness(txn, index, rowData, indexKey);
 
         byte[] packedKey = packedTuple(index, indexRow.getPKey());
         byte[] packedValue = Arrays.copyOf(indexRow.getValue().getEncodedBytes(), indexRow.getValue().getEncodedSize());
-        txn.set(packedKey, packedValue);
+        txn.setBytes(packedKey, packedValue);
     }
 
     @Override
@@ -424,7 +425,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
                                   RowData rowData,
                                   Key hKey,
                                   PersistitIndexRowBuffer indexRowBuffer) {
-        Transaction txn = txnService.getTransaction(session);
+        TransactionState txn = txnService.getTransaction(session);
         Key indexKey = createKey();
         // See big note in PersistitStore#deleteIndexRow() about format.
         if(index.isUniqueAndMayContainNulls()) {
@@ -442,7 +443,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             IndexRowType indexRowType = adapter.schema().indexRowType(index);
             PersistitIndexRow indexRow = adapter.takeIndexRow(indexRowType);
             constructIndexRow(session, indexKey, rowData, index, hKey, indexRow, false);
-            for(KeyValue kv : txn.getRange(Range.startsWith(packedTuple(index, indexKey)))) {
+            for(KeyValue kv : txn.getTransaction().getRange(Range.startsWith(packedTuple(index, indexKey)))) {
                 // Key
                 byte[] keyBytes = Tuple.fromBytes(kv.getKey()).getBytes(2);
                 spareKey.setEncodedSize(keyBytes.length);
@@ -455,14 +456,14 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
                 indexRow.copyFrom(spareKey, spareValue);
                 PersistitHKey rowHKey = (PersistitHKey)indexRow.hKey();
                 if(rowHKey.key().compareTo(hKey) == 0) {
-                    txn.clear(kv.getKey());
+                    txn.getTransaction().clear(kv.getKey());
                     break;
                 }
             }
             adapter.returnIndexRow(indexRow);
         } else {
             constructIndexRow(session, indexKey, rowData, index, hKey, indexRowBuffer, false);
-            txn.clear(packedTuple(index, indexKey));
+            txn.getTransaction().clear(packedTuple(index, indexKey));
         }
     }
 
@@ -473,8 +474,8 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
 
     @Override
     public void truncateTree(Session session, TreeLink treeLink) {
-        Transaction txn = txnService.getTransaction(session);
-        txn.clearRangeStartsWith(packedTuple(treeLink));
+        TransactionState txn = txnService.getTransaction(session);
+        txn.getTransaction().clearRangeStartsWith(packedTuple(treeLink));
     }
 
     @Override
@@ -484,8 +485,8 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             if(treeLink instanceof IndexDef) {
                 Index index = ((IndexDef)treeLink).getIndex();
                 if(index.isGroupIndex()) {
-                    Transaction txn = txnService.getTransaction(session);
-                    txn.clear(packedTupleGICount((GroupIndex)index));
+                    TransactionState txn = txnService.getTransaction(session);
+                    txn.getTransaction().clear(packedTupleGICount((GroupIndex)index));
                 }
             }
         }
@@ -494,11 +495,11 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
 
     @Override
     public void truncateIndexes(Session session, Collection<? extends Index> indexes) {
-        Transaction txn = txnService.getTransaction(session);
+        TransactionState txn = txnService.getTransaction(session);
         for(Index index : indexes) {
             truncateTree(session, index.indexDef());
             if(index.isGroupIndex()) {
-                txn.set(packedTupleGICount((GroupIndex)index), FDBTableStatusCache.packForAtomicOp(0));
+                txn.setBytes(packedTupleGICount((GroupIndex)index), FDBTableStatusCache.packForAtomicOp(0));
             }
         }
     }
@@ -518,8 +519,8 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
 
     @Override
     public boolean treeExists(Session session, String schemaName, String treeName) {
-        Transaction txn = txnService.getTransaction(session);
-        return txn.getRange(Range.startsWith(packedTuple(treeName)), 1).iterator().hasNext();
+        TransactionState txn = txnService.getTransaction(session);
+        return txn.getTransaction().getRange(Range.startsWith(packedTuple(treeName)), 1).iterator().hasNext();
     }
 
     @Override
@@ -559,10 +560,10 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
 
     @Override
     public void traverse(Session session, Group group, TreeRecordVisitor visitor) {
-        Transaction txn = txnService.getTransaction(session);
+        TransactionState txn = txnService.getTransaction(session);
         visitor.initialize(session, this);
         Key key = createKey();
-        for(KeyValue kv : txn.getRange(Range.startsWith(packedTuple(group)))) {
+        for(KeyValue kv : txn.getTransaction().getRange(Range.startsWith(packedTuple(group)))) {
             // Key
             key.clear();
             byte[] keyBytes = Tuple.fromBytes(kv.getKey()).getBytes(2);
@@ -580,8 +581,8 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     public <V extends IndexVisitor<Key, Value>> V traverse(Session session, Index index, V visitor) {
         Key key = createKey();
         Value value = new Value((Persistit)null);
-        Transaction txn = txnService.getTransaction(session);
-        Iterator<KeyValue> it = txn.getRange(Range.startsWith(packedTuple(index))).iterator();
+        TransactionState txn = txnService.getTransaction(session);
+        Iterator<KeyValue> it = txn.getTransaction().getRange(Range.startsWith(packedTuple(index))).iterator();
         while(it.hasNext()) {
             KeyValue kv = it.next();
 
@@ -629,7 +630,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         indexRow.close(session, this, forInsert);
     }
 
-    private void checkUniqueness(Transaction txn, Index index, RowData rowData, Key key) {
+    private void checkUniqueness(TransactionState txn, Index index, RowData rowData, Key key) {
         if(index.isUnique() && !hasNullIndexSegments(rowData, index)) {
             int segmentCount = index.indexDef().getIndexKeySegmentCount();
             // An index that isUniqueAndMayContainNulls has the extra null-separating field.
@@ -643,9 +644,9 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         }
     }
 
-    private boolean keyExistsInIndex(Transaction txn, Index index, Key key) {
+    private boolean keyExistsInIndex(TransactionState txn, Index index, Key key) {
         assert index.isUnique() : index;
-        return txn.get(packedTuple(index, key)).get() != null;
+        return txn.getTransaction().get(packedTuple(index, key)).get() != null;
     }
 
 

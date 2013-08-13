@@ -17,6 +17,7 @@
 
 package com.akiban.server.store;
 
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.util.MultipleCauseException;
@@ -24,29 +25,74 @@ import com.foundationdb.Transaction;
 import com.foundationdb.async.Function;
 import com.google.inject.Inject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Deque;
 
 import static com.akiban.server.service.session.Session.Key;
 import static com.akiban.server.service.session.Session.StackKey;
 
 public class FDBTransactionService implements TransactionService {
-    private static final Key<Transaction> TXN_KEY = Key.named("TXN_KEY");
+    private static final Logger LOG = LoggerFactory.getLogger(FDBTransactionService.class);
+
+    private static final Key<TransactionState> TXN_KEY = Key.named("TXN_KEY");
     private static final Key<Boolean> ROLLBACK_KEY = Key.named("TXN_ROLLBACK");
     private static final StackKey<Callback> PRE_COMMIT_KEY = StackKey.stackNamed("TXN_PRE_COMMIT");
     private static final StackKey<Callback> AFTER_END_KEY = StackKey.stackNamed("TXN_AFTER_END");
     private static final StackKey<Callback> AFTER_COMMIT_KEY = StackKey.stackNamed("TXN_AFTER_COMMIT");
     private static final StackKey<Callback> AFTER_ROLLBACK_KEY = StackKey .stackNamed("TXN_AFTER_ROLLBACK");
+    private static final String CONFIG_COMMIT_AFTER_MILLIS = "akserver.fdb.periodicallCommit.afterMillis";
+    private static final String CONFIG_COMMIT_AFTER_BYTES = "akserver.fdb.periodicallCommit.afterBytes";
 
     private final FDBHolder fdbHolder;
-
+    private final ConfigurationService configService;
+    private static long commitAfterMillis, commitAfterBytes;
 
     @Inject
-    public FDBTransactionService(FDBHolder fdbHolder) {
+    public FDBTransactionService(FDBHolder fdbHolder,
+                                 ConfigurationService configService) {
         this.fdbHolder = fdbHolder;
+        this.configService = configService;
     }
 
-    public Transaction getTransaction(Session session) {
-        Transaction txn = getTransactionInternal(session);
+    public static class TransactionState {
+        final Transaction transaction;
+        long startTime;
+        long bytesSet;
+
+        public TransactionState(Transaction transaction) {
+            this.transaction = transaction;
+            reset();
+        }
+
+        public Transaction getTransaction() {
+            return transaction;
+        }
+
+        public void setBytes(byte[] key, byte[] value) {
+            transaction.set(key, value);
+            bytesSet += value.length;
+        }
+
+        public void reset() {
+            this.startTime = System.currentTimeMillis();
+            this.bytesSet = 0;
+        }
+
+        public boolean timeToCommit() {
+            long dt = System.currentTimeMillis() - startTime;
+            if ((dt > commitAfterMillis) ||
+                (bytesSet > commitAfterBytes)) {
+                LOG.debug("Commit after {} ms. / {} bytes", dt, bytesSet);
+                return true;
+            }
+            return false;
+        }
+    }
+
+    public TransactionState getTransaction(Session session) {
+        TransactionState txn = getTransactionInternal(session);
         requireActive(txn);
         return txn;
     }
@@ -62,6 +108,8 @@ public class FDBTransactionService implements TransactionService {
 
     @Override
     public void start() {
+        commitAfterMillis = Long.parseLong(configService.getProperty(CONFIG_COMMIT_AFTER_MILLIS));
+        commitAfterBytes = Long.parseLong(configService.getProperty(CONFIG_COMMIT_AFTER_BYTES));
     }
 
     @Override
@@ -80,7 +128,7 @@ public class FDBTransactionService implements TransactionService {
 
     @Override
     public boolean isTransactionActive(Session session) {
-        Transaction txn = getTransactionInternal(session);
+        TransactionState txn = getTransactionInternal(session);
         return (txn != null);
     }
 
@@ -91,16 +139,16 @@ public class FDBTransactionService implements TransactionService {
 
     @Override
     public long getTransactionStartTimestamp(Session session) {
-        Transaction txn = getTransactionInternal(session);
+        TransactionState txn = getTransactionInternal(session);
         requireActive(txn);
-        return txn.getReadVersion().get();
+        return txn.getTransaction().getReadVersion().get();
     }
 
     @Override
     public void beginTransaction(Session session) {
-        Transaction txn = getTransactionInternal(session);
+        TransactionState txn = getTransactionInternal(session);
         requireInactive(txn); // No nesting
-        txn = fdbHolder.getDatabase().createTransaction();
+        txn = new TransactionState(fdbHolder.getDatabase().createTransaction());
         session.put(TXN_KEY, txn);
     }
 
@@ -139,19 +187,19 @@ public class FDBTransactionService implements TransactionService {
     }
 
     protected boolean commitTransactionInternal(Session session, boolean retry) {
-        Transaction txn = getTransactionInternal(session);
+        TransactionState txn = getTransactionInternal(session);
         requireActive(txn);
         RuntimeException re = null;
         try {
-            long startTime = txn.getReadVersion().get();
+            long startTime = txn.getTransaction().getReadVersion().get();
             runCallbacks(session, PRE_COMMIT_KEY, startTime, null);
-            txn.commit().get();
-            long commitTime = txn.getCommittedVersion();
+            txn.getTransaction().commit().get();
+            long commitTime = txn.getTransaction().getCommittedVersion();
             runCallbacks(session, AFTER_COMMIT_KEY, commitTime, null);
         } catch(RuntimeException e1) {
             if (retry) {
                 try {
-                    txn.onError(e1).get();
+                    txn.getTransaction().onError(e1).get();
                     // Getting here means retry.
                     clearStack(session, AFTER_COMMIT_KEY);
                     clearStack(session, AFTER_ROLLBACK_KEY);
@@ -173,7 +221,7 @@ public class FDBTransactionService implements TransactionService {
 
     @Override
     public void rollbackTransaction(Session session) {
-        Transaction txn = getTransactionInternal(session);
+        TransactionState txn = getTransactionInternal(session);
         requireActive(txn);
         RuntimeException re = null;
         try {
@@ -187,7 +235,7 @@ public class FDBTransactionService implements TransactionService {
 
     @Override
     public void rollbackTransactionIfOpen(Session session) {
-        Transaction txn = getTransactionInternal(session);
+        TransactionState txn = getTransactionInternal(session);
         if(txn != null) {
             rollbackTransaction(session);
         }
@@ -209,6 +257,23 @@ public class FDBTransactionService implements TransactionService {
     public int incrementTransactionStep(Session session) {
         // TODO
         return 0;
+    }
+
+
+    @Override
+    public void periodicallyCommit(Session session) {
+        TransactionState txn = getTransactionInternal(session);
+        requireActive(txn);
+        if (txn.timeToCommit()) {
+            // TODO: Better to leave callbacks until user-initiated commit?
+            long startTime = txn.getTransaction().getReadVersion().get();
+            runCallbacks(session, PRE_COMMIT_KEY, startTime, null);
+            txn.getTransaction().commit().get();
+            long commitTime = txn.getTransaction().getCommittedVersion();
+            runCallbacks(session, AFTER_COMMIT_KEY, commitTime, null);
+            txn.getTransaction().reset();
+            txn.reset();
+        }
     }
 
     @Override
@@ -237,30 +302,30 @@ public class FDBTransactionService implements TransactionService {
     // Helpers
     //
 
-    private Transaction getTransactionInternal(Session session) {
+    private TransactionState getTransactionInternal(Session session) {
         return session.get(TXN_KEY);
     }
 
-    private void requireInactive(Transaction txn) {
+    private void requireInactive(TransactionState txn) {
         if(txn != null) {
             throw new IllegalStateException("Transaction already began");
         }
     }
 
-    private void requireActive(Transaction txn) {
+    private void requireActive(TransactionState txn) {
         if(txn == null) {
             throw new IllegalStateException("No transaction open");
         }
     }
 
-    private void end(Session session, Transaction txn, RuntimeException cause) {
+    private void end(Session session, TransactionState txn, RuntimeException cause) {
         RuntimeException re = cause;
         // if txn != null, Transaction gets aborted. Abnormal end, though, so no calling of rollback hooks.
         try {
             session.remove(TXN_KEY);
             // TODO: Keep and reset() instead?
             if(txn != null) {
-                txn.dispose();
+                txn.getTransaction().dispose();
             }
         } catch(RuntimeException e) {
             re = MultipleCauseException.combine(re, e);

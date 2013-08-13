@@ -60,6 +60,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
         new HashMap<>();
     protected ServerTransaction transaction;
     protected boolean transactionDefaultReadOnly = false;
+    protected boolean transactionPeriodicallyCommit = false;
     protected ServerSessionMonitor sessionMonitor;
 
     protected Long queryTimeoutMilli = null;
@@ -123,6 +124,12 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             else
                 queryTimeoutMilli = (long)(Double.parseDouble(value) * 1000);
             return true;
+        }
+        if ("transactionPeriodicallyCommit".equals(key)) {
+            boolean periodicallyCommit = (value != null) && Boolean.parseBoolean(value);
+            transactionPeriodicallyCommit = periodicallyCommit;
+            if (transaction != null)
+                transaction.setPeriodicallyCommit(periodicallyCommit);
         }
         return false;
     }
@@ -210,7 +217,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     public void beginTransaction() {
         if (transaction != null)
             throw new TransactionInProgressException();
-        transaction = new ServerTransaction(this, transactionDefaultReadOnly);
+        transaction = new ServerTransaction(this, transactionDefaultReadOnly, transactionPeriodicallyCommit);
     }
 
     @Override
@@ -247,6 +254,11 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     @Override
     public void setTransactionDefaultReadOnly(boolean readOnly) {
         this.transactionDefaultReadOnly = readOnly;
+    }
+
+    @Override
+    public void setTransactionPeriodicallyCommit(boolean periodicallyCommit) {
+        this.transactionPeriodicallyCommit = periodicallyCommit;
     }
 
     @Override
@@ -331,14 +343,14 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
                 throw new NoTransactionInProgressException();
             case READ:
             case NEW:
-                localTransaction = new ServerTransaction(this, true);
+                localTransaction = new ServerTransaction(this, true, false);
                 break;
             case WRITE:
             case NEW_WRITE:
             case WRITE_STEP_ISOLATED:
                 if (transactionDefaultReadOnly)
                     throw new TransactionReadOnlyException();
-                localTransaction = new ServerTransaction(this, false);
+                localTransaction = new ServerTransaction(this, false, false);
                 localTransaction.beforeUpdate(true);
                 break;
             }
@@ -369,17 +381,18 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             else
                 localTransaction.abort();
         }
-        else {
+        else if (transaction != null) {
             // Make changes visible in open global transaction.
             ServerStatement.TransactionMode transactionMode = stmt.getTransactionMode();
             switch (transactionMode) {
             case REQUIRED_WRITE:
             case WRITE:
             case WRITE_STEP_ISOLATED:
-                if (transaction != null)
-                    transaction.afterUpdate(transactionMode == ServerStatement.TransactionMode.WRITE_STEP_ISOLATED);
+                transaction.afterUpdate(transactionMode == ServerStatement.TransactionMode.WRITE_STEP_ISOLATED);
                 break;
             }
+            // Give periodic commit a chance if enabled.
+            transaction.checkPeriodicallyCommit();
         }
     }
 
