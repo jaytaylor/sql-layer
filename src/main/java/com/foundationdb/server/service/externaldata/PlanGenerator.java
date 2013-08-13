@@ -49,7 +49,7 @@ public class PlanGenerator
         Operator plan = scanPlans.get(table);
         if (plan != null) return plan;
 
-        plan =  com.akiban.sql.optimizer.rule.PlanGenerator.generateScanPlan(schema.ais(), table);
+        plan =  com.foundationdb.sql.optimizer.rule.PlanGenerator.generateScanPlan(schema.ais(), table);
         
         scanPlans.put(table, plan);
         return plan;
@@ -59,7 +59,7 @@ public class PlanGenerator
         Operator plan = branchPlans.get(table);
         if (plan != null) return plan;
         
-        plan =  com.akiban.sql.optimizer.rule.PlanGenerator.generateBranchPlan(schema.ais(), table);
+        plan =  com.foundationdb.sql.optimizer.rule.PlanGenerator.generateBranchPlan(schema.ais(), table);
 
         branchPlans.put(table, plan);
         return plan;
@@ -67,14 +67,14 @@ public class PlanGenerator
 
     public Operator generateBranchPlan(UserTable table, Operator scan, RowType scanType) {
         // No caching possible.
-        return com.akiban.sql.optimizer.rule.PlanGenerator.generateBranchPlan(table, scan, scanType);
+        return com.foundationdb.sql.optimizer.rule.PlanGenerator.generateBranchPlan(table, scan, scanType);
     }
     
     public Operator generateAncestorPlan (UserTable table) {
         Operator plan = ancestorPlans.get(table);
         if (plan != null) return plan;
         
-        plan = com.akiban.sql.optimizer.rule.PlanGenerator.generateAncestorPlan(schema.ais(), table);
+        plan = com.foundationdb.sql.optimizer.rule.PlanGenerator.generateAncestorPlan(schema.ais(), table);
         ancestorPlans.put(table, plan);
         return plan;
     }

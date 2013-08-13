@@ -572,7 +572,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         Key key = hkey.key();
         key.setEncodedSize(rowBytes.length);
         System.arraycopy(rowBytes, 0, key.getEncodedBytes(), 0, rowBytes.length);
-        return new HKeyRow(hKeyRowType, hkey, new HKeyCache<com.akiban.qp.row.HKey>(store));
+        return new HKeyRow(hKeyRowType, hkey, new HKeyCache<>(store));
     }
 
     public HKeyBytesStream getChangedRows(Session session) {

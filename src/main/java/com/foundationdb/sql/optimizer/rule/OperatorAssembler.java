@@ -457,7 +457,7 @@ public class OperatorAssembler extends BaseRule
             @Override
             public Expression sequenceGenerator (Sequence sequence, Column column, Expression expression) {
 
-                Expression seqExpr = new com.akiban.server.expression.std.CastExpression (column.getType().akType(),
+                Expression seqExpr = new com.foundationdb.server.expression.std.CastExpression (column.getType().akType(),
                         new SequenceNextValueExpression(AkType.LONG, 
                         new LiteralExpression (AkType.VARCHAR, sequence.getSequenceName().getSchemaName()),
                         new LiteralExpression (AkType.VARCHAR, sequence.getSequenceName().getTableName())));
@@ -819,7 +819,7 @@ public class OperatorAssembler extends BaseRule
                     row[pos] = inserts.get(i);
 
                     if (column.getType().akType() != row[pos].valueType() ) {
-                        row[pos] = new com.akiban.server.expression.std.CastExpression 
+                        row[pos] = new com.foundationdb.server.expression.std.CastExpression
                                 (column.getType().akType(), row[pos]);
                     }
                 }
@@ -841,7 +841,7 @@ public class OperatorAssembler extends BaseRule
                             defval = new LiteralExpression(AkType.NULL, null);
                         }
                         if (defval.valueType() != column.getType().akType()) {
-                            defval = new com.akiban.server.expression.std.CastExpression(column.getType().akType(), defval);
+                            defval = new com.foundationdb.server.expression.std.CastExpression(column.getType().akType(), defval);
                         }
                         row[i] = defval;
                     }

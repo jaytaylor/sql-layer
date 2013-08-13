@@ -324,7 +324,7 @@ public class EntityToAIS implements EntityVisitor {
             }
         }
 
-        for (Map.Entry<? extends com.akiban.server.types3.Attribute, ? extends Serialization> t3Attr
+        for (Map.Entry<? extends com.foundationdb.server.types3.Attribute, ? extends Serialization> t3Attr
                 : type.tClass.attributeSerializations().entrySet())
         {
             Serialization serialization = t3Attr.getValue();
@@ -369,7 +369,7 @@ public class EntityToAIS implements EntityVisitor {
         return false;
     }
 
-    private static Long maybeLong(Map<String, Object> props, com.akiban.server.types3.Attribute attribute) {
+    private static Long maybeLong(Map<String, Object> props, com.foundationdb.server.types3.Attribute attribute) {
         Object o = null;
         if (props.containsKey(attribute.name().toUpperCase())) {
             o = props.remove(attribute.name());
@@ -382,7 +382,7 @@ public class EntityToAIS implements EntityVisitor {
             return ((Number)o).longValue();
     }
 
-    private static String maybeString(Map<String, Object> props, com.akiban.server.types3.Attribute attribute) {
+    private static String maybeString(Map<String, Object> props, com.foundationdb.server.types3.Attribute attribute) {
         Object o = null;
         if (props.containsKey(attribute.name().toUpperCase()))
             o = props.remove(attribute.name());

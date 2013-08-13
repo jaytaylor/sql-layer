@@ -22,7 +22,7 @@ import com.foundationdb.ais.model.TableName;
 public class DDLHelper {
     private DDLHelper() {}
 
-    public static TableName convertName(String defaultSchema, com.akiban.sql.parser.TableName parserName) {
+    public static TableName convertName(String defaultSchema, com.foundationdb.sql.parser.TableName parserName) {
         final String schema = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchema;
         return new TableName(schema, parserName.getTableName());
     }

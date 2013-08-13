@@ -309,7 +309,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     groupScan_Default(origTable.getGroup()),
                     Collections.singleton(oldSourceType)
             );
-            com.akiban.qp.operator.Cursor cursor = API.cursor(plan, queryContext, queryBindings);
+            com.foundationdb.qp.operator.Cursor cursor = API.cursor(plan, queryContext, queryBindings);
 
             cursor.openTopLevel();
             try {
@@ -487,7 +487,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         for(UserTable root : roots) {
             Operator plan = groupScan_Default(root.getGroup());
-            com.akiban.qp.operator.Cursor cursor = API.cursor(plan, queryContext, queryBindings);
+            com.foundationdb.qp.operator.Cursor cursor = API.cursor(plan, queryContext, queryBindings);
             cursor.openTopLevel();
             try {
                 Row oldRow;
@@ -786,7 +786,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         List<Integer> tableIDs = new ArrayList<>();
         txnService.beginTransaction(session);
         try {
-            final com.akiban.ais.model.Schema schema = getAIS(session).getSchema(schemaName);
+            final com.foundationdb.ais.model.Schema schema = getAIS(session).getSchema(schemaName);
             if(schema != null) {
                 for(Table table : schema.getUserTables().values()) {
                     tableIDs.add(table.getTableId());
@@ -808,7 +808,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     private void dropSchemaInternal(Session session, String schemaName) {
-        final com.akiban.ais.model.Schema schema = getAIS(session).getSchema(schemaName);
+        final com.foundationdb.ais.model.Schema schema = getAIS(session).getSchema(schemaName);
         if (schema == null)
             return; // NOT throw new NoSuchSchemaException(schemaName); adapter does it.
 
@@ -895,7 +895,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     private void addView(View view, Collection<View> into, Collection<View> seen, 
-                         com.akiban.ais.model.Schema schema, String schemaName) {
+                         com.foundationdb.ais.model.Schema schema, String schemaName) {
         if (seen.add(view)) {
             for (TableName reference : view.getTableReferences()) {
                 if (!reference.getSchemaName().equals(schemaName)) {

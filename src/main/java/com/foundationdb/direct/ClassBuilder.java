@@ -43,7 +43,7 @@ import com.sun.jersey.core.impl.provider.entity.Inflector;
 public abstract class ClassBuilder {
     final static String PACKAGE = "com.akiban.direct.entity";
     final static String[] NONE = {};
-    final static String[] IMPORTS = { java.util.Date.class.getName(), com.akiban.direct.DirectIterable.class.getName() };
+    final static String[] IMPORTS = { java.util.Date.class.getName(), com.foundationdb.direct.DirectIterable.class.getName() };
     final static String[] UNSUPPORTED = { "// TODO", "throw new UnsupportedOperationException()" };
 
     private final static Inflector INFLECTOR = Inflector.getInstance();

@@ -97,7 +97,7 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public HKey newHKey(com.akiban.ais.model.HKey hKeyMetadata)
+    public HKey newHKey(com.foundationdb.ais.model.HKey hKeyMetadata)
     {
         return new PersistitHKey(store.createKey(), hKeyMetadata);
     }

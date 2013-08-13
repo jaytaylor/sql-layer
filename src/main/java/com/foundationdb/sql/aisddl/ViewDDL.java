@@ -53,7 +53,7 @@ public class ViewDDL
                                   CreateViewNode createView,
                                   AISBinderContext binderContext,
                                   QueryContext context) {
-        com.akiban.sql.parser.TableName parserName = createView.getObjectName();
+        com.foundationdb.sql.parser.TableName parserName = createView.getObjectName();
         String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
         String viewName = parserName.getTableName();
         ExistenceCheck condition = createView.getExistenceCheck();
@@ -98,7 +98,7 @@ public class ViewDDL
                                  DropViewNode dropView,
                                  AISBinderContext binderContext,
                                  QueryContext context) {
-        com.akiban.sql.parser.TableName parserName = dropView.getObjectName();
+        com.foundationdb.sql.parser.TableName parserName = dropView.getObjectName();
         String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
         TableName viewName = TableName.create(schemaName, parserName.getTableName());
         ExistenceCheck existenceCheck = dropView.getExistenceCheck();

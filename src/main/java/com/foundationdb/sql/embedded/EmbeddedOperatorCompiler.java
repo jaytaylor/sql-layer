@@ -160,7 +160,7 @@ public class EmbeddedOperatorCompiler extends ServerOperatorCompiler
                     nodeFactory.getNode(NodeTypes.COLUMN_REFERENCE,
                                         columnName, tableName,
                                         parserContext);
-                com.akiban.sql.parser.ResultColumn resultColumn = (com.akiban.sql.parser.ResultColumn)
+                com.foundationdb.sql.parser.ResultColumn resultColumn = (com.foundationdb.sql.parser.ResultColumn)
                     nodeFactory.getNode(NodeTypes.RESULT_COLUMN,
                                         columnName, columnRef,
                                         parserContext);

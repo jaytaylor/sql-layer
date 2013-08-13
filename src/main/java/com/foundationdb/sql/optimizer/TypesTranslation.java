@@ -104,7 +104,7 @@ public final class TypesTranslation {
         }
 
         String name = descriptor.getFullSQLTypeName();
-        for (com.akiban.ais.model.Type aisType : Types.types()) {
+        for (com.foundationdb.ais.model.Type aisType : Types.types()) {
             if (aisType.name().equalsIgnoreCase(name)) {
                 return aisType.akType();
             }
@@ -185,7 +185,7 @@ public final class TypesTranslation {
             {
                 AkType akType = null;
                 String name = sqlType.getFullSQLTypeName();
-                for (com.akiban.ais.model.Type aisType : Types.types()) {
+                for (com.foundationdb.ais.model.Type aisType : Types.types()) {
                     if (aisType.name().equalsIgnoreCase(name)) {
                         akType = aisType.akType();
                         break;

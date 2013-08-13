@@ -60,7 +60,7 @@ public abstract class StoreAdapter implements KeyCreator
                                              boolean usePValues,
                                              boolean openAllSubCursors);
 
-    public abstract <HKEY extends com.akiban.qp.row.HKey> HKEY newHKey(HKey hKeyMetadata);
+    public abstract <HKEY extends com.foundationdb.qp.row.HKey> HKEY newHKey(HKey hKeyMetadata);
 
     public final Schema schema()
     {

@@ -145,7 +145,7 @@ public class TableDDL
         if (createTable.getQueryExpression() != null)
             throw new UnsupportedCreateSelectException();
 
-        com.akiban.sql.parser.TableName parserName = createTable.getObjectName();
+        com.foundationdb.sql.parser.TableName parserName = createTable.getObjectName();
         String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
         String tableName = parserName.getTableName();
         ExistenceCheck condition = createTable.getExistenceCheck();

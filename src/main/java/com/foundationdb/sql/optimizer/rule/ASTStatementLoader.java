@@ -458,9 +458,9 @@ public class ASTStatementLoader extends BaseRule
                 }
                 result = new TableSource(table, required, name);
             }
-            else if (fromTable instanceof com.akiban.sql.parser.JoinNode) {
-                com.akiban.sql.parser.JoinNode joinNode = 
-                    (com.akiban.sql.parser.JoinNode)fromTable;
+            else if (fromTable instanceof com.foundationdb.sql.parser.JoinNode) {
+                com.foundationdb.sql.parser.JoinNode joinNode =
+                    (com.foundationdb.sql.parser.JoinNode)fromTable;
                 JoinType joinType;
                 switch (joinNode.getNodeType()) {
                 case NodeTypes.JOIN_NODE:

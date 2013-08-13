@@ -142,7 +142,7 @@ public class PersistitHKey implements HKey
         hKey.copyTo(target);
     }
 
-    public PersistitHKey(Key key, com.akiban.ais.model.HKey hKeyMetadata)
+    public PersistitHKey(Key key, com.foundationdb.ais.model.HKey hKeyMetadata)
     {
         this.hKeyMetadata = hKeyMetadata;
         this.hKey = key;
@@ -201,7 +201,7 @@ public class PersistitHKey implements HKey
 
     // Object state
 
-    private final com.akiban.ais.model.HKey hKeyMetadata;
+    private final com.foundationdb.ais.model.HKey hKeyMetadata;
     private final Key hKey;
     private final int hKeySegments;
     private int originalHKeySize;

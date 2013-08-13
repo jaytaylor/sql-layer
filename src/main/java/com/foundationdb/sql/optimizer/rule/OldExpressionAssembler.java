@@ -101,7 +101,7 @@ public class OldExpressionAssembler extends ExpressionAssembler<Expression>
             if (id.isIntervalTypeId())
                 expr = new IntervalCastExpression(expr, id);
             else 
-                expr = new com.akiban.server.expression.std.CastExpression(toType, expr);
+                expr = new com.foundationdb.server.expression.std.CastExpression(toType, expr);
         }
         
         switch (toType) {
@@ -114,7 +114,7 @@ public class OldExpressionAssembler extends ExpressionAssembler<Expression>
                     ((fromSQL == null) ||
                      (toSQL.getMaximumWidth() < fromSQL.getMaximumWidth())))
                     // Cast to shorter VARCHAR.
-                    expr = new com.akiban.server.expression.std.TruncateStringExpression(toSQL.getMaximumWidth(), expr);
+                    expr = new com.foundationdb.server.expression.std.TruncateStringExpression(toSQL.getMaximumWidth(), expr);
             }
             break;
         case DECIMAL:
@@ -123,7 +123,7 @@ public class OldExpressionAssembler extends ExpressionAssembler<Expression>
                 DataTypeDescriptor toSQL = castExpression.getSQLtype();
                 if ((toSQL != null) && !toSQL.equals(fromSQL))
                     // Cast to DECIMAL scale.
-                    expr = new com.akiban.server.expression.std.ScaleDecimalExpression(toSQL.getPrecision(), toSQL.getScale(), expr);
+                    expr = new com.foundationdb.server.expression.std.ScaleDecimalExpression(toSQL.getPrecision(), toSQL.getScale(), expr);
             }
             break;
         }

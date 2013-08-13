@@ -149,7 +149,7 @@ class HKeyUnion_Ordered extends Operator
         this.advanceLeftOnMatch = leftOrderingFields >= rightOrderingFields;
         this.advanceRightOnMatch = rightOrderingFields >= leftOrderingFields;
         this.outputHKeyTableRowType = outputHKeyTableRowType;
-        com.akiban.ais.model.HKey outputHKeyDefinition = outputHKeyTableRowType.userTable().hKey();
+        com.foundationdb.ais.model.HKey outputHKeyDefinition = outputHKeyTableRowType.userTable().hKey();
         this.outputHKeyRowType = outputHKeyTableRowType.schema().newHKeyRowType(outputHKeyDefinition);
         this.outputHKeySegments = outputHKeyDefinition.segments().size();
         // Setup for row comparisons

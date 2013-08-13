@@ -160,7 +160,7 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
         }
 
         @Override
-        public void jump(Row row, com.akiban.server.api.dml.ColumnSelector columnSelector) {
+        public void jump(Row row, com.foundationdb.server.api.dml.ColumnSelector columnSelector) {
             throw new UnsupportedOperationException();
         }
 
