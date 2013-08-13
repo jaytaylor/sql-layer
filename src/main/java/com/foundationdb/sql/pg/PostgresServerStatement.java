@@ -251,7 +251,7 @@ public class PostgresServerStatement implements PostgresStatement {
             public void run() {
                 try {
                     MBeanServer jmxServer = ManagementFactory.getPlatformMBeanServer();
-                    jmxServer.invoke(new ObjectName ("com.akiban:type=SHUTDOWN"), "shutdown", new Object[0], new String[0]);
+                    jmxServer.invoke(new ObjectName ("com.foundationdb:type=SHUTDOWN"), "shutdown", new Object[0], new String[0]);
                 }
                 catch (Exception ex) {
                     LOG.error("Shutdown failed", ex);

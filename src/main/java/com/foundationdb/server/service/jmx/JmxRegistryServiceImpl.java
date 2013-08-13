@@ -31,7 +31,7 @@ import javax.management.ObjectName;
 import com.foundationdb.server.service.Service;
 
 public class JmxRegistryServiceImpl implements JmxRegistryService, JmxManageable, Service {
-    private static final String FORMATTER = "com.akiban:type=%s";
+    private static final String FORMATTER = "com.foundationdb:type=%s";
 
     private boolean started = false;
     private final Map<JmxManageable,ObjectName> serviceToName = new HashMap<>();

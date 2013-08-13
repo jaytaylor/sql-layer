@@ -154,7 +154,7 @@ import org.yaml.snakeyaml.nodes.Tag;
      each output row
    - The warning message is optional
    
-   - JMX: <objectName>   (i.e com.akiban:type=IndexStatistics)
+   - JMX: <objectName>   (i.e com.foundationdb:type=IndexStatistics)
    ** Only one allowed of the following three (3) per command set
    - set: <set method>
    - method: <method>

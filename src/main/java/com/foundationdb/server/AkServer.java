@@ -180,7 +180,7 @@ public class AkServer implements Service, JmxManageable, AkServerInterface
     }
 
     private static class ShutdownMXBeanImpl implements ShutdownMXBean {
-        private static final String BEAN_NAME = "com.akiban:type=SHUTDOWN";
+        private static final String BEAN_NAME = "com.foundationdb:type=SHUTDOWN";
         private final ServiceManager sm;
 
         public ShutdownMXBeanImpl(ServiceManager sm) {

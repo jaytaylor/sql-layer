@@ -65,7 +65,7 @@ public class JMXCancelationIT extends PostgresServerITBase
 
             Integer[] sessions = (Integer[])
                 jmx.makeBeanCall(SERVER_ADDRESS, SERVER_JMX_PORT,
-                                 "com.akiban:type=PostgresServer",
+                                 "com.foundationdb:type=PostgresServer",
                                  "CurrentSessions", null, "get");
             List<Integer> before = Arrays.asList(sessions);
 
@@ -76,7 +76,7 @@ public class JMXCancelationIT extends PostgresServerITBase
             // Connection is open, so (unique) session should exist.
             sessions = (Integer[])
                 jmx.makeBeanCall(SERVER_ADDRESS, SERVER_JMX_PORT,
-                                 "com.akiban:type=PostgresServer",
+                                 "com.foundationdb:type=PostgresServer",
                                  "CurrentSessions", null, "get");
             List<Integer> after = Arrays.asList(sessions);
             after = new ArrayList<>(after);
@@ -89,7 +89,7 @@ public class JMXCancelationIT extends PostgresServerITBase
             while (true) {
                 String sql = (String)
                     jmx.makeBeanCall(SERVER_ADDRESS, SERVER_JMX_PORT,
-                                     "com.akiban:type=PostgresServer",
+                                     "com.foundationdb:type=PostgresServer",
                                      "getSqlString", new Object[] { session }, "method");
                 if (sql != null) 
                     break;
@@ -97,7 +97,7 @@ public class JMXCancelationIT extends PostgresServerITBase
             }
 
             jmx.makeBeanCall(SERVER_ADDRESS, SERVER_JMX_PORT,
-                             "com.akiban:type=PostgresServer",
+                             "com.foundationdb:type=PostgresServer",
                              method, new Object[] { session }, "method");
 
             queryThread.join();

@@ -47,7 +47,7 @@ public class JMXInterpreterIT extends PostgresServerYamlITBase {
             ObjectName mxbeanName = null;
             try {
                 mxbeanName = new ObjectName(
-                        "com.akiban:type=IndexStatistics");
+                        "com.foundationdb:type=IndexStatistics");
             } catch (MalformedObjectNameException e1) {
                 e1.printStackTrace();
                 Assert.fail(e1.getMessage());
@@ -84,7 +84,7 @@ public class JMXInterpreterIT extends PostgresServerYamlITBase {
             Object data = conn.makeBeanCall( 
                     SERVER_ADDRESS, 
                     SERVER_JMX_PORT, 
-                    "com.akiban:type=IndexStatistics", 
+                    "com.foundationdb:type=IndexStatistics", 
                     "dumpIndexStatisticsToString", 
                     parameters, "method");
             System.out.println(""+data);

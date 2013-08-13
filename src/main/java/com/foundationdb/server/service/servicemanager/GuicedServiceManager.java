@@ -657,7 +657,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         @Override
         public ObjectName register(JmxManageable service) {
             try {
-                return new ObjectName("com.akiban:type=DummyPlaceholder" + counter.incrementAndGet());
+                return new ObjectName("com.foundationdb:type=DummyPlaceholder" + counter.incrementAndGet());
             } catch (MalformedObjectNameException e) {
                 throw new RuntimeException(e);
             }

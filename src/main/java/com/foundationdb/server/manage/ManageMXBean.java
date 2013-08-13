@@ -19,7 +19,7 @@ package com.foundationdb.server.manage;
 
 @SuppressWarnings("unused") // used via JMX
 public interface ManageMXBean {
-    static final String MANAGE_BEAN_NAME = "com.akiban:type=Manage";
+    static final String MANAGE_BEAN_NAME = "com.foundationdb:type=Manage";
 
     void ping();
 

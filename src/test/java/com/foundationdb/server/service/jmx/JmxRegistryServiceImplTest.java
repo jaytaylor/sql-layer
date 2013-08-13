@@ -139,7 +139,7 @@ public final class JmxRegistryServiceImplTest {
         assertRegisteredServices(service);
 
         service.start();
-        assertRegisteredServices(service, "com.akiban:type=Alpha");
+        assertRegisteredServices(service, "com.foundationdb:type=Alpha");
 
         service.stop();
         assertRegisteredServices(service);
@@ -152,7 +152,7 @@ public final class JmxRegistryServiceImplTest {
 
         service.start();
         service.register(new GoodService("Alpha"));
-        assertRegisteredServices(service, "com.akiban:type=Alpha");
+        assertRegisteredServices(service, "com.foundationdb:type=Alpha");
 
         service.stop();
         assertRegisteredServices(service);
@@ -167,13 +167,13 @@ public final class JmxRegistryServiceImplTest {
         assertRegisteredServices(service);
 
         service.start();
-        assertRegisteredServices(service, "com.akiban:type=Alpha");
+        assertRegisteredServices(service, "com.foundationdb:type=Alpha");
 
         service.stop();
         assertRegisteredServices(service);
 
         service.start();
-        assertRegisteredServices(service, "com.akiban:type=Alpha");
+        assertRegisteredServices(service, "com.foundationdb:type=Alpha");
     }
 
     @Test
@@ -189,7 +189,7 @@ public final class JmxRegistryServiceImplTest {
 
         service.register(new GoodService("Beta"));
         service.start();
-        assertRegisteredServices(service, "com.akiban:type=Alpha", "com.akiban:type=Beta");
+        assertRegisteredServices(service, "com.foundationdb:type=Alpha", "com.foundationdb:type=Beta");
     }
 
     @Test(expected=JmxRegistrationException.class)

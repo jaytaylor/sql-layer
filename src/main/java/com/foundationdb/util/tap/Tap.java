@@ -300,7 +300,7 @@ public abstract class Tap
                NotCompliantMBeanException
     {
         if (!registered) {
-            ObjectName mxbeanName = new ObjectName("com.akiban:type=Tap");
+            ObjectName mxbeanName = new ObjectName("com.foundationdb:type=Tap");
             MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
             mbs.registerMBean(new TapMXBeanImpl(), mxbeanName);
             registered = true;
@@ -324,7 +324,7 @@ public abstract class Tap
                InstanceNotFoundException
     {
         if (registered) {
-            ObjectName mxbeanName = new ObjectName("com.akiban:type=Tap");
+            ObjectName mxbeanName = new ObjectName("com.foundationdb:type=Tap");
             MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
             mbs.unregisterMBean(mxbeanName);
             registered = false;
