@@ -90,7 +90,7 @@ elif [ ${platform} == "redhat" ]; then
     pushd redhat
     # git status outputs lines like "?? redhat/akserver/redhat/log4j.properties"
     # we want to turn those to just "akserver/redhat/log4j.properties"
-    for to_add in $(git status --untracked=all --porcelain | sed 's/\?\?\s\+redhat\///'); do
+    for to_add in $(git status --untracked=all --porcelain | sed 's/\?\+\s\+redhat\///'); do
         tar --append -f $tar_file $to_add
     done
     popd
