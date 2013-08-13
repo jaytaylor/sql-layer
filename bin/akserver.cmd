@@ -19,7 +19,7 @@
 
 SETLOCAL
 
-SET SERVER_JAR=akiban-server-1.6.2-SNAPSHOT.jar
+SET SERVER_JAR=akiban-server-2.0.0-SNAPSHOT.jar
 SET SERVICE_NAME=akserver
 SET SERVICE_DNAME=Akiban Server
 SET SERVICE_DESC=Akiban Database Server
