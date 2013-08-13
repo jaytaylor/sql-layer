@@ -19,7 +19,8 @@
 
 SETLOCAL
 
-FOR /F "usebackq" %%v IN (`bzr revno`) DO SET BZR_REVNO=%%v
+FOR /F "usebackq" %%v IN (`git rev-parse --short HEAD`) DO SET GIT_COUNT=%%v
+FOR /F "usebackq" %%v IN (`git rev-list --merges HEAD --count`) DO SET GIT_HASH=%%v
 
 SET LICENSE=LICENSE.txt
 
@@ -28,7 +29,7 @@ IF NOT DEFINED CERT_PASSWORD SET CERT_PASSWORD=test
 
 ECHO "Building Akiban Server"
 
-call mvn -Dmaven.test.skip clean install -DBZR_REVISION=%BZR_REVNO%
+call mvn clean install -DGIT_COUNT=%GIT_COUNT% -DGIT_HASH=%GIT_HASH% -DskipTests=true
 IF ERRORLEVEL 1 GOTO EOF
 
 IF NOT DEFINED TOOLS_BRANCH SET TOOLS_BRANCH=lp:akiban-client-tools

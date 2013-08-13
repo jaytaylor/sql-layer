@@ -25,8 +25,11 @@ if [ $# -lt 1 ]; then
 fi
 
 platform=$1
-bzr_revno=`bzr revno`
+git_hash=`git rev-parse --short HEAD`
+git_count=`git rev-list --merges HEAD |wc -l |tr -d ' '` # --count is newer
 server_version=$(mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version |grep -o '^[0-9.]\+')
+
+mvn_install="mvn clean install -DGIT_COUNT=${GIT_COUNT} -DGIT_HASH=${GIT_HASH} -DskipTests=true"
 
 echo "Building Akiban Server"
 
@@ -71,7 +74,7 @@ fi
 # Handle platform-specific packaging process
 if [ ${platform} == "debian" ]; then
     cp -R packages-common/* ${platform}
-    mvn -Dmaven.test.skip.exec clean install -DBZR_REVISION=${bzr_revno}
+    $mvn_install
     mkdir -p ${platform}/server/
     cp ./target/dependency/* ${platform}/server/
     cp -R packages-common/plugins/ ${platform}/
@@ -80,22 +83,24 @@ elif [ ${platform} == "redhat" ]; then
     mkdir -p ${PWD}/redhat/akserver/redhat
     mkdir -p ${PWD}/redhat/rpmbuild/{BUILD,SOURCES,SRPMS,RPMS/noarch}
     tar_file=${PWD}/redhat/rpmbuild/SOURCES/akserver.tar
-    bzr export --format=tar $tar_file
+    git archive --format=tar --output=$tar_file HEAD
     rm -f ${PWD}/redhat/akserver/redhat/* # Clear out old files
     cp -R packages-common/* ${PWD}/redhat/akserver/redhat
     pushd redhat
-    # bzr st -S outs lines like "? redhat/akserver/redhat/log4j.properties"
+    # git status outputs lines like "?? redhat/akserver/redhat/log4j.properties"
     # we want to turn those to just "akserver/redhat/log4j.properties"
-    for to_add in $(bzr st -S . | sed 's/\?\s\+redhat\///'); do
+    for to_add in $(git status --untracked=all --porcelain | sed 's/\?\s\+redhat\///'); do
         tar --append -f $tar_file $to_add
     done
     popd
     gzip $tar_file
-    cat ${PWD}/redhat/akiban-server.spec | sed "9,9s/REVISION/${bzr_revno}/g" > ${PWD}/redhat/akiban-server-${bzr_revno}.spec
-    sed -i "10,10s/EPOCH/${epoch}/g" ${PWD}/redhat/akiban-server-${bzr_revno}.spec
-    rpmbuild --target=noarch --define "_topdir ${PWD}/redhat/rpmbuild" -ba ${PWD}/redhat/akiban-server-${bzr_revno}.spec
+    cat ${PWD}/redhat/akiban-server.spec | \
+        sed -e -e "10,10s/_EPOCH/${epoch}/g" \
+            -e "s/_GIT_COUNT/${git_count}/g" -e "s/_GIT_HASH/${git_hash}/g" \
+        > ${PWD}/redhat/akiban-server-${git_count}.spec
+    rpmbuild --target=noarch --define "_topdir ${PWD}/redhat/rpmbuild" -ba ${PWD}/redhat/akiban-server-${git_count}.spec
 elif [ ${platform} == "binary" ]; then
-    mvn -Dmaven.test.skip clean install -DBZR_REVISION=${bzr_revno}
+    $mvn_install
     rm -f ./target/*-tests.jar ./target/*-sources.jar
 
     # For releases only
@@ -136,7 +141,7 @@ elif [ ${platform} == "macosx" ]; then
     rm prototype.txt
     
     # build jar
-    mvn -DskipTests=true -DBZR_REVISION=${bzr_revno} clean install 
+    $mvn_install
     rm -f ./target/*-tests.jar ./target/*-sources.jar
 
     build_dmg() {
@@ -145,7 +150,7 @@ elif [ ${platform} == "macosx" ]; then
 
         # build app bundle
         curl -Ls -o target/appbundler-1.0.jar http://java.net/projects/appbundler/downloads/download/appbundler-1.0.jar
-        ant -f macosx/appbundler.xml ${ant_target} -Djdk.home=$(/usr/libexec/java_home) -Dakserver.version="${server_version}-r${bzr_revno}"
+        ant -f macosx/appbundler.xml ${ant_target} -Djdk.home=$(/usr/libexec/java_home) -Dakserver.version="${server_version}-r${git_count}"
 
         # add config files to bundle
         mkdir "${mac_app}/Contents/Resources/config/"

@@ -6,8 +6,8 @@
 
 Name:           akiban-server
 Version:        1.6.2
-Release:        REVISION%{?dist}
-Epoch:          EPOCH
+Release:        _GIT_COUNT%{?dist}
+Epoch:          _EPOCH
 Summary:        Akiban Server is the main server for the Akiban Orthogonal Architecture.
 
 Group:          Applications/Databases
@@ -36,7 +36,7 @@ For more information see http://akiban.com/
 %setup -q -n akserver
 
 %build
-mvn -B -Dmaven.test.skip.exec -DBZR_REVISION=%{release} clean install
+mvn clean install -DGIT_COUNT=_GIT_COUNT -DGIT_HASH=_GIT_HASH -DskipTests=true
 
 %install
 rm -rf ${RPM_BUILD_ROOT}
