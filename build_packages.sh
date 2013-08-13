@@ -89,9 +89,9 @@ elif [ ${platform} == "redhat" ]; then
     rm -f ${PWD}/redhat/akserver/redhat/* # Clear out old files
     cp -R packages-common/* ${PWD}/redhat/akserver/redhat
     pushd redhat
-    # git status outputs lines like "?? redhat/akserver/redhat/log4j.properties"
-    # we want to turn those to just "akserver/redhat/log4j.properties"
-    for to_add in $(git status --untracked=all --porcelain | sed 's/\?\+\s\+redhat\///'); do
+    # git status outputs lines like "?? redhat/akserver/"
+    # we want to turn those to just "akserver/"
+    for to_add in $(git status --untracked=normal --porcelain | sed 's/\?\+\s\+redhat\///'); do
         tar --append -f $tar_file $to_add
     done
     popd

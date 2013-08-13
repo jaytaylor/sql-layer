@@ -36,7 +36,7 @@ For more information see http://akiban.com/
 %setup -q -n akserver
 
 %build
-mvn clean install -DGIT_COUNT=_GIT_COUNT -DGIT_HASH=_GIT_HASH -DskipTests=true
+mvn -B clean install -DGIT_COUNT=_GIT_COUNT -DGIT_HASH=_GIT_HASH -DskipTests=true
 
 %install
 rm -rf ${RPM_BUILD_ROOT}
