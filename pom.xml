@@ -2,17 +2,17 @@
 <project>
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.akiban</groupId>
-    <artifactId>akiban-server</artifactId>
+    <groupId>com.foundationdb</groupId>
+    <artifactId>foundationdb-sql-layer</artifactId>
     <version>2.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>akiban-server</name>
+    <name>FoundationDB SQL Layer</name>
     <inceptionYear>2009</inceptionYear>
-    <url>http://www.akiban.com/</url>
+    <url>http://www.foundationdb.com/</url>
     <organization>
-        <name>Akiban Technologies, Inc</name>
-        <url>http://www.akiban.com</url>
+        <name>FoundationDB, LLC</name>
+        <url>http://www.foundationdb.com</url>
     </organization>
 
     <licenses>
@@ -24,8 +24,8 @@
     </licenses>
 
     <scm>
-        <connection>scm:bazaar:https://code.launchpad.net/akiban-server</connection>
-        <url>https://code.launchpad.net/akiban-server</url>
+        <url>git@github.com:foundationdb/sql-layer.git</url>
+        <connection>scm:git:git@github.com:foundationdb/sql-layer.git</connection>
     </scm>
 
     <properties>
@@ -99,8 +99,8 @@
             <version>3.2.9</version>
         </dependency>
         <dependency>
-            <groupId>com.akiban</groupId>
-            <artifactId>akiban-sql-parser</artifactId>
+            <groupId>com.foundationdb</groupId>
+            <artifactId>foundationdb-sql-parser</artifactId>
             <version>1.0.17-SNAPSHOT</version>
         </dependency>
         <dependency>
@@ -121,8 +121,8 @@
             <version>2.3.0</version>
         </dependency>
         <dependency>
-            <groupId>com.akiban</groupId>
-            <artifactId>akiban-sql-parser</artifactId>
+            <groupId>com.foundationdb</groupId>
+            <artifactId>foundationdb-sql-parser</artifactId>
             <version>1.0.17-SNAPSHOT</version>
             <type>test-jar</type>
             <scope>test</scope>
