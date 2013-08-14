@@ -258,7 +258,7 @@ public class ApiTestBase {
         types3SwitchSave = Types3Switch.ON;
         Types3Switch.ON &= testSupportsPValues();
         assertTrue("some row updaters were left over: " + unfinishedRowUpdaters, unfinishedRowUpdaters.isEmpty());
-        System.setProperty("akiban.home", System.getProperty("user.home"));
+        System.setProperty("fdbsql.home", System.getProperty("user.home"));
         try {
             ConverterTestUtils.setGlobalTimezone("UTC");
             Map<String, String> startupConfigProperties = startupConfigProperties();

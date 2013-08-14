@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 public final class HomeDirPluginsFinder implements PluginsFinder {
+    private static final String CONFIG_NAME = "fdbsql.home";
 
     @Override
     public Collection<? extends Plugin> get() {
@@ -51,10 +52,10 @@ public final class HomeDirPluginsFinder implements PluginsFinder {
     private static final File pluginsDir = findPluginsDir();
 
     private static File findPluginsDir() {
-        String homeDirPath = System.getProperty("akiban.home");
+        String homeDirPath = System.getProperty(CONFIG_NAME);
         if (homeDirPath == null) {
-            logger.error("no akiban.home variable set");
-            throw new RuntimeException("no akiban.home variable set");
+            logger.error("no {} variable set", CONFIG_NAME);
+            throw new RuntimeException("no "+CONFIG_NAME+" variable set");
         }
         File homeDir = new File(homeDirPath);
         if (!homeDir.isDirectory()) {

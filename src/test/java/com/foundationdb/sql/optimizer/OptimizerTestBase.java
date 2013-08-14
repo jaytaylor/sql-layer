@@ -126,7 +126,7 @@ public class OptimizerTestBase extends ASTTransformTestBase
     
     private static ServiceManager prepareServices()
     {
-        System.setProperty("akiban.home", System.getProperty("user.home"));
+        System.setProperty("fdbsql.home", System.getProperty("user.home"));
         ServiceManager ret = createServiceManager();
         ret.startServices();
         
