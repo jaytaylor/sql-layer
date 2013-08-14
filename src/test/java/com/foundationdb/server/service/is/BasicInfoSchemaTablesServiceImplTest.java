@@ -283,7 +283,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         builder.parameter("test", "proc1", null, Parameter.Direction.OUT,
                           "varchar", 100L, null);
         builder.routineExternalName("test", "proc1", "test", "ajar",
-                                    "com.akiban.procs.Proc1", "call");
+                                    "com.foundationdb.procs.Proc1", "call");
     }
 
     private MemoryTableFactory getFactory(TableName name) {
@@ -618,7 +618,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void routinesScan() {
         final Object[][] expected = {
-            { "test", "proc1", "PROCEDURE", null, "com.akiban.procs.Proc1.call", "java", "JAVA", "NO", null, "YES", 0L, LONG },
+            { "test", "proc1", "PROCEDURE", null, "com.foundationdb.procs.Proc1.call", "java", "JAVA", "NO", null, "YES", 0L, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.ROUTINES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);

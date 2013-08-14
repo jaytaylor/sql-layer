@@ -10,7 +10,7 @@
 ---
 - Statement: ALTER TABLE t1 ALL UPDATE STATISTICS;
 ---
-- JMX: com.akiban:type=IndexStatistics
+- JMX: com.foundationdb:type=IndexStatistics
 - method: dumpIndexStatisticsToString
 - params: ['test']
 - split_result: [
@@ -52,7 +52,7 @@
 ---
 - Statement: ALTER TABLE t1 ALL UPDATE STATISTICS;
 ---
-- JMX: com.akiban:type=IndexStatistics
+- JMX: com.foundationdb:type=IndexStatistics
 - method: dumpIndexStatisticsToString
 - params: ['test']
 - split_result: [
@@ -124,15 +124,15 @@
 ['Table: t1'],
 [!dc dc]]
 ---
-- JMX: com.akiban:type=AKSERVER
+- JMX: com.foundationdb:type=AKSERVER
 - get: VersionString
 - output: [[!dc dc]]
 ---
-- JMX: com.akiban:type=Configuration
+- JMX: com.foundationdb:type=Configuration
 - set: QueryTimeoutMilli
 - params: ['2000']
 ---
-- JMX: com.akiban:type=Configuration
+- JMX: com.foundationdb:type=Configuration
 - get: QueryTimeoutMilli
 - output: [['2000']]
 ...

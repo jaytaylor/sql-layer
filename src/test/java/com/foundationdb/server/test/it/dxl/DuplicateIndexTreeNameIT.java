@@ -46,7 +46,7 @@ public class DuplicateIndexTreeNameIT extends ITBase
         assertEquals(0, results.failures().size());
     }
 
-    // Copy of class in com.akiban.ais.model.validation, but it isn't public.
+    // Copy of class in com.foundationdb.ais.model.validation, but it isn't public.
     static class IndexTreeNamesUnique implements AISValidation
     {
 

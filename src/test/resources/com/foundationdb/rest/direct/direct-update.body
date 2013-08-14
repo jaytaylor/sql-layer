@@ -9,7 +9,7 @@ function _register(registrar) {
 
 function customerNames(s) {
     var result = s;
-    var extent = Packages.com.akiban.direct.Direct.context.extent;
+    var extent = Packages.com.foundationdb.direct.Direct.context.extent;
     
     for (customer in Iterator(extent.customers)) {
       result += "," + customer.name;
@@ -18,7 +18,7 @@ function customerNames(s) {
 }
 
 function addCustomer(cid, name) {
-    var extent = Packages.com.akiban.direct.Direct.context.extent;
+    var extent = Packages.com.foundationdb.direct.Direct.context.extent;
     var customer = extent.customers.newInstance();
     customer.cid = cid;
     customer.name = name;
@@ -26,7 +26,7 @@ function addCustomer(cid, name) {
 }
 
 function changeCustomerName(cid, name) {
-    var extent = Packages.com.akiban.direct.Direct.context.extent;
+    var extent = Packages.com.foundationdb.direct.Direct.context.extent;
     var customer = extent.getCustomer(cid);
     customer.setName(name);
     customer.save();

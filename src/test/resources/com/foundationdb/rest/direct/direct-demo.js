@@ -38,7 +38,7 @@ function _register(registrar) {
 }
 
 function computeTotalCompensation(empno, start, end) {
-	var extent = com.akiban.direct.Direct.context.extent;
+	var extent = com.foundationdb.direct.Direct.context.extent;
 	var emp = extent.getEmployee(empno);
 	var newSalary = emp.salaries.newInstance();
 	println("Computing total compensation for employee " + empno);
@@ -71,7 +71,7 @@ function computeTotalCompensation(empno, start, end) {
 
 function raiseSalary(empno, percent, effectiveDate) {
 
-	var emp = com.akiban.direct.Direct.context.extent.getEmployee(empno);
+	var emp = com.foundationdb.direct.Direct.context.extent.getEmployee(empno);
 	var multiplier = 1.0 + (percent / 100.0);
 	println("Multiplier is " + multiplier);
 	var iter = emp.salaries.sort("to_date", "desc").iterator();

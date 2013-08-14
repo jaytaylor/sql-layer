@@ -1,7 +1,7 @@
 
 function customerNames(s) {
     var result = s;
-    var extent = Packages.com.akiban.direct.Direct.context.extent;
+    var extent = Packages.com.foundationdb.direct.Direct.context.extent;
     for (customer in Iterator(extent.customers)) {
       result += "," + customer.name;
     }

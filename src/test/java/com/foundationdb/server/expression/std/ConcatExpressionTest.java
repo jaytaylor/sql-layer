@@ -68,7 +68,7 @@ public final class ConcatExpressionTest  extends ComposedExpressionTestBase {
     }
 
     /**
-     * The test is moved to com.akiban.sql.optimizer package 
+     * The test is moved to com.foundationdb.sql.optimizer package 
      */
     @Test
     public void typeLength() {

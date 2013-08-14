@@ -38,7 +38,7 @@ $$;
 
 CREATE PROCEDURE test_json(IN json_in VARCHAR(4096), OUT json_out VARCHAR(4096)) LANGUAGE javascript PARAMETER STYLE json AS $$
   var params = JSON.parse(json_in);
-  var context = com.akiban.direct.Direct.getContext();
+  var context = com.foundationdb.direct.Direct.getContext();
 
   // There is only an accessor for root classes (customers, not orders).
   // There is no accessor with primary key in extent (only in children).

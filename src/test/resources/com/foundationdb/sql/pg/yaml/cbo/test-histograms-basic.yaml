@@ -10,7 +10,7 @@
     street VARCHAR(32) COLLATE utf8_bin,
     GROUPING FOREIGN KEY (pid) REFERENCES people (pid))
 ---
-- JMX: com.akiban:type=IndexStatistics
+- JMX: com.foundationdb:type=IndexStatistics
 - method: dumpIndexStatisticsToString
 - params: ['test']
 - output:
@@ -20,7 +20,7 @@
 ---
 - Statement: CREATE INDEX name_address ON addresses (addresses.street, people.name) USING LEFT JOIN
 ---
-- JMX: com.akiban:type=IndexStatistics
+- JMX: com.foundationdb:type=IndexStatistics
 - method: dumpIndexStatisticsToString
 - params: ['test']
 - output:
@@ -28,7 +28,7 @@
 ---
 - Statement: ALTER TABLE people ALL UPDATE STATISTICS;
 ---
-- JMX: com.akiban:type=IndexStatistics
+- JMX: com.foundationdb:type=IndexStatistics
 - method: dumpIndexStatisticsToString
 - params: ['test']
 - split_result:
@@ -172,7 +172,7 @@
 ---
 - Statement: ALTER TABLE addresses ALL UPDATE STATISTICS;
 ---
-- JMX: com.akiban:type=IndexStatistics
+- JMX: com.foundationdb:type=IndexStatistics
 - method: dumpIndexStatisticsToString
 - params: ['test']
 - split_result: 

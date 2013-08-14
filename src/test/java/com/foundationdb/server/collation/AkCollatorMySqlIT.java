@@ -116,7 +116,7 @@ public class AkCollatorMySqlIT extends ITBase {
         final AkCollator collator = AkCollatorFactory.getAkCollator("latin1_swedish_ci");
         final Key key = store().createKey();
         key.append(new CString("aBcDe123!@#$%^&*(()", collator.getCollationId()));
-        assertEquals("Incorrect display form", "{(com.akiban.server.collation.CString)ABCDE123!@#$%^&*(()}", key.toString());
+        assertEquals("Incorrect display form", "{(com.foundationdb.server.collation.CString)ABCDE123!@#$%^&*(()}", key.toString());
     }
 
     @Test
