@@ -393,7 +393,7 @@
                     <failIfMissing>true</failIfMissing>
                     <excludes>
                         <!-- General files that can't have or don't need header -->
-                        <exclude>.bzrignore</exclude>
+                        <exclude>.gitignore</exclude>
                         <exclude>.idea/**</exclude>
                         <!-- No extension. Manually add header and ignore -->
                         <exclude>bin/akserver</exclude>
