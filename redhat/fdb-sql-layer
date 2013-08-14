@@ -15,8 +15,8 @@ export FDBSQL_CONF=/etc/foundationdb-sql
 export FDBSQL_HOME=/usr/share/foundationdb-sql
 export FDBSQL_OWNR="foundationdb-sql"
 NAME="FoundationDB SQL Layer"
-log_file=/var/log/foundationdb-sql/layer_stdout.log
-pid_file=/var/run/foundationdb-sql/layer.pid
+log_file=/var/log/foundationdb-sql/server_stdout.log
+pid_file=/var/run/foundationdb-sql/server.pid
 timeout=60
 FDBSQL_PROG=/usr/sbin/fdbsqllayer
 

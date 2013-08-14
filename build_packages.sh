@@ -96,11 +96,12 @@ elif [ ${platform} == "redhat" ]; then
     done
     popd
     gzip $tar_file
-    cat ${PWD}/redhat/fdb-sql-layer.spec | \
+    spec_file="$PWD/redhat/fdb-sql-layer.spec"
+    cat "${spec_file}.in" | \
         sed -e "10,10s/_EPOCH/${epoch}/g" \
             -e "s/_GIT_COUNT/${git_count}/g" -e "s/_GIT_HASH/${git_hash}/g" \
-        > ${PWD}/redhat/akiban-server-${git_count}.spec
-    rpmbuild --target=noarch --define "_topdir ${PWD}/redhat/rpmbuild" -ba ${PWD}/redhat/akiban-server-${git_count}.spec
+        > "${spec_file}"
+    rpmbuild --target=noarch --define "_topdir ${PWD}/redhat/rpmbuild" -ba "${spec_file}"
 elif [ ${platform} == "binary" ]; then
     $mvn_install
     rm -f ./target/*-tests.jar ./target/*-sources.jar
