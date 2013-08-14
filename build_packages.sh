@@ -80,23 +80,23 @@ if [ ${platform} == "debian" ]; then
     cp -R packages-common/plugins/ ${platform}/
     debuild
 elif [ ${platform} == "redhat" ]; then
-    rm -rf ${PWD}/redhat/{akserver,rpmbuild}
-    mkdir -p ${PWD}/redhat/akserver/redhat
+    rm -rf ${PWD}/redhat/{fdbsql,rpmbuild}
+    mkdir -p ${PWD}/redhat/fdbsql/redhat
     mkdir -p ${PWD}/redhat/rpmbuild/{BUILD,SOURCES,SRPMS,RPMS/noarch}
-    tar_prefix=akserver
+    tar_prefix=fdbsql
     tar_file=${PWD}/redhat/rpmbuild/SOURCES/${tar_prefix}.tar
     git archive --format=tar --output="$tar_file" --prefix="${tar_prefix}/" HEAD
-    rm -f ${PWD}/redhat/akserver/redhat/* # Clear out old files
-    cp -R packages-common/* ${PWD}/redhat/akserver/redhat
+    rm -f ${PWD}/redhat/fdbsql/redhat/* # Clear out old files
+    cp -R packages-common/* ${PWD}/redhat/fdbsql/redhat
     pushd redhat
-    # git status outputs lines like "?? redhat/akserver/"
-    # we want to turn those to just "akserver/"
+    # git status outputs lines like "?? redhat/fdbsql/"
+    # we want to turn those to just "fdbsql/"
     for to_add in $(git status --untracked=normal --porcelain | sed 's/\?\+\s\+redhat\///'); do
         tar --append -f $tar_file $to_add
     done
     popd
     gzip $tar_file
-    cat ${PWD}/redhat/akiban-server.spec | \
+    cat ${PWD}/redhat/fdb-sql-layer.spec | \
         sed -e "10,10s/_EPOCH/${epoch}/g" \
             -e "s/_GIT_COUNT/${git_count}/g" -e "s/_GIT_HASH/${git_hash}/g" \
         > ${PWD}/redhat/akiban-server-${git_count}.spec

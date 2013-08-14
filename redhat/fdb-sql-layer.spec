@@ -1,39 +1,39 @@
 %define __jar_repack %{nil}
 
-%global username akiban
+%global username foundationdb-sql
 
 %define relname %{name}-%{version}-%{release}
 
-Name:           akiban-server
+Name:           fdb-sql-layer
 Version:        2.0.0
 Release:        _GIT_COUNT%{?dist}
 Epoch:          _EPOCH
-Summary:        Akiban Server is the main server for the Akiban Orthogonal Architecture.
+Summary:        FoundationDB SQL Layer
 
 Group:          Applications/Databases
 License:        AGPL
-URL:            http://akiban.com/
+URL:            http://foundationdb.com
 
-Source0:       akserver.tar.gz
+Source0:       fdbsql.tar.gz
 BuildRoot:     %{_tmppath}/%{name}-%{version}-%{release}-root
 
 Requires:      jre >= 1.7.0
-Requires(pre): user(akiban)
-Requires(pre): group(akiban)
+Requires(pre): user(foundationdb-sql)
+Requires(pre): group(foundationdb-sql)
 Requires(pre): shadow-utils
-Provides:      user(akiban)
-Provides:      group(akiban)
+Provides:      user(foundationdb-sql)
+Provides:      group(foundationdb-sql)
 
 BuildArch:      noarch
 BuildRequires:  jdk >= 1.7.0
 
 %description
-Akiban Server is the main server for the Akiban Orthogonal Architecture.
+FoundationDB SQL Layer
 
-For more information see http://akiban.com/
+For more information see http://foundationdb.com
 
 %prep
-%setup -q -n akserver
+%setup -q -n fdbsql
 
 %build
 mvn -B clean install -DGIT_COUNT=_GIT_COUNT -DGIT_HASH=_GIT_HASH -DskipTests=true
@@ -55,19 +55,19 @@ cp -p redhat/log4j.properties ${RPM_BUILD_ROOT}/etc/%{username}/config
 cp -p redhat/server.properties ${RPM_BUILD_ROOT}/etc/%{username}/config
 cp -p redhat/services-config.yaml ${RPM_BUILD_ROOT}/etc/%{username}/config
 cp -p redhat/jvm.options ${RPM_BUILD_ROOT}/etc/%{username}/config
-cp -p redhat/akiban-server ${RPM_BUILD_ROOT}/etc/rc.d/init.d/
+cp -p redhat/fdb-sql-layer ${RPM_BUILD_ROOT}/etc/rc.d/init.d/
 cp -p redhat/LICENSE.txt ${RPM_BUILD_ROOT}/usr/share/%{username}
 
-cp -p target/akiban-server-2.0.0-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
-ln -s /usr/share/%{username}/akiban-server-2.0.0-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-server.jar
+cp -p target/foundationdb-sql-layer-2.0.0-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
+ln -s /usr/share/%{username}/foundationdb-sql-layer-2.0.0-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/foundationdb-sql-layer.jar
 cp -p target/dependency/* ${RPM_BUILD_ROOT}/usr/share/%{username}/server
-cp -p redhat/akiban-client-tools-1.3.7-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
-ln -s /usr/share/%{username}/akiban-client-tools-1.3.7-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-client-tools.jar
+cp -p redhat/foundationdb-sql-layer-client-tools-1.3.7-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
+ln -s /usr/share/%{username}/foundationdb-sql-layer-client-tools-1.3.7-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/foundationdb-sql-layer-client-tools.jar
 cp -p redhat/client/* ${RPM_BUILD_ROOT}/usr/share/%{username}/client
 cp -pR redhat/plugins/ ${RPM_BUILD_ROOT}/usr/share/%{username}/
 
-mv redhat/akdump ${RPM_BUILD_ROOT}/usr/bin
-mv bin/akserver ${RPM_BUILD_ROOT}/usr/sbin
+mv redhat/fdbsqldump ${RPM_BUILD_ROOT}/usr/bin
+mv bin/fdbsqllayer ${RPM_BUILD_ROOT}/usr/sbin
 
 mkdir -p ${RPM_BUILD_ROOT}/var/lib/%{username}
 mkdir -p ${RPM_BUILD_ROOT}/var/lib/%{username}
@@ -92,9 +92,9 @@ fi
 
 %files
 %defattr(-,root,root,0755)
-%attr(755,root,root) %{_sbindir}/akserver
-%attr(755,root,root) %{_bindir}/akdump
-%attr(755,root,root) /etc/rc.d/init.d/akiban-server
+%attr(755,root,root) %{_sbindir}/fdbsqllayer
+%attr(755,root,root) %{_bindir}/fdbsqldump
+%attr(755,root,root) /etc/rc.d/init.d/fdb-sql-layer
 %attr(755,%{username},%{username}) /usr/share/%{username}*
 %attr(755,%{username},%{username}) %config(noreplace) /%{_sysconfdir}/%{username}
 %attr(755,%{username},%{username}) %config(noreplace) /var/lib/%{username}
@@ -103,21 +103,21 @@ fi
 
 %post
 alternatives --install /etc/%{username}/config %{username} /etc/%{username}/default.conf/ 0
-# make akiban start/shutdown automatically
+# make fdb-sql-layer start/shutdown automatically
 if [ -x /sbin/chkconfig ]; then
-    /sbin/chkconfig --add akiban-server
+    /sbin/chkconfig --add fdb-sql-layer
 fi
 exit 0
 
 %postun
 # only delete alternative on removal, not upgrade
 if [ "$1" = "0" ]; then
-    # stop akiban-server before uninstalling it
-    if [ -x %{_sysconfdir}/init.d/akiban-server ]; then
-        %{_sysconfdir}/init.d/akiban-server stop > /dev/null
+    # stop fdb-sql-layer before uninstalling it
+    if [ -x %{_sysconfdir}/init.d/fdb-sql-layer ]; then
+        %{_sysconfdir}/init.d/fdb-sql-layer stop > /dev/null
         # don't start it automatically anymore
         if [ -x /sbin/chkconfig ]; then
-            /sbin/chkconfig --del akiban-server
+            /sbin/chkconfig --del fdb-sql-layer
         fi
     fi
     alternatives --remove %{username} /etc/%{username}/default.conf/
