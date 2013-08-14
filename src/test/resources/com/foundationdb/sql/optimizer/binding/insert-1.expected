@@ -1,40 +1,40 @@
-com.akiban.sql.parser.InsertNode@61542a75
+com.foundationdb.sql.parser.InsertNode@61542a75
 statementType: INSERT
 resultSet: 	
-	com.akiban.sql.parser.SelectNode@5caf993e
+	com.foundationdb.sql.parser.SelectNode@5caf993e
 	isDistinct: false
 	resultColumns: 		
-		com.akiban.sql.parser.ResultColumnList@100c62c8
+		com.foundationdb.sql.parser.ResultColumnList@100c62c8
 
 		[0]:		
-		com.akiban.sql.parser.ResultColumn@1d2940b3
+		com.foundationdb.sql.parser.ResultColumn@1d2940b3
 		exposedName: w
 		name: w
 		tableName: null
 		isDefaultColumn: false
 		type: null
 		expression: 			
-			com.akiban.sql.parser.ColumnReference@7f56b6b9
+			com.foundationdb.sql.parser.ColumnReference@7f56b6b9
 			columnName: w
 			tableName: null
 			type: null
-			userData: t2.w from com.akiban.sql.parser.FromBaseTable@49ff0dde
+			userData: t2.w from com.foundationdb.sql.parser.FromBaseTable@49ff0dde
 		[1]:		
-		com.akiban.sql.parser.ResultColumn@15f66cff
+		com.foundationdb.sql.parser.ResultColumn@15f66cff
 		exposedName: _SQL_COL_1
 		name: _SQL_COL_1
 		tableName: null
 		isDefaultColumn: false
 		type: null
 		expression: 			
-			com.akiban.sql.parser.NumericConstantNode@656de49c
+			com.foundationdb.sql.parser.NumericConstantNode@656de49c
 			value: 1
 			type: INTEGER NOT NULL
 	fromList: 		
-		com.akiban.sql.parser.FromList@11bbf1ca
+		com.foundationdb.sql.parser.FromList@11bbf1ca
 
 		[0]:		
-		com.akiban.sql.parser.FromBaseTable@49ff0dde
+		com.foundationdb.sql.parser.FromBaseTable@49ff0dde
 		tableName: t2
 		updateOrDelete: null
 		null
@@ -42,34 +42,34 @@ resultSet:
 		null
 		userData: test.t2
 targetTableName: 	
-	com.akiban.sql.parser.TableName@a5d
+	com.foundationdb.sql.parser.TableName@a5d
 	t1
 	userData: test.t1
 targetColumnList: 	
-	com.akiban.sql.parser.ResultColumnList@7e78fc6
+	com.foundationdb.sql.parser.ResultColumnList@7e78fc6
 
 	[0]:	
-	com.akiban.sql.parser.ResultColumn@73901437
+	com.foundationdb.sql.parser.ResultColumn@73901437
 	exposedName: y
 	name: y
 	tableName: null
 	isDefaultColumn: false
 	type: null
 	reference: 		
-		com.akiban.sql.parser.ColumnReference@5464ea66
+		com.foundationdb.sql.parser.ColumnReference@5464ea66
 		columnName: y
 		tableName: null
 		type: null
 		userData: t1.y
 	[1]:	
-	com.akiban.sql.parser.ResultColumn@781f6226
+	com.foundationdb.sql.parser.ResultColumn@781f6226
 	exposedName: x
 	name: x
 	tableName: null
 	isDefaultColumn: false
 	type: null
 	reference: 		
-		com.akiban.sql.parser.ColumnReference@2d58f9d3
+		com.foundationdb.sql.parser.ColumnReference@2d58f9d3
 		columnName: x
 		tableName: null
 		type: null

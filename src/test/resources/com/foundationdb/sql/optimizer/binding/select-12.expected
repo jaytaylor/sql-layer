@@ -1,57 +1,57 @@
-com.akiban.sql.parser.CursorNode@67ef6bbf
+com.foundationdb.sql.parser.CursorNode@67ef6bbf
 name: null
 updateMode: UNSPECIFIED
 statementType: SELECT
 resultSet: 	
-	com.akiban.sql.parser.SelectNode@178afde8
+	com.foundationdb.sql.parser.SelectNode@178afde8
 	isDistinct: false
 	resultColumns: 		
-		com.akiban.sql.parser.ResultColumnList@2623966b
+		com.foundationdb.sql.parser.ResultColumnList@2623966b
 
 		[0]:		
-		com.akiban.sql.parser.ResultColumn@6a685e5c
+		com.foundationdb.sql.parser.ResultColumn@6a685e5c
 		exposedName: x
 		name: x
 		tableName: null
 		isDefaultColumn: false
 		type: null
 		expression: 			
-			com.akiban.sql.parser.ColumnReference@6a0b2097
+			com.foundationdb.sql.parser.ColumnReference@6a0b2097
 			columnName: x
 			tableName: t
 			type: null
-			userData: t1.x from com.akiban.sql.parser.FromBaseTable@313428df
+			userData: t1.x from com.foundationdb.sql.parser.FromBaseTable@313428df
 		[1]:		
-		com.akiban.sql.parser.ResultColumn@88cfe5
+		com.foundationdb.sql.parser.ResultColumn@88cfe5
 		exposedName: y
 		name: y
 		tableName: null
 		isDefaultColumn: false
 		type: null
 		expression: 			
-			com.akiban.sql.parser.ColumnReference@1608c3a9
+			com.foundationdb.sql.parser.ColumnReference@1608c3a9
 			columnName: y
 			tableName: t
 			type: null
-			userData: t1.y from com.akiban.sql.parser.FromBaseTable@313428df
+			userData: t1.y from com.foundationdb.sql.parser.FromBaseTable@313428df
 		[2]:		
-		com.akiban.sql.parser.ResultColumn@1965978c
+		com.foundationdb.sql.parser.ResultColumn@1965978c
 		exposedName: z
 		name: z
 		tableName: null
 		isDefaultColumn: false
 		type: null
 		expression: 			
-			com.akiban.sql.parser.ColumnReference@5cc0755a
+			com.foundationdb.sql.parser.ColumnReference@5cc0755a
 			columnName: z
 			tableName: t
 			type: null
-			userData: t1.z from com.akiban.sql.parser.FromBaseTable@313428df
+			userData: t1.z from com.foundationdb.sql.parser.FromBaseTable@313428df
 	fromList: 		
-		com.akiban.sql.parser.FromList@5f589748
+		com.foundationdb.sql.parser.FromList@5f589748
 
 		[0]:		
-		com.akiban.sql.parser.FromBaseTable@313428df
+		com.foundationdb.sql.parser.FromBaseTable@313428df
 		tableName: t1
 		updateOrDelete: null
 		null
@@ -59,38 +59,38 @@ resultSet:
 		t
 		userData: test.t1
 	whereClause: 		
-		com.akiban.sql.parser.NotNode@576761b5
+		com.foundationdb.sql.parser.NotNode@576761b5
 		operator: not
 		methodName: not
 		type: null
 		operand: 			
-			com.akiban.sql.parser.SubqueryNode@443fdee7
+			com.foundationdb.sql.parser.SubqueryNode@443fdee7
 			subqueryType: IN
 			type: null
 			resultSet: 				
-				com.akiban.sql.parser.SelectNode@6b5638a
+				com.foundationdb.sql.parser.SelectNode@6b5638a
 				isDistinct: false
 				resultColumns: 					
-					com.akiban.sql.parser.ResultColumnList@6e99fc76
+					com.foundationdb.sql.parser.ResultColumnList@6e99fc76
 
 					[0]:					
-					com.akiban.sql.parser.ResultColumn@3f8ddfb4
+					com.foundationdb.sql.parser.ResultColumn@3f8ddfb4
 					exposedName: z
 					name: z
 					tableName: null
 					isDefaultColumn: false
 					type: null
 					expression: 						
-						com.akiban.sql.parser.ColumnReference@7b59c304
+						com.foundationdb.sql.parser.ColumnReference@7b59c304
 						columnName: z
 						tableName: t
 						type: null
-						userData: t2.z from com.akiban.sql.parser.FromBaseTable@4b412a03
+						userData: t2.z from com.foundationdb.sql.parser.FromBaseTable@4b412a03
 				fromList: 					
-					com.akiban.sql.parser.FromList@42127ae0
+					com.foundationdb.sql.parser.FromList@42127ae0
 
 					[0]:					
-					com.akiban.sql.parser.FromBaseTable@4b412a03
+					com.foundationdb.sql.parser.FromBaseTable@4b412a03
 					tableName: t2
 					updateOrDelete: null
 					null
@@ -98,23 +98,23 @@ resultSet:
 					t
 					userData: test.t2
 				whereClause: 					
-					com.akiban.sql.parser.BinaryRelationalOperatorNode@232d518e
+					com.foundationdb.sql.parser.BinaryRelationalOperatorNode@232d518e
 					operator: =
 					methodName: equals
 					type: null
 					leftOperand: 						
-						com.akiban.sql.parser.ColumnReference@744553ac
+						com.foundationdb.sql.parser.ColumnReference@744553ac
 						columnName: w
 						tableName: t
 						type: null
-						userData: t2.w from com.akiban.sql.parser.FromBaseTable@4b412a03
+						userData: t2.w from com.foundationdb.sql.parser.FromBaseTable@4b412a03
 					rightOperand: 						
-						com.akiban.sql.parser.CharConstantNode@73787cd6
+						com.foundationdb.sql.parser.CharConstantNode@73787cd6
 						value: X
 						type: CHAR(1) NOT NULL
 			leftOperand: 				
-				com.akiban.sql.parser.ColumnReference@3d4332b2
+				com.foundationdb.sql.parser.ColumnReference@3d4332b2
 				columnName: z
 				tableName: t
 				type: null
-				userData: t1.z from com.akiban.sql.parser.FromBaseTable@313428df
+				userData: t1.z from com.foundationdb.sql.parser.FromBaseTable@313428df

@@ -1,13 +1,13 @@
-com.akiban.sql.parser.DeleteNode@15a62c31
+com.foundationdb.sql.parser.DeleteNode@15a62c31
 statementType: DELETE
 resultSet: 	
-	com.akiban.sql.parser.SelectNode@b41b571
+	com.foundationdb.sql.parser.SelectNode@b41b571
 	isDistinct: false
 	fromList: 		
-		com.akiban.sql.parser.FromList@39e87719
+		com.foundationdb.sql.parser.FromList@39e87719
 
 		[0]:		
-		com.akiban.sql.parser.FromBaseTable@4ce32802
+		com.foundationdb.sql.parser.FromBaseTable@4ce32802
 		tableName: t1
 		updateOrDelete: DELETE
 		null
@@ -15,21 +15,21 @@ resultSet:
 		null
 		userData: test.t1
 	whereClause: 		
-		com.akiban.sql.parser.BinaryRelationalOperatorNode@5557c2bd
+		com.foundationdb.sql.parser.BinaryRelationalOperatorNode@5557c2bd
 		operator: =
 		methodName: equals
 		type: null
 		leftOperand: 			
-			com.akiban.sql.parser.ColumnReference@74b23210
+			com.foundationdb.sql.parser.ColumnReference@74b23210
 			columnName: y
 			tableName: null
 			type: null
-			userData: t1.y from com.akiban.sql.parser.FromBaseTable@4ce32802
+			userData: t1.y from com.foundationdb.sql.parser.FromBaseTable@4ce32802
 		rightOperand: 			
-			com.akiban.sql.parser.CharConstantNode@23d256fa
+			com.foundationdb.sql.parser.CharConstantNode@23d256fa
 			value: foo
 			type: CHAR(3) NOT NULL
 targetTableName: 	
-	com.akiban.sql.parser.TableName@a5d
+	com.foundationdb.sql.parser.TableName@a5d
 	t1
 	userData: test.t1

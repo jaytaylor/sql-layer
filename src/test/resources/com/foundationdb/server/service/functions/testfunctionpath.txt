@@ -1,1 +1,1 @@
-com.akiban.server.service.functions.Path*Class
+com.foundationdb.server.service.functions.Path*Class
