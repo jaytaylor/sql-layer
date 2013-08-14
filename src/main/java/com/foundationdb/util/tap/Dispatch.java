@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A {@link com.akiban.util.tap.Tap} Implementation that simply dispatches to another Tap
+ * A {@link com.foundationdb.util.tap.Tap} Implementation that simply dispatches to another Tap
  * instance. Used to hold the "switch" that determines whether a Null,
  * TimeAndCount or other kind of Tap is invoked.
  * <p/>

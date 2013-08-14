@@ -80,7 +80,7 @@ public class SparseArrayQueryBindings implements QueryBindings
 
     /*
      * (non-Javadoc)
-     * @see com.akiban.qp.operator.QueryContext#setPValue(int, com.akiban.server.types3.pvalue.PValueSource)
+     * @see com.foundationdb.qp.operator.QueryContext#setPValue(int, com.foundationdb.server.types3.pvalue.PValueSource)
      * This makes a copy of the PValueSource value, rather than simply
      * storing the reference. The assumption is the PValueSource parameter
      * will be reused by the caller as rows are processed, so the QueryContext

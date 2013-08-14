@@ -56,7 +56,7 @@ public class AkCollatorFactory {
 
     private final static String DEFAULT_PROPERTIES_FILE_NAME = "collation_data.properties";
 
-    private final static String COLLATION_PROPERTIES_FILE_NAME_PROPERTY = "akiban.collation.properties";
+    private final static String COLLATION_PROPERTIES_FILE_NAME_PROPERTY = "foundationdb.collation.properties";
 
     private final static Properties collationNameProperties = new Properties();
 
@@ -205,7 +205,7 @@ public class AkCollatorFactory {
      * 
      * <pre>
      * <code>
-     * com.akiban.server.collation.collation_names.properties
+     * com.foundationdb.server.collation.collation_names.properties
      * </code>
      * </pre>
      * 
@@ -213,7 +213,7 @@ public class AkCollatorFactory {
      * 
      * <pre>
      * <code>
-     * akiban.collation.properties
+     * foundationdb.collation.properties
      * </code>
      * </pre>
      * 

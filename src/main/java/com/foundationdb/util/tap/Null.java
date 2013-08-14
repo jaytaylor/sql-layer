@@ -18,8 +18,8 @@
 package com.foundationdb.util.tap;
 
 /**
- * A {@link com.akiban.util.tap.Tap} subclass that does nothing. This is the initial target of
- * every added {@link com.akiban.util.tap.Dispatch}.
+ * A {@link com.foundationdb.util.tap.Tap} subclass that does nothing. This is the initial target of
+ * every added {@link com.foundationdb.util.tap.Dispatch}.
  */
 class Null extends Tap
 {

@@ -27,7 +27,7 @@ import java.util.List;
  * <li>{@link #argumentTypes} is called with the actual argument types.</li>
  * <li>{@link #composeType} is called with the precise argument types.</li>
  * <li>{@link #compose} is called with the actual argument expressions.</li></ol>
- * @see com.akiban.server.service.functions.Scalar.
+ * @see com.foundationdb.server.service.functions.Scalar.
  */
 public interface ExpressionComposer {
     public static enum NullTreating
@@ -56,10 +56,10 @@ public interface ExpressionComposer {
     /** Return an expression with the given expressions as its arguments. 
      * If the function has simple type requirements, it can use {@link #argumentTypes}
      * to specify these and then depend on being passed expressions of that type.
-     * It can then call type-specific {@link com.akiban.server.types.ValueSource} 
+     * It can then call type-specific {@link com.foundationdb.server.types.ValueSource} 
      * methods to get the argument values, after checking
-     * {@link com.akiban.server.types.ValueSource#isNull} as necessary.
-     * Otherwise, it can use one of the {@link com.akiban.server.types.extract.Extractors}.
+     * {@link com.foundationdb.server.types.ValueSource#isNull} as necessary.
+     * Otherwise, it can use one of the {@link com.foundationdb.server.types.extract.Extractors}.
      *
      * typesList.size() should be (arguments.size() + 1), where the last element 
      * in typesList is the return type, and the rest is the arguments' type

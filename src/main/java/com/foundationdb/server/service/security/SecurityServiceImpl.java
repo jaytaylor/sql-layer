@@ -66,7 +66,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
     public static final String ADD_USER_PROC_NAME = "add_user";
     public static final int TABLE_VERSION = 1;
 
-    public static final String ADMIN_USER_NAME = "akiban";
+    public static final String ADMIN_USER_NAME = "foundationdb";
     public static final String CONNECTION_URL = "jdbc:default:connection";
 
     public static final String ADD_ROLE_SQL = "INSERT INTO roles(name) VALUES(?)";

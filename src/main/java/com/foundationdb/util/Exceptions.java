@@ -58,8 +58,8 @@ public final class Exceptions {
      *
      * <p>The include and exclude strings are split on spaces before being fed here.</p>
      *
-     * <p>For instance, if <tt>include="com.akiban.foo", exclude="com.akiban.foo.bar"</tt> then
-     * <tt>com.akiban.foo.*</tt> classes are included, but <tt>com.akiban.foo.bar.*</tt> classes are excluded.</p>
+     * <p>For instance, if <tt>include="com.foundationdb.foo", exclude="com.foundationdb.foo.bar"</tt> then
+     * <tt>com.foundationdb.foo.*</tt> classes are included, but <tt>com.foundationdb.foo.bar.*</tt> classes are excluded.</p>
      * @param trace the trace elements
      * @param includes the include prefix
      * @param excludes the exclude prefix

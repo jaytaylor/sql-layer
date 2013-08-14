@@ -34,7 +34,7 @@ public class AkCollatorMySQL extends AkCollator {
      * per--character basis. The table supplied here is acquired from a
      * properties file:
      * 
-     * src/main/resources/com/akiban/server/collation/collation_data_properties
+     * src/main/resources/com/foundationdb/server/collation/collation_data_properties
      * 
      * See property keys such as "mysql_latin1_swedish_ci" for example.
      * 

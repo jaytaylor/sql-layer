@@ -124,8 +124,8 @@ abstract class PerThread extends Tap
 
     /**
      * Create a PerThread instance the adds a new instance of the supplied
-     * subclass of {@link com.akiban.util.tap.Tap} for each Thread. Note: the classes
-     * {@link com.akiban.util.tap.PerThread} (including subclasses)
+     * subclass of {@link com.foundationdb.util.tap.Tap} for each Thread. Note: the classes
+     * {@link com.foundationdb.util.tap.PerThread} (including subclasses)
      * may not be added.
      *
      * @param name  Name of the Tap

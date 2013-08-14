@@ -76,7 +76,7 @@ public final class ScriptEngineManagerProviderImpl implements ScriptEngineManage
             // May
             // need a JDBCDriver proxy get just to register without putting all
             // of
-            // com.akiban.sql.embedded into the parent.
+            // com.foundationdb.sql.embedded into the parent.
             String[] paths = classPath.split(File.pathSeparator);
             URL[] urls = new URL[paths.length];
             try {

@@ -118,7 +118,7 @@ import static com.foundationdb.server.service.tree.TreeService.SCHEMA_TREE_NAME;
  *     <tr>
  *         <td>"byAIS"</td>
  *         <td>byte[]</td>
- *         <td>Value is as constructed by (now deleted) com.akiban.ais.metamodel.io.MessageTarget</td>
+ *         <td>Value is as constructed by (now deleted) com.foundationdb.ais.metamodel.io.MessageTarget</td>
  *     </tr>
  * </table>
  * </p>

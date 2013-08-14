@@ -39,7 +39,7 @@ import com.persistit.Persistit;
 import com.persistit.Task;
 
 /**
- * Invokes the akiban-persistit CLI via a PSQL statement through a loadable
+ * Invokes the Persistit CLI via a PSQL statement through a loadable
  * plan.
  */
 public class PersistitCLILoadablePlan extends LoadableDirectObjectPlan

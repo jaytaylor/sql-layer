@@ -38,7 +38,7 @@ public class ClassSourceWriter extends ClassSourceWriterBase {
     /*
      * (non-Javadoc)
      * 
-     * @see com.akiban.direct.ClassBuilder#startInterface(java.lang.String)
+     * @see com.foundationdb.direct.ClassBuilder#startInterface(java.lang.String)
      */
     @Override
     public void startClass(final String name, final boolean isInterface, String extendsClass,
@@ -137,7 +137,7 @@ public class ClassSourceWriter extends ClassSourceWriterBase {
     /*
      * (non-Javadoc)
      * 
-     * @see com.akiban.direct.ClassBuilder#end()
+     * @see com.foundationdb.direct.ClassBuilder#end()
      */
     @Override
     public void end() {

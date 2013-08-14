@@ -75,8 +75,8 @@ public class RowData {
 
     // Arbitrary sanity bound on maximum size
     // Needs to be about the same size as the smaller of:
-    // com.akiban.network.AkibanCommPipelineFactory#MAX_PACKET_SIZE
-    // com.akiban.mysql.adapter.protocol.NettyAkibanConnectionImpl#MAX_PACKET_SIZE
+    // com.foundationdb.network.AkibanCommPipelineFactory#MAX_PACKET_SIZE
+    // com.foundationdb.mysql.adapter.protocol.NettyAkibanConnectionImpl#MAX_PACKET_SIZE
     // These two limit the network throughput message size.
     public final static int MAXIMUM_RECORD_LENGTH = 8 * 1024 * 1024;
 
