@@ -19,34 +19,34 @@
 
 SETLOCAL
 
-SET SERVER_JAR=akiban-server-2.0.0-SNAPSHOT.jar
-SET SERVICE_NAME=akserver
-SET SERVICE_DNAME=Akiban Server
-SET SERVICE_DESC=Akiban Database Server
+SET SERVER_JAR=foundationdb-sql-layer-2.0.0-SNAPSHOT.jar
+SET SERVICE_NAME=fdbsqllayer
+SET SERVICE_DNAME=FoundationDB SQL Layer 
+SET SERVICE_DESC=FoundationDB SQL Layer
 
 IF EXIST "%~dp0..\pom.xml" GOTO FROM_BUILD
 
 REM Installation Configuration
 
-FOR %%P IN ("%~dp0..") DO SET AKIBAN_HOME=%%~fP
+FOR %%P IN ("%~dp0..") DO SET FDBSQL_HOME=%%~fP
 
-SET JAR_FILE=%AKIBAN_HOME%\lib\%SERVER_JAR%
-SET DEP_DIR=%AKIBAN_HOME%\lib\server
-SET AKIBAN_CONF=%AKIBAN_HOME%
-SET AKIBAN_LOGDIR=%AKIBAN_HOME%\log
-SET AKIBAN_HOME_DIR=%AKIBAN_HOME%\lib
+SET JAR_FILE=%FDBSQL_HOME%\lib\%SERVER_JAR%
+SET DEP_DIR=%FDBSQL_HOME%\lib\server
+SET FDBSQL_CONF=%FDBSQL_HOME%
+SET FDBSQL_LOGDIR=%FDBSQL_HOME%\log
+SET FDBSQL_HOME_DIR=%FDBSQL_HOME%\lib
 
 FOR %%P IN (prunsrv.exe) DO SET PRUNSRV=%%~$PATH:P
 FOR %%P IN (prunmgr.exe) DO SET PRUNMGR=%%~$PATH:P
 REM Not in path, assume installed with program.
 IF "%PRUNSRV%"=="" (
   IF "%PROCESSOR_ARCHITECTURE%"=="x86" (
-    SET PRUNSRV=%AKIBAN_HOME%\procrun\prunsrv
+    SET PRUNSRV=%FDBSQL_HOME%\procrun\prunsrv
   ) ELSE (
-    SET PRUNSRV=%AKIBAN_HOME%\procrun\%PROCESSOR_ARCHITECTURE%\prunsrv
+    SET PRUNSRV=%FDBSQL_HOME%\procrun\%PROCESSOR_ARCHITECTURE%\prunsrv
 ) )
 IF "%PRUNMGR%"=="" (
-  SET PRUNMGR=%AKIBAN_HOME%\procrun\prunmgr
+  SET PRUNMGR=%FDBSQL_HOME%\procrun\prunmgr
 )
 
 GOTO PARSE_CMD
@@ -59,9 +59,9 @@ FOR %%P IN ("%~dp0..") DO SET BUILD_HOME=%%~fP
 
 SET JAR_FILE=%BUILD_HOME%\target\%SERVER_JAR%
 SET DEP_DIR=%BUILD_HOME%\target\dependency
-SET AKIBAN_CONF=%BUILD_HOME%\conf
-SET AKIBAN_LOGDIR=\tmp\akiban_server
-SET AKIBAN_HOME_DIR=%BUILD_HOME%\target
+SET FDBSQL_CONF=%BUILD_HOME%\conf
+SET FDBSQL_LOGDIR=\tmp\fdbsqllayer
+SET FDBSQL_HOME_DIR=%BUILD_HOME%\target
 SET PRUNSRV=prunsrv
 SET PRUNMGR=prunmgr
 SET SERVICE_MODE=manual
@@ -88,11 +88,11 @@ IF "%1"=="-j" (
   SHIFT
   SHIFT
 ) ELSE IF "%1"=="-c" (
-  SET AKIBAN_CONF=%2
+  SET FDBSQL_CONF=%2
   SHIFT
   SHIFT
 ) ELSE IF "%1"=="-l" (
-  SET AKIBAN_LOGCONF=%2
+  SET FDBSQL_LOGCONF=%2
   SHIFT
   SHIFT
 ) ELSE IF "%1"=="-g" (
@@ -145,21 +145,21 @@ IF "%VERB%"=="start" (
   GOTO EOF
 )
 
-IF NOT EXIST "%AKIBAN_CONF%\config\services-config.yaml" (
+IF NOT EXIST "%FDBSQL_CONF%\config\services-config.yaml" (
   ECHO Wrong configuration directory; try -c
   GOTO EOF
 )
 
-IF NOT DEFINED AKIBAN_LOGCONF SET AKIBAN_LOGCONF=%AKIBAN_CONF%\config\log4j.properties
+IF NOT DEFINED FDBSQL_LOGCONF SET FDBSQL_LOGCONF=%FDBSQL_CONF%\config\log4j.properties
 
-IF EXIST "%AKIBAN_CONF%\config\jvm-options.cmd" CALL "%AKIBAN_CONF%\config\jvm-options.cmd"
+IF EXIST "%FDBSQL_CONF%\config\jvm-options.cmd" CALL "%FDBSQL_CONF%\config\jvm-options.cmd"
 
 IF "%VERB%"=="window" GOTO RUN_CMD
 IF "%VERB%"=="run" GOTO RUN_CMD
 
-SET PRUNSRV_ARGS=--StartMode=jvm --StartClass com.akiban.server.AkServer --StartMethod=procrunStart --StopMode=jvm --StopClass=com.akiban.server.AkServer --StopMethod=procrunStop --StdOutput="%AKIBAN_LOGDIR%\stdout.log" --DisplayName="%SERVICE_DNAME%" --Description="%SERVICE_DESC%" --Startup=%SERVICE_MODE% --Classpath="%CLASSPATH%"
+SET PRUNSRV_ARGS=--StartMode=jvm --StartClass com.foundationdb.server.AkServer --StartMethod=procrunStart --StopMode=jvm --StopClass=com.foundationdb.server.AkServer --StopMethod=procrunStop --StdOutput="%FDBSQL_LOGDIR%\stdout.log" --DisplayName="%SERVICE_DNAME%" --Description="%SERVICE_DESC%" --Startup=%SERVICE_MODE% --Classpath="%CLASSPATH%"
 REM Each value that might have a space needs a separate ++JvmOptions.
-SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmOptions="%JVM_OPTS: =#%" ++JvmOptions="-Dakserver.config_dir=%AKIBAN_CONF%" ++JvmOptions="-Dservices.config=%AKIBAN_CONF%\config\services-config.yaml" ++JvmOptions="-Dlog4j.configuration=file:%AKIBAN_LOGCONF%"
+SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmOptions="%JVM_OPTS: =#%" ++JvmOptions="-Dakserver.config_dir=%FDBSQL_CONF%" ++JvmOptions="-Dservices.config=%FDBSQL_CONF%\config\services-config.yaml" ++JvmOptions="-Dlog4j.configuration=file:%FDBSQL_LOGCONF%"
 IF DEFINED SERVICE_USER SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --ServiceUser=%SERVICE_USER% --ServicePassword=%SERVICE_PASSWORD%
 IF DEFINED MAX_HEAP_SIZE SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmMs=%MAX_HEAP_SIZE% --JvmMx=%MAX_HEAP_SIZE%
 
@@ -181,7 +181,7 @@ ECHO version   - print version and exit
 GOTO EOF
 
 :VERSION
-FOR /F "usebackq" %%V IN (`java -cp "%CLASSPATH%" com.akiban.server.GetVersion`) DO SET SERVER_VERSION=%%V
+FOR /F "usebackq" %%V IN (`java -cp "%CLASSPATH%" com.foundationdb.server.GetVersion`) DO SET SERVER_VERSION=%%V
 FOR /F "usebackq" %%V IN (`java -cp "%CLASSPATH%" com.persistit.GetVersion`) DO SET PERSISTIT_VERSION=%%V
 ECHO server   : %SERVER_VERSION%
 ECHO persistit: %PERSISTIT_VERSION%
@@ -190,19 +190,19 @@ ECHO.
 GOTO EOF
 
 :RUN_CMD
-SET JVM_OPTS=%JVM_OPTS% -Dakserver.config_dir="%AKIBAN_CONF%"
-SET JVM_OPTS=%JVM_OPTS% -Dservices.config="%AKIBAN_CONF%\config\services-config.yaml"
-SET JVM_OPTS=%JVM_OPTS% -Dlog4j.configuration="file:%AKIBAN_LOGCONF%"
+SET JVM_OPTS=%JVM_OPTS% -Dakserver.config_dir="%FDBSQL_CONF%"
+SET JVM_OPTS=%JVM_OPTS% -Dservices.config="%FDBSQL_CONF%\config\services-config.yaml"
+SET JVM_OPTS=%JVM_OPTS% -Dlog4j.configuration="file:%FDBSQL_LOGCONF%"
 SET JVM_OPTS=%JVM_OPTS% -ea
-SET JVM_OPTS=%JVM_OPTS% -Dakiban.home="%AKIBAN_HOME_DIR%"
+SET JVM_OPTS=%JVM_OPTS% -Dfdbsql.home="%FDBSQL_HOME_DIR%"
 IF DEFINED MAX_HEAP_SIZE SET JVM_OPTS=%JVM_OPTS% -Xms%MAX_HEAP_SIZE%-Xmx%MAX_HEAP_SIZE%
 IF "%VERB%"=="window" GOTO WINDOW_CMD
-java %JVM_OPTS% -cp "%CLASSPATH%" com.akiban.server.AkServer
+java %JVM_OPTS% -cp "%CLASSPATH%" com.foundationdb.server.AkServer
 GOTO EOF
 
 :WINDOW_CMD
-SET JVM_OPTS=%JVM_OPTS% "-Drequire:com.akiban.server.service.ui.SwingConsoleService" "-Dprioritize:com.akiban.server.service.ui.SwingConsoleService"
-START javaw %JVM_OPTS% -cp "%CLASSPATH%" com.akiban.server.service.ui.AkServerWithSwingConsole
+SET JVM_OPTS=%JVM_OPTS% "-Drequire:com.foundationdb.server.service.ui.SwingConsoleService" "-Dprioritize:com.foundationdb.server.service.ui.SwingConsoleService"
+START javaw %JVM_OPTS% -cp "%CLASSPATH%" com.foundationdb.server.service.ui.AkServerWithSwingConsole
 GOTO EOF
 
 :CHECK_ERROR

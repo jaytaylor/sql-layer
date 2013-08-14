@@ -17,31 +17,19 @@
 #
 
 #
-# OPTIONS:
-#   -f: start in foreground
-#   -w: start console window
-#   -g: start the persistit GUI
-#   -p <filename>: log the pid to a file (useful to kill it later)
-#   -j <filename>: jar file of server to use
-#   -d <dirname>: directory with jar dependencies
-#   -c <dirname>: configuration directory to use
-#   -k: kill an akiban server process
-#   -v: print the version of akiban server
-#   -s: profile using Solaris Studio
-#
 # CONTROLLING STARTUP:
 # 
 # This script relies on few environment variables to determine startup
 # behavior, those variables are:
 #
 #   JVM_OPTS -- Additional arguments to the JVM for heap size, etc
-#   AKIBAN_CONF -- Directory containing configuration files.
-#   AKIBAN_HOME -- Directory passed as akiban.home (e.g. plugin loading)
+#   FDBSQL_CONF -- Directory containing configuration files.
+#   FDBSQL_HOME -- Directory passed as fdbsql.home (e.g. plugin loading)
 #
 
-# Use AKIBAN_HOME if set, otherwise assume source checkout
-if [ -z "$AKIBAN_HOME" ]; then
-    AKIBAN_HOME=$(cd $(dirname $0)/..; pwd -P)
+# Use FDBSQL_HOME if set, otherwise assume source checkout
+if [ -z "$FDBSQL_HOME" ]; then
+    FDBSQL_HOME=$(cd $(dirname $0)/..; pwd -P)
 fi
 
 # Use JAVA_HOME if set, otherwise look for java in PATH
@@ -53,8 +41,8 @@ fi
 
 infer_jar_file()
 {
-    local loc_local="${AKIBAN_HOME}/target/akiban-server-2.0.0-SNAPSHOT.jar"
-    local loc_global="/usr/share/akiban/akiban-server.jar"
+    local loc_local="${FDBSQL_HOME}/target/foundationdb-sql-layer-2.0.0-SNAPSHOT.jar"
+    local loc_global="/usr/share/foundationdb-sql/foundationdb-sql-layer.jar"
 
     # Only infer if passed no argument
     if [ -z "$1" ]; then
@@ -73,8 +61,8 @@ infer_jar_file()
 
 infer_dep_dir()
 {
-    local loc_local="${AKIBAN_HOME}/target/dependency"
-    local loc_global="/usr/share/akiban/server"
+    local loc_local="${FDBSQL_HOME}/target/dependency"
+    local loc_global="/usr/share/foundationdb-sql/server"
 
     # Only infer if passed no argument
     if [ -z "$1" ]; then
@@ -98,7 +86,7 @@ get_version()
     dep_dir=$(infer_dep_dir $2)
     CLASSPATH=$jar_file:$dep_dir/*
 
-    server_version=$(exec $JAVA -cp "$CLASSPATH" com.akiban.server.GetVersion)
+    server_version=$(exec $JAVA -cp "$CLASSPATH" com.foundationdb.server.GetVersion)
     persistit_version=$(exec $JAVA -cp "$CLASSPATH" com.persistit.GetVersion)
     echo "server   : ${server_version}"
     echo "persistit: ${persistit_version}"
@@ -112,50 +100,50 @@ launch_service()
     pidpath=$4
     JAR_FILE=$(infer_jar_file $5)
     DEP_DIR=$(infer_dep_dir $6)
-    AKIBAN_CONF=$7
+    FDBSQL_CONF=$7
 
-    if [ -z "$AKIBAN_CONF" ]; then
-        AKIBAN_CONF="${AKIBAN_HOME}/conf"
+    if [ -z "$FDBSQL_CONF" ]; then
+        FDBSQL_CONF="${FDBSQL_HOME}/conf"
     fi
 
     if [ -n "$pidpath" ]; then
-        akiban_parms="$akiban_parms -Dakserver.pidfile=$pidpath"
+        fdbsql_parms="$fdbsql_parms -Dfdbsql.pidfile=$pidpath"
     fi
 
-    if [ -f "$AKIBAN_CONF/config/jvm.options" ]; then
-        . "$AKIBAN_CONF/config/jvm.options"
+    if [ -f "$FDBSQL_CONF/config/jvm.options" ]; then
+        . "$FDBSQL_CONF/config/jvm.options"
     fi
 
     if [ -n "$usegui" ]; then
-        akiban_parms="$akiban_parms -Dcom.persistit.showgui=true"
+        fdbsql_parms="$fdbsql_parms -Dcom.persistit.showgui=true"
     fi
 
-    akiban_parms="$akiban_parms -Dakiban.home=$AKIBAN_HOME -Dakserver.config_dir=$AKIBAN_CONF"
-    akiban_parms="$akiban_parms -Dservices.config=$AKIBAN_CONF/config/services-config.yaml -Dlog4j.configuration=file:$AKIBAN_CONF/config/log4j.properties"
-    akiban_parms="$akiban_parms $print_compilation $props"
+    fdbsql_parms="$fdbsql_parms -Dfdbsql.home=$FDBSQL_HOME -Dfdbsql.config_dir=$FDBSQL_CONF"
+    fdbsql_parms="$fdbsql_parms -Dservices.config=$FDBSQL_CONF/config/services-config.yaml -Dlog4j.configuration=file:$FDBSQL_CONF/config/log4j.properties"
+    fdbsql_parms="$fdbsql_parms $print_compilation $props"
 
     CLASSPATH=$JAR_FILE:$DEP_DIR/*
-    main_class="com.akiban.server.AkServer"
+    main_class="com.foundationdb.server.AkServer"
     if [ -n "$mode" ]; then
         if [ "$mode" == "window" ]; then
-          akiban_parms="$akiban_parms -Drequire:com.akiban.server.service.ui.SwingConsoleService -Dprioritize:com.akiban.server.service.ui.SwingConsoleService"
-          main_class=com.akiban.server.service.ui.AkServerWithSwingConsole
+          fdbsql_parms="$fdbsql_parms -Drequire:com.foundationdb.server.service.ui.SwingConsoleService -Dprioritize:com.foundationdb.server.service.ui.SwingConsoleService"
+          main_class=com.foundationdb.server.service.ui.AkServerWithSwingConsole
         fi
         if [ -n "$profile" ]
         then
-            echo $profile "$JVM_OPTS $akiban_parms -cp $CLASSPATH" $JAVA  $main_class
-            exec $profile "$JVM_OPTS $akiban_parms -cp $CLASSPATH" $JAVA  $main_class
+            echo $profile "$JVM_OPTS $fdbsql_parms -cp $CLASSPATH" $JAVA  $main_class
+            exec $profile "$JVM_OPTS $fdbsql_parms -cp $CLASSPATH" $JAVA  $main_class
         else
-            echo $JAVA $JVM_OPTS $akiban_parms -cp "$CLASSPATH" $main_class
-            exec $JAVA $JVM_OPTS $akiban_parms -cp "$CLASSPATH" $main_class
+            echo $JAVA $JVM_OPTS $fdbsql_parms -cp "$CLASSPATH" $main_class
+            exec $JAVA $JVM_OPTS $fdbsql_parms -cp "$CLASSPATH" $main_class
         fi
     else
-        echo ${AKIBAN_HOME}
+        echo ${FDBSQL_HOME}
         if [ -n "$profile" ]
         then
-            exec $profile "$JVM_OPTS $akiban_parms -cp $CLASSPATH" $JAVA $main_class <&- &
+            exec $profile "$JVM_OPTS $fdbsql_parms -cp $CLASSPATH" $JAVA $main_class <&- &
         else
-            exec $JAVA $JVM_OPTS $akiban_parms -cp "$CLASSPATH" $main_class <&- &
+            exec $JAVA $JVM_OPTS $fdbsql_parms -cp "$CLASSPATH" $main_class <&- &
         fi
     fi
 
@@ -197,14 +185,18 @@ while true; do
             shift
         ;;
         -h)
-            echo "Usage: $0 [-f] [-g] [-h] [-p pidfile] [-j jarfile] [-k] [-s] [-v]"
-            echo "-f launch the akiban server process in the foreground"
-            echo "-g launch the persistit admin tool"
+            echo "Usage: $0 [-c conf_dir] [-d dep_dir] [-f] [-g] [-h] [-j jar_file] [-k] [-p pid_file] [-s] [-w] [-v]"
+            echo "-c configuration directory to use"
+            echo "-d directory with jar dependencies"
+            echo "-f launch the SQL layer process in the foreground"
+            echo "-g launch the persistit GUI"
+            echo "-h print this help message"
+            echo "-j specify a jar file to use"
+            echo "-k kill an existing SQL layer process"
             echo "-p specify a pid file"
-            echo "-j specify a jar file for the server to use"
-            echo "-k kill an akiban server process"
             echo "-s profile using Solaris Studio"
-            echo "-v print akiban server version"
+            echo "-w start console window"
+            echo "-v print SQL layer version"
             exit 0
         ;;
         -D)
@@ -214,8 +206,8 @@ while true; do
         -k)
             # this is not ideal but is only intended to be
             # called by a developer in their environment when
-            # they want to quickly kill an akiban-server
-            # process. This can kill other process with akiban-server
+            # they want to quickly kill a running process.
+            # can kill other process with akiban-server
             # in their name or arguments too...
             pgrep -u `whoami` -f akiban-server | xargs kill -9
             exit 0
@@ -223,7 +215,7 @@ while true; do
         -s)
             profile=`which collect`
             profile="$profile -y SIGCONT -j on -J "
-            print_compilation="$akiban_parms -XX:+PrintCompilation"
+            print_compilation="$fdbsql_parms -XX:+PrintCompilation"
             shift
         ;;
         -v)
@@ -246,4 +238,3 @@ launch_service "$mode" "$properties" "$gui" "$pidfile" "$jarfile" "$depdir" "$co
 
 exit $?
 
-# vi:ai sw=4 ts=4 tw=0 et
