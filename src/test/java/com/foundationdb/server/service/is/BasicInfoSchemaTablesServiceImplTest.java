@@ -271,7 +271,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
 
         builder.sqljJar("test", "ajar", 
-                        new URL("https://software.akiban.com/procs/ajar.jar"));
+                        new URL("https://example.com/procs/ajar.jar"));
 
         builder.routine("test", "proc1", "java", Routine.CallingConvention.JAVA);
         builder.parameter("test", "proc1", "n1", Parameter.Direction.IN,
@@ -641,7 +641,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void jarsScan() {
         final Object[][] expected = {
-            { "test", "ajar", "https://software.akiban.com/procs/ajar.jar", LONG },
+            { "test", "ajar", "https://example.com/procs/ajar.jar", LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.JARS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);

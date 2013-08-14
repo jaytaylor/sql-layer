@@ -199,7 +199,7 @@ public class DateTimeMatrixCreator implements Runnable {
         try {
             
             String path = System.getProperty("user.dir")
-                    + "/src/test/resources/com/akiban/sql/pg/yaml/functional/";
+                    + "/src/test/resources/com/foundationdb/sql/pg/yaml/functional/";
             save(path + "all-datetime-schema.yaml", data);
             //save("data.sql", sql_data);
         } catch (IOException e) {

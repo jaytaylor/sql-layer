@@ -477,7 +477,7 @@ public class ProtobufReaderWriterTest {
         NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
         builder.sqljJar("myjar")
             // A file URL would vary by testing system. But don't check exists.
-            .url("http://software.akiban.com/procs.jar", false);
+            .url("http://example.com/procs.jar", false);
         builder.procedure("PROC1")
             .language("java", Routine.CallingConvention.JAVA)
             .paramLongIn("x1")
@@ -496,7 +496,7 @@ public class ProtobufReaderWriterTest {
         SQLJJar jar = proc.getSQLJJar();
         assertNotNull(jar);
         assertEquals("myjar", jar.getName().getTableName());
-        assertEquals("http://software.akiban.com/procs.jar", jar.getURL().toString());
+        assertEquals("http://example.com/procs.jar", jar.getURL().toString());
 
         assertEquals("java", proc.getLanguage());
         assertEquals(Routine.CallingConvention.JAVA, proc.getCallingConvention());

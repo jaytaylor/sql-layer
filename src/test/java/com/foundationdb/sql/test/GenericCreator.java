@@ -41,7 +41,7 @@ public abstract class GenericCreator {
     protected StringBuilder sb = new StringBuilder();
     protected Formatter formatter = new Formatter(sb, Locale.US);
     String path = System.getProperty("user.dir")
-            + "/src/test/resources/com/akiban/sql/pg/yaml/functional/";
+            + "/src/test/resources/com/foundationdb/sql/pg/yaml/functional/";
     int empty_counter = 0;
     int counter = 0;
 
@@ -192,7 +192,7 @@ public abstract class GenericCreator {
 
     protected boolean deleteFile(String modifier) {
         String path = System.getProperty("user.dir")
-                + "/src/test/resources/com/akiban/sql/pg/yaml/functional/";
+                + "/src/test/resources/com/foundationdb/sql/pg/yaml/functional/";
         return new File(path + "test-" + targetArea + "-" + modifier + ".yaml")
                 .delete();
     }

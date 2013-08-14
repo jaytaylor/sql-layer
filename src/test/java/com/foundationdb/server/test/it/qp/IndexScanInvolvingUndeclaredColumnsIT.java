@@ -63,7 +63,7 @@ public class IndexScanInvolvingUndeclaredColumnsIT extends OperatorITBase
             // region
             createNewRow(region, 10L),
             createNewRow(region, 20L),
-            // region_children (last column is akiban PK)
+            // region_children (last column is hidden PK)
             createNewRow(regionChildren, 10L, 100L, 1L),
             createNewRow(regionChildren, 10L, 110L, 2L),
             createNewRow(regionChildren, 10L, 120L, 3L),

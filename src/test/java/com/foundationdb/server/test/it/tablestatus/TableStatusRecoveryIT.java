@@ -51,14 +51,14 @@ public class TableStatusRecoveryIT extends ITBase {
     public void pkLessInsertRowCountTest() throws Exception {
         final int tableId = createTable("test", "A", "I INT, V VARCHAR(255)");
         for (int i = 0; i < ROW_COUNT; i++) {
-            // -1: Dummy value for akiban-supplied PK
+            // -1: Dummy value for hidden PK
             writeRows(createNewRow(tableId, i, "This is record # " + 1, -1));
         }
         final TableStatistics ts1 = dml().getTableStatistics(session(), tableId, false);
         assertEquals(ROW_COUNT, ts1.getRowCount());
 
         for (int i = ROW_COUNT; i < (ROW_COUNT*2); i++) {
-            // -1: Dummy value for akiban-supplied PK
+            // -1: Dummy value for hidden PK
             writeRows(createNewRow(tableId, i, "This is record # " + 1, -1));
         }
         

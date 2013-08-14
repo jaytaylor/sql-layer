@@ -1,7 +1,7 @@
 ---
 - Properties: sys-mysql
 - suppressed: true
----  # based on files in server /src/test/resources/com/akiban/sql/pg/select
+---  # based on files in server /src/test/resources/com/foundationdb/sql/pg/select
 - Include: all-schema.yaml
 ---
 - Statement: SELECT name FROM customers WHERE cid = 1 

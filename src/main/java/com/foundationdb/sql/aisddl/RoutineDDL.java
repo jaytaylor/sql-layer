@@ -56,7 +56,7 @@ public class RoutineDDL {
     static final ParameterStyleCallingConvention[] parameterStyleCallingConventions = {
         new ParameterStyleCallingConvention("JAVA", "JAVA", 
                                             Routine.CallingConvention.JAVA),
-        new ParameterStyleCallingConvention("JAVA", "AKIBAN_LOADABLE_PLAN", 
+        new ParameterStyleCallingConvention("JAVA", "FOUNDATIONDB_LOADABLE_PLAN",
                                             Routine.CallingConvention.LOADABLE_PLAN),
         new ParameterStyleCallingConvention("SQL", "ROW", 
                                             Routine.CallingConvention.SQL_ROW),

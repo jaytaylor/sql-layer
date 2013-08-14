@@ -91,7 +91,7 @@ public class BitwiseMatrixCreator implements Runnable {
             // will drop the files in the same branch as where this ciode is running
             // sql gets dropped in the root directory of branch
             String path = System.getProperty("user.dir")
-                    + "/src/test/resources/com/akiban/sql/pg/yaml/functional/";
+                    + "/src/test/resources/com/foundationdb/sql/pg/yaml/functional/";
             System.out.println(path);
             save(path + "all-bitwise-matrix-schema.yaml", data);
             save("all-bitwise-matrix-schema.sql", sql_data);

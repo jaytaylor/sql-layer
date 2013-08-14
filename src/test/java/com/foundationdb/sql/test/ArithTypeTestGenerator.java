@@ -59,7 +59,7 @@ public class ArithTypeTestGenerator
                          "## Tests enabled: " + (stmNumber - 2) + "\n");
 
         String path = System.getProperty("user.dir")
-                    + "/src/test/resources/com/akiban/sql/pg/yaml/functional"
+                    + "/src/test/resources/com/foundationdb/sql/pg/yaml/functional"
                     + "/test-arith-typing.yaml";
         saveFile(output, path);
         System.out.println(output);

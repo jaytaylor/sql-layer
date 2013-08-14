@@ -558,7 +558,7 @@ public class IntervalMatrixCreator {
         /*
          * TODO: Need to test timestamp intervals once we clear up the issue of
          * controlling the timezone for timestamps from tests.
-         * -tblackman@akiban.com (01/05/2012)
+         * -tblackman (01/05/2012)
          */
     }
 

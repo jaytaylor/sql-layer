@@ -35,8 +35,8 @@ import java.io.*;
 /** A loadable direct object plan that returns asynchronous results.
  * Needs to use copy mode to get results out as it goes.
  * <code><pre>
-CALL sqlj.install_jar('target/akiban-server-1.4.3-SNAPSHOT-tests.jar', 'testjar', 0);
-CREATE PROCEDURE system.`exec`(IN cmd VARCHAR(1024)) LANGUAGE java PARAMETER STYLE akiban_loadable_plan EXTERNAL NAME 'testjar:com.foundationdb.server.test.it.routines.TestDirectAsync';
+CALL sqlj.install_jar('target/foundationdb-sql-layer-2.0.0-SNAPSHOT-tests.jar', 'testjar', 0);
+CREATE PROCEDURE system.`exec`(IN cmd VARCHAR(1024)) LANGUAGE java PARAMETER STYLE foundationdb_loadable_plan EXTERNAL NAME 'testjar:com.foundationdb.server.test.it.routines.TestDirectAsync';
 CALL system.`exec`('tail', '-f', '/tmp/akiban_server/server.log');
  * </pre></code> 
  */
