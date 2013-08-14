@@ -27,11 +27,11 @@ fi
 platform=$1
 git_hash=`git rev-parse --short HEAD`
 git_count=`git rev-list --merges HEAD |wc -l |tr -d ' '` # --count is newer
-server_version=$(mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version |grep -o '^[0-9.]\+')
+layer_version=$(mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version |grep -o '^[0-9.]\+')
 
 mvn_install="mvn clean install -DGIT_COUNT=${git_count} -DGIT_HASH=${git_hash} -DskipTests=true"
 
-echo "Building Akiban Server"
+echo "Building FoundationDB SQL Layer"
 
 license=LICENSE.txt
 
@@ -49,19 +49,19 @@ cp ${license} packages-common/LICENSE.txt
 cp ${common_dir}/* packages-common/
 
 #
-# Add akiban-client tools
+# Add client-tools
 #
-: ${TOOLS_BRANCH:="lp:akiban-client-tools"}
-echo "Using akiban-client-tools bazaar branch: ${TOOLS_BRANCH}"
+: ${TOOLS_LOC:="git@github.com:FoundationDB/sql-layer-client-tools.git"}
+echo "Using client-tools location: ${TOOLS_LOC}"
 pushd .
 cd target
-rm -rf akiban-client-tools
-bzr branch ${TOOLS_BRANCH} akiban-client-tools
-cd akiban-client-tools
+rm -rf client-tools
+git clone ${TOOLS_LOC} client-tools
+cd client-tools
 mvn -DskipTests=true install 
 rm -f target/*-tests.jar target/*-sources.jar
-cp bin/akdump ../../packages-common/
-cp target/akiban-client-tools-*.jar ../../packages-common/
+cp bin/fdbsqldump ../../packages-common/
+cp target/foundationdb-sql-layer-client-tools-*.jar ../../packages-common/
 cp target/dependency/* ../../packages-common/client/
 popd
 
@@ -129,11 +129,12 @@ elif [ ${platform} == "binary" ]; then
     cp ${license} ${BINARY_NAME}/LICENSE.txt
     tar zcf ${BINARY_TAR_NAME} ${BINARY_NAME}    
 elif [ ${platform} == "macosx" ]; then
-    client_jar=packages-common/akiban-client-tools-*.jar
+    client_jar=packages-common/foundationdb-sql-layer-client-tools-*.jar
     client_deps=packages-common/client
-    akdump_bin=packages-common/akdump
+    akdump_bin=packages-common/fdbsqldump
     plugins_dir=packages-common/plugins
-    mac_app='target/Akiban Server.app'
+    app_name='FoundationDB SQL Layer.app'
+    mac_app="target/${app_name}"
     inst_temp=/tmp/inst_temp
 
     # copy icon data from a "prototype" file
@@ -152,7 +153,7 @@ elif [ ${platform} == "macosx" ]; then
 
         # build app bundle
         curl -Ls -o target/appbundler-1.0.jar http://java.net/projects/appbundler/downloads/download/appbundler-1.0.jar
-        ant -f macosx/appbundler.xml ${ant_target} -Djdk.home=$(/usr/libexec/java_home) -Dakserver.version="${server_version}-r${git_count}"
+        ant -f macosx/appbundler.xml ${ant_target} -Djdk.home=$(/usr/libexec/java_home) -Dfdbsql.version="${layer_version}-r${git_count}"
 
         # add config files to bundle
         mkdir "${mac_app}/Contents/Resources/config/"
@@ -170,19 +171,18 @@ elif [ ${platform} == "macosx" ]; then
         rm -rf $inst_temp
         rm -f $inst_temp.dmg
         mkdir $inst_temp
-        mkdir "$inst_temp/Akiban Server.app"
-        ln -s /Applications $inst_temp
-        mkdir $inst_temp/.background
-        cp macosx/dmg_background.png $inst_temp/.background
-        hdiutil create -fs HFSX -layout SPUD -size 200m $inst_temp.dmg -format UDRW -volname 'Akiban Server' -srcfolder $inst_temp
+        mkdir "$inst_temp/${app_name}"
+        hdiutil create -fs HFSX -layout SPUD -size 200m $inst_temp.dmg -format UDRW -volname 'FoundationDB SQL Layer' -srcfolder $inst_temp
         rm -rf $inst_temp
 
         # update disk image
         mkdir $inst_temp
         hdiutil attach $inst_temp.dmg -noautoopen -mountpoint $inst_temp
-        ditto "$mac_app" "$inst_temp/Akiban Server.app"
+        ditto "$mac_app" "$inst_temp/${app_name}"
         
         # == add non-app files here ==
+        ln -s /Applications $inst_temp
+        cp macosx/dmg_background.png ${inst_temp}/.background.png
         cp macosx/dmg.DS_Store $inst_temp/.DS_Store
         cp macosx/dmg_VolumeIcon.icns $inst_temp/.VolumeIcon.icns
         cp ${license} $inst_temp/LICENSE.txt
@@ -192,7 +192,7 @@ elif [ ${platform} == "macosx" ]; then
         rm $inst_temp.dmg
     }
     
-    dmg_basename="Akiban_Server_${server_version}"
+    dmg_basename="FoundationDB_SQL_Layer_${layer_version}"
     build_dmg "bundle_app" "${dmg_basename}.dmg"
     build_dmg "bundle_app_jre" "${dmg_basename}_JRE.dmg"
 else
