@@ -124,10 +124,10 @@ public final class SchemaManagerIT extends ITBase {
     protected Map<String, String> startupConfigProperties() {
         // Set up multi-volume treespace policy so we can be sure schema is properly distributed.
         final Map<String, String> properties = new HashMap<>();
-        properties.put("akserver.treespace.a",
+        properties.put("fdbsql.treespace.a",
                                     VOL2_PREFIX + "*:${datapath}/${schema}.v0,create,pageSize:${buffersize},"
                                     + "initialSize:10K,extensionSize:1K,maximumSize:10G");
-        properties.put("akserver.treespace.b",
+        properties.put("fdbsql.treespace.b",
                                     VOL3_PREFIX + "*:${datapath}/${schema}.v0,create,pageSize:${buffersize},"
                                     + "initialSize:10K,extensionSize:1K,maximumSize:10G");
         return properties;

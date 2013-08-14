@@ -131,13 +131,13 @@ public class TestConfigService extends ConfigurationServiceImpl {
 
     private static final AtomicReference<Map<String, String>> startupConfigPropertiesRef
             = new AtomicReference<>();
-    public final static String DATA_PATH_KEY = "akserver.datapath";
-    public final static String TEXT_INDEX_PATH_KEY = "akserver.text.indexpath";
+    public final static String DATA_PATH_KEY = "fdbsql.datapath";
+    public final static String TEXT_INDEX_PATH_KEY = "fdbsql.text.indexpath";
     private final static String COMMIT_POLICY_KEY = "persistit.txnpolicy";
     private final static String BUFFER_SIZE_KEY = "persistit.buffersize";
     private final static String BUFFER_MEMORY_KEY_PREFIX = "persistit.buffer.memory";
     private final static String JOURNAL_SIZE_KEY = "persistit.journalsize";
-    private final static String PARSE_SPATIAL_INDEX = "akserver.postgres.parserGeospatialIndexes";
+    private final static String PARSE_SPATIAL_INDEX = "fdbsql.postgres.parserGeospatialIndexes";
     private final static String UNIT_TEST_PERSISTIT_MEMORY = "20M";
     private final static long UNIT_TEST_PERSISTIT_JOURNAL_SIZE = 128 * 1024 * 1024;
     private final static String UNIT_TEST_COMMIT_POLICY = "SOFT";

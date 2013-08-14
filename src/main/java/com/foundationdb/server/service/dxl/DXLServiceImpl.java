@@ -51,7 +51,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DXLServiceImpl implements DXLService, Service, JmxManageable {
-    private final static String CONFIG_USE_GLOBAL_LOCK = "akserver.dxl.use_global_lock";
+    private final static String CONFIG_USE_GLOBAL_LOCK = "fdbsql.dxl.use_global_lock";
     private final static Logger LOG = LoggerFactory.getLogger(DXLServiceImpl.class);
 
     // For alterSequence routine

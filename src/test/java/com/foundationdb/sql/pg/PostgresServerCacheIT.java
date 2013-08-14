@@ -40,7 +40,7 @@ public class PostgresServerCacheIT extends PostgresServerFilesITBase
     
     @Override
     protected Map<String, String> startupConfigProperties() {
-        return Collections.singletonMap("akserver.postgres.statementCacheCapacity", CAPACITY);
+        return Collections.singletonMap("fdbsql.postgres.statementCacheCapacity", CAPACITY);
     }
 
     @Before

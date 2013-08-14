@@ -72,7 +72,7 @@ import static com.foundationdb.http.SecurityServiceLoginService.CredentialType;
 public final class HttpConductorImpl implements HttpConductor, Service {
     private static final Logger logger = LoggerFactory.getLogger(HttpConductorImpl.class);
 
-    private static final String CONFIG_HTTP_PREFIX = "akserver.http.";
+    private static final String CONFIG_HTTP_PREFIX = "fdbsql.http.";
     private static final String CONFIG_PORT_PROPERTY = CONFIG_HTTP_PREFIX + "port";
     private static final String CONFIG_SSL_PROPERTY = CONFIG_HTTP_PREFIX + "ssl";
     private static final String CONFIG_LOGIN_PROPERTY = CONFIG_HTTP_PREFIX + "login";

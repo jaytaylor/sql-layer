@@ -57,7 +57,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
 {
     private static final Logger LOG = LoggerFactory.getLogger(PersistitStore.class);
 
-    private static final String WRITE_LOCK_ENABLED_CONFIG = "akserver.write_lock_enabled";
+    private static final String WRITE_LOCK_ENABLED_CONFIG = "fdbsql.write_lock_enabled";
 
     private boolean writeLockEnabled;
 

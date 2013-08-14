@@ -90,12 +90,12 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         UNKNOWN
     }
 
-    public static final String MAX_AIS_SIZE_PROPERTY = "akserver.max_ais_size_bytes";
-    public static final String SKIP_AIS_UPGRADE_PROPERTY = "akserver.skip_ais_upgrade";
+    public static final String MAX_AIS_SIZE_PROPERTY = "fdbsql.max_ais_size_bytes";
+    public static final String SKIP_AIS_UPGRADE_PROPERTY = "fdbsql.skip_ais_upgrade";
     public static final SerializationType DEFAULT_SERIALIZATION = SerializationType.PROTOBUF;
 
-    public static final String DEFAULT_CHARSET = "akserver.default_charset";
-    public static final String DEFAULT_COLLATION = "akserver.default_collation";
+    public static final String DEFAULT_CHARSET = "fdbsql.default_charset";
+    public static final String DEFAULT_COLLATION = "fdbsql.default_collation";
 
     private static final String CREATE_SCHEMA_FORMATTER = "create schema if not exists `%s`;";
     private static final Logger LOG = LoggerFactory.getLogger(AbstractSchemaManager.class.getName());

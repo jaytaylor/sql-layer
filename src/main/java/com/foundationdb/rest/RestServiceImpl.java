@@ -72,7 +72,7 @@ public class RestServiceImpl implements RestService, Service {
 
     @Override
     public String getContextPath() {
-        return configService.getProperty("akserver.rest.context_path");
+        return configService.getProperty("fdbsql.rest.context_path");
     }
 
 	@Override

@@ -32,8 +32,8 @@ public class TreeServiceImplInvalidIT extends PersistitITBase
     @Override
     protected Map<String, String> startupConfigProperties() {
         final Map<String, String> properties = new HashMap<>();
-        properties.put("akserver.treespace.a", "drupal*");
-        properties.put("akserver.treespace.b", "liveops*");
+        properties.put("fdbsql.treespace.a", "drupal*");
+        properties.put("fdbsql.treespace.b", "liveops*");
         return properties;
     }
 

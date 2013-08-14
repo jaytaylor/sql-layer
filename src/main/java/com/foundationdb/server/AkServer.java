@@ -85,10 +85,10 @@ public class AkServer implements Service, JmxManageable, AkServerInterface
         VERSION_PATCH = patch;
     }
 
-    private static final String AKSERVER_NAME_PROP = "akserver.name";
-    private static final String GC_INTERVAL_NAME = "akserver.gc_monitor.interval";
-    private static final String GC_THRESHOLD_NAME = "akserver.gc_monitor.log_threshold_ms";
-    private static final String PID_FILE_NAME = System.getProperty("akserver.pidfile");
+    private static final String AKSERVER_NAME_PROP = "fdbsql.name";
+    private static final String GC_INTERVAL_NAME = "fdbsql.gc_monitor.interval";
+    private static final String GC_THRESHOLD_NAME = "fdbsql.gc_monitor.log_threshold_ms";
+    private static final String PID_FILE_NAME = System.getProperty("fdbsql.pidfile");
 
     private final JmxObjectInfo jmxObjectInfo;
     private final ConfigurationService config;

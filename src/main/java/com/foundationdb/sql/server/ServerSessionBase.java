@@ -48,7 +48,7 @@ import java.util.*;
 public abstract class ServerSessionBase extends AISBinderContext implements ServerSession
 {
     public static final String COMPILER_PROPERTIES_PREFIX = "optimizer.";
-    public static final String PIPELINE_PROPERTIES_PREFIX = "akserver.pipeline.";
+    public static final String PIPELINE_PROPERTIES_PREFIX = "fdbsql.pipeline.";
 
     protected final ServerServiceRequirements reqs;
     protected Properties compilerProperties;

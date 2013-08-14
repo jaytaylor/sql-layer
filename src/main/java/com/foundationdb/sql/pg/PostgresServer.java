@@ -53,7 +53,7 @@ import javax.security.auth.login.LoginException;
  * Also keeps global state for shutdown and inter-connection communication like cancel.
 */
 public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
-    public static final String SERVER_PROPERTIES_PREFIX = "akserver.postgres.";
+    public static final String SERVER_PROPERTIES_PREFIX = "fdbsql.postgres.";
     protected static final String SERVER_TYPE = "Postgres";
     private static final String THREAD_NAME_PREFIX = "PostgresServer_Accept-"; // Port is appended
 

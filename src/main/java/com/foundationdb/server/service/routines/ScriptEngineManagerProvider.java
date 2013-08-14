@@ -23,6 +23,6 @@ import org.slf4j.LoggerFactory;
 import javax.script.ScriptEngineManager;
 
 public interface ScriptEngineManagerProvider {
-    public static final String CLASS_PATH = "akserver.routines.script_class_path";
+    public static final String CLASS_PATH = "fdbsql.routines.script_class_path";
     public ScriptEngineManager getManager();
 }

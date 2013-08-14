@@ -278,10 +278,10 @@
                         <phase>process-resources</phase>
                         <configuration>
                             <portNames>
-                                <portName>akserver.port</portName>
+                                <portName>fdbsql.port</portName>
                                 <portName>debug.port</portName>
-                                <portName>akserver.postgres.port</portName>
-                                <portName>akserver.http.port</portName>
+                                <portName>fdbsql.postgres.port</portName>
+                                <portName>fdbsql.http.port</portName>
                             </portNames>
                         </configuration>
                     </execution>
@@ -334,8 +334,8 @@
                 <version>2.12.4</version>
                 <configuration>
                     <systemPropertyVariables>
-                        <akserver.port>${akserver.port}</akserver.port>
-                        <akserver.postgres.port>${akserver.postgres.port}</akserver.postgres.port>
+                        <fdbsql.port>${fdbsql.port}</fdbsql.port>
+                        <fdbsql.postgres.port>${fdbsql.postgres.port}</fdbsql.postgres.port>
                     </systemPropertyVariables>
                     <argLine>-Xmx512m ${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
                     <includes>
@@ -353,8 +353,8 @@
                 <version>2.12.4</version>
                 <configuration>
                     <systemPropertyVariables>
-                        <akserver.port>${akserver.port}</akserver.port>
-                        <akserver.postgres.port>${akserver.postgres.port}</akserver.postgres.port>
+                        <fdbsql.port>${fdbsql.port}</fdbsql.port>
+                        <fdbsql.postgres.port>${fdbsql.postgres.port}</fdbsql.postgres.port>
                     </systemPropertyVariables>
                     <argLine>-Xmx512m ${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
                 </configuration>

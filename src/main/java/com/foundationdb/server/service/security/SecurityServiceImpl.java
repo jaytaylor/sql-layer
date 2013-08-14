@@ -79,7 +79,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
     public static final String DELETE_ROLE_USER_ROLES_SQL = "DELETE FROM user_roles WHERE role_id IN (SELECT id FROM roles WHERE name = ?)";
     public static final String DELETE_USER_USER_ROLES_SQL = "DELETE FROM user_roles WHERE user_id IN (SELECT id FROM users WHERE name = ?)";
     
-    public static final String RESTRICT_USER_SCHEMA_PROPERTY = "akserver.restrict_user_schema";
+    public static final String RESTRICT_USER_SCHEMA_PROPERTY = "fdbsql.restrict_user_schema";
 
     private final ConfigurationService configService;
     private final SchemaManager schemaManager;

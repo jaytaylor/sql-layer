@@ -180,7 +180,7 @@ public class MergeJoinSorter implements Sorter {
     }
     
     private SortConfig getSortConfig (MergeTempFileProvider tmpFileProvider) {
-        long maxMemory = Long.parseLong(context.getServiceManager().getConfigurationService().getProperty("akserver.sort.memory"));
+        long maxMemory = Long.parseLong(context.getServiceManager().getConfigurationService().getProperty("fdbsql.sort.memory"));
         return new SortConfig().withTempFileProvider(tmpFileProvider).withMaxMemoryUsage(maxMemory);
     }
     /*
@@ -472,7 +472,7 @@ public class MergeJoinSorter implements Sorter {
         private final String prefix;
         private final String suffix;
         public MergeTempFileProvider (QueryContext context) {
-            directory = new File (context.getServiceManager().getConfigurationService().getProperty("akserver.tmp_dir"));
+            directory = new File (context.getServiceManager().getConfigurationService().getProperty("fdbsql.tmp_dir"));
             suffix = ".tmp";
             String tmpPrefix;
             tmpPrefix = "sort-" +  context.getSessionId() + "-";

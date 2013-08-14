@@ -66,7 +66,7 @@ public class PostgresServerITBase extends ITBase
     protected Connection openConnection() throws Exception {
         int port = getPostgresService().getPort();
         if (port <= 0) {
-            throw new Exception("akserver.postgres.port is not set.");
+            throw new Exception("fdbsql.postgres.port is not set.");
         }
         String url = String.format(CONNECTION_URL, port);
         Class.forName(DRIVER_NAME);

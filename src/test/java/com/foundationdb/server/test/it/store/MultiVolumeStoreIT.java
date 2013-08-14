@@ -40,10 +40,10 @@ public class MultiVolumeStoreIT extends PersistitITBase {
     protected Map<String, String> startupConfigProperties() {
         // Set up multi-volume treespace policy so we can be sure schema is properly distributed.
         final Map<String, String> properties = new HashMap<>();
-        properties.put("akserver.treespace.1",
+        properties.put("fdbsql.treespace.1",
                                     "test2/_akiban_customer:${datapath}/${schema}_customer.v0,create,pageSize:"+
                                     "${buffersize},initialSize:10K,extensionSize:1K,maximumSize:10G");
-        properties.put("akserver.treespace.2",
+        properties.put("fdbsql.treespace.2",
                                     "test*:${datapath}/${schema}.v0,create,pageSize:"+
                                     "${buffersize},initialSize:10K,extensionSize:1K,maximumSize:10G");
         return properties;

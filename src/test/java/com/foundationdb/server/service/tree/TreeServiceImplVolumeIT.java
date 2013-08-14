@@ -35,10 +35,10 @@ public class TreeServiceImplVolumeIT extends PersistitITBase
     @Override
     protected Map<String, String> startupConfigProperties() {
         final Map<String, String> properties = new HashMap<>();
-        properties.put("akserver.treespace.a",
+        properties.put("fdbsql.treespace.a",
                                     "drupal*:${datapath}/${schema}.v0,create,pageSize:${buffersize},"
                                     + "initialSize:10K,extensionSize:1K,maximumSize:10G");
-        properties.put("akserver.treespace.b",
+        properties.put("fdbsql.treespace.b",
                                     "liveops*:${datapath}/${schema}.v0,create,pageSize:${buffersize},"
                                     + "initialSize:10K,extensionSize:1K,maximumSize:10G");
         return properties;

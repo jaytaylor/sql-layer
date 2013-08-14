@@ -68,7 +68,7 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
     private static final Logger log = LoggerFactory.getLogger(AbstractIndexStatisticsService.class);
 
     private static final int INDEX_STATISTICS_TABLE_VERSION = 1;
-    private static final String BUCKET_COUNT_PROPERTY = "akserver.index_statistics.bucket_count";
+    private static final String BUCKET_COUNT_PROPERTY = "fdbsql.index_statistics.bucket_count";
 
     private final Store store;
     private final TransactionService txnService;

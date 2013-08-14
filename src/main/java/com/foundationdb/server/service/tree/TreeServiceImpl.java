@@ -65,11 +65,11 @@ public class TreeServiceImpl
 
     private static final String DATAPATH_PROP_NAME = "datapath";
     
-    private static final String TEMPDIR_NAME = "akserver.tmp_dir";
+    private static final String TEMPDIR_NAME = "fdbsql.tmp_dir";
 
     private static final String BUFFER_SIZE_PROP_NAME = "buffersize";
     
-    private static final String COLLATION_PROP_NAME = "akserver.collation";
+    private static final String COLLATION_PROP_NAME = "fdbsql.collation";
 
     private static final Session.Key<Volume> TEMP_VOLUME = Session.Key.named("TEMP_VOLUME");
 
@@ -188,7 +188,7 @@ public class TreeServiceImpl
         // Sets the property named "buffersize" so that the volume
         // specifications can use the substitution syntax ${buffersize}.
         //
-        final String datapath = configService.getProperty("akserver." + DATAPATH_PROP_NAME);
+        final String datapath = configService.getProperty("fdbsql." + DATAPATH_PROP_NAME);
         properties.setProperty(DATAPATH_PROP_NAME, datapath);
         ensureDirectoryExists(datapath, false);
 
@@ -511,7 +511,7 @@ public class TreeServiceImpl
     }
 
     void buildSchemaMap() {
-        final Properties properties = configService.deriveProperties("akserver.");
+        final Properties properties = configService.deriveProperties("fdbsql.");
         for (final Entry<Object, Object> entry : properties.entrySet()) {
             final String name = (String) entry.getKey();
             final String value = (String) entry.getValue();

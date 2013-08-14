@@ -77,8 +77,8 @@ public class HttpMonitorVerifyIT extends ITBase {
     @Override
     protected Map<String, String> startupConfigProperties() {
         Map<String, String> properties = new HashMap<>();
-        properties.put("akserver.http.login", "basic"); // "digest"
-        properties.put("akserver.restrict_user_schema", "true");
+        properties.put("fdbsql.http.login", "basic"); // "digest"
+        properties.put("fdbsql.restrict_user_schema", "true");
         return properties;
     }
 

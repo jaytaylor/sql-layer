@@ -82,8 +82,8 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
 {
     private static final Logger logger = LoggerFactory.getLogger(FullTextIndexServiceImpl.class);
 
-    public static final String INDEX_PATH_PROPERTY = "akserver.text.indexpath";
-    public static final String BACKGROUND_INTERVAL_PROPERTY = "akserver.text.backgroundInterval";
+    public static final String INDEX_PATH_PROPERTY = "fdbsql.text.indexpath";
+    public static final String BACKGROUND_INTERVAL_PROPERTY = "fdbsql.text.backgroundInterval";
 
     private static final TableName POPULATE_TABLE = new TableName(TableName.INFORMATION_SCHEMA, "full_text_populate");
     private static final TableName CHANGES_TABLE = new TableName(TableName.INFORMATION_SCHEMA, "full_text_changes");

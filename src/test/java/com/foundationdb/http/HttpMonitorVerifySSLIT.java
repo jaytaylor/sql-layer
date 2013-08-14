@@ -118,9 +118,9 @@ public class HttpMonitorVerifySSLIT extends ITBase {
     @Override
     protected Map<String, String> startupConfigProperties() {
         Map<String, String> properties = new HashMap<>();
-        properties.put("akserver.http.login", "digest"); // "digest"
-        properties.put("akserver.http.ssl", "true");
-        properties.put("akserver.restrict_user_schema", "true");
+        properties.put("fdbsql.http.login", "digest"); // "digest"
+        properties.put("fdbsql.http.ssl", "true");
+        properties.put("fdbsql.restrict_user_schema", "true");
         
         Properties p = new Properties(System.getProperties());
         p.put("javax.net.ssl.keyStore", "./keystore");

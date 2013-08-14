@@ -27,7 +27,7 @@ import com.google.inject.Inject;
 public final class StatisticsServiceImpl implements StatisticsService,
         Service, JmxManageable {
 
-    private static final String STATISTICS_PROPERTY = "akserver.statistics";
+    private static final String STATISTICS_PROPERTY = "fdbsql.statistics";
 
     @Inject
     public StatisticsServiceImpl(ConfigurationService config) {
