@@ -86,7 +86,7 @@ public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
                 user = (User)principal;
             }
             else {
-                // Translate from Java security realm (e.g., Jetty) to Akiban.
+                // Translate from Java security realm (e.g., Jetty) to SQL Layer.
                 user = reqs.securityService().getUser(principal.getName());
             }
         }

@@ -8,7 +8,7 @@
     - com.foundationdb.server.service.dxl.DXLService          # Loads the DDL/DML JMX bean
     - com.foundationdb.server.service.stats.StatisticsService # Stats gathering
     - com.foundationdb.server.service.jmx.JmxRegistryService  # Turns on JMX for other services
-    - com.foundationdb.sql.pg.PostgresService                 # Akiban SQL
+    - com.foundationdb.sql.pg.PostgresService                 # SQL
     - com.foundationdb.sql.embedded.EmbeddedJDBCService       # Embedded JDBC
     - com.foundationdb.server.service.log4jconfig.Log4JConfigurationService
     - com.foundationdb.server.service.monitor.MonitorService

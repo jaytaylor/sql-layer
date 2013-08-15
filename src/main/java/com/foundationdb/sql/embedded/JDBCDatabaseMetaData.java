@@ -102,7 +102,7 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 
     @Override
     public String getDriverName() throws SQLException {
-        return "Akiban Embedded JDBC";
+        return "FoundationDB SQL Layer Embedded JDBC";
     }
 
     @Override

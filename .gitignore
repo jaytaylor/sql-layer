@@ -5,9 +5,9 @@ debian/postrm.debhelper
 debian/prerm.debhelper
 debian/substvars
 debian/tmp/
-debian/akiban/
-debian/akiban.debhelper.log
-debian/akiban.substvars
+debian/fdb-sql-layer/
+debian/fdb-sql-layer.debhelper.log
+debian/fdb-sql-layer.substvars
 redhat/rpmbuild
 target/
 plugins/

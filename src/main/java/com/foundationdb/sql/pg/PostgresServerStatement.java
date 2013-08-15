@@ -200,7 +200,7 @@ public class PostgresServerStatement implements PostgresStatement {
             break;
         case SHUTDOWN:
             {
-                String msg = "Akiban server being shutdown";
+                String msg = "FoundationDB SQL Layer being shutdown";
                 Collection<PostgresServerConnection> conns = server.getConnections();
                 for (PostgresServerConnection conn : conns) {
                     if (conn == current)

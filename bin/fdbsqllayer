@@ -207,9 +207,7 @@ while true; do
             # this is not ideal but is only intended to be
             # called by a developer in their environment when
             # they want to quickly kill a running process.
-            # can kill other process with akiban-server
-            # in their name or arguments too...
-            pgrep -u `whoami` -f akiban-server | xargs kill -9
+            pgrep -u `whoami` -f foundationdb-sql-layer | xargs kill -9
             exit 0
         ;;
         -s)

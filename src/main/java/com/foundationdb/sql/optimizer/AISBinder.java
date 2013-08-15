@@ -48,7 +48,6 @@ import com.foundationdb.ais.model.View;
 
 import java.util.*;
 
-/** Bind objects to Akiban schema. */
 public class AISBinder implements Visitor
 {
     private AkibanInformationSchema ais;

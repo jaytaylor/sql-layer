@@ -54,7 +54,7 @@ public class PKLessTableRowDefCacheTest
         rowComp = index.indexRowComposition();
         Assert.assertEquals(4, rowComp.getFieldPosition(0)); // test.e
         Assert.assertEquals(3, rowComp.getFieldPosition(1)); // test.d
-        Assert.assertEquals(5, rowComp.getFieldPosition(2)); // Akiban PK
+        Assert.assertEquals(5, rowComp.getFieldPosition(2)); // hidden PK
         indexToHKey = index.indexToHKey();
         Assert.assertEquals(t.getOrdinal().intValue(), indexToHKey.getOrdinal(0)); // test ordinal
         Assert.assertEquals(2, indexToHKey.getIndexRowPosition(1)); // test row counter
@@ -65,10 +65,10 @@ public class PKLessTableRowDefCacheTest
         rowComp = index.indexRowComposition();
         Assert.assertEquals(3, rowComp.getFieldPosition(0)); // test.d
         Assert.assertEquals(1, rowComp.getFieldPosition(1)); // test.b
-        Assert.assertEquals(5, rowComp.getFieldPosition(2)); // Akiban PK
+        Assert.assertEquals(5, rowComp.getFieldPosition(2)); // hidden PK
         indexToHKey = index.indexToHKey();
         Assert.assertEquals(t.getOrdinal().intValue(), indexToHKey.getOrdinal(0)); // test ordinal
-        Assert.assertEquals(2, indexToHKey.getIndexRowPosition(1)); // Akiban PK
+        Assert.assertEquals(2, indexToHKey.getIndexRowPosition(1)); // hidden PK
     }
 
     @Test

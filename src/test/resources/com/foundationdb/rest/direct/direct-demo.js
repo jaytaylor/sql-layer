@@ -86,7 +86,7 @@ function raiseSalary(empno, percent, effectiveDate) {
 	var newSalary = salary.salary * multiplier;
 	println("Salary for employee " + emp.lastName + " would be raised to "
 			+ newSalary + " on " + effectiveDate
-			+ " if Akiban Direct had update support");
+			+ " if Direct had update support");
 
 }
 

@@ -29,8 +29,8 @@ import java.util.regex.Pattern;
 
 /** Handle known system table queries from tools directly.  At some
  * point it may be possible to actually implement <code>pg_</code>
- * tables as views against Akiban's own information schema. But for
- * now, some of the queries do not even parse in Akiban SQL.
+ * tables as views against the SQL Layer's own information schema. But for
+ * now, some of the queries do not even parse in our dialect.
  */
 public class PostgresEmulatedMetaDataStatementParser implements PostgresStatementParser
 {

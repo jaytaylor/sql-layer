@@ -50,7 +50,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class AlterTableITBase extends ITBase {
-    private final static String EXPECTED_VOLUME_NAME = "akiban_data";
+    private final static String EXPECTED_VOLUME_NAME = "persistit_data";
 
     protected static final String SCHEMA = "test";
     protected static final String X_TABLE = "x";

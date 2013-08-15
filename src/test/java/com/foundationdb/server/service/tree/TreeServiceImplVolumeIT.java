@@ -48,7 +48,7 @@ public class TreeServiceImplVolumeIT extends PersistitITBase
     public void testCreateVolume() throws Exception {
         final TreeService treeService = treeService();
         final TestLink link0 = new TestLink("not_drupal", "_schema_");
-        checkExchangeName(treeService, link0, "akiban_data");
+        checkExchangeName(treeService, link0, "persistit_data");
         final TestLink link1 = new TestLink("drupal_large", "_schema_");
         checkExchangeName(treeService, link1, "drupal_large");
         final TestLink link2 = new TestLink("drupal.org", "_schema_");

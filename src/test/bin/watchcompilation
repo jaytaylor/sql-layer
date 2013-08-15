@@ -6,7 +6,7 @@ import time
 import threading
 import signal
 
-AKSERVER='com.akiban.server.AkServer'
+AKSERVER='com.foundationdb.server.AkServer'
 START_PROFILING='kill -18 %s'
 MUST_COMPILE='com.persistit.Transaction::isActive'
 monitor = None

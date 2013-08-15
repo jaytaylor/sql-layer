@@ -32,8 +32,8 @@
         <!-- Defaults hash and merge count. Jenkins sets these to real values when building packages. -->
         <GIT_HASH></GIT_HASH>
         <GIT_COUNT></GIT_COUNT>
-        <akiban.test.extraJvmArgs></akiban.test.extraJvmArgs>
-        <akiban.test.JmxJvmArgs>-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=8082 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false</akiban.test.JmxJvmArgs>
+        <fdbsql.test.extraJvmArgs></fdbsql.test.extraJvmArgs>
+        <fdbsql.test.JmxJvmArgs>-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=8082 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false</fdbsql.test.JmxJvmArgs>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
@@ -337,7 +337,7 @@
                         <fdbsql.port>${fdbsql.port}</fdbsql.port>
                         <fdbsql.postgres.port>${fdbsql.postgres.port}</fdbsql.postgres.port>
                     </systemPropertyVariables>
-                    <argLine>-Xmx512m ${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
+                    <argLine>-Xmx512m ${fdbsql.test.extraJvmArgs} ${fdbsql.test.JmxJvmArgs}</argLine>
                     <includes>
                         <include>**/*Test.java</include>
                         <include>**/*Test?.java</include>
@@ -356,7 +356,7 @@
                         <fdbsql.port>${fdbsql.port}</fdbsql.port>
                         <fdbsql.postgres.port>${fdbsql.postgres.port}</fdbsql.postgres.port>
                     </systemPropertyVariables>
-                    <argLine>-Xmx512m ${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
+                    <argLine>-Xmx512m ${fdbsql.test.extraJvmArgs} ${fdbsql.test.JmxJvmArgs}</argLine>
                 </configuration>
                 <executions>
                     <execution>

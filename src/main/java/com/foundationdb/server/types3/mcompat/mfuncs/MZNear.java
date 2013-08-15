@@ -44,7 +44,7 @@ public class MZNear extends TScalarBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-            throw new UnsupportedSQLException("This query is not supported by Akiban, its definition " + 
+            throw new UnsupportedSQLException("This query is not supported, its definition " +
                                               "is used solely for optimization purposes.");
     }
 

@@ -18,8 +18,8 @@
 package com.foundationdb.server.collation;
 
 /**
- * Holds a String and a collationId. Akiban Server registers a custom KeyCoder
- * instance to handle serializing and deserializing instances of this class in a
+ * Holds a String and a collationId. A custom KeyCoder instance is registered
+ * to handle serializing and deserializing instances of this class in a
  * Persistit Key.
  * 
  * This class is not immutable because the CStringKeyCoder decoding methods are

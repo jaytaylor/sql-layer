@@ -29,7 +29,7 @@ import javassist.CtClass;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 
 /**
- * ClassLoader that generates Akiban Direct classes. There is one instance of
+ * ClassLoader that generates Direct classes. There is one instance of
  * this ClassLoader per schema per AkibanInformationSchema instance. The method
  * {@link AkibanInformationSchema#getDirectClassLoader(String, ClassLoader)}
  * should be used to acquire or create an instance of this class.

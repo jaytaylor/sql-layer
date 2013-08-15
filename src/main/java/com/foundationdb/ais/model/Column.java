@@ -260,8 +260,7 @@ public class Column implements ColumnContainer
      * <p>
      * <b>NOTE</b>: It is possible for the GetInitialAutoIncrement to be
      * not null and this to be null, as MySQL generated tables use
-     *  auto-increment value, where as the Akiban SQL use the 
-     * identity generators.
+     *  auto-increment value, where as the SQL Layer uses identity generators.
      * </p>
      */
     public final Boolean getDefaultIdentity() {

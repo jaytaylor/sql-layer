@@ -22,8 +22,7 @@ REM The amount of memory to allocate to the JVM at startup, you almost
 REM certainly want to adjust this for your environment.
 REM SET MAX_HEAP_SIZE=1024M
 
-REM Here we create the arguments that will get passed to the jvm when
-REM starting the akiban server.
+REM Here we create the arguments that will get passed to the jvm when starting.
 
 REM enable thread priorities, primarily so we can give periodic tasks
 REM a lower priority to avoid interfering with client workload

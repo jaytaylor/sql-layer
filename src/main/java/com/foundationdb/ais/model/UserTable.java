@@ -239,7 +239,7 @@ public class UserTable extends Table
     {
         TableIndex index = null;
         if (indexName.equals(Index.PRIMARY_KEY_CONSTRAINT)) {
-            // getPrimaryKey has logic for handling Akiban PK
+            // getPrimaryKey has logic for handling hidden PK
             PrimaryKey primaryKey = getPrimaryKey();
             index = primaryKey == null ? null : primaryKey.getIndex();
         } else {

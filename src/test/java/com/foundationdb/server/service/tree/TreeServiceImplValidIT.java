@@ -56,7 +56,7 @@ public class TreeServiceImplValidIT extends PersistitITBase
         final String vs4 = treeService.volumeForTree("test42", "_schema_");
         assertTrue(vs1.contains("drupalxx.v0"));
         assertTrue(vs2.contains("liveops.v0"));
-        assertTrue(vs3.contains("akiban_data"));
+        assertTrue(vs3.contains("persistit_data"));
         assertTrue(vs4.contains("test42_schema_.v0"));
     }
 }

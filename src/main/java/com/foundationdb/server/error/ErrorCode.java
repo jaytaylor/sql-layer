@@ -22,15 +22,14 @@ import org.slf4j.Logger;
 import java.util.ResourceBundle;
 
 /**
- * The error codes that are part of the Akiban Server's public API. 
+ * The error codes that are part of the public API.
  * 
  * From the SQL Standard, the SQLSTATE (ErrorCodes) are a 2 character class value
  * followed by a 3 character sub-class value. These characters are either digits or
  * upper-case latin characters. (0-9 or A-Z). 
  * 
  * Class values that begin with 0 through 4 or A through H are defined by the standard.
- * Class values that begin with 5 through 9 or I through Z are implementation defined
- * errors, i.e. specific to the Akiban implementation.
+ * Class values that begin with 5 through 9 or I through Z are implementation defined.
  *  
  * The subclass '000' means no subclass to the given SQLSTATE class
  * 
@@ -43,7 +42,6 @@ import java.util.ResourceBundle;
  * SQLCODES.  
  * 
  * The specific division between a class and a subclass is not made clear by the standard. 
- * 
  */
 public enum ErrorCode {
     

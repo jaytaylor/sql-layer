@@ -54,7 +54,7 @@ public final class NamedParameterizedRunner extends Suite
      * as failing, or because of a <tt>@Failing</tt> annotation on the method), and if you have a system property
      * <tt>{@value} == "/myFoo/"</tt>, then the test <em>will</em> be run.
      */
-    public final static String PARAMETERIZATION_OVERRIDE = "akiban.test.param.override";
+    public final static String PARAMETERIZATION_OVERRIDE = "fdbsql.test.param.override";
 	/**
 	 * <p>Annotation for a method which provides parameters for an
      * {@link NamedParameterizedRunner} suite.</p>

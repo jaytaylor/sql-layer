@@ -120,7 +120,7 @@ public abstract class StoreAdapter implements KeyCreator
         UserTable table = rowDef.userTable();
         PrimaryKey primaryKey = table.getPrimaryKeyIncludingInternal();
         if(primaryKey != null && table.getPrimaryKey() == null) {
-            // Akiban-generated PK. Initialize its value to a dummy value, which will be replaced later. The
+            // Generated PK. Initialize its value to a dummy value, which will be replaced later. The
             // important thing is that the value be non-null.
             row.put(table.getColumnsIncludingInternal().size() - 1, -1L);
         }

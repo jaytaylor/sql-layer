@@ -1,4 +1,4 @@
-# Test procedures defined as scripts using Akiban Direct extent accessor
+# Test procedures defined as scripts using Direct extent accessor
 ---
 - Properties: sys-mysql
 - suppressed: true

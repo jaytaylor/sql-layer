@@ -74,10 +74,10 @@ public interface ServerSession
     /** Set a session attribute. */
     public void setAttribute(String key, Object attr);
 
-    /** Return Akiban Server manager. */
+    /** Return DXL service. */
     public DXLService getDXL();
 
-    /** Return Akiban Server session. */
+    /** Return SQL Layer session. */
     public Session getSession();
 
     /** Return the default schema for SQL objects. */

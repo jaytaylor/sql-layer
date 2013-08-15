@@ -35,7 +35,7 @@ import com.foundationdb.server.service.functions.FunctionsRegistryImpl;
 
 import java.util.*;
 
-/** An Akiban schema, parser and binder with various client properties.
+/** A schema, parser and binder with various client properties.
  * Also caches view definitions.
  */
 public class AISBinderContext

@@ -35,7 +35,7 @@ import java.io.StringWriter;
 
 public class SwingConsole extends JFrame implements WindowListener 
 {
-    public static final String TITLE = "Akiban Server";
+    public static final String TITLE = "FoundationDB SQL Layer";
     public static final String ICON_PATH = "Akiban_Server_128x128.png";
 
     private final ServiceManager serviceManager;
@@ -270,7 +270,7 @@ public class SwingConsole extends JFrame implements WindowListener
             break;
         default:
             int yn = JOptionPane.showConfirmDialog(this, 
-                                                   "Do you really want to quit Akiban-Server?",
+                                                   "Do you really want to quit?",
                                                    "Attention!", 
                                                     JOptionPane.YES_NO_OPTION,
                                                     JOptionPane.QUESTION_MESSAGE);

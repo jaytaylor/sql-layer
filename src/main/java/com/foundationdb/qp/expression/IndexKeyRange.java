@@ -340,7 +340,7 @@ public class IndexKeyRange
     private boolean hiInclusive;
     private final IndexKind indexKind;
 
-    // A CONVENTIONAL (Akiban) index scan normally allows a range for only the last specified part of the bound. E.g.,
+    // A CONVENTIONAL (SQL Layer) index scan normally allows a range for only the last specified part of the bound. E.g.,
     // (1, 10, 800) - (1, 10, 888) is legal, but (1, 10, 800) - (1, 20, 888) is not, because there are two ranges,
     // 10-20 and 800-888.
     //

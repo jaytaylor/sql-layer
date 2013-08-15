@@ -70,7 +70,7 @@ public final class ScriptEngineManagerProviderImpl implements ScriptEngineManage
             String classPath = configService.getProperty(CLASS_PATH);
             // TODO: The idea should be to restrict scripts to standard Java
             // classes
-            // without the rest of the Akiban server. But note
+            // without the rest of the sql layer. But note
             // java.sql.DriverManager.isDriverAllowed(), which requires that a
             // registered driver's class by accessible to its caller by name.
             // May
