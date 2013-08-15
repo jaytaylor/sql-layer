@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Nathan Williams <nathan.williams@foundationdb.com>
 Build-Depends: debhelper (>= 5), openjdk-7-jdk | oracle-java7-installer
 Homepage: http://foundationdb.com
-Vcs-Bzr: git@github.com:FoundationDB/sql-layer.git
+Vcs-Git: git@github.com:FoundationDB/sql-layer.git
 Vcs-Browser: https://github.com/FoundationDB/sql-layer
 Standards-Version: 3.9.1
 
