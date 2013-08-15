@@ -257,6 +257,11 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
 
     @Override
+    public boolean isTransactionPeriodicallyCommit() {
+        return transactionPeriodicallyCommit;
+    }
+
+    @Override
     public void setTransactionPeriodicallyCommit(boolean periodicallyCommit) {
         this.transactionPeriodicallyCommit = periodicallyCommit;
     }

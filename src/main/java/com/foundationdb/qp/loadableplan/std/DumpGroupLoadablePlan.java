@@ -54,6 +54,11 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             }
 
             @Override
+            public TransactionMode getTransactionMode() {
+                return TransactionMode.READ_ONLY;
+            }
+
+            @Override
             public OutputMode getOutputMode() {
                 // Output as raw text, not rows.
                 return OutputMode.COPY;

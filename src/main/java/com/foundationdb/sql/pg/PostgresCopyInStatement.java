@@ -125,8 +125,11 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
             throw new UnsupportedSQLException("COPY FORMAT " + format);
         }
         commitFrequency = copyStmt.getCommitFrequency();
-        if (commitFrequency == 0)
-            commitFrequency = Long.MAX_VALUE; // Or let it choose?
+        if (commitFrequency == 0) {
+            commitFrequency = server.isTransactionPeriodicallyCommit() ? 
+                ExternalDataService. COMMIT_FREQUENCY_PERIODICALLY : 
+                ExternalDataService.COMMIT_FREQUENCY_NEVER;
+        }
         return this;
     }
 

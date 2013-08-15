@@ -66,7 +66,15 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
 
     @Override
     public TransactionMode getTransactionMode() {
-        return TransactionMode.NONE;
+        switch (plan.getTransactionMode()) {
+        case READ_ONLY:
+            return TransactionMode.READ;
+        case READ_WRITE:
+            return TransactionMode.WRITE;
+        case NONE:
+        default:
+            return TransactionMode.NONE;
+        }
     }
 
     @Override
