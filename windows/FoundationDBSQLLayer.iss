@@ -3,15 +3,15 @@
 #endif
 
 [Setup]
-OutputBaseFilename = AkibanServer
-AppName = Akiban Server
-AppVerName = Akiban Server {#VERSION}
-AppPublisher = Akiban Technologies
-AppPublisherURL = http://www.akiban.com/
+OutputBaseFilename = FoundationDBSQLLayer
+AppName = FoundationDB SQL Layer
+AppVerName = FoundationDB SQL Layer {#VERSION}
+AppPublisher = FoundationDB, LCC
+AppPublisherURL = http://www.foundationdb.com/
 AppVersion = {code:JustVersion|{#VERSION}}
 VersionInfoProductTextVersion = {#VERSION}
-DefaultDirName = {pf}\Akiban
-DefaultGroupName = Akiban
+DefaultDirName = {pf}\FoundationDBSQL
+DefaultGroupName = FoundationDBSQL
 Compression = lzma
 SolidCompression = yes
 MinVersion = 5.1
@@ -40,11 +40,11 @@ Source: "lib\*"; DestDir: "{app}\lib"; Flags: recursesubdirs
 Source: "procrun\*"; DestDir: "{app}\procrun"; Flags: recursesubdirs
 
 [Icons]
-Name: "{group}\Akiban Server"; Filename: "{app}\bin\akserver.cmd"; Parameters: "window";  WorkingDir: "{app}"; Comment: "Run the server as an application"; IconFilename: "{app}\bin\Akiban_Server.ico"
-Name: "{group}\Start Service"; Filename: "{app}\bin\akserver.cmd"; Parameters: "start";  WorkingDir: "{app}"; Comment: "Start Windows service"; Tasks: installsvc
-Name: "{group}\Stop Service"; Filename: "{app}\bin\akserver.cmd"; Parameters: "stop";  WorkingDir: "{app}"; Comment: "Stop Windows service"; Tasks: installsvc
-Name: "{group}\Monitor Service"; Filename: "{app}\bin\akserver.cmd"; Parameters: "monitor";  WorkingDir: "{app}"; Comment: "Monitor Windows service"; Tasks: installsvc
-Name: "{group}\Uninstall Akiban Server"; Filename: "{uninstallexe}"
+Name: "{group}\FoundationDB SQL Layer"; Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "window";  WorkingDir: "{app}"; Comment: "Run the server as an application"; IconFilename: "{app}\bin\Akiban_Server.ico"
+Name: "{group}\Start Service"; Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "start";  WorkingDir: "{app}"; Comment: "Start Windows service"; Tasks: installsvc
+Name: "{group}\Stop Service"; Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "stop";  WorkingDir: "{app}"; Comment: "Stop Windows service"; Tasks: installsvc
+Name: "{group}\Monitor Service"; Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "monitor";  WorkingDir: "{app}"; Comment: "Monitor Windows service"; Tasks: installsvc
+Name: "{group}\Uninstall FoundationDB SQL Layer"; Filename: "{uninstallexe}"
 
 [Run]
 ;See StartNow() below.
@@ -68,7 +68,7 @@ begin
   if JavaInstalled then
     Result := true
   else begin
-      MsgBox('Java is required to run Akiban Server', mbError, MB_OK);
+      MsgBox('Java is required to run FoundationDB SQL Layer', mbError, MB_OK);
       Result := false;
   end;
 end;
@@ -76,15 +76,15 @@ end;
 procedure InitializeWizard;
 begin
   DataDirPage := CreateInputDirPage(wpSelectDir,
-    'Select Data Directory', 'Where should Akiban data files be installed?',
+    'Select Data Directory', 'Where should FoundationDB SQL Layer data files be installed?',
     'Select the folder in which the database will store its data files, then click Next.',
     False, '');
   DataDirPage.Add('');
-  DataDirPage.Values[0] := GetPreviousData('DataDir', ExpandConstant('{commonappdata}\Akiban'));
+  DataDirPage.Values[0] := GetPreviousData('DataDir', ExpandConstant('{commonappdata}\FoundationDBSQL'));
 
   ServiceAccountPage := CreateInputQueryPage(wpSelectTasks,
     'Service Account', 'Use what account?',
-    'Please specify the account under which the Akiban Server service should run, then click Next.');
+    'Please specify the account under which the FoundationDB SQL Layer service should run, then click Next.');
   ServiceAccountPage.Add('Username:', False);
   ServiceAccountPage.Add('Password:', True);
   ServiceAccountPage.Add('Repeat password:', True);
