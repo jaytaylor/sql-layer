@@ -112,27 +112,27 @@ elif [ ${platform} == "binary" ]; then
         echo "No release number defined. Define the \$release environmental variable."; exit 1
     fi
     
-    BINARY_NAME="akiban-server-${release}"
+    BINARY_NAME="fdb-sql-layer-${release}"
     BINARY_TAR_NAME="${BINARY_NAME}.tar.gz"
     
     mkdir -p ${BINARY_NAME}
     mkdir -p ${BINARY_NAME}/lib/server
     mkdir -p ${BINARY_NAME}/lib/client
     mkdir -p ${BINARY_NAME}/bin
-    cp ./target/akiban-server-*.jar ${BINARY_NAME}/lib
+    cp ./target/fdb-sql-layerr-*.jar ${BINARY_NAME}/lib
     cp ./target/dependency/* ${BINARY_NAME}/lib/server/
     cp -R ./conf ${BINARY_NAME}/
     rm -f ${BINARY_NAME}/conf/config/*.cmd
-    cp ./bin/akserver ${BINARY_NAME}/bin
-    cp packages-common/akdump ${BINARY_NAME}/bin
-    cp packages-common/akiban-client-*.jar ${BINARY_NAME}/lib
+    cp ./bin/fdbsqllayer ${BINARY_NAME}/bin
+    cp packages-common/fdbsqldump ${BINARY_NAME}/bin
+    cp packages-common/foundationdb-sql-layer-client-*.jar ${BINARY_NAME}/lib
     cp packages-common/client/* ${BINARY_NAME}/lib/client
     cp ${license} ${BINARY_NAME}/LICENSE.txt
     tar zcf ${BINARY_TAR_NAME} ${BINARY_NAME}    
 elif [ ${platform} == "macosx" ]; then
     client_jar=packages-common/foundationdb-sql-layer-client-tools-*.jar
     client_deps=packages-common/client
-    akdump_bin=packages-common/fdbsqldump
+    fdbsqldump_bin=packages-common/fdbsqldump
     plugins_dir=packages-common/plugins
     app_name='FoundationDB SQL Layer.app'
     mac_app="target/${app_name}"
@@ -165,7 +165,7 @@ elif [ ${platform} == "macosx" ]; then
         cp $client_jar "$mac_app/Contents/Resources/tools/lib/"
         cp $client_deps/* "$mac_app/Contents/Resources/tools/lib/client/"
         mkdir -p "$mac_app/Contents/Resources/tools/bin"
-        cp $akdump_bin "$mac_app/Contents/Resources/tools/bin/"
+        cp $fdbsqldump_bin "$mac_app/Contents/Resources/tools/bin/"
         cp -R "$plugins_dir" "$mac_app/Contents/Resources/"
 
         # build disk image template
