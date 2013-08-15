@@ -1,0 +1,134 @@
+/**
+ * Copyright (C) 2009-2013 Akiban Technologies, Inc.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package com.foundationdb.server.expression.std;
+
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.server.expression.Expression;
+import com.foundationdb.server.expression.ExpressionComposer;
+import com.foundationdb.server.expression.ExpressionEvaluation;
+import com.foundationdb.server.expression.ExpressionType;
+import com.foundationdb.server.service.functions.Scalar;
+import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types.ValueSource;
+import org.joda.time.DateTime;
+
+public class CurrentDateTimeExpression extends AbstractNoArgExpression
+{
+    /**
+     * return current_date() expression 
+     */
+    @Scalar({"current_date", "curdate"})
+    public static final ExpressionComposer CURRENT_DATE_COMPOSER 
+            = new DateTimeComposer(AkType.DATE);
+    
+    /**
+     * return current_time() expression 
+     */
+    @Scalar({"current_time", "curtime"})
+    public static final ExpressionComposer CURRENT_TIME_COMPOSER 
+            = new DateTimeComposer(AkType.TIME);
+    
+    /**
+     * return current_timestamp() expression in String
+     * current_timestamp, now, localtime and localtimestamp all mean the same thimg
+     */
+    @Scalar({"current_timestamp", "now", "localtime", "localtimestamp"})
+    public static final ExpressionComposer CURRENT_TIMESTAMP_COMPOSER 
+            = new DateTimeComposer(AkType.DATETIME);
+
+
+    private final AkType currentType;
+
+    public CurrentDateTimeExpression(AkType currentType)
+    {
+        super(checkType(currentType));
+        this.currentType = currentType;
+    }
+
+    private static final class InnerEvaluation extends AbstractNoArgExpressionEvaluation
+    {
+        private AkType currentType;
+        private QueryContext context;
+
+        public InnerEvaluation(AkType currentType)
+        {
+            this.currentType = currentType;
+        }
+
+        @Override
+        public void of(QueryContext context) {
+            this.context = context;
+        }
+
+        @Override
+        public ValueSource eval()
+        {
+            valueHolder().putRaw(currentType, new DateTime(context.getCurrentDate()));
+            return valueHolder();
+        }
+    }
+
+    @Override
+    public boolean isConstant() {
+        return false;
+    }
+
+    @Override
+    public boolean needsBindings() {
+        return true;
+    }
+
+    private static final class DateTimeComposer extends NoArgComposer {
+        private final AkType currentType;
+
+        public DateTimeComposer(AkType currentType)
+        {
+            this.currentType = currentType;
+        }
+        
+        @Override
+        protected Expression compose()
+        {
+            return new CurrentDateTimeExpression(currentType);
+        }
+
+        @Override
+        protected ExpressionType composeType()
+        {
+            return ExpressionTypes.newType(currentType, 0, 0);
+        }        
+    }
+
+    @Override
+    public ExpressionEvaluation evaluation()
+    {
+        return new InnerEvaluation(currentType);
+    }
+
+    @Override
+    public String name ()
+    {
+        return "CURRENT_" + currentType;
+    }
+    
+    private static AkType checkType (AkType input)
+    {
+        if (input == AkType.DATE  || input == AkType.TIME || input == AkType.DATETIME) return input;
+        else throw new UnsupportedOperationException("CURRENT_" + input + " is not supported");
+    }
+}

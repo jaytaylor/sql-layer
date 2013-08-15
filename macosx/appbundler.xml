@@ -17,7 +17,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 -->
-<project name="Akiban Server App Builder" default="usage" basedir="..">
+<project name="FoundationDB SQL Layer App Builder" default="usage" basedir="..">
     <!--
          Oracle and appbundler docs:
          http://docs.oracle.com/javase/7/docs/technotes/guides/jweb/packagingAppsForMac.html
@@ -30,26 +30,26 @@
                      classname="com.oracle.appbundler.AppBundlerTask"
                      classpath="target/appbundler-1.0.jar" />
             
-            <fail unless="akserver.version" message="akserver.version property required" />
+            <fail unless="fdbsql.version" message="fdbsql.version property required" />
             <fail unless="jdk.home" message="jdk.home property required" />
 
             <!-- All attributes, except outputdirectory, correspond to Info.plist entires -->
             <bundleapp outputdirectory="target/" 
-                       name="Akiban Server"
-                       displayname="Akiban Server"
-                       identifier="com.akiban.server"
+                       name="FoundationDB SQL Layer"
+                       displayname="FoundationDB SQL Layer"
+                       identifier="com.foundationdb.sql"
                        icon="macosx/Akiban Server.icns"
-                       shortversion="${akserver.version}"
+                       shortversion="${fdbsql.version}"
                        signature="????"
                        copyright="© 2009-2013 Akiban Technologies, Inc."
                        applicationCategory="public.app-category.developer-tools"
-                       mainclassname="com.akiban.server.service.ui.AkServerWithSwingConsole">
+                       mainclassname="com.foundationdb.sql.ui.MainWithSwingConsole">
                 
                 <extra-tasks />
 
                 <!-- Files are copied into bundle and set as classpath -->
                 <classpath dir="target/">
-                    <include name="akiban-server-*.jar" />
+                    <include name="foundationdb-sql-layer-*.jar" />
                     <include name="dependency/*.jar" />
                 </classpath>
                 
@@ -74,12 +74,12 @@
                 
                 <option value="-Dapple.laf.useScreenMenuBar=true" />
                 <option value="-Dlog4j.configuration=file:$APP_ROOT/Contents/Resources/config/log4j.properties" />
-                <option value="-Dakserver.config_dir=$APP_ROOT/Contents/Resources" />
                 <option value="-Dservices.config=$APP_ROOT/Contents/Resources/config/services-config.yaml" />
-                <option value="-Dakiban.home=$APP_ROOT/Contents/Resources" />
+                <option value="-Dfdbsql.config_dir=$APP_ROOT/Contents/Resources" />
+                <option value="-Dfdbsql.home=$APP_ROOT/Contents/Resources" />
 
                 <!-- The displayname should influence the About menu but doesn't. This does. -->
-                <option value="-Xdock:name=Akiban Server" />
+                <option value="-Xdock:name=FoundationDB SQL Layer" />
             </bundleapp>
         </sequential>
     </macrodef>

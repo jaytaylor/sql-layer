@@ -19,22 +19,23 @@
 
 SETLOCAL
 
-FOR /F "usebackq" %%v IN (`bzr revno`) DO SET BZR_REVNO=%%v
+FOR /F "usebackq" %%v IN (`git rev-parse --short HEAD`) DO SET GIT_COUNT=%%v
+FOR /F "usebackq" %%v IN (`git rev-list --merges HEAD --count`) DO SET GIT_HASH=%%v
 
 SET LICENSE=LICENSE.txt
 
 IF NOT DEFINED CERT_FILE SET CERT_FILE=%~dp0\windows\testcert\testcert.pfx
 IF NOT DEFINED CERT_PASSWORD SET CERT_PASSWORD=test
 
-ECHO "Building Akiban Server"
+ECHO "Building FoundationDB SQL Layer"
 
-call mvn -Dmaven.test.skip clean install -DBZR_REVISION=%BZR_REVNO%
+call mvn clean install -DGIT_COUNT=%GIT_COUNT% -DGIT_HASH=%GIT_HASH% -DskipTests=true
 IF ERRORLEVEL 1 GOTO EOF
 
-IF NOT DEFINED TOOLS_BRANCH SET TOOLS_BRANCH=lp:akiban-client-tools
+IF NOT DEFINED TOOLS_LOC SET TOOLS_LOC="git@github.com:foundationdb/sql-layer-client-tools"
 
 CD target
-bzr branch %TOOLS_BRANCH% client-tools
+git clone %TOOLS_LOC% client-tools
 IF ERRORLEVEL 1 GOTO EOF
 CD client-tools
 call mvn -Dmaven.test.skip clean install
@@ -60,16 +61,16 @@ COPY target\client-tools\bin\*.cmd target\isstage\bin
 COPY windows\config-files\* target\isstage\config
 ECHO -tests.jar >target\xclude
 ECHO -sources.jar >>target\xclude
-XCOPY target\akiban-server-*.jar target\isstage\lib /EXCLUDE:target\xclude
+XCOPY target\foundationdb-sql-layer-*.jar target\isstage\lib /EXCLUDE:target\xclude
 COPY target\dependency\* target\isstage\lib\server
-XCOPY target\client-tools\target\akiban-client-tools-*.jar target\isstage\lib /EXCLUDE:target\xclude
+XCOPY target\client-tools\target\foundationdb-sql-layer-client-tools-*.jar target\isstage\lib /EXCLUDE:target\xclude
 COPY target\client-tools\target\dependency\* target\isstage\lib\client
 
 CD target\isstage
 
-FOR %%j IN (lib\akiban-server-*.jar) DO SET JARFILE=%%~nj
+FOR %%j IN (lib\foundationdb-sql-layer-*.jar) DO SET JARFILE=%%~nj
 FOR /F "delims=- tokens=3" %%n IN ("%JARFILE%") DO SET VERSION=%%n
-SET INSTALLER=akiban-server-%VERSION%-installer
+SET INSTALLER=foundationdb-sql-layer-%VERSION%-installer
 
 curl -o procrun.zip -L http://archive.apache.org/dist/commons/daemon/binaries/windows/commons-daemon-1.0.11-bin-windows.zip
 
@@ -89,7 +90,7 @@ mt -manifest ..\..\prunsrv.manifest -outputresource:prunsrv.exe;1
 IF ERRORLEVEL 1 GOTO EOF
 CD ..\..
 
-iscc /S"GoDaddy=signtool sign /f $q%CERT_FILE%$q  /p $q%CERT_PASSWORD%$q /t http://tsa.starfieldtech.com/ $f" /O.. /F"%INSTALLER%" /dVERSION=%VERSION% AkibanServer.iss
+iscc /S"GoDaddy=signtool sign /f $q%CERT_FILE%$q  /p $q%CERT_PASSWORD%$q /t http://tsa.starfieldtech.com/ $f" /O.. /F"%INSTALLER%" /dVERSION=%VERSION% FoundationDBSQLLayer.iss
 IF ERRORLEVEL 1 GOTO EOF
 
 CD ..\..

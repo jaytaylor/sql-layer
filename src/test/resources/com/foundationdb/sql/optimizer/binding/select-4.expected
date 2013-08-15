@@ -1,0 +1,47 @@
+com.foundationdb.sql.parser.CursorNode@781f6226
+name: null
+updateMode: UNSPECIFIED
+statementType: SELECT
+resultSet: 	
+	com.foundationdb.sql.parser.SelectNode@5464ea66
+	isDistinct: false
+	resultColumns: 		
+		com.foundationdb.sql.parser.ResultColumnList@2d58f9d3
+
+		[0]:		
+		com.foundationdb.sql.parser.ResultColumn@2c79a2e7
+		exposedName: _SQL_COL_1
+		name: _SQL_COL_1
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.foundationdb.sql.parser.CoalesceFunctionNode@65b60280
+			functionName: COALESCE
+			type: null
+			argumentsList: 				
+				com.foundationdb.sql.parser.ValueNodeList@105e55ab
+
+				[0]:				
+				com.foundationdb.sql.parser.ColumnReference@214a55f2
+				columnName: x
+				tableName: null
+				type: null
+				userData: t1.x from com.foundationdb.sql.parser.FromBaseTable@72e6f7d2
+				[1]:				
+				com.foundationdb.sql.parser.ColumnReference@175093f1
+				columnName: z
+				tableName: null
+				type: null
+				userData: t1.z from com.foundationdb.sql.parser.FromBaseTable@72e6f7d2
+	fromList: 		
+		com.foundationdb.sql.parser.FromList@2b20bf2c
+
+		[0]:		
+		com.foundationdb.sql.parser.FromBaseTable@72e6f7d2
+		tableName: t1
+		updateOrDelete: null
+		null
+		correlation Name: null
+		null
+		userData: test.t1

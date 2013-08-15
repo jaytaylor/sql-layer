@@ -1,23 +1,17 @@
-Source: akiban-server
+Source: fdb-sql-layer
 Section: misc
 Priority: optional
-Maintainer: Padraig O'Sullivan <posullivan@akiban.com>
+Maintainer: Nathan Williams <nathan.williams@foundationdb.com>
 Build-Depends: debhelper (>= 5), openjdk-7-jdk | oracle-java7-installer
-Homepage: http://akiban.com
-Vcs-Bzr: http://bazaar.launchpad.net/~akiban-technologies/akiban-server/trunk
-Vcs-Browser: http://bazaar.launchpad.net/~akiban-technologies/akiban-server/trunk/files
+Homepage: http://foundationdb.com
+Vcs-Git: git@github.com:FoundationDB/sql-layer.git
+Vcs-Browser: https://github.com/FoundationDB/sql-layer
 Standards-Version: 3.9.1
 
-Package: akiban-server
+Package: fdb-sql-layer
 Architecture: all
 Depends: openjdk-7-jdk | openjdk-7-jre-headless | oracle-java7-installer, adduser
 Recommends: postgresql-client, libpg-java
-Description: Akiban Server 
- Akiban Server is the primary interface for Akiban's table grouping technology.
-
-Package: akiban
-Architecture: all
-Depends: akiban-server, akiban-adapter-mysql, akiban-studio, ${misc:Depends}
-Description: Akiban Technologies stack.
- This is an empty package that installs all akiban packages.
+Description: FoundationDB SQL Layer
+ SQL Layer for FoundationDB
 
