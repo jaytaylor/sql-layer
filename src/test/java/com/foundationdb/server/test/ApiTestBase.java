@@ -45,9 +45,8 @@ import com.foundationdb.qp.expression.BoundExpressions;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.persistitadapter.PersistitAdapter;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.server.AkServerInterface;
+import com.foundationdb.sql.LayerInfoInterface;
 import com.foundationdb.server.AkServerUtil;
 import com.foundationdb.server.api.dml.scan.ScanFlag;
 import com.foundationdb.server.rowdata.RowDef;
@@ -89,7 +88,6 @@ import org.junit.After;
 import org.junit.Before;
 
 import com.foundationdb.server.api.dml.scan.RowDataOutput;
-import com.foundationdb.server.store.PersistitStore;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.util.ListUtils;
 
@@ -464,8 +462,8 @@ public class ApiTestBase {
         return sm.getStore();
     }
 
-    protected final AkServerInterface akServer() {
-        return sm.getAkSserver();
+    protected final LayerInfoInterface layerInfo() {
+        return sm.getLayerInfo();
     }
 
     protected String akibanFK(String childCol, String parentTable, String parentCol) {

@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.server;
 
-import com.foundationdb.server.AkServerInterface;
+import com.foundationdb.sql.LayerInfoInterface;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.dxl.DXLService;
@@ -34,7 +34,7 @@ import com.foundationdb.server.t3expressions.T3RegistryService;
 
 public final class ServerServiceRequirements {
 
-    public ServerServiceRequirements(AkServerInterface akServer,
+    public ServerServiceRequirements(LayerInfoInterface layerInfo,
                                      DXLService dxlService,
                                      MonitorService monitor,
                                      SessionService sessionService,
@@ -47,7 +47,7 @@ public final class ServerServiceRequirements {
                                      TransactionService txnService,
                                      SecurityService securityService,
                                      ServiceManager serviceManager) {
-        this.akServer = akServer;
+        this.layerInfo = layerInfo;
         this.dxlService = dxlService;
         this.monitor = monitor;
         this.sessionService = sessionService;
@@ -62,8 +62,8 @@ public final class ServerServiceRequirements {
         this.serviceManager = serviceManager;
     }
 
-    public AkServerInterface akServer() {
-        return akServer;
+    public LayerInfoInterface layerInfo() {
+        return layerInfo;
     }
 
     public DXLService dxl() {
@@ -120,7 +120,7 @@ public final class ServerServiceRequirements {
         return serviceManager.getServiceByClass(ExternalDataService.class);
     }
 
-    private final AkServerInterface akServer;
+    private final LayerInfoInterface layerInfo;
     private final DXLService dxlService;
     private final MonitorService monitor;
     private final SessionService sessionService;

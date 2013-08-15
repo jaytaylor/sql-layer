@@ -59,7 +59,7 @@ public class ServerSessionITBase extends ITBase {
 
     protected class TestSession extends ServerSessionBase {
         public TestSession() {
-            super(new ServerServiceRequirements(serviceManager().getAkSserver(),
+            super(new ServerServiceRequirements(serviceManager().getLayerInfo(),
                                                 dxl(),
                                                 serviceManager().getMonitorService(),
                                                 serviceManager().getSessionService(),

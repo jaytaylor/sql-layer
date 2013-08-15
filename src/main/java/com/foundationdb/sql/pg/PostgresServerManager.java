@@ -19,9 +19,9 @@ package com.foundationdb.sql.pg;
 
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.sql.LayerInfoInterface;
 import com.foundationdb.sql.server.ServerServiceRequirements;
 
-import com.foundationdb.server.AkServerInterface;
 import com.foundationdb.server.error.ServiceStartupException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
@@ -46,7 +46,7 @@ public class PostgresServerManager implements PostgresService, Service, JmxManag
     private PostgresServer server = null;
 
     @Inject
-    public PostgresServerManager(AkServerInterface akServer,
+    public PostgresServerManager(LayerInfoInterface layerInfo,
                                  DXLService dxlService,
                                  MonitorService monitor,
                                  SessionService sessionService,
@@ -59,7 +59,7 @@ public class PostgresServerManager implements PostgresService, Service, JmxManag
                                  TransactionService txnService,
                                  SecurityService securityService,
                                  ServiceManager serviceManager) {
-        reqs = new ServerServiceRequirements(akServer, dxlService, monitor, 
+        reqs = new ServerServiceRequirements(layerInfo, dxlService, monitor,
                 sessionService, store, functionsRegistry,
                 config, indexStatisticsService, overloadResolutionService, 
                 routineLoader, txnService, securityService, serviceManager);

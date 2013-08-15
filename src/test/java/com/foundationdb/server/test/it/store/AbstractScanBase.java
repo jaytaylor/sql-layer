@@ -25,10 +25,9 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.server.AkServer;
+import com.foundationdb.sql.Main;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.api.DMLFunctions;
 import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
@@ -81,7 +80,7 @@ public abstract class AbstractScanBase extends ITBase {
 
     protected Set<TableName> loadDDLFromResource(final String schema, final String resourceName) throws Exception {
         final BufferedReader reader = new BufferedReader(new InputStreamReader(
-                AkServer.class.getClassLoader().getResourceAsStream(resourceName)));
+                Main.class.getClassLoader().getResourceAsStream(resourceName)));
 
         List<String> allStatements = new ArrayList<>();
 

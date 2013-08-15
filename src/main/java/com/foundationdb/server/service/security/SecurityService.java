@@ -25,7 +25,7 @@ import java.util.Collection;
 
 public interface SecurityService
 {
-    public static final String REALM = "AkServer";
+    public static final String REALM = "Main";
     public static final String ADMIN_ROLE = "admin";
 
     public static final Session.Key<User> SESSION_KEY = 

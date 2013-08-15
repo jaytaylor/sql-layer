@@ -4,7 +4,7 @@
 #  macosx/config-files/
 #  windows/config-files/
 - require:
-    - com.foundationdb.server.AkServerInterface               # Loads the AKSERVER JMX bean
+    - com.foundationdb.sql.LayerInfoInterface
     - com.foundationdb.server.service.dxl.DXLService          # Loads the DDL/DML JMX bean
     - com.foundationdb.server.service.stats.StatisticsService # Stats gathering
     - com.foundationdb.server.service.jmx.JmxRegistryService  # Turns on JMX for other services
@@ -15,7 +15,7 @@
     - com.foundationdb.server.service.is.BasicInfoSchemaTablesService
     - com.foundationdb.server.service.is.StorageSchemaTablesService
     - com.foundationdb.server.service.is.ServerSchemaTablesService
-    - com.foundationdb.server.service.ui.SwingConsoleService  # Presents a simple UI
+    - com.foundationdb.sql.ui.SwingConsoleService  # Presents a simple UI
     - com.foundationdb.rest.RestService
 - prioritize:
-    - com.foundationdb.server.service.ui.SwingConsoleService  # Show service progress ASAP
+    - com.foundationdb.sql.ui.SwingConsoleService  # Show service progress ASAP

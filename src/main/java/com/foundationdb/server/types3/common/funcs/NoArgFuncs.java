@@ -17,12 +17,10 @@
 
 package com.foundationdb.server.types3.common.funcs;
 
-import com.foundationdb.server.AkServer;
+import com.foundationdb.sql.Main;
 import com.foundationdb.server.types3.LazyList;
 import com.foundationdb.server.types3.TClass;
 import com.foundationdb.server.types3.TExecutionContext;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.TInstanceGenerator;
 import com.foundationdb.server.types3.TScalar;
 import com.foundationdb.server.types3.TOverloadResult;
 import com.foundationdb.server.types3.mcompat.mtypes.MApproximateNumber;
@@ -46,7 +44,7 @@ public class NoArgFuncs
         @Override
         public void evaluate(TExecutionContext context, PValueTarget target)
         {
-            target.putString(AkServer.SHORT_VERSION_STRING, null);
+            target.putString(Main.SHORT_VERSION_STRING, null);
         }
 
         @Override
@@ -56,7 +54,7 @@ public class NoArgFuncs
 
         @Override
         protected int[] resultAttrs() {
-            return new int[] { AkServer.SHORT_VERSION_STRING.length() };
+            return new int[] { Main.SHORT_VERSION_STRING.length() };
         }
     };
 
@@ -66,7 +64,7 @@ public class NoArgFuncs
         @Override
         public void evaluate(TExecutionContext context, PValueTarget target)
         {
-            target.putString(AkServer.VERSION_STRING, null);
+            target.putString(Main.VERSION_STRING, null);
         }
 
         @Override
@@ -76,7 +74,7 @@ public class NoArgFuncs
 
         @Override
         protected int[] resultAttrs() {
-            return new int[] { AkServer.VERSION_STRING.length() };
+            return new int[] { Main.VERSION_STRING.length() };
         }
     };
     

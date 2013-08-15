@@ -27,7 +27,7 @@ import com.foundationdb.sql.types.TypeId;
 
 /**
  * 
- * Implement AkServer's bool type which is a Java's primitive boolean
+ * Implement Main's bool type which is a Java's primitive boolean
  */
 public class AkBool
 {

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server;
+package com.foundationdb.sql;
 
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
@@ -24,9 +24,8 @@ import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
   
   
-public class AkServerJmxManage {
-  
-
+public class LayerJmxManage
+{
     public static int jmxport;
     public static String jmxhost;
     private static String jmxurl; 
@@ -46,7 +45,7 @@ public class AkServerJmxManage {
 	    if (url==null)   url = new JMXServiceURL(jmxurl);
 	    if (jmxc==null)  jmxc = JMXConnectorFactory.connect(url, null);
 	    if (mbsc==null)  mbsc = jmxc.getMBeanServerConnection();
-    	    if (mbean==null) mbean = new ObjectName("com.foundationdb:type=AKSERVER");
+    	    if (mbean==null) mbean = new ObjectName("com.foundationdb:type=SQLLAYER");
 
     }
  

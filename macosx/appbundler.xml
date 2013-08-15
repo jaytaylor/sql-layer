@@ -43,7 +43,7 @@
                        signature="????"
                        copyright="© 2009-2013 Akiban Technologies, Inc."
                        applicationCategory="public.app-category.developer-tools"
-                       mainclassname="com.foundationdb.server.service.ui.AkServerWithSwingConsole">
+                       mainclassname="com.foundationdb.sql.ui.MainWithSwingConsole">
                 
                 <extra-tasks />
 

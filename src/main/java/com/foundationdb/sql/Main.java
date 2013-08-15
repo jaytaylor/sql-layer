@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server;
+package com.foundationdb.sql;
 
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.dxl.DXLService;
@@ -44,12 +44,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 
-/**
- * @author peter
- */
-public class AkServer implements Service, JmxManageable, AkServerInterface
+public class Main implements Service, JmxManageable, LayerInfoInterface
 {
-    private static final Logger LOG = LoggerFactory.getLogger(AkServer.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(Main.class.getName());
 
     private static final String VERSION_STRING_FILE = "version/fdbsql_version";
     public static final String VERSION_STRING, SHORT_VERSION_STRING;
@@ -85,7 +82,7 @@ public class AkServer implements Service, JmxManageable, AkServerInterface
         VERSION_PATCH = patch;
     }
 
-    private static final String AKSERVER_NAME_PROP = "fdbsql.name";
+    private static final String NAME_PROP = "fdbsql.name";
     private static final String GC_INTERVAL_NAME = "fdbsql.gc_monitor.interval";
     private static final String GC_THRESHOLD_NAME = "fdbsql.gc_monitor.log_threshold_ms";
     private static final String PID_FILE_NAME = System.getProperty("fdbsql.pidfile");
@@ -95,10 +92,10 @@ public class AkServer implements Service, JmxManageable, AkServerInterface
     private GCMonitor gcMonitor;
 
     @Inject
-    public AkServer(Store store, DXLService dxl, SessionService sessionService, ConfigurationService config) {
+    public Main(Store store, DXLService dxl, SessionService sessionService, ConfigurationService config) {
         this.config = config;
         this.jmxObjectInfo = new JmxObjectInfo(
-                "AKSERVER",
+                "SQLLAYER",
                 new ManageMXBeanImpl(store, dxl, sessionService),
                 ManageMXBean.class
         );
@@ -146,7 +143,7 @@ public class AkServer implements Service, JmxManageable, AkServerInterface
     @Override
     public String getServerName()
     {
-        return config.getProperty(AKSERVER_NAME_PROP);
+        return config.getProperty(NAME_PROP);
     }
 
     @Override

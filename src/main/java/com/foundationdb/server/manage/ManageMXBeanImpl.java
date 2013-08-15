@@ -23,7 +23,7 @@ import java.util.HashSet;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.UserTable;
-import com.foundationdb.server.AkServer;
+import com.foundationdb.sql.Main;
 import com.foundationdb.server.service.dxl.DXLService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.session.SessionService;
@@ -78,7 +78,7 @@ public class ManageMXBeanImpl implements ManageMXBean {
 
     @Override
     public String getVersionString() {
-        return AkServer.VERSION_STRING;
+        return Main.VERSION_STRING;
     }
 
     private Store getStore() {

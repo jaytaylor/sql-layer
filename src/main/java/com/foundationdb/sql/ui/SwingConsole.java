@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.service.ui;
+package com.foundationdb.sql.ui;
 
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.monitor.MonitorService;
@@ -30,8 +30,6 @@ import javax.swing.text.*;
 
 import java.net.URL;
 import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 
 public class SwingConsole extends JFrame implements WindowListener 
 {

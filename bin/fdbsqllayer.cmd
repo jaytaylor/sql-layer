@@ -157,7 +157,7 @@ IF EXIST "%FDBSQL_CONF%\config\jvm-options.cmd" CALL "%FDBSQL_CONF%\config\jvm-o
 IF "%VERB%"=="window" GOTO RUN_CMD
 IF "%VERB%"=="run" GOTO RUN_CMD
 
-SET PRUNSRV_ARGS=--StartMode=jvm --StartClass com.foundationdb.server.AkServer --StartMethod=procrunStart --StopMode=jvm --StopClass=com.foundationdb.server.AkServer --StopMethod=procrunStop --StdOutput="%FDBSQL_LOGDIR%\stdout.log" --DisplayName="%SERVICE_DNAME%" --Description="%SERVICE_DESC%" --Startup=%SERVICE_MODE% --Classpath="%CLASSPATH%"
+SET PRUNSRV_ARGS=--StartMode=jvm --StartClass com.foundationdb.sql.Main --StartMethod=procrunStart --StopMode=jvm --StopClass=com.foundationdb.sql.Main --StopMethod=procrunStop --StdOutput="%FDBSQL_LOGDIR%\stdout.log" --DisplayName="%SERVICE_DNAME%" --Description="%SERVICE_DESC%" --Startup=%SERVICE_MODE% --Classpath="%CLASSPATH%"
 REM Each value that might have a space needs a separate ++JvmOptions.
 SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmOptions="%JVM_OPTS: =#%" ++JvmOptions="-Dfdbsql.config_dir=%FDBSQL_CONF%" ++JvmOptions="-Dservices.config=%FDBSQL_CONF%\config\services-config.yaml" ++JvmOptions="-Dlog4j.configuration=file:%FDBSQL_LOGCONF%"
 IF DEFINED SERVICE_USER SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --ServiceUser=%SERVICE_USER% --ServicePassword=%SERVICE_PASSWORD%
@@ -197,12 +197,12 @@ SET JVM_OPTS=%JVM_OPTS% -ea
 SET JVM_OPTS=%JVM_OPTS% -Dfdbsql.home="%FDBSQL_HOME_DIR%"
 IF DEFINED MAX_HEAP_SIZE SET JVM_OPTS=%JVM_OPTS% -Xms%MAX_HEAP_SIZE%-Xmx%MAX_HEAP_SIZE%
 IF "%VERB%"=="window" GOTO WINDOW_CMD
-java %JVM_OPTS% -cp "%CLASSPATH%" com.foundationdb.server.AkServer
+java %JVM_OPTS% -cp "%CLASSPATH%" com.foundationdb.sql.Main
 GOTO EOF
 
 :WINDOW_CMD
-SET JVM_OPTS=%JVM_OPTS% "-Drequire:com.foundationdb.server.service.ui.SwingConsoleService" "-Dprioritize:com.foundationdb.server.service.ui.SwingConsoleService"
-START javaw %JVM_OPTS% -cp "%CLASSPATH%" com.foundationdb.server.service.ui.AkServerWithSwingConsole
+SET JVM_OPTS=%JVM_OPTS% "-Drequire:com.foundationdb.sql.ui.SwingConsoleService" "-Dprioritize:com.foundationdb.sql.ui.SwingConsoleService"
+START javaw %JVM_OPTS% -cp "%CLASSPATH%" com.foundationdb.sql.ui.MainWithSwingConsole
 GOTO EOF
 
 :CHECK_ERROR

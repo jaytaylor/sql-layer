@@ -1,5 +1,5 @@
 - bind:
-    com.foundationdb.server.AkServerInterface : com.foundationdb.server.AkServer
+    com.foundationdb.sql.LayerInfoInterface : com.foundationdb.sql.Main
     com.foundationdb.server.service.config.ConfigurationService : com.foundationdb.server.service.config.ConfigurationServiceImpl
     com.foundationdb.server.service.dxl.DXLService : com.foundationdb.server.service.dxl.DXLServiceImpl
     com.foundationdb.server.service.jmx.JmxRegistryService : com.foundationdb.server.service.jmx.JmxRegistryServiceImpl
@@ -15,7 +15,7 @@
     com.foundationdb.server.store.statistics.IndexStatisticsService : com.foundationdb.server.store.statistics.PersistitIndexStatisticsService
     com.foundationdb.server.service.is.BasicInfoSchemaTablesService : com.foundationdb.server.service.is.BasicInfoSchemaTablesServiceImpl
     com.foundationdb.server.service.is.StorageSchemaTablesService   : com.foundationdb.server.service.is.StorageSchemaTablesServiceImpl
-    com.foundationdb.server.service.ui.SwingConsoleService : com.foundationdb.server.service.ui.SwingConsoleServiceImpl
+    com.foundationdb.sql.ui.SwingConsoleService : com.foundationdb.sql.ui.SwingConsoleServiceImpl
     com.foundationdb.server.service.is.ServerSchemaTablesService    : com.foundationdb.server.service.is.ServerSchemaTablesServiceImpl
     com.foundationdb.server.t3expressions.T3RegistryService : com.foundationdb.server.t3expressions.T3RegistryServiceImpl
     com.foundationdb.server.service.routines.RoutineLoader : com.foundationdb.server.service.routines.RoutineLoaderImpl

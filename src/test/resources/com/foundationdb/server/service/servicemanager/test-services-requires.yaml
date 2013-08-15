@@ -1,4 +1,4 @@
 - require:
     - com.foundationdb.server.service.stats.StatisticsService
     - com.foundationdb.server.service.jmx.JmxRegistryService
-    - com.foundationdb.server.AkServerInterface               # Loads the AKSERVER JMX bean
+    - com.foundationdb.sql.LayerInfoInterface

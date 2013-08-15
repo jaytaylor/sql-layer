@@ -92,12 +92,12 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 
     @Override
     public String getDatabaseProductName() throws SQLException {
-        return connection.getAkServer().getServerName();
+        return connection.getLayerInfo().getServerName();
     }
 
     @Override
     public String getDatabaseProductVersion() throws SQLException {
-        return connection.getAkServer().getServerVersion();
+        return connection.getLayerInfo().getServerVersion();
     }
 
     @Override
@@ -865,12 +865,12 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 
     @Override
     public int getDatabaseMajorVersion() throws SQLException {
-        return connection.getAkServer().getServerMajorVersion();
+        return connection.getLayerInfo().getServerMajorVersion();
     }
 
     @Override
     public int getDatabaseMinorVersion() throws SQLException {
-        return connection.getAkServer().getServerMinorVersion();
+        return connection.getLayerInfo().getServerMinorVersion();
     }
 
     @Override

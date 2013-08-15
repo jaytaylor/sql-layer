@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.service.ui;
+package com.foundationdb.sql.ui;
 
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;

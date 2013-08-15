@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.service.servicemanager;
 
-import com.foundationdb.server.AkServerInterface;
+import com.foundationdb.sql.LayerInfoInterface;
 import com.foundationdb.server.error.ServiceStartupException;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
@@ -59,8 +59,8 @@ public abstract class DelegatingServiceManager implements ServiceManager {
     }
 
     @Override
-    public AkServerInterface getAkSserver() {
-        return delegate().getAkSserver();
+    public LayerInfoInterface getLayerInfo() {
+        return delegate().getLayerInfo();
     }
 
     @Override

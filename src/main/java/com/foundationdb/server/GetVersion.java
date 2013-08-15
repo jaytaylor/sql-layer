@@ -17,13 +17,13 @@
 
 package com.foundationdb.server;
 
-import com.foundationdb.server.AkServer;
+import com.foundationdb.sql.Main;
 
 public class GetVersion{
 
     public static void main (String[] a) throws Exception
     {
-        System.out.println(AkServer.VERSION_STRING);
+        System.out.println(Main.VERSION_STRING);
     }
 }
 

@@ -105,7 +105,7 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
         return port;
     }
 
-    /** Called from the (AkServer's) main thread to start a server
+    /** Called from the (Main's) main thread to start a server
         running in its own thread. */
     public void start() {
         running = true;

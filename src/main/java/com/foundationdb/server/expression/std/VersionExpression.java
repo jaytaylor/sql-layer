@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.expression.std;
 
-import com.foundationdb.server.AkServer;
+import com.foundationdb.sql.Main;
 import com.foundationdb.server.expression.Expression;
 import com.foundationdb.server.expression.ExpressionComposer;
 import com.foundationdb.server.expression.ExpressionEvaluation;
@@ -74,8 +74,8 @@ public abstract class VersionExpression extends AbstractNoArgExpression
     
     // static members
 
-    private static final ValueSource FULL_VERSION_SOURCE = new ValueHolder(AkType.VARCHAR, AkServer.VERSION_STRING);
-    private static final ValueSource SHORT_VERSION_SOURCE = new ValueHolder(AkType.VARCHAR, AkServer.SHORT_VERSION_STRING);
+    private static final ValueSource FULL_VERSION_SOURCE = new ValueHolder(AkType.VARCHAR, Main.VERSION_STRING);
+    private static final ValueSource SHORT_VERSION_SOURCE = new ValueHolder(AkType.VARCHAR, Main.SHORT_VERSION_STRING);
     
     private static final Expression FULL_VERSION = new VersionExpression()
     {

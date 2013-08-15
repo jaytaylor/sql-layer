@@ -15,25 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.service.ui;
+package com.foundationdb.sql;
 
-import com.foundationdb.server.AkServer;
-
-import java.io.PrintStream;
-
-public class AkServerWithSwingConsole
+public interface LayerInfoInterface
 {
-    public static void main(String[] args) {
-        // This has to be done before log4j gets a chance to capture the previous
-        // System.out for the CONSOLE appender. It will get switched to the real
-        // console when that service starts up.
-        PrintStream ps = new SwingConsole.TextAreaPrintStream();
-        System.setOut(ps);
-        try {
-            AkServer.main(args);
-        }
-        catch (Exception ex) {
-            ex.printStackTrace(ps);
-        }
-    }
+    String getServerName();
+    String getServerVersion();
+    String getServerShortVersion();
+    int getServerMajorVersion();
+    int getServerMinorVersion();
+    int getServerPatchVersion();
 }

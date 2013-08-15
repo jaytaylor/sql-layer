@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.service.servicemanager;
 
-import com.foundationdb.server.AkServerInterface;
+import com.foundationdb.sql.LayerInfoInterface;
 import com.foundationdb.server.error.ServiceStartupException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
@@ -75,9 +75,8 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
                 state = State.ERROR_STARTING;
         }
         state = State.ACTIVE;
-        AkServerInterface akServer = getAkSserver();
-        logger.info("{} {} ready.",
-                    akServer.getServerName(), akServer.getServerVersion());
+        LayerInfoInterface layerInfo = getLayerInfo();
+        logger.info("{} {} ready.", layerInfo.getServerName(), layerInfo.getServerVersion());
     }
 
     @Override
@@ -112,8 +111,8 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
     }
 
     @Override
-    public AkServerInterface getAkSserver() {
-        return getServiceByClass(AkServerInterface.class);
+    public LayerInfoInterface getLayerInfo() {
+        return getServiceByClass(LayerInfoInterface.class);
     }
 
     @Override

@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.service;
 
-import com.foundationdb.server.AkServerInterface;
+import com.foundationdb.sql.LayerInfoInterface;
 import com.foundationdb.server.error.ServiceStartupException;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.dxl.DXLService;
@@ -47,7 +47,7 @@ public interface ServiceManager extends ServiceManagerBase {
 
     ConfigurationService getConfigurationService();
     
-    AkServerInterface getAkSserver();
+    LayerInfoInterface getLayerInfo();
 
     Store getStore();
 

@@ -15,9 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.service.ui;
+package com.foundationdb.sql.ui;
 
-import java.awt.*;
 import javax.swing.*;
 
 import java.io.IOException;

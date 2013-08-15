@@ -68,7 +68,7 @@ import java.util.*;
 
 /**
  * Connection to a Postgres server client.
- * Runs in its own thread; has its own AkServer Session.
+ * Runs in its own thread; has its own Main Session.
  *
  */
 public class PostgresServerConnection extends ServerSessionBase

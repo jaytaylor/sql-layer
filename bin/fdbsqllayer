@@ -123,11 +123,11 @@ launch_service()
     fdbsql_parms="$fdbsql_parms $print_compilation $props"
 
     CLASSPATH=$JAR_FILE:$DEP_DIR/*
-    main_class="com.foundationdb.server.AkServer"
+    main_class="com.foundationdb.sql.Main"
     if [ -n "$mode" ]; then
         if [ "$mode" == "window" ]; then
-          fdbsql_parms="$fdbsql_parms -Drequire:com.foundationdb.server.service.ui.SwingConsoleService -Dprioritize:com.foundationdb.server.service.ui.SwingConsoleService"
-          main_class=com.foundationdb.server.service.ui.AkServerWithSwingConsole
+          fdbsql_parms="$fdbsql_parms -Drequire:com.foundationdb.sql.ui.SwingConsoleService -Dprioritize:com.foundationdb.sql.ui.SwingConsoleService"
+          main_class=com.foundationdb.sql.ui.MainWithSwingConsole
         fi
         if [ -n "$profile" ]
         then

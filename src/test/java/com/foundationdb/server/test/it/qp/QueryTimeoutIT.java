@@ -17,15 +17,13 @@
 
 package com.foundationdb.server.test.it.qp;
 
-import com.foundationdb.qp.exec.Plannable;
 import com.foundationdb.qp.operator.*;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.AkServer;
+import com.foundationdb.sql.Main;
 import com.foundationdb.server.error.QueryCanceledException;
 import com.foundationdb.server.error.QueryTimedOutException;
 import com.foundationdb.server.explain.CompoundExplainer;
 import com.foundationdb.server.explain.ExplainContext;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -116,7 +114,7 @@ public class QueryTimeoutIT extends OperatorITBase
     {
         int INITIAL_TIMEOUT_MILLI = 10000000;
         int MODIFIED_TIMEOUT_MILLI = 5000;
-        AkServer akServer = (AkServer) akServer();
+        Main layerInfo = (Main) layerInfo();
         configService().queryTimeoutMilli(INITIAL_TIMEOUT_MILLI);
         final Operator plan = new DoNothingForever();
         final Cursor cursor = cursor(plan, queryContext, queryBindings);
@@ -154,7 +152,7 @@ public class QueryTimeoutIT extends OperatorITBase
     {
         int INITIAL_TIMEOUT_MILLI = 5000;
         int MODIFIED_TIMEOUT_MILLI = -1; // No timeout
-        AkServer akServer = (AkServer) akServer();
+        Main layerInfo = (Main) layerInfo();
         configService().queryTimeoutMilli(INITIAL_TIMEOUT_MILLI);
         final Operator plan = new DoNothingForever();
         final Cursor cursor = cursor(plan, queryContext, queryBindings);

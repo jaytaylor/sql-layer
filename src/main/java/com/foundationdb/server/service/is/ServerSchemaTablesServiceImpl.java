@@ -34,7 +34,7 @@ import com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesRow;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.AkServerInterface;
+import com.foundationdb.sql.LayerInfoInterface;
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
@@ -72,14 +72,14 @@ public class ServerSchemaTablesServiceImpl
 
     private final MonitorService monitor;
     private final ConfigurationService configService;
-    private final AkServerInterface serverInterface;
+    private final LayerInfoInterface serverInterface;
     private final SecurityService securityService;
     
     @Inject
     public ServerSchemaTablesServiceImpl (SchemaManager schemaManager, 
                                           MonitorService monitor, 
                                           ConfigurationService configService,
-                                          AkServerInterface serverInterface,
+                                          LayerInfoInterface serverInterface,
                                           SecurityService securityService) {
         super(schemaManager);
         this.monitor = monitor;

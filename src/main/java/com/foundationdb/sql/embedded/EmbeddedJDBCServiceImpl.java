@@ -21,7 +21,7 @@ import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.t3expressions.T3RegistryService;
 import com.foundationdb.sql.server.ServerServiceRequirements;
 
-import com.foundationdb.server.AkServerInterface;
+import com.foundationdb.sql.LayerInfoInterface;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
@@ -54,7 +54,7 @@ public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
     private static final Logger logger = LoggerFactory.getLogger(EmbeddedJDBCService.class);
 
     @Inject
-    public EmbeddedJDBCServiceImpl(AkServerInterface akServer,
+    public EmbeddedJDBCServiceImpl(LayerInfoInterface layerInfo,
                                    DXLService dxlService,
                                    MonitorService monitor,
                                    SessionService sessionService,
@@ -67,7 +67,7 @@ public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
                                    TransactionService txnService,
                                    SecurityService securityService,
                                    ServiceManager serviceManager) {
-        reqs = new ServerServiceRequirements(akServer, dxlService, monitor, 
+        reqs = new ServerServiceRequirements(layerInfo, dxlService, monitor,
                 sessionService, store, functionsRegistry,
                 config, indexStatisticsService, overloadResolutionService, 
                 routineLoader, txnService, securityService, serviceManager);

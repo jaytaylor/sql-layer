@@ -19,7 +19,7 @@ package com.foundationdb.sql.embedded;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.server.AkServerInterface;
+import com.foundationdb.sql.LayerInfoInterface;
 import com.foundationdb.sql.optimizer.rule.ExplainPlanContext;
 import com.foundationdb.sql.server.ServerServiceRequirements;
 import com.foundationdb.sql.server.ServerSessionBase;
@@ -285,8 +285,8 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         reqs.monitor().deregisterSessionMonitor(sessionMonitor, session);
     }
 
-    protected AkServerInterface getAkServer() {
-        return reqs.akServer();
+    protected LayerInfoInterface getLayerInfo() {
+        return reqs.layerInfo();
     }
 
     public JDBCCallableStatement prepareCall(TableName routineName) throws SQLException {
