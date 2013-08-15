@@ -31,7 +31,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class TestConfigService extends ConfigurationServiceImpl {
-    private final static File TESTDIR = new File("/tmp/akserver-junit");
+    private final static File TESTDIR = new File("/tmp/foundationdb-sql-junit");
     private static File dataDirectory = null;
     private static int dataDirectoryCounter = 0;
     private static volatile boolean doCleanOnUnload = false;

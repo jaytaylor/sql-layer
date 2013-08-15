@@ -226,14 +226,14 @@
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
                 <includes>
-                    <include>version/akserver_version</include>
+                    <include>version/fdbsql_version</include>
                 </includes>
             </resource>
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>false</filtering>
                 <excludes>
-                    <exclude>version/akserver_version</exclude>
+                    <exclude>version/fdbsql_version</exclude>
                 </excludes>
             </resource>
         </resources>
@@ -396,7 +396,7 @@
                         <exclude>.gitignore</exclude>
                         <exclude>.idea/**</exclude>
                         <!-- No extension. Manually add header and ignore -->
-                        <exclude>bin/akserver</exclude>
+                        <exclude>bin/fdbsqllayer</exclude>
                         <exclude>**/*.options</exclude>
                         <!-- Files requiring a specific format (packaging control, test output, etc) -->
                         <exclude>README.md</exclude>
@@ -409,7 +409,7 @@
                         <exclude>**/services-config.yaml</exclude>
                         <exclude>**/default-services.yaml</exclude>
                         <exclude>src/main/protobuf/*.proto</exclude>
-                        <exclude>src/main/resources/version/akserver_version</exclude>
+                        <exclude>src/main/resources/version/fdbsql_version</exclude>
                         <exclude>src/test/bin/*</exclude>
                         <exclude>src/test/resources/**</exclude>
                     </excludes>

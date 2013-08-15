@@ -51,7 +51,7 @@ public class AkServer implements Service, JmxManageable, AkServerInterface
 {
     private static final Logger LOG = LoggerFactory.getLogger(AkServer.class.getName());
 
-    private static final String VERSION_STRING_FILE = "version/akserver_version";
+    private static final String VERSION_STRING_FILE = "version/fdbsql_version";
     public static final String VERSION_STRING, SHORT_VERSION_STRING;
     public static final int VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH;
     static {

@@ -48,12 +48,12 @@ Name: "{group}\Uninstall FoundationDB SQL Layer"; Filename: "{uninstallexe}"
 
 [Run]
 ;See StartNow() below.
-;Filename: "{app}\bin\akserver.cmd"; Parameters: "install -m {code:InstallMode}";  WorkingDir: "{app}"; StatusMsg: "Installing service ..."; Tasks: installsvc
-;Filename: "{app}\bin\akserver.cmd"; Parameters: "start";  WorkingDir: "{app}"; StatusMsg: "Starting service ..."; Tasks: start and installsvc
-;Filename: "{app}\bin\akserver.cmd"; Parameters: "window";  WorkingDir: "{app}"; StatusMsg: "Starting database ..."; Tasks: start and not installsvc
+;Filename: "{app}\bin\fdbsllayer.cmd"; Parameters: "install -m {code:InstallMode}";  WorkingDir: "{app}"; StatusMsg: "Installing service ..."; Tasks: installsvc
+;Filename: "{app}\bin\fdbsllayer.cmd"; Parameters: "start";  WorkingDir: "{app}"; StatusMsg: "Starting service ..."; Tasks: start and installsvc
+;Filename: "{app}\bin\fdbsllayer.cmd"; Parameters: "window";  WorkingDir: "{app}"; StatusMsg: "Starting database ..."; Tasks: start and not installsvc
 
 [UninstallRun]
-Filename: "{app}\bin\akserver.cmd"; Parameters: "uninstall";  WorkingDir: "{app}"; StatusMsg: "Removing service ..."; Tasks: installsvc
+Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "uninstall";  WorkingDir: "{app}"; StatusMsg: "Removing service ..."; Tasks: installsvc
 
 [Code]
 var
@@ -185,7 +185,7 @@ var
   Command, Dir, Params: String;
   ResultCode: Integer;
 begin
-  Command := ExpandConstant('{app}\bin\akserver.cmd');
+  Command := ExpandConstant('{app}\bin\fdbsqllayer.cmd');
   Dir := ExpandConstant('{app}');
   if IsTaskSelected('installsvc') then begin
     Params := 'install -m ' + InstallMode('');

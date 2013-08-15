@@ -129,7 +129,7 @@ public class TreeServiceImpl
         /*
          * TODO:
          * Remove when AkCollatorFactory becomes a service.
-         * Temporary bridge to get the akserver.collation property AkCollatorFactory
+         * Temporary bridge to get the fdbsql.collation property AkCollatorFactory
          */
         AkCollatorFactory.setCollationMode(configService.getProperty(COLLATION_PROP_NAME));
         // TODO - remove this when sure we don't need it
@@ -181,7 +181,7 @@ public class TreeServiceImpl
         //
         final Properties properties = configService.deriveProperties(PERSISTIT_MODULE_NAME);
         //
-        // Copies the akserver.datapath property to the Persistit properties
+        // Copies the fdbsql.datapath property to the Persistit properties
         // set. This allows Persistit to perform substitution of ${datapath}
         // with the server-specified home directory.
         //
@@ -193,7 +193,7 @@ public class TreeServiceImpl
         ensureDirectoryExists(datapath, false);
 
         //
-        // Copied the akserver.tmp_dir property to the Persistit tmpvoldir 
+        // Copied the fdbsql.tmp_dir property to the Persistit tmpvoldir
         // The latter is used for temporary Persistit volumes used for sorting.
         final String tmpPath = configService.getProperty(TEMPDIR_NAME);
         properties.setProperty(Configuration.TEMPORARY_VOLUME_DIR_PROPERTY_NAME, tmpPath);

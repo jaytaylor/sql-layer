@@ -27,6 +27,7 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.persistitadapter.Sorter;
 import com.foundationdb.qp.persistitadapter.indexcursor.MergeJoinSorter;
 import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.service.config.TestConfigService;
 import com.foundationdb.util.tap.InOutTap;
 
 public class MergeJoinSorterIT extends SorterITBase {
@@ -35,7 +36,8 @@ public class MergeJoinSorterIT extends SorterITBase {
     public Map<String,String> startupConfigProperties() {
         Map<String,String> props = new HashMap<>();
         props.putAll(super.startupConfigProperties());
-        props.put("fdbsql.tmp_dir","/tmp/akserver-junit/");
+
+        props.put("fdbsql.tmp_dir", TestConfigService.dataDirectory().getAbsolutePath());
         return props;
     }
 

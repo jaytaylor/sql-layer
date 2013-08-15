@@ -13,5 +13,5 @@ Architecture: all
 Depends: openjdk-7-jdk | openjdk-7-jre-headless | oracle-java7-installer, adduser
 Recommends: postgresql-client, libpg-java
 Description: FoundationDB SQL Layer
- FoundationDB SQL Layer
+ SQL Layer for FoundationDB
 
