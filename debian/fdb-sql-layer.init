@@ -1,30 +1,30 @@
 #! /bin/sh
 ### BEGIN INIT INFO
-# Provides:          akiban-server
+# Provides:          fdb-sql-layer
 # Required-Start:    $remote_fs
 # Required-Stop:     $remote_fs
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: akiban server
-# Description:       Server for Akiban Orthogonal Architecture
+# Short-Description: FoundationDB SQL Layer
+# Description:       FoundationDB SQL Layer
 ### END INIT INFO
 
-# Author: Padraig O'Sullivan <posullivan@akiban.com>
+# Author: Nathan Williams <nathan.williams@foundationdb.com>
 
-export JAR_FILE=/usr/share/akiban/akiban-server.jar
-export DEP_DIR=/usr/share/akiban/server
-export AKIBAN_CONF=/etc/akiban
-export AKIBAN_HOME=/usr/share/akiban
-export AKIBAN_OWNR=akiban
+export JAR_FILE=/usr/share/foundationdb-sql/foundationdb-sql-layer.jar
+export DEP_DIR=/usr/share/foundationdb-sql/server
+export FDBSQL_CONF=/etc/foundationdb-sql
+export FDBSQL_HOME=/usr/share/foundationdb-sql
+export FDBSQL_OWNR=foundationdb-sql
 SELF=$(cd $(dirname $0); pwd -P)/$(basename $0)
-NAME="akiban"
-DESC="Akiban"
-log_file=/var/log/akiban/server_stdout.log
+NAME="foundationdb-sql"
+DESC="FoundationDB SQL Layer"
+log_file=/var/log/foundationdb-sql/server_stdout.log
 PIDFILE_DIR=/var/run/$NAME
 pidfile=$PIDFILE_DIR/server.pid
 timeout=60
-AKIBAN_PROG=/usr/sbin/akserver
-DAEMON=/usr/sbin/akserver
+FDBSQL_PROG=/usr/sbin/fdbsqllayer
+DAEMON=/usr/sbin/fdbsqllayer
 
 # Read configuration variable file if it is present
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
@@ -33,14 +33,14 @@ DAEMON=/usr/sbin/akserver
 # on reboot and during upgrades, its contents can be wiped
 if [ ! -d $PIDFILE_DIR ]; then
     mkdir $PIDFILE_DIR
-    chown $AKIBAN_OWNR $PIDFILE_DIR
+    chown $FDBSQL_OWNR $PIDFILE_DIR
 fi
 
-[ -e /usr/share/akiban/akiban-server.jar ] || exit 0
-[ -e /etc/akiban/config/jvm.options ] || exit 0
+[ -e "$JAR_FILE" ] || exit 0
+[ -e "$FDBSQL_CONF/config/jvm.options" ] || exit 0
 
-# read akiban JVM options
-. /etc/akiban/config/jvm.options
+# read JVM options
+. /etc/foundationdb-sql/config/jvm.options
 
 if [ -z "$JVM_OPTS" ]; then
     echo "Initialization failed; \$JVM_OPTS not set!" >&2
@@ -61,7 +61,7 @@ fi
 # process is not running but the pidfile exists (to match the exit codes for
 # the "status" command; see LSB core spec 3.1, section 20.2)
 #
-CMD_PATT="akiban-server"
+CMD_PATT="foundationdb-sql"
 is_running()
 {
     if [ -f $pidfile ]; then
@@ -97,7 +97,7 @@ case "$1" in
             exit 1
         fi
         log_daemon_msg "Starting $DESC"
-        start_daemon "$DAEMON --chuid $AKIBAN_OWNR" "-p $pidfile" "-j $JAR_FILE" "-d $DEP_DIR" "-c $AKIBAN_CONF" > $log_file 2>&1 &
+        start_daemon "$DAEMON --chuid $FDBSQL_OWNR" "-p $pidfile" "-j $JAR_FILE" "-d $DEP_DIR" "-c $FDBSQL_CONF" > $log_file 2>&1 &
         # we give server 60 seconds to start all services
         attempts=1
         while [ ! -f $pidfile ]

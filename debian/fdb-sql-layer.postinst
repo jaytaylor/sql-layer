@@ -1,5 +1,5 @@
 #!/bin/sh
-# postinst script for akiban server
+# postinst script for fdb-sql-layer
 
 set -e
 
@@ -15,28 +15,31 @@ set -e
 # for details, see http://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
+USER_NAME=foundationdb-sql
+GROUP_NAME=$USER_NAME
+
 case "$1" in
     configure)
-        if ! getent group akiban >/dev/null; then
-            addgroup --system akiban
+        if ! getent group $GROUP_NAME >/dev/null; then
+            addgroup --system $GROUP_NAME
         fi
 
-        if ! getent passwd akiban >/dev/null; then
+        if ! getent passwd $USER_NAME >/dev/null; then
             adduser --quiet \
                 --system \
-                --ingroup akiban \
+                --ingroup $GROUP_NAME \
                 --quiet \
                 --disabled-login \
                 --disabled-password \
-                --home /var/lib/akiban \
+                --home /var/lib/$USER_NAME \
                 --no-create-home \
-                -gecos "Akiban Server" \
-                akiban
+                -gecos "FoundationDB SQL Layer" \
+                $USER_NAME
         fi
 
-	chown -R akiban: /var/lib/akiban
-	chown -R akiban: /var/log/akiban
-	chown -R akiban: /var/run/akiban
+	chown -R $USER_NAME: /var/lib/$USER_NAME
+	chown -R $USER_NAME: /var/log/$USER_NAME
+	chown -R $USER_NAME: /var/run/$USER_NAME
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

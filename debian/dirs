@@ -1,9 +1,8 @@
-usr/share/akiban
-usr/share/akiban/server
-usr/share/akiban/client
-#usr/share/akiban/plugins
-etc/akiban
-etc/akiban/config
-var/lib/akiban
-var/log/akiban
-var/run/akiban
+usr/share/foundationdb-sql
+usr/share/foundationdb-sql/server
+usr/share/foundationdb-sql/client
+etc/foundationdb-sql
+etc/foundationdb-sql/config
+var/lib/foundationdb-sql
+var/log/foundationdb-sql
+var/run/foundationdb-sql
