@@ -18,7 +18,7 @@
 
 set -e
 
-usage="Usage: ./build_packages.sh [debian|redhat|macosx|binary] [... epoch]"
+usage="Usage: ./build_packages.sh [--git-hash] [--git-count] [debian|redhat|macosx|binary] [... epoch]"
 if [ $# -lt 1 ]; then
     echo "${usage}"
     exit 1
@@ -28,6 +28,17 @@ platform=$1
 git_hash=`git rev-parse --short HEAD`
 git_count=`git rev-list --merges HEAD |wc -l |tr -d ' '` # --count is newer
 layer_version=$(mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version |grep -o '^[0-9.]\+')
+
+if [ "${1}" = "--git-hash" ]; then
+    echo "${git_hash}"
+    exit 0
+fi
+
+if [ "${1}" = "--git-count" ]; then
+    echo "${git_count}"
+    exit 0
+fi
+
 
 mvn_install="mvn clean install -DGIT_COUNT=${git_count} -DGIT_HASH=${git_hash} -DskipTests=true"
 
