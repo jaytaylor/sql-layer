@@ -1,0 +1,83 @@
+com.foundationdb.sql.parser.UpdateNode@3dbbd23f
+statementType: UPDATE
+resultSet: 	
+	com.foundationdb.sql.parser.SelectNode@75e845c2
+	isDistinct: false
+	resultColumns: 		
+		com.foundationdb.sql.parser.ResultColumnList@643c0007
+
+		[0]:		
+		com.foundationdb.sql.parser.ResultColumn@1f25fefa
+		exposedName: x
+		name: x
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.foundationdb.sql.parser.BinaryArithmeticOperatorNode@7786df0f
+			operator: +
+			methodName: plus
+			type: null
+			leftOperand: 				
+				com.foundationdb.sql.parser.ColumnReference@379e8f17
+				columnName: x
+				tableName: null
+				type: null
+				userData: t1.x from com.foundationdb.sql.parser.FromBaseTable@33d6f122
+			rightOperand: 				
+				com.foundationdb.sql.parser.NumericConstantNode@ac44b88
+				value: 1
+				type: INTEGER NOT NULL
+		reference: 			
+			com.foundationdb.sql.parser.ColumnReference@5d61dfb5
+			columnName: x
+			tableName: null
+			type: null
+			userData: t1.x
+		[1]:		
+		com.foundationdb.sql.parser.ResultColumn@5d3ad33d
+		exposedName: y
+		name: y
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.foundationdb.sql.parser.CharConstantNode@4102799c
+			value: foo
+			type: CHAR(3) NOT NULL
+		reference: 			
+			com.foundationdb.sql.parser.ColumnReference@44a613f8
+			columnName: y
+			tableName: null
+			type: null
+			userData: t1.y
+	fromList: 		
+		com.foundationdb.sql.parser.FromList@97e121c
+
+		[0]:		
+		com.foundationdb.sql.parser.FromBaseTable@33d6f122
+		tableName: t1
+		updateOrDelete: UPDATE
+		null
+		correlation Name: null
+		null
+		userData: test.t1
+	whereClause: 		
+		com.foundationdb.sql.parser.BinaryRelationalOperatorNode@647109c4
+		operator: >
+		methodName: greaterThan
+		type: null
+		leftOperand: 			
+			com.foundationdb.sql.parser.ColumnReference@39385660
+			columnName: z
+			tableName: null
+			type: null
+			userData: t1.z from com.foundationdb.sql.parser.FromBaseTable@33d6f122
+		rightOperand: 			
+			com.foundationdb.sql.parser.NumericConstantNode@21aed5f9
+			value: 100
+			type: INTEGER NOT NULL
+targetTableName: 	
+	com.foundationdb.sql.parser.TableName@a5d
+	t1
+	userData: test.t1

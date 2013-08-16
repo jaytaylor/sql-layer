@@ -1,0 +1,49 @@
+/**
+ * Copyright (C) 2009-2013 Akiban Technologies, Inc.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package com.foundationdb.ais.model.validation;
+
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.server.error.ColumnSizeMismatchException;
+
+public class ColumnMaxAndPrefixSizesMatch implements AISValidation {
+    @Override
+    public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
+        for(UserTable table : ais.getUserTables().values()) {
+            for(Column column : table.getColumnsIncludingInternal()) {
+                Long maxStorage = column.getMaxStorageSize();
+                Long computedMaxStorage = column.computeMaxStorageSize();
+                Integer prefix = column.getPrefixSize();
+                Integer computedPrefix = column.computePrefixSize();
+                if((maxStorage != null) && !maxStorage.equals(computedMaxStorage)) {
+                    output.reportFailure(new AISValidationFailure(
+                            new ColumnSizeMismatchException(table.getName(), column.getName(),
+                                                            "maxStorageSize", maxStorage, computedMaxStorage)
+                    ));
+                }
+                if((prefix != null) && !prefix.equals(computedPrefix)) {
+                    output.reportFailure(new AISValidationFailure(
+                            new ColumnSizeMismatchException(table.getName(), column.getName(),
+                                                            "prefixSize", prefix, computedPrefix)
+                    ));
+                }
+            }
+        }
+    }
+}

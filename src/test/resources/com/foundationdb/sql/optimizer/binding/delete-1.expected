@@ -1,0 +1,35 @@
+com.foundationdb.sql.parser.DeleteNode@15a62c31
+statementType: DELETE
+resultSet: 	
+	com.foundationdb.sql.parser.SelectNode@b41b571
+	isDistinct: false
+	fromList: 		
+		com.foundationdb.sql.parser.FromList@39e87719
+
+		[0]:		
+		com.foundationdb.sql.parser.FromBaseTable@4ce32802
+		tableName: t1
+		updateOrDelete: DELETE
+		null
+		correlation Name: null
+		null
+		userData: test.t1
+	whereClause: 		
+		com.foundationdb.sql.parser.BinaryRelationalOperatorNode@5557c2bd
+		operator: =
+		methodName: equals
+		type: null
+		leftOperand: 			
+			com.foundationdb.sql.parser.ColumnReference@74b23210
+			columnName: y
+			tableName: null
+			type: null
+			userData: t1.y from com.foundationdb.sql.parser.FromBaseTable@4ce32802
+		rightOperand: 			
+			com.foundationdb.sql.parser.CharConstantNode@23d256fa
+			value: foo
+			type: CHAR(3) NOT NULL
+targetTableName: 	
+	com.foundationdb.sql.parser.TableName@a5d
+	t1
+	userData: test.t1

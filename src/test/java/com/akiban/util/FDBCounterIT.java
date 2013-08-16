@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.util;
+package com.foundationdb.util;
 
-import com.akiban.server.store.FDBHolder;
-import com.akiban.server.test.it.ITBase;
+import com.foundationdb.server.store.FDBHolder;
+import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.Database;
 import com.foundationdb.FDBException;
 import com.foundationdb.Transaction;
