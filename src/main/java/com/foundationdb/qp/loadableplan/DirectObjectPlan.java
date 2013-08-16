@@ -25,7 +25,13 @@ public abstract class DirectObjectPlan
 {
     public abstract DirectObjectCursor cursor(QueryContext context, QueryBindings bindings);
 
+    public enum TransactionMode { NONE, READ_ONLY, READ_WRITE };
+
     public enum OutputMode { TABLE, COPY_WITH_NEWLINE, COPY };
+
+    public TransactionMode getTransactionMode() {
+        return TransactionMode.NONE;
+    }
 
     /** Return <code>COPY</code> to stream a single column with text formatting. */
     public OutputMode getOutputMode() {

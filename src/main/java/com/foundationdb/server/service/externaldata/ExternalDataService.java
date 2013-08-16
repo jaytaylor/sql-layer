@@ -60,6 +60,9 @@ public interface ExternalDataService {
                           Operator scan, RowType scanType, int depth,
                           boolean withTransaction);
 
+    static final long COMMIT_FREQUENCY_NEVER = -1;
+    static final long COMMIT_FREQUENCY_PERIODICALLY = -2;
+
     long loadTableFromCsv(Session session, InputStream inputStream, 
                           CsvFormat format, long skipRows,
                           UserTable toTable, List<Column> toColumns,

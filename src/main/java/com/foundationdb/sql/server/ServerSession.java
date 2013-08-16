@@ -131,6 +131,9 @@ public interface ServerSession
     /** Set following transaction to read-only / read-write. */
     public void setTransactionDefaultReadOnly(boolean readOnly);
 
+    /** Return whether to commit as determined by store. */
+    public boolean isTransactionPeriodicallyCommit();
+
     /** Set following transaction to commit as determined by store. */
     public void setTransactionPeriodicallyCommit(boolean periodicallyCommit);
 
