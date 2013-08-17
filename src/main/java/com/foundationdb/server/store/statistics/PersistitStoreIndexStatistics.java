@@ -75,12 +75,12 @@ public class PersistitStoreIndexStatistics extends AbstractStoreIndexStatistics<
     }
 
     @Override
-    public IndexStatistics computeIndexStatistics(Session session, Index index) {
+    public IndexStatistics computeIndexStatistics(Session session, Index index, long scanTimeLimit, long sleepTime) {
         long indexRowCount = indexStatsService.countEntries(session, index);
         IndexStatisticsVisitor<Key,Value> visitor = new IndexStatisticsVisitor<>(session, index, indexRowCount, this);
         int bucketCount = indexStatsService.bucketCount();
         visitor.init(bucketCount);
-        getStore().traverse(session, index, visitor);
+        getStore().traverse(session, index, visitor, scanTimeLimit, sleepTime);
         visitor.finish(bucketCount);
         IndexStatistics indexStatistics = visitor.getIndexStatistics();
         if (logger.isDebugEnabled()) {
@@ -92,7 +92,7 @@ public class PersistitStoreIndexStatistics extends AbstractStoreIndexStatistics<
     @Override
     public long manuallyCountEntries(Session session, Index index) {
         CountingVisitor countingVisitor = new CountingVisitor();
-        getStore().traverse(session, index, countingVisitor);
+        getStore().traverse(session, index, countingVisitor, -1, 0);
         return countingVisitor.getCount();
     }
 

@@ -248,7 +248,7 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
                                                                         Collection<? extends Index> indexes) {
         Map<Index,IndexStatistics> updates = new HashMap<>(indexes.size());
         for (Index index : indexes) {
-            IndexStatistics indexStatistics = storeStats.computeIndexStatistics(session, index);
+            IndexStatistics indexStatistics = storeStats.computeIndexStatistics(session, index, -1, 0);
             storeStats.storeIndexStatistics(session, index, indexStatistics);
             updates.put(index, indexStatistics);
         }
