@@ -69,6 +69,7 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
 
     private static final int INDEX_STATISTICS_TABLE_VERSION = 1;
     private static final String BUCKET_COUNT_PROPERTY = "fdbsql.index_statistics.bucket_count";
+    private static final String BUCKET_TIME_PROPERTY = "fdbsql.index_statistics.timeLimit";
 
     private final Store store;
     private final TransactionService txnService;
@@ -81,6 +82,7 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
     private AbstractStoreIndexStatistics storeStats;
     private Map<Index,IndexStatistics> cache;
     private int bucketCount;
+    private long scanTimeLimit, sleepTime;
 
     protected AbstractIndexStatisticsService(Store store,
                                              TransactionService txnService,
@@ -110,6 +112,22 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
         cache = Collections.synchronizedMap(new WeakHashMap<Index,IndexStatistics>());
         storeStats = createStoreIndexStatistics();
         bucketCount = Integer.parseInt(configurationService.getProperty(BUCKET_COUNT_PROPERTY));
+        String time = configurationService.getProperty(BUCKET_TIME_PROPERTY);
+        if ("unlimited".equals(time)) {
+            scanTimeLimit = -1;
+            sleepTime = 0;
+        }
+        else {
+            int idx = time.indexOf(',');
+            if (idx < 0) {
+                scanTimeLimit = Long.parseLong(time);
+                sleepTime = 0;
+            }
+            else {
+                scanTimeLimit = Long.parseLong(time.substring(0, idx));
+                sleepTime = Long.parseLong(time.substring(idx+1));
+            }
+        }
         registerStatsTables();
         listenerService.registerTableListener(this);
     }
@@ -248,7 +266,7 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
                                                                         Collection<? extends Index> indexes) {
         Map<Index,IndexStatistics> updates = new HashMap<>(indexes.size());
         for (Index index : indexes) {
-            IndexStatistics indexStatistics = storeStats.computeIndexStatistics(session, index, -1, 0);
+            IndexStatistics indexStatistics = storeStats.computeIndexStatistics(session, index, scanTimeLimit, sleepTime);
             storeStats.storeIndexStatistics(session, index, indexStatistics);
             updates.put(index, indexStatistics);
         }
