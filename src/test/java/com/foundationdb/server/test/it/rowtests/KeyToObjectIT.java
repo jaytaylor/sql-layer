@@ -119,7 +119,7 @@ public class KeyToObjectIT extends ITBase {
                     ++rowCounter;
                 }
             }
-        });
+        }, -1, 0);
 
         if(rowIt.hasNext()) {
             Assert.fail("More rows than index entries: rows("+allRows+") index("+index+")");
