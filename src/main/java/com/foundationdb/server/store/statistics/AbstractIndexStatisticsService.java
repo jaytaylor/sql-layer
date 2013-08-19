@@ -18,9 +18,12 @@
 package com.foundationdb.server.store.statistics;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexName;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
@@ -51,14 +54,17 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
@@ -70,19 +76,23 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
     private static final int INDEX_STATISTICS_TABLE_VERSION = 1;
     private static final String BUCKET_COUNT_PROPERTY = "fdbsql.index_statistics.bucket_count";
     private static final String BUCKET_TIME_PROPERTY = "fdbsql.index_statistics.timeLimit";
+    private static final String BACKGROUND_TIME_PROPERTY = "fdbsql.index_statistics.background";
+    private static final long TIME_LIMIT_UNLIMITED = -1;
+    private static final long TIME_LIMIT_DISABLED = -2;
 
-    private final Store store;
-    private final TransactionService txnService;
+    protected final Store store;
+    protected final TransactionService txnService;
     // Following couple only used by JMX method, where there is no context.
-    private final SchemaManager schemaManager;
-    private final SessionService sessionService;
-    private final ConfigurationService configurationService;
-    private final ListenerService listenerService;
+    protected final SchemaManager schemaManager;
+    protected final SessionService sessionService;
+    protected final ConfigurationService configurationService;
+    protected final ListenerService listenerService;
 
     private AbstractStoreIndexStatistics storeStats;
     private Map<Index,IndexStatistics> cache;
+    private BackgroundState backgroundState;
     private int bucketCount;
-    private long scanTimeLimit, sleepTime;
+    private long scanTimeLimit, sleepTime, backgroundTimeLimit, backgroundSleepTime;
 
     protected AbstractIndexStatisticsService(Store store,
                                              TransactionService txnService,
@@ -112,24 +122,43 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
         cache = Collections.synchronizedMap(new WeakHashMap<Index,IndexStatistics>());
         storeStats = createStoreIndexStatistics();
         bucketCount = Integer.parseInt(configurationService.getProperty(BUCKET_COUNT_PROPERTY));
-        String time = configurationService.getProperty(BUCKET_TIME_PROPERTY);
-        if ("unlimited".equals(time)) {
-            scanTimeLimit = -1;
-            sleepTime = 0;
+        parseTimeLimit(BUCKET_TIME_PROPERTY, false);
+        parseTimeLimit(BACKGROUND_TIME_PROPERTY, true);
+        registerStatsTables();
+        listenerService.registerTableListener(this);
+        backgroundState = new BackgroundState(backgroundTimeLimit != TIME_LIMIT_DISABLED);
+    }
+
+    private void parseTimeLimit(String key, boolean background) {
+        String time = configurationService.getProperty(key);
+        long on, sleep;
+        if ("disabled".equals(time)) {
+            on = TIME_LIMIT_DISABLED;
+            sleep = 0;
+        }
+        else if ("unlimited".equals(time)) {
+            on = TIME_LIMIT_UNLIMITED;
+            sleep = 0;
         }
         else {
             int idx = time.indexOf(',');
             if (idx < 0) {
-                scanTimeLimit = Long.parseLong(time);
-                sleepTime = 0;
+                on = Long.parseLong(time);
+                sleep = 0;
             }
             else {
-                scanTimeLimit = Long.parseLong(time.substring(0, idx));
-                sleepTime = Long.parseLong(time.substring(idx+1));
+                on = Long.parseLong(time.substring(0, idx));
+                sleep = Long.parseLong(time.substring(idx+1));
             }
         }
-        registerStatsTables();
-        listenerService.registerTableListener(this);
+        if (background) {
+            backgroundTimeLimit = on;
+            backgroundSleepTime = sleep;
+        }
+        else {
+            scanTimeLimit = on;
+            sleepTime = sleep;
+        }
     }
 
     @Override
@@ -138,6 +167,7 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
         cache = null;
         storeStats = null;
         bucketCount = 0;
+        backgroundState.stop();
     }
 
     @Override
@@ -201,7 +231,7 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
         // somehow?
         IndexStatistics result = cache.get(index);
         if (result != null) {
-            if (result.getAnalysisTimestamp() < 0)
+            if (result.isInvalid())
                 return null;
             else
                 return result;
@@ -212,7 +242,7 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
             return result;
         }
         result = new IndexStatistics(index);
-        result.setAnalysisTimestamp(-1);
+        result.setValidity(IndexStatistics.Validity.INVALID);
         cache.put(index, result);
         return null;
     }
@@ -244,36 +274,52 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
                                       Collection<? extends Index> indexes) {
         ensureAdapter(session);
         final Map<Index,IndexStatistics> updates = new HashMap<>(indexes.size());
-
         if (indexes.size() > 0) {
-            final Index first = indexes.iterator().next();
-            final UserTable table =  (UserTable)first.rootMostTable();
-            if (table.hasMemoryTableFactory()) {
-                updates.putAll(updateMemoryTableIndexStatistics(session, indexes));
-            } else {
-                updates.putAll(updateStoredTableIndexStatistics(session, indexes));
-            }
+            updates.putAll(updateIndexStatistics(session, indexes, false));
         }
         txnService.addCallback(session, TransactionService.CallbackType.COMMIT, new TransactionService.Callback() {
             @Override
             public void run(Session session, long timestamp) {
                 cache.putAll(updates);
+                backgroundState.removeAll(updates);
             }
         });
     }
 
+    protected Map<Index,IndexStatistics> updateIndexStatistics(Session session,
+                                                               Collection<? extends Index> indexes,
+                                                               boolean background) {
+        final Index first = indexes.iterator().next();
+        final UserTable table =  (UserTable)first.rootMostTable();
+        if (table.hasMemoryTableFactory()) {
+            return updateMemoryTableIndexStatistics(session, indexes, background);
+        } else {
+            return updateStoredTableIndexStatistics(session, indexes, background);
+        }
+    }
+
     private Map<Index,IndexStatistics> updateStoredTableIndexStatistics(Session session,
-                                                                        Collection<? extends Index> indexes) {
+                                                                        Collection<? extends Index> indexes,
+                                                                        boolean background) {
         Map<Index,IndexStatistics> updates = new HashMap<>(indexes.size());
+        long on, sleep;
+        if (background) {
+            on = backgroundTimeLimit;
+            sleep = backgroundSleepTime;
+        }
+        else {
+            on = scanTimeLimit;
+            sleep = sleepTime;
+        }
         for (Index index : indexes) {
-            IndexStatistics indexStatistics = storeStats.computeIndexStatistics(session, index, scanTimeLimit, sleepTime);
+            IndexStatistics indexStatistics = storeStats.computeIndexStatistics(session, index, on, sleep);
             storeStats.storeIndexStatistics(session, index, indexStatistics);
             updates.put(index, indexStatistics);
         }
         return updates;
     }
     
-    private Map<Index,IndexStatistics> updateMemoryTableIndexStatistics (Session session, Collection<? extends Index> indexes) {
+    private Map<Index,IndexStatistics> updateMemoryTableIndexStatistics (Session session, Collection<? extends Index> indexes, boolean background) {
         Map<Index,IndexStatistics> updates = new HashMap<>(indexes.size());
         IndexStatistics indexStatistics;
         for (Index index : indexes) {
@@ -310,6 +356,7 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
             IndexStatistics indexStatistics = entry.getValue();
             storeStats.storeIndexStatistics(session, index, indexStatistics);
             cache.put(index, indexStatistics);
+            backgroundState.remove(index);
         }
     }
 
@@ -347,6 +394,56 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
         return bucketCount;
     }
 
+    @Override
+    public void missingStats(Session session, Index index, Column column) {
+        if (index == null) {
+            log.warn("No statistics for {}.{}; cost estimates will not be accurate", column.getTable().getName(), column.getName());
+        }
+        else {
+            IndexStatistics stats = cache.get(index);
+            if ((stats != null) && stats.isInvalid() && !stats.isWarned()) {
+                if (index.isTableIndex()) {
+                    Table table = ((TableIndex)index).getTable();
+                    log.warn("No statistics for table {}; cost estimates will not be accurate", table.getName());
+                    stats.setWarned(true);
+                    backgroundState.offer(table);
+                }
+                else {
+                    log.warn("No statistics for index {}; cost estimates will not be accurate", index.getIndexName());
+                    stats.setWarned(true);
+                    backgroundState.offer(index);
+                }
+            }
+        }
+    }
+
+    public static final double MIN_ROW_COUNT_SMALLER = 0.2;
+    public static final double MAX_ROW_COUNT_LARGER = 5.0;
+
+    @Override
+    public void checkRowCountChanged(Session session, UserTable table,
+                                     IndexStatistics stats, long rowCount) {
+        if (stats.isValid() && !stats.isWarned()) {
+            double ratio = (double)Math.max(rowCount, 1) /
+                           (double)Math.max(stats.getRowCount(), 1);
+            String msg = null;
+            long change = 1;
+            if (ratio < MIN_ROW_COUNT_SMALLER) {
+                msg = "smaller";
+                change = Math.round(1.0 / ratio);
+            }
+            else if (ratio > MAX_ROW_COUNT_LARGER) {
+                msg = "larger";
+                change = Math.round(ratio);
+            }
+            if (msg != null) {
+                stats.setValidity(IndexStatistics.Validity.OUTDATED);
+                log.warn("Table {} is {} times {} than on {}; cost estimates will not be accurate until statistics are updated", new Object[] { table.getName(), change, msg, new Date(stats.getAnalysisTimestamp()) });
+                stats.setWarned(true);
+                backgroundState.offer(table);
+            }
+        }
+    }
 
     //
     // JmxManageable
@@ -525,5 +622,98 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
         AkibanInformationSchema ais = createStatsTables();
         schemaManager.registerStoredInformationSchemaTable(ais.getUserTable(INDEX_STATISTICS_TABLE_NAME), INDEX_STATISTICS_TABLE_VERSION);
         schemaManager.registerStoredInformationSchemaTable(ais.getUserTable(INDEX_STATISTICS_ENTRY_TABLE_NAME), INDEX_STATISTICS_TABLE_VERSION);
+    }
+
+    class BackgroundState implements Runnable {
+        private final Queue<IndexName> queue = new ArrayDeque<>();
+        private boolean active;
+        private Thread thread = null;
+
+        public BackgroundState(boolean active) {
+            this.active = active;
+        }
+
+        public synchronized void offer(Table table) {
+            for (Index index : table.getIndexes()) {
+                offer(index);
+            }
+        }
+
+        public synchronized void offer(Index index) {
+            if (active) {
+                IndexName entry = index.getIndexName();
+                if (!queue.contains(entry)) {
+                    if (queue.offer(entry)) {
+                        if (thread == null) {
+                            thread = new Thread(this, "IndexStatistics-Background");
+                            thread.start();
+                        }
+                    }
+                }
+            }
+        }
+
+        public synchronized void removeAll(Map<Index,IndexStatistics> updates) {
+            for (Index index : updates.keySet()) {
+                remove(index);
+            }
+        }
+
+        public synchronized void remove(Index index) {
+            queue.remove(index.getIndexName());
+        }
+
+        public synchronized void stop() {
+            active = false;
+            if (thread != null) {
+                thread.interrupt();
+            }
+        }
+
+        @Override
+        public void run() {
+            try (Session session = sessionService.createSession()) {
+                while (active) {
+                    IndexName entry;
+                    synchronized (this) {
+                        entry = queue.poll();
+                        if (entry == null) {
+                            thread = null;
+                            break;
+                        }
+                    }
+                    updateIndex(session, entry);
+                }
+            }
+            catch (Exception ex) {
+                log.warn("Error in background", ex);
+                // TODO: Disable background altogether by turning off active?
+                synchronized (this) {
+                    queue.clear();
+                    thread = null;
+                }
+            }
+        }
+
+        private void updateIndex(Session session, IndexName indexName) {
+            Map<Index,IndexStatistics> statistics;
+            try (TransactionService.CloseableTransaction txn = txnService.beginCloseableTransaction(session)) {
+                Index index = null;
+                AkibanInformationSchema ais = schemaManager.getAis(session);
+                Table table = ais.getTable(indexName.getFullTableName());
+                if (table != null)
+                    index = table.getIndex(indexName.getName());
+                if (index == null) {
+                    Group group = ais.getGroup(indexName.getFullTableName());
+                    if (group != null)
+                        index = group.getIndex(indexName.getName());
+                }
+                if (index == null) return; // Could have been dropped in the meantime.
+                statistics = updateIndexStatistics(session, Collections.singletonList(index), true);
+                txn.commit();
+                log.info("Automatically updated statistics for {}", indexName);
+            }
+            cache.putAll(statistics);
+        }
     }
 }

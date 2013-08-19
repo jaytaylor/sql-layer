@@ -48,7 +48,6 @@ public class TestCostEstimator extends CostEstimator
         else
             stats = new IndexStatisticsYamlLoader(ais, OptimizerTestBase.DEFAULT_SCHEMA, new TestKeyCreator())
                 .load(statsFile, statsIgnoreMissingIndexes);
-        warningsEnabled = false;
     }
 
     @Override

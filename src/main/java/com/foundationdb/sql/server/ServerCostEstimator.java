@@ -19,8 +19,10 @@ package com.foundationdb.sql.server;
 
 import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
 
+import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.store.statistics.IndexStatistics;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
@@ -30,6 +32,7 @@ public class ServerCostEstimator extends CostEstimator
     private ServerSession session;
     private IndexStatisticsService indexStatistics;
     private boolean scaleIndexStatistics;
+    private boolean testMode;
 
     public ServerCostEstimator(ServerSession session,
                                ServerServiceRequirements reqs,
@@ -38,8 +41,7 @@ public class ServerCostEstimator extends CostEstimator
         this.session = session;
         indexStatistics = reqs.indexStatistics();
         scaleIndexStatistics = Boolean.parseBoolean(getProperty("scaleIndexStatistics", "true"));
-        if (reqs.config().testing())
-            warningsEnabled = false;
+        testMode = reqs.config().testing();
     }
 
     @Override
@@ -56,6 +58,20 @@ public class ServerCostEstimator extends CostEstimator
                 return count;
         }
         return table.rowDef().getTableStatus().getApproximateRowCount();
+    }
+
+    @Override
+    protected void missingStats(Index index, Column column) {
+        if (!testMode) {
+            indexStatistics.missingStats(session.getSession(), index, column);
+        }
+    }
+
+    @Override
+    protected void checkRowCountChanged(UserTable table, IndexStatistics stats, long rowCount) {
+        if (!testMode) {
+            indexStatistics.checkRowCountChanged(session.getSession(), table, stats, rowCount);
+        }
     }
 
 }

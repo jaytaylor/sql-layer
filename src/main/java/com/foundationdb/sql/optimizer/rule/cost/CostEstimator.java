@@ -60,7 +60,6 @@ public abstract class CostEstimator implements TableRowCounts
     private final PersistitKeyValueTarget keyTarget;
     private final PersistitKeyPValueTarget keyPTarget;
     private final Comparator<byte[]> bytesComparator;
-    protected boolean warningsEnabled;
 
     protected CostEstimator(Schema schema, Properties properties, KeyCreator keyCreator) {
         this.schema = schema;
@@ -76,7 +75,6 @@ public abstract class CostEstimator implements TableRowCounts
             keyPTarget = null;
         }
         bytesComparator = UnsignedBytes.lexicographicalComparator();
-        warningsEnabled = logger.isWarnEnabled();
     }
 
     protected CostEstimator(SchemaRulesContext rulesContext, KeyCreator keyCreator) {
@@ -316,12 +314,12 @@ public abstract class CostEstimator implements TableRowCounts
                                    Histogram histogram,
                                    ExpressionNode expr) {
         if (histogram == null) {
-            missingStats(column, index);
+            missingStats(index, column);
             return missingStatsSelectivity();
         } else {
             long indexStatsSampledCount = histogram.getIndexStatistics().getSampledCount();
             if (histogram.getEntries().isEmpty()) {
-                missingStats(column, index);
+                missingStats(index, column);
                 return missingStatsSelectivity();
             } else if ((expr instanceof ColumnExpression) &&
                        (((ColumnExpression)expr).getTable() instanceof ExpressionsSource)) {
@@ -383,7 +381,7 @@ public abstract class CostEstimator implements TableRowCounts
                                      ExpressionNode hi, boolean highInclusive)
     {
         if (histogram == null || histogram.getEntries().isEmpty()) {
-            missingStats(column, index);
+            missingStats(index, column);
             return missingStatsSelectivity();
         }
         if (usePValues())
@@ -1135,43 +1133,11 @@ public abstract class CostEstimator implements TableRowCounts
         }
     }
 
-    protected void missingStats(Column column, Index index) {
-        if (warningsEnabled) {
-            if (index == null) {
-                logger.warn("No statistics for {}.{}; cost estimates will not be accurate", column.getTable().getName(), column.getName());
-            }
-            else if (index.isTableIndex()) {
-                Table table = ((TableIndex)index).getTable();
-                logger.warn("No statistics for table {}; cost estimates will not be accurate", table.getName());
-            }
-            else {
-                logger.warn("No statistics for index {}; cost estimates will not be accurate", index.getIndexName());
-            }
-        }
+    protected void missingStats(Index index, Column column) {
     }
-
-    public static final double MIN_ROW_COUNT_SMALLER = 0.2;
-    public static final double MAX_ROW_COUNT_LARGER = 5.0;
 
     protected void checkRowCountChanged(UserTable table, IndexStatistics stats, 
                                         long rowCount) {
-        if (warningsEnabled) {
-            double ratio = (double)Math.max(rowCount, 1) / 
-                           (double)Math.max(stats.getRowCount(), 1);
-            String msg = null;
-            long change = 1;
-            if (ratio < MIN_ROW_COUNT_SMALLER) {
-                msg = "smaller";
-                change = Math.round(1.0 / ratio);
-            }
-            else if (ratio > MAX_ROW_COUNT_LARGER) {
-                msg = "larger";
-                change = Math.round(ratio);
-            }
-            if (msg != null) {
-                logger.warn("Table {} is {} times {} than on {}; cost estimates will not be accurate until statistics are updated", new Object[] { table.getName(), change, msg, new Date(stats.getAnalysisTimestamp()) });
-            }
-        }
     }
 
 }
