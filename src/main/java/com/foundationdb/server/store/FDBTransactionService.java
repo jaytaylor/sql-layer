@@ -69,6 +69,10 @@ public class FDBTransactionService implements TransactionService {
             return transaction;
         }
 
+        public long getStartTime() {
+            return startTime;
+        }
+
         public void setBytes(byte[] key, byte[] value) {
             transaction.set(key, value);
             bytesSet += value.length;

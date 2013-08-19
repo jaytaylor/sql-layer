@@ -31,6 +31,7 @@ import com.foundationdb.server.FDBTableStatusCache;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.FDBAdapterException;
+import com.foundationdb.server.error.QueryCanceledException;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.IndexDef;
 import com.foundationdb.server.rowdata.RowData;
@@ -51,6 +52,7 @@ import com.foundationdb.MutationType;
 import com.foundationdb.Range;
 import com.foundationdb.ReadTransaction;
 import com.foundationdb.Transaction;
+import com.foundationdb.async.AsyncIterator;
 import com.foundationdb.async.Function;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple;
@@ -577,11 +579,18 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     }
 
     @Override
-    public <V extends IndexVisitor<Key, Value>> V traverse(Session session, Index index, V visitor) {
+    public <V extends IndexVisitor<Key, Value>> V traverse(Session session, Index index, V visitor, long scanTimeLimit, long sleepTime) {
         Key key = createKey();
         Value value = new Value((Persistit)null);
         TransactionState txn = txnService.getTransaction(session);
-        Iterator<KeyValue> it = txn.getTransaction().getRange(Range.startsWith(packedTuple(index))).iterator();
+        long nextCommitTime = 0;
+        if (scanTimeLimit >= 0) {
+            nextCommitTime = txn.getStartTime() + scanTimeLimit;
+        }
+        byte[] packedPrefix = packedTuple(index);
+        KeySelector start = KeySelector.firstGreaterOrEqual(packedPrefix);
+        KeySelector end = KeySelector.firstGreaterThan(ByteArrayUtil.strinc(packedPrefix));
+        Iterator<KeyValue> it = txn.getTransaction().getRange(start, end).iterator();
         while(it.hasNext()) {
             KeyValue kv = it.next();
 
@@ -597,6 +606,25 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             value.putEncodedBytes(valueBytes, 0, valueBytes.length);
             // Visit
             visitor.visit(key, value);
+
+            if ((scanTimeLimit >= 0) &&
+                (System.currentTimeMillis() >= nextCommitTime)) {
+                ((AsyncIterator)it).dispose();
+                txn.getTransaction().commit().get();
+                if (sleepTime > 0) {
+                    try {
+                        Thread.sleep(sleepTime);
+                    }
+                    catch (InterruptedException ex) {
+                        throw new QueryCanceledException(session);
+                    }
+                }
+                txn.reset();
+                txn.getTransaction().reset();
+                nextCommitTime = txn.getStartTime() + scanTimeLimit;
+                start = KeySelector.firstGreaterThan(kv.getKey());
+                it = txn.getTransaction().getRange(start, end).iterator();
+            }            
         }
         return visitor;
     }
