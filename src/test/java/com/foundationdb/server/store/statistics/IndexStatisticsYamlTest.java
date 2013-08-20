@@ -52,6 +52,7 @@ public class IndexStatisticsYamlTest
         IndexStatisticsYamlLoader loader = new IndexStatisticsYamlLoader(ais, "test", new TestKeyCreator());
         Map<Index,IndexStatistics> stats = loader.load(YAML_FILE);
         File tempFile = File.createTempFile("stats", ".yaml");
+        tempFile.deleteOnExit();
         StringWriter tempWriter = new StringWriter();
         loader.dump(stats, tempWriter);
         assertEquals("dump matches load", 
