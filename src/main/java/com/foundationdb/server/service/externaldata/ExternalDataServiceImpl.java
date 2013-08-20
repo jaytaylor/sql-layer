@@ -237,13 +237,13 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
         try {
             NewRow row;
             do {
+                if (!transaction) {
+                    transactionService.beginTransaction(session);
+                    transaction = true;
+                }
                 row = reader.nextRow();
                 if (row != null) {
                     logger.trace("Read row: {}", row);
-                    if (!transaction) {
-                        transactionService.beginTransaction(session);
-                        transaction = true;
-                    }
                     dml.writeRow(session, row);
                     total++;
                     pending++;
