@@ -54,7 +54,7 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
     private CsvFormat csvFormat;
     private long skipRows;
     private long commitFrequency;
-    private int maxRetries = 1;
+    private int maxRetries;
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresCopyInStatement.class);
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresCopyInStatement: execute shared");
@@ -131,6 +131,7 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
                 ExternalDataService. COMMIT_FREQUENCY_PERIODICALLY : 
                 ExternalDataService.COMMIT_FREQUENCY_NEVER;
         }
+        maxRetries = copyStmt.getMaxRetries();
         return this;
     }
 
