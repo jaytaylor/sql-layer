@@ -54,6 +54,7 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
     private CsvFormat csvFormat;
     private long skipRows;
     private long commitFrequency;
+    private int maxRetries = 1;
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresCopyInStatement.class);
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresCopyInStatement: execute shared");
@@ -155,12 +156,14 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
             case CSV:
                 nrows = externalData.loadTableFromCsv(session, istr, csvFormat, skipRows,
                                                       toTable, toColumns,
-                                                      commitFrequency, context);
+                                                      commitFrequency, maxRetries,
+                                                      context);
                 break;
             case MYSQL_DUMP:
                 nrows = externalData.loadTableFromMysqlDump(session, istr, encoding,
                                                             toTable, toColumns,
-                                                            commitFrequency, context);
+                                                            commitFrequency, maxRetries,
+                                                            context);
                 break;
             }
         }

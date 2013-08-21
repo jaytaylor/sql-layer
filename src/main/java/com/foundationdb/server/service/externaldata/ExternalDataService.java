@@ -66,9 +66,11 @@ public interface ExternalDataService {
     long loadTableFromCsv(Session session, InputStream inputStream, 
                           CsvFormat format, long skipRows,
                           UserTable toTable, List<Column> toColumns,
-                          long commitFrequency, QueryContext context) throws IOException;
+                          long commitFrequency, int maxRetries,
+                          QueryContext context) throws IOException;
 
     long loadTableFromMysqlDump(Session session, InputStream inputStream, String encoding,
                                 UserTable toTable, List<Column> toColumns,
-                                long commitFrequency, QueryContext context) throws IOException;
+                                long commitFrequency, int maxRetries,
+                                QueryContext context) throws IOException;
 }

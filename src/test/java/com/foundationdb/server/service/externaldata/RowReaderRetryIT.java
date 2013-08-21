@@ -38,10 +38,12 @@ public class RowReaderRetryIT extends ITBase
     public static final int NROWS = 1000;
     public static final int NTHREADS = 2;
     public static final int COMMIT_FREQUENCY = 100;
+    public static final int MAX_RETRIES = 2;
     public static final int FAILURE_RATE = 4;    
 
     protected ExternalDataService external;
     protected CsvFormat format;
+    protected int tableId;
     protected UserTable table;
 
     @Override
@@ -55,8 +57,8 @@ public class RowReaderRetryIT extends ITBase
         external = serviceManager().getServiceByClass(ExternalDataService.class);
         format = new CsvFormat("UTF-8");
             
-        int tid = createTable("test", "t", "id INT PRIMARY KEY NOT NULL");
-        table = ais().getUserTable(tid);
+        tableId = createTable("test", "t", "id INT PRIMARY KEY NOT NULL");
+        table = ais().getUserTable(tableId);
     }
 
     @Test
@@ -83,6 +85,9 @@ public class RowReaderRetryIT extends ITBase
             total += threads[j].count;
         }
         assertEquals(NROWS, total);
+        txnService().beginTransaction(session());
+        assertEquals(NROWS, getRowDef(tableId).getTableStatus().getRowCount(session()));
+        txnService().commitTransaction(session());
     }
     
     class LoadThread extends Thread {
@@ -101,7 +106,8 @@ public class RowReaderRetryIT extends ITBase
             try {
                 count = external.loadTableFromCsv(session, istr, format, 0,
                                                   table, table.getColumns(),
-                                                  COMMIT_FREQUENCY, null);
+                                                  COMMIT_FREQUENCY, MAX_RETRIES,
+                                                  null);
             }
             catch (Exception ex) {
                 error = ex;
@@ -122,10 +128,14 @@ public class RowReaderRetryIT extends ITBase
         }
 
         @Override
-        protected void commitTransaction(Session session) {
-            if ((counter.incrementAndGet() % FAILURE_RATE) == 0)
-                throw new com.foundationdb.server.error.PersistitAdapterException(new com.persistit.exception.RollbackException("simulated rollback"));
-            super.commitTransaction(session);
+        protected boolean commitOrRetryTransaction(Session session) {
+            if ((counter.incrementAndGet() % FAILURE_RATE) == 0) {
+                transactionService.rollbackTransaction(session);
+                transactionService.beginTransaction(session);
+                return true;
+            }
+            else
+                return super.commitOrRetryTransaction(session);
         }
     }
 }
