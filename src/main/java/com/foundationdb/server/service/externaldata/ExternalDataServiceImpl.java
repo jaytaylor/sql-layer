@@ -262,7 +262,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                 }
                 if (commit) {
                     logger.debug("Committing {} rows", pending);
-                    transactionService.commitTransaction(session);
+                    commitTransaction(session);
                     transaction = false;
                     pending = 0;
                 }
@@ -273,6 +273,10 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                 transactionService.rollbackTransaction(session);
         }
         return total;
+    }
+
+    protected void commitTransaction(Session session) {
+        transactionService.commitTransaction(session);
     }
 
     /* Service */
