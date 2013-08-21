@@ -87,8 +87,7 @@ public class PersistitTransactionService implements TransactionService {
 
             @Override
             public boolean commitOrRetry() {
-                commit();
-                return false;
+                return commitOrRetryTransaction(session);
             }
 
             @Override
