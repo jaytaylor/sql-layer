@@ -75,7 +75,7 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
 
     private static final int INDEX_STATISTICS_TABLE_VERSION = 1;
     private static final String BUCKET_COUNT_PROPERTY = "fdbsql.index_statistics.bucket_count";
-    private static final String BUCKET_TIME_PROPERTY = "fdbsql.index_statistics.timeLimit";
+    private static final String BUCKET_TIME_PROPERTY = "fdbsql.index_statistics.time_limit";
     private static final String BACKGROUND_TIME_PROPERTY = "fdbsql.index_statistics.background";
     private static final long TIME_LIMIT_UNLIMITED = -1;
     private static final long TIME_LIMIT_DISABLED = -2;
@@ -667,6 +667,11 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
             active = false;
             if (thread != null) {
                 thread.interrupt();
+                try {
+                    thread.join(1000); // Wait a little for it to shut down.
+                }
+                catch (InterruptedException ex) {
+                }
             }
         }
 

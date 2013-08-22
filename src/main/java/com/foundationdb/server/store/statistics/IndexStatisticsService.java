@@ -75,7 +75,7 @@ public interface IndexStatisticsService
     /** Note missing statistics: warn user, initiate background analyze. */
     public void missingStats(Session session, Index index, Column column);
 
-    /** Check for out of date stats, based on table being much larser. */
+    /** Check for out of date stats, based on table being much larger. */
     public void checkRowCountChanged(Session session, UserTable table,
                                      IndexStatistics stats, long rowCount);
 }
