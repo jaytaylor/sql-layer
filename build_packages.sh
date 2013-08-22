@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (C) 2009-2013 Akiban Technologies, Inc.
+# Copyright (C) 2009-2013 FoundationDB, LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -18,17 +18,31 @@
 
 set -e
 
-usage="Usage: ./build_packages.sh [debian|redhat|macosx|binary] [... epoch]"
+usage="Usage: ./build_packages.sh [--git-hash] [--git-count] [debian|redhat|macosx|binary] [... epoch]"
 if [ $# -lt 1 ]; then
     echo "${usage}"
     exit 1
 fi
 
 platform=$1
-bzr_revno=`bzr revno`
-server_version=$(mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version |grep -o '^[0-9.]\+')
+git_hash=`git rev-parse --short HEAD`
+git_count=`git rev-list --merges HEAD |wc -l |tr -d ' '` # --count is newer
+layer_version=$(mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version |grep -o '^[0-9.]\+')
 
-echo "Building Akiban Server"
+if [ "${1}" = "--git-hash" ]; then
+    echo "${git_hash}"
+    exit 0
+fi
+
+if [ "${1}" = "--git-count" ]; then
+    echo "${git_count}"
+    exit 0
+fi
+
+
+mvn_install="mvn clean install -DGIT_COUNT=${git_count} -DGIT_HASH=${git_hash} -DskipTests=true"
+
+echo "Building FoundationDB SQL Layer"
 
 license=LICENSE.txt
 
@@ -46,19 +60,19 @@ cp ${license} packages-common/LICENSE.txt
 cp ${common_dir}/* packages-common/
 
 #
-# Add akiban-client tools
+# Add client-tools
 #
-: ${TOOLS_BRANCH:="lp:akiban-client-tools"}
-echo "Using akiban-client-tools bazaar branch: ${TOOLS_BRANCH}"
+: ${TOOLS_LOC:="git@github.com:FoundationDB/sql-layer-client-tools.git"}
+echo "Using client-tools location: ${TOOLS_LOC}"
 pushd .
 cd target
-rm -rf akiban-client-tools
-bzr branch ${TOOLS_BRANCH} akiban-client-tools
-cd akiban-client-tools
+rm -rf client-tools
+git clone ${TOOLS_LOC} client-tools
+cd client-tools
 mvn -DskipTests=true install 
 rm -f target/*-tests.jar target/*-sources.jar
-cp bin/akdump ../../packages-common/
-cp target/akiban-client-tools-*.jar ../../packages-common/
+cp bin/fdbsqldump ../../packages-common/
+cp target/foundationdb-sql-layer-client-tools-*.jar ../../packages-common/
 cp target/dependency/* ../../packages-common/client/
 popd
 
@@ -71,31 +85,36 @@ fi
 # Handle platform-specific packaging process
 if [ ${platform} == "debian" ]; then
     cp -R packages-common/* ${platform}
-    mvn -Dmaven.test.skip.exec clean install -DBZR_REVISION=${bzr_revno}
+    $mvn_install
     mkdir -p ${platform}/server/
     cp ./target/dependency/* ${platform}/server/
     cp -R packages-common/plugins/ ${platform}/
     debuild
 elif [ ${platform} == "redhat" ]; then
-    mkdir -p ${PWD}/redhat/akserver/redhat
+    rm -rf ${PWD}/redhat/{fdbsql,rpmbuild}
+    mkdir -p ${PWD}/redhat/fdbsql/redhat
     mkdir -p ${PWD}/redhat/rpmbuild/{BUILD,SOURCES,SRPMS,RPMS/noarch}
-    tar_file=${PWD}/redhat/rpmbuild/SOURCES/akserver.tar
-    bzr export --format=tar $tar_file
-    rm -f ${PWD}/redhat/akserver/redhat/* # Clear out old files
-    cp -R packages-common/* ${PWD}/redhat/akserver/redhat
+    tar_prefix=fdbsql
+    tar_file=${PWD}/redhat/rpmbuild/SOURCES/${tar_prefix}.tar
+    git archive --format=tar --output="$tar_file" --prefix="${tar_prefix}/" HEAD
+    rm -f ${PWD}/redhat/fdbsql/redhat/* # Clear out old files
+    cp -R packages-common/* ${PWD}/redhat/fdbsql/redhat
     pushd redhat
-    # bzr st -S outs lines like "? redhat/akserver/redhat/log4j.properties"
-    # we want to turn those to just "akserver/redhat/log4j.properties"
-    for to_add in $(bzr st -S . | sed 's/\?\s\+redhat\///'); do
+    # git status outputs lines like "?? redhat/fdbsql/"
+    # we want to turn those to just "fdbsql/"
+    for to_add in $(git status --untracked=normal --porcelain | sed 's/\?\+\s\+redhat\///'); do
         tar --append -f $tar_file $to_add
     done
     popd
     gzip $tar_file
-    cat ${PWD}/redhat/akiban-server.spec | sed "9,9s/REVISION/${bzr_revno}/g" > ${PWD}/redhat/akiban-server-${bzr_revno}.spec
-    sed -i "10,10s/EPOCH/${epoch}/g" ${PWD}/redhat/akiban-server-${bzr_revno}.spec
-    rpmbuild --target=noarch --define "_topdir ${PWD}/redhat/rpmbuild" -ba ${PWD}/redhat/akiban-server-${bzr_revno}.spec
+    spec_file="$PWD/redhat/fdb-sql-layer.spec"
+    cat "${spec_file}.in" | \
+        sed -e "10,10s/_EPOCH/${epoch}/g" \
+            -e "s/_GIT_COUNT/${git_count}/g" -e "s/_GIT_HASH/${git_hash}/g" \
+        > "${spec_file}"
+    rpmbuild --target=noarch --define "_topdir ${PWD}/redhat/rpmbuild" -ba "${spec_file}"
 elif [ ${platform} == "binary" ]; then
-    mvn -Dmaven.test.skip clean install -DBZR_REVISION=${bzr_revno}
+    $mvn_install
     rm -f ./target/*-tests.jar ./target/*-sources.jar
 
     # For releases only
@@ -104,29 +123,30 @@ elif [ ${platform} == "binary" ]; then
         echo "No release number defined. Define the \$release environmental variable."; exit 1
     fi
     
-    BINARY_NAME="akiban-server-${release}"
+    BINARY_NAME="fdb-sql-layer-${release}"
     BINARY_TAR_NAME="${BINARY_NAME}.tar.gz"
     
     mkdir -p ${BINARY_NAME}
     mkdir -p ${BINARY_NAME}/lib/server
     mkdir -p ${BINARY_NAME}/lib/client
     mkdir -p ${BINARY_NAME}/bin
-    cp ./target/akiban-server-*.jar ${BINARY_NAME}/lib
+    cp ./target/fdb-sql-layerr-*.jar ${BINARY_NAME}/lib
     cp ./target/dependency/* ${BINARY_NAME}/lib/server/
     cp -R ./conf ${BINARY_NAME}/
     rm -f ${BINARY_NAME}/conf/config/*.cmd
-    cp ./bin/akserver ${BINARY_NAME}/bin
-    cp packages-common/akdump ${BINARY_NAME}/bin
-    cp packages-common/akiban-client-*.jar ${BINARY_NAME}/lib
+    cp ./bin/fdbsqllayer ${BINARY_NAME}/bin
+    cp packages-common/fdbsqldump ${BINARY_NAME}/bin
+    cp packages-common/foundationdb-sql-layer-client-*.jar ${BINARY_NAME}/lib
     cp packages-common/client/* ${BINARY_NAME}/lib/client
     cp ${license} ${BINARY_NAME}/LICENSE.txt
     tar zcf ${BINARY_TAR_NAME} ${BINARY_NAME}    
 elif [ ${platform} == "macosx" ]; then
-    client_jar=packages-common/akiban-client-tools-*.jar
+    client_jar=packages-common/foundationdb-sql-layer-client-tools-*.jar
     client_deps=packages-common/client
-    akdump_bin=packages-common/akdump
+    fdbsqldump_bin=packages-common/fdbsqldump
     plugins_dir=packages-common/plugins
-    mac_app='target/Akiban Server.app'
+    app_name='FoundationDB SQL Layer.app'
+    mac_app="target/${app_name}"
     inst_temp=/tmp/inst_temp
 
     # copy icon data from a "prototype" file
@@ -136,7 +156,7 @@ elif [ ${platform} == "macosx" ]; then
     rm prototype.txt
     
     # build jar
-    mvn -DskipTests=true -DBZR_REVISION=${bzr_revno} clean install 
+    $mvn_install
     rm -f ./target/*-tests.jar ./target/*-sources.jar
 
     build_dmg() {
@@ -145,7 +165,7 @@ elif [ ${platform} == "macosx" ]; then
 
         # build app bundle
         curl -Ls -o target/appbundler-1.0.jar http://java.net/projects/appbundler/downloads/download/appbundler-1.0.jar
-        ant -f macosx/appbundler.xml ${ant_target} -Djdk.home=$(/usr/libexec/java_home) -Dakserver.version="${server_version}-r${bzr_revno}"
+        ant -f macosx/appbundler.xml ${ant_target} -Djdk.home=$(/usr/libexec/java_home) -Dfdbsql.version="${layer_version}-r${git_count}"
 
         # add config files to bundle
         mkdir "${mac_app}/Contents/Resources/config/"
@@ -156,26 +176,25 @@ elif [ ${platform} == "macosx" ]; then
         cp $client_jar "$mac_app/Contents/Resources/tools/lib/"
         cp $client_deps/* "$mac_app/Contents/Resources/tools/lib/client/"
         mkdir -p "$mac_app/Contents/Resources/tools/bin"
-        cp $akdump_bin "$mac_app/Contents/Resources/tools/bin/"
+        cp $fdbsqldump_bin "$mac_app/Contents/Resources/tools/bin/"
         cp -R "$plugins_dir" "$mac_app/Contents/Resources/"
 
         # build disk image template
         rm -rf $inst_temp
         rm -f $inst_temp.dmg
         mkdir $inst_temp
-        mkdir "$inst_temp/Akiban Server.app"
-        ln -s /Applications $inst_temp
-        mkdir $inst_temp/.background
-        cp macosx/dmg_background.png $inst_temp/.background
-        hdiutil create -fs HFSX -layout SPUD -size 200m $inst_temp.dmg -format UDRW -volname 'Akiban Server' -srcfolder $inst_temp
+        mkdir "$inst_temp/${app_name}"
+        hdiutil create -fs HFSX -layout SPUD -size 200m $inst_temp.dmg -format UDRW -volname 'FoundationDB SQL Layer' -srcfolder $inst_temp
         rm -rf $inst_temp
 
         # update disk image
         mkdir $inst_temp
         hdiutil attach $inst_temp.dmg -noautoopen -mountpoint $inst_temp
-        ditto "$mac_app" "$inst_temp/Akiban Server.app"
+        ditto "$mac_app" "$inst_temp/${app_name}"
         
         # == add non-app files here ==
+        ln -s /Applications $inst_temp
+        cp macosx/dmg_background.png ${inst_temp}/.background.png
         cp macosx/dmg.DS_Store $inst_temp/.DS_Store
         cp macosx/dmg_VolumeIcon.icns $inst_temp/.VolumeIcon.icns
         cp ${license} $inst_temp/LICENSE.txt
@@ -185,7 +204,7 @@ elif [ ${platform} == "macosx" ]; then
         rm $inst_temp.dmg
     }
     
-    dmg_basename="Akiban_Server_${server_version}"
+    dmg_basename="FoundationDB_SQL_Layer_${layer_version}"
     build_dmg "bundle_app" "${dmg_basename}.dmg"
     build_dmg "bundle_app_jre" "${dmg_basename}_JRE.dmg"
 else

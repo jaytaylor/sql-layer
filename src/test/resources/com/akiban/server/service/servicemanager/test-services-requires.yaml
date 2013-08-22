@@ -1,4 +1,0 @@
-- require:
-    - com.akiban.server.service.stats.StatisticsService
-    - com.akiban.server.service.jmx.JmxRegistryService
-    - com.akiban.server.AkServerInterface               # Loads the AKSERVER JMX bean

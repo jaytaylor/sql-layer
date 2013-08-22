@@ -6,7 +6,7 @@ import time
 import threading
 import signal
 
-AKSERVER='com.akiban.server.AkServer'
+MAINCLASS='com.foundationdb.sql.Main'
 START_PROFILING='kill -18 %s'
 MUST_COMPILE='com.persistit.Transaction::isActive'
 monitor = None
@@ -60,8 +60,8 @@ def akserver_pid():
                 cmdline_file = '/proc/%s/cmdline' % file
                 try:
                     cmdline = open(cmdline_file).read().strip()
-                    if AKSERVER in cmdline:
-                        print 'AkServer pid: %s' % file
+                    if MAINCLASS in cmdline:
+                        print 'SQL Layer pid: %s' % file
                         pid = int(file)
                         break
                 except IOError:
