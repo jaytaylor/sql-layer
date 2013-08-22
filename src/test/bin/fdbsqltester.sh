@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (C) 2009-2013 Akiban Technologies, Inc.
+# Copyright (C) 2009-2013 FoundationDB, LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by

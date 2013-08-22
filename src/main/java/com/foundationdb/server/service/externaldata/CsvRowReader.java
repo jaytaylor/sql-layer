@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 Akiban Technologies, Inc.
+ * Copyright (C) 2009-2013 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -90,7 +90,7 @@ public class CsvRowReader extends RowReader
             case FIELD_START:
                 if ((b < 0) || (b == cr) || (b == nl)) {
                     addField(false);
-                    return row();
+                    return finishRow();
                 }
                 else if (b == delim) {
                     addField(false);
@@ -106,7 +106,7 @@ public class CsvRowReader extends RowReader
             case IN_FIELD:
                 if ((b < 0) || (b == cr) || (b == nl)) {
                     addField(false);
-                    return row();
+                    return finishRow();
                 }
                 else if (b == delim) {
                     addField(false);
@@ -149,7 +149,7 @@ public class CsvRowReader extends RowReader
             case AFTER_QUOTE:
                 if ((b < 0) || (b == cr) || (b == nl)) {
                     addField(true);
-                    return row();
+                    return finishRow();
                 }
                 else if (b == delim) {
                     addField(true);

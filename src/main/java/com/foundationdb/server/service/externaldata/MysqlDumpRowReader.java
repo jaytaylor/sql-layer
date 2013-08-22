@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 Akiban Technologies, Inc.
+ * Copyright (C) 2009-2013 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -284,7 +284,7 @@ public class MysqlDumpRowReader extends RowReader
                 }
                 else if (b == ')') {
                     state = State.AFTER_ROW_CTOR;
-                    return row();
+                    return finishRow();
                 }
                 else if (b == '\'') {
                     state = State.QUOTED_FIELD;
@@ -310,7 +310,7 @@ public class MysqlDumpRowReader extends RowReader
                 else if (b == ')') {
                     addField(false);
                     state = State.AFTER_ROW_CTOR;
-                    return row();
+                    return finishRow();
                 }
                 else if (b == '\'') {
                     throw new ExternalRowReaderException("Quote in the middle of a value");
@@ -358,7 +358,7 @@ public class MysqlDumpRowReader extends RowReader
                 else if (b == ')') {
                     addField(true);
                     state = State.AFTER_ROW_CTOR;
-                    return row();
+                    return finishRow();
                 }
                 else {
                     throw unexpectedToken(b);
