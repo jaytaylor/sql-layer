@@ -1,0 +1,60 @@
+com.foundationdb.sql.parser.CursorNode@736921fd
+name: null
+updateMode: UNSPECIFIED
+statementType: SELECT
+resultSet: 	
+	com.foundationdb.sql.parser.SelectNode@7b36a43c
+	isDistinct: false
+	resultColumns: 		
+		com.foundationdb.sql.parser.ResultColumnList@6ba7508a
+
+		[0]:		
+		com.foundationdb.sql.parser.ResultColumn@3598cb3d
+		exposedName: x
+		name: x
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.foundationdb.sql.parser.ColumnReference@42472d48
+			columnName: x
+			tableName: t1
+			type: null
+			userData: t1.x from com.foundationdb.sql.parser.FromBaseTable@625dcec6
+		[1]:		
+		com.foundationdb.sql.parser.ResultColumn@4eedf3f6
+		exposedName: y
+		name: y
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.foundationdb.sql.parser.ColumnReference@682bc3f5
+			columnName: y
+			tableName: t1
+			type: null
+			userData: t1.y from com.foundationdb.sql.parser.FromBaseTable@625dcec6
+		[2]:		
+		com.foundationdb.sql.parser.ResultColumn@114e3f41
+		exposedName: z
+		name: z
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.foundationdb.sql.parser.ColumnReference@281acd47
+			columnName: z
+			tableName: t1
+			type: null
+			userData: t1.z from com.foundationdb.sql.parser.FromBaseTable@625dcec6
+	fromList: 		
+		com.foundationdb.sql.parser.FromList@779b04e2
+
+		[0]:		
+		com.foundationdb.sql.parser.FromBaseTable@625dcec6
+		tableName: t1
+		updateOrDelete: null
+		null
+		correlation Name: null
+		null
+		userData: test.t1

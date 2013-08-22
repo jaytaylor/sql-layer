@@ -1,0 +1,3 @@
+com/foundationdb/server/types3/aksql/
+com/foundationdb/server/types3/common/
+com/foundationdb/server/types3/mcompat/

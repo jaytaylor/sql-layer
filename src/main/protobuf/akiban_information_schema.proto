@@ -1,7 +1,7 @@
 // Master akiban_information_schema protobuf description file
 
 package akiban_schema.protobuf;
-option java_package = "com.akiban.ais.protobuf";
+option java_package = "com.foundationdb.ais.protobuf";
 option java_outer_classname = "AISProtobuf";
 
 // This is the old, static AIS Types. Will be deprecated soon but

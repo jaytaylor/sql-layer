@@ -1,2 +1,0 @@
-- bind:
-    com.akiban.server.service.config.ConfigurationService : com.akiban.server.service.config.TestConfigService

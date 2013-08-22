@@ -2,17 +2,17 @@
 <project>
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.akiban</groupId>
-    <artifactId>akiban-server</artifactId>
-    <version>1.6.2-SNAPSHOT</version>
+    <groupId>com.foundationdb</groupId>
+    <artifactId>foundationdb-sql-layer</artifactId>
+    <version>2.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>akiban-server</name>
+    <name>FoundationDB SQL Layer</name>
     <inceptionYear>2009</inceptionYear>
-    <url>http://www.akiban.com/</url>
+    <url>http://www.foundationdb.com/</url>
     <organization>
-        <name>Akiban Technologies, Inc</name>
-        <url>http://www.akiban.com</url>
+        <name>FoundationDB, LLC</name>
+        <url>http://www.foundationdb.com</url>
     </organization>
 
     <licenses>
@@ -24,15 +24,16 @@
     </licenses>
 
     <scm>
-        <connection>scm:bazaar:https://code.launchpad.net/akiban-server</connection>
-        <url>https://code.launchpad.net/akiban-server</url>
+        <url>git@github.com:foundationdb/sql-layer.git</url>
+        <connection>scm:git:git@github.com:foundationdb/sql-layer.git</connection>
     </scm>
 
     <properties>
-        <!-- this is the default version number, hudson job sets this to the official number -->
-        <BZR_REVISION></BZR_REVISION>
-        <akiban.test.extraJvmArgs></akiban.test.extraJvmArgs>
-        <akiban.test.JmxJvmArgs>-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=8082 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false</akiban.test.JmxJvmArgs>
+        <!-- Defaults hash and merge count. Jenkins sets these to real values when building packages. -->
+        <GIT_HASH></GIT_HASH>
+        <GIT_COUNT></GIT_COUNT>
+        <fdbsql.test.extraJvmArgs></fdbsql.test.extraJvmArgs>
+        <fdbsql.test.JmxJvmArgs>-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=8082 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false</fdbsql.test.JmxJvmArgs>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
@@ -98,8 +99,8 @@
             <version>3.2.9</version>
         </dependency>
         <dependency>
-            <groupId>com.akiban</groupId>
-            <artifactId>akiban-sql-parser</artifactId>
+            <groupId>com.foundationdb</groupId>
+            <artifactId>foundationdb-sql-parser</artifactId>
             <version>1.0.17-SNAPSHOT</version>
         </dependency>
         <dependency>
@@ -120,8 +121,8 @@
             <version>2.3.0</version>
         </dependency>
         <dependency>
-            <groupId>com.akiban</groupId>
-            <artifactId>akiban-sql-parser</artifactId>
+            <groupId>com.foundationdb</groupId>
+            <artifactId>foundationdb-sql-parser</artifactId>
             <version>1.0.17-SNAPSHOT</version>
             <type>test-jar</type>
             <scope>test</scope>
@@ -225,14 +226,14 @@
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
                 <includes>
-                    <include>version/akserver_version</include>
+                    <include>version/fdbsql_version</include>
                 </includes>
             </resource>
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>false</filtering>
                 <excludes>
-                    <exclude>version/akserver_version</exclude>
+                    <exclude>version/fdbsql_version</exclude>
                 </excludes>
             </resource>
         </resources>
@@ -277,10 +278,10 @@
                         <phase>process-resources</phase>
                         <configuration>
                             <portNames>
-                                <portName>akserver.port</portName>
+                                <portName>fdbsql.port</portName>
                                 <portName>debug.port</portName>
-                                <portName>akserver.postgres.port</portName>
-                                <portName>akserver.http.port</portName>
+                                <portName>fdbsql.postgres.port</portName>
+                                <portName>fdbsql.http.port</portName>
                             </portNames>
                         </configuration>
                     </execution>
@@ -333,10 +334,10 @@
                 <version>2.12.4</version>
                 <configuration>
                     <systemPropertyVariables>
-                        <akserver.port>${akserver.port}</akserver.port>
-                        <akserver.postgres.port>${akserver.postgres.port}</akserver.postgres.port>
+                        <fdbsql.port>${fdbsql.port}</fdbsql.port>
+                        <fdbsql.postgres.port>${fdbsql.postgres.port}</fdbsql.postgres.port>
                     </systemPropertyVariables>
-                    <argLine>-Xmx512m ${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
+                    <argLine>-Xmx512m ${fdbsql.test.extraJvmArgs} ${fdbsql.test.JmxJvmArgs}</argLine>
                     <includes>
                         <include>**/*Test.java</include>
                         <include>**/*Test?.java</include>
@@ -352,10 +353,10 @@
                 <version>2.12.4</version>
                 <configuration>
                     <systemPropertyVariables>
-                        <akserver.port>${akserver.port}</akserver.port>
-                        <akserver.postgres.port>${akserver.postgres.port}</akserver.postgres.port>
+                        <fdbsql.port>${fdbsql.port}</fdbsql.port>
+                        <fdbsql.postgres.port>${fdbsql.postgres.port}</fdbsql.postgres.port>
                     </systemPropertyVariables>
-                    <argLine>-Xmx512m ${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
+                    <argLine>-Xmx512m ${fdbsql.test.extraJvmArgs} ${fdbsql.test.JmxJvmArgs}</argLine>
                 </configuration>
                 <executions>
                     <execution>
@@ -392,10 +393,10 @@
                     <failIfMissing>true</failIfMissing>
                     <excludes>
                         <!-- General files that can't have or don't need header -->
-                        <exclude>.bzrignore</exclude>
+                        <exclude>.gitignore</exclude>
                         <exclude>.idea/**</exclude>
                         <!-- No extension. Manually add header and ignore -->
-                        <exclude>bin/akserver</exclude>
+                        <exclude>bin/fdbsqllayer</exclude>
                         <exclude>**/*.options</exclude>
                         <!-- Files requiring a specific format (packaging control, test output, etc) -->
                         <exclude>README.md</exclude>
@@ -408,7 +409,7 @@
                         <exclude>**/services-config.yaml</exclude>
                         <exclude>**/default-services.yaml</exclude>
                         <exclude>src/main/protobuf/*.proto</exclude>
-                        <exclude>src/main/resources/version/akserver_version</exclude>
+                        <exclude>src/main/resources/version/fdbsql_version</exclude>
                         <exclude>src/test/bin/*</exclude>
                         <exclude>src/test/resources/**</exclude>
                     </excludes>

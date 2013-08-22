@@ -1,0 +1,5 @@
+- bind-modules:
+    - com.foundationdb.server.service.servicemanager.configuration.yaml.SampleModules$GoodModule
+    - com.foundationdb.server.service.servicemanager.configuration.yaml.SampleModules$NotAModule
+    - com.foundationdb.server.service.servicemanager.configuration.yaml.SampleModules$ArgCtorModule
+    - com.foundationdb.server.service.servicemanager.configuration.yaml.SampleModules$PrivateCtorModule
