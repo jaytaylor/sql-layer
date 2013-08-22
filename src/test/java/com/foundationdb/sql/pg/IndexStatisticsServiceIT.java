@@ -61,6 +61,7 @@ public class IndexStatisticsServiceIT extends PostgresServerFilesITBase
         service.loadIndexStatistics(session(), SCHEMA_NAME, YAML_FILE);
         service.clearCache();
         File tempFile = File.createTempFile("stats", ".yaml");
+        tempFile.deleteOnExit();
         StringWriter tempWriter = new StringWriter();
         service.dumpIndexStatistics(session(), SCHEMA_NAME, tempWriter);
         assertEquals("dump matches load", 
