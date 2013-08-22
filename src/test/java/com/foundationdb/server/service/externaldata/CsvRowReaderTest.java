@@ -18,6 +18,7 @@
 package com.foundationdb.server.service.externaldata;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.rowdata.SchemaFactory;
@@ -38,13 +39,13 @@ public final class CsvRowReaderTest {
     };
 
     public static final Object[][] ROWS = {
-        { 1, "abc", 20100101000000L },
-        { 2, "xyz", null },
-        { 666, "quoted \"string\" here", 20130101130203L}
+        { 1, 20100101000000L, 100, "abc" },
+        { 2, null, 100, "xyz" },
+        { 666, 20130101130203L, 100, "quoted \"string\" here"}
     };
 
     public static final String DDL =
-        "CREATE TABLE t1(id INT NOT NULL PRIMARY KEY, s VARCHAR(128), t TIMESTAMP)";
+        "CREATE TABLE t1(id INT NOT NULL PRIMARY KEY, t TIMESTAMP, n INT DEFAULT 100, s VARCHAR(128))";
 
     @Test
     public void reader() throws Exception {
@@ -52,7 +53,10 @@ public final class CsvRowReaderTest {
         AkibanInformationSchema ais = schemaFactory.aisWithRowDefs(DDL);
         UserTable t1 = ais.getUserTable("test", "t1");
         InputStream istr = new ByteArrayInputStream(Strings.join(CSV).getBytes("UTF-8"));
-        CsvRowReader reader = new CsvRowReader(t1, t1.getColumns(),
+        List<Column> columns = new ArrayList<>(3);
+        for (String cname : CSV[0].split(","))
+            columns.add(t1.getColumn(cname));
+        CsvRowReader reader = new CsvRowReader(t1, columns,
                                                istr, new CsvFormat("UTF-8"), 
                                                null);
         reader.skipRows(1); // Header
