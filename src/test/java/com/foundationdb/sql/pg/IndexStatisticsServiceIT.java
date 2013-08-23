@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 Akiban Technologies, Inc.
+ * Copyright (C) 2009-2013 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -61,6 +61,7 @@ public class IndexStatisticsServiceIT extends PostgresServerFilesITBase
         service.loadIndexStatistics(session(), SCHEMA_NAME, YAML_FILE);
         service.clearCache();
         File tempFile = File.createTempFile("stats", ".yaml");
+        tempFile.deleteOnExit();
         StringWriter tempWriter = new StringWriter();
         service.dumpIndexStatistics(session(), SCHEMA_NAME, tempWriter);
         assertEquals("dump matches load", 

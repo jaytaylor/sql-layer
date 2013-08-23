@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 Akiban Technologies, Inc.
+ * Copyright (C) 2009-2013 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -18,28 +18,37 @@
 package com.foundationdb.server.service.externaldata;
 
 import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.persistitadapter.PValueRowDataCreator;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.t3expressions.T3RegistryService;
 import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.FromObjectValueSource;
-import com.foundationdb.server.types.ToObjectValueTarget;
-import com.foundationdb.server.types.conversion.Converters;
-import com.foundationdb.server.types.util.ValueHolder;
 import com.foundationdb.server.types3.ErrorHandlingMode;
+import com.foundationdb.server.types3.TCast;
 import com.foundationdb.server.types3.TExecutionContext;
 import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.server.types3.TPreptimeValue;
 import com.foundationdb.server.types3.mcompat.mtypes.MString;
 import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types3.texpressions.TCastExpression;
+import com.foundationdb.server.types3.texpressions.TEvaluatableExpression;
+import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types3.texpressions.TPreparedFunction;
+import com.foundationdb.server.types3.texpressions.TPreparedLiteral;
+import com.foundationdb.server.types3.texpressions.TValidatedScalar;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.UnsupportedCharsetException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -48,19 +57,16 @@ import java.util.List;
 public abstract class RowReader
 {
     private final RowDef rowDef;
-    private final int[] fieldMap;
-    private final boolean[] nullable;
+    private final int[] fieldColumns; // fieldIndex -> columnIndex
+    private final boolean[] nullable; // indexed by field index
+    private final int[] constColumns, evalColumns;
     private final byte[] nullBytes;
     private final int tableId;
-    private final boolean usePValues;
     private final PValue pstring;
-    private final PValue[] pvalues;
+    private final PValue[] pvalues; // indexed by column index
     private final PValueRowDataCreator pvalueCreator;
-    private final TExecutionContext[] executionContexts;
-    private final FromObjectValueSource fromObject;
-    private final ValueHolder holder;
-    private final ToObjectValueTarget toObject;
-    private AkType[] aktypes;
+    private final TExecutionContext[] executionContexts; // indexed by column index
+    private final TEvaluatableExpression[] expressions; // indexed by field index
     private NewRow row;
     private byte[] fieldBuffer = new byte[128];
     private int fieldIndex, fieldLength;
@@ -74,50 +80,108 @@ public abstract class RowReader
                         QueryContext queryContext) {
         this.tableId = table.getTableId();
         this.rowDef = table.rowDef();
-        this.fieldMap = new int[columns.size()];
-        this.nullable = new boolean[fieldMap.length];
-        for (int i = 0; i < fieldMap.length; i++) {
+        this.fieldColumns = new int[columns.size()];
+        this.nullable = new boolean[fieldColumns.length];
+        for (int i = 0; i < fieldColumns.length; i++) {
             Column column = columns.get(i);
-            fieldMap[i] = column.getPosition();
+            fieldColumns[i] = column.getPosition();
             nullable[i] = column.getNullable();
         }
-        this.usePValues = Types3Switch.ON;
-        if (usePValues) {
-            pstring = new PValue(MString.VARCHAR.instance(Integer.MAX_VALUE, false));
-            pvalues = new PValue[columns.size()];
-            executionContexts = new TExecutionContext[pvalues.length];
-            List<TInstance> inputs = Collections.singletonList(pstring.tInstance());
-            for (int i = 0; i < pvalues.length; i++) {
-                TInstance output = columns.get(i).tInstance();
-                pvalues[i] = new PValue(output);
-                // TODO: Only needed until every place gets type from
-                // PValueTarget, when there can just be one
-                // TExecutionContext wrapping the QueryContext.
-                executionContexts[i] = new TExecutionContext(null, 
-                                                             inputs, output, queryContext,
-                                                             ErrorHandlingMode.WARN,
-                                                             ErrorHandlingMode.WARN,
-                                                             ErrorHandlingMode.WARN);
+        List<Column> defaultColumns = new ArrayList<>();
+        List<Column> functionColumns = new ArrayList<>();
+        for (Column column : table.getColumns()) {
+            if (columns.contains(column)) continue;
+            if (column.getIdentityGenerator() != null) {
+                functionColumns.add(column);
             }
-            pvalueCreator = new PValueRowDataCreator();
-            fromObject = null;
-            holder = null;
-            toObject = null;
-            aktypes = null;
-        }
-        else {
-            fromObject = new FromObjectValueSource();
-            holder = new ValueHolder();
-            toObject = new ToObjectValueTarget();
-            aktypes = new AkType[columns.size()];
-            for (int i = 0; i < aktypes.length; i++) {
-                aktypes[i] = columns.get(i).getType().akType();
+            else if (column.getDefaultValue() != null) {
+                defaultColumns.add(column);
             }
-            pstring = null;
-            pvalues = null;
-            pvalueCreator = null;
-            executionContexts = null;
+            else if (column.getDefaultFunction() != null) {
+                functionColumns.add(column);
+            }
         }
+        this.constColumns = new int[defaultColumns.size()];
+        for (int i = 0; i < constColumns.length; i++) {
+            constColumns[i] = defaultColumns.get(i).getPosition();
+        }
+        this.evalColumns = new int[functionColumns.size()];
+        for (int i = 0; i < evalColumns.length; i++) {
+            evalColumns[i] = functionColumns.get(i).getPosition();
+        }
+        this.pstring = new PValue(MString.VARCHAR.instance(Integer.MAX_VALUE, false));
+        this.pvalues = new PValue[rowDef.getFieldCount()];
+        this.executionContexts = new TExecutionContext[pvalues.length];
+        List<TInstance> inputs = Collections.singletonList(pstring.tInstance());
+        for (int fi = 0; fi < fieldColumns.length; fi++) {
+            int ci = fieldColumns[fi];
+            TInstance output = columns.get(fi).tInstance();
+            pvalues[ci] = new PValue(output);
+            // TODO: Only needed until every place gets type from
+            // PValueTarget, when there can just be one
+            // TExecutionContext wrapping the QueryContext.
+            executionContexts[ci] = new TExecutionContext(null, 
+                                                          inputs, output, queryContext,
+                                                          ErrorHandlingMode.WARN,
+                                                          ErrorHandlingMode.WARN,
+                                                          ErrorHandlingMode.WARN);
+        }
+        for (int fi = 0; fi < constColumns.length; fi++) {
+            int ci = constColumns[fi];
+            Column column = defaultColumns.get(fi);
+            TInstance output = column.tInstance();
+            PValue pvalue = new PValue(output);
+            TExecutionContext te = new TExecutionContext(null, 
+                                                         inputs, output, queryContext,
+                                                         ErrorHandlingMode.WARN,
+                                                         ErrorHandlingMode.WARN,
+                                                         ErrorHandlingMode.WARN);
+            pstring.putString(column.getDefaultValue(), null);
+            pvalue.tInstance().typeClass().fromObject(te, pstring, pvalue);
+            pvalues[ci] = pvalue;
+        }
+        this.expressions = new TEvaluatableExpression[evalColumns.length];
+        T3RegistryService registry = null;
+        if (evalColumns.length > 0) {
+            registry = queryContext.getServiceManager().getServiceByClass(T3RegistryService.class);
+        }
+        for (int fi = 0; fi < evalColumns.length; fi++) {
+            int ci = evalColumns[fi];
+            Column column = functionColumns.get(fi);
+            TInstance columnType = column.tInstance();
+            String functionName;
+            List<TPreptimeValue> input;
+            List<TPreparedExpression> arguments;
+            if (column.getIdentityGenerator() != null) {
+                Sequence sequence = column.getIdentityGenerator();
+                TableName sequenceName = sequence.getSequenceName();
+                functionName = "NEXTVAL";
+                input = new ArrayList<>(2);
+                input.add(PValueSources.fromObject(sequenceName.getSchemaName(), AkType.VARCHAR));
+                input.add(PValueSources.fromObject(sequenceName.getTableName(), AkType.VARCHAR));
+                arguments = new ArrayList<>(input.size());
+                for (TPreptimeValue tpv : input) {
+                    arguments.add(new TPreparedLiteral(tpv.instance(), tpv.value()));
+                }
+            }
+            else {
+                functionName = column.getDefaultFunction();
+                assert (functionName != null) : column;
+                input = Collections.<TPreptimeValue>emptyList();
+                arguments = Collections.<TPreparedExpression>emptyList();
+            }
+            TValidatedScalar overload = registry.getScalarsResolver().get(functionName, input).getOverload();
+            TInstance functionType = overload.resultStrategy().fixed(column.getNullable());
+            TPreparedExpression expr = new TPreparedFunction(overload, functionType, arguments, queryContext);
+            if (!functionType.equals(columnType)) {
+                TCast tcast = registry.getCastsResolver().cast(functionType.typeClass(), columnType.typeClass());
+                expr = new TCastExpression(expr, tcast, columnType, queryContext);
+            }
+            TEvaluatableExpression eval = expr.build();
+            eval.with(queryContext);
+            expressions[fi] = eval;
+        }
+        this.pvalueCreator = new PValueRowDataCreator();
         this.inputStream = inputStream;
         this.encoding = encoding;
         this.nullBytes = nullBytes;
@@ -166,26 +230,18 @@ public abstract class RowReader
 
     protected void addField(boolean quoted) {
         if (!quoted && nullable[fieldIndex] && fieldMatches(nullBytes)) {
-            row.put(fieldMap[fieldIndex++], null);
+            row.put(fieldColumns[fieldIndex++], null);
             fieldLength = 0;
             return;
         }
-        int columnIndex = fieldMap[fieldIndex];
+        int columnIndex = fieldColumns[fieldIndex];
         // bytes -> string -> parsed typed value -> Java object.
         String string = decodeField();
-        if (usePValues) {
-            pstring.putString(string, null);
-            PValue pvalue = pvalues[fieldIndex];
-            pvalue.tInstance().typeClass()
-                .fromObject(executionContexts[fieldIndex], pstring, pvalue);
-            pvalueCreator.put(pvalue, row, rowDef.getFieldDef(columnIndex), columnIndex);
-        }
-        else {
-            fromObject.setExplicitly(string, AkType.VARCHAR);
-            holder.expectType(aktypes[fieldIndex]);
-            Converters.convert(fromObject, holder);
-            row.put(columnIndex, toObject.convertFromSource(holder));
-        }
+        pstring.putString(string, null);
+        PValue pvalue = pvalues[columnIndex];
+        pvalue.tInstance().typeClass()
+            .fromObject(executionContexts[columnIndex], pstring, pvalue);
+        pvalueCreator.put(pvalue, row, rowDef.getFieldDef(columnIndex), columnIndex);
         fieldIndex++;
         fieldLength = 0;
     }
@@ -231,6 +287,22 @@ public abstract class RowReader
             nex.initCause(ex);
             throw nex;
         }
+    }
+
+    protected NewRow finishRow() {
+        for (int i = 0; i < constColumns.length; i++) {
+            int columnIndex = constColumns[i];
+            PValueSource pvalue = pvalues[columnIndex];
+            pvalueCreator.put(pvalue, row, rowDef.getFieldDef(columnIndex), columnIndex);
+        }
+        for (int i = 0; i < evalColumns.length; i++) {
+            int columnIndex = evalColumns[i];
+            TEvaluatableExpression expr = expressions[i];
+            expr.evaluate();
+            PValueSource pvalue = expr.resultValue();
+            pvalueCreator.put(pvalue, row, rowDef.getFieldDef(columnIndex), columnIndex);
+        }
+        return row;
     }
 
 }

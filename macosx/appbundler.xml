@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (C) 2009-2013 Akiban Technologies, Inc.
+    Copyright (C) 2009-2013 FoundationDB, LLC
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -41,7 +41,7 @@
                        icon="macosx/Akiban Server.icns"
                        shortversion="${fdbsql.version}"
                        signature="????"
-                       copyright="© 2009-2013 Akiban Technologies, Inc."
+                       copyright="© 2009-2013 FoundationDB, LLC"
                        applicationCategory="public.app-category.developer-tools"
                        mainclassname="com.foundationdb.sql.ui.MainWithSwingConsole">
                 
