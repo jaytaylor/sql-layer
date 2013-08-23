@@ -154,7 +154,13 @@ public abstract class TString extends TClass
 
     @Override
     public Object formatCachedForNiceRow(PValueSource source) {
-        return StringCacher.getString((ByteSource)source.getObject(), source.tInstance());
+        Object obj = source.getObject(); 
+        if (obj instanceof ByteSource) {
+            return StringCacher.getString((ByteSource)source.getObject(), source.tInstance());
+        } else {
+            assert obj instanceof String : "PValue source object not ByteSource nor String: " + source;
+            return obj;
+        }
     }
 
     @Override

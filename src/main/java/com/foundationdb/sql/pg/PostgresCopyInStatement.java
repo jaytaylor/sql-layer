@@ -22,7 +22,6 @@ import com.foundationdb.sql.parser.CopyStatementNode;
 import com.foundationdb.sql.parser.ParameterNode;
 import com.foundationdb.sql.parser.ResultColumn;
 import com.foundationdb.sql.parser.StatementNode;
-import com.foundationdb.sql.server.ServerTransaction;
 
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.UserTable;

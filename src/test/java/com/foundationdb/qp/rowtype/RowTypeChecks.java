@@ -17,26 +17,24 @@
 
 package com.foundationdb.qp.rowtype;
 
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.TInstance;
 
 import java.util.Arrays;
 
 import static org.junit.Assert.*;
 
 public final class RowTypeChecks {
-    public static void checkRowTypeFields(String message, RowType rowType, AkType... expected) {
-        AkType[] actual = new AkType[rowType.nFields()];
-        for (int i=0; i < actual.length; ++i) {
-            actual[i] = rowType.typeAt(i);
+
+    public static void checkRowTypeFields(String message, RowType rowType, TInstance... expected) {
+        assertEquals (rowType.nFields(), expected.length);
+        TInstance[] actual = new TInstance[rowType.nFields()];
+        for (int i = 0; i < actual.length; ++i) {
+            actual[i] = rowType.typeInstanceAt(i);
         }
+        
         if (!Arrays.equals(expected, actual)) {
-            // I like the toString representation more, so check that first
-            assertEquals(message, Arrays.toString(expected), Arrays.toString(actual));
+            assertEquals (message, Arrays.toString(expected), Arrays.toString(actual));
             assertArrayEquals(message, expected, actual);
         }
-    }
-
-    public static void checkRowTypeFields(RowType rowType, AkType... expected) {
-        checkRowTypeFields(null, rowType, expected);
     }
 }

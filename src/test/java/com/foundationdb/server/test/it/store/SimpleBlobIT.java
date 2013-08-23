@@ -21,6 +21,8 @@ import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.util.WrappingByteSource;
+
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -81,8 +83,9 @@ public class SimpleBlobIT extends ITBase {
         for (int i = 1; i <= rowCount; ++i) {
             int bsize = (int)Math.pow(5, i);
             int csize = (int)Math.pow(10, i);
-            NewRow row = createNewRow(tid, (long)i, bigString(bsize), bigString(csize));
+            NewRow row = createNewRow(tid, i, bigString(bsize), bigString(csize));
             writeRows(row);
+            row = createNewRow (tid, i, bigBytes(bsize), bigBytes(csize));
             expected.add(row);
         }
         final List<NewRow> actual = scanAll(scanAllRequest(tid));
@@ -96,5 +99,13 @@ public class SimpleBlobIT extends ITBase {
             sb.append("#");
         }
         return sb.toString();
+    }
+    private WrappingByteSource bigBytes (final int length) {
+        final StringBuilder sb= new StringBuilder(length);
+        sb.append(length);
+        for (int i = sb.length() ; i < length; i++) {
+            sb.append("#");
+        }
+        return new WrappingByteSource(sb.toString().getBytes());
     }
 }

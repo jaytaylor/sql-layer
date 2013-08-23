@@ -23,8 +23,6 @@ import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.explain.CompoundExplainer;
 import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.std.DistinctExplainer;
-import com.foundationdb.server.types.ValueSource;
-import com.foundationdb.server.types.util.ValueHolder;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.common.types.TString;
 import com.foundationdb.server.types3.pvalue.PValue;
@@ -104,7 +102,7 @@ class Distinct_Partial extends Operator
     @Override
     protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
-        return new Execution(context, inputOperator.cursor(context, bindingsCursor), usePValue);
+        return new Execution(context, inputOperator.cursor(context, bindingsCursor));
     }
 
     @Override
@@ -128,13 +126,12 @@ class Distinct_Partial extends Operator
 
     // Distinct_Partial interface
 
-    public Distinct_Partial(Operator inputOperator, RowType distinctType, List<AkCollator> collators, boolean usePValue)
+    public Distinct_Partial(Operator inputOperator, RowType distinctType, List<AkCollator> collators)
     {
         ArgumentValidation.notNull("distinctType", distinctType);
         this.inputOperator = inputOperator;
         this.distinctType = distinctType;
         this.collators = collators;
-        this.usePValue = usePValue;
     }
 
     // Class state
@@ -148,7 +145,6 @@ class Distinct_Partial extends Operator
     private final Operator inputOperator;
     private final RowType distinctType;
     private final List<AkCollator> collators;
-    private final boolean usePValue;
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
@@ -186,9 +182,7 @@ class Distinct_Partial extends Operator
                 Row row;
                 while ((row = input.next()) != null) {
                     assert row.rowType() == distinctType : row;
-                    boolean isDistinct = (currentValues == null) ? isDistinctP(row) : isDistinct(row);
-                    if (isDistinct) // TODO inline this var once legacy types are gone
-                        break;
+                    if (isDistinctP(row)) break;
                 }
                 if (row == null) {
                     close();
@@ -240,21 +234,14 @@ class Distinct_Partial extends Operator
 
         // Execution interface
 
-        Execution(QueryContext context, Cursor input, boolean usePValue)
+        Execution(QueryContext context, Cursor input)
         {
             super(context, input);
 
             nfields = distinctType.nFields();
-            if (!usePValue) {
-                currentValues = new ValueHolder[nfields];
-                currentPValues = null;
-            }
-            else {
-                currentValues = null;
-                currentPValues = new PValue[nfields];
-                for (int i = 0; i < nfields; ++i) {
-                    currentPValues[i] = new PValue(distinctType.typeInstanceAt(i));
-                }
+            currentPValues = new PValue[nfields];
+            for (int i = 0; i < nfields; ++i) {
+                currentPValues[i] = new PValue(distinctType.typeInstanceAt(i));
             }
         }
 
@@ -286,52 +273,6 @@ class Distinct_Partial extends Operator
             return false;
         }
 
-        private boolean isDistinct(Row inputRow) 
-        {
-            if ((nvalid == 0) && currentRow.isEmpty()) {
-                // Very first row.
-                currentRow.hold(inputRow);
-                return true;
-            }
-            ValueHolder inputValue = new ValueHolder();
-            for (int i = 0; i < nfields; i++) {
-                if (i == nvalid) {
-                    assert currentRow.isHolding();
-                    if (currentValues[i] == null)
-                        currentValues[i] = new ValueHolder();
-                    currentValues[i].copyFrom(currentRow.get().eval(i));
-                    nvalid++;
-                    if (nvalid == nfields)
-                        // Once we have copies of all fields, don't need row any more.
-                        currentRow.release();
-                }
-                inputValue.copyFrom(inputRow.eval(i));
-                if (!eq(i, currentValues[i], inputValue)) {
-                    currentValues[i] = inputValue;
-                    nvalid = i + 1;
-                    if (i < nfields - 1)
-                        // Might need later fields.
-                        currentRow.hold(inputRow);
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        private boolean eq(int field, ValueSource x, ValueSource y)
-        {
-            if (collators == null) {
-                return currentValues[field].equals(y);
-            } else {
-                AkCollator collator = collators.get(field);
-                if (collator == null) {
-                    return currentValues[field].equals(y);
-                } else {
-                    return collator.compare(x, y) == 0;
-                }
-            }
-        }
-
         private boolean eqP(PValueSource x, PValueSource y, TInstance tinst)
         {
             if (tinst.typeClass() instanceof TString) {
@@ -350,7 +291,6 @@ class Distinct_Partial extends Operator
         // currentValues contains copies of the first nvalid of currentRow's fields,
         // filled as needed.
         private int nvalid;
-        private final ValueHolder[] currentValues;
         private final PValue[] currentPValues;
         private boolean idle = true;
         private boolean destroyed = false;

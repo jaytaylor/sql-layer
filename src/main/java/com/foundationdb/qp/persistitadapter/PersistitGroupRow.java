@@ -21,12 +21,10 @@ import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.qp.util.HKeyCache;
 import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
 import com.foundationdb.server.encoding.EncodingException;
 import com.foundationdb.server.rowdata.*;
-import com.foundationdb.server.types.ValueSource;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.util.SparseArray;
 import com.persistit.Exchange;
@@ -56,16 +54,6 @@ public class PersistitGroupRow extends AbstractRow
         lastRowDef = rowDef();
         lastRowType = adapter.schema().userTableRowType(lastRowDef.userTable());
         return lastRowType;
-    }
-
-    @Override
-    public ValueSource eval(int i)
-    {
-        FieldDef fieldDef = rowDef().getFieldDef(i);
-        RowData rowData = rowData();
-        RowDataValueSource valueSource = valueSource(i);
-        valueSource.bind(fieldDef, rowData);
-        return valueSource;
     }
 
     @Override
@@ -185,21 +173,6 @@ public class PersistitGroupRow extends AbstractRow
         this.hKeyCache = new HKeyCache(adapter);
     }
 
-    private RowDataValueSource valueSource(int i)
-    {
-        if (valueSources == null) {
-            valueSources = new SparseArray<RowDataValueSource>()
-            {
-                @Override
-                protected RowDataValueSource initialValue()
-                {
-                    return new RowDataValueSource();
-                }
-            };
-        }
-        return valueSources.get(i);
-    }
-
     private RowDataPValueSource pValueSource(int i) {
         if (pvalueSources == null) {
             pvalueSources = new SparseArray<RowDataPValueSource>()
@@ -221,7 +194,6 @@ public class PersistitGroupRow extends AbstractRow
 
     // Object state
 
-    private SparseArray<RowDataValueSource> valueSources;
     private SparseArray<RowDataPValueSource> pvalueSources;
     private final PersistitAdapter adapter;
     private RowData rowData;

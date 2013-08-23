@@ -21,10 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.foundationdb.ais.model.UserTable;
-import com.foundationdb.server.explain.CompoundExplainer;
-import com.foundationdb.server.explain.ExplainContext;
-import com.foundationdb.server.explain.Label;
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.types3.TInstance;
 
 public class CompoundRowType extends DerivedRowType {
@@ -32,13 +28,6 @@ public class CompoundRowType extends DerivedRowType {
     @Override
     public int nFields() {
         return nFields;
-    }
-
-    @Override
-    public AkType typeAt(int index) {
-        if (index < first.nFields())
-            return first.typeAt(index);
-        return second.typeAt(index - first.nFields());
     }
 
     @Override

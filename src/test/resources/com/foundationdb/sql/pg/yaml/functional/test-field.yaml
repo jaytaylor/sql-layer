@@ -1,5 +1,8 @@
 ## test the field function 
 ---
+- Statement: SELECT FIELD('', 'a', null, '');
+- output: [[3]]
+---
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT into all_types(bigint_field, double_field) VALUES (1, 1.0);

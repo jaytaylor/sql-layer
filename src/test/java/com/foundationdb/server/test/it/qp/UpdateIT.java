@@ -29,16 +29,10 @@ import com.foundationdb.qp.operator.UpdateFunction;
 import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.RowBase;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.ToObjectValueTarget;
-import com.foundationdb.server.types.conversion.Converters;
 import static com.foundationdb.qp.operator.API.*;
-
-import com.persistit.Transaction;
 
 import org.junit.Test;
 
-import static com.foundationdb.qp.operator.API.indexScan_Default;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
@@ -51,10 +45,6 @@ public class UpdateIT extends OperatorITBase
         use(db);
 
         UpdateFunction updateFunction = new UpdateFunction() {
-            @Override
-            public boolean usePValues() {
-                return usingPValues();
-            }
 
             @Override
             public boolean rowIsSelected(Row row) {
@@ -63,16 +53,7 @@ public class UpdateIT extends OperatorITBase
 
             @Override
             public Row evaluate(Row original, QueryContext context, QueryBindings bindings) {
-                String name;
-                if (usePValues()) {
-                    name = original.pvalue(1).getString();
-                }
-                else {
-                    ToObjectValueTarget target = new ToObjectValueTarget();
-                    target.expectType(AkType.VARCHAR);
-                    Object obj = Converters.convert(original.eval(1), target).lastConvertedValue();
-                    name = (String) obj;
-                }
+                String name = original.pvalue(1).getString();
                 // TODO eventually use Expression for this
                 name = name.toUpperCase();
                 name = name + name;
@@ -120,24 +101,13 @@ public class UpdateIT extends OperatorITBase
         
         UpdateFunction updateFunction = new UpdateFunction() {
                 @Override
-                public boolean usePValues() {
-                    return usingPValues();
-                }
-
-                @Override
                 public boolean rowIsSelected(Row row) {
                     return row.rowType().equals(itemRowType);
                 }
 
                 @Override
                 public Row evaluate(Row original, QueryContext context, QueryBindings bindings) { 
-                    long id;
-                    if (usePValues()) {
-                        id = original.pvalue(0).getInt64();
-                    }
-                    else {
-                        id = getLong(original, 0);
-                    }
+                    long id = original.pvalue(0).getInt64();
                     // Make smaller to avoid Halloween (see next test).
                     return new OverlayingRow(original).overlay(0, id - 100);
                 }
@@ -178,10 +148,6 @@ public class UpdateIT extends OperatorITBase
             Arrays.asList(itemRowType));
         
         UpdateFunction updateFunction = new UpdateFunction() {
-                @Override
-                public boolean usePValues() {
-                    return usingPValues();
-                }
 
                 @Override
                 public boolean rowIsSelected(Row row) {
@@ -190,13 +156,7 @@ public class UpdateIT extends OperatorITBase
 
                 @Override
                 public Row evaluate(Row original, QueryContext context, QueryBindings bindings) {
-                    long id;
-                    if (usePValues()) {
-                        id = original.pvalue(0).getInt64();
-                    }
-                    else {
-                        id = getLong(original, 0);
-                    }
+                    long id = original.pvalue(0).getInt64();
                     return new OverlayingRow(original).overlay(0, 1000 + id);
                 }
             };
@@ -286,14 +246,9 @@ public class UpdateIT extends OperatorITBase
 
     private void doUpdate() {
         Row[] rows = {
-                row(customerRowType, new Object[]{2, "abc"}, new AkType[]{AkType.INT, AkType.VARCHAR})
+                row(customerRowType, new Object[]{2, "abc"})
         };
         UpdateFunction updateFunction = new UpdateFunction() {
-            @Override
-            public boolean usePValues() {
-                return usingPValues();
-            }
-
             @Override
             public Row evaluate(Row original, QueryContext context, QueryBindings bindings) {
                 return row(customerRowType, 2L, "zzz");

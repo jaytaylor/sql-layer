@@ -66,7 +66,7 @@ public class SelectCT extends CostModelBase
     {
         Operator scan = groupScan_Default(group);
         TimeOperator timeScan = new TimeOperator(scan);
-        Operator select = select_HKeyOrdered(timeScan, tRowType, ExpressionGenerators.literal(true));
+        Operator select = select_HKeyOrdered(timeScan, tRowType, ExpressionGenerators.literal(Boolean.TRUE));
         long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
             Cursor cursor = cursor(select, queryContext, queryBindings);

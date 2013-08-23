@@ -536,7 +536,7 @@ public class MergeJoinSorter implements Sorter {
         }
         
         private Row createRow (SortKey key) {
-            ValuesHolderRow rowCopy = new ValuesHolderRow(rowType, true);
+            ValuesHolderRow rowCopy = new ValuesHolderRow(rowType);
             for(int i = 0 ; i < rowType.nFields(); ++i) {
                 valueSources[i].attach(key.rowKey, i, valueSources[i].tInstance());
                 PValueTargets.copyFrom(valueSources[i], rowCopy.pvalueAt(i));

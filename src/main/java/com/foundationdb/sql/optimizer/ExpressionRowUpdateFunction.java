@@ -25,20 +25,16 @@ import com.foundationdb.qp.operator.UpdateFunction;
 import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.expression.Expression;
-import com.foundationdb.server.expression.ExpressionEvaluation;
 import com.foundationdb.server.types3.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types3.texpressions.TPreparedExpression;
 
 /** Update a row by substituting expressions for some fields. */
 public class ExpressionRowUpdateFunction implements UpdateFunction
 {
-    private final List<Expression> expressions;
     private final List<TPreparedExpression> pExpressions;
     private final RowType rowType;
 
-    public ExpressionRowUpdateFunction(List<Expression> expressions, List<TPreparedExpression> pExpressions, RowType rowType) {
-        this.expressions = expressions;
+    public ExpressionRowUpdateFunction(List<TPreparedExpression> pExpressions, RowType rowType) {
         this.pExpressions = pExpressions;
         this.rowType = rowType;
     }
@@ -52,48 +48,27 @@ public class ExpressionRowUpdateFunction implements UpdateFunction
 
     @Override
     public Row evaluate(Row original, QueryContext context, QueryBindings bindings) {
-        OverlayingRow result = new OverlayingRow(original, pExpressions != null);
+        OverlayingRow result = new OverlayingRow(original);
         int nfields = rowType.nFields();
         for (int i = 0; i < nfields; i++) {
-            if (pExpressions != null) {
-                assert expressions == null : "can't have both expression types";
-                TPreparedExpression expression = pExpressions.get(i);
-                if (expression != null) {
-                    TEvaluatableExpression evaluation = expression.build();
-                    evaluation.with(original);
-                    evaluation.with(context);
-                    evaluation.with(bindings);
-                    evaluation.evaluate();
-                    result.overlay(i, evaluation.resultValue());
-                }
-            }
-            else if (expressions != null) {
-                Expression expression = expressions.get(i);
-                if (expression != null) {
-                    ExpressionEvaluation evaluation = expression.evaluation();
-                    evaluation.of(original);
-                    evaluation.of(context);
-                    evaluation.of(bindings);
-                    result.overlay(i, evaluation.eval());
-                }
-            }
-            else {
-                assert false: "must have one expression list";
+            TPreparedExpression expression = pExpressions.get(i);
+            if (expression != null) {
+                TEvaluatableExpression evaluation = expression.build();
+                evaluation.with(original);
+                evaluation.with(context);
+                evaluation.with(bindings);
+                evaluation.evaluate();
+                result.overlay(i, evaluation.resultValue());
             }
         }
         return result;
-    }
-
-    @Override
-    public boolean usePValues() {
-        return pExpressions != null;
     }
 
     /* Object */
 
     @Override
     public String toString() {
-        String exprs = (pExpressions != null) ? pExpressions.toString() : expressions.toString();
+        String exprs = pExpressions.toString();
         return getClass().getSimpleName() + "(" + exprs + ")";
     }
 

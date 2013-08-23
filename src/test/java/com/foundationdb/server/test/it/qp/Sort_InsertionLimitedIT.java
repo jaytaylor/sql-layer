@@ -24,10 +24,8 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.expression.Expression;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -446,7 +444,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
     public void testPreserveDuplicates()
     {
         Operator project =
-            project_Default(
+            project_DefaultTest(
                 filter_Default(
                     groupScan_Default(coi),
                     Collections.singleton(orderRowType)),
@@ -475,7 +473,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
     public void testSuppressDuplicateCID()
     {
         Operator project =
-            project_Default(
+            project_DefaultTest(
                 filter_Default(
                     groupScan_Default(coi),
                     Collections.singleton(orderRowType)),
@@ -503,7 +501,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
     public void testSuppressDuplicateName()
     {
         Operator project =
-            project_Default(
+            project_DefaultTest(
                 filter_Default(
                     groupScan_Default(coi),
                     Collections.singleton(orderRowType)),
@@ -528,10 +526,10 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
     @Test 
     public void testFreeze()
     {
-        RowType innerValuesRowType = schema.newValuesType(AkType.NULL);
+        RowType innerValuesRowType = schema.newValuesType(MNumeric.INT.instance(true));
         List<BindableRow> innerValuesRows = new ArrayList<>();
-        innerValuesRows.add(BindableRow.of(innerValuesRowType, Collections.singletonList(literal(null)), null));
-        Operator project = project_Default(valuesScan_Default(innerValuesRows, innerValuesRowType),
+        innerValuesRows.add(BindableRow.of(innerValuesRowType, Collections.singletonList(literal(null))));
+        Operator project = project_DefaultTest(valuesScan_Default(innerValuesRows, innerValuesRowType),
                                            innerValuesRowType,
                                            Arrays.asList(boundField(customerRowType, 0, 1)));
         RowType projectType = project.rowType();

@@ -154,7 +154,7 @@ public class ScanFlagsIT extends ITBase
         assertEquals(expected.length, actual.size());
         Iterator<NewRow> a = actual.iterator();
         for (int e : expected) {
-            assertEquals((long) e, ((Long)a.next().get(0)).longValue());
+            assertEquals((long) e, ((Integer)a.next().get(0)).longValue());
         }
     }
 

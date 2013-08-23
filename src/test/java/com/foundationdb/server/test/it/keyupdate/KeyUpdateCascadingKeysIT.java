@@ -76,7 +76,7 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
         // Set item.iid = 1223 for item 1222
         TestRow originalItem = testStore.find(new HKey(vendorRD, 1L, customerRD, 12L, orderRD, 122L, itemRD, 1222L));
         TestRow updatedItem = copyRow(originalItem);
-        updateRow(updatedItem, i_iid, 1223L);
+        updateRow(updatedItem, i_iid, 1223);
         try {
             dbUpdate(originalItem, updatedItem);
             fail();
@@ -130,7 +130,7 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
         // Set order.oid = 221 for order 222
         TestRow originalOrder = testStore.find(new HKey(vendorRD, 2L, customerRD, 22L, orderRD, 222L));
         TestRow updatedOrder = copyRow(originalOrder);
-        updateRow(updatedOrder, o_oid, 221L);
+        updateRow(updatedOrder, o_oid, 221);
         try {
             dbUpdate(originalOrder, updatedOrder);
             fail();
@@ -184,8 +184,8 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
         // Set customer.vid = 11 for customer 23
         TestRow oldCustomerRow = testStore.find(new HKey(vendorRD, 2L, customerRD, 23L));
         TestRow newCustomerRow = copyRow(oldCustomerRow);
-        updateRow(newCustomerRow, c_vid, 1L);
-        updateRow(newCustomerRow, c_cid, 11L);
+        updateRow(newCustomerRow, c_vid, 1);
+        updateRow(newCustomerRow, c_cid, 11);
         try {
             dbUpdate(oldCustomerRow, newCustomerRow);
             fail();
@@ -220,7 +220,7 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
         // Set vendor.vid = 2 for vendor 1
         TestRow originalVendorRow = testStore.find(new HKey(vendorRD, 1L));
         TestRow updatedVendorRow = copyRow(originalVendorRow);
-        updateRow(updatedVendorRow, v_vid, 2L, null);
+        updateRow(updatedVendorRow, v_vid, 2, null);
         try {
             dbUpdate(originalVendorRow, updatedVendorRow);
             fail();
@@ -299,16 +299,16 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
     {
         // vendor
         vendorId = createTable("coi", "vendor",
-                               "vid int not null",
-                               "vx int",
+                               "vid bigint not null",
+                               "vx bigint",
                                "primary key(vid)");
         v_vid = 0;
         v_vx = 1;
         // customer
         customerId = createTable("coi", "customer",
-                                 "vid int not null",
-                                 "cid int not null",
-                                 "cx int",
+                                 "vid bigint not null",
+                                 "cid bigint not null",
+                                 "cx bigint",
                                  "primary key(vid, cid)",
                                  "grouping foreign key (vid) references vendor(vid)");
         c_vid = 0;
@@ -316,12 +316,12 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
         c_cx = 2;
         // order
         orderId = createTable("coi", "order",
-                              "vid int not null",
-                              "cid int not null",
-                              "oid int not null",
-                              "ox int",
-                              "priority int",
-                              "when int",
+                              "vid bigint not null",
+                              "cid bigint not null",
+                              "oid bigint not null",
+                              "ox bigint",
+                              "priority bigint",
+                              "when bigint",
                               "primary key(vid, cid, oid)",
                               "unique(when)",
                               "grouping foreign key (vid, cid) references customer(vid, cid)");
@@ -334,11 +334,11 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
         o_when = 5;
         // item
         itemId = createTable("coi", "item",
-                             "vid int not null",
-                             "cid int not null",
-                             "oid int not null",
-                             "iid int not null",
-                             "ix int",
+                             "vid bigint not null",
+                             "cid bigint not null",
+                             "oid bigint not null",
+                             "iid bigint not null",
+                             "ix bigint",
                              "primary key(vid, cid, oid, iid)",
                              "grouping foreign key (vid, cid, oid) references \"order\"(vid, cid, oid)");
         i_vid = 0;

@@ -27,7 +27,6 @@ import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.api.FixedCountLimit;
 import com.foundationdb.server.api.dml.scan.*;
 import com.foundationdb.server.error.CursorIsFinishedException;
-import com.foundationdb.server.error.InvalidCharToNumException;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NoSuchRowException;
 import com.foundationdb.server.error.OldAISException;
@@ -35,7 +34,6 @@ import com.foundationdb.server.error.TableDefinitionMismatchException;
 import com.foundationdb.server.error.RowDefNotFoundException;
 import com.foundationdb.server.error.NoRowsUpdatedException;
 import com.foundationdb.server.test.it.ITBase;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.util.GrowableByteBuffer;
 import org.junit.Test;
 
@@ -71,7 +69,7 @@ public final class CBasicIT extends ITBase {
         assertEquals("cursors", cursorSet(), dml().getCursors(session()));
 
         List<NewRow> expectedRows = new ArrayList<>();
-        expectedRows.add( createNewRow(tableId, 0L, "hello world") );
+        expectedRows.add( createNewRow(tableId, 0, "hello world") );
         assertEquals("rows scanned", expectedRows, output.getRows());
     }
 
@@ -101,8 +99,8 @@ public final class CBasicIT extends ITBase {
         assertEquals("cursors", cursorSet(), dml().getCursors(session()));
 
         List<NewRow> expectedRows = new ArrayList<>();
-        expectedRows.add( createNewRow(tableId, 0L, "hello world") );
-        expectedRows.add( createNewRow(tableId, 1L, "foo bear") );
+        expectedRows.add( createNewRow(tableId, 0, "hello world") );
+        expectedRows.add( createNewRow(tableId, 1, "foo bear") );
         assertEquals("rows scanned", expectedRows, output.getRows());
 
     }
@@ -129,9 +127,9 @@ public final class CBasicIT extends ITBase {
 
         List<NewRow> expectedRows = new ArrayList<>();
         NewRow r;
-        r = createNewRow(tableId); r.put(0, 11L); r.put(7, 18L); r.put(8, 19L); expectedRows.add(r);
-        r = createNewRow(tableId); r.put(0, 21L); r.put(7, 28L); r.put(8, 29L); expectedRows.add(r);
-        r = createNewRow(tableId); r.put(0, 31L); r.put(7, 38L); r.put(8, 39L); expectedRows.add(r);
+        r = createNewRow(tableId); r.put(0, 11); r.put(7, 18); r.put(8, 19); expectedRows.add(r);
+        r = createNewRow(tableId); r.put(0, 21); r.put(7, 28); r.put(8, 29); expectedRows.add(r);
+        r = createNewRow(tableId); r.put(0, 31); r.put(7, 38); r.put(8, 39); expectedRows.add(r);
         assertEquals("row content", expectedRows, rows);
     }
 
@@ -151,9 +149,9 @@ public final class CBasicIT extends ITBase {
         assertEquals("rows scanned", 3, rows.size());
 
         List<NewRow> expectedRows = new ArrayList<>();
-        expectedRows.add(createNewRow(tableId, 2L, "bar"));
-        expectedRows.add(createNewRow(tableId, 1L, "foo"));
-        expectedRows.add(createNewRow(tableId, 3L, "zap"));
+        expectedRows.add(createNewRow(tableId, 2, "bar"));
+        expectedRows.add(createNewRow(tableId, 1, "foo"));
+        expectedRows.add(createNewRow(tableId, 3, "zap"));
 
         // Remove first column so toStrings match on assert below
         for(NewRow row : expectedRows) {
@@ -172,7 +170,7 @@ public final class CBasicIT extends ITBase {
         expectRowCount(tableId, 1);
 
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0));
-        expectRows(request, createNewRow(tableId, 0L) );
+        expectRows(request, createNewRow(tableId, 0) );
     }
 
     /**
@@ -198,7 +196,7 @@ public final class CBasicIT extends ITBase {
         dml().closeCursor(session(), cursorId);
 
         List<NewRow> expectedRows = new ArrayList<>();
-        expectedRows.add( createNewRow(tableId, 0L, "hello world") ); // full scan expected
+        expectedRows.add( createNewRow(tableId, 0, "hello world") ); // full scan expected
         RowData rowData = new RowData(output.getOutputBuffer().array(), 0, output.getOutputBuffer().position());
         rowData.prepareRow(0);
         assertEquals("table ID", tableId, rowData.getRowDefId());
@@ -319,11 +317,11 @@ public final class CBasicIT extends ITBase {
         expectRowCount(tableId, 1);
 
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-        expectRows(request, createNewRow(tableId, 0L, "hello world") );
+        expectRows(request, createNewRow(tableId, 0, "hello world") );
 
         dml().updateRow(session(), createNewRow(tableId, 0, "hello world"), createNewRow(tableId, 0, "goodbye cruel world"), null);
         expectRowCount(tableId, 1);
-        expectRows(request, createNewRow(tableId, 0L, "goodbye cruel world") );
+        expectRows(request, createNewRow(tableId, 0, "goodbye cruel world") );
     }
 
     @Test
@@ -335,11 +333,11 @@ public final class CBasicIT extends ITBase {
         expectRowCount(tableId, 1);
 
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-        expectRows(request, createNewRow(tableId, 0L, "hello world") );
+        expectRows(request, createNewRow(tableId, 0, "hello world") );
 
         dml().updateRow(session(), createNewRow(tableId, 0), createNewRow(tableId, 1, "goodbye cruel world"), null);
         expectRowCount(tableId, 1);
-        expectRows(request, createNewRow(tableId, 1L, "goodbye cruel world") );
+        expectRows(request, createNewRow(tableId, 1, "goodbye cruel world") );
     }
 
     @Test(expected=NoRowsUpdatedException.class)
@@ -353,7 +351,7 @@ public final class CBasicIT extends ITBase {
             expectRowCount(tableId, 1);
 
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-            expectRows(request, createNewRow(tableId, 0L, "hello world") );
+            expectRows(request, createNewRow(tableId, 0, "hello world") );
         } catch (InvalidOperationException e) {
             throw unexpectedException(e);
         }
@@ -365,7 +363,7 @@ public final class CBasicIT extends ITBase {
             dml().updateRow(session(), old, badRow, null);
         } catch (NoSuchRowException e) {
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-            expectRows(request, createNewRow(tableId, 0L, "hello world"));
+            expectRows(request, createNewRow(tableId, 0, "hello world"));
             throw new NoRowsUpdatedException(badRow.toRowData(), badRow.getRowDef());
         }
     }
@@ -385,13 +383,14 @@ public final class CBasicIT extends ITBase {
         expectRowCount(tableId, 1);
 
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-        expectRows(request, createNewRow(tableId, 0L, "hello world") );
+        expectRows(request, createNewRow(tableId, 0, "hello world") );
 
         dml().updateRow(session(), createNewRow(tableId, 0), createNewRow(tableId, 1), null);
         expectRowCount(tableId, 1);
-        expectRows(new ScanAllRequest(tableId, ColumnSet.ofPositions(0)), createNewRow(tableId, 1L) );
+        expectRows(new ScanAllRequest(tableId, ColumnSet.ofPositions(0)), createNewRow(tableId, 1) );
     }
 
+    /*
     @Test(expected=InvalidCharToNumException.class)
     public void updateOldNewHasWrongType() throws InvalidOperationException {
         Types3Switch.ON = false;
@@ -420,7 +419,8 @@ public final class CBasicIT extends ITBase {
         }
         fail("expected exception. rows are now: " + scanAll(new ScanAllRequest(tableId, null)));
     }
-
+    */
+    /*
     @Test(expected=InvalidCharToNumException.class)
     public void insertHasWrongType() throws InvalidOperationException {
         Types3Switch.ON = false;
@@ -441,7 +441,8 @@ public final class CBasicIT extends ITBase {
         }
         fail("expected exception. rows are now: " + scanAll(new ScanAllRequest(tableId, null)));
     }
-
+    */
+    
     @Test(expected=TableDefinitionMismatchException.class)
     public void insertStringTooLong() throws InvalidOperationException {
         final int tableId;
@@ -471,11 +472,11 @@ public final class CBasicIT extends ITBase {
         expectRowCount(tableId, 1);
 
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-        expectRows(request, createNewRow(tableId, 0L, "hello world") );
+        expectRows(request, createNewRow(tableId, 0, "hello world") );
 
         dml().updateRow(session(), createNewRow(tableId, 0), createNewRow(tableId, 1, "goodbye cruel world"), null);
         expectRowCount(tableId, 1);
-        expectRows(request, createNewRow(tableId, 1L, "goodbye cruel world") );
+        expectRows(request, createNewRow(tableId, 1, "goodbye cruel world") );
     }
 
     @Test
@@ -490,15 +491,15 @@ public final class CBasicIT extends ITBase {
 
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
         expectRows(request,
-                createNewRow(tableId, 0L, "doomed row"),
-                createNewRow(tableId, 1L, "also doomed"));
+                createNewRow(tableId, 0, "doomed row"),
+                createNewRow(tableId, 1, "also doomed"));
 
-        dml().deleteRow(session(), createNewRow(tableId, 0L, "doomed row"), false );
+        dml().deleteRow(session(), createNewRow(tableId, 0, "doomed row"), false );
         expectRowCount(tableId, 1);
         expectRows(request,
-                createNewRow(tableId, 1L, "also doomed"));
+                createNewRow(tableId, 1, "also doomed"));
 
-        dml().deleteRow(session(), createNewRow(tableId, 1L), false );
+        dml().deleteRow(session(), createNewRow(tableId, 1), false );
         expectRowCount(tableId, 0);
         expectRows(request);
     }
@@ -514,7 +515,7 @@ public final class CBasicIT extends ITBase {
             expectRowCount(tableId, 1);
 
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-            expectRows(request, createNewRow(tableId, 0L, "the customer's name"));
+            expectRows(request, createNewRow(tableId, 0, "the customer's name"));
         } catch (InvalidOperationException e) {
             throw unexpectedException(e);
         }
@@ -525,7 +526,7 @@ public final class CBasicIT extends ITBase {
             dml().deleteRow(session(), deleteAttempt, false);
         } catch (NoSuchRowException e) {
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-            expectRows(request, createNewRow(tableId, 0L, "the customer's name"));
+            expectRows(request, createNewRow(tableId, 0, "the customer's name"));
             throw e;
         }
     }
@@ -595,7 +596,7 @@ public final class CBasicIT extends ITBase {
                                                           ScanFlag.toRowDataFormat(scanFlags), 
                                                           ScanLimit.NONE);
 
-        expectRows(request, createNewRow(tid, 1L, -5L), createNewRow(tid, 2L, -1L));
+        expectRows(request, createNewRow(tid, 1, -5), createNewRow(tid, 2, -1));
     }
 
     /**

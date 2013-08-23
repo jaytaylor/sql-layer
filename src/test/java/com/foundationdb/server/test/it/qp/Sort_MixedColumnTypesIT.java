@@ -32,8 +32,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.server.test.it.ITBase;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types3.mcompat.mtypes.MString;
 import org.junit.Before;
@@ -87,12 +85,9 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
                 ordering,
                 SortOption.PRESERVE_DUPLICATES
         );
-        Row[] expected = 
-            (Types3Switch.ON ?
-             new RowsBuilder(MNumeric.INT.instance(false),
+        Row[] expected = new RowsBuilder(MNumeric.INT.instance(false),
                              MString.VARCHAR.instance(32, true),
-                             MNumeric.DECIMAL.instance(5,2, true)) :
-             new RowsBuilder(AkType.INT, AkType.VARCHAR, AkType.DECIMAL))
+                             MNumeric.DECIMAL.instance(5,2, true)) 
                 .row(4, "Aaa", "32.00")
                 .row(2, "Aaa", "75.25")
                 .row(3, "Bbb", "120.00")
@@ -113,12 +108,9 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
                 ordering,
                 SortOption.PRESERVE_DUPLICATES
         );
-        Row[] expected = 
-            (Types3Switch.ON ?
-             new RowsBuilder(MNumeric.INT.instance(false),
+        Row[] expected = new RowsBuilder(MNumeric.INT.instance(false),
                              MString.VARCHAR.instance(32, true),
-                             MNumeric.DECIMAL.instance(5,2, true)) :
-             new RowsBuilder(AkType.INT, AkType.VARCHAR, AkType.DECIMAL))
+                             MNumeric.DECIMAL.instance(5,2, true))
                 .row(2, "Aaa", "75.25")
                 .row(4, "Aaa", "32.00")
                 .row(3, "Bbb", "120.00")

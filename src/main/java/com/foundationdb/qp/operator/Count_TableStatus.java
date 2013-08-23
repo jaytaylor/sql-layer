@@ -19,14 +19,12 @@ package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.PValuesRow;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.ValuesRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.qp.rowtype.ValuesRowType;
 import com.foundationdb.server.explain.CompoundExplainer;
 import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.std.CountOperatorExplainer;
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types3.pvalue.PValue;
 import com.foundationdb.util.ArgumentValidation;
@@ -105,16 +103,13 @@ class Count_TableStatus extends Operator
 
     // Count_TableStatus interface
 
-    public Count_TableStatus(RowType tableType, boolean usePValues)
+    public Count_TableStatus(RowType tableType)
     {
         ArgumentValidation.notNull("tableType", tableType);
         ArgumentValidation.isTrue("tableType instanceof UserTableRowType",
                                   tableType instanceof UserTableRowType);
         this.tableType = tableType;
-        this.resultType = usePValues
-                ? tableType.schema().newValuesType(MNumeric.BIGINT.instance(false))
-                : tableType.schema().newValuesType(AkType.LONG);
-        this.usePValues = usePValues;
+        this.resultType = tableType.schema().newValuesType(MNumeric.BIGINT.instance(false));
     }
 
     // Class state
@@ -127,7 +122,6 @@ class Count_TableStatus extends Operator
 
     private final RowType tableType;
     private final ValuesRowType resultType;
-    private final boolean usePValues;
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
@@ -168,9 +162,7 @@ class Count_TableStatus extends Operator
                 if (pending) {
                     long rowCount = adapter().rowCount(adapter().getSession(), tableType);
                     close();
-                    output = usePValues
-                             ? new PValuesRow(resultType, new PValue(MNumeric.BIGINT.instance(false), rowCount))
-                             : new ValuesRow(resultType, new Object[] { rowCount });
+                    output = new PValuesRow(resultType, new PValue(MNumeric.BIGINT.instance(false), rowCount));
                 }
                 else {
                     output = null;

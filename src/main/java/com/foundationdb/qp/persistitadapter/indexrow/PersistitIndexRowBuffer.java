@@ -18,7 +18,6 @@
 package com.foundationdb.qp.persistitadapter.indexrow;
 
 import com.foundationdb.ais.model.*;
-import com.foundationdb.qp.persistitadapter.indexcursor.OldExpressionsSortKeyAdapter;
 import com.foundationdb.qp.persistitadapter.indexcursor.PValueSortKeyAdapter;
 import com.foundationdb.qp.persistitadapter.indexcursor.SortKeyAdapter;
 import com.foundationdb.qp.persistitadapter.indexcursor.SortKeyTarget;
@@ -26,21 +25,18 @@ import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.util.PersistitKey;
 import com.foundationdb.server.PersistitKeyPValueSource;
-import com.foundationdb.server.PersistitKeyValueSource;
-import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.geophile.SpaceLatLon;
 import com.foundationdb.server.rowdata.*;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.types3.TClass;
 import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.server.types3.common.BigDecimalWrapper;
 import com.foundationdb.server.types3.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.util.ArgumentValidation;
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -87,6 +83,11 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     }
 
     // RowBase interface
+
+    @Override
+    public PValueSource pvalue(int i) {
+        return null;
+    }
 
     @Override
     public final int compareTo(RowBase row, int thisStartIndex, int thatStartIndex, int fieldCount)
@@ -158,7 +159,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         int indexField = 0;
         IndexRowComposition indexRowComp = index.indexRowComposition();
         FieldDef[] fieldDefs = index.indexDef().getRowDef().getFieldDefs();
-        RowDataSource rowDataValueSource = Types3Switch.ON ? new RowDataPValueSource() : new RowDataValueSource();
+        RowDataSource rowDataValueSource = new RowDataPValueSource();
         while (indexField < indexRowComp.getLength()) {
             // handleSpatialColumn will increment pKeyAppends once for all spatial columns
             if (spatialHandler == null || !spatialHandler.handleSpatialColumn(rowData, indexField)) {
@@ -167,9 +168,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
                     Column column = fieldDef.column();
                     rowDataValueSource.bind(fieldDef, rowData);
                     pKeyTarget().append(rowDataValueSource,
-                                        column.getType().akType(),
-                                        column.tInstance(),
-                                        column.getCollator());
+                                        column.tInstance());
                 } else if (indexRowComp.isInHKey(indexField)) {
                     PersistitKey.appendFieldFromKey(pKey(), hKey, indexRowComp.getHKeyPosition(indexField));
                 } else {
@@ -182,9 +181,9 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     }
 
     @Override
-    public <S> void append(S source, AkType type, TInstance tInstance, AkCollator collator)
+    public <S> void append(S source, TInstance tInstance)
     {
-        pKeyTarget().append(source, type, tInstance, collator);
+        pKeyTarget().append(source, tInstance);
         pKeyAppends++;
     }
 
@@ -328,21 +327,12 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     // For testing only. It does an allocation per call, and is not appropriate for product use.
     public long nullSeparator()
     {
-        PersistitKeyValueSource valueSource = new PersistitKeyValueSource();
-        valueSource.attach(pKey, pKeyFields, AkType.LONG, null);
-        return valueSource.getLong();
+        PersistitKeyPValueSource valueSource = new PersistitKeyPValueSource(MNumeric.BIGINT.instance(true));
+        valueSource.attach(pKey, pKeyFields, MNumeric.BIGINT.instance(true));
+        return valueSource.getInt64();
     }
 
     // For use by subclasses
-
-    protected void attach(PersistitKeyValueSource source, int position, AkType type, AkCollator collator)
-    {
-        if (position < pKeyFields) {
-            source.attach(pKey, position, type, collator);
-        } else {
-            source.attach(pValue, position - pKeyFields, type, collator);
-        }
-    }
 
     protected void attach(PersistitKeyPValueSource source, int position, TInstance type)
     {
@@ -518,20 +508,12 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     private Value value;
     private int pKeyAppends = 0;
     private SpatialHandler spatialHandler;
-    private final SortKeyAdapter SORT_KEY_ADAPTER =
-            Types3Switch.ON
-                    ? PValueSortKeyAdapter.INSTANCE
-                    : OldExpressionsSortKeyAdapter.INSTANCE;
+    private final SortKeyAdapter SORT_KEY_ADAPTER = PValueSortKeyAdapter.INSTANCE;
 
     // Inner classes
 
     private class SpatialHandler
     {
-        public int dimensions()
-        {
-            return dimensions;
-        }
-
         public boolean handleSpatialColumn(RowData rowData, int indexField)
         {
             boolean handled = false;
@@ -550,45 +532,24 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         {
             for (int d = 0; d < dimensions; d++) {
                 rowDataSource.bind(fieldDefs[d], rowData);
-                if (Types3Switch.ON) {
-                    RowDataPValueSource rowDataPValueSource = (RowDataPValueSource)rowDataSource;
-                    TClass tclass = tinstances[d].typeClass();
-                    if (tclass == MNumeric.DECIMAL) {
-                        BigDecimalWrapper wrapper = MBigDecimal.getWrapper(rowDataPValueSource, tinstances[d]);
-                        coords[d] =
-                            d == 0
-                            ? SpaceLatLon.scaleLat(wrapper.asBigDecimal())
-                            : SpaceLatLon.scaleLon(wrapper.asBigDecimal());
-                    }
-                    else if (tclass == MNumeric.BIGINT) {
-                        coords[d] = rowDataPValueSource.getInt64();
-                    }
-                    else if (tclass == MNumeric.INT) {
-                        coords[d] = rowDataPValueSource.getInt32();
-                    }
-                    else {
-                        assert false : fieldDefs[d].column();
-                    }
+
+                RowDataPValueSource rowDataPValueSource = (RowDataPValueSource)rowDataSource;
+                TClass tclass = tinstances[d].typeClass();
+                if (tclass == MNumeric.DECIMAL) {
+                    BigDecimalWrapper wrapper = MBigDecimal.getWrapper(rowDataPValueSource, tinstances[d]);
+                    coords[d] =
+                        d == 0
+                        ? SpaceLatLon.scaleLat(wrapper.asBigDecimal())
+                        : SpaceLatLon.scaleLon(wrapper.asBigDecimal());
+                }
+                else if (tclass == MNumeric.BIGINT) {
+                    coords[d] = rowDataPValueSource.getInt64();
+                }
+                else if (tclass == MNumeric.INT) {
+                    coords[d] = rowDataPValueSource.getInt32();
                 }
                 else {
-                    RowDataValueSource rowDataValueSource = (RowDataValueSource)rowDataSource;
-                    switch (types[d]) {
-                        case INT:
-                            coords[d] = rowDataValueSource.getInt();
-                            break;
-                        case LONG:
-                            coords[d] = rowDataValueSource.getLong();
-                            break;
-                        case DECIMAL:
-                            coords[d] =
-                                d == 0
-                                ? SpaceLatLon.scaleLat(rowDataValueSource.getDecimal())
-                                : SpaceLatLon.scaleLon(rowDataValueSource.getDecimal());
-                            break;
-                        default:
-                            assert false : fieldDefs[d].column();
-                            break;
-                    }
+                    assert false : fieldDefs[d].column();
                 }
             }
         }
@@ -600,7 +561,6 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
 
         private final Space space;
         private final int dimensions;
-        private final AkType[] types;
         private final TInstance[] tinstances;
         private final FieldDef[] fieldDefs;
         private final long[] coords;
@@ -612,28 +572,16 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
             space = index.space();
             dimensions = space.dimensions();
             assert index.dimensions() == dimensions;
-            if (Types3Switch.ON) {
-                tinstances = new TInstance[dimensions];
-                types = null;
-            }
-            else {
-                types = new AkType[dimensions];
-                tinstances = null;
-            }
+            tinstances = new TInstance[dimensions];
             fieldDefs = new FieldDef[dimensions];
             coords = new long[dimensions];
-            rowDataSource = (Types3Switch.ON) ? new RowDataPValueSource() : new RowDataValueSource();
+            rowDataSource = new RowDataPValueSource();
             firstSpatialField = index.firstSpatialArgument();
             lastSpatialField = firstSpatialField + dimensions - 1;
             for (int d = 0; d < dimensions; d++) {
                 IndexColumn indexColumn = index.getKeyColumns().get(firstSpatialField + d);
                 Column column = indexColumn.getColumn();
-                if (Types3Switch.ON) {
-                    tinstances[d] = column.tInstance();
-                }
-                else {
-                    types[d] = column.getType().akType();
-                }
+                tinstances[d] = column.tInstance();
                 fieldDefs[d] = column.getFieldDef();
             }
         }

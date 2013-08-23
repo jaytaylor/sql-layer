@@ -31,21 +31,8 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.explain.CompoundExplainer;
 import com.foundationdb.server.explain.ExplainContext;
-import com.foundationdb.server.expression.Expression;
-import com.foundationdb.server.expression.std.BoundFieldExpression;
-import com.foundationdb.server.expression.std.CaseConvertExpression;
-import com.foundationdb.server.expression.std.ColumnExpression;
-import com.foundationdb.server.expression.std.CompareExpression;
 import com.foundationdb.server.expression.std.Comparison;
-import com.foundationdb.server.expression.std.FieldExpression;
-import com.foundationdb.server.expression.std.LiteralExpression;
-import com.foundationdb.server.expression.std.VariableExpression;
-import com.foundationdb.server.expression.subquery.AnySubqueryExpression;
-import com.foundationdb.server.expression.subquery.ExistsSubqueryExpression;
-import com.foundationdb.server.expression.subquery.ScalarSubqueryExpression;
 import com.foundationdb.server.t3expressions.TCastResolver;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.FromObjectValueSource;
 import com.foundationdb.server.types3.TCast;
 import com.foundationdb.server.types3.TClass;
 import com.foundationdb.server.types3.TInstance;
@@ -72,11 +59,6 @@ public final class ExpressionGenerators {
     {
         return new ExpressionGenerator() {
             @Override
-            public Expression getExpression() {
-                return new ColumnExpression(column, position);
-            }
-
-            @Override
             public TPreparedExpression getTPreparedExpression() {
                 return new TPreparedField(column.tInstance(), position);
             }
@@ -87,11 +69,6 @@ public final class ExpressionGenerators {
                                               final ExpressionGenerator right, final TCastResolver castResolver)
     {
         return new ExpressionGenerator() {
-            @Override
-            public Expression getExpression() {
-                return new CompareExpression(left.getExpression(), comparison, right.getExpression());
-            }
-
             @Override
             public TPreparedExpression getTPreparedExpression() {
                 TPreparedExpression leftExpr = left.getTPreparedExpression();
@@ -119,11 +96,6 @@ public final class ExpressionGenerators {
     {
         return new ExpressionGenerator() {
             @Override
-            public Expression getExpression() {
-                return new FieldExpression(rowType, position);
-            }
-
-            @Override
             public TPreparedExpression getTPreparedExpression() {
                 return new TPreparedField(rowType.typeInstanceAt(position), position);
             }
@@ -134,11 +106,6 @@ public final class ExpressionGenerators {
     {
         return new ExpressionGenerator() {
             @Override
-            public Expression getExpression() {
-                return new ExistsSubqueryExpression(innerPlan, outer, inner, 1);
-            }
-
-            @Override
             public TPreparedExpression getTPreparedExpression() {
                 return new ExistsSubqueryTExpression(innerPlan, outer, inner, bindingPos);
             }
@@ -148,11 +115,6 @@ public final class ExpressionGenerators {
     public static ExpressionGenerator scalarSubquery(final Operator innerPlan, final ExpressionGenerator expression, final RowType outer, final RowType inner, final int pos) {
         return new ExpressionGenerator() {
             @Override
-            public Expression getExpression() {
-                return new ScalarSubqueryExpression(innerPlan, expression.getExpression(), outer, inner, 1);
-            }
-
-            @Override
             public TPreparedExpression getTPreparedExpression() {
                 return new ScalarSubqueryTExpression(innerPlan, expression.getTPreparedExpression(), outer, inner, pos);
             }
@@ -161,11 +123,6 @@ public final class ExpressionGenerators {
 
     public static ExpressionGenerator anySubquery(final Operator innerPlan, final ExpressionGenerator expression, final RowType outer, final RowType inner, final int pos) {
         return new ExpressionGenerator() {
-            @Override
-            public Expression getExpression() {
-                return new AnySubqueryExpression(innerPlan, expression.getExpression(), outer, inner, 1);
-            }
-
             @Override
             public TPreparedExpression getTPreparedExpression() {
                 return new AnySubqueryTExpression(innerPlan, expression.getTPreparedExpression(), outer, inner, pos);
@@ -187,27 +144,19 @@ public final class ExpressionGenerators {
     {
         return new ExpressionGenerator() {
             @Override
-            public Expression getExpression() {
-                return new LiteralExpression(new FromObjectValueSource().setReflectively(value));
-            }
-
-            @Override
             public TPreparedExpression getTPreparedExpression() {
-                FromObjectValueSource valueSource = new FromObjectValueSource().setReflectively(value);
-                TPreptimeValue tpv = PValueSources.fromObject(value, valueSource.getConversionType());
+                TPreptimeValue tpv = PValueSources.fromObject(value, (TInstance)null);
+                
+                //FromObjectValueSource valueSource = new FromObjectValueSource().setReflectively(value);
+                //TPreptimeValue tpv = PValueSources.fromObject(value, valueSource.getConversionType());
                 return new TPreparedLiteral(tpv.instance(), tpv.value());
             }
         };
     }
 
-    public static ExpressionGenerator literal(final Object value, final AkType type)
+    public static ExpressionGenerator literal (final Object value, final TInstance type) 
     {
         return new ExpressionGenerator() {
-            @Override
-            public Expression getExpression() {
-                return new LiteralExpression(new FromObjectValueSource().setExplicitly(value, type));
-            }
-
             @Override
             public TPreparedExpression getTPreparedExpression() {
                 TPreptimeValue tpv = PValueSources.fromObject(value, type);
@@ -216,18 +165,12 @@ public final class ExpressionGenerators {
         };
     }
 
-    public static ExpressionGenerator variable(final AkType type, final int position)
+    public static ExpressionGenerator variable(final TInstance type, final int position)
     {
         return new ExpressionGenerator() {
             @Override
-            public Expression getExpression() {
-                return new VariableExpression(type, position);
-            }
-
-            @Override
             public TPreparedExpression getTPreparedExpression() {
-                assert false : "TODO";
-                return new TPreparedParameter(position, null); // TODO
+                return new TPreparedParameter(position, type); 
             }
         };
     }
@@ -235,11 +178,6 @@ public final class ExpressionGenerators {
     public static ExpressionGenerator boundField(final RowType rowType, final int rowPosition, final int fieldPosition)
     {
         return new ExpressionGenerator() {
-            @Override
-            public Expression getExpression() {
-                return new BoundFieldExpression(rowPosition, new FieldExpression(rowType, fieldPosition));
-            }
-
             @Override
             public TPreparedExpression getTPreparedExpression() {
                 return new TPreparedBoundField(rowType, rowPosition, fieldPosition);
@@ -250,11 +188,6 @@ public final class ExpressionGenerators {
     public static ExpressionGenerator toUpper(final ExpressionGenerator input)
     {
         return new ExpressionGenerator() {
-            @Override
-            public Expression getExpression() {
-                return new CaseConvertExpression(input.getExpression(), CaseConvertExpression.ConversionType.TOUPPER);
-            }
-
             @Override
             public TPreparedExpression getTPreparedExpression() {
                 final TPreparedExpression expr = input.getTPreparedExpression();

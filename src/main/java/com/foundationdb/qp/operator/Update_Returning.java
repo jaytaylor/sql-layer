@@ -98,12 +98,11 @@ public class Update_Returning extends Operator {
         return new Execution(context, inputOperator.cursor(context, bindingsCursor));
     }
     
-    public Update_Returning (Operator inputOperator, UpdateFunction updateFunction, boolean usePvals) {
+    public Update_Returning (Operator inputOperator, UpdateFunction updateFunction) {
         ArgumentValidation.notNull("update lambda", updateFunction);
         
         this.inputOperator = inputOperator;
         this.updateFunction = updateFunction;
-        this.usePValues = usePvals;
     }
 
     @Override
@@ -113,7 +112,6 @@ public class Update_Returning extends Operator {
 
     private final Operator inputOperator;
     private final UpdateFunction updateFunction;
-    private final boolean usePValues;
     // Class state
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: UpdateReturning open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: UpdateReturning next");
@@ -154,8 +152,8 @@ public class Update_Returning extends Operator {
                 Row newRow = null;
                 if ((inputRow = input.next()) != null) {
                     newRow = updateFunction.evaluate(inputRow, context, bindings);
-                    context.checkConstraints(newRow, usePValues);
-                    adapter().updateRow(inputRow, newRow, usePValues);
+                    context.checkConstraints(newRow);
+                    adapter().updateRow(inputRow, newRow);
                 }
                 if (LOG_EXECUTION) {
                     LOG.debug("Update_Returning: updating {} to {}", inputRow, newRow);

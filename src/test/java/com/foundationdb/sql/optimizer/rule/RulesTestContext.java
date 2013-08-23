@@ -22,7 +22,6 @@ import com.foundationdb.sql.optimizer.OptimizerTestBase;
 import com.foundationdb.sql.optimizer.rule.cost.TestCostEstimator;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.server.service.functions.FunctionsRegistryImpl;
 
 import java.util.List;
 import java.util.Properties;
@@ -43,13 +42,13 @@ public class RulesTestContext extends SchemaRulesContext
         context.initRules(rules);
         RulesTestHelper.ensureRowDefs(ais);
         context.initAIS(ais);
-        context.initFunctionsRegistry(new FunctionsRegistryImpl());
         T3RegistryServiceImpl t3Registry = new T3RegistryServiceImpl();
         t3Registry.start();
+        context.initFunctionsRegistry(t3Registry);
         context.initT3Registry(t3Registry);
         context.initCostEstimator(new TestCostEstimator(ais, context.getSchema(), 
                                                         statsFile, statsIgnoreMissingIndexes,
-                                                        properties), false);
+                                                        properties));
         context.initPipelineConfiguration(new PipelineConfiguration());
         context.initDone();
         return context;

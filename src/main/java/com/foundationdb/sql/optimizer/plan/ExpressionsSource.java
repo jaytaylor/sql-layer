@@ -52,6 +52,7 @@ public class ExpressionsSource extends BaseJoinable implements ColumnSource, Typ
         return result;
     }
 
+    @Deprecated
     public AkType[] getFieldTypes() {
         AkType[] result = null;
         for (List<ExpressionNode> nodes : expressions) {

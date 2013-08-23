@@ -29,7 +29,6 @@ import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.UserTable;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.MultipleCauseException;
 import com.google.common.base.Objects;
@@ -568,17 +567,8 @@ public class TableChangeValidator {
     }
 
     private static ChangeLevel compare(Column oldCol, Column newCol) {
-        if(Types3Switch.ON) {
-            if(!oldCol.tInstance().equalsExcludingNullable(newCol.tInstance())) {
-                return ChangeLevel.TABLE;
-            }
-        } else {
-            if(!oldCol.getType().equals(newCol.getType()) ||
-               !Objects.equal(oldCol.getTypeParameter1(), newCol.getTypeParameter1()) ||
-               !Objects.equal(oldCol.getTypeParameter2(), newCol.getTypeParameter2()) ||
-               (oldCol.getType().usesCollator() && !Objects.equal(oldCol.getCharsetAndCollation(), newCol.getCharsetAndCollation()))) {
-                return ChangeLevel.TABLE;
-            }
+        if(!oldCol.tInstance().equalsExcludingNullable(newCol.tInstance())) {
+            return ChangeLevel.TABLE;
         }
         boolean oldNull = oldCol.getNullable();
         boolean newNull = newCol.getNullable();

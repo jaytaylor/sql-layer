@@ -27,16 +27,9 @@ import com.foundationdb.ais.model.*;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.server.PersistitKeyPValueTarget;
-import com.foundationdb.server.PersistitKeyValueTarget;
-import com.foundationdb.server.expression.Expression;
-import com.foundationdb.server.expression.std.Expressions;
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.store.statistics.IndexStatistics;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.ValueSource;
-import com.foundationdb.server.types.conversion.Converters;
 import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.persistit.Key;
@@ -57,7 +50,6 @@ public abstract class CostEstimator implements TableRowCounts
     private final Properties properties;
     private final CostModel model;
     private final Key key;
-    private final PersistitKeyValueTarget keyTarget;
     private final PersistitKeyPValueTarget keyPTarget;
     private final Comparator<byte[]> bytesComparator;
     protected boolean warningsEnabled;
@@ -67,24 +59,13 @@ public abstract class CostEstimator implements TableRowCounts
         this.properties = properties;
         model = CostModel.newCostModel(schema, this);
         key = keyCreator.createKey();
-        if (Types3Switch.ON) {
-            keyPTarget = new PersistitKeyPValueTarget();
-            keyTarget = null;
-        }
-        else {
-            keyTarget = new PersistitKeyValueTarget();
-            keyPTarget = null;
-        }
+        keyPTarget = new PersistitKeyPValueTarget();
         bytesComparator = UnsignedBytes.lexicographicalComparator();
         warningsEnabled = logger.isWarnEnabled();
     }
 
     protected CostEstimator(SchemaRulesContext rulesContext, KeyCreator keyCreator) {
         this(rulesContext.getSchema(), rulesContext.getProperties(), keyCreator);
-    }
-
-    private boolean usePValues() {
-        return (keyPTarget != null);
     }
 
     @Override
@@ -296,10 +277,7 @@ public abstract class CostEstimator implements TableRowCounts
                                    Histogram[] histograms,
                                    List<ExpressionNode> eqExpressions) {
         double selectivity = 1.0;
-        if (usePValues())
-            keyPTarget.attach(key);
-        else
-            keyTarget.attach(key);
+        keyPTarget.attach(key);
         for (int column = 0; column < eqExpressions.size(); column++) {
             ExpressionNode node = eqExpressions.get(column);
             Histogram histogram = histograms[column];
@@ -340,10 +318,7 @@ public abstract class CostEstimator implements TableRowCounts
                 return sum;
             } else {
                 key.clear();
-                if (usePValues())
-                    keyPTarget.attach(key);
-                else
-                    keyTarget.attach(key);
+                keyPTarget.attach(key);
                 // encodeKeyValue evaluates non-null iff node is a constant expression. key is initialized as a side-effect.
                 byte[] columnValue = encodeKeyValue(expr, index, histogram.getFirstColumn()) ? keyCopy() : null;
                 if (columnValue == null) {
@@ -386,10 +361,7 @@ public abstract class CostEstimator implements TableRowCounts
             missingStats(column, index);
             return missingStatsSelectivity();
         }
-        if (usePValues())
-            keyPTarget.attach(key);
-        else
-            keyTarget.attach(key);
+        keyPTarget.attach(key);
         key.clear();
         byte[] loBytes = encodeKeyValue(lo, index, histogram.getFirstColumn()) ? keyCopy() : null;
         key.clear();
@@ -503,10 +475,7 @@ public abstract class CostEstimator implements TableRowCounts
                                     ExpressionNode anotherField,
                                     boolean upper) {
         key.clear();
-        if (usePValues())
-            keyPTarget.attach(key);
-        else
-            keyTarget.attach(key);
+        keyPTarget.attach(key);
         int i = 0;
         if (fields != null) {
             for (ExpressionNode field : fields) {
@@ -532,79 +501,39 @@ public abstract class CostEstimator implements TableRowCounts
     }
 
     protected boolean encodeKeyValue(ExpressionNode node, Index index, int column) {
-        if (usePValues()) {
-            PValueSource pvalue = null;
-            if (node instanceof ConstantExpression) {
-                if (node.getPreptimeValue() != null) {
-                    if (node.getPreptimeValue().instance() == null) { // Literal null
-                        keyPTarget.putNull();
-                        return true;
-                    }
-                    pvalue = node.getPreptimeValue().value();
+        PValueSource pvalue = null;
+        if (node instanceof ConstantExpression) {
+            if (node.getPreptimeValue() != null) {
+                if (node.getPreptimeValue().instance() == null) { // Literal null
+                    keyPTarget.putNull();
+                    return true;
                 }
+                pvalue = node.getPreptimeValue().value();
             }
-            else if (node instanceof IsNullIndexKey) {
-                keyPTarget.putNull();
-                return true;
-            }
-            if (pvalue == null)
-                return false;
-            TInstance tInstance;
-            determine_type:
-            {
-                if (index.isSpatial()) {
-                    int firstSpatialColumn = index.firstSpatialArgument();
-                    if (column == firstSpatialColumn) {
-                        tInstance = MNumeric.BIGINT.instance(node.getPreptimeValue().isNullable());
-                        break determine_type;
-                    }
-                    else if (column > firstSpatialColumn) {
-                        column += index.dimensions() - 1;
-                    }
-                }
-                tInstance = index.getAllColumns().get(column).getColumn().tInstance();
-            }
-            tInstance.writeCollating(pvalue, keyPTarget);
+        }
+        else if (node instanceof IsNullIndexKey) {
+            keyPTarget.putNull();
             return true;
         }
-        else {
-            Expression expr = null;
-            if (node instanceof ConstantExpression) {
-                if (node.getAkType() == null)
-                    expr = Expressions.literal(((ConstantExpression)node).getValue());
-                else
-                    expr = Expressions.literal(((ConstantExpression)node).getValue(),
-                                               node.getAkType());
-            }
-            else if (node instanceof IsNullIndexKey) {
-                keyTarget.putNull();
-                return true;
-            }
-            if (expr == null)
-                return false;
-            ValueSource valueSource = expr.evaluation().eval();
-            determine_type:
-            {
-                if (index.isSpatial()) {
-                    TableIndex spatialIndex = (TableIndex)index;
-                    int firstSpatialColumn = spatialIndex.firstSpatialArgument();
-                    if (column == firstSpatialColumn) {
-                        // If there were ever a constant expression for
-                        // the Z-value, it would be a long.
-                        keyTarget.expectingType(AkType.LONG, null);
-                        break determine_type;
-                    }
-                    else if (column > firstSpatialColumn) {
-                        // Following columns are offset by difference
-                        // between logical and physical layouts.
-                        column += spatialIndex.dimensions() - 1;
-                    }
+        if (pvalue == null)
+            return false;
+        TInstance tInstance;
+        determine_type:
+        {
+            if (index.isSpatial()) {
+                int firstSpatialColumn = index.firstSpatialArgument();
+                if (column == firstSpatialColumn) {
+                    tInstance = MNumeric.BIGINT.instance(node.getPreptimeValue().isNullable());
+                    break determine_type;
                 }
-                keyTarget.expectingType(index.getAllColumns().get(column).getColumn());
+                else if (column > firstSpatialColumn) {
+                    column += index.dimensions() - 1;
+                }
             }
-            Converters.convert(valueSource, keyTarget);
-            return true;
+            tInstance = index.getAllColumns().get(column).getColumn().tInstance();
         }
+        tInstance.writeCollating(pvalue, keyPTarget);
+        return true;
     }
 
     private byte[] keyCopy()
@@ -1048,7 +977,6 @@ public abstract class CostEstimator implements TableRowCounts
     // TODO: Need to account for tables actually wanted?
     public CostEstimate costGroupScan(Group group) {
         long nrows = 0;
-        double cost = 0.0;
         UserTable root = null;
         for (UserTable table : group.getRoot().getAIS().getUserTables().values()) {
             if (table.getGroup() == group) {

@@ -61,9 +61,9 @@ public final class TableAndColumnDuplicationIT extends ITBase {
                 createTable("schema2","table1", "name varchar(32) not null primary key");
 
         writeRows(
-                createNewRow(schema1Table, 0L),
-                createNewRow(schema1Table, 1L),
-                createNewRow(schema1Table, 2L)
+                createNewRow(schema1Table, 0),
+                createNewRow(schema1Table, 1),
+                createNewRow(schema1Table, 2)
         );
 
         writeRows(
@@ -73,9 +73,9 @@ public final class TableAndColumnDuplicationIT extends ITBase {
         );
 
         expectFullRows(schema1Table,
-                createNewRow(schema1Table, 0L),
-                createNewRow(schema1Table, 1L),
-                createNewRow(schema1Table, 2L)
+                createNewRow(schema1Table, 0),
+                createNewRow(schema1Table, 1),
+                createNewRow(schema1Table, 2)
         );
         
         expectFullRows(schema2Table,
@@ -94,27 +94,27 @@ public final class TableAndColumnDuplicationIT extends ITBase {
                 createTable("schema2", schema2TableName, schema2TableKeyCol + " int not null primary key, name varchar(32)");
 
         writeRows(
-                createNewRow(schema1Table, 0L, "alpha-0"),
-                createNewRow(schema1Table, 1L, "alpha-1"),
-                createNewRow(schema1Table, 2L, "alpha-1")
+                createNewRow(schema1Table, 0, "alpha-0"),
+                createNewRow(schema1Table, 1, "alpha-1"),
+                createNewRow(schema1Table, 2, "alpha-1")
         );
 
         writeRows(
-                createNewRow(schema2Table, 0L, "bravo-0"),
-                createNewRow(schema2Table, 1L, "bravo-1"),
-                createNewRow(schema2Table, 2L, "bravo-1")
+                createNewRow(schema2Table, 0, "bravo-0"),
+                createNewRow(schema2Table, 1, "bravo-1"),
+                createNewRow(schema2Table, 2, "bravo-1")
         );
 
         expectFullRows( schema1Table,
-                createNewRow(schema1Table, 0L, "alpha-0"),
-                createNewRow(schema1Table, 1L, "alpha-1"),
-                createNewRow(schema1Table, 2L, "alpha-1")
+                createNewRow(schema1Table, 0, "alpha-0"),
+                createNewRow(schema1Table, 1, "alpha-1"),
+                createNewRow(schema1Table, 2, "alpha-1")
         );
 
         expectFullRows( schema2Table,
-                createNewRow(schema2Table, 0L, "bravo-0"),
-                createNewRow(schema2Table, 1L, "bravo-1"),
-                createNewRow(schema2Table, 2L, "bravo-1")
+                createNewRow(schema2Table, 0, "bravo-0"),
+                createNewRow(schema2Table, 1, "bravo-1"),
+                createNewRow(schema2Table, 2, "bravo-1")
         );
     }
 }

@@ -233,8 +233,8 @@ public final class DDLInvalidatesScansIT extends ITBase {
     private List<NewRow> expectedCustomers() {
         int customers = tableId(SCHEMA, CUSTOMERS);
         return Arrays.asList(
-                createNewRow(customers, 27L, "Knoepfli", "C", "N"), // I forget if he actually played center...
-                createNewRow(customers, 29L, "Bitz", "W", "Y")
+                createNewRow(customers, 27, "Knoepfli", "C", "N"), // I forget if he actually played center...
+                createNewRow(customers, 29, "Bitz", "W", "Y")
 
         );
     }

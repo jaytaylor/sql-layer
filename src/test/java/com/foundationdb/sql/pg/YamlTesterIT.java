@@ -17,8 +17,6 @@
 
 package com.foundationdb.sql.pg;
 
-import com.foundationdb.server.types.extract.ConverterTestUtils;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -37,7 +35,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 
     static
     {
-        ConverterTestUtils.setGlobalTimezone("UTC");
+        //ConverterTestUtils.setGlobalTimezone("UTC");
     }
     /* Tests */
 

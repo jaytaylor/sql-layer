@@ -48,14 +48,13 @@ public class PostgresExplainStatement implements PostgresStatement
     private List<String> explanation;
     private String colName;
     private PostgresType colType;
-    private boolean usePVals;
     private long aisGeneration;
 
     public PostgresExplainStatement(OperatorCompiler compiler) {
         this.compiler = compiler;
     }
 
-    public void init(List<String> explanation, boolean usePVals) {
+    public void init(List<String> explanation) {
         this.explanation = explanation;
 
         int maxlen = 32;
@@ -66,7 +65,6 @@ public class PostgresExplainStatement implements PostgresStatement
         colName = "OPERATORS";
         colType = new PostgresType(PostgresType.TypeOid.VARCHAR_TYPE_OID, (short)-1, maxlen,
                                    AkType.VARCHAR, MString.VARCHAR.instance(maxlen, false));
-        this.usePVals = usePVals;
     }
 
     @Override
@@ -121,9 +119,7 @@ public class PostgresExplainStatement implements PostgresStatement
         for (String row : explanation) {
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
             messenger.writeShort(1);
-            ByteArrayOutputStream bytes;
-            if (usePVals) bytes = encoder.encodePObject(row, colType, false);
-            else bytes = encoder.encodeObject(row, colType, false);
+            ByteArrayOutputStream bytes = encoder.encodePObject(row, colType, false);
             messenger.writeInt(bytes.size());
             messenger.writeByteStream(bytes);
             messenger.sendMessage();
@@ -190,7 +186,7 @@ public class PostgresExplainStatement implements PostgresStatement
             DefaultFormatter f = new DefaultFormatter(server.getDefaultSchemaName(), detail);
             explain = f.format(explainable.getExplainer(context.getExplainContext()));
         }
-        init(explain, compiler.usesPValues());
+        init(explain);
         compiler = null;
         return this;
     }

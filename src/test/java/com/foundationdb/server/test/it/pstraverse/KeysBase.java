@@ -42,28 +42,28 @@ public abstract class KeysBase extends ITBase {
     @Before
     public void setUp() throws Exception {
         String schema = "cascading";
-        customers = createTable(schema, "customers", "cid int not null primary key");
+        customers = createTable(schema, "customers", "cid bigint not null primary key");
         orders = createTable(schema, "orders",
-                "cid int not null",
-                "oid int not null",
+                "cid bigint not null",
+                "oid bigint not null",
                 "PRIMARY KEY("+ordersPK()+")",
                 "GROUPING FOREIGN KEY (cid) REFERENCES customers(cid)"
         );
         items = createTable(schema, "items",
-                "cid int not null",
-                "oid int not null",
-                "iid int not null",
+                "cid bigint not null",
+                "oid bigint not null",
+                "iid bigint not null",
                 "PRIMARY KEY("+itemsPK()+")",
                 "GROUPING FOREIGN KEY ("+ordersPK()+") REFERENCES orders("+ordersPK()+")"
         );
 
         writeRows(
-                createNewRow(customers, 71),
-                createNewRow(orders, 71, 81),
-                createNewRow(items, 71, 81, 91),
-                createNewRow(items, 71, 81, 92),
-                createNewRow(orders, 72, 82),
-                createNewRow(items, 72, 82, 93)
+                createNewRow(customers, 71L),
+                createNewRow(orders, 71L, 81L),
+                createNewRow(items, 71L, 81L, 91L),
+                createNewRow(items, 71L, 81L, 92L),
+                createNewRow(orders, 72L, 82L),
+                createNewRow(items, 72L, 82L, 93L)
 
         );
     }

@@ -16,7 +16,6 @@
  */
 package com.foundationdb.server.collation;
 
-import com.foundationdb.server.types.ValueSource;
 import com.persistit.Key;
 import com.persistit.exception.ConversionException;
 

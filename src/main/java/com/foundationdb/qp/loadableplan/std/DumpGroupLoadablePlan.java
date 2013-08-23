@@ -30,8 +30,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.NoSuchTableException;
-import com.foundationdb.server.types.util.SqlLiteralValueFormatter;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.util.AkibanAppender;
 
 import java.sql.Types;
@@ -88,20 +86,11 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
         public void open() {
             String currentSchema = context.getCurrentSchema();
             String schemaName, tableName;
-            if (Types3Switch.ON) {
-                if (bindings.getPValue(0).isNull())
-                    schemaName = currentSchema;
-                else
-                    schemaName = bindings.getPValue(0).getString();
-                tableName = bindings.getPValue(1).getString();
-            }
-            else {
-                if (bindings.getValue(0).isNull())
-                    schemaName = currentSchema;
-                else
-                    schemaName = bindings.getValue(0).getString();
-                tableName = bindings.getValue(1).getString();
-            }
+            if (bindings.getPValue(0).isNull())
+                schemaName = currentSchema;
+            else
+                schemaName = bindings.getPValue(0).getString();
+            tableName = bindings.getPValue(1).getString();
             rootTable = context.getStore().schema().ais()
                 .getUserTable(schemaName, tableName);
             if (rootTable == null)
@@ -113,12 +102,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             buffer = new StringBuilder();
             int insertMaxRowCount;
             try {
-                if (Types3Switch.ON) {
-                    insertMaxRowCount = bindings.getPValue(2).getInt32();
-                }
-                else {
-                    insertMaxRowCount = (int)bindings.getValue(2).getLong();
-                }
+                insertMaxRowCount = bindings.getPValue(2).getInt32();
             }
             catch (BindingNotSetException ex) {
                 insertMaxRowCount = 1;
@@ -201,7 +185,6 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
     public static class SQLRowFormatter extends GroupRowFormatter {
         private Map<UserTable,String> tableNames = new HashMap<>();
         private int maxRowCount;
-        private SqlLiteralValueFormatter literalFormatter;
         private AkibanAppender appender;
         private RowType lastRowType;
         private int rowCount, insertWidth;
@@ -209,14 +192,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
         SQLRowFormatter(StringBuilder buffer, String currentSchema, int maxRowCount) {
             super(buffer, currentSchema);
             this.maxRowCount = maxRowCount;
-            if (Types3Switch.ON) {
-                appender = AkibanAppender.of(buffer);
-            }
-            else {
-                literalFormatter = new SqlLiteralValueFormatter(buffer);
-                // TODO: Workaround INSERT problems with literal timestamp into datetime field.
-                literalFormatter.setDateTimeFormat(SqlLiteralValueFormatter.DateTimeFormat.NONE);
-            }
+            appender = AkibanAppender.of(buffer);
         }
 
         @Override
@@ -242,12 +218,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             ncols = Math.min(ncols, rowType.nFields());
             for (int i = 0; i < ncols; i++) {
                 if (i > 0) buffer.append(", ");
-                if (Types3Switch.ON) {
-                    rowType.typeInstanceAt(i).formatAsLiteral(row.pvalue(i), appender);
-                }
-                else {
-                    literalFormatter.append(row.eval(i), rowType.typeAt(i));
-                }
+                rowType.typeInstanceAt(i).formatAsLiteral(row.pvalue(i), appender);
             }
             buffer.append(')');
         }

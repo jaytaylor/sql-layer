@@ -28,7 +28,6 @@ import com.foundationdb.sql.optimizer.NestedResultSetTypeComputer;
 import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.optimizer.plan.BasePlannable;
 import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
-import com.foundationdb.sql.optimizer.plan.PhysicalSelect;
 import com.foundationdb.sql.optimizer.plan.PhysicalUpdate;
 import com.foundationdb.sql.optimizer.plan.ResultSet.ResultField;
 import com.foundationdb.sql.optimizer.rule.PlanContext;
@@ -43,8 +42,7 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.server.error.SQLParserInternalException;
-import com.foundationdb.server.error.UnsupportedSQLException;
-import com.foundationdb.server.service.functions.FunctionsRegistry;
+import com.foundationdb.server.t3expressions.T3RegistryService;
 import com.foundationdb.server.types3.TInstance;
 
 import org.slf4j.Logger;
@@ -181,8 +179,9 @@ public class EmbeddedOperatorCompiler extends ServerOperatorCompiler
         binder.setAllowSubqueryMultipleColumns(true);
     }
 
+
     @Override
-    protected void initFunctionsRegistry(FunctionsRegistry functionsRegistry) {
+    protected void initFunctionsRegistry(T3RegistryService functionsRegistry) {
         super.initFunctionsRegistry(functionsRegistry);
         typeComputer = new NestedResultSetTypeComputer(functionsRegistry);
     }

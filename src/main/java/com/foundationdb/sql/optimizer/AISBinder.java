@@ -19,7 +19,6 @@ package com.foundationdb.sql.optimizer;
 
 import com.foundationdb.server.error.AmbiguousColumNameException;
 import com.foundationdb.server.error.CorrelationNameAlreadyUsedException;
-import com.foundationdb.server.error.DuplicateTableNameException;
 import com.foundationdb.server.error.JoinNodeAdditionException;
 import com.foundationdb.server.error.NoSuchColumnException;
 import com.foundationdb.server.error.NoSuchFunctionException;

@@ -28,10 +28,10 @@ import java.util.BitSet;
 public class UserTableRowChecker implements ConstraintChecker
 {
     @Override
-    public void checkConstraints(Row row, boolean usePValues) throws InvalidOperationException
+    public void checkConstraints(Row row) throws InvalidOperationException
     {
         for (int f = 0; f < fields; f++) {
-            if (notNull.get(f) && isNull(row, f, usePValues)) {
+            if (notNull.get(f) && isNull(row, f)) {
                 TableName tableName = table.getName();
                 throw new NotNullViolationException(tableName.getSchemaName(),
                                                     tableName.getTableName(),
@@ -40,10 +40,8 @@ public class UserTableRowChecker implements ConstraintChecker
         }
     }
 
-    private boolean isNull(Row row, int f, boolean usePValues) {
-        return usePValues
-                ? row.pvalue(f).isNull()
-                : row.eval(f).isNull();
+    private boolean isNull(Row row, int f) {
+        return row.pvalue(f).isNull();
     }
 
     public UserTableRowChecker(RowType rowType)

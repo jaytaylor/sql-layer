@@ -33,7 +33,6 @@ import com.foundationdb.server.explain.Label;
 import com.foundationdb.server.explain.PrimitiveExplainer;
 import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 
@@ -49,29 +48,28 @@ public class PostgresLoadablePlan
                                                        invocation.getRoutineName());
         List<String> columnNames = loadablePlan.columnNames();
         List<PostgresType> columnTypes = columnTypes(loadablePlan);
-        boolean usesPValues = server.getBooleanProperty("newtypes", Types3Switch.ON);
         if (loadablePlan instanceof LoadableOperator)
             return new PostgresLoadableOperator((LoadableOperator)loadablePlan, 
                                                 invocation,
                                                 columnNames, columnTypes,
-                                                null, usesPValues);
+                                                null);
         if (loadablePlan instanceof LoadableDirectObjectPlan)
             return new PostgresLoadableDirectObjectPlan((LoadableDirectObjectPlan)loadablePlan, 
                                                         invocation,
                                                         columnNames, columnTypes,
-                                                        null, usesPValues);
+                                                        null);
         return null;
     }
 
-    public static QueryBindings setParameters(QueryBindings bindings, ServerCallInvocation invocation, boolean usePVals) {
+    public static QueryBindings setParameters(QueryBindings bindings, ServerCallInvocation invocation) {
         if (!invocation.parametersInOrder()) {
             if (invocation.hasParameters()) {
                 QueryBindings calleeBindings = new SparseArrayQueryBindings();
-                invocation.copyParameters(bindings, calleeBindings, usePVals);
+                invocation.copyParameters(bindings, calleeBindings);
                 bindings = calleeBindings;
             }
             else {
-                invocation.copyParameters(null, bindings, usePVals);
+                invocation.copyParameters(null, bindings);
             }
         }
         return bindings;

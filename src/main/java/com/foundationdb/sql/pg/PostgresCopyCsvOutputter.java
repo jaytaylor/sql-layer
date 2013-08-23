@@ -40,9 +40,9 @@ public class PostgresCopyCsvOutputter extends PostgresOutputter<Row>
     }
 
     @Override
-    public void output(Row row, boolean usePVals) throws IOException {
+    public void output(Row row) throws IOException {
         messenger.beginMessage(PostgresMessages.COPY_DATA_TYPE.code());
-        output(row, messenger.getRawOutput(), usePVals);
+        output(row, messenger.getRawOutput());
         messenger.sendMessage();
     }
 
@@ -69,15 +69,13 @@ public class PostgresCopyCsvOutputter extends PostgresOutputter<Row>
         messenger.sendMessage();
     }
 
-    public void output(Row row, OutputStream outputStream, boolean usePVals) 
+    public void output(Row row, OutputStream outputStream) 
             throws IOException {
         for (int i = 0; i < ncols; i++) {
             if (i > 0) outputStream.write(format.getDelimiterByte());
             PostgresType type = columnTypes.get(i);
             boolean binary = context.isColumnBinary(i);
-            QuotingByteArrayOutputStream bytes;
-            if (usePVals) bytes = (QuotingByteArrayOutputStream)encoder.encodePValue(row.pvalue(i), type, binary);
-            else bytes = (QuotingByteArrayOutputStream)encoder.encodeValue(row.eval(i), type, binary);
+            QuotingByteArrayOutputStream bytes = (QuotingByteArrayOutputStream)encoder.encodePValue(row.pvalue(i), type, binary);
             if (bytes != null) {
                 bytes.quote(format);
                 bytes.writeTo(outputStream);

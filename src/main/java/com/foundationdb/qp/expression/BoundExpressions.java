@@ -17,10 +17,8 @@
 
 package com.foundationdb.qp.expression;
 
-import com.foundationdb.server.types.ValueSource;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 
 public interface BoundExpressions {
     PValueSource pvalue(int index);
-    ValueSource eval(int index);
 }

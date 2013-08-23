@@ -30,9 +30,6 @@ import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.ToObjectValueTarget;
-import com.foundationdb.server.types.conversion.Converters;
 import com.foundationdb.server.util.SequencerConstants;
 import com.foundationdb.server.util.ThreadSequencer;
 import com.persistit.exception.PersistitException;
@@ -113,10 +110,6 @@ public class ConcurrentUpdateIT extends OperatorITBase
         }
         UpdateFunction updateAFunction = new UpdateFunction()
         {
-            @Override
-            public boolean usePValues() {
-                return usingPValues();
-            }
 
             @Override
             public boolean rowIsSelected(Row row)
@@ -127,25 +120,12 @@ public class ConcurrentUpdateIT extends OperatorITBase
             @Override
             public Row evaluate(Row original, QueryContext context, QueryBindings bindings)
             {
-                long ax;
-                if (usePValues()) {
-                    ax = original.pvalue(1).getInt64();
-                }
-                else {
-                    ToObjectValueTarget target = new ToObjectValueTarget();
-                    target.expectType(AkType.INT);
-                    Object obj = Converters.convert(original.eval(1), target).lastConvertedValue();
-                    ax = (Long) obj;
-                }
+                long ax = original.pvalue(1).getInt64();
                 return new OverlayingRow(original).overlay(1, -ax);
             }
         };
         UpdateFunction updateBFunction = new UpdateFunction()
         {
-            @Override
-            public boolean usePValues() {
-                return usingPValues();
-            }
 
             @Override
             public boolean rowIsSelected(Row row)
@@ -156,16 +136,7 @@ public class ConcurrentUpdateIT extends OperatorITBase
             @Override
             public Row evaluate(Row original, QueryContext context, QueryBindings bindings)
             {
-                long bx;
-                if (usePValues()) {
-                    bx = original.pvalue(1).getInt64();
-                }
-                else {
-                    ToObjectValueTarget target = new ToObjectValueTarget();
-                    target.expectType(AkType.INT);
-                    Object obj = Converters.convert(original.eval(1), target).lastConvertedValue();
-                    bx = (Long) obj;
-                }
+                long bx = original.pvalue(1).getInt64();
                 return new OverlayingRow(original).overlay(1, -bx);
             }
         };

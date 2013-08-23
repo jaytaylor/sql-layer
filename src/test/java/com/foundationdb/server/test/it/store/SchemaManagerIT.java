@@ -26,13 +26,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
@@ -407,12 +403,12 @@ public final class SchemaManagerIT extends ITBase {
         final String STATS_TABLE = "index_statistics";
         final String ENTRY_TABLE = "index_statistics_entry";
         final String STATS_DDL = "create table `information_schema`.`index_statistics`("+
-            "`table_id` int NOT NULL, `index_id` int NOT NULL, `analysis_timestamp` timestamp NULL, "+
+            "`table_id` bigint NOT NULL, `index_id` bigint NOT NULL, `analysis_timestamp` timestamp NULL, "+
             "`row_count` bigint NULL, `sampled_count` bigint NULL, "+
             "PRIMARY KEY(`table_id`, `index_id`)"+
         ") engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin";
         final String ENTRY_DDL = "create table `information_schema`.`index_statistics_entry`("+
-            "`table_id` int NOT NULL, `index_id` int NOT NULL, `column_count` int NOT NULL, "+
+            "`table_id` bigint NOT NULL, `index_id` bigint NOT NULL, `column_count` int NOT NULL, "+
             "`item_number` int NOT NULL, `key_string` varchar(2048) CHARACTER SET latin1 NULL, `key_bytes` varbinary(4096) NULL, "+
             "`eq_count` bigint NULL, `lt_count` bigint NULL, `distinct_count` bigint NULL, "+
             "PRIMARY KEY(`table_id`, `index_id`, `column_count`, `item_number`), "+

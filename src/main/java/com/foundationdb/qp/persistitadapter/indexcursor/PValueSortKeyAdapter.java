@@ -60,8 +60,7 @@ public class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPrepared
     }
 
     @Override
-    public void setColumnMetadata(Column column, int f, AkType[] akTypes, AkCollator[] collators,
-                                  TInstance[] tInstances) {
+    public void setColumnMetadata(Column column, int f, TInstance[] tInstances) {
         tInstances[f] = column.tInstance();
     }
 
@@ -125,7 +124,6 @@ public class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPrepared
 
     @Override
     public TPreparedExpression createComparison(TInstance tInstance,
-                                                AkCollator collator,
                                                 PValueSource one,
                                                 Comparison comparison,
                                                 PValueSource two) {
@@ -159,20 +157,14 @@ public class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPrepared
         }
 
         @Override
-        public void append(PValueSource source, int f, AkType[] akTypes, TInstance[] tInstances,
-                           AkCollator[] collators)
+        public void append(PValueSource source, int f, TInstance[] tInstances)
         {
-            append(source, null, tInstances[f], null);
+            append(source, tInstances[f]);
         }
 
         @Override
-        public void append(PValueSource source, AkType akType, TInstance tInstance, AkCollator collator) {
+        public void append(PValueSource source, TInstance tInstance) {
             tInstance.writeCollating(source, target);
-        }
-
-        @Override
-        public void append(PValueSource source, AkCollator collator, TInstance tInstance) {
-            append(source, null, tInstance, collator);
         }
 
         protected final PersistitKeyPValueTarget target = new PersistitKeyPValueTarget(SORT_KEY_MAX_SEGMENT_SIZE);
@@ -180,7 +172,7 @@ public class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPrepared
     
     private static class PValueSortKeySource implements SortKeySource<PValueSource> {
         @Override
-        public void attach(Key key, int i, AkType fieldType, TInstance tInstance) {
+        public void attach(Key key, int i, TInstance tInstance) {
             source.attach(key, i, tInstance);
         }
 

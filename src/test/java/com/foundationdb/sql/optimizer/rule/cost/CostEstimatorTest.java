@@ -24,7 +24,9 @@ import com.foundationdb.sql.optimizer.rule.RulesTestHelper;
 
 import com.foundationdb.ais.model.*;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -77,29 +79,29 @@ public class CostEstimatorTest
         return new TableSource(tableNode(name), true, name);
     }
 
-    protected static ExpressionNode constant(Object value, AkType type) {
-        return new ConstantExpression(value, type);
+    protected static ExpressionNode constant(Object value, TInstance type) {
+        return new ConstantExpression (value, type.dataTypeDescriptor(), null);
     }
 
-    protected static ExpressionNode variable(AkType type) {
-        return new ParameterExpression(0, null, type, null);
+    protected static ExpressionNode variable(TInstance type) {
+        return new ParameterExpression (0, type.dataTypeDescriptor(), null);
     }
-
+    
     @Test
     public void testSingleEquals() throws Exception {
         Index index = index("items", "sku");
-        List<ExpressionNode> equals = Collections.singletonList(constant("0121", AkType.VARCHAR));
+        List<ExpressionNode> equals = Collections.singletonList(constant("0121", MString.VARCHAR.instance(false)));
         CostEstimate costEstimate = costEstimator.costIndexScan(index, equals,
                                                                 null, false, null, false);
         assertEquals(113, costEstimate.getRowCount());
 
-        equals = Collections.singletonList(constant("0123", AkType.VARCHAR));
+        equals = Collections.singletonList(constant("0123", MString.VARCHAR.instance(false)));
         costEstimate = costEstimator.costIndexScan(index, equals,
                                                    null, false, null, false);
         assertEquals(103, costEstimate.getRowCount());
 
         index = index("addresses", "state");
-        equals = Collections.singletonList(constant(null, AkType.NULL));
+        equals = Collections.singletonList(constant(null, MString.VARCHAR.instance(false)));
         costEstimate = costEstimator.costIndexScan(index, equals,
                                                    null, false, null, false);
         assertEquals(13, costEstimate.getRowCount());
@@ -109,20 +111,22 @@ public class CostEstimatorTest
     public void testSingleRange() throws Exception {
         Index index = index("customers", "name");
         CostEstimate costEstimate = costEstimator.costIndexScan(index, null,
-                                                                constant("M", AkType.VARCHAR), true, constant("N", AkType.VARCHAR), false); // LIKE 'M%'.
+                                                                constant("M", MString.VARCHAR.instance(false)), true, 
+                                                                constant("N", MString.VARCHAR.instance(false)), false); // LIKE 'M%'.
         assertEquals(4, costEstimate.getRowCount());
         costEstimate = costEstimator.costIndexScan(index, null,
-                                                   constant("L", AkType.VARCHAR), true, constant("Q", AkType.VARCHAR), true); // BETWEEN 'L' AND 'Q'
+                                                   constant("L", MString.VARCHAR.instance(false)), true, 
+                                                   constant("Q", MString.VARCHAR.instance(false)), true); // BETWEEN 'L' AND 'Q'
         assertEquals(17, costEstimate.getRowCount());
         // Lower bound only
         costEstimate = costEstimator.costIndexScan(index, null,
-                                                   constant("B", AkType.VARCHAR), true, null, false); // >= 'B'
+                                                   constant("B", MString.VARCHAR.instance(false)), true, null, false); // >= 'B'
         // 5 rows from entry with key Ctewy. "B" is near the beginning of this range which contains 6 keys total.
         // The remainder of the histogram has 90 rows.
         assertEquals(95, costEstimate.getRowCount());
         // Upper bound only
         costEstimate = costEstimator.costIndexScan(index, null,
-                                                   null, false, constant("B", AkType.VARCHAR), false); // < 'B'
+                                                   null, false, constant("B", MString.VARCHAR.instance(false)), false); // < 'B'
         // 1 rows from entry with key Ctewy. "B" is near the beginning of this range which contains 6 keys total.
         // 4 rows from the prior entries.
         assertEquals(5, costEstimate.getRowCount());
@@ -131,7 +135,7 @@ public class CostEstimatorTest
     @Test
     public void testVariableEquals() throws Exception {
         Index index = index("customers", "PRIMARY");
-        List<ExpressionNode> equals = Collections.singletonList(variable(AkType.VARCHAR));
+        List<ExpressionNode> equals = Collections.singletonList(variable(MString.VARCHAR.instance(false)));
         CostEstimate costEstimate = costEstimator.costIndexScan(index, equals,
                                                                 null, false, null, false);
         assertEquals(1, costEstimate.getRowCount());
@@ -145,8 +149,8 @@ public class CostEstimatorTest
     @Test
     public void testMultipleIndexEqEq() {
         Index index = groupIndex("sku_and_date");
-        List<ExpressionNode> bothEQ = Arrays.asList(constant("0254", AkType.VARCHAR),
-                                                    constant(1032274, AkType.DATE));
+        List<ExpressionNode> bothEQ = Arrays.asList(constant("0254", MString.VARCHAR.instance(false)),
+                                                    constant(1032274, MDatetimes.DATE.instance(false)));
         CostEstimate costEstimate = costEstimator.costIndexScan(index, bothEQ, null, false, null, false);
         // sku 0254 is a match for a histogram entry with eq = 110. total distinct count = 20000
         //     selectivity = 110 / 20000 = 0.0055
@@ -160,9 +164,9 @@ public class CostEstimatorTest
     @Test
     public void testMultipleIndexEqRange() {
         Index index = groupIndex("sku_and_date");
-        List<ExpressionNode> skuEQ = Arrays.asList(constant("0254", AkType.VARCHAR));
-        ExpressionNode loDate = constant(1029500, AkType.DATE);
-        ExpressionNode hiDate = constant(1033000, AkType.DATE);
+        List<ExpressionNode> skuEQ = Arrays.asList(constant("0254", MString.VARCHAR.instance(false)));
+        ExpressionNode loDate = constant(1029500, MDatetimes.DATE.instance(false));
+        ExpressionNode hiDate = constant(1033000, MDatetimes.DATE.instance(false));
         CostEstimate costEstimate = costEstimator.costIndexScan(index, skuEQ, loDate, true, hiDate, true);
         // sku 0254 is a match for a histogram entry with eq = 110. total distinct count = 20000
         //     selectivity = 110 / 20000 = 0.0055

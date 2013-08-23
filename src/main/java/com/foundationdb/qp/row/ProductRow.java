@@ -18,9 +18,7 @@
 package com.foundationdb.qp.row;
 
 import com.foundationdb.qp.rowtype.ProductRowType;
-import com.foundationdb.server.types.ValueTarget;
-import com.foundationdb.server.types.conversion.Converters;
-import com.foundationdb.util.AkibanAppender;
+import com.foundationdb.server.types3.pvalue.PValueSources;
 
 public class ProductRow extends CompoundRow
 {
@@ -29,18 +27,17 @@ public class ProductRow extends CompoundRow
     @Override
     public String toString()
     {
-        ValueTarget buffer = AkibanAppender.of(new StringBuilder()).asValueTarget();
+        StringBuilder sb = new StringBuilder(); 
         ProductRowType type = (ProductRowType)rowType();
-        buffer.putString("(");
         int nFields = type.leftType().nFields() + type.rightType().nFields() - type.branchType().nFields();
-        for (int i = 0; i < nFields; i++) {
-            if (i > 0) {
-                buffer.putString(", ");
-            }
-            Converters.convert(eval(i), buffer);
+
+        sb.append("(");
+        for (int i = 0; i < nFields; ++i) {
+            if (i > 0) { sb.append(", "); }
+            PValueSources.toStringSimple(pvalue(i), sb);
         }
-        buffer.putString(")");
-        return buffer.toString();
+        sb.append(")");
+        return sb.toString();
     }
 
     // ProductRow interface

@@ -33,7 +33,6 @@ import com.foundationdb.qp.persistitadapter.PersistitAdapter;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.QueryCanceledException;
 import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.types3.Types3Switch;
 import com.persistit.Management.TaskStatus;
 import com.persistit.Persistit;
 import com.persistit.Task;
@@ -83,10 +82,7 @@ public class PersistitCLILoadablePlan extends LoadableDirectObjectPlan
             for (int i = 0; i < 100; i++) {
                 String carg;
                 try {
-                    if (Types3Switch.ON)
-                        carg = bindings.getPValue(i).getString();
-                    else
-                        carg = bindings.getValue(i).getString();
+                    carg = bindings.getPValue(i).getString();
                 } catch (BindingNotSetException ex) {
                     break;
                 }

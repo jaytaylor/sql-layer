@@ -107,9 +107,8 @@ public class Insert_Returning extends Operator {
         return new DUIOperatorExplainer(getName(), atts, inputOperator, context);
     }
     
-    public Insert_Returning (Operator inputOperator, boolean usePValues) {
+    public Insert_Returning (Operator inputOperator) {
         this.inputOperator = inputOperator;
-        this.usePValues = usePValues;
     }
     
     
@@ -122,7 +121,6 @@ public class Insert_Returning extends Operator {
     // Object state
 
     protected final Operator inputOperator;
-    private final boolean usePValues;
     
     // Inner classes
     private class Execution extends ChainedCursor
@@ -159,9 +157,9 @@ public class Insert_Returning extends Operator {
                 if ((inputRow = input.next()) != null) {
                     // TODO: Perform constraint check for insert here
                     // Needs to be moved to Constraint Check operator. 
-                    context.checkConstraints(inputRow, usePValues);
+                    context.checkConstraints(inputRow);
                     // Do the real work of inserting the row
-                    adapter().writeRow(inputRow, null, usePValues);
+                    adapter().writeRow(inputRow, null);
                     if (LOG_EXECUTION) {
                         LOG.debug("Insert_Returning: inserting {}", inputRow);
                     }

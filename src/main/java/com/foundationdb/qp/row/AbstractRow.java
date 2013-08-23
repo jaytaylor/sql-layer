@@ -18,18 +18,11 @@
 package com.foundationdb.qp.row;
 
 import com.foundationdb.ais.model.UserTable;
-import com.foundationdb.qp.expression.BoundExpressions;
-import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.Quote;
 import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.types.ValueSource;
-import com.foundationdb.server.types.util.ValueSources;
 import com.foundationdb.server.types3.TClass;
 import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSources;
 import com.foundationdb.util.AkibanAppender;
 
 public abstract class AbstractRow implements Row
@@ -51,23 +44,13 @@ public abstract class AbstractRow implements Row
     @Override
     public int compareTo(RowBase row, int leftStartIndex, int rightStartIndex, int fieldCount)
     {
-        if (Types3Switch.ON) {
-            for (int i = 0; i < fieldCount; i++) {
-                TInstance leftType = rowType().typeInstanceAt(leftStartIndex + i);
-                PValueSource leftValue = pvalue(leftStartIndex + i);
-                TInstance rightType = ((Row)row).rowType().typeInstanceAt(rightStartIndex + i);
-                PValueSource rightValue = row.pvalue(rightStartIndex + i);
-                int c = TClass.compare(leftType, leftValue, rightType, rightValue);
-                if (c != 0) return (c < 0) ? -(i + 1) : (i + 1);
-            }
-        }
-        else {
-            for (int i = 0; i < fieldCount; i++) {
-                ValueSource leftValue = eval(leftStartIndex + i);
-                ValueSource rightValue = row.eval(rightStartIndex + i);
-                long c = ValueSources.compare(leftValue, rightValue, null);
-                if (c != 0) return (c < 0) ? -(i + 1) : (i + 1);
-            }
+        for (int i = 0; i < fieldCount; i++) {
+            TInstance leftType = rowType().typeInstanceAt(leftStartIndex + i);
+            PValueSource leftValue = pvalue(leftStartIndex + i);
+            TInstance rightType = ((Row)row).rowType().typeInstanceAt(rightStartIndex + i);
+            PValueSource rightValue = row.pvalue(rightStartIndex + i);
+            int c = TClass.compare(leftType, leftValue, rightType, rightValue);
+            if (c != 0) return (c < 0) ? -(i + 1) : (i + 1);
         }
         return 0;
     }
@@ -81,16 +64,8 @@ public abstract class AbstractRow implements Row
     public abstract HKey hKey();
 
     @Override
-    public PValueSource pvalue(int i) {
-        // Default, though inefficient.
-        return PValueSources.fromValueSource(eval(i), rowType().typeInstanceAt(i));
-    }
-
-    @Override
-    public ValueSource eval(int index) {
-        throw new UnsupportedOperationException(); // TODO
-    }
-
+    public abstract PValueSource pvalue(int i);
+    
     @Override
     public HKey ancestorHKey(UserTable table)
     {
@@ -148,17 +123,13 @@ public abstract class AbstractRow implements Row
         final int fieldsCount = rowType.nFields();
         AkibanAppender appender = AkibanAppender.of(builder);
         for (int i=0; i < fieldsCount; ++i) {
-            if (Types3Switch.ON) {
-                if (rowType.typeInstanceAt(i) == null) {
-                    assert pvalue(i).isNull();
-                    builder.append("NULL");
-                }
-                else {
-                    rowType.typeInstanceAt(i).format(pvalue(i), appender);
-                }
+            if (rowType.typeInstanceAt(i) == null) {
+                assert pvalue(i).isNull();
+                builder.append("NULL");
             }
-            else
-                eval(i).appendAsString(appender, Quote.SINGLE_QUOTE);
+            else {
+                rowType.typeInstanceAt(i).format(pvalue(i), appender);
+            }
             if(i+1 < fieldsCount) {
                 builder.append(',').append(' ');
             }

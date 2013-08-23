@@ -18,81 +18,53 @@
 package com.foundationdb.qp.row;
 
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types.ValueSource;
-import com.foundationdb.server.types.FromObjectValueSource;
-import com.foundationdb.server.types.util.ValueHolder;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.server.types3.pvalue.PValue;
 import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSources;
 import com.foundationdb.server.types3.pvalue.PValueTargets;
 
 public final class OverlayingRow extends AbstractRow {
     private final Row underlying;
     private final RowType rowType;
-    private final ValueHolder[] overlays;
     protected final PValue[] pOverlays;
 
     public OverlayingRow(Row underlying) {
-        this(underlying, Types3Switch.ON);
+        this(underlying, underlying.rowType());
     }
 
-    public OverlayingRow(Row underlying, boolean usePValues) {
-        this(underlying, underlying.rowType(), usePValues);
-    }
-
-    public OverlayingRow(Row underlying, RowType rowType, boolean usePValues) {
+    public OverlayingRow(Row underlying, RowType rowType) {
         this.underlying = underlying;
         this.rowType = rowType;
-        if (usePValues) {
-            this.overlays = null;
-            this.pOverlays = new PValue[underlying.rowType().nFields()];
-        }
-        else {
-            this.overlays = new ValueHolder[underlying.rowType().nFields()];
-            this.pOverlays = null;
-        }
-    }
-
-    public OverlayingRow overlay(int index, ValueSource object) {
-        if (object == null) {
-            overlays[index] = null;
-        }
-        else {
-            if (overlays[index] == null)
-                overlays[index] = new ValueHolder();
-            overlays[index].copyFrom(object);
-        }
-        return this;
+        this.pOverlays = new PValue[underlying.rowType().nFields()];
     }
 
     public OverlayingRow overlay(int index, PValueSource object) {
-        if (object == null) {
-            pOverlays[index] = null;
-        }
-        else {
-            if (pOverlays[index] == null)
-                pOverlays[index] = new PValue(underlying.rowType().typeInstanceAt(index));
-            PValueTargets.copyFrom(object,  pOverlays[index]);
+        if (checkOverlay(index, object)) {
+            PValueTargets.copyFrom(object, pOverlays[index]);
         }
         return this;
     }
 
     public OverlayingRow overlay(int index, Object object) {
-        if (pOverlays != null)
-            return overlay(index, PValueSources.fromObject(object, underlying.rowType().typeAt(index)).value());
-        else
-            return overlay(index, valueSource.setExplicitly(object, underlying.rowType().typeAt(index)));
+        if (checkOverlay(index, object)) {
+            pOverlays[index].putObject(object);
+        }
+        return this;
+    }
+    
+    private boolean  checkOverlay (int index, Object object) {
+        if (object == null) {
+            pOverlays[index] = null;
+            return false;
+        } else if (pOverlays[index] == null) {
+            pOverlays[index] = new PValue(underlying.rowType().typeInstanceAt(index));
+            return true;
+        }
+        return true;
     }
 
     @Override
     public RowType rowType() {
         return rowType;
-    }
-
-    @Override
-    public ValueSource eval(int i) {
-        return overlays[i] == null ? underlying.eval(i) : overlays[i];
     }
 
     @Override
@@ -105,6 +77,4 @@ public final class OverlayingRow extends AbstractRow {
     public HKey hKey() {
         return underlying.hKey();
     }
-
-    private final FromObjectValueSource valueSource = new FromObjectValueSource();
 }

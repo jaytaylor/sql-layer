@@ -46,21 +46,21 @@ public final class BasicKeyUpdateIT extends ITBase {
         runTest(
                 tableId,
                 Arrays.asList(
-                        createNewRow(tableId, 2L, "c")
+                        createNewRow(tableId, 2, "c")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 2L, "c")
+                        createNewRow(tableId, 2, "c")
                 ),
 
-                createNewRow(tableId, 2L, "c"),
-                createNewRow(tableId, 2L, "a"),
+                createNewRow(tableId, 2, "c"),
+                createNewRow(tableId, 2, "a"),
                 set(1),
 
                 Arrays.asList(
-                        createNewRow(tableId, 2L, "a")
+                        createNewRow(tableId, 2, "a")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 2L, "a")
+                        createNewRow(tableId, 2, "a")
                 )
         );
     }
@@ -71,25 +71,25 @@ public final class BasicKeyUpdateIT extends ITBase {
         runTest(
                 tableId,
                 Arrays.asList(
-                        createNewRow(tableId, 1L, "b"),
-                        createNewRow(tableId, 2L, "c")
+                        createNewRow(tableId, 1, "b"),
+                        createNewRow(tableId, 2, "c")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 1L, "b"),
-                        createNewRow(tableId, 2L, "c")
+                        createNewRow(tableId, 1, "b"),
+                        createNewRow(tableId, 2, "c")
                 ),
 
-                createNewRow(tableId, 2L, UNDEF),
-                createNewRow(tableId, 2L, "a"),
+                createNewRow(tableId, 2, UNDEF),
+                createNewRow(tableId, 2, "a"),
                 set(1),
 
                 Arrays.asList(
-                        createNewRow(tableId, 1L, "b"),
-                        createNewRow(tableId, 2L, "a")
+                        createNewRow(tableId, 1, "b"),
+                        createNewRow(tableId, 2, "a")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 2L, "a"),
-                        createNewRow(tableId, 1L, "b")
+                        createNewRow(tableId, 2, "a"),
+                        createNewRow(tableId, 1, "b")
                 )
         );
     }
@@ -100,25 +100,25 @@ public final class BasicKeyUpdateIT extends ITBase {
         runTest(
                 tableId,
                 Arrays.asList(
-                        createNewRow(tableId, 1L, "b"),
-                        createNewRow(tableId, 2L, "c")
+                        createNewRow(tableId, 1, "b"),
+                        createNewRow(tableId, 2, "c")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 1L, "b"),
-                        createNewRow(tableId, 2L, "c")
+                        createNewRow(tableId, 1, "b"),
+                        createNewRow(tableId, 2, "c")
                 ),
 
-                createNewRow(tableId, 2L, "c"),
-                createNewRow(tableId, 2L, "a"),
+                createNewRow(tableId, 2, "c"),
+                createNewRow(tableId, 2, "a"),
                 set(1),
 
                 Arrays.asList(
-                        createNewRow(tableId, 1L, "b"),
-                        createNewRow(tableId, 2L, "a")
+                        createNewRow(tableId, 1, "b"),
+                        createNewRow(tableId, 2, "a")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 2L, "a"),
-                        createNewRow(tableId, 1L, "b")
+                        createNewRow(tableId, 2, "a"),
+                        createNewRow(tableId, 1, "b")
                 )
         );
     }
@@ -129,25 +129,25 @@ public final class BasicKeyUpdateIT extends ITBase {
         runTest(
                 tableId,
                 Arrays.asList(
-                        createNewRow(tableId, 1L, "b"),
-                        createNewRow(tableId, 2L, "c")
+                        createNewRow(tableId, 1, "b"),
+                        createNewRow(tableId, 2, "c")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 1L, "b"),
-                        createNewRow(tableId, 2L, "c")
+                        createNewRow(tableId, 1, "b"),
+                        createNewRow(tableId, 2, "c")
                 ),
 
-                createNewRow(tableId, 2L, "c"),
-                createNewRow(tableId, 0L, "a"),
+                createNewRow(tableId, 2, "c"),
+                createNewRow(tableId, 0, "a"),
                 set(0, 1),
 
                 Arrays.asList(
-                        createNewRow(tableId, 0L, "a"),
-                        createNewRow(tableId, 1L, "b")
+                        createNewRow(tableId, 0, "a"),
+                        createNewRow(tableId, 1, "b")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 0L, "a"),
-                        createNewRow(tableId, 1L, "b")
+                        createNewRow(tableId, 0, "a"),
+                        createNewRow(tableId, 1, "b")
                 )
         );
     }
@@ -158,25 +158,25 @@ public final class BasicKeyUpdateIT extends ITBase {
         runTest(
                 tableId,
                 Arrays.asList(
-                        createNewRow(tableId, 1L, "b"),
-                        createNewRow(tableId, 2L, "c")
+                        createNewRow(tableId, 1, "b"),
+                        createNewRow(tableId, 2, "c")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 1L, "b"),
-                        createNewRow(tableId, 2L, "c")
+                        createNewRow(tableId, 1, "b"),
+                        createNewRow(tableId, 2, "c")
                 ),
 
-                createNewRow(tableId, 2L, "c"),
-                createNewRow(tableId, 3L, "a"),
+                createNewRow(tableId, 2, "c"),
+                createNewRow(tableId, 3, "a"),
                 set(0, 1),
 
                 Arrays.asList(
-                        createNewRow(tableId, 1L, "b"),
-                        createNewRow(tableId, 3L, "a")
+                        createNewRow(tableId, 1, "b"),
+                        createNewRow(tableId, 3, "a")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 3L, "a"),
-                        createNewRow(tableId, 1L, "b")
+                        createNewRow(tableId, 3, "a"),
+                        createNewRow(tableId, 1, "b")
                 )
         );
     }
@@ -187,25 +187,25 @@ public final class BasicKeyUpdateIT extends ITBase {
         runTest(
                 tableId,
                 Arrays.asList(
-                        createNewRow(tableId, 1L, "d"),
-                        createNewRow(tableId, 2L, "c")
+                        createNewRow(tableId, 1, "d"),
+                        createNewRow(tableId, 2, "c")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 2L, "c"),
-                        createNewRow(tableId, 1L, "d")
+                        createNewRow(tableId, 2, "c"),
+                        createNewRow(tableId, 1, "d")
                 ),
 
-                createNewRow(tableId, 2L, "c"),
-                createNewRow(tableId, 2L, "a"),
+                createNewRow(tableId, 2, "c"),
+                createNewRow(tableId, 2, "a"),
                 set(1),
 
                 Arrays.asList(
-                        createNewRow(tableId, 1L, "d"),
-                        createNewRow(tableId, 2L, "a")
+                        createNewRow(tableId, 1, "d"),
+                        createNewRow(tableId, 2, "a")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 2L, "a"),
-                        createNewRow(tableId, 1L, "d")
+                        createNewRow(tableId, 2, "a"),
+                        createNewRow(tableId, 1, "d")
                 )
         );
     }

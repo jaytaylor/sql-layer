@@ -68,7 +68,7 @@ public class ProjectCT extends CostModelBase
     {
         Operator scan = groupScan_Default(group);
         TimeOperator timeScan = new TimeOperator(scan);
-        Operator project = project_Default(timeScan, tRowType, Arrays.asList(ExpressionGenerators.literal(true)));
+        Operator project = project_DefaultTest(timeScan, tRowType, Arrays.asList(ExpressionGenerators.literal(true)));
         long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
             Cursor cursor = cursor(project, queryContext, queryBindings);

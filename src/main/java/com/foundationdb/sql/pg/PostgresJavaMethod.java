@@ -24,7 +24,6 @@ import com.foundationdb.sql.server.ServerJavaRoutine;
 
 import java.lang.reflect.Method;
 import java.util.List;
-import java.io.IOException;
 
 public class PostgresJavaMethod extends PostgresJavaRoutine
 {
@@ -34,13 +33,12 @@ public class PostgresJavaMethod extends PostgresJavaRoutine
                                               ServerCallInvocation invocation,
                                               List<String> columnNames, 
                                               List<PostgresType> columnTypes,
-                                              PostgresType[] parameterTypes,
-                                              boolean usesPValues) {
+                                              PostgresType[] parameterTypes) {
         Method method = server.getRoutineLoader()
             .loadJavaMethod(server.getSession(), invocation.getRoutineName());
         return new PostgresJavaMethod(method, invocation,
                                       columnNames, columnTypes,
-                                      parameterTypes, usesPValues);
+                                      parameterTypes);
     }
 
 
@@ -51,9 +49,8 @@ public class PostgresJavaMethod extends PostgresJavaRoutine
                                  ServerCallInvocation invocation,
                                  List<String> columnNames, 
                                  List<PostgresType> columnTypes,
-                                 PostgresType[] parameterTypes,
-                                 boolean usesPValues) {
-        super(invocation, columnNames, columnTypes, parameterTypes, usesPValues);
+                                 PostgresType[] parameterTypes) {
+        super(invocation, columnNames, columnTypes, parameterTypes);
         this.method = method;
     }
 

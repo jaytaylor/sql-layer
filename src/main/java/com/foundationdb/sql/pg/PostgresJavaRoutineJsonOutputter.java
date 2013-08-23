@@ -24,7 +24,6 @@ import com.foundationdb.server.Quote;
 import com.foundationdb.server.error.ExternalRoutineInvocationException;
 import com.foundationdb.server.error.SQLParserInternalException;
 import com.foundationdb.sql.StandardException;
-import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.server.ServerJavaRoutine;
 import com.foundationdb.sql.server.ServerJavaValues;
 import com.foundationdb.sql.types.DataTypeDescriptor;
@@ -58,7 +57,7 @@ public class PostgresJavaRoutineJsonOutputter extends PostgresOutputter<ServerJa
     }
 
     @Override
-    public void output(ServerJavaRoutine javaRoutine, boolean usePVals) throws IOException {
+    public void output(ServerJavaRoutine javaRoutine) throws IOException {
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
         messenger.writeShort(1);
         encoder.reset();

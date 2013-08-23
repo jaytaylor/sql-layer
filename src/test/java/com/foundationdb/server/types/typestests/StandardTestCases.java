@@ -18,9 +18,10 @@
 package com.foundationdb.server.types.typestests;
 
 import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.extract.ConverterTestUtils;
-import com.foundationdb.server.types.extract.Extractors;
-import com.foundationdb.server.types.extract.LongExtractor;
+import com.foundationdb.server.types3.TExecutionContext;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types3.pvalue.PUnderlying;
 import com.foundationdb.util.ByteSource;
 import com.foundationdb.util.WrappingByteSource;
 
@@ -70,6 +71,10 @@ final class StandardTestCases {
         list.add(TestCase.forFloat(Float.MIN_VALUE, NO_STATE));
         list.add(TestCase.forFloat(Float.MAX_VALUE, NO_STATE));
 
+        list.add(TestCase.forTinyInt(-1, NO_STATE));
+        list.add(TestCase.forTinyInt(0, NO_STATE));
+        list.add(TestCase.forTinyInt(1, NO_STATE));
+        
         list.add(TestCase.forInt(-1, NO_STATE));
         list.add(TestCase.forInt(0, NO_STATE));
         list.add(TestCase.forInt(1, NO_STATE));
@@ -82,6 +87,9 @@ final class StandardTestCases {
         list.add(TestCase.forLong(-1, Long.MAX_VALUE));
         list.add(TestCase.forLong(-1, Long.MIN_VALUE));
 
+        list.add(TestCase.forChar('A', NO_STATE));
+        list.add(TestCase.forChar('Z', NO_STATE));
+        
         list.add(TestCase.forString("", 32, "UTF-8", NO_STATE));
         list.add(TestCase.forString("word", 32, "UTF-8", NO_STATE));
         list.add(TestCase.forString("☃", 32, "UTF-8", NO_STATE));
@@ -99,12 +107,11 @@ final class StandardTestCases {
         list.add(TestCase.forBool(true, NO_STATE));
         list.add(TestCase.forBool(false, NO_STATE));
 
-        LongExtractor timestampExtractor = Extractors.getLongExtractor(AkType.TIMESTAMP);
-        ConverterTestUtils.setGlobalTimezone("UTC");
-        list.add(TestCase.forTimestamp(timestampExtractor.getLong("0000-00-00 00:00:00"), NO_STATE));
-        list.add(TestCase.forTimestamp(timestampExtractor.getLong("1970-01-01 00:00:01"), NO_STATE));
-        list.add(TestCase.forTimestamp(timestampExtractor.getLong("2011-08-18 15:09:00"), NO_STATE));
-        list.add(TestCase.forTimestamp(timestampExtractor.getLong("2038-01-19 03:14:06"), NO_STATE));
+        TExecutionContext context = new TExecutionContext (null, null, null);
+        list.add(TestCase.forTimestamp(MDatetimes.parseTimestamp("0000-00-00 00:00:00", "UTC", context), NO_STATE));
+        list.add(TestCase.forTimestamp(MDatetimes.parseTimestamp("1970-01-01 00:00:01", "UTC", context), NO_STATE));
+        list.add(TestCase.forTimestamp(MDatetimes.parseTimestamp("2011-08-18 15:09:00", "UTC", context), NO_STATE));
+        list.add(TestCase.forTimestamp(MDatetimes.parseTimestamp("2038-01-19 03:14:06", "UTC", context), NO_STATE));
 
         list.add(TestCase.forUBigInt(BigInteger.ZERO, NO_STATE));
         list.add(TestCase.forUBigInt(BigInteger.ONE, NO_STATE));
@@ -132,11 +139,10 @@ final class StandardTestCases {
         list.add(TestCase.forVarBinary(wrap(), 0, NO_STATE));
         list.add(TestCase.forVarBinary(wrap(Byte.MIN_VALUE, Byte.MAX_VALUE, 0), 2, NO_STATE));
 
-        LongExtractor yearConverter = Extractors.getLongExtractor(AkType.YEAR);
-        list.add(TestCase.forYear(yearConverter.getLong("0000"), NO_STATE));
-        list.add(TestCase.forYear(yearConverter.getLong("1901"), NO_STATE));
-        list.add(TestCase.forYear(yearConverter.getLong("1983"), NO_STATE));
-        list.add(TestCase.forYear(yearConverter.getLong("2155"), NO_STATE));
+        list.add(TestCase.forYear(MDatetimes.parseYear("0000", context), NO_STATE));
+        list.add(TestCase.forYear(MDatetimes.parseYear("1901", context), NO_STATE));
+        list.add(TestCase.forYear(MDatetimes.parseYear("1983", context), NO_STATE));
+        list.add(TestCase.forYear(MDatetimes.parseYear("2155", context), NO_STATE));
 
         list.add(TestCase.forInterval_Millis(0, NO_STATE));
         list.add(TestCase.forInterval_Millis(Long.MAX_VALUE, NO_STATE));
@@ -152,13 +158,14 @@ final class StandardTestCases {
     }
 
     private static void verifyAllTypesTested(Collection<? extends TestCase<?>> testCases) {
-        Set<AkType> allTypes = EnumSet.allOf(AkType.class);
-        allTypes.removeAll(EnumSet.of(AkType.UNSUPPORTED, AkType.NULL, AkType.RESULT_SET));
+        Set<PUnderlying> allTypes = EnumSet.allOf(PUnderlying.class);
+        // No Types currently use this -> single char? 
+        allTypes.remove(PUnderlying.UINT_16);
         for (TestCase<?> testCase : testCases) {
-            allTypes.remove(testCase.type());
+            allTypes.remove(TInstance.pUnderlying(testCase.type()));
         }
         if (!allTypes.isEmpty()) {
-            throw new RuntimeException("untested types: " + allTypes);
+            throw new RuntimeException("Untested pUnderlying: " + allTypes);
         }
     }
 

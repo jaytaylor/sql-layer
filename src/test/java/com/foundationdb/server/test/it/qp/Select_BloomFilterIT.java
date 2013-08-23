@@ -63,7 +63,6 @@ public class Select_BloomFilterIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        dRowType = schema.userTableRowType(userTable(d));
         fRowType = schema.userTableRowType(userTable(f));
         dIndexRowType = indexType(d, "test_id", "a", "b");
         fabIndexRowType = indexType(f, "a", "b");
@@ -255,7 +254,7 @@ public class Select_BloomFilterIT extends OperatorITBase
     public Operator plan(long testId)
     {
         // loadFilter loads the filter with F rows containing the given testId.
-        Operator loadFilter = project_Default(
+        Operator loadFilter = project_DefaultTest(
             select_HKeyOrdered(
                 filter_Default(
                     groupScan_Default(group(f)),
@@ -279,14 +278,14 @@ public class Select_BloomFilterIT extends OperatorITBase
                 loadFilter.rowType(),
                 Arrays.asList(
                     ExpressionGenerators.boundField(dIndexRowType, 0, 1),
-                    ExpressionGenerators.boundField(dIndexRowType, 0, 2))),
+                    ExpressionGenerators.boundField(dIndexRowType, 0, 2)), true),
             new SetColumnSelector(0, 1));
         IndexKeyRange fabKeyRange =
             IndexKeyRange.bounded(fabIndexRowType, abBound, true, abBound, true);
         // Use a bloom filter loaded by loadFilter. Then for each input row, check the filter (projecting
         // D rows on (a, b)), and, for positives, check F using an index scan keyed by D.a and D.b.
         Operator plan =
-            project_Default(
+            project_DefaultTest(
                 using_BloomFilter(
                     // filterInput
                     loadFilter,
@@ -297,7 +296,7 @@ public class Select_BloomFilterIT extends OperatorITBase
                     // filterBindingPosition
                     0,
                     // streamInput
-                    select_BloomFilter(
+                    select_BloomFilterTest(
                         // input
                         indexScan_Default(dIndexRowType, dTestIdKeyRange, new Ordering()),
                         // onPositive
@@ -324,7 +323,6 @@ public class Select_BloomFilterIT extends OperatorITBase
 
     private int d;
     private int f;
-    private UserTableRowType dRowType;
     private UserTableRowType fRowType;
     private RowType outputRowType;
     IndexRowType dIndexRowType;

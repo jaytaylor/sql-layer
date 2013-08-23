@@ -20,9 +20,11 @@ package com.foundationdb.sql.server;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.UnsupportedCharsetException;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.FromObjectValueSource;
-import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.mcompat.mtypes.MApproximateNumber;
+import com.foundationdb.server.types3.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.server.types3.pvalue.PValueSources;
 
@@ -34,114 +36,21 @@ import java.io.*;
 public class ServerValueDecoder
 {
     private String encoding;
-    private FromObjectValueSource objectSource;
 
     public ServerValueDecoder(String encoding) {
         this.encoding = encoding;
-        objectSource = new FromObjectValueSource();
     }
 
     /** Decode the given value into a the given bindings at the given position.
      */
-    public  void decodeValue(byte[] encoded, ServerType type, boolean binary,
-                             QueryBindings bindings, int index) {
-        AkType targetType = null;
-        if (type != null)
-            targetType = type.getAkType();
-        if (targetType == null)
-            targetType = AkType.VARCHAR;
-        Object value;
-        AkType decodedType = null; // If not evident from reflection.
-        if (encoded == null) {
-            value = null;
-        }
-        else if (!binary) {
-            try {
-                value = new String(encoded, encoding);
-            }
-            catch (UnsupportedEncodingException ex) {
-                throw new UnsupportedCharsetException("", "", encoding);
-            }
-        }
-        else {
-            try {
-                switch (type.getBinaryEncoding()) {
-                case BINARY_OCTAL_TEXT:
-                default:
-                    value = encoded;
-                    break;
-                case INT_8:
-                    value = (long)getDataStream(encoded).read();
-                    decodedType = AkType.INT;
-                    break;
-                case INT_16:
-                    value = (long)getDataStream(encoded).readShort();
-                    decodedType = AkType.INT;
-                    break;
-                case INT_32:
-                    value = (long)getDataStream(encoded).readInt();
-                    decodedType = AkType.INT;
-                    break;
-                case INT_64:
-                    value = getDataStream(encoded).readLong();
-                    break;
-                case FLOAT_32:
-                    value = getDataStream(encoded).readFloat();
-                    break;
-                case FLOAT_64:
-                    value = getDataStream(encoded).readDouble();
-                    break;
-                case STRING_BYTES:
-                    value = new String(encoded, encoding);
-                    break;
-                case BOOLEAN_C:
-                    value = (encoded[0] != 0);
-                    break;
-                case TIMESTAMP_FLOAT64_SECS_2000_NOTZ:
-                    value = seconds2000NoTZ((long)getDataStream(encoded).readDouble());
-                    decodedType = AkType.TIMESTAMP;
-                    break;
-                case TIMESTAMP_INT64_MICROS_2000_NOTZ:
-                    value = seconds2000NoTZ(getDataStream(encoded).readLong() / 1000000L);
-                    decodedType = AkType.TIMESTAMP;
-                    break;
-                case DECIMAL_PG_NUMERIC_VAR:
-                    {
-                        DataInputStream dstr = getDataStream(encoded);
-                        short ndigits = dstr.readShort();
-                        short[] digits = new short[ndigits + 4];
-                        digits[0] = ndigits;
-                        for (int i = 1; i < digits.length; i++) {
-                            digits[i] = dstr.readShort();
-                        }
-                        value = pgNumericVar(digits);
-                    }
-                    break;
-                }
-            }
-            catch (UnsupportedEncodingException ex) {
-                throw new UnsupportedCharsetException("", "", encoding);
-            }
-            catch (IOException ex) {
-                throw new AkibanInternalException("IO error reading from byte array", ex);
-            }
-        }
-        if (decodedType != null)
-            objectSource.setExplicitly(value, decodedType);
-        else
-            objectSource.setReflectively(value);
-        bindings.setValue(index, objectSource, targetType);
-    }
-   
     public void decodePValue(byte[] encoded, ServerType type, boolean binary,
                              QueryBindings bindings, int index) {
-        AkType targetType = null;
-        if (type != null)
-            targetType = type.getAkType();
+       
+        TInstance decodedType = null;
+        TInstance targetType = type != null ? type.getInstance() : null;
         if (targetType == null)
-            targetType = AkType.VARCHAR;
+            targetType = MString.varchar();
         Object value;
-        AkType decodedType = null; // If not evident from reflection.
         if (encoded == null) {
             value = null;
         }
@@ -162,38 +71,42 @@ public class ServerValueDecoder
                     break;
                 case INT_8:
                     value = (long)getDataStream(encoded).read();
-                    decodedType = AkType.INT;
+                    decodedType = MNumeric.TINYINT.instance(true);
                     break;
                 case INT_16:
                     value = (long)getDataStream(encoded).readShort();
-                    decodedType = AkType.INT;
+                    decodedType = MNumeric.MEDIUMINT.instance(true);
                     break;
                 case INT_32:
                     value = (long)getDataStream(encoded).readInt();
-                    decodedType = AkType.INT;
+                    decodedType = MNumeric.INT.instance(true);
                     break;
                 case INT_64:
                     value = getDataStream(encoded).readLong();
+                    decodedType = MNumeric.BIGINT.instance(true);
                     break;
                 case FLOAT_32:
                     value = getDataStream(encoded).readFloat();
+                    decodedType = MApproximateNumber.FLOAT.instance(true);
                     break;
                 case FLOAT_64:
                     value = getDataStream(encoded).readDouble();
+                    decodedType = MApproximateNumber.DOUBLE.instance(true);
                     break;
                 case STRING_BYTES:
                     value = new String(encoded, encoding);
+                    decodedType = MString.varcharFor((String)value);
                     break;
                 case BOOLEAN_C:
                     value = (encoded[0] != 0);
                     break;
                 case TIMESTAMP_FLOAT64_SECS_2000_NOTZ:
                     value = seconds2000NoTZ((long)getDataStream(encoded).readDouble());
-                    decodedType = AkType.TIMESTAMP;
+                    decodedType = MDatetimes.TIMESTAMP.instance(true);
                     break;
                 case TIMESTAMP_INT64_MICROS_2000_NOTZ:
                     value = seconds2000NoTZ(getDataStream(encoded).readLong() / 1000000L);
-                    decodedType = AkType.TIMESTAMP;
+                    decodedType = MDatetimes.TIMESTAMP.instance(true);
                     break;
                 case DECIMAL_PG_NUMERIC_VAR:
                     {
@@ -218,7 +131,7 @@ public class ServerValueDecoder
         }
         if (decodedType == null)
             decodedType = targetType;
-        PValueSource source = PValueSources.fromObject(value, decodedType).value();
+        PValueSource source = PValueSources.pValuefromObject(value, targetType);
         bindings.setPValue(index, source);
     }
 

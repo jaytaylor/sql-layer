@@ -36,7 +36,7 @@ public class PostgresDirectObjectCopier extends PostgresOutputter<List<?>>
     }
 
     @Override
-    public void output(List<?> row, boolean usePVals) throws IOException {
+    public void output(List<?> row) throws IOException {
         messenger.beginMessage(PostgresMessages.COPY_DATA_TYPE.code());
         encoder.reset();
         for (int i = 0; i < ncols; i++) {
@@ -44,7 +44,7 @@ public class PostgresDirectObjectCopier extends PostgresOutputter<List<?>>
             Object field = row.get(i);
             PostgresType type = columnTypes.get(i);
             if (field != null)
-                encoder.appendObject(field, type, false);
+                encoder.appendPObject(field, type, false);
         }
         if (withNewline)
             encoder.appendString("\n");

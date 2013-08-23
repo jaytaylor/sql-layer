@@ -48,9 +48,9 @@ public final class MissingColumnsIT extends ITBase {
 
     private NewRow[] rows(int tableId) {
         return new NewRow[] {
-                createNewRow(tableId, 1L, "user", "0", "garland", 1L, 0L, "left", 0L, 0L, 0L, "", "", -1L),
-                createNewRow(tableId, 2L, "user", "1", "garland", 1L, 0L, "left", 0L, 0L, 0L, "", "", -1L),
-                createNewRow(tableId, 3L, "system", "0", "garland", 1L, 10L, "footer", 0L, 0L, 0L, "", "", -1L)
+                createNewRow(tableId, 1, "user", "0", "garland", 1, 0, "left", 0, 0, 0, "", "", -1),
+                createNewRow(tableId, 2, "user", "1", "garland", 1, 0, "left", 0, 0, 0, "", "", -1),
+                createNewRow(tableId, 3, "system", "0", "garland", 1, 10, "footer", 0, 0, 0, "", "", -1)
         };
     }
 }

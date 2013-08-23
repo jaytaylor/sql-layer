@@ -21,13 +21,13 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.server.PersistitKeyValueSource;
+import com.foundationdb.server.PersistitKeyPValueSource;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.UnsupportedIndexDataTypeException;
 import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
 import com.foundationdb.server.store.IndexVisitor;
 import com.foundationdb.server.test.it.ITBase;
-import com.foundationdb.server.types.ToObjectValueTarget;
+import com.foundationdb.server.types3.pvalue.PValueSources;
 import com.foundationdb.util.WrappingByteSource;
 import com.persistit.Key;
 import com.persistit.Value;
@@ -48,12 +48,7 @@ public class KeyToObjectIT extends ITBase {
     private final boolean IS_PK = false;
     private final boolean INDEXES = true;
 
-    @Override
-    protected boolean testSupportsPValues() {
-        return false;
-    }
-
-    private void testKeyToObject(int tableId, int expectedRowCount, String indexName) throws Exception {
+     private void testKeyToObject(int tableId, int expectedRowCount, String indexName) throws Exception {
         try(CloseableTransaction txn = txnService().beginCloseableTransaction(session())) {
             testKeyToObjectInternal(tableId, expectedRowCount, indexName);
             txn.commit();
@@ -91,17 +86,17 @@ public class KeyToObjectIT extends ITBase {
                 final NewRow row = rowIt.next();
                 key.indexTo(0);
 
-                PersistitKeyValueSource valueSource = new PersistitKeyValueSource();
-                ToObjectValueTarget valueTarget = new ToObjectValueTarget();
-                
+               
                 for(IndexColumn indexColumn : index.getKeyColumns()) {
                     Column column = indexColumn.getColumn();
                     int colPos = column.getPosition();
                     Object objFromRow = row.get(colPos);
+                    PersistitKeyPValueSource valueSource = new PersistitKeyPValueSource(indexColumn.getColumn().tInstance());
                     valueSource.attach(key, indexColumn);
+                    
                     final Object lastConvertedValue;
                     try {
-                        lastConvertedValue = valueTarget.convertFromSource(valueSource);
+                        lastConvertedValue = PValueSources.toObject(valueSource);
                     } catch (Exception e) {
                         throw new RuntimeException("with AkType." + column.getType().akType(), e);
                     }

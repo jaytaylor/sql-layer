@@ -19,13 +19,10 @@ package com.foundationdb.ais.model;
 
 import com.foundationdb.ais.model.validation.AISInvariants;
 import com.foundationdb.qp.persistitadapter.SpatialHelper;
-import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.geophile.SpaceLatLon;
 import com.foundationdb.server.rowdata.IndexDef;
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.server.types3.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 
@@ -356,29 +353,17 @@ public abstract class Index implements Traversable
     // akTypes, akCollators and tInstances provide type info for physical index rows.
     // Physical != logical for spatial indexes.
 
-    public AkType[] akTypes()
-    {
-        ensureTypeInfo(false);
-        return akTypes;
-    }
-
-    public AkCollator[] akCollators()
-    {
-        ensureTypeInfo(false);
-        return akCollators;
-    }
-
     public TInstance[] tInstances()
     {
-        ensureTypeInfo(true);
+        ensureTypeInfo();
         return tInstances;
     }
 
-    private void ensureTypeInfo(boolean types3Info)
+    private void ensureTypeInfo()
     {
-        if (types3Info ? (tInstances == null) : (akTypes == null)) {
+        if (tInstances == null) {
             synchronized (this) {
-                if (types3Info ? (tInstances == null) : (akTypes == null)) {
+                if (tInstances == null) {
                     int physicalColumns;
                     int firstSpatialColumn;
                     int dimensions;
@@ -391,53 +376,29 @@ public abstract class Index implements Traversable
                         physicalColumns = allColumns.size();
                         firstSpatialColumn = Integer.MAX_VALUE;
                     }
-                    AkType[] localAkTypes = null;
-                    AkCollator[] localAkCollators = null;
                     TInstance[] localTInstances = null;
-                    if (types3Info) {
-                        localTInstances = new TInstance[physicalColumns];
-                    }
-                    else {
-                        localAkTypes = new AkType[physicalColumns];
-                        localAkCollators = new AkCollator[physicalColumns];
-                    }
+                    localTInstances = new TInstance[physicalColumns];
                     int logicalColumn = 0;
                     int physicalColumn = 0;
                     int nColumns = allColumns.size();
                     while (logicalColumn < nColumns) {
                         if (logicalColumn == firstSpatialColumn) {
-                            if (types3Info) {
-                                localTInstances[physicalColumn] =
-                                    MNumeric.BIGINT.instance(SpatialHelper.isNullable(this));
-                            } else {
-                                localAkTypes[physicalColumn] = AkType.LONG;
-                                localAkCollators[physicalColumn] = null;
-                            }
+                            localTInstances[physicalColumn] =
+                                MNumeric.BIGINT.instance(SpatialHelper.isNullable(this));
                             logicalColumn += dimensions;
                         } else {
                             IndexColumn indexColumn = allColumns.get(logicalColumn);
                             Column column = indexColumn.getColumn();
-                            if (types3Info) {
-                                localTInstances[physicalColumn] = column.tInstance();
-                            } else {
-                                localAkTypes[physicalColumn] = column.getType().akType();
-                                localAkCollators[physicalColumn] = column.getCollator();
-                            }
+                            localTInstances[physicalColumn] = column.tInstance();
                             logicalColumn++;
                         }
                         physicalColumn++;
                     }
-                    if (types3Info) {
-                        tInstances = localTInstances;
-                    }
-                    else {
-                        akCollators = localAkCollators;
-                        akTypes = localAkTypes;
-                    }
+                    tInstances = localTInstances;
                 }
             }
         }
-    }
+     }
 
     public static boolean isSpatialCompatible(Index index)
     {
@@ -455,12 +416,7 @@ public abstract class Index implements Traversable
     }
 
     private static boolean isFixedDecimal(Column column) {
-        if (Types3Switch.ON) {
-            return column.tInstance().typeClass() instanceof MBigDecimal;
-        } else {
-            AkType type = column.getType().akType();
-            return type == AkType.DECIMAL;
-        }
+        return column.tInstance().typeClass() instanceof MBigDecimal;
     }
 
     public static final String PRIMARY_KEY_CONSTRAINT = "PRIMARY";
@@ -486,8 +442,6 @@ public abstract class Index implements Traversable
     protected IndexRowComposition indexRowComposition;
     protected List<IndexColumn> keyColumns;
     protected List<IndexColumn> allColumns;
-    private volatile AkType[] akTypes;
-    private volatile AkCollator[] akCollators;
     private volatile TInstance[] tInstances;
     // For a spatial index
     private Space space;
