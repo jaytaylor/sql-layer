@@ -2140,7 +2140,7 @@ public final class NewGiUpdateIT extends ITBase {
         private void checkIndex(final GroupIndex groupIndex, List<String> expected) {
             StringsIndexScanner scanner;
             try(CloseableTransaction txn = txnService().beginCloseableTransaction(session())) {
-                scanner = store().traverse(session(), groupIndex, new StringsIndexScanner());
+                scanner = store().traverse(session(), groupIndex, new StringsIndexScanner(), -1, 0);
                 txn.commit();
             }
             AssertUtils.assertCollectionEquals(

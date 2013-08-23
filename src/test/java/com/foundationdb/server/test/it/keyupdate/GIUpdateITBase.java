@@ -116,7 +116,7 @@ public abstract class GIUpdateITBase extends ITBase {
     }
 
     private void checkIndexInternal(GroupIndex groupIndex, String... expected) {
-        StringsIndexScanner scanner = store().traverse(session(), groupIndex, new StringsIndexScanner());
+        StringsIndexScanner scanner = store().traverse(session(), groupIndex, new StringsIndexScanner(), -1, 0);
         // convert "a, b, c => d" to "[a, b, c] => d"
         for (int i = 0; i < expected.length; ++i) {
             String original = expected[i];

@@ -112,7 +112,7 @@ public abstract class KeysBase extends ITBase {
 
         try(CloseableTransaction txn = txnService().beginCloseableTransaction(session())) {
             CollectingIndexKeyVisitor visitor = new CollectingIndexKeyVisitor();
-            store().traverse(session(), pkIndex, visitor);
+            store().traverse(session(), pkIndex, visitor, -1, 0);
             assertEquals("traversed indexes", Arrays.asList(expectedIndexes), visitor.records());
             txn.commit();
         }

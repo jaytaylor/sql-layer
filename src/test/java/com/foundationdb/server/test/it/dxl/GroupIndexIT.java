@@ -247,7 +247,7 @@ public class GroupIndexIT extends ITBase {
                         curKey[0]++;
                     }
                 }
-            });
+            }, -1, 0);
             txn.commit();
         }
 

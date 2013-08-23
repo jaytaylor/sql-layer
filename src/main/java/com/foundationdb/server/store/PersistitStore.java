@@ -483,11 +483,32 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
-    public <V extends IndexVisitor<Key,Value>> V traverse(Session session, Index index, V visitor) {
+    public <V extends IndexVisitor<Key,Value>> V traverse(Session session, Index index, V visitor, long scanTimeLimit, long sleepTime) {
+        Transaction xact = null;
+        long nextCommitTime = 0;
+        if (scanTimeLimit >= 0) {
+            xact = treeService.getTransaction(session);
+            nextCommitTime = System.currentTimeMillis() + scanTimeLimit;
+        }
         Exchange exchange = getExchange(session, index).append(Key.BEFORE);
         try {
             while (exchange.next(true)) {
                 visitor.visit(exchange.getKey(), exchange.getValue());
+                if ((scanTimeLimit >= 0) &&
+                    (System.currentTimeMillis() >= nextCommitTime)) {
+                    xact.commit();
+                    xact.end();
+                    if (sleepTime > 0) {
+                        try {
+                            Thread.sleep(sleepTime);
+                        }
+                        catch (InterruptedException ex) {
+                            throw new QueryCanceledException(session);
+                        }
+                    }
+                    xact.begin();
+                    nextCommitTime = System.currentTimeMillis() + scanTimeLimit;
+                }
             }
         } catch(PersistitException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);

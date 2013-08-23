@@ -59,7 +59,7 @@ public abstract class AbstractStoreIndexStatistics<S extends Store> {
     public abstract IndexStatistics loadIndexStatistics(Session session, Index index);
     public abstract void removeStatistics(Session session, Index index);
     /** Sample index values and build statistics histograms. */
-    public abstract IndexStatistics computeIndexStatistics(Session session, Index index);
+    public abstract IndexStatistics computeIndexStatistics(Session session, Index index, long scanTimeLimit, long sleepTime);
     public abstract long manuallyCountEntries(Session session, Index index);
 
 
