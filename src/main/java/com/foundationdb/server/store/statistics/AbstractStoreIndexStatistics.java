@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 Akiban Technologies, Inc.
+ * Copyright (C) 2009-2013 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -59,7 +59,7 @@ public abstract class AbstractStoreIndexStatistics<S extends Store> {
     public abstract IndexStatistics loadIndexStatistics(Session session, Index index);
     public abstract void removeStatistics(Session session, Index index);
     /** Sample index values and build statistics histograms. */
-    public abstract IndexStatistics computeIndexStatistics(Session session, Index index);
+    public abstract IndexStatistics computeIndexStatistics(Session session, Index index, long scanTimeLimit, long sleepTime);
     public abstract long manuallyCountEntries(Session session, Index index);
 
 

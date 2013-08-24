@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 Akiban Technologies, Inc.
+ * Copyright (C) 2009-2013 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -89,7 +89,8 @@ public final class KeyUpdateAcrossTransactionsIT extends ITBase
                                            boolean added = uniqueKeys.add(u);
                                            assertTrue(key.toString(), added);
                                        }
-                                   });
+                                   }, 
+                                   -1, 0);
                 return null;
             }
         });

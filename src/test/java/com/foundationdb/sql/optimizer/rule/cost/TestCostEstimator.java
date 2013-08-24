@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 Akiban Technologies, Inc.
+ * Copyright (C) 2009-2013 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -48,7 +48,6 @@ public class TestCostEstimator extends CostEstimator
         else
             stats = new IndexStatisticsYamlLoader(ais, OptimizerTestBase.DEFAULT_SCHEMA, new TestKeyCreator())
                 .load(statsFile, statsIgnoreMissingIndexes);
-        warningsEnabled = false;
     }
 
     @Override

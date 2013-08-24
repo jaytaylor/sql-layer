@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 Akiban Technologies, Inc.
+ * Copyright (C) 2009-2013 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -73,6 +73,7 @@ public class TestConfigService extends ConfigurationServiceImpl {
         }
         ret.put(JOURNAL_SIZE_KEY, Long.toString(UNIT_TEST_PERSISTIT_JOURNAL_SIZE));
         ret.put(PARSE_SPATIAL_INDEX, "true");
+        ret.put(BUCKET_COUNT_KEY, BUCKET_COUNT);
         return ret;
     }
 
@@ -141,4 +142,6 @@ public class TestConfigService extends ConfigurationServiceImpl {
     private final static String UNIT_TEST_PERSISTIT_MEMORY = "20M";
     private final static long UNIT_TEST_PERSISTIT_JOURNAL_SIZE = 128 * 1024 * 1024;
     private final static String UNIT_TEST_COMMIT_POLICY = "SOFT";
+    private final static String BUCKET_COUNT_KEY = "fdbsql.index_statistics.bucket_count";
+    private final static String BUCKET_COUNT = "32";
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 Akiban Technologies, Inc.
+ * Copyright (C) 2009-2013 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.store.statistics;
 
+import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.TableStatistics;
@@ -70,4 +71,11 @@ public interface IndexStatisticsService
 
     /** How many buckets to compute per index */
     public int bucketCount();
+
+    /** Note missing statistics: warn user, initiate background analyze. */
+    public void missingStats(Session session, Index index, Column column);
+
+    /** Check for out of date stats, based on table being much larger. */
+    public void checkRowCountChanged(Session session, UserTable table,
+                                     IndexStatistics stats, long rowCount);
 }

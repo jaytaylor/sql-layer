@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 Akiban Technologies, Inc.
+ * Copyright (C) 2009-2013 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -2138,7 +2138,7 @@ public final class NewGiUpdateIT extends ITBase {
             transactionallyUnchecked(new Runnable() {
                 @Override
                 public void run() {
-                    StringsIndexScanner scanner = store().traverse(session(), groupIndex, new StringsIndexScanner());
+                    StringsIndexScanner scanner = store().traverse(session(), groupIndex, new StringsIndexScanner(), -1, 0);
                     AssertUtils.assertCollectionEquals(
                         "scan of " + groupIndex.getIndexName().getName(),
                         expected,

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 Akiban Technologies, Inc.
+ * Copyright (C) 2009-2013 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -112,7 +112,7 @@ public abstract class KeysBase extends ITBase {
 
         try(CloseableTransaction txn = txnService().beginCloseableTransaction(session())) {
             CollectingIndexKeyVisitor visitor = new CollectingIndexKeyVisitor();
-            store().traverse(session(), pkIndex, visitor);
+            store().traverse(session(), pkIndex, visitor, -1, 0);
             assertEquals("traversed indexes", Arrays.asList(expectedIndexes), visitor.records());
             txn.commit();
         }

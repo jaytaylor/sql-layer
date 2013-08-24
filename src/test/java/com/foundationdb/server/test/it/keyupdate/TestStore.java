@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 Akiban Technologies, Inc.
+ * Copyright (C) 2009-2013 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -69,9 +69,9 @@ public class TestStore
         }
     }
 
-    public void traverse(Session session, Index index, IndexKeyVisitor visitor)
+    public void traverse(Session session, Index index, IndexKeyVisitor visitor, long scanTimeLimit, long sleepTime)
     {
-        realStore.traverse(session, index, visitor);
+        realStore.traverse(session, index, visitor, scanTimeLimit, sleepTime);
     }
 
     // TestStore interface

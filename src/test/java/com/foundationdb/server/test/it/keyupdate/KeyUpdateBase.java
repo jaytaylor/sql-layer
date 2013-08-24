@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 Akiban Technologies, Inc.
+ * Copyright (C) 2009-2013 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -134,33 +134,33 @@ public abstract class KeyUpdateBase extends ITBase {
                 if (checkChildPKs()) {
                     // Vendor PK index
                     indexVisitor = new CollectingIndexKeyVisitor();
-                    testStore.traverse(session(), vendorRD.getPKIndex(), indexVisitor);
+                    testStore.traverse(session(), vendorRD.getPKIndex(), indexVisitor, -1, 0);
                     assertEquals(vendorPKIndex(testVisitor.records()), indexVisitor.records());
                     assertEquals("vendor PKs", countRows(vendorRD), indexVisitor.records().size());
                     // Customer PK index
                     indexVisitor = new CollectingIndexKeyVisitor();
-                    testStore.traverse(session(), customerRD.getPKIndex(), indexVisitor);
+                    testStore.traverse(session(), customerRD.getPKIndex(), indexVisitor, -1, 0);
                     assertEquals(customerPKIndex(testVisitor.records()), indexVisitor.records());
                     assertEquals("customer PKs", countRows(customerRD), indexVisitor.records().size());
                     // Order PK index
                     indexVisitor = new CollectingIndexKeyVisitor();
-                    testStore.traverse(session(), orderRD.getPKIndex(), indexVisitor);
+                    testStore.traverse(session(), orderRD.getPKIndex(), indexVisitor, -1, 0);
                     assertEquals(orderPKIndex(testVisitor.records()), indexVisitor.records());
                     assertEquals("order PKs", countRows(orderRD), indexVisitor.records().size());
                     // Item PK index
                     indexVisitor = new CollectingIndexKeyVisitor();
-                    testStore.traverse(session(), itemRD.getPKIndex(), indexVisitor);
+                    testStore.traverse(session(), itemRD.getPKIndex(), indexVisitor, -1, 0);
                     assertEquals(itemPKIndex(testVisitor.records()), indexVisitor.records());
                     assertEquals("order PKs", countRows(itemRD), indexVisitor.records().size());
                 }
                 // Order priority index
                 indexVisitor = new CollectingIndexKeyVisitor();
-                testStore.traverse(session(), index(orderRD, "priority"), indexVisitor);
+                testStore.traverse(session(), index(orderRD, "priority"), indexVisitor, -1, 0);
                 assertEquals(orderPriorityIndex(testVisitor.records()), indexVisitor.records());
                 assertEquals("order PKs", countRows(orderRD), indexVisitor.records().size());
                 // Order timestamp index
                 indexVisitor = new CollectingIndexKeyVisitor();
-                testStore.traverse(session(), index(orderRD, "when"), indexVisitor);
+                testStore.traverse(session(), index(orderRD, "when"), indexVisitor, -1, 0);
                 assertEquals(orderWhenIndex(testVisitor.records()), indexVisitor.records());
                 assertEquals("order PKs", countRows(orderRD), indexVisitor.records().size());
                 return null;
