@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 Akiban Technologies, Inc.
+ * Copyright (C) 2009-2013 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,6 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package com.foundationdb.server.store.statistics;
 
 import com.foundationdb.ais.model.GroupIndex;
@@ -53,7 +52,7 @@ public class FDBIndexStatisticsService extends AbstractIndexStatisticsService {
 
     @Override
     protected AbstractStoreIndexStatistics createStoreIndexStatistics() {
-        return new FDBStoreIndexStatistics(store, this);
+        return new FDBStoreIndexStatistics(store, this, txnService);
     }
 
     @Override

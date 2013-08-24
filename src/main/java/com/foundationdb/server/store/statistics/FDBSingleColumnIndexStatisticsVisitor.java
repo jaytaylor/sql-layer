@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 Akiban Technologies, Inc.
+ * Copyright (C) 2009-2013 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,6 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package com.foundationdb.server.store.statistics;
 
 import com.foundationdb.ais.model.IndexColumn;
@@ -28,6 +27,7 @@ import java.util.TreeMap;
 
 public class FDBSingleColumnIndexStatisticsVisitor extends IndexStatisticsGenerator<Key,byte[]>
 {
+    private final Key extractKey = new Key(null, Key.MAX_KEY_LENGTH);
     private final Map<Key,int[]> countMap = new TreeMap<>(); // Is ordered required?
     private final int field;
 
@@ -40,13 +40,13 @@ public class FDBSingleColumnIndexStatisticsVisitor extends IndexStatisticsGenera
 
     @Override
     public void init(int bucketCount, long distinctCount) {
-        // TODO: can't call super?
-        //super.init(bucketCount, distinctCount);
+        // Does not do generator init until finish because just
+        // buffering counts in this pass.
     }
 
     @Override
     public void finish(int bucketCount) {
-        // TODO: Why init here?
+        // Now init the generator and replay the accumulated counts.
         super.init(bucketCount, rowCount);
         try {
             for(Map.Entry<Key,int[]> entry : countMap.entrySet()) {
@@ -63,10 +63,10 @@ public class FDBSingleColumnIndexStatisticsVisitor extends IndexStatisticsGenera
     @Override
     public void visit(Key key, byte[] value) {
         key.indexTo(field);
-        int[] curCount = countMap.get(key);
+        extractKey.clear().appendKeySegment(key);
+        int[] curCount = countMap.get(extractKey);
         if(curCount == null) {
-            Key storedKey = new Key(null, key.getEncodedSize());
-            key.copyTo(storedKey);
+            Key storedKey = new Key(extractKey);
             curCount = new int[1];
             countMap.put(storedKey, curCount);
         }
