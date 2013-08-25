@@ -85,7 +85,10 @@ public abstract class StoreAdapter implements KeyCreator
         return config.queryTimeoutMilli();
     }
 
-    public abstract long rowCount(Session session, RowType tableType);
+    public long rowCount(Session session, RowType tableType) {
+        assert tableType.hasUserTable() : tableType;
+        return tableType.userTable().rowDef().getTableStatus().getRowCount(session);
+    }
     
     public abstract long sequenceNextValue(TableName sequenceName);
 

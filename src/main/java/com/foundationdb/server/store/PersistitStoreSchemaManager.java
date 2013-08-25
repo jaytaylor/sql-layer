@@ -202,7 +202,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
      */
     private static final AISAndTimestamp CACHE_SENTINEL = new AISAndTimestamp(new SharedAIS(null), Long.MAX_VALUE);
 
-    private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreSchemaManager.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreSchemaManager.class);
 
     private final TreeService treeService;
     private RowDefCache rowDefCache;
@@ -508,9 +508,10 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
 
         reader.loadAIS();
 
-        // ProtobufWriter does not save group tables (by design) so generate columns and indexes
-        AISBuilder builder = new AISBuilder(newAIS);
-        builder.groupingIsComplete();
+        for(UserTable table : newAIS.getUserTables().values()) {
+            // nameGenerator is only needed to generate hidden PK, which shouldn't happen here
+            table.endTable(null);
+        }
     }
 
     private void buildRowDefCache(Session session, AkibanInformationSchema newAis ) throws PersistitException {
@@ -710,8 +711,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         }
     }
 
-    @Override
-    protected void serializeMemoryTables(Session session, AkibanInformationSchema newAIS) {
+    private void serializeMemoryTables(Session session, AkibanInformationSchema newAIS) {
         GrowableByteBuffer byteBuffer = newByteBufferForSavingAIS();
         Exchange ex = null;
         try {

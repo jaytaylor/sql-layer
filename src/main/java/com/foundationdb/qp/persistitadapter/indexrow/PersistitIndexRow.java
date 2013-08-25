@@ -127,16 +127,10 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
         this.indexRowType = indexRowType;
         this.leafmostTable = (UserTable) index.leafMostTable();
         this.hKeyCache = new HKeyCache<>(adapter);
-        if (Types3Switch.ON) {
-            this.tInstances = index.tInstances();
-            this.akTypes = null;
-            this.akCollators = null;
-        }
-        else {
-            this.akTypes = index.akTypes();
-            this.akCollators = index.akCollators();
-            this.tInstances = null;
-        }
+
+        this.tInstances = index.tInstances();
+        this.akTypes = null;
+        this.akCollators = null;
     }
 
     // For use by this class

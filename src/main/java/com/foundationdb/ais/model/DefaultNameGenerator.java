@@ -57,11 +57,8 @@ public class DefaultNameGenerator implements NameGenerator {
     }
 
     public DefaultNameGenerator(AkibanInformationSchema ais) {
-        treeNames = collectTreeNames(ais);
-        sequenceNames = new HashSet<>(ais.getSequences().keySet());
-        isTableIDSet = collectTableIDs(ais, true);
-        userTableIDSet = collectTableIDs(ais, false);
-        indexIDMap = collectMaxIndexIDs(ais);
+        this();
+        mergeAIS(ais);
     }
 
     int getMaxIndexID() {
@@ -169,6 +166,15 @@ public class DefaultNameGenerator implements NameGenerator {
         String proposed = escapeForTreeName(tableName.getSchemaName()) + TREE_NAME_SEPARATOR +
                           escapeForTreeName(tableName.getTableName());
         return makeUnique(treeNames, proposed);
+    }
+
+    @Override
+    public void mergeAIS(AkibanInformationSchema ais) {
+        treeNames.addAll(collectTreeNames(ais));
+        sequenceNames.addAll(ais.getSequences().keySet());
+        isTableIDSet.addAll(collectTableIDs(ais, true));
+        userTableIDSet.addAll(collectTableIDs(ais, false));
+        indexIDMap.putAll(collectMaxIndexIDs(ais));
     }
 
     @Override

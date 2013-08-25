@@ -85,6 +85,12 @@ public class PersistitTransactionService implements TransactionService {
             }
 
             @Override
+            public boolean commitOrRetry() {
+                commit();
+                return false;
+            }
+
+            @Override
             public void rollback() {
                 rollbackTransaction(session);
             }

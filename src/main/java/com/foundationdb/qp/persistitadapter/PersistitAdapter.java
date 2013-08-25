@@ -37,6 +37,7 @@ import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.service.tree.TreeService;
 import com.foundationdb.server.store.PersistitStore;
 import com.foundationdb.server.store.Store;
@@ -52,7 +53,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.InterruptedIOException;
 
-public class PersistitAdapter extends StoreAdapter
+public class PersistitAdapter extends StoreAdapter implements KeyCreator
 {
     private static final Logger logger = LoggerFactory.getLogger(PersistitAdapter.class);
     // StoreAdapter interface
@@ -161,12 +162,6 @@ public class PersistitAdapter extends StoreAdapter
         finally {
             leaveUpdateStep(oldStep);
         }
-    }
-
-    @Override
-    public long rowCount(Session session, RowType tableType) {
-        RowDef rowDef = tableType.userTable().rowDef();
-        return rowDef.getTableStatus().getRowCount(session);
     }
 
     @Override
@@ -385,6 +380,7 @@ public class PersistitAdapter extends StoreAdapter
     public Key createKey() {
         return store.createKey();
     }
+
 
     // Class state
 

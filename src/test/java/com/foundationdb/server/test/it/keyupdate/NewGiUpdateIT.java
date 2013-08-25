@@ -23,7 +23,6 @@ import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.UserTable;
-import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
 import com.foundationdb.server.store.IndexRecordVisitor;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
 import com.foundationdb.server.test.it.ITBase;
@@ -31,7 +30,6 @@ import com.foundationdb.util.AssertUtils;
 import com.foundationdb.util.Strings;
 import com.foundationdb.util.tap.Tap;
 import com.foundationdb.util.tap.TapReport;
-import com.persistit.exception.PersistitException;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -51,7 +49,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -2137,26 +2134,21 @@ public final class NewGiUpdateIT extends ITBase {
             }
         }
 
-        private void checkIndex(final GroupIndex groupIndex, List<String> expected) {
-            StringsIndexScanner scanner;
-            try(CloseableTransaction txn = txnService().beginCloseableTransaction(session())) {
-                scanner = store().traverse(session(), groupIndex, new StringsIndexScanner(), -1, 0);
-                txn.commit();
-            }
-            AssertUtils.assertCollectionEquals(
-                    "scan of " + groupIndex.getIndexName().getName(),
-                    expected,
-                    scanner.strings()
-            );
-            
-            long giRowCount = transactionallyUnchecked(new Callable<Long>() {
+        private void checkIndex(final GroupIndex groupIndex, final List<String> expected) {
+            transactionallyUnchecked(new Runnable() {
                 @Override
-                public Long call() throws Exception {
+                public void run() {
+                    StringsIndexScanner scanner = store().traverse(session(), groupIndex, new StringsIndexScanner(), -1, 0);
+                    AssertUtils.assertCollectionEquals(
+                        "scan of " + groupIndex.getIndexName().getName(),
+                        expected,
+                        scanner.strings()
+                    );
                     IndexStatisticsService idxStats = serviceManager().getServiceByClass(IndexStatisticsService.class);
-                    return idxStats.countEntries(session(), groupIndex);
+                    long giRowCount = idxStats.countEntries(session(), groupIndex);
+                    assertEquals("row count for " + groupIndex.getIndexName().getName(), expected.size(), giRowCount);
                 }
             });
-            assertEquals("row count for " + groupIndex.getIndexName().getName(), expected.size(), giRowCount);
         }
 
         private GisCheckerImpl(Map<GroupIndex, List<String>> expectedStrings) {

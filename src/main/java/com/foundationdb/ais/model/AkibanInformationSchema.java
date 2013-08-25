@@ -54,6 +54,11 @@ public class AkibanInformationSchema implements Traversable
         charsetAndCollation = CharsetAndCollation.intern(defaultCharset, defaultCollation);
     }
 
+    public AkibanInformationSchema(int generation) {
+        this();
+        this.generation = generation;
+    }
+
 
     // AkibanInformationSchema interface
 
@@ -688,7 +693,7 @@ public class AkibanInformationSchema implements Traversable
     @SuppressWarnings("unchecked") // Expected, value type varies
     public <V> V getCachedValue(Object key, CacheValueGenerator<V> generator) {
         Object val = cachedValues.get(key);
-        if(val == null) {
+        if(val == null && generator != null) {
             val = generator.valueFor(this);
             Object firstVal = cachedValues.putIfAbsent(key, val);
             if(firstVal != null) {
