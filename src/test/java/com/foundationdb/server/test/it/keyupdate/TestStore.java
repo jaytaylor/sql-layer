@@ -69,9 +69,9 @@ public class TestStore
         }
     }
 
-    public void traverse(Session session, Index index, IndexKeyVisitor visitor)
+    public void traverse(Session session, Index index, IndexKeyVisitor visitor, long scanTimeLimit, long sleepTime)
     {
-        realStore.traverse(session, index, visitor);
+        realStore.traverse(session, index, visitor, scanTimeLimit, sleepTime);
     }
 
     // TestStore interface

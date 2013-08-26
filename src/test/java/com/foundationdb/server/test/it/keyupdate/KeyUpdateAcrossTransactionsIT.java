@@ -89,7 +89,8 @@ public final class KeyUpdateAcrossTransactionsIT extends ITBase
                                            boolean added = uniqueKeys.add(u);
                                            assertTrue(key.toString(), added);
                                        }
-                                   });
+                                   }, 
+                                   -1, 0);
                 return null;
             }
         });

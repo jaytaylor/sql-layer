@@ -71,7 +71,7 @@ git clone ${TOOLS_LOC} client-tools
 cd client-tools
 mvn -DskipTests=true install 
 rm -f target/*-tests.jar target/*-sources.jar
-cp bin/fdbsqldump ../../packages-common/
+cp bin/fdbsql{dump,load} ../../packages-common/
 cp target/foundationdb-sql-layer-client-tools-*.jar ../../packages-common/
 cp target/dependency/* ../../packages-common/client/
 popd
@@ -135,7 +135,7 @@ elif [ ${platform} == "binary" ]; then
     cp -R ./conf ${BINARY_NAME}/
     rm -f ${BINARY_NAME}/conf/config/*.cmd
     cp ./bin/fdbsqllayer ${BINARY_NAME}/bin
-    cp packages-common/fdbsqldump ${BINARY_NAME}/bin
+    cp packages-common/fdbsql* ${BINARY_NAME}/bin
     cp packages-common/foundationdb-sql-layer-client-*.jar ${BINARY_NAME}/lib
     cp packages-common/client/* ${BINARY_NAME}/lib/client
     cp ${license} ${BINARY_NAME}/LICENSE.txt
@@ -143,7 +143,7 @@ elif [ ${platform} == "binary" ]; then
 elif [ ${platform} == "macosx" ]; then
     client_jar=packages-common/foundationdb-sql-layer-client-tools-*.jar
     client_deps=packages-common/client
-    fdbsqldump_bin=packages-common/fdbsqldump
+    fdbsqldump_bin=packages-common/fdbsql*
     plugins_dir=packages-common/plugins
     app_name='FoundationDB SQL Layer.app'
     mac_app="target/${app_name}"

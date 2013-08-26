@@ -18,11 +18,15 @@ package com.foundationdb.server.store.statistics;
 
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.server.error.QueryCanceledException;
 import com.foundationdb.server.rowdata.IndexDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.FDBStore;
+import com.foundationdb.server.store.FDBTransactionService;
+import com.foundationdb.async.AsyncIterator;
 import com.foundationdb.KeyValue;
 import com.foundationdb.tuple.Tuple;
 import com.persistit.Key;
@@ -33,10 +37,12 @@ import static com.foundationdb.server.store.statistics.IndexStatisticsVisitor.Vi
 
 public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBStore> implements VisitorCreator<Key,byte[]> {
     private final IndexStatisticsService indexStatisticsService;
+    private final FDBTransactionService txnService;
 
-    public FDBStoreIndexStatistics(FDBStore store, IndexStatisticsService indexStatisticsService) {
+    public FDBStoreIndexStatistics(FDBStore store, IndexStatisticsService indexStatisticsService, TransactionService txnService) {
         super(store);
         this.indexStatisticsService = indexStatisticsService;
+        this.txnService = (FDBTransactionService)txnService;
     }
 
 
@@ -92,7 +98,13 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
     }
 
     @Override
-    public IndexStatistics computeIndexStatistics(Session session, Index index) {
+    public IndexStatistics computeIndexStatistics(Session session, Index index, long scanTimeLimit, long sleepTime) {
+        FDBTransactionService.TransactionState txn = null;
+        long nextCommitTime = 0;
+        if (scanTimeLimit >= 0) {
+            txn = txnService.getTransaction(session);
+            nextCommitTime = txn.getStartTime() + scanTimeLimit;
+        }
         long indexRowCount = indexStatisticsService.countEntries(session, index);
         IndexStatisticsVisitor<Key,byte[]> visitor = new IndexStatisticsVisitor<>(session, index, indexRowCount, this);
         int bucketCount = indexStatisticsService.bucketCount();
@@ -106,6 +118,23 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
             System.arraycopy(keyBytes, 0, key.getEncodedBytes(), 0, keyBytes.length);
             key.setEncodedSize(keyBytes.length);
             visitor.visit(key, kv.getValue());
+            if ((scanTimeLimit >= 0) &&
+                (System.currentTimeMillis() >= nextCommitTime)) {
+                ((AsyncIterator)it).dispose();
+                txn.getTransaction().commit().get();
+                if (sleepTime > 0) {
+                    try {
+                        Thread.sleep(sleepTime);
+                    }
+                    catch (InterruptedException ex) {
+                        throw new QueryCanceledException(session);
+                    }
+                }
+                txn.reset();
+                txn.getTransaction().reset();
+                nextCommitTime = txn.getStartTime() + scanTimeLimit;
+                it = getStore().indexIterator(session, index, key, false, false);
+            }
         }
         visitor.finish(bucketCount);
         return visitor.getIndexStatistics();

@@ -2138,7 +2138,7 @@ public final class NewGiUpdateIT extends ITBase {
             transactionallyUnchecked(new Runnable() {
                 @Override
                 public void run() {
-                    StringsIndexScanner scanner = store().traverse(session(), groupIndex, new StringsIndexScanner());
+                    StringsIndexScanner scanner = store().traverse(session(), groupIndex, new StringsIndexScanner(), -1, 0);
                     AssertUtils.assertCollectionEquals(
                         "scan of " + groupIndex.getIndexName().getName(),
                         expected,
