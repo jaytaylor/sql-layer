@@ -667,6 +667,11 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
             active = false;
             if (thread != null) {
                 thread.interrupt();
+                try {
+                    thread.join(1000); // Wait a little for it to shut down.
+                }
+                catch (InterruptedException ex) {
+                }
             }
         }
 

@@ -34,6 +34,7 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.DMLFunctions;
 import com.foundationdb.server.error.NoSuchTableException;
+import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
@@ -53,15 +54,16 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 public class ExternalDataServiceImpl implements ExternalDataService, Service {
-    private final ConfigurationService configService;
-    private final DXLService dxlService;
-    private final Store store;
-    private final TransactionService transactionService;
-    private final ServiceManager serviceManager;
+    protected final ConfigurationService configService;
+    protected final DXLService dxlService;
+    protected final Store store;
+    protected final TransactionService transactionService;
+    protected final ServiceManager serviceManager;
     
     private static final Logger logger = LoggerFactory.getLogger(ExternalDataServiceImpl.class);
 
@@ -207,32 +209,40 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     public long loadTableFromCsv(Session session, InputStream inputStream, 
                                  CsvFormat format, long skipRows,
                                  UserTable toTable, List<Column> toColumns,
-                                 long commitFrequency, QueryContext context) 
+                                 long commitFrequency, int maxRetries,
+                                 QueryContext context) 
             throws IOException {
         CsvRowReader reader = new CsvRowReader(toTable, toColumns, inputStream, format,
                                                context);
         if (skipRows > 0)
             reader.skipRows(skipRows);
-        return loadTableFromRowReader(session, inputStream, reader, commitFrequency);
+        return loadTableFromRowReader(session, inputStream, reader, 
+                                      commitFrequency, maxRetries);
     }
 
     @Override
     public long loadTableFromMysqlDump(Session session, InputStream inputStream, 
                                        String encoding,
                                        UserTable toTable, List<Column> toColumns,
-                                       long commitFrequency, QueryContext context) 
+                                       long commitFrequency, int maxRetries,
+                                       QueryContext context) 
             throws IOException {
         MysqlDumpRowReader reader = new MysqlDumpRowReader(toTable, toColumns,
                                                            inputStream, encoding, 
                                                            context);
-        return loadTableFromRowReader(session, inputStream, reader, commitFrequency);
+        return loadTableFromRowReader(session, inputStream, reader, 
+                                      commitFrequency, maxRetries);
     }
 
-    protected long loadTableFromRowReader(Session session, InputStream inputStream, 
-                                          RowReader reader, long commitFrequency)
+    protected long loadTableFromRowReader(Session session, 
+                                          InputStream inputStream, RowReader reader, 
+                                          long commitFrequency, int maxRetries)
             throws IOException {
         DMLFunctions dml = dxlService.dmlFunctions();
         long pending = 0, total = 0;
+        List<RowData> rowDatas = null;
+        if (maxRetries > 1)
+            rowDatas = new ArrayList<>();
         boolean transaction = false;
         try {
             NewRow row;
@@ -244,7 +254,14 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                 row = reader.nextRow();
                 if (row != null) {
                     logger.trace("Read row: {}", row);
-                    dml.writeRow(session, row);
+                    if (rowDatas == null)
+                        dml.writeRow(session, row);
+                    else {
+                        // Make a copy now so that what we keep is compacter.
+                        RowData rowData = row.toRowData().copy();
+                        rowDatas.add(rowData);
+                        store.writeRow(session, rowData, null);
+                    }
                     total++;
                     pending++;
                 }
@@ -262,7 +279,23 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                 }
                 if (commit) {
                     logger.debug("Committing {} rows", pending);
-                    transactionService.commitTransaction(session);
+                    if (rowDatas == null)
+                        transactionService.commitTransaction(session);
+                    else {
+                        for (int i = 1; i <= maxRetries; i++) {
+                            if (i == maxRetries)
+                                transactionService.commitTransaction(session);
+                            else if (!commitOrRetryTransaction(session))
+                                break;
+                            else {
+                                logger.debug("Retry #{}", i);
+                                for (RowData rowData : rowDatas) {
+                                    store.writeRow(session, rowData, null);
+                                }
+                            }
+                        }
+                        rowDatas.clear();
+                    }
                     transaction = false;
                     pending = 0;
                 }
@@ -273,6 +306,10 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                 transactionService.rollbackTransaction(session);
         }
         return total;
+    }
+
+    protected boolean commitOrRetryTransaction(Session session) {
+        return transactionService.commitOrRetryTransaction(session);
     }
 
     /* Service */

@@ -189,6 +189,14 @@ public class FDBTransactionService implements TransactionService {
         commitTransactionInternal(session, false);
     }
 
+    @Override
+    public boolean commitOrRetryTransaction(Session session) {
+        if(isRollbackPending(session)) {
+            throw new IllegalStateException("Rollback is pending");
+        }
+        return commitTransactionInternal(session, true);
+    }
+
     protected boolean commitTransactionInternal(Session session, boolean retry) {
         TransactionState txn = getTransactionInternal(session);
         requireActive(txn);
