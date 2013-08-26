@@ -25,15 +25,17 @@ import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.junit.NamedParameterizedRunner;
 import com.foundationdb.junit.Parameterization;
 import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.ValueSource;
-import com.foundationdb.server.types.ValueTarget;
-import com.foundationdb.server.types.extract.ConverterTestUtils;
-import com.foundationdb.server.types.extract.Extractors;
-import com.foundationdb.server.types.extract.LongExtractor;
 import com.foundationdb.server.types.typestests.ConversionSuite;
 import com.foundationdb.server.types.typestests.ConversionTestBase;
 import com.foundationdb.server.types.typestests.LinkedConversion;
 import com.foundationdb.server.types.typestests.TestCase;
+import com.foundationdb.server.types3.TExecutionContext;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.aksql.aktypes.AkBool;
+import com.foundationdb.server.types3.aksql.aktypes.AkInterval;
+import com.foundationdb.server.types3.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueTarget;
 import com.foundationdb.util.ByteSource;
 import com.foundationdb.util.Strings;
 import com.foundationdb.util.WrappingByteSource;
@@ -57,13 +59,14 @@ public final class RowDataConversionTest extends ConversionTestBase {
 
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> params() {
-        LongExtractor year = Extractors.getLongExtractor(AkType.YEAR);
-        LongExtractor timestamp = Extractors.getLongExtractor(AkType.TIMESTAMP);
-        LongExtractor time = Extractors.getLongExtractor(AkType.TIME);
-        LongExtractor interval_millis = Extractors.getLongExtractor(AkType.INTERVAL_MILLIS);
-        LongExtractor interval_month = Extractors.getLongExtractor(AkType.INTERVAL_MONTH);
-        ConverterTestUtils.setGlobalTimezone("UTC");
-
+        //LongExtractor year = Extractors.getLongExtractor(AkType.YEAR);
+        //LongExtractor timestamp = Extractors.getLongExtractor(AkType.TIMESTAMP);
+        //LongExtractor time = Extractors.getLongExtractor(AkType.TIME);
+        //LongExtractor interval_millis = Extractors.getLongExtractor(AkType.INTERVAL_MILLIS);
+        //LongExtractor interval_month = Extractors.getLongExtractor(AkType.INTERVAL_MONTH);
+        //ConverterTestUtils.setGlobalTimezone("UTC");
+        TExecutionContext context = new TExecutionContext(null, null, null);
+        
         ConversionSuite<?> suite = ConversionSuite.build(new ConversionPair())
                 // Double values
                 .add(TestCase.forDouble(-0.0d, b(0x8000000000000000L)))
@@ -114,33 +117,34 @@ public final class RowDataConversionTest extends ConversionTestBase {
                 .add(TestCase.forDecimal(d("0.00000000"), 10, 8, parseHex("0x8000000000")))
 
                 // Year
-                .add(TestCase.forYear(year.getLong("0000"), b(0, 1)))
-                .add(TestCase.forYear(year.getLong("1902"), b(2, 1)))
-                .add(TestCase.forYear(year.getLong("1986"), b(86, 1)))
-                .add(TestCase.forYear(year.getLong("2011"), b(111, 1)))
-                .add(TestCase.forYear(year.getLong("2155"), b(255, 1)))
+                
+                .add(TestCase.forYear(MDatetimes.parseYear("0000", context), b(0, 1)))
+                .add(TestCase.forYear(MDatetimes.parseYear("1902", context), b(2, 1)))
+                .add(TestCase.forYear(MDatetimes.parseYear("1986", context), b(86, 1)))
+                .add(TestCase.forYear(MDatetimes.parseYear("2011", context), b(111, 1)))
+                .add(TestCase.forYear(MDatetimes.parseYear("2155", context), b(255, 1)))
                 
                 // Timestamp
-                .add(TestCase.forTimestamp(timestamp.getLong("0000-00-00 00:00:00"), b(0, 4)))
-                .add(TestCase.forTimestamp(timestamp.getLong("1970-01-01 00:00:01"), b(1, 4)))
-                .add(TestCase.forTimestamp(timestamp.getLong("2009-02-13 23:31:30"), b(1234567890, 4)))
-                .add(TestCase.forTimestamp(timestamp.getLong("2009-02-13 23:31:30"), b(1234567890, 4)))
-                .add(TestCase.forTimestamp(timestamp.getLong("2038-01-19 03:14:07"), b(2147483647, 4)))
-                .add(TestCase.forTimestamp(timestamp.getLong("1986-10-28 00:00:00"), b(530841600, 4)))
-                .add(TestCase.forTimestamp(timestamp.getLong("2011-04-10 18:34:00"), b(1302460440, 4)))
+                .add(TestCase.forTimestamp(MDatetimes.parseTimestamp("0000-00-00 00:00:00", "UTC", context), b(0,4)))
+                .add(TestCase.forTimestamp(MDatetimes.parseTimestamp("1970-01-01 00:00:01", "UTC", context), b(1, 4)))
+                .add(TestCase.forTimestamp(MDatetimes.parseTimestamp("2009-02-13 23:31:30", "UTC", context), b(1234567890, 4)))
+                .add(TestCase.forTimestamp(MDatetimes.parseTimestamp("2009-02-13 23:31:30", "UTC", context), b(1234567890, 4)))
+                .add(TestCase.forTimestamp(MDatetimes.parseTimestamp("2038-01-19 03:14:07", "UTC", context), b(2147483647, 4)))
+                .add(TestCase.forTimestamp(MDatetimes.parseTimestamp("1986-10-28 00:00:00", "UTC", context), b(530841600, 4)))
+                .add(TestCase.forTimestamp(MDatetimes.parseTimestamp("2011-04-10 18:34:00", "UTC", context), b(1302460440, 4)))
 
                 // Interval millis
-                .add(TestCase.forInterval_Millis(interval_millis.getLong("12345"), b(12345L, 8) ))
-                .add(TestCase.forInterval_Month(interval_month.getLong("12345"), b(12345L, 8)))
+                .add(TestCase.forInterval_Millis(12345L, b(12345L, 8) ))
+                .add(TestCase.forInterval_Month(12345L, b(12345L, 8)))
                 
                 // Time
-                .add(TestCase.forTime(time.getLong("00:00:00"), b(0, 3)))
-                .add(TestCase.forTime(time.getLong("00:00:01"), b(1, 3)))
-                .add(TestCase.forTime(time.getLong("-00:00:01"), b(-1, 3)))
-                .add(TestCase.forTime(time.getLong("838:59:59"), b(8385959, 3)))
-                .add(TestCase.forTime(time.getLong("-838:59:59"), b(-8385959, 3)))
-                .add(TestCase.forTime(time.getLong("14:20:32"), b(142032, 3)))
-                .add(TestCase.forTime(time.getLong("-147:21:01"), b(-1472101, 3)))
+                .add(TestCase.forTime(MDatetimes.parseTime("00:00:00", context), b(0, 3)))
+                .add(TestCase.forTime(MDatetimes.parseTime("00:00:01", context), b(1, 3)))
+                .add(TestCase.forTime(MDatetimes.parseTime("-00:00:01", context), b(-1, 3)))
+                .add(TestCase.forTime(MDatetimes.parseTime("838:59:59", context), b(8385959, 3)))
+                .add(TestCase.forTime(MDatetimes.parseTime("-838:59:59", context), b(-8385959, 3)))
+                .add(TestCase.forTime(MDatetimes.parseTime("14:20:32", context), b(142032, 3)))
+                .add(TestCase.forTime(MDatetimes.parseTime("-147:21:01", context), b(-1472101, 3)))
                 
                 // Strings (character encoding)
                 .add(TestCase.forString("abc", 32, "UTF-8", parseHex("0x03616263")))
@@ -153,7 +157,7 @@ public final class RowDataConversionTest extends ConversionTestBase {
         return filter(params(suite), new Predicate() {
             @Override
             public boolean include(TestCase<?> testCase) {
-                return testCase.type() != AkType.BOOL;
+                return testCase.type().equals(AkBool.INSTANCE.instance(true));
             }
         });
     }
@@ -164,12 +168,12 @@ public final class RowDataConversionTest extends ConversionTestBase {
 
     private static final class ConversionPair implements LinkedConversion<ByteSource> {
         @Override
-        public ValueSource linkedSource() {
+        public PValueSource linkedSource() {
             return source;
         }
 
         @Override
-        public ValueTarget linkedTarget() {
+        public PValueTarget linkedTarget() {
             return target;
         }
 
@@ -184,7 +188,8 @@ public final class RowDataConversionTest extends ConversionTestBase {
 
         @Override
         public void setUp(TestCase<?> testCase) {
-            if (testCase.type() == AkType.INTERVAL_MILLIS || testCase.type() == AkType.INTERVAL_MONTH)
+            if (testCase.type().equals(AkInterval.SECONDS.instance(true)) ||
+                    testCase.type().equals(AkInterval.MONTHS.instance(true)))
                 throw new UnsupportedOperationException();
             createEnvironment(testCase);
             byte[] bytes = new byte[128];
@@ -217,25 +222,16 @@ public final class RowDataConversionTest extends ConversionTestBase {
             col.setTypeParameter1(testCase.param1());
             col.setTypeParameter2(testCase.param2());
             col.setCharset(testCase.charset());
+            col.setNullable(testCase.type().nullability());
             new SchemaFactory().buildRowDefs(ais);
             RowDef rowDef = ais.getTable("mySchema", "testTable").rowDef();
             fieldDef = rowDef.getFieldDef(rowDef.getFieldIndex("c1"));
         }
 
-        private Type colType(AkType akType) {
+        private Type colType(TInstance tInstance) {
             final String typeName;
-            switch (akType) {
-                case LONG:
-                    typeName = Types.BIGINT.name().toUpperCase();
-                    break;
-                default:
-                    typeName = akType.name();
-                    break;
-                case NULL:
-                case UNSUPPORTED:
-                    throw new UnsupportedOperationException(akType.name());
-            }
-
+            typeName = tInstance.typeClass().name().unqualifiedName();
+            
             try {
                 Field typesField = Types.class.getField(typeName);
                 return (Type) typesField.get(null);
@@ -245,11 +241,11 @@ public final class RowDataConversionTest extends ConversionTestBase {
         }
 
         private final TestableRowDataValueSource source = new TestableRowDataValueSource();
-        private final RowDataValueTarget target = new RowDataValueTarget();
+        private final RowDataPValueTarget target = new RowDataPValueTarget();
         private FieldDef fieldDef;
     }
 
-    private static class TestableRowDataValueSource extends AbstractRowDataValueSource {
+    private static class TestableRowDataValueSource extends AbstractRowDataPValueSource {
         @Override
         protected long getRawOffsetAndWidth() {
             return width;

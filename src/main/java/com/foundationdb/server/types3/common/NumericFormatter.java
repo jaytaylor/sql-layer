@@ -20,7 +20,6 @@ package com.foundationdb.server.types3.common;
 import com.foundationdb.server.rowdata.ConversionHelperBigDecimal;
 import com.foundationdb.server.types3.TClassFormatter;
 import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.common.types.StringAttribute;
 import com.foundationdb.server.types3.common.types.StringFactory;
 import com.foundationdb.server.types3.mcompat.mtypes.MBigDecimal.Attrs;
 import com.foundationdb.server.types3.pvalue.PValueSource;

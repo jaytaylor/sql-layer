@@ -38,12 +38,9 @@ import com.foundationdb.server.api.dml.scan.ScanLimit;
 import com.foundationdb.server.rowdata.IndexDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
-import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.store.PersistitStore;
 import com.foundationdb.server.store.RowCollector;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.util.GrowableByteBuffer;
 import com.foundationdb.util.ShareHolder;
 import org.slf4j.Logger;
@@ -414,7 +411,6 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     private int rowCount = 0;
     private ShareHolder<Row> currentRow = new ShareHolder<>();
     private boolean closed = true; // Not false, so that initial call to hasMore, prior to open, will proceed to call open.
-    private boolean usePVals = Types3Switch.ON;
 
 //    // inner class
 //    static class OpenInfoStruct {

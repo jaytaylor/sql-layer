@@ -17,7 +17,6 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
-import com.foundationdb.server.service.functions.FunctionsRegistry;
 import com.foundationdb.server.t3expressions.T3RegistryService;
 import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.foundationdb.sql.optimizer.plan.ResultSet.ResultField;
@@ -33,7 +32,6 @@ public abstract class SchemaRulesContext extends RulesContext
 {
     private Schema schema;
 
-    private FunctionsRegistry functionsRegistry;
     private CostEstimator costEstimator;
     private T3RegistryService t3Registry;
     private PipelineConfiguration pipelineConfiguration;
@@ -44,16 +42,15 @@ public abstract class SchemaRulesContext extends RulesContext
     protected void initAIS(AkibanInformationSchema ais) {
         schema = SchemaCache.globalSchema(ais);
     }
-
-    protected void initFunctionsRegistry(FunctionsRegistry functionsRegistry) {
-        this.functionsRegistry = functionsRegistry;
+    
+    protected void initFunctionsRegistry(T3RegistryService functionsRegistry) {
     }
 
     protected void initT3Registry(T3RegistryService overloadResolver) {
         this.t3Registry = overloadResolver;
     }
 
-    protected void initCostEstimator(CostEstimator costEstimator, boolean usePValues) {
+    protected void initCostEstimator(CostEstimator costEstimator) {
         this.costEstimator = costEstimator;
     }
 
@@ -65,9 +62,9 @@ public abstract class SchemaRulesContext extends RulesContext
     protected void initDone() {
         super.initDone();
         assert (schema != null) : "initSchema() not called";
-        assert (functionsRegistry != null) : "initFunctionsRegistry() not called";
         assert (costEstimator != null) : "initCostEstimator() not called";
         assert (pipelineConfiguration != null) : "initPipelineConfiguration() not called";
+        assert (t3Registry != null) : "initT3Registry() not called";
     }
 
     public Schema getSchema() {
@@ -84,10 +81,6 @@ public abstract class SchemaRulesContext extends RulesContext
 
     public T3RegistryService getT3Registry() {
         return t3Registry;
-    }
-
-    public FunctionsRegistry getFunctionsRegistry() {
-        return functionsRegistry;
     }
 
     public CostEstimator getCostEstimator() {

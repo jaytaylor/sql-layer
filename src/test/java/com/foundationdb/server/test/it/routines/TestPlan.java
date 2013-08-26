@@ -23,7 +23,7 @@ import com.foundationdb.qp.loadableplan.LoadableOperator;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.test.ExpressionGenerators;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 
 import java.sql.Types;
 import java.util.Arrays;
@@ -53,10 +53,10 @@ public class TestPlan extends LoadableOperator
         return
             project_Default(
                 groupScan_Default(group),
-                testRowType,
                 Arrays.asList(ExpressionGenerators.field(testRowType, 0),
                               ExpressionGenerators.field(testRowType, 1),
-                              ExpressionGenerators.variable(AkType.LONG, 0)));
+                              ExpressionGenerators.variable(MNumeric.INT.instance(true), 0)),
+                testRowType);
     }
 
     @Override

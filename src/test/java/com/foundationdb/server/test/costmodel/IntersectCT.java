@@ -29,7 +29,6 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.expression.std.FieldExpression;
 import org.junit.Test;
 
 import java.util.Random;

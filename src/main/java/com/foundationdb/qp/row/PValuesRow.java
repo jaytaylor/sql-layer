@@ -21,6 +21,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.types3.TClass;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueSources;
 
 import java.util.Arrays;
 
@@ -57,6 +58,20 @@ public final class PValuesRow extends AbstractRow {
         }
     }
 
+    public PValuesRow (RowType rowType, Object... objects) {
+        this.rowType = rowType;
+        values = new PValueSource[rowType.nFields()];
+        
+        if (rowType.nFields() != objects.length) {
+            throw new IllegalArgumentException(
+                    "row type " + rowType + " requires " + rowType.nFields() + " fields, but "
+                            + objects.length + " values given: " + Arrays.asList(objects));
+        }
+        for (int i = 0; i < values.length; ++i) {
+            values[i] = PValueSources.pValuefromObject(objects[i], rowType.typeInstanceAt(i));
+        }
+    }
+    
     private final RowType rowType;
     private final PValueSource[] values;
 }

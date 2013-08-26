@@ -56,18 +56,18 @@ public class PostgresJsonOutputter extends PostgresOutputter<Row>
     }
     
     @Override
-    public void output(Row row, boolean usePVals) throws IOException {
+    public void output(Row row) throws IOException {
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
         messenger.writeShort(1);
         encoder.reset();
-        outputRow(row, resultColumns, usePVals);
+        outputRow(row, resultColumns);
         ByteArrayOutputStream bytes = encoder.getByteStream();
         messenger.writeInt(bytes.size());
         messenger.writeByteStream(bytes);
         messenger.sendMessage();
     }
 
-    protected void outputRow(Row row, List<JsonResultColumn> resultColumns, boolean usePVals)
+    protected void outputRow(Row row, List<JsonResultColumn> resultColumns)
             throws IOException {
         encoder.appendString("{");
         AkibanAppender appender = encoder.getAppender();
@@ -77,40 +77,21 @@ public class PostgresJsonOutputter extends PostgresOutputter<Row>
             encoder.appendString((i == 0) ? "\"" : ",\"");
             Quote.DOUBLE_QUOTE.append(appender, resultColumn.getName());
             encoder.appendString("\":");
-            if (usePVals) {
-                PValueSource value = row.pvalue(i);
-                TInstance columnTInstance = resultColumn.getTInstance();
-                if (columnTInstance.typeClass() instanceof AkResultSet) {
-                    outputNestedResultSet((Cursor)value.getObject(),
-                                          resultColumn.getNestedResultColumns(),
-                                          usePVals);
-                }
-                else {
-                    columnTInstance.formatAsJson(value, appender);
-                }
+            PValueSource value = row.pvalue(i);
+            TInstance columnTInstance = resultColumn.getTInstance();
+            if (columnTInstance.typeClass() instanceof AkResultSet) {
+                outputNestedResultSet((Cursor)value.getObject(),
+                                      resultColumn.getNestedResultColumns());
             }
             else {
-                AkType type = resultColumn.getAkType();
-                ValueSource value = row.eval(i);
-                if (type == AkType.RESULT_SET) {
-                    outputNestedResultSet(value.getResultSet(),
-                                          resultColumn.getNestedResultColumns(),
-                                          usePVals);
-                }
-                else if (value.isNull()) {
-                    encoder.appendString("null");
-                }
-                else {
-                    value.appendAsString(appender, Quote.JSON_QUOTE);
-                }
+                columnTInstance.formatAsJson(value, appender);
             }
         }
         encoder.appendString("}");
     }
 
     protected void outputNestedResultSet(Cursor cursor, 
-                                         List<JsonResultColumn> resultColumns,
-                                         boolean usePVals) 
+                                         List<JsonResultColumn> resultColumns) 
             throws IOException {
         encoder.appendString("[");
         try {
@@ -121,7 +102,7 @@ public class PostgresJsonOutputter extends PostgresOutputter<Row>
                     first = false;
                 else
                     encoder.appendString(",");
-                outputRow(row, resultColumns, usePVals);
+                outputRow(row, resultColumns);
             }
         }
         finally {
@@ -184,5 +165,4 @@ public class PostgresJsonOutputter extends PostgresOutputter<Row>
         }
         encoder.appendString("]");
     }
-
 }

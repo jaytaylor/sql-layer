@@ -17,19 +17,16 @@
 
 package com.foundationdb.qp.rowtype;
 
-import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.HKey;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.util.FilteringIterator;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 
 public class UserTableRowType extends AisRowType
 {
@@ -47,12 +44,6 @@ public class UserTableRowType extends AisRowType
     public int nFields()
     {
         return table.getColumnsIncludingInternal().size();
-    }
-
-    @Override
-    public AkType typeAt(int index)
-    {
-        return akTypes[index];
     }
 
     @Override
@@ -128,12 +119,6 @@ public class UserTableRowType extends AisRowType
         super(schema, table.getTableId());
         this.table = table;
         typeComposition(new SingleBranchTypeComposition(this, table));
-        List<Column> columns = table.getColumnsIncludingInternal();
-        akTypes = new AkType[columns.size()];
-        for (int i = 0; i < columns.size(); i++) {
-            Column column = columns.get(i);
-            akTypes[i] = column.getType().akType();
-        }
         constraintChecker = new UserTableRowChecker(this);
     }
 
@@ -142,6 +127,5 @@ public class UserTableRowType extends AisRowType
     private final UserTable table;
     // Type of indexRowTypes is ArrayList, not List, to make it clear that null values are permitted.
     private final ArrayList<IndexRowType> indexRowTypes = new ArrayList<>();
-    private final AkType[] akTypes;
     private final ConstraintChecker constraintChecker;
 }

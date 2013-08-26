@@ -43,7 +43,7 @@ public class ManyLongTextFieldsIT extends ITBase {
         updateAISGeneration();
 
         Object[] colValues = new Object[fieldCount + 1];
-        colValues[0] = 1L;
+        colValues[0] = 1;
         for(int i = 1; i <= fieldCount; ++i) {
             colValues[i] = "longtext_value";
         }

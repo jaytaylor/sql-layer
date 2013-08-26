@@ -23,7 +23,6 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.expression.IndexKeyRange;
-import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.GroupCursor;
 import com.foundationdb.qp.operator.IndexScanSelector;
 import com.foundationdb.qp.operator.QueryBindings;
@@ -40,11 +39,9 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.types.ValueSource;
 import com.foundationdb.util.tap.InOutTap;
 import com.persistit.Key;
 
@@ -75,7 +72,7 @@ public class MemoryAdapter extends StoreAdapter {
     @Override
     public RowCursor newIndexCursor(QueryContext context, Index index,
             IndexKeyRange keyRange, Ordering ordering,
-            IndexScanSelector scanSelector, boolean usePValues, boolean openAllSubCursors) {
+            IndexScanSelector scanSelector, boolean openAllSubCursors) {
         
         Table table = index.rootMostTable();
         if (table.isUserTable()) {
@@ -100,18 +97,18 @@ public class MemoryAdapter extends StoreAdapter {
     }
 
     @Override
-    public void updateRow(Row oldRow, Row newRow, boolean usePValues) {
+    public void updateRow(Row oldRow, Row newRow) {
         throw new UnsupportedOperationException();
         
     }
 
     @Override
-    public void writeRow(Row newRow, Index[] indexes, boolean usePValues) {
+    public void writeRow(Row newRow, Index[] indexes) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void deleteRow(Row oldRow, boolean usePValues, boolean cascadeDelete) {
+    public void deleteRow(Row oldRow, boolean cascadeDelete) {
         throw new UnsupportedOperationException();
     }
 
@@ -123,14 +120,6 @@ public class MemoryAdapter extends StoreAdapter {
     @Override
     public long sequenceCurrentValue(TableName sequenceName) {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public long hash(ValueSource valueSource, AkCollator collator) {
-        return
-            collator == null
-            ? valueSource.getString().hashCode()
-            : collator.hashCode(valueSource.getString());
     }
 
     @Override

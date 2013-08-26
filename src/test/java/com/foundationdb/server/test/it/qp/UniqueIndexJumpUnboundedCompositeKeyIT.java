@@ -21,7 +21,6 @@ import org.junit.Ignore;
 import java.util.Arrays;
 import java.lang.Long;
 import com.foundationdb.util.ShareHolder;
-import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.operator.Operator;
 import org.junit.Test;
 import com.foundationdb.qp.operator.API;
@@ -61,8 +60,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     private static final int ID1 = 3;
     private static final int ID2 = 4;
 
-    private static final int INDEX_COLUMN_COUNT = 3;
-
     private static final boolean ASC = true;
     private static final boolean DESC = false;
 
@@ -71,7 +68,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     private int t;
     private RowType tRowType;
     private IndexRowType idxRowType;
-    private Map<Long, TestRow> indexRowMap = new HashMap<>();
     private Map<Long, TestRow> indexRowWithIdMap = new HashMap<>(); // use for jumping
 
     @Override
@@ -117,13 +113,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
         use(db);
         for (NewRow row : db)
         {
-            indexRowMap.put(id((Long)row.get(0), (Long)row.get(1)),
-                            new TestRow(tRowType,
-                                        new Object[] {row.get(2),     // a
-                                                      row.get(3),     // b
-                                                      row.get(4),     // c
-                                                      }));
-            
             indexRowWithIdMap.put(id((Long)row.get(0), (Long)row.get(1)),
                                   new TestRow(tRowType,
                                               new Object[]{row.get(2),  // a
@@ -2835,17 +2824,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
         doTest(targetId1, targetId2, unbounded(), ordering, expected);
     }
 
-     private void testBounded(long targetId1,                  // location to jump to
-                              long targetId2,
-                              int bLo, boolean lowInclusive,  // lower bound
-                              int bHi, boolean hiInclusive,   // upper bound
-                              API.Ordering ordering,          
-                              long expected[][])
-    {
-        doTest(targetId1, targetId2, bounded(1, bLo, lowInclusive, bHi, hiInclusive), ordering, expected);
-    }
-
-    private void doTest(long targetId1,                  // location to jump to
+     private void doTest(long targetId1,                  // location to jump to
                         long targetId2,
                         IndexKeyRange range,
                         API.Ordering ordering,          
@@ -3083,41 +3062,14 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
      // --- done generated
 
-    private TestRow indexRow(long id1, long id2)
-    {
-        return indexRowMap.get(id(id1, id2));
-    }
-
-    private TestRow indexRow(long val)
-    {
-        return indexRowMap.get(val);
-    }
-
     private TestRow indexRowWithId(long id1, long id2)
     {
         return indexRowWithIdMap.get(id(id1, id2));
     }
 
-    private TestRow indexRowWithId(long val)
-    {
-        return indexRowWithIdMap.get(val);
-    }
-    
     private long id(long id1, long id2)
     {
         return id2 << 4 | id1;
-    }
-
-    private long[] longs(long... longs)
-    {
-        return longs;
-    }
-
-    private IndexKeyRange bounded(long a, long bLo, boolean loInclusive, long bHi, boolean hiInclusive)
-    {
-        IndexBound lo = new IndexBound(new TestRow(tRowType, new Object[] {a, bLo}), new SetColumnSelector(0, 1));
-        IndexBound hi = new IndexBound(new TestRow(tRowType, new Object[] {a, bHi}), new SetColumnSelector(0, 1));
-        return IndexKeyRange.bounded(idxRowType, lo, loInclusive, hi, hiInclusive);
     }
 
     private IndexKeyRange unbounded()

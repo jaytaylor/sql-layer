@@ -42,7 +42,7 @@ public class UserTableRowCheckerTest {
         PValuesRow row = new PValuesRow (schema.userTableRowType(customer), col1, col2);
         
         UserTableRowChecker checker = new UserTableRowChecker (customer);
-        checker.checkConstraints(row, true);
+        checker.checkConstraints(row);
     }
 
     @Test (expected = NotNullViolationException.class)
@@ -58,7 +58,7 @@ public class UserTableRowCheckerTest {
         PValuesRow row = new PValuesRow (schema.userTableRowType(customer), col1, col2);
         
         UserTableRowChecker checker = new UserTableRowChecker (customer);
-        checker.checkConstraints(row, true);
+        checker.checkConstraints(row);
     }
     
     

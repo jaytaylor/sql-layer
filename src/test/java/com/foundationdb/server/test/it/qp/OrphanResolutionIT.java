@@ -25,7 +25,8 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.test.ExpressionGenerators;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -88,8 +89,8 @@ public class OrphanResolutionIT extends OperatorITBase
 
     private BindableRow parentRow(int pid, int px)
     {
-        return BindableRow.of(parentRowType, Arrays.asList(ExpressionGenerators.literal(pid, AkType.INT),
-                                                           ExpressionGenerators.literal(px, AkType.INT)), null);
+        return BindableRow.of(parentRowType, Arrays.asList(ExpressionGenerators.literal(pid, MNumeric.INT.instance(true)),
+                                                           ExpressionGenerators.literal(px, MNumeric.INT.instance(true))));
     }
 
     private int parent;

@@ -19,13 +19,8 @@ package com.foundationdb.server.rowdata;
 
 import com.foundationdb.server.AkServerUtil;
 import com.foundationdb.server.encoding.EncodingException;
-import com.foundationdb.server.types.FromObjectValueSource;
-import com.foundationdb.server.types.NullValueSource;
-import com.foundationdb.server.types.ValueSource;
-import com.foundationdb.server.types.conversion.Converters;
 import com.foundationdb.server.types3.TExecutionContext;
 import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.server.types3.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types3.mcompat.mtypes.MString;
 import com.foundationdb.server.types3.pvalue.PUnderlying;
@@ -211,9 +206,7 @@ public final class RowDataBuilder {
         fixedWidthSectionOffset = rowData.getRowStart();
         state = State.NEWLY_CONSTRUCTED;
         this.fieldWidths = new int[rowDef.getFieldCount()];
-        this.adapter = Types3Switch.ON
-                ? new NewValueAdapter()
-                : new OldValueAdapter();
+        this.adapter = new NewValueAdapter();
     }
 
     private final ValueAdapter<?,?> adapter;
@@ -266,42 +259,6 @@ public final class RowDataBuilder {
 
         private S source;
         private T target;
-    }
-
-    private static class OldValueAdapter extends ValueAdapter<ValueSource,RowDataValueTarget>{
-
-        @Override
-        public void doConvert(ValueSource source, RowDataValueTarget target, FieldDef fieldDef) {
-            Converters.convert(source, target);
-        }
-
-        @Override
-        public void objectToSource(Object object, FieldDef fieldDef) {
-            fromObjectValueSource.setReflectively(object);
-        }
-
-        @Override
-        public ValueSource nullSource(FieldDef fieldDef) {
-            return NullValueSource.only();
-        }
-
-        @Override
-        public boolean isNull(ValueSource source) {
-            return source.isNull();
-        }
-
-        public OldValueAdapter() {
-            this(
-                    new FromObjectValueSource(),
-                    new RowDataValueTarget());
-        }
-
-        private OldValueAdapter(FromObjectValueSource source, RowDataValueTarget target) {
-            super(source,  target);
-            this.fromObjectValueSource = source;
-        }
-
-        private FromObjectValueSource fromObjectValueSource;
     }
 
     private static class NewValueAdapter extends ValueAdapter<PValueSource,RowDataPValueTarget> {

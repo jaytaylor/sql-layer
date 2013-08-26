@@ -23,5 +23,4 @@ public interface T3RegistryMXBean {
     String describeScalars();
     String describeAggregates();
     String describeAll();
-    boolean isNewtypesOn();
 }

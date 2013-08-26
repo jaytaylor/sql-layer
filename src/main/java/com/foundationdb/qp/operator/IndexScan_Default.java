@@ -31,9 +31,7 @@ import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayDeque;
 import java.util.List;
-import java.util.Queue;
 
 /**
 
@@ -182,8 +180,7 @@ class IndexScan_Default extends Operator
                              IndexKeyRange indexKeyRange,
                              API.Ordering ordering,
                              IndexScanSelector scanSelector,
-                             int lookaheadQuantum,
-                             boolean usePValues)
+                             int lookaheadQuantum)
     {
         ArgumentValidation.notNull("indexType", indexType);
         this.indexType = indexType;
@@ -192,7 +189,6 @@ class IndexScan_Default extends Operator
         this.indexKeyRange = indexKeyRange;
         this.scanSelector = scanSelector;
         this.lookaheadQuantum = lookaheadQuantum;
-        this.usePValues = usePValues;
     }
 
     // Class state
@@ -209,7 +205,6 @@ class IndexScan_Default extends Operator
     private final IndexKeyRange indexKeyRange;
     private final IndexScanSelector scanSelector;
     private final int lookaheadQuantum;
-    private final boolean usePValues;
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
@@ -377,7 +372,7 @@ class IndexScan_Default extends Operator
         {
             super(context, bindingsCursor);
             UserTable table = (UserTable)index.rootMostTable();
-            this.cursor = adapter(table).newIndexCursor(context, index, indexKeyRange, ordering, scanSelector, usePValues, false);
+            this.cursor = adapter(table).newIndexCursor(context, index, indexKeyRange, ordering, scanSelector, false);
         }
 
         // Object state
@@ -421,7 +416,7 @@ class IndexScan_Default extends Operator
 
         @Override
         protected BindingsAwareCursor newCursor(QueryContext context, StoreAdapter adapter) {
-            return (BindingsAwareCursor)adapter.newIndexCursor(context, index, indexKeyRange, ordering, scanSelector, usePValues, true);
+            return (BindingsAwareCursor)adapter.newIndexCursor(context, index, indexKeyRange, ordering, scanSelector, true);
         }
 
         @Override

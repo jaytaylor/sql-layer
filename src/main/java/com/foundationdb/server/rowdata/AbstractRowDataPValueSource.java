@@ -17,14 +17,20 @@
 
 package com.foundationdb.server.rowdata;
 
+import java.math.BigDecimal;
+
 import com.foundationdb.server.AkServerUtil;
 import com.foundationdb.server.types.*;
 import com.foundationdb.server.types3.TClass;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.common.types.TString;
+import com.foundationdb.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.foundationdb.server.types3.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.util.AkibanAppender;
 
 
 abstract class AbstractRowDataPValueSource implements PValueSource {
@@ -128,20 +134,41 @@ abstract class AbstractRowDataPValueSource implements PValueSource {
 
     @Override
     public Object getObject() {
-        assert hasCacheValue() : "can't get cached object for " + fieldDef();
-        final long location = getRawOffsetAndWidth();
-        return location == 0
-                ? null
-                : AkServerUtil.byteSourceForMySQLString(bytes(), (int) location, (int) (location >>> 32), fieldDef());
+        if (fieldDef().column().tInstance().typeClass() instanceof TString) {
+            final long location = getRawOffsetAndWidth();
+            return location == 0
+                    ? null
+                    : AkServerUtil.byteSourceForMySQLString(bytes(), (int) location, (int) (location >>> 32), fieldDef());
+        } else if (fieldDef().column().tInstance().typeClass() instanceof MBigDecimal) {
+            return getDecimal();
+        } else {
+            assert false : "Unable to get object for type: " + fieldDef();
+        }
+        return null;
     }
-
 
     // for subclasses
     protected abstract long getRawOffsetAndWidth();
     protected abstract byte[] bytes();
     protected abstract FieldDef fieldDef();
 
+    
+    
     // for use within this class
+    
+    private MBigDecimalWrapper getDecimal() {
+        AkibanAppender appender = AkibanAppender.of(new StringBuilder(fieldDef().getMaxStorageSize()));
+        ConversionHelperBigDecimal.decodeToString(fieldDef(), bytes(), getRawOffsetAndWidth(), appender);
+        String asString = appender.toString();
+        assert ! asString.isEmpty();
+        try {
+            return new MBigDecimalWrapper(new BigDecimal(asString));
+        } catch (NumberFormatException e) {
+            throw new NumberFormatException(asString);
+        }
+    }
+
+    
     private double doGetDouble() {
         long asLong = extractLong(Signage.SIGNED);
         return Double.longBitsToDouble(asLong);

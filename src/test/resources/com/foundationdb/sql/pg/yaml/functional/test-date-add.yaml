@@ -107,24 +107,15 @@
 # malformed dates:
 # invalid date/time format should be thrown here?
 ---
-- Message: Skipping test due to bug1084613
+#- Message: Skipping test due to bug1084613
 #---
-#- Statement: SELECT DATE_ADD('2006-07-00', INTERVAL 1 DAY);
+- Statement: SELECT DATE_ADD('2006-07-00', INTERVAL 1 DAY);
 #- output: [[null]]
+- error: [70001]
 ---
 - Statement: SELECT '2005-03-32' + INTERVAL 1 MONTH;
 - output: !select-engine { sys-mysql: [[null]], newtypes: [[null]], all: [['2005-04-30']] }
 ---
 - Statement: SELECT INTERVAL 1 DAY + '2008-12-31';
 - output: [['2009-01-01']]
-
-################# Types2-unique- behaviour ##############################
----
-- Newtypes: false
-# '2000-12-31 23:59:59' minus '2000-12-30 23:59:58' ===> interval 1 day and 1 second
----
-- Statement: SELECT DATE_ADD('2000-12-31 23:59:59', DATETIME('2000-12-31 23:59:59') -'2000-12-30 23:59:58');
-- output: [[!re '2001-01-02 00:00:00([.]0)?']] 
----
-- Newtypes: null
 ...

@@ -18,8 +18,6 @@
 package com.foundationdb.sql.embedded;
 
 import com.foundationdb.qp.operator.QueryBindings;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.ValueSource;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.sql.server.ServerJavaValues;
@@ -59,16 +57,6 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
         }
 
         @Override
-        protected ValueSource getValue(int index) {
-            return bindings.getValue(index);
-        }
-
-        @Override
-        protected void setValue(int index, ValueSource source, AkType akType) {
-            bindings.setValue(index, source, akType);
-        }
-
-        @Override
         protected PValueSource getPValue(int index) {
             return bindings.getPValue(index);
         }
@@ -78,10 +66,6 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             bindings.setPValue(index, source);
         }
 
-        @Override
-        protected AkType getAkType(int index) {
-            return executableStatement.getParameterMetaData().getParameter(index + 1).getAkType();
-        }
 
         @Override
         protected TInstance getTInstance(int index) {

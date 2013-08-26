@@ -4,12 +4,11 @@
 ---
 - Properties: sys-aksql
 - suppressed: true
-
 ---
 - CreateTable: t (id INT PRIMARY KEY NOT NULL, s VARCHAR(32) CHARACTER SET latin1 COLLATE latin1_swedish_ci)
 ---
 - Statement: INSERT INTO t(id, s)
-    VALUES (1, 'alfa'), (2, 'charlie'), (3, 'BRAVO'), (4, 'Ångström'), (5, 'Zulu'), (0, null)
+    VALUES (0, null), (1, 'alfa'), (2, 'charlie'), (3, 'BRAVO'), (4, 'Ångström'), (5, 'Zulu')
 ---
 - Statement: SELECT id FROM t WHERE s > 'B'
 - output_ordered: [[2], [3], [4], [5]]

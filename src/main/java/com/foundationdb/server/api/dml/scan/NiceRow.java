@@ -27,8 +27,6 @@ import com.foundationdb.server.rowdata.RowDataExtractor;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.store.Store;
 import com.foundationdb.util.ArgumentValidation;
 
 public class NiceRow extends NewRow {

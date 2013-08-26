@@ -27,8 +27,7 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.UserTableRowType;
-import com.foundationdb.qp.util.ValueSourceHasher;
-import com.foundationdb.server.PersistitKeyValueSource;
+import com.foundationdb.server.PersistitKeyPValueSource;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.collation.AkCollator;
@@ -36,7 +35,8 @@ import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.collation.AkCollatorMySQL;
 import com.foundationdb.server.expression.std.Comparison;
 import com.foundationdb.server.test.ExpressionGenerators;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types3.pvalue.PValueSources;
 import com.persistit.Key;
 import org.junit.Test;
 
@@ -127,27 +127,26 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     {
         AkCollator caseInsensitiveCollator = AkCollatorFactory.getAkCollator("latin1_swedish_ci");
         AkCollator binaryCollator = AkCollatorFactory.getAkCollator(AkCollatorFactory.UCS_BINARY);
-        PersistitKeyValueSource source = new PersistitKeyValueSource();
+        PersistitKeyPValueSource source = new PersistitKeyPValueSource(MString.VARCHAR.instance(true));
         long hash_AB;
         long hash_ab;
         Key key = store().createKey();
         {
             binaryCollator.append(key.clear(), "AB");
-            source.attach(key, 0, AkType.VARCHAR, binaryCollator);
-            hash_AB = ValueSourceHasher.hash(adapter, source, binaryCollator);
+            source.attach(key, 0, MString.VARCHAR.instance(true));
+            hash_AB = PValueSources.hash(source, binaryCollator);
             binaryCollator.append(key.clear(), "ab");
-            source.attach(key, 0, AkType.VARCHAR, binaryCollator);
-            hash_ab = ValueSourceHasher.hash(adapter, source, binaryCollator);
+            source.attach(key, 0, MString.VARCHAR.instance(true));
+            hash_ab = PValueSources.hash(source, binaryCollator);
             assertTrue(hash_AB != hash_ab);
-
         }
         {
             caseInsensitiveCollator.append(key.clear(), "AB");
-            source.attach(key, 0, AkType.VARCHAR, caseInsensitiveCollator);
-            hash_AB = ValueSourceHasher.hash(adapter, source, caseInsensitiveCollator);
+            source.attach(key, 0, MString.VARCHAR.instance(true));
+            hash_AB = PValueSources.hash(source, caseInsensitiveCollator);
             caseInsensitiveCollator.append(key.clear(), "ab");
-            source.attach(key, 0, AkType.VARCHAR, caseInsensitiveCollator);
-            hash_ab = ValueSourceHasher.hash(adapter, source, caseInsensitiveCollator);
+            source.attach(key, 0, MString.VARCHAR.instance(true));
+            hash_ab = PValueSources.hash(source, caseInsensitiveCollator);
             assertTrue(hash_AB == hash_ab);
         }
     }
@@ -260,7 +259,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     {
         List<AkCollator> collators = Arrays.asList(ciCollator, ciCollator);
         // loadFilter loads the filter with F rows containing the given testId.
-        Operator loadFilter = project_Default(
+        Operator loadFilter = project_DefaultTest(
             select_HKeyOrdered(
                 filter_Default(
                     groupScan_Default(group(f)),
@@ -284,14 +283,14 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
                 loadFilter.rowType(),
                 Arrays.asList(
                     ExpressionGenerators.boundField(dIndexRowType, 0, 1),
-                    ExpressionGenerators.boundField(dIndexRowType, 0, 2))),
+                    ExpressionGenerators.boundField(dIndexRowType, 0, 2)), true),
             new SetColumnSelector(0, 1));
         IndexKeyRange fabKeyRange =
             IndexKeyRange.bounded(fabIndexRowType, abBound, true, abBound, true);
         // Use a bloom filter loaded by loadFilter. Then for each input row, check the filter (projecting
         // D rows on (a, b)), and, for positives, check F using an index scan keyed by D.a and D.b.
         Operator plan =
-            project_Default(
+            project_DefaultTest(
                 using_BloomFilter(
                     // filterInput
                     loadFilter,

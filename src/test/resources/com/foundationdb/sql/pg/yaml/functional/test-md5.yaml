@@ -1,7 +1,5 @@
 # test the MD5 function in types3
 ---
-- Newtypes: true
----
 - Statement: select length(md5('AK'));
 - output: [[32]]
 ---
@@ -13,6 +11,4 @@
 ---
 - Statement: SELECT md5('abcdefaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaddddddddddddddddddddddddddddddddddddddddddddddaaaaaa');
 - output: [['bd5f0680795777eb208be66db93d2c10']]
----
-- Newtypes: null
 ...

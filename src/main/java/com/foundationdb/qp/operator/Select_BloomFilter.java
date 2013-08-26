@@ -19,11 +19,8 @@ package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.util.ValueSourceHasher;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.expression.Expression;
-import com.foundationdb.server.expression.ExpressionEvaluation;
 import com.foundationdb.server.types3.pvalue.PValueSources;
 import com.foundationdb.server.types3.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types3.texpressions.TPreparedExpression;
@@ -108,10 +105,7 @@ class Select_BloomFilter extends Operator
     protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor)
     {
         if (!pipeline) {
-            if (tFields == null)
-                return new Execution<>(context, bindingsCursor, fields, oldExpressionsAdapater);
-            else
-                return new Execution<>(context, bindingsCursor, tFields, newExpressionsAdapter);
+            return new Execution<>(context, bindingsCursor, tFields, newExpressionsAdapter);
         }
         else {
             assert (tFields != null);
@@ -138,7 +132,6 @@ class Select_BloomFilter extends Operator
 
     public Select_BloomFilter(Operator input,
                               Operator onPositive,
-                              List<? extends Expression> fields,
                               List<? extends TPreparedExpression> tFields,
                               List<AkCollator> collators,
                               int bindingPosition,
@@ -147,14 +140,8 @@ class Select_BloomFilter extends Operator
     {
         ArgumentValidation.notNull("input", input);
         ArgumentValidation.notNull("onPositive", onPositive);
-        int size;
-        if (tFields == null) {
-            ArgumentValidation.notNull("fields", fields);
-            size = fields.size();
-        }
-        else {
-            size = tFields.size();
-        }
+        ArgumentValidation.notNull("Fields", tFields);
+        int size = tFields.size();
         ArgumentValidation.isGT("fields.size()", size, 0);
         ArgumentValidation.isGTE("bindingPosition", bindingPosition, 0);
         ArgumentValidation.isGT("depth", depth, 0);
@@ -163,7 +150,6 @@ class Select_BloomFilter extends Operator
         this.bindingPosition = bindingPosition;
         this.pipeline = pipeline;
         this.depth = depth;
-        this.fields = fields;
         this.tFields = tFields;
         this.collators = collators;
     }
@@ -188,7 +174,6 @@ class Select_BloomFilter extends Operator
     private final Operator onPositive;
     private final int bindingPosition, depth;
     private final boolean pipeline;
-    private final List<? extends Expression> fields;
     private final List<? extends TPreparedExpression> tFields;
     private final List<AkCollator> collators;
 
@@ -199,15 +184,8 @@ class Select_BloomFilter extends Operator
         atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(bindingPosition));
         atts.put(Label.INPUT_OPERATOR, input.getExplainer(context));
         atts.put(Label.INPUT_OPERATOR, onPositive.getExplainer(context));
-        if (tFields == null) {
-            for (Expression field : fields) {
-                atts.put(Label.EXPRESSIONS, field.getExplainer(context));
-            }
-        }
-        else {
-            for (TPreparedExpression field : tFields) {
-                atts.put(Label.EXPRESSIONS, field.getExplainer(context));
-            }
+        for (TPreparedExpression field : tFields) {
+            atts.put(Label.EXPRESSIONS, field.getExplainer(context));
         }
         return new CompoundExplainer(Type.BLOOM_FILTER, atts);
     }
@@ -218,22 +196,6 @@ class Select_BloomFilter extends Operator
         EVAL evaluate(EXPR expression, QueryContext contex);
         int hash(StoreAdapter adapter, EVAL evaluation, Row row, AkCollator collator);
     }
-
-    private static ExpressionAdapter<Expression, ExpressionEvaluation> oldExpressionsAdapater
-            = new ExpressionAdapter<Expression, ExpressionEvaluation>() {
-        @Override
-        public ExpressionEvaluation evaluate(Expression expression, QueryContext contex) {
-            ExpressionEvaluation eval = expression.evaluation();
-            eval.of(contex);
-            return eval;
-        }
-
-        @Override
-        public int hash(StoreAdapter adapter, ExpressionEvaluation evaluation, Row row, AkCollator collator) {
-            evaluation.of(row);
-            return ValueSourceHasher.hash(adapter, evaluation.eval(), collator);
-        }
-    };
 
     private static ExpressionAdapter<TPreparedExpression, TEvaluatableExpression> newExpressionsAdapter
             = new ExpressionAdapter<TPreparedExpression, TEvaluatableExpression>() {

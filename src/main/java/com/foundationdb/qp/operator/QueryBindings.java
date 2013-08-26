@@ -19,8 +19,6 @@ package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.ValueSource;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.util.BloomFilter;
 
@@ -34,29 +32,6 @@ public interface QueryBindings
     public PValueSource getPValue(int index);
 
     public void setPValue(int index, PValueSource value);
-
-    /**
-     * Gets the value bound to the given index.
-     * @param index the index to look up
-     * @return the value at that index
-     * @throws BindingNotSetException if the given index wasn't set
-     */
-    public ValueSource getValue(int index);
-
-    /**
-     * Bind a value to the given index.
-     * @param index the index to set
-     * @param value the value to assign
-     */
-    public void setValue(int index, ValueSource value);
-
-    /**
-     * Bind a value to the given index.
-     * @param index the index to set
-     * @param value the value to assign
-     * @param type the type to convert the value to for binding
-     */
-    public void setValue(int index, ValueSource value, AkType type);
 
     /**
      * Gets the row bound to the given index.

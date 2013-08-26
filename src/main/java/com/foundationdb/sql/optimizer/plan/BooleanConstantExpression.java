@@ -17,8 +17,8 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.sql.parser.ValueNode;
 
 public class BooleanConstantExpression extends ConstantExpression 
@@ -26,11 +26,11 @@ public class BooleanConstantExpression extends ConstantExpression
 {
     public BooleanConstantExpression(Object value, 
                                      DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(value, sqlType, AkType.BOOL, sqlSource);
+        super(value, sqlType, sqlSource);
     }
 
     public BooleanConstantExpression(Boolean value) {
-        super(value, AkType.BOOL);
+        super(value, new DataTypeDescriptor(TypeId.BOOLEAN_ID, true), null);
     }
     
     @Override

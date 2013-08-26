@@ -17,7 +17,6 @@
 
 package com.foundationdb.qp.operator;
 
-import com.foundationdb.qp.exec.Plannable;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.CompoundExplainer;
@@ -25,7 +24,6 @@ import com.foundationdb.server.explain.ExplainContext;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class TimeOperator extends Operator

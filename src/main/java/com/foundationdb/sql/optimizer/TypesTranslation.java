@@ -26,7 +26,6 @@ import com.foundationdb.server.expression.ExpressionType;
 import com.foundationdb.server.expression.std.ExpressionTypes;
 import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.server.types3.aksql.aktypes.AkBool;
 import com.foundationdb.server.types3.aksql.aktypes.AkInterval;
 import com.foundationdb.server.types3.aksql.aktypes.AkResultSet;
@@ -349,9 +348,8 @@ public final class TypesTranslation {
     }
 
     public static TInstance toTInstance(DataTypeDescriptor sqlType) {
-        if (!Types3Switch.ON)
-            return null;
         TInstance tInstance;
+        if (sqlType == null) return null;
         TypeId typeId = sqlType.getTypeId();
         typeIdSwitch:
         switch (typeId.getTypeFormatId()) {

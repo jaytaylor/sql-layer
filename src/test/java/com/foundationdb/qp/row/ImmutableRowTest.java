@@ -19,9 +19,12 @@ package com.foundationdb.qp.row;
 
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.ValuesRowType;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.ValueSource;
-import com.foundationdb.server.types.util.ValueHolder;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -32,61 +35,62 @@ import static org.junit.Assert.assertEquals;
 public final class ImmutableRowTest {
     @Test
     public void basic() {
-        ValueHolder vh1 = new ValueHolder(AkType.LONG, 1L);
-        ValueHolder vh2 = new ValueHolder(AkType.VARCHAR, "right");
-        Row row = new ImmutableRow(rowType(AkType.LONG, AkType.VARCHAR), Arrays.asList(vh1, vh2).iterator());
-        vh1.putLong(50);
-        vh2.putString("wrong");
-        assertEquals("1", 1L, row.eval(0).getLong());
-        assertEquals("2", "right", row.eval(1).getString());
+        PValue vh1 = new PValue (MNumeric.BIGINT.instance(false), 1L);
+        PValue vh2 = new PValue (MString.varchar(), "right");
+        Row row = new ImmutableRow (rowType(MNumeric.BIGINT.instance(false), MString.varchar()), Arrays.asList(vh1, vh2).iterator());
+        vh1.putInt64(50L);
+        vh2.putString("wrong", null);
+        assertEquals("1", 1L, row.pvalue(0).getInt64());
+        assertEquals("2", "right", row.pvalue(1).getString());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void tooFewInputs() {
-        new ImmutableRow(rowType(AkType.LONG), Collections.<ValueSource>emptyList().iterator());
+        new ImmutableRow(rowType(MNumeric.INT.instance(false)), Collections.<PValueSource>emptyList().iterator());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void tooManyInputs() {
         new ImmutableRow(
-                rowType(AkType.LONG),
+                rowType(MNumeric.BIGINT.instance(false)),
                 Arrays.asList(
-                        new ValueHolder(AkType.LONG, 1L),
-                        new ValueHolder(AkType.VARCHAR, "bonus")).iterator()
+                        new PValue(MNumeric.BIGINT.instance(false), 1L),
+                        new PValue(MString.varchar(), "bonus")).iterator()
+        );
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void wrongInputType() {
+        new ImmutableRow(
+                rowType(MNumeric.INT.instance(false)),
+                Collections.singleton(new PValue(MNumeric.INT.instance(false), "1L")).iterator()
         );
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void wrongInputType() {
-        new ImmutableRow(
-                rowType(AkType.LONG),
-                Collections.singleton(new ValueHolder(AkType.VARCHAR, "1L")).iterator()
-        );
-    }
-
-    @Test(expected = IllegalStateException.class)
     public void tryToClear() {
         ImmutableRow row = new ImmutableRow(
-                rowType(AkType.VARCHAR),
-                Collections.singleton(new ValueHolder(AkType.VARCHAR, "1L")).iterator()
+                rowType(MNumeric.INT.instance(false)),
+                Collections.singleton(new PValue(MString.varchar(), "1L")).iterator()
         );
         row.clear();
     }
 
+    
     @Test(expected = IllegalStateException.class)
     public void tryToGetHolder() {
         ImmutableRow row = new ImmutableRow(
-                rowType(AkType.VARCHAR),
-                Collections.singleton(new ValueHolder(AkType.VARCHAR, "1L")).iterator()
+                rowType(MString.varchar()),
+                Collections.singleton(new PValue(MString.varchar(), "1L")).iterator()
         );
-        row.holderAt(0);
+        row.pvalueAt(0);
     }
 
     @Test
     public void aquire() {
         Row row = new ImmutableRow(
-                rowType(AkType.VARCHAR),
-                Collections.singleton(new ValueHolder(AkType.VARCHAR, "1L")).iterator()
+                rowType(MString.varchar()),
+                Collections.singleton(new PValue(MString.varchar(), "1L")).iterator()
         );
         row.acquire();
         row.acquire();
@@ -94,7 +98,8 @@ public final class ImmutableRowTest {
         assertEquals("isShared", false, row.isShared());
     }
 
-    private RowType rowType(AkType... types) {
-        return new ValuesRowType(null, 1, types);
+    
+    private RowType rowType(TInstance... types) {
+        return new ValuesRowType (null, 1, types);
     }
 }

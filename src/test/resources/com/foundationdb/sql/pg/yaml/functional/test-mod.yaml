@@ -44,34 +44,9 @@
 - Statement: SELECT 2 mod ? FROM all_types;
 - params: [[1]]
 - output: [[0.0]]
-############### types2's behaviour #############################
----
-- Newtypes: false
-# test division by zero
----
-- Statement: SELECT 2 % 0;
-- error: [22012]
----
-- Statement: SELECT '2' % '3' FROM all_types;
-- error: [22503]
-# test invalid argument type
----
-- Statement: SELECT DATE('2006-11-07') % 3 FROM all_types;
-- error: [22503]
----
-- Statement: SELECT bigint_field % date_field FROM all_types;
-- error: [22503]
----
-- Statement: SELECT year_field % 3 FROM all_types;
-- error: [22503]
----
-- Statement: SELECT year_field % time_field FROM all_types;
-- error: [22503]
 # Commented out since the instance-picking algorithm isn't working
 # properly in trunk
 ############### types3's behaviour #############################
----
-- Newtypes: true
 ---
 - Statement: SELECT 2 % 0;
 - output: [[null]]
@@ -90,13 +65,11 @@
 - Statement: SELECT year_field % 3 FROM all_types;
 - output: [[0.0]]
 ---
-- Message: bug 1070604
-#- Statement: SELECT year_field % time_field FROM all_types;
-#- output: [[0.0]]
-#---
-#- Statement: SELECT year_field from all_types;
-#- output: [[0]]
+#- Message: bug 1070604
+- Statement: SELECT year_field % time_field FROM all_types;
+- output: [[0.0]]
 ---
-- Newtypes: null
+- Statement: SELECT year_field from all_types;
+- output: [[0]]
 ...
 

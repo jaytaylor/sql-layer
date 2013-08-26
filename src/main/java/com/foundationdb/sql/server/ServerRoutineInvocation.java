@@ -55,6 +55,7 @@ public abstract class ServerRoutineInvocation
             return routine.getParameters().get(index);
     }
 
+    @Deprecated
     protected AkType getAkType(int index) {
         return getRoutineParameter(index).getType().akType();
     }

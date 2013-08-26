@@ -30,15 +30,13 @@ public class PostgresRowOutputter extends PostgresOutputter<Row>
     }
 
     @Override
-    public void output(Row row, boolean usePVals) throws IOException {
+    public void output(Row row) throws IOException {
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
         messenger.writeShort(ncols);
         for (int i = 0; i < ncols; i++) {
             PostgresType type = columnTypes.get(i);
             boolean binary = context.isColumnBinary(i);
-            ByteArrayOutputStream bytes;
-            if (usePVals) bytes = encoder.encodePValue(row.pvalue(i), type, binary);
-            else bytes = encoder.encodeValue(row.eval(i), type, binary);
+            ByteArrayOutputStream bytes = encoder.encodePValue(row.pvalue(i), type, binary);
             if (bytes == null) {
                 messenger.writeInt(-1);
             }

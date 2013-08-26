@@ -512,20 +512,20 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
     {
         // vendor
         vendorId = createTable("coi", "vendor",
-                               "vid1 int not null",
-                               "vx int",
-                               "vid2 int not null",
+                               "vid1 bigint not null",
+                               "vx bigint",
+                               "vid2 bigint not null",
                                "primary key(vid1, vid2)");
         v_vid1 = 0;
         v_vid2 = 2;
         v_vx = 1;
         // customer
         customerId = createTable("coi", "customer",
-                                 "vid1 int not null",
-                                 "cid2 int not null",
-                                 "vid2 int not null",
-                                 "cx int",
-                                 "cid1 int not null",
+                                 "vid1 bigint not null",
+                                 "cid2 bigint not null",
+                                 "vid2 bigint not null",
+                                 "cx bigint",
+                                 "cid1 bigint not null",
                                  "primary key(vid1, vid2, cid1, cid2)",
                                  "grouping foreign key (vid1, vid2) references vendor(vid1, vid2)");
         c_vid1 = 0;
@@ -535,15 +535,15 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
         c_cx = 3;
         // order
         orderId = createTable("coi", "order",
-                              "vid2 int not null",
-                              "cid1 int not null",
-                              "cid2 int not null",
-                              "oid2 int not null",
-                              "oid1 int not null",
-                              "ox int",
-                              "priority int",
-                              "vid1 int not null",
-                              "when int",
+                              "vid2 bigint not null",
+                              "cid1 bigint not null",
+                              "cid2 bigint not null",
+                              "oid2 bigint not null",
+                              "oid1 bigint not null",
+                              "ox bigint",
+                              "priority bigint",
+                              "vid1 bigint not null",
+                              "when bigint",
                               "primary key(vid1, vid2, cid1, cid2, oid1, oid2)",
                               "unique(when)",
                               "grouping foreign key (vid1, vid2, cid1, cid2) references customer(vid1, vid2, cid1, cid2)");
@@ -559,15 +559,15 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
         o_when = 8;
         // item
         itemId = createTable("coi", "item",
-                             "cid1 int not null",
-                             "ix int",
-                             "oid1 int not null",
-                             "vid2 int not null",
-                             "oid2 int not null",
-                             "vid1 int not null",
-                             "cid2 int not null",
-                             "iid1 int not null",
-                             "iid2 int not null",
+                             "cid1 bigint not null",
+                             "ix bigint",
+                             "oid1 bigint not null",
+                             "vid2 bigint not null",
+                             "oid2 bigint not null",
+                             "vid1 bigint not null",
+                             "cid2 bigint not null",
+                             "iid1 bigint not null",
+                             "iid2 bigint not null",
                              "primary key(vid1, vid2, cid1, cid2, oid1, oid2, iid1, iid2)",
                              "grouping foreign key (vid1, vid2, cid1, cid2, oid1, oid2) references \"order\"(vid1, vid2, cid1, cid2, oid1, oid2)");
         i_vid1 = 5;

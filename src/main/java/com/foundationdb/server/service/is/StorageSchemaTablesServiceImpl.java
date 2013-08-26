@@ -40,13 +40,12 @@ import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.ValuesRow;
+import com.foundationdb.qp.row.PValuesRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.tree.TreeService;
 import com.foundationdb.server.store.SchemaManager;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.FromObjectValueSource;
+import com.foundationdb.server.types3.pvalue.PValue;
 import com.google.inject.Inject;
 import com.persistit.Management;
 import com.persistit.Management.BufferPoolInfo;
@@ -217,7 +216,7 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                return new ValuesRow (rowType,
+                return new PValuesRow (rowType,
                         getJMXAttribute (mbeanName, "AlertLevel"),
                         getJMXAttribute (mbeanName, "WarnLogTimeInterval"),
                         getJMXAttribute (mbeanName, "ErrorLogTimeInterval"),
@@ -265,7 +264,7 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter >= bufferPools.length) {
                     return null;
                 }
-                return new ValuesRow (rowType, 
+                return new PValuesRow (rowType, 
                         bufferPools[rowCounter].getBufferSize(),
                         bufferPools[rowCounter].getBufferCount(),
                         bufferPools[rowCounter].getValidPageCount(),
@@ -310,7 +309,7 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                return new ValuesRow (rowType,
+                return new PValuesRow (rowType,
                             getJMXAttribute(mbeanName, "CheckpointInterval"),
                             ++rowCounter /* Hidden PK */);
             }
@@ -342,7 +341,7 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                return new ValuesRow (rowType,
+                return new PValuesRow (rowType,
                         getJMXAttribute(mbeanName, "AcceptedCount"),
                         getJMXAttribute(mbeanName, "RefusedCount"),
                         getJMXAttribute(mbeanName, "PerformedCount"),
@@ -380,7 +379,7 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                return new ValuesRow (rowType,
+                return new PValuesRow (rowType,
                         getJMXAttribute(mbeanName, "IoRate"),
                         getJMXAttribute(mbeanName, "QuiescentIOthreshold"),
                         getJMXAttribute(mbeanName, "LogFile"),
@@ -419,7 +418,7 @@ public class StorageSchemaTablesServiceImpl
                     return null;
                 }
                 parameter.set(0, IOMeterMXBean.OPERATIONS[rowCounter+1]);
-                return new ValuesRow (rowType,
+                return new PValuesRow (rowType,
                         IOMeterMXBean.OPERATION_NAMES[rowCounter+1],
                         getJMXInvoke (mbeanName, "totalBytes", parameter.toArray()),
                         getJMXInvoke (mbeanName, "totalOperations", parameter.toArray()),
@@ -462,7 +461,7 @@ public class StorageSchemaTablesServiceImpl
                 }
                 String[] params = new String[0]; 
                                
-                ValuesRow row = new ValuesRow (rowType,
+                PValuesRow row = new PValuesRow (rowType,
                         journal.getBlockSize(),
                         journal.getBaseAddress(),
                         journal.getCurrentJournalAddress(),
@@ -490,8 +489,8 @@ public class StorageSchemaTablesServiceImpl
                         getJMXAttribute(mbeanName, "JournalCreatedTime"),
                         ++rowCounter);
                 
-                ((FromObjectValueSource)row.eval(13)).setExplicitly(journal.getLastValidCheckpointSystemTime()/1000, AkType.TIMESTAMP);
-                ((FromObjectValueSource)row.eval(23)).setExplicitly(((Long)getJMXAttribute(mbeanName, "JournalCreatedTime")).longValue()/1000, AkType.TIMESTAMP);
+                ((PValue)row.pvalue(13)).putInt64(journal.getLastValidCheckpointSystemTime()/1000);
+                ((PValue)row.pvalue(23)).putInt64(((Long)getJMXAttribute(mbeanName, "JournalCreatedTime")).longValue()/1000);
                 return row;
             }
         }
@@ -526,9 +525,9 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                ValuesRow row;
+                PValuesRow row;
                 try {
-                    row = new ValuesRow (rowType,
+                    row = new PValuesRow (rowType,
                             boolResult(db_manage.isInitialized()),
                             boolResult(db_manage.isUpdateSuspended()),
                             boolResult(db_manage.isShutdownSuspended()),
@@ -537,7 +536,7 @@ public class StorageSchemaTablesServiceImpl
                             db_manage.getStartTime(),
                             db_manage.getDefaultCommitPolicy(),
                             ++rowCounter);
-                    ((FromObjectValueSource)row.eval(5)).setExplicitly(db_manage.getStartTime()/1000, AkType.TIMESTAMP);
+                    ((PValue)row.pvalue(5)).putInt64(db_manage.getStartTime()/1000);
                 } catch (RemoteException e) {
                     logger.error ("Getting Manager items throws exception: " + e.getMessage());
                     return null;
@@ -576,7 +575,7 @@ public class StorageSchemaTablesServiceImpl
                 }
                 Object activeTransactionFloor = getJMXAttribute(mbeanName, "ActiveTransactionFloor");
                 Object activeTransactionCeiling = getJMXAttribute(mbeanName, "ActiveTransactionCeiling"); 
-                ValuesRow row =  new ValuesRow(rowType,
+                PValuesRow row =  new PValuesRow(rowType,
                         activeTransactionFloor,
                         activeTransactionCeiling,
                         getJMXAttribute(mbeanName, "ActiveTransactionCount"),
@@ -638,7 +637,7 @@ public class StorageSchemaTablesServiceImpl
 
             @Override
             public Row next() {
-                ValuesRow row;
+                PValuesRow row;
                 if (volumes == null) {
                     return null;
                 }
@@ -649,7 +648,7 @@ public class StorageSchemaTablesServiceImpl
                     return null;
                 }
 
-                row = new ValuesRow (rowType,
+                row = new PValuesRow (rowType,
                         volumes[volumeIndex].getName(),
                         trees[treeIndex].getName(),
                         trees[treeIndex].getStatus(),
@@ -720,7 +719,7 @@ public class StorageSchemaTablesServiceImpl
                     return null;
                 }
                 
-                ValuesRow row = new ValuesRow (rowType,
+                PValuesRow row = new PValuesRow (rowType,
                         volumes[rowCounter].getName(),
                         volumes[rowCounter].getPath(),
                         boolResult(volumes[rowCounter].isTransient()),
@@ -742,11 +741,11 @@ public class StorageSchemaTablesServiceImpl
                         volumes[rowCounter].getStoreCounter(),
                         volumes[rowCounter].getRemoveCounter(),
                         rowCounter);
-                ((FromObjectValueSource)row.eval(7)).setExplicitly(volumes[rowCounter].getCreateTime().getTime()/1000, AkType.TIMESTAMP);
-                ((FromObjectValueSource)row.eval(8)).setExplicitly(volumes[rowCounter].getOpenTime().getTime()/1000, AkType.TIMESTAMP);
-                ((FromObjectValueSource)row.eval(9)).setExplicitly(volumes[rowCounter].getLastReadTime().getTime()/1000, AkType.TIMESTAMP);
-                ((FromObjectValueSource)row.eval(10)).setExplicitly(volumes[rowCounter].getLastWriteTime().getTime()/1000, AkType.TIMESTAMP);
-                ((FromObjectValueSource)row.eval(11)).setExplicitly(volumes[rowCounter].getLastExtensionTime().getTime()/1000, AkType.TIMESTAMP);
+                ((PValue)row.pvalue(7)).putInt64(volumes[rowCounter].getCreateTime().getTime()/1000);
+                ((PValue)row.pvalue(8)).putInt64(volumes[rowCounter].getOpenTime().getTime()/1000);
+                ((PValue)row.pvalue(9)).putInt64(volumes[rowCounter].getLastReadTime().getTime()/1000);
+                ((PValue)row.pvalue(10)).putInt64(volumes[rowCounter].getLastWriteTime().getTime()/1000);
+                ((PValue)row.pvalue(11)).putInt64(volumes[rowCounter].getLastExtensionTime().getTime()/1000);
                 ++rowCounter;
                 return row;
             }

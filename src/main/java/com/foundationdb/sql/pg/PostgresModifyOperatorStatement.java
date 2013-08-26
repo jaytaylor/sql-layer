@@ -61,10 +61,9 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
                      Operator resultsOperator,
                      PostgresType[] parameterTypes,
                      CostEstimate costEstimate,
-                     boolean usesPValues,
                      boolean requireStepIsolation,
                      boolean putInCache) {
-        super.init(parameterTypes, usesPValues);
+        super.init(parameterTypes);
         this.statementType = statementType;
         this.resultOperator = resultsOperator;
         this.costEstimate = costEstimate;
@@ -80,10 +79,9 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
                      List<PostgresType> columnTypes,
                      PostgresType[] parameterTypes,
                      CostEstimate costEstimate,
-                     boolean usesPValues,
                      boolean requireStepIsolation,
                      boolean putInCache) {
-        super.init(resultRowType, columnNames, columnTypes, parameterTypes, usesPValues);
+        super.init(resultRowType, columnNames, columnTypes, parameterTypes);
         this.statementType = statementType;
         this.resultOperator = resultOperator;
         this.costEstimate = costEstimate;
@@ -160,7 +158,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
                 while ((row = cursor.next()) != null) {
                     assert getResultRowType() == null || (row.rowType() == getResultRowType()) : row;
                     if (outputResult) { 
-                        outputter.output(row, usesPValues());
+                        outputter.output(row);
                     }
                     rowsModified++;
                     if ((maxrows > 0) && (rowsModified >= maxrows))

@@ -21,6 +21,7 @@ import com.foundationdb.ais.model.*;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 import com.foundationdb.sql.optimizer.OptimizerTestBase;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
@@ -134,7 +135,7 @@ public class MultipleIndexCostSensitivityTest
     
     private CostEstimate costIndexScan(Index index, int key)
     {
-        List<ExpressionNode> equals = Collections.singletonList(constant(key, AkType.INT));
+        List<ExpressionNode> equals = Collections.singletonList(constant(key));
         return costEstimator.costIndexScan(index, equals, null, false, null, false);
     }
     
@@ -203,8 +204,8 @@ public class MultipleIndexCostSensitivityTest
         return new TableSource(tableNode(name), true, name);
     }
 
-    protected static ExpressionNode constant(Object value, AkType type) {
-        return new ConstantExpression(value, type);
+    protected static ExpressionNode constant(Object value) {
+        return new ConstantExpression(value, MNumeric.BIGINT.instance(true).dataTypeDescriptor(), null);
     }
 
     protected static ExpressionNode variable(AkType type) {

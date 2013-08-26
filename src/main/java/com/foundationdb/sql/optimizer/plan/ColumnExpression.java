@@ -45,7 +45,7 @@ public class ColumnExpression extends BaseExpression
         this.table = table;
         this.position = position;
     }
-
+    
     public ColumnExpression(ColumnSource table, int position, 
                             DataTypeDescriptor sqlType, ValueNode sqlSource) {
         super(sqlType, sqlSource);

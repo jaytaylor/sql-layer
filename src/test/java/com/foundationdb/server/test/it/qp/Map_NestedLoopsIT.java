@@ -30,16 +30,11 @@ import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.expression.Expression;
 import com.foundationdb.server.expression.std.Comparison;
-import com.foundationdb.server.expression.std.LiteralExpression;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types3.pvalue.PValue;
 import com.foundationdb.server.types3.texpressions.TPreparedExpression;
 import com.foundationdb.server.types3.texpressions.TPreparedLiteral;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -157,7 +152,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
     {
         // customer order inner join, done as a general join
         Operator project =
-            project_Default(
+            project_DefaultTest(
                 select_HKeyOrdered(
                     filter_Default(
                         groupScan_Default(coi),
@@ -193,7 +188,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
     public void testOuterJoin()
     {
         // customer order outer join, done as a general join
-        Operator project = project_Default(
+        Operator project = project_DefaultTest(
             select_HKeyOrdered(
                 filter_Default(
                     groupScan_Default(coi),
@@ -211,7 +206,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
                 filter_Default(
                     groupScan_Default(coi),
                     Collections.singleton(customerRowType)),
-                ifEmpty_Default(project, projectRowType, Arrays.asList(boundField(customerRowType, 0, 0), literal(null)), InputPreservationOption.KEEP_INPUT),
+                ifEmpty_DefaultTest(project, projectRowType, Arrays.asList(boundField(customerRowType, 0, 0), literal(null)), InputPreservationOption.KEEP_INPUT),
                 0, pipelineMap(), 1);
         RowBase[] expected = new RowBase[]{
             row(projectRowType, 1L, 100L),
@@ -272,11 +267,11 @@ public class Map_NestedLoopsIT extends OperatorITBase
     // Inspired by bug 869396
     public void testIndexScanUnderMapNestedLoopsUsedAsInnerLoopOfAnotherMapNestedLoops()
     {
-        RowType cidValueRowType = schema.newValuesType(AkType.INT);
+        RowType cidValueRowType = schema.newValuesType(MNumeric.INT.instance(true));
         List<ExpressionGenerator> expressions = Arrays.asList(boundField(cidValueRowType, 1, 0));
         IndexBound cidBound =
             new IndexBound(
-                new RowBasedUnboundExpressions(customerCidIndexRowType, expressions),
+                new RowBasedUnboundExpressions(customerCidIndexRowType, expressions, true),
                 new SetColumnSelector(0));
         IndexKeyRange cidRange = IndexKeyRange.bounded(customerCidIndexRowType, cidBound, true, cidBound, true);
         Operator plan =
@@ -306,10 +301,10 @@ public class Map_NestedLoopsIT extends OperatorITBase
     @Test
     public void testDeepMapLimit()
     {
-        RowType intRowType = schema.newValuesType(AkType.INT);
+        RowType intRowType = schema.newValuesType(MNumeric.INT.instance(true));
         List<ExpressionGenerator> expressions = Arrays.asList(boundField(intRowType, 0, 0), boundField(intRowType, 1, 0), field(intRowType, 0));
         Operator inside = 
-            project_Default(
+            project_DefaultTest(
                 valuesScan_Default(
                     bindableExpressions(intRow(intRowType, 1),
                                         intRow(intRowType, 2),
@@ -349,10 +344,10 @@ public class Map_NestedLoopsIT extends OperatorITBase
     @Test
     public void testLeftDeepMap()
     {
-        RowType intRowType = schema.newValuesType(AkType.INT);
+        RowType intRowType = schema.newValuesType(MNumeric.INT.instance(true));
         List<ExpressionGenerator> outerExprs = Arrays.asList(boundField(intRowType, 0, 0), field(intRowType, 0));
         Operator middle = 
-            project_Default(
+            project_DefaultTest(
                 valuesScan_Default(
                     bindableExpressions(intRow(intRowType, 10),
                                         intRow(intRowType, 20)),
@@ -369,7 +364,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
                 0, pipelineMap(), 1);
         List<ExpressionGenerator> innerExprs = Arrays.asList(boundField(outerRowType, 1, 0), boundField(outerRowType, 1, 1), field(intRowType, 0));
         Operator inner =
-            project_Default(
+            project_DefaultTest(
                 valuesScan_Default(
                     bindableExpressions(intRow(intRowType, 1),
                                         intRow(intRowType, 2)),
@@ -392,24 +387,16 @@ public class Map_NestedLoopsIT extends OperatorITBase
 
     private Row intRow(RowType rowType, int x)
     {
-        List<Expression> expressions;
         List<TPreparedExpression> pExpressions;
-        if (Types3Switch.ON) {
-            expressions = null;
-            pExpressions = Arrays.asList((TPreparedExpression) new TPreparedLiteral(
-                    MNumeric.INT.instance(false), new PValue(MNumeric.INT.instance(false), x)));
-        }
-        else {
-            expressions = Arrays.asList((Expression) new LiteralExpression(AkType.INT, x));
-            pExpressions = null;
-        }
-        return new ExpressionRow(rowType, queryContext, queryBindings, expressions, pExpressions);
+        pExpressions = Arrays.asList((TPreparedExpression) new TPreparedLiteral(
+                MNumeric.INT.instance(false), new PValue(MNumeric.INT.instance(false), x)));
+        return new ExpressionRow(rowType, queryContext, queryBindings, pExpressions);
     }
 
     private Collection<? extends BindableRow> bindableExpressions(Row... rows) {
         List<BindableRow> result = new ArrayList<>();
         for (Row row : rows) {
-            result.add(BindableRow.of(row, Types3Switch.ON));
+            result.add(BindableRow.of(row));
         }
         return result;
     }

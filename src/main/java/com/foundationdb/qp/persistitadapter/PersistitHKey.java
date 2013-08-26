@@ -19,10 +19,6 @@ package com.foundationdb.qp.persistitadapter;
 
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.server.PersistitKeyPValueSource;
-import com.foundationdb.server.PersistitKeyValueSource;
-import com.foundationdb.server.service.tree.KeyCreator;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.ValueSource;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.persistit.Key;
@@ -119,12 +115,6 @@ public class PersistitHKey implements HKey
     }
 
     @Override
-    public ValueSource eval(int i)
-    {
-        return source(i);
-    }
-     
-    @Override
     public PValueSource pEval(int i) {
         return pSource(i);
     }
@@ -157,27 +147,6 @@ public class PersistitHKey implements HKey
     
     // For use by this class
     
-    private PersistitKeyValueSource source(int i)
-    {
-        if (sources == null) {
-            assert types == null;
-            sources = new PersistitKeyValueSource[hKeyMetadata.nColumns()];
-            types = new AkType[hKeyMetadata.nColumns()];
-            for (int c = 0; c < hKeyMetadata.nColumns(); c++) {
-                types[c] = hKeyMetadata.columnType(c);
-            }
-        }
-        if (sources[i] == null) {
-            sources[i] = new PersistitKeyValueSource();
-            sources[i].attach(hKey, keyDepth[i], types[i]);
-        } else {
-            // TODO: Add state tracking whether hkey has been changed (e.g. by useSegments). Avoid attach calls
-            // TODO: when there has been no change.
-            sources[i].attach(hKey);
-        }
-        return sources[i];
-    }
-    
     private PersistitKeyPValueSource pSource(int i) 
     {
         if (pSources == null) {
@@ -207,8 +176,6 @@ public class PersistitHKey implements HKey
     private int originalHKeySize;
     // Identifies the persistit key depth for the ith hkey segment, 1 <= i <= #hkey segments.
     private final int[] keyDepth;
-    private PersistitKeyValueSource[] sources;
     private PersistitKeyPValueSource[] pSources;
-    private AkType[] types;
     private TInstance[] underlyingTypes;
 }

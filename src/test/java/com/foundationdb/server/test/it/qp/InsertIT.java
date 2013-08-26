@@ -114,9 +114,9 @@ public class InsertIT extends OperatorITBase {
 
     private void doInsert() {
         Row[] rows = {
-                row(customerRowType, new Object[]{0, "zzz"}, new AkType[]{AkType.INT, AkType.VARCHAR}),
-                row(customerRowType, new Object[]{3, "jkl"}, new AkType[]{AkType.INT, AkType.VARCHAR}),
-                row(customerRowType, new Object[]{5, "ooo"}, new AkType[]{AkType.INT, AkType.VARCHAR})
+                row(customerRowType, new Object[]{0, "zzz"}),
+                row(customerRowType, new Object[]{3, "jkl"}),
+                row(customerRowType, new Object[]{5, "ooo"})
         };
         UpdatePlannable insertPlan = insert_Default(rowsToValueScan(rows));
         UpdateResult result = insertPlan.run(queryContext, queryBindings);

@@ -101,7 +101,8 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
                             new TestRow(tRowType,
                                         new Object[] {row.get(1),     // a
                                                       row.get(2),     // b
-                                                      row.get(3)      // c
+                                                      row.get(3),      // c
+                                                      row.get(0)    // id
                                                       }));
         }
     }
@@ -114,7 +115,7 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
      */
     private int b_of(long id)
     {
-        return (int)indexRow(id).eval(1).getLong();
+        return (int)indexRow(id).pvalue(1).getInt32();
     }
 
     @Test

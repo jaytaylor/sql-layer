@@ -34,7 +34,7 @@ public class PostgresJavaRoutineResultsOutputter extends PostgresOutputter<Serve
     }
 
     @Override
-    public void output(ServerJavaRoutine javaRoutine, boolean usePVals) throws IOException {
+    public void output(ServerJavaRoutine javaRoutine) throws IOException {
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
         messenger.writeShort(ncols);
         int fieldIndex = 0;
@@ -43,21 +43,19 @@ public class PostgresJavaRoutineResultsOutputter extends PostgresOutputter<Serve
         for (int i = 0; i < params.size(); i++) {
             Parameter param = params.get(i);
             if (param.getDirection() == Parameter.Direction.IN) continue;
-            output(javaRoutine, param, i, fieldIndex++, usePVals);
+            output(javaRoutine, param, i, fieldIndex++);
         }
         if (routine.getReturnValue() != null) {
-            output(javaRoutine, routine.getReturnValue(), ServerJavaValues.RETURN_VALUE_INDEX, fieldIndex++, usePVals);
+            output(javaRoutine, routine.getReturnValue(), ServerJavaValues.RETURN_VALUE_INDEX, fieldIndex++);
         }
         messenger.sendMessage();
     }
 
-    protected void output(ServerJavaRoutine javaRoutine, Parameter param, int i, int fieldIndex, boolean usePVals) throws IOException {
+    protected void output(ServerJavaRoutine javaRoutine, Parameter param, int i, int fieldIndex) throws IOException {
         Object field = javaRoutine.getOutParameter(param, i);
         PostgresType type = columnTypes.get(fieldIndex);
         boolean binary = context.isColumnBinary(fieldIndex);
-        ByteArrayOutputStream bytes;
-        if (usePVals) bytes = encoder.encodePObject(field, type, binary);
-        else bytes = encoder.encodeObject(field, type, binary);
+        ByteArrayOutputStream bytes = encoder.encodePObject(field, type, binary);
         if (bytes == null) {
             messenger.writeInt(-1);
         }

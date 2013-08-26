@@ -91,7 +91,7 @@ public interface ExpressionEvaluation extends Shareable {
      * may be lazily evaluated, too.
      * @return a possibly-lazy, possibly-mutable representation of this evaluation's value
      */
-    ValueSource eval();
+    //ValueSource eval();
 
     /**
      * Release resources used by this ExpressionEvaluation. No further uses of this are permitted.

@@ -22,7 +22,6 @@ import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.expression.RowBasedUnboundExpressions;
 import com.foundationdb.qp.operator.Cursor;
-import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.TimeOperator;
 import com.foundationdb.qp.row.BindableRow;
@@ -125,7 +124,7 @@ public class Select_BloomFilterCT extends CostModelBase
     {
         // filterInput loads the filter with F rows containing the given testId.
         Operator filterInput =
-            project_Default(
+            project_DefaultTest(
                 groupScan_Default(group(f)),
                 fRowType,
                 Arrays.asList(ExpressionGenerators.field(fRowType, 0)));
@@ -134,7 +133,7 @@ public class Select_BloomFilterCT extends CostModelBase
         IndexBound fxBound = new IndexBound(
             new RowBasedUnboundExpressions(
                 filterInput.rowType(),
-                Arrays.asList(ExpressionGenerators.boundField(dIndexRowType, 0, 0))),
+                Arrays.asList(ExpressionGenerators.boundField(dIndexRowType, 0, 0)), true),
             new SetColumnSelector(0));
         IndexKeyRange fKeyRange = IndexKeyRange.bounded(fIndexRowType, fxBound, true, fxBound, true);
         // Use a bloom filter loaded by filterInput. Then for each input row, check the filter (projecting
@@ -150,7 +149,7 @@ public class Select_BloomFilterCT extends CostModelBase
                 // filterBindingPosition
                 0,
                 // streamInput
-                select_BloomFilter(
+                select_BloomFilterTest(
                     // input
                     valuesScan_Default(Collections.<BindableRow>emptyList(), dIndexRowType),
                     // onPositive
@@ -169,7 +168,7 @@ public class Select_BloomFilterCT extends CostModelBase
     {
         // filterInput loads the filter with F rows containing the given testId.
         Operator filterInput =
-            project_Default(
+            project_DefaultTest(
                 groupScan_Default(group(f)),
                 fRowType,
                 Arrays.asList(ExpressionGenerators.field(fRowType, 0)));
@@ -185,7 +184,7 @@ public class Select_BloomFilterCT extends CostModelBase
         IndexBound fxBound = new IndexBound(
             new RowBasedUnboundExpressions(
                 filterInput.rowType(),
-                Arrays.asList(ExpressionGenerators.boundField(dIndexRowType, 0, 0))),
+                Arrays.asList(ExpressionGenerators.boundField(dIndexRowType, 0, 0)), true),
             new SetColumnSelector(0));
         IndexKeyRange fKeyRange = IndexKeyRange.bounded(fIndexRowType, fxBound, true, fxBound, true);
         // Use a bloom filter loaded by filterInput. Then for each input row, check the filter (projecting
@@ -203,7 +202,7 @@ public class Select_BloomFilterCT extends CostModelBase
                 // filterBindingPosition
                 0,
                 // streamInput
-                select_BloomFilter(
+                select_BloomFilterTest(
                     // input
                     timeScanInput,
                     // onPositive

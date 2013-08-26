@@ -1,6 +1,4 @@
 ---
-- Newtypes: true
----
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types(integer_field) VALUES (1);
@@ -13,6 +11,4 @@
 ---
 - Statement: SELECT DESCRIBE_EXPRESSION(CONCAT('a', 'bb', 'ccc', 'dddd')) from all_types;
 - output: [['const MCOMPAT_ VARCHAR(10, UTF8, UCS_BINARY) NOT NULL']]
----
-- Newtypes: null
 ...

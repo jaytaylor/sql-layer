@@ -36,7 +36,6 @@ import com.foundationdb.server.types3.TClass;
 import com.foundationdb.server.types3.TKeyComparable;
 import com.foundationdb.server.types3.TScalar;
 import com.foundationdb.server.types3.TOverload;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.server.types3.service.InstanceFinder;
 import com.foundationdb.server.types3.service.ReflectiveInstanceFinder;
 import com.foundationdb.server.types3.texpressions.TValidatedAggregator;
@@ -75,6 +74,15 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         return registryService.getCastsResolver();
     }
 
+    private static T3RegistryService INSTANCE = null;
+    public static T3RegistryService createRegistryService() {
+        if (INSTANCE == null) {
+            T3RegistryServiceImpl registryService = new T3RegistryServiceImpl();
+            registryService.start();
+            INSTANCE = registryService;
+        }
+        return INSTANCE;
+    }
     public T3RegistryServiceImpl() {
         this(null);
     }
@@ -254,11 +262,6 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             all.put("aggregate_functions", describeOverloads(aggreatorsRegistry));
 
             return toYaml(all);
-        }
-
-        @Override
-        public boolean isNewtypesOn() {
-            return Types3Switch.ON;
         }
 
         private Object typesDescriptors() {

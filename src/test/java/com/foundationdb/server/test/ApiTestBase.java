@@ -23,7 +23,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import java.io.File;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -66,9 +65,6 @@ import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.service.tree.TreeService;
 import com.foundationdb.server.t3expressions.T3RegistryService;
 import com.foundationdb.server.t3expressions.TCastResolver;
-import com.foundationdb.server.types.ValueSource;
-import com.foundationdb.server.types.extract.ConverterTestUtils;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.server.types3.pvalue.PValueSources;
 import com.foundationdb.server.util.GroupIndexCreator;
@@ -237,7 +233,6 @@ public class ApiTestBase {
     private final Set<RowUpdater> unfinishedRowUpdaters = new HashSet<>();
     private static Map<String,String> lastStartupConfigProperties = null;
     private static boolean needServicesRestart = false;
-    private boolean types3SwitchSave;
     protected static Set<Callable<Void>> beforeStopServices = new HashSet<>();
 
     @Rule
@@ -253,12 +248,9 @@ public class ApiTestBase {
 
     @Before
     public final void startTestServices() throws Throwable {
-        types3SwitchSave = Types3Switch.ON;
-        Types3Switch.ON &= testSupportsPValues();
         assertTrue("some row updaters were left over: " + unfinishedRowUpdaters, unfinishedRowUpdaters.isEmpty());
         System.setProperty("fdbsql.home", System.getProperty("user.home"));
         try {
-            ConverterTestUtils.setGlobalTimezone("UTC");
             Map<String, String> startupConfigProperties = startupConfigProperties();
             Map<String,String> propertiesForEquality = propertiesForEquality(startupConfigProperties);
             if (needServicesRestart ||
@@ -338,7 +330,6 @@ public class ApiTestBase {
 
     @After
     public final void tearDownAllTables() throws Exception {
-        Types3Switch.ON = types3SwitchSave;
         if (lastStartupConfigProperties == null)
             return; // services never started up
         Set<RowUpdater> localUnfinishedUpdaters = new HashSet<>(unfinishedRowUpdaters);
@@ -556,7 +547,7 @@ public class ApiTestBase {
 
     /**
      * A simple unique (per class) property that can be returned for tests
-     * overriding the {@link #startupConfigProperties()} and/or
+     * overriding the {@link #  } and/or
      * {@link #serviceBindingsProvider()} methods.
      */
     protected Map<String, String> uniqueStartupConfigProperties(Class clazz) {
@@ -1044,68 +1035,34 @@ public class ApiTestBase {
     }
 
     public static boolean isNull(BoundExpressions row, int pos) {
-        return Types3Switch.ON
-                ? row.pvalue(pos).isNull()
-                : row.eval(pos).isNull();
+        return row.pvalue(pos).isNull();
     }
 
     public static Long getLong(BoundExpressions row, int field) {
         final Long result;
-        if (Types3Switch.ON) {
-            PValueSource pvalue = row.pvalue(field);
-            if (pvalue.isNull()) {
-                result = null;
-            }
-            else {
-                switch (PValueSources.pUnderlying(pvalue)) {
-                case INT_8:
-                    result = (long) pvalue.getInt8();
-                    break;
-                case INT_16:
-                    result = (long) pvalue.getInt16();
-                    break;
-                case UINT_16:
-                    result = (long) pvalue.getUInt16();
-                    break;
-                case INT_32:
-                    result = (long) pvalue.getInt32();
-                    break;
-                case INT_64:
-                    result = pvalue.getInt64();
-                    break;
-                default:
-                    throw new AssertionError(pvalue);
-                }
-            }
+        PValueSource pvalue = row.pvalue(field);
+        if (pvalue.isNull()) {
+            result = null;
         }
         else {
-            ValueSource value = row.eval(field);
-            if (value.isNull()) {
-                result = null;
-            }
-            else {
-                switch (value.getConversionType()) {
-                case INT:
-                    result = value.getInt();
-                    break;
-                case LONG:
-                    result = value.getLong();
-                    break;
-                case U_BIGINT:
-                    BigInteger bigInt = value.getUBigInt();
-                    result = bigInt.longValue();
-                    if (!bigInt.equals(BigInteger.valueOf(result)))
-                        throw new AssertionError("overflow: " + bigInt);
-                    break;
-                case U_INT:
-                    result = value.getUInt();
-                    break;
-                case NULL:
-                    result = null;
-                    break;
-                default:
-                    throw new AssertionError(value);
-                }
+            switch (PValueSources.pUnderlying(pvalue)) {
+            case INT_8:
+                result = (long) pvalue.getInt8();
+                break;
+            case INT_16:
+                result = (long) pvalue.getInt16();
+                break;
+            case UINT_16:
+                result = (long) pvalue.getUInt16();
+                break;
+            case INT_32:
+                result = (long) pvalue.getInt32();
+                break;
+            case INT_64:
+                result = pvalue.getInt64();
+                break;
+            default:
+                throw new AssertionError(pvalue);
             }
         }
         return result;
@@ -1381,14 +1338,6 @@ public class ApiTestBase {
                 return null;
             }
         });
-    }
-
-    protected boolean usingPValues() {
-        return Types3Switch.ON && testSupportsPValues();
-    }
-    
-    protected boolean testSupportsPValues() {
-        return true;
     }
 
     protected boolean pipelineMap() {

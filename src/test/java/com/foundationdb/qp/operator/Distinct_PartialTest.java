@@ -22,12 +22,10 @@ import com.foundationdb.qp.operator.OperatorTestHelper;
 import com.foundationdb.qp.operator.RowsBuilder;
 import com.foundationdb.qp.operator.TestOperator;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
 import com.foundationdb.server.types3.texpressions.TPreparedField;
 import static com.foundationdb.qp.operator.API.*;
-import static com.foundationdb.server.test.ExpressionGenerators.*;
-
-import com.foundationdb.server.types.AkType;
 
 import org.junit.Test;
 
@@ -37,7 +35,7 @@ public class Distinct_PartialTest {
 
     @Test
     public void testDistinct() {
-        Operator input = new TestOperator(new RowsBuilder(AkType.LONG, AkType.VARCHAR, AkType.LONG)
+        Operator input = new TestOperator(new RowsBuilder(MNumeric.INT.instance(true), MString.varchar(), MNumeric.INT.instance(true))
             .row(1L,"abc",0L)
             .row(2L,"abc",0L)
             .row(2L,"xyz",0L)
@@ -47,7 +45,7 @@ public class Distinct_PartialTest {
             .row(3L,"def",null)
         );
         Operator plan = distinct_Partial(input, input.rowType());
-        Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR, AkType.LONG)
+        Deque<Row> expected = new RowsBuilder(MNumeric.INT.instance(true), MString.varchar(), MNumeric.INT.instance(true))
             .row(1L,"abc",0L)
             .row(2L,"abc",0L)
             .row(2L,"xyz",0L)
@@ -60,14 +58,14 @@ public class Distinct_PartialTest {
 
     @Test
     public void testPartial() {
-        Operator input = new TestOperator(new RowsBuilder(AkType.LONG, AkType.VARCHAR, AkType.LONG)
+        Operator input = new TestOperator(new RowsBuilder(MNumeric.INT.instance(true), MString.varchar(), MNumeric.INT.instance(true))
             .row(1L,"abc",0L)
             .row(1L,"abc",0L)
             .row(2L,"abc",0L)
             .row(1L,"abc",0L)
         );
         Operator plan = distinct_Partial(input, input.rowType());
-        Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR, AkType.LONG)
+        Deque<Row> expected = new RowsBuilder(MNumeric.INT.instance(true), MString.varchar(), MNumeric.INT.instance(true))
             .row(1L,"abc",0L)
             .row(2L,"abc",0L)
             .row(1L,"abc",0L)
@@ -77,7 +75,7 @@ public class Distinct_PartialTest {
 
     @Test
     public void testWithSort() {
-        Operator input = new TestOperator(new RowsBuilder(AkType.LONG, AkType.VARCHAR)
+        Operator input = new TestOperator(new RowsBuilder(MNumeric.INT.instance(true), MString.varchar())
             .row(7L,"def")
             .row(3L,"def")
             .row(0L,"abc")
@@ -180,18 +178,12 @@ public class Distinct_PartialTest {
             .row(7L,"abc")
         );
         Ordering ordering = ordering();
-        if (Types3Switch.ON) {
-            ordering.append(new TPreparedField(input.rowType().typeInstanceAt(0), 0), true);
-            ordering.append(new TPreparedField(input.rowType().typeInstanceAt(1), 1), true);
-        }
-        else {
-            ordering.append(field(input.rowType(), 0), true);
-            ordering.append(field(input.rowType(), 1), true);
-        }
+        ordering.append(new TPreparedField(input.rowType().typeInstanceAt(0), 0), true);
+        ordering.append(new TPreparedField(input.rowType().typeInstanceAt(1), 1), true);
         Operator sort = sort_InsertionLimited(input, input.rowType(),
                                               ordering, SortOption.PRESERVE_DUPLICATES, 200);
         Operator plan = distinct_Partial(sort, sort.rowType());
-        Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR)
+        Deque<Row> expected = new RowsBuilder(MNumeric.INT.instance(true), MString.varchar())
             .row(0L,"abc")
             .row(0L,"def")
             .row(0L,"ghi")
@@ -231,6 +223,4 @@ public class Distinct_PartialTest {
             .rows();
         OperatorTestHelper.check(plan, expected);
     }
-
-    // TODO: testCursor
 }

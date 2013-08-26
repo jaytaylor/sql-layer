@@ -128,7 +128,7 @@ public class SortCT extends CostModelBase
                       boolean report)
     {
         Operator setup =
-            project_Default(
+            project_DefaultTest(
                 limit_Default(
                     groupScan_Default(group),
                     rows),

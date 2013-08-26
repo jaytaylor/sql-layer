@@ -19,7 +19,6 @@ package com.foundationdb.qp.persistitadapter.indexcursor;
 
 import static com.foundationdb.qp.operator.API.cursor;
 import static com.foundationdb.qp.operator.API.valuesScan_Default;
-import static org.junit.Assert.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -36,12 +35,10 @@ import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.persistitadapter.indexcursor.MergeJoinSorter.KeyReadCursor;
-import com.foundationdb.qp.persistitadapter.indexcursor.MergeJoinSorter.KeyReader;
 import com.foundationdb.qp.persistitadapter.indexcursor.MergeJoinSorter.KeyWriter;
 import com.foundationdb.qp.persistitadapter.indexcursor.MergeJoinSorter.KeyFinalCursor;
 import com.foundationdb.qp.persistitadapter.indexcursor.MergeJoinSorter.SortKey;
 import com.foundationdb.qp.row.BindableRow;
-import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.test.it.qp.OperatorITBase;
@@ -50,7 +47,6 @@ import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types3.mcompat.mtypes.MString;
 import com.foundationdb.server.types3.texpressions.TPreparedField;
 import com.foundationdb.util.tap.Tap;
-import com.persistit.Key;
 
 public class KeyFinalCursorIT extends OperatorITBase {
 
@@ -81,7 +77,7 @@ public class KeyFinalCursorIT extends OperatorITBase {
                 row(rowType, 1L),
         };
         
-        bindRows.add(BindableRow.of(rows[0], true));
+        bindRows.add(BindableRow.of(rows[0]));
     
         RowCursor cursor = cycleRows(rowType);
         compareRows(rows, cursor);
@@ -94,7 +90,7 @@ public class KeyFinalCursorIT extends OperatorITBase {
                 row(rowType, 1L, 100L, "A"),
         };
         
-        bindRows.add(BindableRow.of(rows[0], true));
+        bindRows.add(BindableRow.of(rows[0]));
         RowCursor cursor = cycleRows (rowType);
         compareRows(rows, cursor);
     }
@@ -107,7 +103,7 @@ public class KeyFinalCursorIT extends OperatorITBase {
         for (long i = 0; i < 100; i++) {
             TestRow row = row (rowType, i);
             rows.add(row);
-            bindRows.add(BindableRow.of(row, true));
+            bindRows.add(BindableRow.of(row));
         }
         RowCursor cursor = cycleRows (rowType);
         
@@ -123,7 +119,7 @@ public class KeyFinalCursorIT extends OperatorITBase {
             TestRow row = row (rowType, random.nextInt(), i, 
                     characters(5+random.nextInt(1000)));
             rows.add(row);
-            bindRows.add(BindableRow.of(row, true));
+            bindRows.add(BindableRow.of(row));
         }
         RowCursor cursor = cycleRows(rowType);
         TestRow[] rowArray = new TestRow[rows.size()];

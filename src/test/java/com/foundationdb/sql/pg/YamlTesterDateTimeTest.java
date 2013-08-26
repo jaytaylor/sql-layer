@@ -17,12 +17,12 @@
 
 package com.foundationdb.sql.pg;
 
-import com.foundationdb.server.types.extract.ConverterTestUtils;
 import static org.junit.Assert.fail;
 
 import java.util.Calendar;
 import java.util.TimeZone;
 
+import org.joda.time.DateTimeZone;
 import org.junit.Test;
 
 import com.foundationdb.sql.pg.YamlTester.DateTimeChecker;
@@ -37,7 +37,9 @@ public class YamlTesterDateTimeTest {
 
     static
     {
-        ConverterTestUtils.setGlobalTimezone("UTC");
+        String timezone="UTC";
+        DateTimeZone.setDefault(DateTimeZone.forID(timezone));
+        TimeZone.setDefault(TimeZone.getTimeZone(timezone));
     }
     
     @Test

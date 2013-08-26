@@ -19,10 +19,8 @@ package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.util.ValueSourceHasher;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types.ValueSource;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.server.types3.pvalue.PValueSources;
 import com.foundationdb.util.ArgumentValidation;
@@ -119,8 +117,7 @@ class Using_BloomFilter extends Operator
                              long estimatedRowCount,
                              int filterBindingPosition,
                              Operator streamInput,
-                             List<AkCollator> collators,
-                             boolean usePValues)
+                             List<AkCollator> collators)
     {
         ArgumentValidation.notNull("filterInput", filterInput);
         ArgumentValidation.notNull("filterRowType", filterRowType);
@@ -135,7 +132,6 @@ class Using_BloomFilter extends Operator
         this.filterBindingPosition = filterBindingPosition;
         this.streamInput = streamInput;
         this.collators = collators;
-        this.usePValues = usePValues;
     }
 
     // For use by this class
@@ -160,7 +156,6 @@ class Using_BloomFilter extends Operator
     private final int filterBindingPosition;
     private final Operator streamInput;
     private final List<AkCollator> collators;
-    private final boolean usePValues;
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context) {
@@ -252,14 +247,8 @@ class Using_BloomFilter extends Operator
             while ((row = loadCursor.next()) != null) {
                 int h = 0;
                 for (int f = 0; f < fields; f++) {
-                    if (usePValues) {
-                        PValueSource valueSource = row.pvalue(f);
-                        h = h ^ PValueSources.hash(valueSource, collator(f));
-                    }
-                    else {
-                        ValueSource valueSource = row.eval(f);
-                        h = h ^ ValueSourceHasher.hash(adapter(), valueSource, collator(f));
-                    }
+                    PValueSource valueSource = row.pvalue(f);
+                    h = h ^ PValueSources.hash(valueSource, collator(f));
                 }
                 filter.add(h);
                 rows++;

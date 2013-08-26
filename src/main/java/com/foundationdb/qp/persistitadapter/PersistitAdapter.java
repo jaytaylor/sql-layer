@@ -30,8 +30,6 @@ import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.server.PersistitKeyValueSource;
-import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.error.*;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
@@ -40,7 +38,6 @@ import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.TreeService;
 import com.foundationdb.server.store.PersistitStore;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.types.ValueSource;
 import com.foundationdb.util.tap.InOutTap;
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -72,14 +69,13 @@ public class PersistitAdapter extends StoreAdapter
 
     @Override
     public RowCursor newIndexCursor(QueryContext context, Index index, IndexKeyRange keyRange, API.Ordering ordering,
-                                    IndexScanSelector selector, boolean usePValues, boolean openAllSubCursors)
+                                    IndexScanSelector selector, boolean openAllSubCursors)
     {
         return new PersistitIndexCursor(context,
                                         schema.indexRowType(index),
                                         keyRange,
                                         ordering,
                                         selector,
-                                        usePValues,
                                         openAllSubCursors);
     }
 
@@ -103,19 +99,19 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public void updateRow(Row oldRow, Row newRow, boolean usePValues) {
+    public void updateRow(Row oldRow, Row newRow) {
         RowDef rowDef = oldRow.rowType().userTable().rowDef();
         RowDef rowDefNewRow = newRow.rowType().userTable().rowDef();
         if (rowDef.getRowDefId() != rowDefNewRow.getRowDefId()) {
             throw new IllegalArgumentException(String.format("%s != %s", rowDef, rowDefNewRow));
         }
 
-        RowData oldRowData = rowData(rowDef, oldRow, rowDataCreator(usePValues));
+        RowData oldRowData = rowData(rowDef, oldRow, rowDataCreator());
         int oldStep = 0;
         try {
             // For Update row, the new row (value being inserted) does not
             // need the default value (including identity set)
-            RowData newRowData = rowData(rowDefNewRow, newRow, rowDataCreator(usePValues));
+            RowData newRowData = rowData(rowDefNewRow, newRow, rowDataCreator());
             oldStep = enterUpdateStep();
             oldRowData.setExplicitRowDef(rowDef);
             newRowData.setExplicitRowDef(rowDefNewRow);
@@ -129,11 +125,11 @@ public class PersistitAdapter extends StoreAdapter
         }
     }
     @Override
-    public void writeRow (Row newRow, Index[] indexes, boolean usePValues) {
+    public void writeRow (Row newRow, Index[] indexes) {
         RowDef rowDef = newRow.rowType().userTable().rowDef();
         int oldStep = 0;
         try {
-            RowData newRowData = rowData (rowDef, newRow, rowDataCreator(usePValues));
+            RowData newRowData = rowData (rowDef, newRow, rowDataCreator());
             newRowData.setExplicitRowDef(rowDef);
             oldStep = enterUpdateStep();
             store.writeRow(getSession(), newRowData, indexes);
@@ -147,9 +143,9 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public void deleteRow (Row oldRow, boolean usePValues, boolean cascadeDelete) {
+    public void deleteRow (Row oldRow, boolean cascadeDelete) {
         RowDef rowDef = oldRow.rowType().userTable().rowDef();
-        RowData oldRowData = rowData(rowDef, oldRow, rowDataCreator(usePValues));
+        RowData oldRowData = rowData(rowDef, oldRow, rowDataCreator());
         oldRowData.setExplicitRowDef(rowDef);
         int oldStep = enterUpdateStep();
         try {
@@ -168,27 +164,6 @@ public class PersistitAdapter extends StoreAdapter
         RowDef rowDef = tableType.userTable().rowDef();
         return rowDef.getTableStatus().getRowCount(session);
     }
-
-    @Override
-    public long hash(ValueSource valueSource, AkCollator collator)
-    {
-        assert collator != null; // Caller should have hashed in this case
-        long hash;
-        Key key;
-        int depth;
-        if (valueSource instanceof PersistitKeyValueSource) {
-            PersistitKeyValueSource persistitKeyValueSource = (PersistitKeyValueSource) valueSource;
-            key = persistitKeyValueSource.key();
-            depth = persistitKeyValueSource.depth();
-        } else {
-            key = store.createKey();
-            collator.append(key, valueSource.getString());
-            depth = 0;
-        }
-        hash = keyHasher.hash(key, depth);
-        return hash;
-    }
-
 
     @Override
     public <S> RowData rowData(RowDef rowDef, RowBase row, RowDataCreator<S> creator) {
@@ -210,10 +185,8 @@ public class PersistitAdapter extends StoreAdapter
         return schema.ais().getUserTable(tableId).rowDef();
     }
 
-    private RowDataCreator<?> rowDataCreator(boolean usePValues) {
-        return usePValues
-                ? new PValueRowDataCreator()
-                : new OldRowDataCreator();
+    private RowDataCreator<?> rowDataCreator() {
+        return new PValueRowDataCreator();
     }
 
     public PersistitGroupRow newGroupRow()
