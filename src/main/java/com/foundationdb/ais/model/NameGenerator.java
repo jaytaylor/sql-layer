@@ -32,6 +32,9 @@ public interface NameGenerator
     String generateGroupTreeName(String schemaName, String groupName);
     String generateSequenceTreeName(Sequence sequence);
 
+    // Bulk add
+    void mergeAIS(AkibanInformationSchema ais);
+
     // Removal
     void removeTableID(int tableID);
     void removeTreeName(String treeName);

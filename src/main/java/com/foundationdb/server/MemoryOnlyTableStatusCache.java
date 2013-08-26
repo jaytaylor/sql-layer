@@ -19,28 +19,27 @@ package com.foundationdb.server;
 
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class MemoryOnlyTableStatusCache implements TableStatusCache {
-    private final Map<Integer, InternalTableStatus> tableStatusMap = new HashMap<>();
+    private final Map<Integer,MemoryTableStatus> tableStatusMap = new HashMap<>();
             
     @Override
     public synchronized TableStatus createTableStatus(int tableID) {
-        return new InternalTableStatus(tableID, null);
+        return new MemoryTableStatus(tableID, null);
     }
 
     @Override
-    public TableStatus getOrCreateMemoryTableStatus(int tableID, MemoryTableFactory factory) {
+    public synchronized TableStatus getOrCreateMemoryTableStatus(int tableID, MemoryTableFactory factory) {
         return getInternalTableStatus(tableID, factory);
     }
 
     @Override
     public synchronized void detachAIS() {
-        for(InternalTableStatus status : tableStatusMap.values()) {
+        for(MemoryTableStatus status : tableStatusMap.values()) {
             status.setRowDef(null);
         }
     }
@@ -50,101 +49,12 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
         tableStatusMap.remove(table.getTableId());
     }
 
-    private InternalTableStatus getInternalTableStatus(int tableID, MemoryTableFactory factory) {
-        InternalTableStatus ts = tableStatusMap.get(tableID);
+    private MemoryTableStatus getInternalTableStatus(int tableID, MemoryTableFactory factory) {
+        MemoryTableStatus ts = tableStatusMap.get(tableID);
         if(ts == null) {
-            ts = new InternalTableStatus(tableID, factory);
+            ts = new MemoryTableStatus(tableID, factory);
             tableStatusMap.put(tableID, ts);
         }
         return ts;
-    }
-
-    private static class InternalTableStatus implements TableStatus {
-        private final int expectedID;
-        private final MemoryTableFactory factory;
-        private long autoIncrement = 0;
-        private long rowCount = 0;
-        private long uniqueID = 0;
-
-        public InternalTableStatus(int expectedID, MemoryTableFactory factory) {
-            this.expectedID = expectedID;
-            this.factory = factory;
-        }
-
-        @Override
-        public synchronized long getAutoIncrement(Session session) {
-            return autoIncrement;
-        }
-
-        @Override
-        public synchronized long getRowCount(Session session) {
-            if(factory != null) {
-                return factory.rowCount();
-            }
-            return rowCount;
-        }
-
-        @Override
-        public synchronized void setRowCount(Session session, long rowCount) {
-            if(factory != null) {
-                throw new IllegalArgumentException("Cannot set row count for memory table");
-            }
-            this.rowCount = rowCount;
-        }
-
-        @Override
-        public synchronized long getApproximateRowCount() {
-            return getRowCount(null);
-        }
-
-        @Override
-        public synchronized long getUniqueID(Session session) {
-            return uniqueID;
-        }
-
-        @Override
-        public long getApproximateUniqueID() {
-            return getUniqueID(null);
-        }
-
-        @Override
-        public int getTableID() {
-            return expectedID;
-        }
-
-        @Override
-        public synchronized void setRowDef(RowDef rowDef) {
-            if((rowDef != null) && (expectedID != rowDef.getRowDefId())) {
-                throw new IllegalArgumentException("RowDef ID " + rowDef.getRowDefId() +
-                                                   " does not match expected ID " + expectedID);
-            }
-        }
-
-        @Override
-        public synchronized void rowDeleted(Session session) {
-            rowCount = Math.max(0, rowCount - 1);
-        }
-
-        @Override
-        public synchronized void rowsWritten(Session session, long count) {
-            rowCount += count;
-        }
-
-        @Override
-        public synchronized void setAutoIncrement(Session session, long autoIncrement) {
-            this.autoIncrement = Math.max(this.autoIncrement, autoIncrement);
-        }
-
-        @Override
-        public synchronized long createNewUniqueID(Session session) {
-            return ++uniqueID;
-        }
-
-        @Override
-        public synchronized void truncate(Session session) {
-            autoIncrement = 0;
-            uniqueID = 0;
-            rowCount = 0;
-        }
     }
 }

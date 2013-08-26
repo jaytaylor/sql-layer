@@ -228,6 +228,16 @@ public final class OperatorTestHelper {
         }
 
         @Override
+        public long sequenceNextValue(TableName sequenceName) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public long sequenceCurrentValue(TableName sequenceName) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public PersistitIndexRow takeIndexRow(IndexRowType indexRowType) {
             throw new UnsupportedOperationException();
         }
@@ -245,16 +255,6 @@ public final class OperatorTestHelper {
         public TestAdapter()
         {
             super(null, null, null);
-        }
-
-        @Override
-        public long sequenceNextValue(TableName sequenceName) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public long sequenceCurrentValue(TableName sequenceName) {
-            throw new UnsupportedOperationException();
         }
 
         @Override

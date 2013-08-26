@@ -91,6 +91,13 @@ public class SynchronizedNameGenerator implements NameGenerator {
     }
 
     @Override
+    public void mergeAIS(AkibanInformationSchema ais) {
+        synchronized(LOCK) {
+            realNamer.mergeAIS(ais);
+        }
+    }
+
+    @Override
     public void removeTableID(int tableID) {
         synchronized(LOCK) {
             realNamer.removeTableID(tableID);

@@ -18,8 +18,10 @@
 package com.foundationdb.qp.persistitadapter;
 
 import com.foundationdb.qp.operator.Limit;
+import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.server.api.dml.scan.ScanLimit;
+import com.foundationdb.server.rowdata.RowData;
 
 public class PersistitRowLimit implements Limit
 {
@@ -37,8 +39,12 @@ public class PersistitRowLimit implements Limit
     @Override
     public boolean limitReached(RowBase row)
     {
-        PersistitGroupRow persistitRow = (PersistitGroupRow) row;
-        return limit.limitReached(persistitRow.rowData());
+        RowData rowData;
+        if(row instanceof AbstractRow)
+            rowData = ((AbstractRow)row).rowData();
+        else
+            throw new IllegalStateException("Unknown row type: " + row);
+        return limit.limitReached(rowData);
     }
 
     // PersistitRowLimit interface

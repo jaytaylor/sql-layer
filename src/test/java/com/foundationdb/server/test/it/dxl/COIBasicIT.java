@@ -20,7 +20,6 @@ package com.foundationdb.server.test.it.dxl;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertSame;
-import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertNull;
 
 import java.util.Arrays;
@@ -28,6 +27,7 @@ import java.util.List;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.RowType;
@@ -336,5 +336,15 @@ public final class COIBasicIT extends ITBase {
         // updated o moves after o1 and adopts i
         update(tids.o, oOrig).to(oUpdate);
         compareRows( new RowBase[] { o1Row, cRow, oUpdateRow, iRow }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+    }
+
+    protected void compareRows(RowBase[] expected, Cursor cursor) {
+        txnService().beginTransaction(session());
+        try {
+            super.compareRows(expected, cursor);
+            txnService().commitTransaction(session());
+        } finally {
+            txnService().rollbackTransactionIfOpen(session());
+        }
     }
 }

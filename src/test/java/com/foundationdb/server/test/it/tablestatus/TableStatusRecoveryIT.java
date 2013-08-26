@@ -31,7 +31,7 @@ import com.foundationdb.server.TableStatus;
 
 public class TableStatusRecoveryIT extends ITBase {
     private final static int ROW_COUNT = 100;
-    
+
     @Test
     public void simpleInsertRowCountTest() throws Exception {
         int tableId = createTable("test", "A", "I INT NOT NULL, V VARCHAR(255), PRIMARY KEY(I)");

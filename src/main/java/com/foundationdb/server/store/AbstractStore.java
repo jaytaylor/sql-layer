@@ -608,14 +608,18 @@ public abstract class AbstractStore<SDType> implements Store {
 
     @Override
     public void truncateGroup(final Session session, final Group group) {
-        // Collect indexes, truncate table statuses
         group.getRoot().traverseTableAndDescendants(new NopVisitor() {
             @Override
             public void visitUserTable(UserTable table) {
+                // Table indexes
+                truncateIndexes(session, table.getIndexesIncludingInternal());
+                // Table statuses
                 table.rowDef().getTableStatus().truncate(session);
             }
         });
-        // Truncate the group tree
+        // Group indexes
+        truncateIndexes(session, group.getIndexes());
+        // Group tree
         truncateTree(session, group);
     }
 
@@ -684,13 +688,6 @@ public abstract class AbstractStore<SDType> implements Store {
                         StoreGIHandler.Action.STORE
                 );
             }
-        }
-    }
-
-    @Override
-    public void truncateIndexes(Session session, Collection<? extends Index> indexes) {
-        for(Index index : indexes) {
-            truncateTree(session, index.indexDef());
         }
     }
 
