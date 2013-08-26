@@ -59,6 +59,7 @@ public enum Quote {
         }
     }
 
+    @Deprecated
     public void quote(AkibanAppender appender, AkType type) {
         if ((quoteChar != null) && (!quotedTypes.isEmpty()) && quotedTypes.contains(type)) {
             appender.append(quoteChar.charValue());

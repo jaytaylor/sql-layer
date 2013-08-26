@@ -21,7 +21,6 @@ import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.ConstantColumnSelector;
-import com.foundationdb.server.types3.Types3Switch;
 
 public class IndexKeyRange
 {
@@ -77,20 +76,13 @@ public class IndexKeyRange
         return boundColumns;
     }
 
-    /** @deprecated uses the Types3Switch */
-    @Deprecated
-    public static IndexKeyRange unbounded(IndexRowType indexRowType) {
-        return unbounded(indexRowType, Types3Switch.ON);
-    }
-
     /**
      * Describes a full index scan.
      * @param indexRowType The row type of index keys.
      * @return IndexKeyRange covering all keys of the index.
      */
-    public static IndexKeyRange unbounded(IndexRowType indexRowType, boolean usePValues)
-    {
-        IndexBound unbounded = new IndexBound(new ValuesHolderRow(indexRowType, usePValues), ConstantColumnSelector.ALL_OFF);
+    public static IndexKeyRange unbounded(IndexRowType indexRowType) {
+        IndexBound unbounded = new IndexBound(new ValuesHolderRow(indexRowType), ConstantColumnSelector.ALL_OFF);
         return new IndexKeyRange(indexRowType, unbounded, false, unbounded, false, IndexKind.CONVENTIONAL);
     }
 

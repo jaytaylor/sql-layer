@@ -67,6 +67,7 @@ public class JDBCResultSetMetaData implements ResultSetMetaData
             return tInstance;
         }
 
+        @Deprecated
         public AkType getAkType() {
             if (aisColumn != null)
                 return aisColumn.getType().akType();

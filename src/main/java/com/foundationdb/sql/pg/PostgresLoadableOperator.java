@@ -38,11 +38,10 @@ public class PostgresLoadableOperator extends PostgresOperatorStatement
     protected PostgresLoadableOperator(LoadableOperator loadableOperator, 
                                        ServerCallInvocation invocation,
                                        List<String> columnNames, List<PostgresType> columnTypes, 
-                                       PostgresType[] parameterTypes,
-                                       boolean usesPValues)
+                                       PostgresType[] parameterTypes)
     {
         super(null);
-        super.init(loadableOperator.plan(), null, columnNames, columnTypes, parameterTypes, null, usesPValues);
+        super.init(loadableOperator.plan(), null, columnNames, columnTypes, parameterTypes, null);
         this.invocation = invocation;
     }
     
@@ -60,7 +59,7 @@ public class PostgresLoadableOperator extends PostgresOperatorStatement
 
     @Override
     public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
-        bindings = PostgresLoadablePlan.setParameters(bindings, invocation, usesPValues());
+        bindings = PostgresLoadablePlan.setParameters(bindings, invocation);
         ServerCallContextStack.push(context, invocation);
         try {
             return super.execute(context, bindings, maxrows);

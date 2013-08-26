@@ -44,9 +44,9 @@ public class RowTestIT extends ITBase
         int cA = 1;
         int cB = 2;
         // Insert longs, not integers, because Persistit stores all ints as 8-byte.
-        original.put(cId, 100L);
-        original.put(cA, 200L);
-        original.put(cB, 300L);
+        original.put(cId, 100);
+        original.put(cA, 200);
+        original.put(cB, 300);
         RowDef rowDef = getRowDef(t);
         RowData rowData = original.toRowData();
         NiceRow reconstituted = (NiceRow) NiceRow.fromRowData(rowData, rowDef);
@@ -66,8 +66,8 @@ public class RowTestIT extends ITBase
         int cA = 1;
         int cB = 2;
         // Insert longs, not integers, because Persistit stores all ints as 8-byte.
-        original.put(cId, 100L);
-        original.put(cA, 200L);
+        original.put(cId, 100);
+        original.put(cA, 200);
         original.put(cB, null);
         RowDef rowDef = getRowDef(t);
         RowData rowData = original.toRowData();
@@ -90,21 +90,21 @@ public class RowTestIT extends ITBase
         int cB = 2;
         int cC = 3;
         // Insert longs, not integers, because Persistit stores all ints as 8-byte.
-        row.put(cId, 100L);
-        row.put(cA, 200L);
-        row.put(cB, 300L);
+        row.put(cId, 100);
+        row.put(cA, 200);
+        row.put(cB, 300);
         row.put(cC, null);
-        assertEquals(100L, row.get(cId));
-        assertEquals(200L, row.get(cA));
-        assertEquals(300L, row.get(cB));
+        assertEquals(100, row.get(cId));
+        assertEquals(200, row.get(cA));
+        assertEquals(300, row.get(cB));
         assertNull(row.get(cC));
-        row.put(cA, 222L);
+        row.put(cA, 222);
         row.put(cB, null);
-        row.put(cC, 444L);
-        assertEquals(100L, row.get(cId));
-        assertEquals(222L, row.get(cA));
+        row.put(cC, 444);
+        assertEquals(100, row.get(cId));
+        assertEquals(222, row.get(cA));
         assertNull(row.get(cB));
-        assertEquals(444L, row.get(cC));
+        assertEquals(444, row.get(cC));
     }
 
     @Test
@@ -122,22 +122,22 @@ public class RowTestIT extends ITBase
         int cB = 2;
         int cC = 3;
         // Insert longs, not integers, because Persistit stores all ints as 8-byte.
-        niceRow.put(cId, 100L);
-        niceRow.put(cA, 200L);
-        niceRow.put(cB, 300L);
+        niceRow.put(cId, 100);
+        niceRow.put(cA, 200);
+        niceRow.put(cB, 300);
         niceRow.put(cC, null);
         LegacyRowWrapper legacyRow = new LegacyRowWrapper(niceRow.getRowDef(), niceRow.toRowData());
-        assertEquals(100L, legacyRow.get(cId));
-        assertEquals(200L, legacyRow.get(cA));
-        assertEquals(300L, legacyRow.get(cB));
+        assertEquals(100, legacyRow.get(cId));
+        assertEquals(200, legacyRow.get(cA));
+        assertEquals(300, legacyRow.get(cB));
         assertNull(legacyRow.get(cC));
-        legacyRow.put(cA, 222L);
+        legacyRow.put(cA, 222);
         legacyRow.put(cB, null);
-        legacyRow.put(cC, 444L);
-        assertEquals(100L, legacyRow.get(cId));
-        assertEquals(222L, legacyRow.get(cA));
+        legacyRow.put(cC, 444);
+        assertEquals(100, legacyRow.get(cId));
+        assertEquals(222, legacyRow.get(cA));
         assertNull(legacyRow.get(cB));
-        assertEquals(444L, legacyRow.get(cC));
+        assertEquals(444, legacyRow.get(cC));
     }
 
     @Test
@@ -158,34 +158,34 @@ public class RowTestIT extends ITBase
         int cC = 3;
         // Insert longs, not integers, because Persistit stores all ints as 8-byte.
         niceRow.put(cId, 0);
-        niceRow.put(cA, 0L);
-        niceRow.put(cB, 0L);
-        niceRow.put(cC, 0L);
+        niceRow.put(cA, 0);
+        niceRow.put(cB, 0);
+        niceRow.put(cC, 0);
         // Create initial legacy row
         LegacyRowWrapper legacyRow = new LegacyRowWrapper(niceRow.getRowDef(), niceRow.toRowData());
-        assertEquals(0L, legacyRow.get(cA));
-        assertEquals(0L, legacyRow.get(cB));
-        assertEquals(0L, legacyRow.get(cC));
+        assertEquals(0, legacyRow.get(cA));
+        assertEquals(0, legacyRow.get(cB));
+        assertEquals(0, legacyRow.get(cC));
         // Apply a few updates
-        legacyRow.put(cA, 1L);
-        legacyRow.put(cB, 1L);
-        legacyRow.put(cC, 1L);
+        legacyRow.put(cA, 1);
+        legacyRow.put(cB, 1);
+        legacyRow.put(cC, 1);
         // Check the updates (should be a NiceRow)
-        assertEquals(1L, legacyRow.get(cA));
-        assertEquals(1L, legacyRow.get(cB));
-        assertEquals(1L, legacyRow.get(cC));
+        assertEquals(1, legacyRow.get(cA));
+        assertEquals(1, legacyRow.get(cB));
+        assertEquals(1, legacyRow.get(cC));
         // Convert to LegacyRow and check NiceRow created from the legacy row's RowData
         RowDef rowDef = getRowDef(t);
         niceRow = (NiceRow) NiceRow.fromRowData(legacyRow.toRowData(), rowDef);
-        assertEquals(1L, niceRow.get(cA));
-        assertEquals(1L, niceRow.get(cB));
-        assertEquals(1L, niceRow.get(cC));
+        assertEquals(1, niceRow.get(cA));
+        assertEquals(1, niceRow.get(cB));
+        assertEquals(1, niceRow.get(cC));
         // Convert back to NiceRow and check state again
-        legacyRow.put(cA, 2L);
-        legacyRow.put(cB, 2L);
-        legacyRow.put(cC, 2L);
-        assertEquals(2L, legacyRow.get(cA));
-        assertEquals(2L, legacyRow.get(cB));
-        assertEquals(2L, legacyRow.get(cC));
+        legacyRow.put(cA, 2);
+        legacyRow.put(cB, 2);
+        legacyRow.put(cC, 2);
+        assertEquals(2, legacyRow.get(cA));
+        assertEquals(2, legacyRow.get(cB));
+        assertEquals(2, legacyRow.get(cC));
     }
 }

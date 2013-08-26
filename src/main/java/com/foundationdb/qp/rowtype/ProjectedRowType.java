@@ -18,10 +18,10 @@
 package com.foundationdb.qp.rowtype;
 
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.expression.Expression;
 import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.util.ArgumentValidation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +33,7 @@ public class ProjectedRowType extends DerivedRowType
     @Override
     public String toString()
     {
-        List<?> projectionsToString = projections == null ? tExprs : projections;
+        List<?> projectionsToString = tExprs;
         return String.format("project(%s)", projectionsToString);
     }
 
@@ -42,12 +42,7 @@ public class ProjectedRowType extends DerivedRowType
     @Override
     public int nFields()
     {
-        return projections == null ? tInstances.size() : projections.size();
-    }
-
-    @Override
-    public AkType typeAt(int index) {
-        return projections.get(index).valueType();
+        return tInstances.size();
     }
 
     @Override
@@ -59,39 +54,26 @@ public class ProjectedRowType extends DerivedRowType
     public CompoundExplainer getExplainer(ExplainContext context)
     {
         CompoundExplainer explainer = super.getExplainer(context);
-        if (tExprs != null) {
-            for (TPreparedExpression expr : tExprs) {
-                explainer.addAttribute(Label.EXPRESSIONS, expr.getExplainer(context));
-            }
-        }
-        else {
-            for (Expression expr : projections) {
-                explainer.addAttribute(Label.EXPRESSIONS, expr.getExplainer(context));
-            }
+        for (TPreparedExpression expr : tExprs) {
+            explainer.addAttribute(Label.EXPRESSIONS, expr.getExplainer(context));
         }
         return explainer;
     }
 
     // ProjectedRowType interface
 
-    public ProjectedRowType(DerivedTypesSchema schema, int typeId, List<? extends Expression> projections, List<? extends TPreparedExpression> tExpr)
+    public ProjectedRowType(DerivedTypesSchema schema, int typeId, List<? extends TPreparedExpression> tExpr)
     {
         super(schema, typeId);
-        this.projections = projections;
+        ArgumentValidation.notNull("tExpressions", tExpr);
         this.tExprs = tExpr;
-        if (tExpr != null) {
-            this.tInstances = new ArrayList<>(tExpr.size());
-            for (TPreparedExpression expr : tExpr)
-                tInstances.add(expr.resultType());
-        }
-        else {
-            this.tInstances = null;
-        }
+        this.tInstances = new ArrayList<>(tExpr.size());
+        for (TPreparedExpression expr : tExpr)
+            tInstances.add(expr.resultType());
     }
     
     // Object state
 
-    private final List<? extends Expression> projections;
     private final List<? extends TPreparedExpression> tExprs;
     private final List<TInstance> tInstances;
 }

@@ -18,9 +18,6 @@
 package com.foundationdb.sql.pg;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
-import com.foundationdb.sql.parser.SetConfigurationNode;
 import com.foundationdb.sql.server.ServerServiceRequirements;
 import com.foundationdb.sql.server.ServerSessionBase;
 import com.foundationdb.sql.server.ServerSessionMonitor;
@@ -173,7 +170,10 @@ public class PostgresServerConnection extends ServerSessionBase
         catch (Exception ex) {
             if (running)
                 logger.warn("Error in server", ex);
+        } catch (Throwable ex) {
+            logger.error("Error in server {}", ex);
         }
+        
         finally {
             try {
                 socket.close();
@@ -299,7 +299,7 @@ public class PostgresServerConnection extends ServerSessionBase
                     sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
                     stop();
                 } catch (InvalidOperationException ex) {
-                    logError(ErrorLogLevel.WARN, "Error in query {}", ex);
+                    logError(ErrorLogLevel.WARN, "Error in query {} => {}", ex);
                     sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
                 } catch (RollbackException ex) {
                     QueryRollbackException qe = new QueryRollbackException();
@@ -814,11 +814,9 @@ public class PostgresServerConnection extends ServerSessionBase
             if (valueDecoder == null)
                 valueDecoder = new ServerValueDecoder(messenger.getEncoding());
             PostgresType[] parameterTypes = null;
-            boolean usePValues = false;
             if (stmt instanceof PostgresBaseStatement) {
                 PostgresDMLStatement dml = (PostgresDMLStatement)stmt;
                 parameterTypes = dml.getParameterTypes();
-                usePValues = dml.usesPValues();
             }
             for (int i = 0; i < params.length; i++) {
                 PostgresType pgType = null;
@@ -827,10 +825,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 boolean binary = false;
                 if ((paramsBinary != null) && (i < paramsBinary.length))
                     binary = paramsBinary[i];
-                if (usePValues)
-                    valueDecoder.decodePValue(params[i], pgType, binary, bindings, i);
-                else
-                    valueDecoder.decodeValue(params[i], pgType, binary, bindings, i);
+                valueDecoder.decodePValue(params[i], pgType, binary, bindings, i);
             }
         }
         bound.setBindings(bindings);

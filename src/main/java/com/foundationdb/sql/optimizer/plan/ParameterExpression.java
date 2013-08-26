@@ -32,6 +32,7 @@ public class ParameterExpression extends BaseExpression
         this.position = position;
     }
 
+    @Deprecated
     public ParameterExpression(int position, 
                                DataTypeDescriptor sqlType, AkType akType, 
                                ValueNode sqlSource) {

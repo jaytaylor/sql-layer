@@ -28,8 +28,8 @@ import com.foundationdb.server.types3.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types3.texpressions.TPreparedExpression;
 
 /** 
- * Update a row by sustituting expressions for some fields.
- * For use specificalally for the REST API upsert processing. 
+ * Update a row by substituting expressions for some fields.
+ * For use specifically for the REST API upsert processing. 
  * @author tjoneslo
  *
  */
@@ -49,13 +49,8 @@ public class UpsertRowUpdateFunction implements UpdateFunction{
     }
 
     @Override
-    public boolean usePValues() {
-        return true;
-    }
-
-    @Override
     public Row evaluate(Row original, QueryContext context, QueryBindings bindings) {
-        OverlayingRow result = new OverlayingRow(original, pExpressions != null);
+        OverlayingRow result = new OverlayingRow(original);
         int nfields = rowType.nFields();
         for (int i = 0; i < nfields; i++) {
             TPreparedExpression expression = pExpressions.get(i);

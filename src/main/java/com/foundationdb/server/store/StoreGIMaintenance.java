@@ -38,8 +38,6 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDataPValueSource;
-import com.foundationdb.server.rowdata.RowDataValueSource;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
@@ -72,17 +70,12 @@ class StoreGIMaintenance {
             bindings.setHKey(StoreGIMaintenance.HKEY_BINDING_POSITION, hKey);
 
             // Copy the values into the array bindings
-            RowDataValueSource source = new RowDataValueSource();
             RowDataPValueSource pSource = new RowDataPValueSource();
             for (int i=0; i < lookupCols.size(); ++i) {
                 int bindingsIndex = i+1;
                 Column col = lookupCols.get(i);
                 pSource.bind(col.getFieldDef(), forRow);
-                source.bind(col.getFieldDef(), forRow);
-
-                // New types
-                if (Types3Switch.ON) bindings.setPValue(bindingsIndex, pSource);
-                else bindings.setValue(bindingsIndex, source);
+                bindings.setPValue(bindingsIndex, pSource);
             }
             cursor = API.cursor(planOperator, context, bindings);
             RUN_TAP.in();

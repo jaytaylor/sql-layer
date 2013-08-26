@@ -22,8 +22,6 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.NegativeLimitException;
-import com.foundationdb.server.types.FromObjectValueSource;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types3.pvalue.PValue;
 import org.junit.Test;
@@ -108,10 +106,7 @@ public class LimitIT extends OperatorITBase
         Operator plan = limit_Default(groupScan_Default(coi),
                                               0, false, 0, true);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        if (Types3Switch.ON)
-            queryBindings.setPValue(0, new PValue(MNumeric.INT.instance(false), 2));
-        else
-            queryBindings.setValue(0, new FromObjectValueSource().setReflectively(2L));
+        queryBindings.setPValue(0, new PValue(MNumeric.INT.instance(false), 2));
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(customerRowType, 2L, "foundation"),
@@ -125,10 +120,7 @@ public class LimitIT extends OperatorITBase
         Operator plan = limit_Default(groupScan_Default(coi),
                                               0, false, 0, true);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        if (Types3Switch.ON)
-            queryBindings.setPValue(0, new PValue(MNumeric.INT.instance(false), -1));
-        else
-            queryBindings.setValue(0, new FromObjectValueSource().setReflectively(-1L));
+        queryBindings.setPValue(0, new PValue(MNumeric.INT.instance(false), -1));
         RowBase[] expected = new RowBase[]{
         };
         compareRows(expected, cursor);

@@ -17,24 +17,16 @@
 
 package com.foundationdb.sql.server;
 
-import com.foundationdb.server.Quote;
 import com.foundationdb.server.error.UnsupportedCharsetException;
 import com.foundationdb.server.error.ZeroDateTimeException;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.FromObjectValueSource;
-import com.foundationdb.server.types.ValueSource;
-import com.foundationdb.server.types.extract.Extractors;
-import com.foundationdb.server.types.util.ValueHolder;
-import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.mcompat.mtypes.MBigDecimal;
-import com.foundationdb.server.types3.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types3.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types3.mcompat.mtypes.MString;
 import com.foundationdb.server.types3.pvalue.PValue;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.server.types3.pvalue.PValueSources;
 import com.foundationdb.util.AkibanAppender;
-import com.foundationdb.util.ByteSource;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -79,8 +71,6 @@ public class ServerValueEncoder
     private ByteArrayOutputStream byteStream;
     private PrintWriter printWriter;
     private AkibanAppender appender;
-    private FromObjectValueSource objectSource;
-    private ValueHolder dateHolder;
     private DataOutputStream dataStream;
 
     public ServerValueEncoder(String encoding) {
@@ -129,38 +119,7 @@ public class ServerValueEncoder
         return dataStream;
     }
 
-    /** Encode the given value into a stream that can then be passed
-     * to <code>writeByteStream</code>.
-     */
-    public ByteArrayOutputStream encodeValue(ValueSource value, ServerType type, 
-                                             boolean binary) throws IOException {
-        if (value.isNull())
-            return null;
-        if ((zeroDateTimeBehavior != ZeroDateTimeBehavior.NONE) &&
-            (((type.getAkType() == AkType.DATE) &&
-              (value.getDate() == 0)) ||
-             ((type.getAkType() == AkType.DATETIME) &&
-              (value.getDateTime() == 0)))) {
-            switch (zeroDateTimeBehavior) {
-            case EXCEPTION:
-                throw new ZeroDateTimeException();
-            case ROUND:
-                if (objectSource == null)
-                    objectSource = new FromObjectValueSource();
-                objectSource.setExplicitly((type.getAkType() == AkType.DATETIME) ?
-                                           ROUND_ZERO_DATETIME : ROUND_ZERO_DATE,
-                                           AkType.VARCHAR);
-                value = objectSource;
-                break;
-            case CONVERT_TO_NULL:
-                return null;
-            }
-        }
-        reset();
-        appendValue(value, type, binary);
-        return getByteStream();
-    }
-   
+  
     /**
      * Encode the given value into a stream that can then be passed
      * to
@@ -193,16 +152,6 @@ public class ServerValueEncoder
     }
 
     /** Encode the given direct value. */
-    public ByteArrayOutputStream encodeObject(Object value, ServerType type, 
-                                              boolean binary) throws IOException {
-        if (value == null)
-            return null;
-        reset();
-        appendObject(value, type, binary);
-        return getByteStream();
-    }
-    
-    /** Encode the given direct value. */
     public ByteArrayOutputStream encodePObject(Object value, ServerType type, 
                                                boolean binary) throws IOException {
         if (value == null)
@@ -217,81 +166,6 @@ public class ServerValueEncoder
         getByteStream().reset();
     }
     
-    /** Append the given value to the buffer. */
-    public void appendValue(ValueSource value, ServerType type, boolean binary) 
-            throws IOException {
-        if (!binary) {
-            // Handle unusual text encoding of binary types.
-            switch (type.getBinaryEncoding()) {
-            case BINARY_OCTAL_TEXT:
-                {
-                    ByteSource bs = Extractors.getByteSourceExtractor().getObject(value);
-                    byte[] ba = bs.byteArray();
-                    int offset = bs.byteArrayOffset();
-                    int length = bs.byteArrayLength();
-                    for (int i = 0; i < length; i++) {
-                        printWriter.format("\\%03o", ba[offset+i]);
-                    }
-                }
-                break;
-            default:
-                value.appendAsString(appender, Quote.NONE);
-                break;
-            }
-        }
-        else {
-            switch (type.getBinaryEncoding()) {
-            case BINARY_OCTAL_TEXT:
-                {
-                    ByteSource bs = Extractors.getByteSourceExtractor().getObject(value);
-                    byte[] ba = bs.byteArray();
-                    int offset = bs.byteArrayOffset();
-                    int length = bs.byteArrayLength();
-                    getByteStream().write(ba, offset, length);
-                }
-                break;
-            case INT_8:
-                getDataStream().write((byte)Extractors.getLongExtractor(AkType.INT).getLong(value));
-                break;
-            case INT_16:
-                getDataStream().writeShort((short)Extractors.getLongExtractor(AkType.INT).getLong(value));
-                break;
-            case INT_32:
-                getDataStream().writeInt((int)Extractors.getLongExtractor(AkType.INT).getLong(value));
-                break;
-            case INT_64:
-                getDataStream().writeLong(Extractors.getLongExtractor(AkType.LONG).getLong(value));
-                break;
-            case FLOAT_32:
-                getDataStream().writeFloat((float)Extractors.getDoubleExtractor().getDouble(value));
-                break;
-            case FLOAT_64:
-                getDataStream().writeDouble(Extractors.getDoubleExtractor().getDouble(value));
-                break;
-            case STRING_BYTES:
-                getByteStream().write(Extractors.getStringExtractor().getObject(value).getBytes(encoding));
-                break;
-            case BOOLEAN_C:
-                getDataStream().write(Extractors.getBooleanExtractor().getBoolean(value, false) ? 1 : 0);
-                break;
-            case TIMESTAMP_FLOAT64_SECS_2000_NOTZ:
-                getDataStream().writeDouble(seconds2000NoTZ(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value)));
-                break;
-            case TIMESTAMP_INT64_MICROS_2000_NOTZ:
-                getDataStream().writeLong(seconds2000NoTZ(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value)) * 1000000L);
-                break;
-            case DECIMAL_PG_NUMERIC_VAR:
-                for (short d : pgNumericVar(Extractors.getDecimalExtractor().getObject(value))) {
-                    getDataStream().writeShort(d);
-                }
-                break;
-            case NONE:
-            default:
-                throw new UnsupportedOperationException("No binary encoding for " + type);
-            }
-        }
-    }
-
     /** Append the given value to the buffer. */
     public void appendPValue(PValueSource value, ServerType type, boolean binary) 
             throws IOException {
@@ -356,31 +230,6 @@ public class ServerValueEncoder
     }
     
     /** Append the given direct object to the buffer. */
-    public void appendObject(Object value, ServerType type, boolean binary) 
-            throws IOException {
-        AkType akType = type.getAkType();
-        if ((akType == AkType.VARCHAR) && (value instanceof String)) {
-            // Optimize the common case of directly encoding a string.
-            printWriter.write((String)value);
-            return;
-        }
-        if (value instanceof Date) {
-            akType = javaDateType(value);
-            value = javaDateValue(value, akType);
-            // FromObjectValueSource's appendAsString() does not handle special longs.
-            if (dateHolder == null)
-                dateHolder = new ValueHolder();
-            dateHolder.putRaw(akType, ((Number)value).longValue());
-            appendValue(dateHolder, type, binary);
-            return;
-        }
-        if (objectSource == null)
-            objectSource = new FromObjectValueSource();
-        objectSource.setExplicitly(value, akType);
-        appendValue(objectSource, type, binary);
-    }
-
-    /** Append the given direct object to the buffer. */
     public void appendPObject(Object value, ServerType type, boolean binary) 
             throws IOException {
         if (type.getInstance().typeClass() == MString.VARCHAR && value instanceof String)
@@ -390,42 +239,39 @@ public class ServerValueEncoder
             return;
         }
 
-        AkType akType = type.getAkType();
+        TInstance tInstance = type.getInstance();
         if (value instanceof Date) {
-            akType = javaDateType(value);
-            value = javaDateValue(value, akType);
+            tInstance = javaDateTInstance(value);
+            value = javaDateValue(value, tInstance);
         }
         // TODO this is inefficient, but I want to get it working. I created a task to fix it in pivotal.
-        PValueSource source = PValueSources.fromObject(value, akType).value();
+        PValueSource source = PValueSources.pValuefromObject(value, tInstance);
         appendPValue(source, type, binary);
     }
     
-    private AkType javaDateType(Object value) {
-        if (value instanceof java.sql.Date)
-            return AkType.DATE;
-        else if (value instanceof java.sql.Time)
-            return AkType.TIME;
-        else
-            return AkType.TIMESTAMP;
+    private TInstance javaDateTInstance(Object value) {
+        if (value instanceof java.sql.Date) {
+           return MDatetimes.DATE.instance(true); 
+        } else if (value instanceof java.sql.Time) {
+            return MDatetimes.TIME.instance(true);
+        } else {
+            return MDatetimes.TIMESTAMP.instance(true);
+        }
     }
-
-    private Object javaDateValue(Object value, AkType akType) {
-        switch (akType) {
-        case DATE:
-            {
-                DateTime dt = new DateTime(value);
-                return (dt.getYear() * 512 + 
-                        dt.getMonthOfYear() * 32 + 
-                        dt.getDayOfMonth());
-            }
-        case TIME:
-            {
-                DateTime dt = new DateTime(value);
-                return (dt.getHourOfDay() * 10000 +
-                        dt.getMinuteOfHour() * 100 +
-                        dt.getSecondOfMinute());
-            }
-        default:
+    
+    private Object javaDateValue(Object value, TInstance tInstance) {
+        
+        if (tInstance.typeClass() == MDatetimes.DATE) {
+            DateTime dt = new DateTime(value);
+            return (dt.getYear() * 512 + 
+                    dt.getMonthOfYear() * 32 + 
+                    dt.getDayOfMonth());
+        } else if (tInstance.typeClass() == MDatetimes.TIME) {
+            DateTime dt = new DateTime(value);
+            return (dt.getHourOfDay() * 10000 +
+                    dt.getMinuteOfHour() * 100 +
+                    dt.getSecondOfMinute());
+        } else {
             return ((Date)value).getTime() / 1000; // Seconds since epoch.
         }
     }

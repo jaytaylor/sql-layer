@@ -22,7 +22,6 @@ import com.foundationdb.sql.parser.CopyStatementNode;
 import com.foundationdb.sql.parser.ParameterNode;
 import com.foundationdb.sql.parser.ResultColumn;
 import com.foundationdb.sql.parser.StatementNode;
-import com.foundationdb.sql.server.ServerTransaction;
 
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.UserTable;
@@ -54,6 +53,7 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
     private CsvFormat csvFormat;
     private long skipRows;
     private long commitFrequency;
+    private int maxRetries;
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresCopyInStatement.class);
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresCopyInStatement: execute shared");
@@ -130,6 +130,7 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
                 ExternalDataService. COMMIT_FREQUENCY_PERIODICALLY : 
                 ExternalDataService.COMMIT_FREQUENCY_NEVER;
         }
+        maxRetries = copyStmt.getMaxRetries();
         return this;
     }
 
@@ -155,12 +156,14 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
             case CSV:
                 nrows = externalData.loadTableFromCsv(session, istr, csvFormat, skipRows,
                                                       toTable, toColumns,
-                                                      commitFrequency, context);
+                                                      commitFrequency, maxRetries,
+                                                      context);
                 break;
             case MYSQL_DUMP:
                 nrows = externalData.loadTableFromMysqlDump(session, istr, encoding,
                                                             toTable, toColumns,
-                                                            commitFrequency, context);
+                                                            commitFrequency, maxRetries,
+                                                            context);
                 break;
             }
         }

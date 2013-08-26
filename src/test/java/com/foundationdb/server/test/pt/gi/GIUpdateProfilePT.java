@@ -34,8 +34,6 @@ import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.test.pt.PTBase;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.ToObjectValueTarget;
 import com.foundationdb.util.tap.Tap;
 import org.junit.Before;
 import org.junit.Test;
@@ -103,8 +101,6 @@ public class GIUpdateProfilePT extends PTBase
         final int ITEMS_PER_ORDER = 2;
         populateDB(CUSTOMERS, ORDERS_PER_CUSTOMER, ITEMS_PER_ORDER);
         Operator scan = filter_Default(groupScan_Default(coi), Collections.singleton(customerRowType));
-        ToObjectValueTarget target = new ToObjectValueTarget();
-        target.expectType(AkType.VARCHAR);
         Tap.setEnabled(".*", true);
         for (int s = 0; s < 100000000 ; s++) {
             Cursor cursor = cursor(scan, queryContext, queryBindings);
@@ -115,7 +111,7 @@ public class GIUpdateProfilePT extends PTBase
                 NiceRow oldRow = new NiceRow(customer, customerRowDef);
                 NiceRow newRow  = new NiceRow(customer, customerRowDef);
                 long cid = getLong(row, 0);
-                String name = row.eval(1).getString();
+                String name = row.pvalue(1).getString();
                 oldRow.put(0, cid);
                 oldRow.put(1, name);
                 newRow.put(0, cid);

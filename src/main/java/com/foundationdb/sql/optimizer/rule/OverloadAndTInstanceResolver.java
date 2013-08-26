@@ -26,7 +26,6 @@ import com.foundationdb.server.t3expressions.OverloadResolver;
 import com.foundationdb.server.t3expressions.OverloadResolver.OverloadResult;
 import com.foundationdb.server.t3expressions.T3RegistryService;
 import com.foundationdb.server.t3expressions.TCastResolver;
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.types3.ErrorHandlingMode;
 import com.foundationdb.server.types3.LazyList;
 import com.foundationdb.server.types3.LazyListBase;
@@ -310,7 +309,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     // to resolver.commonTClass.
                     if (Objects.equal(instances[field], botInstance))
                         continue;
-
+                    
                     TClass topClass = tclass(instances[field]);
                     TClass botClass = tclass(botInstance);
 
@@ -329,6 +328,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                         // bottom is not nullable, and there is a top. See if it's nullable
                         eitherIsNullable = instances[field].nullability();
                     }
+                    
                     // need to set a new instances[field]. Rules:
                     // - if topClass and botClass are the same as common, use picking algorithm
                     // - else, if one of them == commonTClass, use topInstance or botInstance (whichever is == common)
@@ -336,7 +336,16 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     boolean topIsCommon = (topClass == commonTClass);
                     boolean botIsCommon = (botClass == commonTClass);
                     if (topIsCommon && botIsCommon) {
-                        instances[field] = topClass.pickInstance(instances[field], botInstance);
+                        // TODO: The special case here for TClass VARCHAR with mismatched charsets
+                        // is a limitation of the TClass#pickInstance, as there is no current way
+                        // to create a common TInstance for TString with difference charsets. 
+                        if (commonTClass == MString.VARCHAR &&
+                            botInstance.attribute(StringAttribute.CHARSET) != instances[field].attribute(StringAttribute.CHARSET)) {
+                            ;
+                        }
+                        else {    
+                            instances[field] = topClass.pickInstance(instances[field], botInstance);
+                        }
                     }
                     else if (botIsCommon) {
                         instances[field] = botInstance;
@@ -532,7 +541,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
             TInstance commonInstance = commonInstance(registry.getCastsResolver(), tinst(thenExpr), tinst(elseExpr));
             if (commonInstance == null)
-                return new ConstantExpression(null, AkType.NULL); // both types are unknown, so result is unknown
+                return ConstantExpression.typedNull(null, null, null);
 
             thenExpr = castTo(thenExpr, commonInstance, folder, parametersSync);
             elseExpr = castTo(elseExpr, commonInstance, folder, parametersSync);
@@ -769,7 +778,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleBooleanConstantExpression(BooleanConstantExpression expression) {
-            return boolExpr(expression, expression.getValue() == null);
+            return boolExpr(expression, expression.isNullable());
         }
 
         ExpressionNode handleConstantExpression(ConstantExpression expression) {
@@ -1103,7 +1112,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         public void uninferred(ParameterExpression parameterExpression) {
-            assert parameterExpression.getPreptimeValue() == null : parameterExpression;
+            //assert parameterExpression.getPreptimeValue() == null : parameterExpression;
             List<ExpressionNode> siblings = siblings(parameterExpression);
             if (siblings.isEmpty()) {
                 parameterExpression.setPreptimeValue(new TPreptimeValue());

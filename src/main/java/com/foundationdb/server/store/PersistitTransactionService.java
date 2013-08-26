@@ -24,7 +24,8 @@ import com.foundationdb.server.service.tree.TreeService;
 import com.foundationdb.util.MultipleCauseException;
 import com.google.inject.Inject;
 import com.persistit.Transaction;
-import com.persistit.exception.PersistitException;
+import com.persistit.exception.PersistitException; 
+import com.persistit.exception.RollbackException;
 
 import java.util.Deque;
 
@@ -118,6 +119,40 @@ public class PersistitTransactionService implements TransactionService {
         } finally {
             end(session, txn, re);
         }
+    }
+
+    @Override
+    public boolean commitOrRetryTransaction(Session session) {
+        Transaction txn = getTransaction(session);
+        requireActive(txn);
+        RuntimeException re = null;
+        boolean retry = false;
+        try {
+            runCallbacks(session, PRE_COMMIT_KEY, txn.getStartTimestamp(), null);
+            txn.commit();
+            runCallbacks(session, AFTER_COMMIT_KEY, txn.getCommitTimestamp(), null);
+        } catch(RollbackException e1) {
+            clearStack(session, AFTER_COMMIT_KEY);
+            clearStack(session, AFTER_ROLLBACK_KEY);
+            clearStack(session, AFTER_END_KEY);
+            txn.end();
+            try {
+                txn.begin();
+                retry = true;
+            }
+            catch (PersistitException e2) {
+                re = PersistitAdapter.wrapPersistitException(session, e2);
+            }
+        } catch(RuntimeException e) {
+            re = e;
+        } catch(PersistitException e) {
+            re = PersistitAdapter.wrapPersistitException(session, e);
+        } finally {
+            if (!retry) {
+                end(session, txn, re);
+            }
+        }
+        return retry;
     }
 
     @Override

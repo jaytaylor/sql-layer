@@ -17,8 +17,7 @@
 
 package com.foundationdb.server.types.typestests;
 
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.WrongValueGetException;
+import com.foundationdb.server.types3.TInstance;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -66,7 +65,7 @@ public final class ConversionSuite<T> {
 
     void getMismatch(int i) {
         TestCase<? extends T> testCase = testCases.get(i);
-        AkType expectedType = testCase.type();
+        TInstance expectedType = testCase.type();
         converters.setUp(testCase);
         testCase.put(converters.linkedTarget());
         converters.syncConversions();
@@ -98,14 +97,14 @@ public final class ConversionSuite<T> {
         testCase.get(converters.linkedSource());
     }
 
-    private String errorMessage(String failedClass, String action, AkType expectedType, TestCase<?> switched) {
+    private String errorMessage(String failedClass, String action, TInstance expectedType, TestCase<?> switched) {
         return "expected " + failedClass + " error after " + action + ' ' + switched
-                + ": expected check for " + expectedType + " when " + action + ' ' + switched.type();
+                + ": expected check for " + expectedType.toString() + " when " + action + ' ' + switched.type();
     }
 
     void putMismatch(int i) {
         TestCase<? extends T> testCase = testCases.get(i);
-        AkType expectedType = testCase.type();
+        TInstance expectedType = testCase.type();
         converters.setUp(testCase);
 
         TestCase<?> switched = resolveSwitcher(testCase);

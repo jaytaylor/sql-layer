@@ -43,7 +43,6 @@ import static com.foundationdb.qp.operator.API.cursor;
 import static com.foundationdb.qp.operator.API.indexScan_Default;
 import static java.lang.Math.abs;
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
 {

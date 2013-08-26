@@ -24,11 +24,11 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.IndexRowType;
-import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.error.InvalidOperationException;
-import com.foundationdb.server.types.util.ValueHolder;
+import com.foundationdb.server.types3.pvalue.PValue;
+
 import org.junit.Test;
 
 import static com.foundationdb.qp.operator.API.*;
@@ -101,7 +101,6 @@ public class TreeScanCT extends CostModelBase
                         "primary key(id)");
         createIndex(schemaName, tableName, "idx", indexedColumn.name());
         schema = new Schema(ais());
-        tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, indexedColumn.name());
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
@@ -153,7 +152,7 @@ public class TreeScanCT extends CostModelBase
     private void runRandom(int runs, int sequentialAccessesPerRandom, String label)
     {
         ValuesHolderRow boundRow = new ValuesHolderRow(idxRowType);
-        ValueHolder valueHolder = boundRow.holderAt(0);
+        PValue valueHolder = boundRow.pvalueAt(0);
         queryBindings.setRow(0, boundRow);
         IndexBound bound = new IndexBound(boundRow, new SetColumnSelector(0));
         IndexKeyRange keyRange = IndexKeyRange.bounded(idxRowType, bound, true, bound, true);
@@ -166,9 +165,9 @@ public class TreeScanCT extends CostModelBase
             for (int s = 0; s < sequentialAccessesPerRandom; s++) {
                 Object key = keys[s];
                 if (key instanceof Integer) {
-                    valueHolder.putInt((long) ((Integer) key).intValue());
+                    valueHolder.putInt64((long) ((Integer) key).intValue());
                 } else {
-                    valueHolder.putString((String) key);
+                    valueHolder.putString((String) key, null);
                 }
                 cursor.openTopLevel();
                 Row row = cursor.next();
@@ -189,7 +188,6 @@ public class TreeScanCT extends CostModelBase
     private static final int MAX_SCAN = 1000;
 
     private int t;
-    private RowType tRowType;
     private IndexRowType idxRowType;
     private int start;
     private Object[] keys;

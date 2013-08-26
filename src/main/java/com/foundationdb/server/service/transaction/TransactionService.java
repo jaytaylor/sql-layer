@@ -65,6 +65,11 @@ public interface TransactionService extends Service {
     /** Commit the open transaction. */
     void commitTransaction(Session session);
 
+    /** Commit the open transaction or reset and reopen it if a retryable rollback exception occurs.
+     * @return <code>true</code> if the caller should retry.
+     */
+    boolean commitOrRetryTransaction(Session session);
+
     /** Rollback an open transaction. */
     void rollbackTransaction(Session session);
 

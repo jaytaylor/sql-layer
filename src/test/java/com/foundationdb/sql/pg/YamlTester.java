@@ -60,8 +60,6 @@ import java.util.Map.Entry;
 import java.util.Stack;
 import java.util.regex.Pattern;
 
-import com.foundationdb.server.types3.Types3Switch;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -270,7 +268,7 @@ class YamlTester {
         } else if ("JMX".equals(commandName)) {
             jmxCommand(value, sequence);
         } else if ("Newtypes".equals(commandName)) {
-            newtypesCommand(value);
+            fail("No longer supported Newtypes command");
 		} else {
 		    fail("Unknown command: " + commandName);
 		}
@@ -356,21 +354,6 @@ class YamlTester {
     private void messageCommand(Object value) {
         String message = string(value, "Message");
         System.err.println("FTS Message: " + message);
-    }
-
-    private void newtypesCommand(Object value) throws SQLException {
-        Boolean boolVal = (Boolean) value;
-        String newtypesValue;
-        if (boolVal == null)
-            newtypesValue = "DEFAULT";
-        else if (boolVal)
-            newtypesValue = "'true'";
-        else
-            newtypesValue = "'false'";
-        String command = "SET newtypes = " + newtypesValue;
-        Map<?,?> commandMap = Collections.singletonMap("Statement", command);
-        List<Object> sequence = Collections.<Object>singletonList(commandMap);
-        statementCommand(command, sequence);
     }
 
     private void propertiesCommand(Object value, List<Object> sequence) {
@@ -492,50 +475,49 @@ class YamlTester {
         CreateTableCommand(Object value, List<Object> sequence) {
 	    super("CREATE TABLE " + string(value, "CreateTable argument"));
 	    for (int i = 1; i < sequence.size(); i++) {
-		Entry<Object, Object> map = onlyEntry(sequence.get(i),
-			"CreateTable attribute");
-		String attribute = string(map.getKey(),
-			"CreateTable attribute name");
-		Object attributeValue = map.getValue();
-		if ("error".equals(attribute))
-		    parseError(attributeValue);
-                else if ("warnings_count".equals(attribute)) 
-                    warningsCount = parseWarningsCount(attributeValue, warningsCount);
-                else if ("warnings".equals(attribute)) 
-                    warnings = parseWarnings(attributeValue, warnings);
-                else 
-		    fail("The '" + attribute + "' attribute name was not"
-			    + " recognized");
+    		Entry<Object, Object> map = onlyEntry(sequence.get(i),
+    			"CreateTable attribute");
+    		String attribute = string(map.getKey(),
+    			"CreateTable attribute name");
+    		Object attributeValue = map.getValue();
+    		if ("error".equals(attribute))
+    		    parseError(attributeValue);
+            else if ("warnings_count".equals(attribute)) 
+                warningsCount = parseWarningsCount(attributeValue, warningsCount);
+            else if ("warnings".equals(attribute)) 
+                warnings = parseWarnings(attributeValue, warnings);
+            else 
+    		    fail("The '" + attribute + "' attribute name was not"
+    			    + " recognized");
+    
+                    if (warnings != null && warningsCount != null 
+                                         && !expected(warningsCount, warnings.size()))
+                        fail("Warnings count " + warningsCount
+                             + " does not match " + warnings.size()
+                             + ", which is the number of warnings");
+	        }
+        }
 
-                if (warnings != null && warningsCount != null 
-                                     && !expected(warningsCount, warnings.size()))
-                    fail("Warnings count " + warningsCount
-                         + " does not match " + warnings.size()
-                         + ", which is the number of warnings");
-	    }
-	}
-
-	void execute() throws SQLException {
-	    Statement stmt = connection.createStatement();
-	    if (DEBUG) {
-		System.err.println("Executing statement: " + statement);
-	    }
-	    try {
-		stmt.execute(statement);
-		if (DEBUG) {
-		    System.err.println("Statement executed successfully");
-		}
-                
-	    } catch (SQLException e) {
-		if (DEBUG) {
-		    System.err.println("Generated error code: "
-			    + e.getSQLState() + "\nException: " + e);
-		}
-		checkFailure(e);
-		return;
-	    }
-            checkSuccess(stmt, errorSpecified, warnings, warningsCount);
-	}
+    	void execute() throws SQLException {
+    	    Statement stmt = connection.createStatement();
+    	    if (DEBUG) {
+        		System.err.println("Executing statement: " + statement);
+    	    }
+    	    try {
+        		stmt.execute(statement);
+        		if (DEBUG) {
+        		    System.err.println("Statement executed successfully");
+        		}
+    	    } catch (SQLException e) {
+        		if (DEBUG) {
+        		    System.err.println("Generated error code: "
+        			    + e.getSQLState() + "\nException: " + e);
+        		}
+        		checkFailure(e);
+        		return;
+    	    }
+                checkSuccess(stmt, errorSpecified, warnings, warningsCount);
+    	}
     }
 
     
@@ -1522,7 +1504,7 @@ class YamlTester {
 				+ "\nGot: " + constructObject(keyNode));
 		    }
 		    String key = ((ScalarNode) keyNode).getValue();
-		    if (NEWTYPES_ENGINE.equals(key) && Types3Switch.ON) {
+		    if (NEWTYPES_ENGINE.equals(key)) {
 		        matchingKey = key;
 		        result = constructObject(tuple.getValueNode());
 		    }

@@ -16,14 +16,11 @@
  */
 package com.foundationdb.qp.persistitadapter.indexcursor;
 
-import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.types3.TInstance;
 import com.persistit.Key;
 
 public interface SortKeyTarget<S> {
     void attach(Key key);
-    void append(S source, int f, AkType[] akTypes, TInstance[] tInstances, AkCollator[] collators);
-    void append(S source, AkType akType, TInstance tInstance, AkCollator collator);
-    void append(S source, AkCollator collator, TInstance tInstance);
+    void append(S source, int f, TInstance[] tInstances);
+    void append(S source, TInstance tInstance);
 }

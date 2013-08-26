@@ -26,7 +26,6 @@ import com.foundationdb.qp.persistitadapter.indexcursor.IterationHelper;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.server.api.dml.ColumnSelector;
-import com.persistit.exception.PersistitException;
 
 class PersistitIndexCursor implements BindingsAwareCursor
 {
@@ -116,7 +115,6 @@ class PersistitIndexCursor implements BindingsAwareCursor
                          IndexKeyRange keyRange,
                          API.Ordering ordering,
                          IndexScanSelector selector,
-                         boolean usePValues,
                          boolean openAllSubCursors)
     {
         this.keyRange = keyRange;
@@ -124,11 +122,10 @@ class PersistitIndexCursor implements BindingsAwareCursor
         this.context = context;
         this.indexRowType = indexRowType;
         this.isTableIndex = indexRowType.index().isTableIndex();
-        this.usePValues = usePValues;
         this.selector = selector;
         this.idle = true;
         this.rowState = context.getStore().createIterationHelper(indexRowType);
-        this.indexCursor = IndexCursor.create(context, keyRange, ordering, rowState, usePValues, openAllSubCursors);
+        this.indexCursor = IndexCursor.create(context, keyRange, ordering, rowState,  openAllSubCursors);
     }
 
     // For use by this class
@@ -140,7 +137,6 @@ class PersistitIndexCursor implements BindingsAwareCursor
     private final IndexKeyRange keyRange;
     private final API.Ordering ordering;
     private final boolean isTableIndex;
-    private final boolean usePValues;
     private final IterationHelper rowState;
     private IndexCursor indexCursor;
     private final IndexScanSelector selector;

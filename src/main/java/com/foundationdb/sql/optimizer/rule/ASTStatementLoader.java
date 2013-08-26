@@ -18,9 +18,7 @@
 package com.foundationdb.sql.optimizer.rule;
 
 import com.foundationdb.server.expression.std.Comparison;
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.types3.TPreptimeValue;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.server.types3.mcompat.mtypes.MString;
 import com.foundationdb.server.types3.pvalue.PValue;
 import com.foundationdb.sql.optimizer.plan.*;
@@ -939,6 +937,19 @@ public class ASTStatementLoader extends BaseRule
                 if (nfields > 0)
                     operand = operands.get(0);
             }
+            if ((operands == null) &&
+                (subquery instanceof ColumnSource) &&
+                (subquery instanceof TypedPlan)) {
+                int nfields = ((TypedPlan)subquery).nFields();
+                if (!multipleOperands && (nfields != 1))
+                    throw new UnsupportedSQLException("Subquery must have exactly one column", subqueryNode);
+                operands = new ArrayList<>(nfields);
+                for (int i = 0; i < nfields; i++) {
+                    operands.add(new ColumnExpression(((ColumnSource)subquery), i, null, null));
+                }
+                if (nfields > 0)
+                    operand = operands.get(0);
+            }
             ConditionExpression condition;
             if (needOperand) {
                 assert (operand != null);
@@ -1343,7 +1354,7 @@ public class ASTStatementLoader extends BaseRule
                                               List<ExpressionNode> projects)
                 throws StandardException {
             if (valueNode == null) {
-                return new ConstantExpression(null, AkType.NULL);
+                return ConstantExpression.typedNull(null, null, null);
             }
             DataTypeDescriptor type = valueNode.getType();
             if (valueNode instanceof ColumnReference) {
@@ -1373,22 +1384,19 @@ public class ASTStatementLoader extends BaseRule
                 if (valueNode instanceof BooleanConstantNode)
                     return new BooleanConstantExpression((Boolean)((ConstantNode)valueNode).getValue(), 
                                                          type, valueNode);
+                else if (valueNode instanceof UntypedNullConstantNode) {
+                    return ConstantExpression.typedNull(valueNode.getType(), valueNode, TypesTranslation.toTInstance(valueNode.getType()));
+                }
                 else {
                     Object value = ((ConstantNode)valueNode).getValue();
                     if (value instanceof Integer) {
                         int ival = ((Integer)value).intValue();
-                        if (Types3Switch.ON) {
-                            if ((ival >= Byte.MIN_VALUE) && (ival <= Byte.MAX_VALUE))
-                                value = new Byte((byte)ival);
-                            else if ((ival >= Short.MIN_VALUE) && (ival <= Short.MAX_VALUE))
-                                value = new Short((short)ival);
-                            ExpressionNode constInt = new ConstantExpression(value, type, AkType.LONG, valueNode);
-                            constInt.getPreptimeValue(); // So that toString() won't try to use that AkType with an unsupported types2 type.
-                            return constInt;
-                        }
-                        else {
-                            value = new Long(ival);
-                        }
+                        if ((ival >= Byte.MIN_VALUE) && (ival <= Byte.MAX_VALUE))
+                            value = new Byte((byte)ival);
+                        else if ((ival >= Short.MIN_VALUE) && (ival <= Short.MAX_VALUE))
+                            value = new Short((short)ival);
+                        ExpressionNode constInt = new ConstantExpression(value, type, valueNode);
+                        return constInt;
                     }
                     return new ConstantExpression(value, type, valueNode);
                 }
@@ -1566,7 +1574,25 @@ public class ASTStatementLoader extends BaseRule
                 if (caseNode.getElseValue() != null)
                     expr = toExpression(caseNode.getElseValue(), projects);
                 else
-                    expr = new ConstantExpression(null, AkType.NULL);
+                    expr = ConstantExpression.typedNull(type, valueNode, null); 
+                for (int i = ncases - 1; i >= 0; i--) {
+                    ConditionList conds = new ConditionList(1);
+                    conds.add(new ComparisonCondition(Comparison.EQ, operand, toExpression(caseNode.getCaseOperand(i), projects), caseNode.getType(), caseNode));
+                    expr = new IfElseExpression(conds,
+                                                toExpression(caseNode.getResultValue(i), projects),
+                                                expr, caseNode.getType(), caseNode);
+                }
+                return expr;
+            }
+            else if (valueNode instanceof SimpleCaseNode) {
+                SimpleCaseNode caseNode = (SimpleCaseNode)valueNode;
+                ExpressionNode operand = toExpression(caseNode.getOperand(), projects);
+                int ncases = caseNode.getNumberOfCases();
+                ExpressionNode expr;
+                if (caseNode.getElseValue() != null)
+                    expr = toExpression(caseNode.getElseValue(), projects);
+                else
+                    expr = ConstantExpression.typedNull(type, valueNode, null); 
                 for (int i = ncases - 1; i >= 0; i--) {
                     ConditionList conds = new ConditionList(1);
                     conds.add(new ComparisonCondition(Comparison.EQ, operand, toExpression(caseNode.getCaseOperand(i), projects), caseNode.getType(), caseNode));

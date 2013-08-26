@@ -18,8 +18,6 @@ package com.foundationdb.qp.row;
 
 import com.foundationdb.qp.rowtype.CompoundRowType;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types.NullValueSource;
-import com.foundationdb.server.types.ValueSource;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.server.types3.pvalue.PValueSources;
 import com.foundationdb.util.ShareHolder;
@@ -34,17 +32,6 @@ public class CompoundRow extends AbstractRow {
     @Override
     public HKey hKey() {
         return null;
-    }
-
-    @Override
-    public ValueSource eval(int i) {
-        ValueSource source;
-        if (i < firstRowFields) {
-            source = firstRowh.isEmpty() ? NullValueSource.only() : firstRowh.get().eval(i);
-        } else {
-            source = secondRowh.isEmpty() ? NullValueSource.only() : secondRowh.get().eval(i - rowOffset);
-        }
-        return source;
     }
 
     @Override

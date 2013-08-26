@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.types3.service;
 
-import com.foundationdb.server.service.functions.FunctionsRegistryImpl.FunctionsRegistryException;
+import com.foundationdb.server.error.AkibanInternalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -139,6 +139,12 @@ public class ReflectiveInstanceFinder implements InstanceFinder
         catch (InvocationTargetException ex)
         {
             throw new FunctionsRegistryException(ex.getMessage());
+        }
+    }
+
+    public static class FunctionsRegistryException extends AkibanInternalException {
+        public FunctionsRegistryException(String message) {
+            super(message);
         }
     }
 

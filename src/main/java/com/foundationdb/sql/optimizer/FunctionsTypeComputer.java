@@ -21,7 +21,6 @@ import com.foundationdb.sql.parser.*;
 
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.types.DataTypeDescriptor;
-import com.foundationdb.sql.types.TypeId;
 
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.server.expression.ExpressionComposer;
@@ -29,6 +28,7 @@ import com.foundationdb.server.expression.ExpressionType;
 import com.foundationdb.server.expression.TypesList;
 import com.foundationdb.server.expression.std.ExpressionTypes;
 import com.foundationdb.server.service.functions.FunctionsRegistry;
+import com.foundationdb.server.t3expressions.T3RegistryService;
 import com.foundationdb.server.types.AkType;
 
 import com.foundationdb.server.error.NoSuchFunctionException;
@@ -40,12 +40,13 @@ import static com.foundationdb.sql.optimizer.TypesTranslation.*;
 /** Calculate types from expression composers. */
 public class FunctionsTypeComputer extends AISTypeComputer
 {
-    private FunctionsRegistry functionsRegistry;
+    //private FunctionsRegistry functionsRegistry;
+    private T3RegistryService functionsRegistry;
     private boolean useComposers;
 
-    public FunctionsTypeComputer(FunctionsRegistry functionsRegistry) {
+    public FunctionsTypeComputer(T3RegistryService functionsRegistry) {
         this.functionsRegistry = functionsRegistry;
-        useComposers = true;
+        useComposers = false;
     }
     
     public boolean isUseComposers() {
@@ -118,9 +119,8 @@ public class FunctionsTypeComputer extends AISTypeComputer
                                                     ArgumentsAccess args,
                                                     boolean isNullable)
             throws StandardException {
-        if (!useComposers)
             return null;
-
+/*
         ExpressionComposer composer;
         try {
             composer = functionsRegistry.composer(functionName);
@@ -142,6 +142,7 @@ public class FunctionsTypeComputer extends AISTypeComputer
         if (resultType == null)
             return null;
         return fromExpressionType(resultType, isNullable);
+*/        
     }
 
 
@@ -154,9 +155,9 @@ public class FunctionsTypeComputer extends AISTypeComputer
 
     protected DataTypeDescriptor noArgFunction(String functionName) 
             throws StandardException {
-        FunctionsRegistry.FunctionKind functionKind = 
+        T3RegistryService.FunctionKind functionKind = 
             functionsRegistry.getFunctionKind(functionName);
-        if (functionKind == FunctionsRegistry.FunctionKind.SCALAR)
+        if (functionKind == T3RegistryService.FunctionKind.SCALAR)
             return expressionComposer(functionName,
                                       new ArgumentsAccess() {
                                           @Override
@@ -386,12 +387,12 @@ public class FunctionsTypeComputer extends AISTypeComputer
 
     protected DataTypeDescriptor oneArgMethodCall(MethodCallNode methodCall)
             throws StandardException {
-        FunctionsRegistry.FunctionKind functionKind = 
+        T3RegistryService.FunctionKind functionKind = 
             functionsRegistry.getFunctionKind(methodCall.getMethodName());
-        if (functionKind == FunctionsRegistry.FunctionKind.SCALAR)
+        if (functionKind == T3RegistryService.FunctionKind.SCALAR)
             return expressionComposer(methodCall.getMethodName(),
                                       new JavaValuesAccess(methodCall.getMethodParameters()));
-        if (functionKind == FunctionsRegistry.FunctionKind.AGGREGATE) {
+        if (functionKind == T3RegistryService.FunctionKind.AGGREGATE) {
             // Mark the method call as really an aggregate function.
             // Could do the substitution now, but that would require throwing
             // a subclass of StandardException up to visit() or something other

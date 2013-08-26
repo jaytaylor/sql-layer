@@ -30,8 +30,8 @@ import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.geophile.SpaceLatLon;
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.types3.common.BigDecimalWrapper;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -188,8 +188,8 @@ public class PlanCostEstimator
                     for (int i = 0; i < SpaceLatLon.MAX_DECOMPOSITION_Z_VALUES; i++) {
                         long z = zValues[i];
                         if (z != -1L) {
-                            ExpressionNode lo = new ConstantExpression(space.zLo(z), AkType.LONG);
-                            ExpressionNode hi = new ConstantExpression(space.zHi(z), AkType.LONG);
+                            ExpressionNode lo = new ConstantExpression(space.zLo(z), MNumeric.BIGINT.instance(true).dataTypeDescriptor(), null);
+                            ExpressionNode hi =  new ConstantExpression(space.zHi(z), MNumeric.BIGINT.instance(true).dataTypeDescriptor(), null);
                             CostEstimate zScanCost =
                                 costEstimator.costIndexScan(index.getIndex(), index.getEqualityComparands(),
                                                             lo, true,

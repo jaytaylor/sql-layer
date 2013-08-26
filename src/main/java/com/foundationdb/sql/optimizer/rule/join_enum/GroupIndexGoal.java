@@ -32,14 +32,10 @@ import com.foundationdb.ais.model.*;
 import com.foundationdb.ais.model.Index.JoinType;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.expression.std.Comparison;
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.service.text.FullTextQueryBuilder;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.TPreptimeValue;
-import com.foundationdb.server.types3.Types3Switch;
-import com.foundationdb.server.types3.aksql.aktypes.AkBool;
-import com.foundationdb.sql.optimizer.TypesTranslation;
+import com.foundationdb.server.types3.mcompat.mtypes.MApproximateNumber;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 
@@ -255,9 +251,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                                                    new DataTypeDescriptor(TypeId.BOOLEAN_ID, true),
                                                    null);
         cond.setComparison(ccond);
-        if (Types3Switch.ON) {
-            cond.setPreptimeValue(new TPreptimeValue(AkBool.INSTANCE.instance(true)));
-        }
+        //cond.setPreptimeValue(new TPreptimeValue(AkBool.INSTANCE.instance(true)));
         return cond;
     }
 
@@ -336,9 +330,6 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                         equalityCondition = condition;
                         otherComparand = new IsNullIndexKey(foperand.getSQLtype(),
                                                             fcond.getSQLsource());
-                        if (foperand.getPreptimeValue() != null) {
-                            otherComparand.setPreptimeValue(new TPreptimeValue(foperand.getPreptimeValue().instance()));
-                        }
                         break;
                     }
                 }
@@ -1672,14 +1663,10 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         ExpressionNode op2 = operands.get(1);
         ExpressionNode op3 = operands.get(2);
         ExpressionNode op4 = operands.get(3);
-        if (right.getAkType() != AkType.DECIMAL) {
+        if (right.getPreptimeValue().instance().typeClass() != MNumeric.DECIMAL) {
             DataTypeDescriptor sqlType = 
                 new DataTypeDescriptor(TypeId.DECIMAL_ID, 10, 6, true, 12);
             right = new CastExpression(right, sqlType, right.getSQLsource());
-            if (Types3Switch.ON) {
-                TInstance instance = TypesTranslation.toTInstance(sqlType);
-                right.setPreptimeValue(new TPreptimeValue(instance));
-            }
         }
         if (columnMatches(col1, op1) && columnMatches(col2, op2) &&
             constantOrBound(op3) && constantOrBound(op4)) {

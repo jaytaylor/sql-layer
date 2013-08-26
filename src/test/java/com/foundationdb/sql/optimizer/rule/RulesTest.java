@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
-import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.server.t3expressions.T3RegistryServiceImpl;
 import com.foundationdb.sql.NamedParamsTestBase;
 import com.foundationdb.sql.TestBase;
 
@@ -32,7 +32,6 @@ import com.foundationdb.sql.parser.DMLStatementNode;
 import com.foundationdb.sql.parser.StatementNode;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.server.service.functions.FunctionsRegistryImpl;
 
 import com.foundationdb.junit.NamedParameterizedRunner;
 import com.foundationdb.junit.NamedParameterizedRunner.TestParameters;
@@ -68,13 +67,9 @@ public class RulesTest extends OptimizerTestBase
                 }
             })) {
             File rulesFile;
-            if (Types3Switch.ON) {
-                rulesFile = new File (subdir, "t3rules.yml");
-                if (!rulesFile.exists()) 
-                    rulesFile = new File (subdir, "rules.yml");
-            } else {
-                rulesFile = new File(subdir, "rules.yml");
-            }
+            rulesFile = new File (subdir, "t3rules.yml");
+            if (!rulesFile.exists()) 
+                rulesFile = new File (subdir, "rules.yml");
             File schemaFile = new File(subdir, "schema.ddl");
             if (rulesFile.exists() && schemaFile.exists()) {
                 File defaultStatsFile = new File(subdir, "stats.yaml");
@@ -97,7 +92,7 @@ public class RulesTest extends OptimizerTestBase
                     if (!extraDDL.exists())
                         extraDDL = defaultExtraDDL;
                     File t3Results = new File (subdir, args[0] + ".t3expected");
-                    if (t3Results.exists() && Types3Switch.ON) {
+                    if (t3Results.exists()) {
                         args[2] = fileContents(t3Results);
                     }
                     Object[] nargs = new Object[args.length+5];
@@ -153,7 +148,7 @@ public class RulesTest extends OptimizerTestBase
         if (Boolean.parseBoolean(properties.getProperty("allowSubqueryMultipleColumns",
                                                         "false"))) {
             binder.setAllowSubqueryMultipleColumns(true);
-            typeComputer = new NestedResultSetTypeComputer(new FunctionsRegistryImpl());
+            typeComputer = new NestedResultSetTypeComputer(T3RegistryServiceImpl.createRegistryService());
         }
         if (!Boolean.parseBoolean(properties.getProperty("useComposers", "true"))) {
             ((FunctionsTypeComputer)typeComputer).setUseComposers(false);

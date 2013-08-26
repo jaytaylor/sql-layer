@@ -19,7 +19,6 @@ package com.foundationdb.sql.embedded;
 
 import com.foundationdb.server.test.it.ITBase;
 
-import com.foundationdb.server.types3.Types3Switch;
 import org.junit.Before;
 import org.junit.Test;
 import static junit.framework.Assert.*;
@@ -31,7 +30,6 @@ import java.sql.*;
 
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import java.math.BigDecimal;
-import java.text.SimpleDateFormat;
 import java.util.Map;
 
 public class EmbeddedJDBCIT extends ITBase
@@ -177,11 +175,7 @@ public class EmbeddedJDBCIT extends ITBase
         assertEquals("sum result", 123, cstmt.getInt("sum"));
         // we have to if-else it; a ternary expression will always try to make both a Long, it seems, even if
         // we explicitly invoke Long.valueOf and Integer.valueOf.
-        Object diffExpected;
-        if (Types3Switch.ON)
-            diffExpected = 77;
-        else
-            diffExpected = 77L;
+        Object diffExpected = 77;
         assertEquals("diff results", diffExpected, cstmt.getObject("diff"));
     }
 

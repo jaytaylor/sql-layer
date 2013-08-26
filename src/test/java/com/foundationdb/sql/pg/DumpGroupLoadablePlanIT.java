@@ -29,8 +29,6 @@ import com.foundationdb.server.service.transaction.TransactionService.CloseableT
 import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types3.mcompat.mtypes.MString;
 import com.foundationdb.sql.TestBase;
-import com.foundationdb.server.types.FromObjectValueSource;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.server.types3.pvalue.PValue;
 
 import com.foundationdb.junit.NamedParameterizedRunner;
@@ -110,18 +108,10 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
                 }
             };
         QueryBindings queryBindings = queryContext.createBindings();
-        if (Types3Switch.ON) {
-            queryBindings.setPValue(0, new PValue(MString.varcharFor(SCHEMA_NAME), SCHEMA_NAME));
-            queryBindings.setPValue(1, new PValue(MString.varcharFor(GROUP_NAME), GROUP_NAME));
-            if (multiple)
-                queryBindings.setPValue(2, new PValue(MNumeric.INT.instance(false), 10));
-        }
-        else {
-            queryBindings.setValue(0, new FromObjectValueSource().setReflectively(SCHEMA_NAME));
-            queryBindings.setValue(1, new FromObjectValueSource().setReflectively(GROUP_NAME));
-            if (multiple)
-                queryBindings.setValue(2, new FromObjectValueSource().setReflectively(10L));
-        }
+        queryBindings.setPValue(0, new PValue(MString.varcharFor(SCHEMA_NAME), SCHEMA_NAME));
+        queryBindings.setPValue(1, new PValue(MString.varcharFor(GROUP_NAME), GROUP_NAME));
+        if (multiple)
+            queryBindings.setPValue(2, new PValue(MNumeric.INT.instance(false), 10));
 
         DirectObjectCursor cursor = plan.cursor(queryContext, queryBindings);
         

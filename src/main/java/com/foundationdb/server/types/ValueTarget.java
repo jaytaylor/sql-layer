@@ -23,6 +23,7 @@ import com.foundationdb.util.ByteSource;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
+@Deprecated
 public interface ValueTarget {
     void putNull();
     void putDate(long value);

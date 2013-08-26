@@ -25,11 +25,12 @@ import com.foundationdb.sql.parser.SQLParser;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.server.service.ServiceManager;
-import com.foundationdb.server.service.functions.FunctionsRegistryImpl;
 
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.service.text.FullTextIndexService;
 import com.foundationdb.server.service.text.FullTextIndexServiceImpl;
+import com.foundationdb.server.t3expressions.T3RegistryServiceImpl;
+
 import org.junit.Before;
 import org.junit.Ignore;
 
@@ -65,7 +66,7 @@ public class OptimizerTestBase extends ASTTransformTestBase
         parser = new SQLParser();
         parser.setNodeFactory(new BindingNodeFactory(parser.getNodeFactory()));
         unparser = new BoundNodeToString();
-        typeComputer = new FunctionsTypeComputer(new FunctionsRegistryImpl());
+        typeComputer = new FunctionsTypeComputer(T3RegistryServiceImpl.createRegistryService());
         booleanNormalizer = new BooleanNormalizer(parser);
         subqueryFlattener = new SubqueryFlattener(parser);
         distinctEliminator = new DistinctEliminator(parser);

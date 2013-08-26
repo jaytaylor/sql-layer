@@ -39,8 +39,10 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types3.pvalue.PValueSource;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -55,7 +57,6 @@ import java.util.Properties;
 import java.util.Set;
 
 import static com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
-import static com.foundationdb.server.types.AkType.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
@@ -319,7 +320,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
             for(int colIndex = 0; colIndex < expectedRows[rowIndex].length; ++colIndex) {
                 final String msg = "row " + rowIndex + ", col " + colIndex;
                 final Object expected = expectedRows[rowIndex][colIndex];
-                final ValueSource actual = row.eval(colIndex);
+                final PValueSource actual = row.pvalue(colIndex);
                 
                 if(expected == null || actual.isNull()) {
                     Column column = row.rowType().userTable().getColumn(colIndex);
@@ -331,8 +332,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
 
                 if(expected == null) {
                     assertEquals(msg + " isNull", true, actual.isNull());
-                } else if(expected instanceof AkType) {
-                    assertEquals(msg + " (type only)", expected, actual.getConversionType());
+                } else if(expected instanceof TInstance) {
+                    assertEquals(msg + " (type only)", expected, actual.tInstance());
                 } else if(expected instanceof String) {
                     if(colIndex == 0 && actual.getString().equals(I_S)) {
                         --rowIndex;
@@ -342,13 +343,13 @@ public class BasicInfoSchemaTablesServiceImplTest {
                     assertEquals(msg, expected, actual.getString());
    
                 } else if(expected instanceof Integer) {
-                    assertEquals(msg, expected, actual.getInt());
+                    assertEquals(msg, expected, actual.getInt32());
                 } else if(expected instanceof Long) {
-                    assertEquals(msg, expected, actual.getLong());
+                    assertEquals(msg, expected, actual.getInt64());
                 } else if(expected instanceof Boolean) {
                     assertEquals(msg, (Boolean)expected ? "YES" : "NO", actual.getString());
                 } else if(expected instanceof Text) {
-                    assertEquals(msg, ((Text)expected).getText(), actual.getText());
+                    assertEquals(msg, ((Text)expected).getText(), actual.getString());
                 } else {
                     fail("Unsupported type: " + expected.getClass());
                 }
@@ -373,6 +374,10 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
     }
 
+    private static final TInstance LONG = MNumeric.BIGINT.instance(false);
+    private static final TInstance LONG_NULL = MNumeric.BIGINT.instance(true);
+    private static final TInstance VARCHAR = MString.VARCHAR.instance(128,true);
+ 
     @Test
     public void schemataScan() {
         final Object[][] expected = {
@@ -389,20 +394,20 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void tablesScan() {
         final Object[][] expected = {
-                { "gco", "a", "TABLE", LONG, null, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "gco", "b", "TABLE", LONG, null, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "gco", "m", "TABLE", LONG, null, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "gco", "r", "TABLE", LONG, null, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "gco", "w", "TABLE", LONG, null, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "gco", "x", "TABLE", LONG, null, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "test", "bar", "TABLE", LONG, null, "bar_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "test", "bar2", "TABLE", LONG, null, "bar_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "test", "defaults", "TABLE", LONG, null, "defaults_tree", I_S, VARCHAR, I_S, VARCHAR, LONG},
-                { "test", "foo", "TABLE", LONG, null, "foo_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "test", "seq-table", "TABLE", LONG, null, "seq-table_tree", I_S, VARCHAR, I_S, VARCHAR, LONG},
-                { "zap", "pow", "TABLE", LONG, null, "pow_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "zzz", "zzz1", "TABLE", LONG, null, "zzz1_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "zzz", "zzz2", "TABLE", LONG, null, "zzz1_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "a", "TABLE", LONG_NULL, null, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "b", "TABLE", LONG_NULL, null, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "m", "TABLE", LONG_NULL, null, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "r", "TABLE", LONG_NULL, null, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "w", "TABLE", LONG_NULL, null, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "x", "TABLE", LONG_NULL, null, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "test", "bar", "TABLE", LONG_NULL, null, "bar_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "test", "bar2", "TABLE", LONG_NULL, null, "bar_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "test", "defaults", "TABLE", LONG_NULL, null, "defaults_tree", I_S, VARCHAR, I_S, VARCHAR, LONG},
+                { "test", "foo", "TABLE", LONG_NULL, null, "foo_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "test", "seq-table", "TABLE", LONG_NULL, null, "seq-table_tree", I_S, VARCHAR, I_S, VARCHAR, LONG},
+                { "zap", "pow", "TABLE", LONG_NULL, null, "pow_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "zzz", "zzz1", "TABLE", LONG_NULL, null, "zzz1_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "zzz", "zzz2", "TABLE", LONG_NULL, null, "zzz1_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
                 { "test", "voo", "VIEW", null, null, null, null, null, null, null, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLES).getGroupScan(adapter);

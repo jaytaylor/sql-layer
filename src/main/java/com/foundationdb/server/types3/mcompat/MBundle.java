@@ -19,9 +19,6 @@ package com.foundationdb.server.types3.mcompat;
 
 import com.foundationdb.server.types3.TBundle;
 import com.foundationdb.server.types3.TBundleID;
-import com.foundationdb.server.types3.TClass;
-
-import java.util.Map;
 
 public enum  MBundle implements TBundle {
     INSTANCE;

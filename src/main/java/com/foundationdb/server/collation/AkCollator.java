@@ -17,10 +17,7 @@
 package com.foundationdb.server.collation;
 
 import com.foundationdb.server.PersistitKeyPValueSource;
-import com.foundationdb.server.PersistitKeyValueSource;
-import com.foundationdb.server.types.ValueSource;
 import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.util.WrappingByteSource;
 import com.persistit.Key;
 
 public abstract class AkCollator {
@@ -71,23 +68,6 @@ public abstract class AkCollator {
      *             impossible. See {@link #isRecoverable()}.
      */
     abstract public String decode(Key key);
-
-    /**
-     * Compare two string values: Comparable<ValueSource>
-     */
-    final public int compare(ValueSource value1, ValueSource value2) {
-        boolean persistit1 = value1 instanceof PersistitKeyValueSource;
-        boolean persistit2 = value2 instanceof PersistitKeyValueSource;
-        if (persistit1 && persistit2) {
-            return ((PersistitKeyValueSource) value1).compare((PersistitKeyValueSource) value2);
-        } else if (persistit1) {
-            return ((PersistitKeyValueSource) value1).compare(this, value2.getString());
-        } else if (persistit2) {
-            return -((PersistitKeyValueSource) value2).compare(this, value1.getString());
-        } else {
-            return compare(value1.getString(), value2.getString());
-        }
-    }
 
     /**
      * Compare two string values: Comparable<PValueSource>

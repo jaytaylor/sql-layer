@@ -23,8 +23,6 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.types3.TInstance;
 import com.persistit.Key;
 import com.persistit.Value;
@@ -46,10 +44,9 @@ abstract class SorterAdapter<S,E,V> {
         this.keyTarget.attach(key);
         
         int rowFields  = rowType.nFields();
-        this.oFieldTypes = aktypes(rowFields);
         this.tFieldTypes = tinstances(rowFields);
         for (int i = 0; i < rowFields; i++) {
-            initTypes(rowType, oFieldTypes, tFieldTypes, i);
+            initTypes(rowType, tFieldTypes, i);
         }
         
         attachValueTarget(value);
@@ -64,12 +61,9 @@ abstract class SorterAdapter<S,E,V> {
         
         int nsort = ordering.sortColumns();
         this.evaluations = new ArrayList<>(nsort);
-        this.oOrderingTypes = aktypes(nsort);
         this.tOrderingTypes = tinstances(nsort);
-        this.orderingCollators = new AkCollator[nsort];
         for (int i = 0; i < nsort; i++) {
-            initTypes(ordering, i, oOrderingTypes, tOrderingTypes);
-            orderingCollators[i] = ordering.collator(i);
+            initTypes(ordering, i, tOrderingTypes);
             V evaluation = evaluation(ordering, context, bindings, i);
             evaluations.add(evaluation);
         }
@@ -79,16 +73,10 @@ abstract class SorterAdapter<S,E,V> {
 
     protected abstract TInstance[] tinstances(int size);
 
-    protected abstract AkType[] aktypes(int size);
-
     public void evaluateToKey(Row row, int i) {
         V evaluation = evaluations.get(i);
         S keySource = evaluateRow(evaluation, row);
-        keyTarget.append(keySource, i, oOrderingTypes, tOrderingTypes, orderingCollators);
-    }
-
-    public AkType[] oFieldTypes() {
-        return oFieldTypes;
+        keyTarget.append(keySource, i, tOrderingTypes);
     }
 
     public TInstance[] tFieldTypes() {
@@ -99,8 +87,8 @@ abstract class SorterAdapter<S,E,V> {
         return preserveDuplicates;
     }
     
-    protected abstract void initTypes(RowType rowType, AkType[] ofFieldTypes, TInstance[] tFieldTypes, int i);
-    protected abstract void initTypes(Ordering ordering, int i, AkType[] akTypes, TInstance[] tInstances);
+    protected abstract void initTypes(RowType rowType, TInstance[] tFieldTypes, int i);
+    protected abstract void initTypes(Ordering ordering, int i, TInstance[] tInstances);
     protected abstract V evaluation(Ordering ordering, QueryContext context, QueryBindings bindings, int i);
     protected abstract S evaluateRow(V evaluation, Row row);
     protected abstract void attachValueTarget(Value value);
@@ -110,21 +98,21 @@ abstract class SorterAdapter<S,E,V> {
 
     private final SortKeyTarget<S> keyTarget;
     private boolean preserveDuplicates;
-    private AkCollator orderingCollators[];
-    private AkType oFieldTypes[], oOrderingTypes[];
+    //private AkCollator orderingCollators[];
+    //private AkType oFieldTypes[], oOrderingTypes[];
     private TInstance tFieldTypes[], tOrderingTypes[];
 
     private List<V> evaluations;
 
     public void evaluateToTarget(Row row, int i) {
         S field = sortKeyAdapter.get(row, i);
-        putFieldToTarget(field, i, oFieldTypes, tFieldTypes);
+        putFieldToTarget(field, i, tFieldTypes);
     }
 
-    protected abstract void putFieldToTarget(S value, int i, AkType[] oFieldTypes, TInstance[] tFieldTypes);
+    protected abstract void putFieldToTarget(S value, int i, TInstance[] tFieldTypes);
 
     public interface PersistitValueSourceAdapter {
         void attach(Value value);
-        void putToHolders(ValuesHolderRow row, int i, AkType[] oFieldTypes);
+        void putToHolders(ValuesHolderRow row, int i, TInstance[] fieldTypes);
     }
 }

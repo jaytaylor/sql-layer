@@ -152,16 +152,6 @@
 - Statement: SELECT datetime_field + INTERVAL '3 7' DAY TO HOUR FROM t
     WHERE ind=1
 - output: [[!re '2000-01-04 07:00:00([.]0)?']]
-
-# Use in WHERE clause
----
-- Newtypes: false
----
-- Statement: SELECT time_field FROM t
-    WHERE time_field + INTERVAL '2' SECOND = TIME('00:00:02')
-- output: [['00:00:00']]
----
-- Newtypes: null
 ---
 - Statement: SELECT date_field FROM t
     WHERE date_field + INTERVAL '4' MONTH = DATE('2000-05-02')

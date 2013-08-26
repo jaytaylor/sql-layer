@@ -1,7 +1,5 @@
 ---
-- Statement: SET newtypes to 'true';
 # Tests for bug 1070999
----
 - CreateTable: a (c DECIMAL (15, 3));
 ---
 - Statement: INSERT INTO a values (123456789999.123);
@@ -23,6 +21,4 @@
 ---
 - Statement: SELECT * FROM b ORDER BY i;
 - output: [[1, '0', '0.00', '0.0000'],[2, '1111', '11.11', '0.1111'],[3, '-1111', '-11.11', '-0.1111'],[4, '9998', '99.98', '0.9998'],[5, '9999', '99.99', '0.9999'],[6, '-9999', '-99.99', '-0.9999'],[7, '9999', '99.99', '0.9999'],[8, '-9999', '-99.99', '-0.9999']]
----
-- Statement: SET newtypes to DEFAULT;
 ...

@@ -1,7 +1,5 @@
 # Test the TIMEDIFF() function
 ---
-- Statement: SET newtypes to 'true';
----
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types (bigint_field, time_field, timestamp_field, varchar_field) VALUES (1, '01:05:06', '2012-01-01 12:31:00', '2012-03-04 18:22:15')
@@ -77,10 +75,7 @@
 ---
 - Statement: select TIMEDIFF(5, 2) from all_types;
 - output: [['00:00:03']]
-
 # the following tests ONLY work in test3
----
-- Newtypes: true
 ---
 - Statement: select TIMEDIFF('12:34:55', 17) from all_types;
 - output: [['12:34:38']]
@@ -88,6 +83,4 @@
 ---
 - Statement: select TIMEDIFF('12:34:55', -17) from all_types;
 - output: [['12:35:12']]
----
-- Newtypes: null
 ...

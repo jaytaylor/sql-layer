@@ -449,7 +449,7 @@ public class Sort_GeneralIT extends OperatorITBase
     public void testPreserveDuplicates()
     {
         Operator project = 
-            project_Default(
+            project_DefaultTest(
                 filter_Default(
                     groupScan_Default(coi),
                     Collections.singleton(orderRowType)),
@@ -478,7 +478,7 @@ public class Sort_GeneralIT extends OperatorITBase
     public void testSuppressDuplicates()
     {
         Operator project =
-            project_Default(
+            project_DefaultTest(
                 filter_Default(
                     groupScan_Default(coi),
                     Collections.singleton(orderRowType)),

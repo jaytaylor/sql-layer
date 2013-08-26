@@ -25,5 +25,5 @@ public interface ConstraintChecker
     /** Check constraints on row.
      * @throws com.foundationdb.server.error.InvalidOperationException thrown if a constraint on the row is violated.
      */
-    public void checkConstraints(Row row, boolean usePValues) throws InvalidOperationException;
+    public void checkConstraints(Row row) throws InvalidOperationException;
 }

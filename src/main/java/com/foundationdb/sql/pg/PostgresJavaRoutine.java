@@ -19,11 +19,8 @@ package com.foundationdb.sql.pg;
 
 import static com.foundationdb.sql.pg.PostgresJsonStatement.jsonColumnNames;
 import static com.foundationdb.sql.pg.PostgresJsonStatement.jsonColumnTypes;
-import static com.foundationdb.sql.pg.PostgresServerSession.OutputFormat;
 
 import com.foundationdb.sql.parser.ParameterNode;
-import com.foundationdb.sql.parser.StatementNode;
-import com.foundationdb.sql.server.ServerCallContextStack;
 import com.foundationdb.sql.server.ServerCallInvocation;
 import com.foundationdb.sql.server.ServerJavaRoutine;
 
@@ -32,7 +29,6 @@ import com.foundationdb.ais.model.Routine;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.server.error.ExternalRoutineInvocationException;
 import com.foundationdb.server.explain.Explainable;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.Tap;
 
@@ -79,22 +75,21 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
             parameterTypes = null;
         else
             parameterTypes = parameterTypes(invocation, params.size(), paramTypes);
-        boolean usesPValues = server.getBooleanProperty("newtypes", Types3Switch.ON);
         switch (routine.getCallingConvention()) {
         case JAVA:
             return PostgresJavaMethod.statement(server, invocation, 
                                                 columnNames, columnTypes,
-                                                parameterTypes, usesPValues);
+                                                parameterTypes);
         case SCRIPT_FUNCTION_JAVA:
         case SCRIPT_FUNCTION_JSON:
             return PostgresScriptFunctionJavaRoutine.statement(server, invocation, 
                                                                columnNames, columnTypes,
-                                                               parameterTypes, usesPValues);
+                                                               parameterTypes);
         case SCRIPT_BINDINGS:
         case SCRIPT_BINDINGS_JSON:
             return PostgresScriptBindingsRoutine.statement(server, invocation, 
                                                            columnNames, columnTypes,
-                                                           parameterTypes, usesPValues);
+                                                           parameterTypes);
         default:
             return null;
         }
@@ -106,9 +101,8 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
     protected PostgresJavaRoutine(ServerCallInvocation invocation,
                                   List<String> columnNames, 
                                   List<PostgresType> columnTypes,
-                                  PostgresType[] parameterTypes,
-                                  boolean usesPValues) {
-        super.init(null, columnNames, columnTypes, parameterTypes, usesPValues);
+                                  PostgresType[] parameterTypes) {
+        super.init(null, columnNames, columnTypes, parameterTypes);
         this.invocation = invocation;
     }
 
@@ -171,7 +165,7 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
                     break;
                 }
                 outputter.beforeData();
-                outputter.output(call, usesPValues());
+                outputter.output(call);
                 nrows++;
                 anyOutput = true;
                 outputter.afterData();
@@ -196,7 +190,7 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
                         outputter.setMetaData(rs.getMetaData());
                         outputter.sendDescription();
                         while (rs.next()) {
-                            outputter.output(rs, usesPValues());
+                            outputter.output(rs);
                             nrows++;
                         }
                     }

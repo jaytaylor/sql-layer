@@ -20,7 +20,6 @@ package com.foundationdb.qp.persistitadapter;
 import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.rowdata.FieldDef;
-import com.foundationdb.server.types.AkType;
 
 public interface RowDataCreator<S> {
     S eval(RowBase row, int f);

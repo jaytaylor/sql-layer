@@ -28,7 +28,6 @@ import com.foundationdb.qp.persistitadapter.RowDataCreator;
 import com.foundationdb.qp.persistitadapter.Sorter;
 import com.foundationdb.qp.persistitadapter.indexcursor.IterationHelper;
 import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRow;
-import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.IndexRowType;
@@ -36,14 +35,12 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.NiceRow;
-import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.types.ValueSource;
 import com.foundationdb.util.tap.InOutTap;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -57,7 +54,6 @@ public abstract class StoreAdapter implements KeyCreator
                                              IndexKeyRange keyRange,
                                              API.Ordering ordering,
                                              IndexScanSelector scanSelector,
-                                             boolean usePValues,
                                              boolean openAllSubCursors);
 
     public abstract <HKEY extends com.foundationdb.qp.row.HKey> HKEY newHKey(HKey hKeyMetadata);
@@ -67,11 +63,11 @@ public abstract class StoreAdapter implements KeyCreator
         return schema;
     }
 
-    public abstract void updateRow(Row oldRow, Row newRow, boolean usePValues);
+    public abstract void updateRow(Row oldRow, Row newRow);
 
-    public abstract void writeRow (Row newRow, Index[] indexes, boolean usePValues);
+    public abstract void writeRow (Row newRow, Index[] indexes);
     
-    public abstract void deleteRow (Row oldRow, boolean usePValues, boolean cascadeDelete);
+    public abstract void deleteRow (Row oldRow, boolean cascadeDelete);
 
     public abstract Sorter createSorter(QueryContext context,
                                         QueryBindings bindings,
@@ -93,8 +89,6 @@ public abstract class StoreAdapter implements KeyCreator
     public abstract long sequenceNextValue(TableName sequenceName);
 
     public abstract long sequenceCurrentValue(TableName sequenceName);
-
-    public abstract long hash(ValueSource valueSource, AkCollator collator);
 
     // Persistit Transaction step related. Way to generalize?
     public int enterUpdateStep() {

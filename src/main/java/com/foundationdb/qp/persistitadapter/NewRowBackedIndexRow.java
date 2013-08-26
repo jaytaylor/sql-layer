@@ -25,8 +25,6 @@ import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.rowdata.FieldDef;
-import com.foundationdb.server.types.FromObjectValueSource;
-import com.foundationdb.server.types.ValueSource;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.server.types3.pvalue.PValueSources;
 
@@ -46,10 +44,6 @@ public class NewRowBackedIndexRow implements RowBase
         this.rowType = rowType;
         this.row = row;
         this.index = index;
-        this.sources = new FromObjectValueSource[rowType.nFields()];
-        for (int f = 0; f < rowType.nFields(); f++) {
-            this.sources[f] = new FromObjectValueSource();
-        }
     }
 
     // RowBase interface
@@ -57,19 +51,6 @@ public class NewRowBackedIndexRow implements RowBase
     @Override
     public RowType rowType() {
         return rowType;
-    }
-
-    @Override
-    public ValueSource eval(int i) {
-        FieldDef fieldDef = index.getAllColumns().get(i).getColumn().getFieldDef();
-        int fieldPos = fieldDef.getFieldIndex();
-        FromObjectValueSource source = sources[fieldPos];
-        if (row.isColumnNull(fieldPos)) {
-            source.setNull();
-        } else {
-            source.setReflectively(row.get(fieldPos));
-        }
-        return source;
     }
 
     @Override
@@ -102,13 +83,7 @@ public class NewRowBackedIndexRow implements RowBase
     public PValueSource pvalue(int i) {
         FieldDef fieldDef = index.getAllColumns().get(i).getColumn().getFieldDef();
         int fieldPos = fieldDef.getFieldIndex();
-        FromObjectValueSource source = sources[fieldPos];
-        if (row.isColumnNull(fieldPos)) {
-            source.setNull();
-        } else {
-            source.setReflectively(row.get(fieldPos));
-        }
-        return PValueSources.fromValueSource(source, rowType.typeInstanceAt(fieldPos));
+        return PValueSources.pValuefromObject(row.get(fieldPos), rowType.typeInstanceAt(fieldPos));
     }
 
     @Override
@@ -122,5 +97,4 @@ public class NewRowBackedIndexRow implements RowBase
     private final NewRow row;
     private final RowType rowType;
     private final TableIndex index;
-    private final FromObjectValueSource[] sources;
 }

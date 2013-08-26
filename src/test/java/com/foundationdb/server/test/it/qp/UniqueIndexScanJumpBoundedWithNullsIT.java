@@ -104,6 +104,7 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
                                         new Object[] {row.get(1),     // a
                                                       row.get(2),     // b
                                                       row.get(3),     // c
+                                                      row.get(0)    //id
                                                       }));
         }
     }
@@ -116,7 +117,7 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
      */
     private int b_of(long id)
     {
-        return (int)indexRow(id).eval(1).getLong();
+        return (int)indexRow(id).pvalue(1).getInt32();
     }
 
     @Test
@@ -336,8 +337,8 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
 
     private IndexKeyRange bounded(long a, long bLo, boolean loInclusive, long bHi, boolean hiInclusive)
     {
-        IndexBound lo = new IndexBound(new TestRow(tRowType, new Object[] {a, bLo}), new SetColumnSelector(0, 1));
-        IndexBound hi = new IndexBound(new TestRow(tRowType, new Object[] {a, bHi}), new SetColumnSelector(0, 1));
+        IndexBound lo = new IndexBound(new TestRow(tRowType, new Object[] {a, bLo, null, null}), new SetColumnSelector(0, 1));
+        IndexBound hi = new IndexBound(new TestRow(tRowType, new Object[] {a, bHi, null, null}), new SetColumnSelector(0, 1));
         return IndexKeyRange.bounded(idxRowType, lo, loInclusive, hi, hiInclusive);
     }
 

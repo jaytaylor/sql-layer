@@ -29,7 +29,7 @@ public class DefaultRules
             new AggregateMapper(),
             new AggregateToDistinctMapper(),
             new OverloadAndTInstanceResolver(),
-            new ConstantFolder(true),
+            new ConstantFolder(),
             new OuterJoinPromoter(),
             new ColumnEquivalenceFinder(),
             new GroupJoinFinder(),
@@ -43,10 +43,11 @@ public class DefaultRules
             new MapFolder(),
             new ExpressionCompactor(),
             new HalloweenRecognizer(),
-            new OperatorAssembler(true)
+            new OperatorAssembler()
     );
 
     /** These are the rules that get run old types compilation. */
+    /*
     public static final List<BaseRule> DEFAULT_RULES_OLDTYPES = Arrays.asList(
         // These aren't singletons because someday they will have options.
         new ASTStatementLoader(),
@@ -68,7 +69,7 @@ public class DefaultRules
         new HalloweenRecognizer(),
         new OperatorAssembler(false)
      );
-
+*/
     private DefaultRules() {
     }
 }

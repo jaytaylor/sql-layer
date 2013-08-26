@@ -28,9 +28,11 @@ import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.rowdata.SchemaFactory;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
 
 public class CompoundRowTypeTest {
+    
     @Test
     public void testFlattenedTypeCreate() {
         Schema schema = caoiSchema();
@@ -44,12 +46,11 @@ public class CompoundRowTypeTest {
         assertEquals (type.parentType(), schema.userTableRowType(customer));
         assertEquals (type.childType(), schema.userTableRowType(orders));
         
-        assertEquals (type.typeAt(0), AkType.INT);
-        assertEquals (type.typeAt(1), AkType.VARCHAR);
-        assertEquals (type.typeAt(2), AkType.INT);
-        assertEquals (type.typeAt(3), AkType.INT );
-        assertEquals (type.typeAt(4), AkType.INT);
-        
+        assertTrue(type.typeInstanceAt(0).equalsIncludingNullable(MNumeric.INT.instance(false)));
+        assertTrue(type.typeInstanceAt(1).equalsIncludingNullable(MString.VARCHAR.instance(64, false)));
+        assertTrue(type.typeInstanceAt(2).equalsIncludingNullable(MNumeric.INT.instance(false)));
+        assertTrue(type.typeInstanceAt(3).equalsIncludingNullable(MNumeric.INT.instance(false)));
+        assertTrue(type.typeInstanceAt(4).equalsIncludingNullable(MNumeric.INT.instance(false)));
         assertTrue (type.parentType().parentOf(type.childType()));
         //assertTrue (type.childType().ancestorOf(type.parentType()));
     }
@@ -64,11 +65,11 @@ public class CompoundRowTypeTest {
                                 schema.userTableRowType(items));
         assertNotNull (type);
         assertEquals (5, type.nFields());
-        assertEquals (type.typeAt(0), AkType.INT);
-        assertEquals (type.typeAt(1), AkType.VARCHAR);
-        assertEquals (type.typeAt(2), AkType.INT);
-        assertEquals (type.typeAt(3), AkType.INT );
-        assertEquals (type.typeAt(4), AkType.INT);
+        assertTrue(type.typeInstanceAt(0).equalsIncludingNullable(MNumeric.INT.instance(false)));
+        assertTrue(type.typeInstanceAt(1).equalsIncludingNullable(MString.VARCHAR.instance(64, false)));
+        assertTrue(type.typeInstanceAt(2).equalsIncludingNullable(MNumeric.INT.instance(false)));
+        assertTrue(type.typeInstanceAt(3).equalsIncludingNullable(MNumeric.INT.instance(false)));
+        assertTrue(type.typeInstanceAt(4).equalsIncludingNullable(MNumeric.INT.instance(false)));
         
         assertTrue (type.parentType().parentOf(type.childType()));
     }
@@ -92,11 +93,11 @@ public class CompoundRowTypeTest {
         assertEquals (5, type.nFields());
         assertFalse (type.hasUserTable());
         
-        assertEquals (type.typeAt(0), AkType.INT);
-        assertEquals (type.typeAt(1), AkType.VARCHAR);
-        assertEquals (type.typeAt(2), AkType.INT);
-        assertEquals (type.typeAt(3), AkType.INT);
-        assertEquals (type.typeAt(4), AkType.INT);
+        assertTrue(type.typeInstanceAt(0).equalsIncludingNullable(MNumeric.INT.instance(false)));
+        assertTrue(type.typeInstanceAt(1).equalsIncludingNullable(MString.VARCHAR.instance(64, false)));
+        assertTrue(type.typeInstanceAt(2).equalsIncludingNullable(MNumeric.INT.instance(false)));
+        assertTrue(type.typeInstanceAt(3).equalsIncludingNullable(MNumeric.INT.instance(false)));
+        assertTrue(type.typeInstanceAt(4).equalsIncludingNullable(MNumeric.INT.instance(false)));
     }
     
     @Test
@@ -109,9 +110,9 @@ public class CompoundRowTypeTest {
         assertNotNull (type);
         assertFalse (type.hasUserTable());
         assertEquals(3, type.nFields());
-        assertEquals(type.typeAt(0), AkType.INT);
-        assertEquals(type.typeAt(1), AkType.INT);
-        assertEquals(type.typeAt(2), AkType.INT);
+        assertTrue(type.typeInstanceAt(0).equalsIncludingNullable(MNumeric.INT.instance(false)));
+        assertTrue(type.typeInstanceAt(1).equalsIncludingNullable(MNumeric.INT.instance(false)));
+        assertTrue(type.typeInstanceAt(2).equalsIncludingNullable(MNumeric.INT.instance(false)));
     }
     
     @Test
@@ -127,16 +128,16 @@ public class CompoundRowTypeTest {
         ProductRowType type = schema.newProductType(flatOrder, 
                 schema.userTableRowType(customer), 
                 schema.userTableRowType(addresses));
+        
         assertNotNull (type);
         assertEquals (7, type.nFields());
-        assertEquals(type.typeAt(0), AkType.INT);
-        assertEquals(type.typeAt(1), AkType.VARCHAR);
-        assertEquals(type.typeAt(2), AkType.INT);
-        assertEquals(type.typeAt(3), AkType.INT);
-        assertEquals(type.typeAt(4), AkType.INT);
-        assertEquals(type.typeAt(5), AkType.INT);
-        assertEquals(type.typeAt(6), AkType.LONG);
-        
+        assertEquals (type.typeInstanceAt(0), MNumeric.INT.instance(false));
+        assertEquals (type.typeInstanceAt(1), MString.VARCHAR.instance(64, false));
+        assertEquals (type.typeInstanceAt(2), MNumeric.INT.instance(false));
+        assertEquals (type.typeInstanceAt(3), MNumeric.INT.instance(false));
+        assertEquals (type.typeInstanceAt(4), MNumeric.INT.instance(false));
+        assertEquals (type.typeInstanceAt(5), MNumeric.INT.instance(false));
+        assertEquals (type.typeInstanceAt(6), MNumeric.BIGINT.instance(false));
     }
     
     

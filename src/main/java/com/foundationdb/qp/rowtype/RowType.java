@@ -22,7 +22,6 @@ package com.foundationdb.qp.rowtype;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.HKey;
 import com.foundationdb.ais.model.UserTable;
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.explain.*;
 
@@ -73,8 +72,6 @@ public abstract class RowType
     }
 
     public abstract int nFields();
-
-    public abstract AkType typeAt(int index);
 
     public abstract TInstance typeInstanceAt(int index);
 

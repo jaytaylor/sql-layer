@@ -236,7 +236,7 @@ public class ExternalDataServiceIT extends ITBase
             };
         long nrows = external.loadTableFromCsv(session(), istr, new CsvFormat("UTF-8"),
                                                0, table, columns,
-                                               -1, queryContext);
+                                               -1, 1, queryContext);
         assertEquals(4, nrows);
         RowType rowType = schema.userTableRowType(table);
         compareRows(new RowBase[] {

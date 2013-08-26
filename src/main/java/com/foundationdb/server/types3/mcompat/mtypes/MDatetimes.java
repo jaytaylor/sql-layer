@@ -265,6 +265,16 @@ public class MDatetimes
         return String.format("%04d-%02d-%02d", yr, m, d);
     }
 
+    public static int parseYear (String st, TExecutionContext context) 
+    {
+        try{
+            int value = Integer.parseInt(st);
+            return value == 0 ? 0 : (value - 1900);
+        } catch (NumberFormatException ex) {
+            throw new InvalidDateFormatException ("year", st);
+        }
+    }
+    
     public static int parseDate(String st, TExecutionContext context)
     {
         String tks[];

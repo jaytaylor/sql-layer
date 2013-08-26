@@ -19,7 +19,7 @@ package com.foundationdb.server.test.it.qp;
 
 import org.junit.Ignore;
 import com.foundationdb.util.ShareHolder;
-import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.operator.Operator;
 import org.junit.Test;
@@ -69,7 +69,6 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
     private int t;
     private RowType tRowType;
     private IndexRowType idxRowType;
-    private Map<Long, TestRow> indexRowMap = new HashMap<>();
     private Map<Long, TestRow> indexRowWithIdMap = new HashMap<>(); // use for jumping
 
     @Override
@@ -112,13 +111,6 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
         use(db);
         for (NewRow row : db)
         {
-            indexRowMap.put((Long) row.get(0),
-                            new TestRow(tRowType,
-                                        new Object[] {row.get(1),     // a
-                                                      row.get(2),     // b
-                                                      row.get(3),     // c
-                                                      }));
-            
             indexRowWithIdMap.put((Long) row.get(0),
                                   new TestRow(tRowType,
                                               new Object[]{row.get(1),  // a
@@ -137,11 +129,8 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
      */
     private Integer b_of(long id)
     {
-        ValueSource val = indexRow(id).eval(1);
-        if(val.isNull())
-            return null;
-
-        return (int)indexRow(id).eval(1).getLong();
+        PValueSource val = indexRowWithIdMap.get(id).pvalue(1);
+        return (val.isNull() ? null : val.getInt32());
     }
 
     // test jumping to rows whose c == null
@@ -1782,26 +1771,15 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
     }
 
      // --- done generated
-
-    private TestRow indexRow(long id)
-    {
-        return indexRowMap.get(id);
-    }
-
     private TestRow indexRowWithId(long id)
     {
         return indexRowWithIdMap.get(id);
     }
 
-    private long[] longs(long... longs)
-    {
-        return longs;
-    }
-
     private IndexKeyRange bounded(long a, long bLo, boolean loInclusive, long bHi, boolean hiInclusive)
     {
-        IndexBound lo = new IndexBound(new TestRow(tRowType, new Object[] {a, bLo}), new SetColumnSelector(0, 1));
-        IndexBound hi = new IndexBound(new TestRow(tRowType, new Object[] {a, bHi}), new SetColumnSelector(0, 1));
+        IndexBound lo = new IndexBound(new TestRow(tRowType, new Object[] {a, bLo, null, null}), new SetColumnSelector(0, 1));
+        IndexBound hi = new IndexBound(new TestRow(tRowType, new Object[] {a, bHi, null, null}), new SetColumnSelector(0, 1));
         return IndexKeyRange.bounded(idxRowType, lo, loInclusive, hi, hiInclusive);
     }
 

@@ -128,9 +128,9 @@ public final class COIBasicIT extends ITBase {
     public void insertToUTablesAndScan() throws InvalidOperationException {
         final TableIds tids = createTables();
 
-        final NewRow cRow = NewRowBuilder.forTable(tids.c, getRowDef(tids.c)).put(1L).put("Robert").check(session(), dml()).row();
-        final NewRow oRow = NewRowBuilder.forTable(tids.o, getRowDef(tids.o)).put(10L).put(1L).check(session(), dml()).row();
-        final NewRow iRow = NewRowBuilder.forTable(tids.i, getRowDef(tids.i)).put(100L).put(10L).put("Desc 1").check(session(), dml()).row();
+        final NewRow cRow = NewRowBuilder.forTable(tids.c, getRowDef(tids.c)).put(1).put("Robert").check(session(), dml()).row();
+        final NewRow oRow = NewRowBuilder.forTable(tids.o, getRowDef(tids.o)).put(10).put(1).check(session(), dml()).row();
+        final NewRow iRow = NewRowBuilder.forTable(tids.i, getRowDef(tids.i)).put(100).put(10).put("Desc 1").check(session(), dml()).row();
 
         writeRows(cRow, oRow, iRow);
         expectFullRows(tids.c, NewRowBuilder.copyOf(cRow).row());
@@ -142,9 +142,9 @@ public final class COIBasicIT extends ITBase {
     public void insertToUTablesAndScanToLegacy() throws InvalidOperationException {
         final TableIds tids = createTables();
 
-        final NewRow cRow = NewRowBuilder.forTable(tids.c, getRowDef(tids.c)).put(1L).put("Robert").check(session(), dml()).row();
-        final NewRow oRow = NewRowBuilder.forTable(tids.o, getRowDef(tids.o)).put(10L).put(1L).check(session(), dml()).row();
-        final NewRow iRow = NewRowBuilder.forTable(tids.i, getRowDef(tids.i)).put(100L).put(10L).put("Desc 1").check(session(), dml()).row();
+        final NewRow cRow = NewRowBuilder.forTable(tids.c, getRowDef(tids.c)).put(1).put("Robert").check(session(), dml()).row();
+        final NewRow oRow = NewRowBuilder.forTable(tids.o, getRowDef(tids.o)).put(10).put(1).check(session(), dml()).row();
+        final NewRow iRow = NewRowBuilder.forTable(tids.i, getRowDef(tids.i)).put(100).put(10).put("Desc 1").check(session(), dml()).row();
 
         writeRows(cRow, oRow, iRow);
         List<RowData> cRows = scanFull(scanAllRequest(tids.c));
@@ -160,9 +160,9 @@ public final class COIBasicIT extends ITBase {
     public void insertToUTablesBulkAndScanToLegacy() throws InvalidOperationException {
         final TableIds tids = createTables();
 
-        final NewRow cRow = NewRowBuilder.forTable(tids.c, getRowDef(tids.c)).put(1L).put("Robert").check(session(), dml()).row();
-        final NewRow oRow = NewRowBuilder.forTable(tids.o, getRowDef(tids.o)).put(10L).put(1L).check(session(), dml()).row();
-        final NewRow iRow = NewRowBuilder.forTable(tids.i, getRowDef(tids.i)).put(100L).put(10L).put("Desc 1").check(session(), dml()).row();
+        final NewRow cRow = NewRowBuilder.forTable(tids.c, getRowDef(tids.c)).put(1).put("Robert").check(session(), dml()).row();
+        final NewRow oRow = NewRowBuilder.forTable(tids.o, getRowDef(tids.o)).put(10).put(1).check(session(), dml()).row();
+        final NewRow iRow = NewRowBuilder.forTable(tids.i, getRowDef(tids.i)).put(100).put(10).put("Desc 1").check(session(), dml()).row();
 
         dml().writeRows(session(), Arrays.asList(cRow.toRowData(), oRow.toRowData(), iRow.toRowData()));
         List<RowData> cRows = scanFull(scanAllRequest(tids.c));
@@ -190,9 +190,9 @@ public final class COIBasicIT extends ITBase {
     public void dropTableLeaves() throws InvalidOperationException {
         final TableIds tids = createTables();
 
-        final NewRow cRow = NewRowBuilder.forTable(tids.c, getRowDef(tids.c)).put(1L).put("Robert").check(session(), dml()).row();
-        final NewRow oRow = NewRowBuilder.forTable(tids.o, getRowDef(tids.o)).put(10L).put(1L).check(session(), dml()).row();
-        final NewRow iRow = NewRowBuilder.forTable(tids.i, getRowDef(tids.i)).put(100L).put(10L).put("Desc 1").check(session(), dml()).row();
+        final NewRow cRow = NewRowBuilder.forTable(tids.c, getRowDef(tids.c)).put(1).put("Robert").check(session(), dml()).row();
+        final NewRow oRow = NewRowBuilder.forTable(tids.o, getRowDef(tids.o)).put(10).put(1).check(session(), dml()).row();
+        final NewRow iRow = NewRowBuilder.forTable(tids.i, getRowDef(tids.i)).put(100).put(10).put("Desc 1").check(session(), dml()).row();
 
         writeRows(cRow, oRow, iRow);
         List<RowData> cRows = scanFull(scanAllRequest(tids.c));

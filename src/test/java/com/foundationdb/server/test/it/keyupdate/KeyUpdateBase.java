@@ -345,7 +345,7 @@ public abstract class KeyUpdateBase extends ITBase {
         int column = 0;
         for (Object value : values) {
             if (value instanceof Integer) {
-                value = ((Integer) value).longValue();
+               value = ((Integer) value).longValue();
             }
             row.put(column++, value);
         }

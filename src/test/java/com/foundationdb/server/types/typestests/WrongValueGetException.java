@@ -14,24 +14,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+package com.foundationdb.server.types.typestests;
 
-package com.foundationdb.server.aggregation.std;
+import com.foundationdb.server.types3.TInstance;
 
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.ValueSource;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-
-interface AbstractProcessor
-{
-    long process (long oldState, long input);
-    double process (double oldState, double input);
-    float process (float oldState, float input);
-    BigDecimal process (BigDecimal oldState, BigDecimal input);
-    BigInteger process (BigInteger oldState, BigInteger input);
-    boolean process (boolean oldState, boolean input);
-    String process (String oldState, String input);
-    
-    void checkType (AkType type);
-    ValueSource emptyValue();
+public class WrongValueGetException extends RuntimeException {
+    public WrongValueGetException(TInstance expectedType, TInstance actualType) {
+        super("expected to put or get " + expectedType + " but saw " + actualType);
+    }
 }

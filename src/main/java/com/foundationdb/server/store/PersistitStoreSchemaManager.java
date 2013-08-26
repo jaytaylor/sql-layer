@@ -39,8 +39,8 @@ import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.memoryadapter.MemoryGroupCursor;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.qp.row.PValuesRow;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.ValuesRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.PersistitAccumulatorTableStatusCache;
 import com.foundationdb.server.error.AISTooLargeException;
@@ -978,7 +978,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
                     return null;
                 }
                 AISAndTimestamp latest = latestAISCache;
-                return new ValuesRow(rowType,
+                return new PValuesRow(rowType,
                                      aisCacheMissCount.get(),
                                      delayedTreeCount.get(),
                                      (latest == CACHE_SENTINEL) ? null : latest.sAIS.ais.getGeneration(),

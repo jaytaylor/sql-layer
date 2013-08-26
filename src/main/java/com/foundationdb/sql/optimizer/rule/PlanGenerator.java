@@ -167,7 +167,6 @@ public class PlanGenerator {
         final Schema schema = SchemaCache.globalSchema(ais);
         PrimaryKey pkey = table.getPrimaryKeyIncludingInternal();
         final int nkeys = pkey.getColumns().size();
-        UserTableRowType tableType = schema.userTableRowType(table);
         IndexRowType indexType = schema.indexRowType(pkey.getIndex());
 
         List<TPreparedExpression> pexprs = new ArrayList<>(nkeys);
@@ -175,7 +174,7 @@ public class PlanGenerator {
             pexprs.add(new TPreparedParameter(i, indexType.typeInstanceAt(i)));
         }
         IndexBound bound = 
-            new IndexBound(new RowBasedUnboundExpressions(indexType, null, pexprs),
+            new IndexBound(new RowBasedUnboundExpressions(indexType, pexprs),
                            new ColumnSelector() {
                                @Override
                                public boolean includesColumn(int columnPosition) {

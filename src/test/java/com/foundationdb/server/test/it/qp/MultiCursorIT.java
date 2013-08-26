@@ -18,8 +18,8 @@
 package com.foundationdb.server.test.it.qp;
 
 import com.foundationdb.qp.operator.RowCursor;
+import com.foundationdb.qp.row.PValuesRow;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.ValuesRow;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.qp.util.MultiCursor;
@@ -137,8 +137,7 @@ public class MultiCursorIT extends OperatorITBase
 
     private int unwrap(Row row)
     {
-        ValuesRow valuesRow = (ValuesRow) row;
-        return getLong(valuesRow, 0).intValue();
+        return getLong(row, 0).intValue();
     }
 
     private int t;
@@ -210,7 +209,7 @@ public class MultiCursorIT extends OperatorITBase
 
         public Row row()
         {
-            return new ValuesRow(tRowType, items[position]);
+            return new PValuesRow(tRowType, items[position]);
         }
 
         // Object state

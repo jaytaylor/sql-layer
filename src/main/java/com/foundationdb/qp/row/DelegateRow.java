@@ -19,7 +19,6 @@ package com.foundationdb.qp.row;
 
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types.ValueSource;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 
 public class DelegateRow implements Row {
@@ -75,11 +74,6 @@ public class DelegateRow implements Row {
     @Override
     public PValueSource pvalue(int index) {
         return delegate.pvalue(index);
-    }
-
-    @Override
-    public ValueSource eval(int index) {
-        return delegate.eval(index);
     }
 
     @Override
