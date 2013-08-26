@@ -488,18 +488,18 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
         for (int key : keys) {
             List<TPreparedExpression> pExpressions =
                 Arrays.<TPreparedExpression>asList(new TPreparedLiteral(intType, new PValue(intType, key)));
-            Row row = new ExpressionRow(xyValueRowType, queryContext, queryBindings, null, pExpressions);
-            keyRows.add(BindableRow.of(row, true));
+            Row row = new ExpressionRow(xyValueRowType, queryContext, queryBindings, pExpressions);
+            keyRows.add(BindableRow.of(row));
         }
         List<ExpressionGenerator> expressions = Arrays.asList(boundField(xyValueRowType, 0, 0));
         IndexBound xBound =
             new IndexBound(
-                new RowBasedUnboundExpressions(parentXIndexRowType, expressions),
+                new RowBasedUnboundExpressions(parentXIndexRowType, expressions, true),
                 new SetColumnSelector(0));
         IndexKeyRange xRange = IndexKeyRange.bounded(parentXIndexRowType, xBound, true, xBound, true);
         IndexBound yBound =
             new IndexBound(
-                new RowBasedUnboundExpressions(parentYIndexRowType, expressions),
+                new RowBasedUnboundExpressions(parentYIndexRowType, expressions, true),
                 new SetColumnSelector(0));
         IndexKeyRange yRange = IndexKeyRange.bounded(parentYIndexRowType, yBound, true, yBound, true);
         Operator plan =

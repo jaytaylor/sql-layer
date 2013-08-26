@@ -114,7 +114,7 @@ public abstract class OperatorGenerator {
         }
 
         stream.rowType =  schema().newValuesType(types);
-        bindableRows.add(BindableRow.of(stream.rowType, null, tExprs, queryContext()));
+        bindableRows.add(BindableRow.of(stream.rowType, tExprs, queryContext()));
         stream.operator = API.valuesScan_Default(bindableRows, stream.rowType);
         return stream;
     }
@@ -141,7 +141,6 @@ public abstract class OperatorGenerator {
             stream.operator = API.project_Table(stream.operator,
                     stream.rowType,
                     schema().userTableRowType(table),
-                    null,
                     pExpressions);
         }
         return stream;

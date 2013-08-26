@@ -136,7 +136,7 @@ public class MemorySorter implements Sorter
                     context.checkQueryCancelation();
                     KeyState[] states = createKey(row, rowCount);
                     // Copy instead of hold as ProjectedRow cannot be held
-                    ValuesHolderRow rowCopy = new ValuesHolderRow(row.rowType(), true);
+                    ValuesHolderRow rowCopy = new ValuesHolderRow(row.rowType());
                     for(int i = 0 ; i < row.rowType().nFields(); ++i) {
                         PValueTargets.copyFrom(row.pvalue(i), rowCopy.pvalueAt(i));
                     }

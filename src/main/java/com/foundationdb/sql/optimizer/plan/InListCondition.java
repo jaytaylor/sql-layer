@@ -17,7 +17,6 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.parser.ValueNode;
 
@@ -33,7 +32,7 @@ public class InListCondition extends BaseExpression implements ConditionExpressi
 
     public InListCondition(ExpressionNode operand, List<ExpressionNode> expressions,
                            DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, AkType.BOOL, sqlSource);
+        super(sqlType, sqlSource);
         this.operand = operand;
         this.expressions = expressions;
     }

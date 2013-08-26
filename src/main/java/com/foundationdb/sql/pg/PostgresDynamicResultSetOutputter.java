@@ -71,7 +71,7 @@ public class PostgresDynamicResultSetOutputter extends PostgresOutputter<ResultS
     }
 
     @Override
-    public void output(ResultSet resultSet, boolean usePVals) throws IOException {
+    public void output(ResultSet resultSet) throws IOException {
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
         messenger.writeShort(ncols);
         for (int i = 0; i < ncols; i++) {
@@ -84,9 +84,7 @@ public class PostgresDynamicResultSetOutputter extends PostgresOutputter<ResultS
             }
             PostgresType type = columnTypes[i];
             boolean binary = false;
-            ByteArrayOutputStream bytes;
-            if (usePVals) bytes = encoder.encodePObject(column, type, binary);
-            else bytes = encoder.encodeObject(column, type, binary);
+            ByteArrayOutputStream bytes = encoder.encodePObject(column, type, binary);
             if (bytes == null) {
                 messenger.writeInt(-1);
             }

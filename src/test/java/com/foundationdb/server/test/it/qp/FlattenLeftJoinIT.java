@@ -39,6 +39,9 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.expression.std.Comparison;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
+
 import org.junit.Test;
 
 import static com.foundationdb.qp.operator.API.FlattenOption.KEEP_PARENT;
@@ -47,7 +50,6 @@ import static com.foundationdb.qp.operator.API.*;
 import static com.foundationdb.server.test.ExpressionGenerators.*;
 
 import static com.foundationdb.qp.rowtype.RowTypeChecks.checkRowTypeFields;
-import static com.foundationdb.server.types.AkType.*;
 
 public class FlattenLeftJoinIT extends OperatorITBase
 {
@@ -121,6 +123,15 @@ public class FlattenLeftJoinIT extends OperatorITBase
         use(db);
     }
 
+    private void checkRowFields (RowType pcRowType) {
+        checkRowTypeFields(null, pcRowType, 
+                MNumeric.INT.instance(false),
+                MNumeric.INT.instance(true),
+                MString.VARCHAR.instance(20, true),
+                MNumeric.INT.instance(false),
+                MNumeric.INT.instance(true),
+                MString.VARCHAR.instance(20, true));
+    }
     @Test
     public void testCase1()
     {
@@ -135,7 +146,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
                 LEFT_JOIN,
                 KEEP_PARENT);
         RowType pcRowType = plan.rowType();
-        checkRowTypeFields(pcRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
+        checkRowFields(pcRowType);
         RowBase[] expected = new RowBase[]{
             row(ancestorRowType, 1L, "a1"),
             row(parentRowType, 11L, 1L, "p1"),
@@ -160,7 +171,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
                 LEFT_JOIN,
                 KEEP_PARENT);
         RowType pcRowType = plan.rowType();
-        checkRowTypeFields(pcRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
+        checkRowFields(pcRowType);
         RowBase[] expected = new RowBase[]{
             row(ancestorRowType, 2L, "a2"),
             row(parentRowType, 22L, 2L, "p2"),
@@ -184,7 +195,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
                 LEFT_JOIN,
                 KEEP_PARENT);
         RowType pcRowType = plan.rowType();
-        checkRowTypeFields(pcRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
+        checkRowFields(pcRowType);
         RowBase[] expected = new RowBase[]{
             row(ancestorRowType, 3L, "a3"),
             row(parentRowType, 33L, 3L, "p3"),
@@ -208,7 +219,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
                 LEFT_JOIN,
                 KEEP_PARENT);
         RowType pcRowType = plan.rowType();
-        checkRowTypeFields(pcRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
+        checkRowFields(pcRowType);
         RowBase[] expected = new RowBase[]{
             row(ancestorRowType, 4L, "a4"),
             row(parentRowType, 41L, 4L, "p41"),
@@ -240,9 +251,9 @@ public class FlattenLeftJoinIT extends OperatorITBase
                 LEFT_JOIN,
                 KEEP_PARENT);
         RowType pbRowType = flattenPB.rowType();
-        checkRowTypeFields(pbRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
+        checkRowFields(pbRowType);
         RowType pcRowType = plan.rowType();
-        checkRowTypeFields(pcRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
+        checkRowFields(pcRowType);
         RowBase[] expected = new RowBase[]{
             row(ancestorRowType, 1L, "a1"),
             row(parentRowType, 11L, 1L, "p1"),
@@ -274,9 +285,9 @@ public class FlattenLeftJoinIT extends OperatorITBase
                 LEFT_JOIN,
                 KEEP_PARENT);
         RowType pbRowType = flattenPB.rowType();
-        checkRowTypeFields(pbRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
+        checkRowFields(pbRowType);
         RowType pcRowType = plan.rowType();
-        checkRowTypeFields(pcRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
+        checkRowFields(pcRowType);
         RowBase[] expected = new RowBase[]{
             row(ancestorRowType, 2L, "a2"),
             row(parentRowType, 22L, 2L, "p2"),
@@ -308,9 +319,9 @@ public class FlattenLeftJoinIT extends OperatorITBase
                 LEFT_JOIN,
                 KEEP_PARENT);
         RowType pbRowType = flattenPB.rowType();
-        checkRowTypeFields(pbRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
+        checkRowFields(pbRowType);
         RowType pcRowType = plan.rowType();
-        checkRowTypeFields(pcRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
+        checkRowFields(pcRowType);
         RowBase[] expected = new RowBase[]{
             row(ancestorRowType, 3L, "a3"),
             row(parentRowType, 33L, 3L, "p3"),
@@ -341,9 +352,9 @@ public class FlattenLeftJoinIT extends OperatorITBase
                 LEFT_JOIN,
                 KEEP_PARENT);
         RowType pbRowType = flattenPB.rowType();
-        checkRowTypeFields(pbRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
+        checkRowFields(pbRowType);
         RowType pcRowType = plan.rowType();
-        checkRowTypeFields(pcRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
+        checkRowFields(pcRowType);
         RowBase[] expected = new RowBase[]{
             row(ancestorRowType, 4L, "a4"),
             row(parentRowType, 41L, 4L, "p41"),
@@ -377,9 +388,9 @@ public class FlattenLeftJoinIT extends OperatorITBase
                 LEFT_JOIN,
                 KEEP_PARENT);
         RowType paRowType = flattenPA.rowType();
-        checkRowTypeFields(paRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
+        checkRowFields(paRowType);
         RowType pcRowType = plan.rowType();
-        checkRowTypeFields(pcRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
+        checkRowFields(pcRowType);
         RowBase[] expected = new RowBase[]{
             row(ancestorRowType, 1L, "a1"),
             row(parentRowType, 11L, 1L, "p1"),
@@ -411,9 +422,9 @@ public class FlattenLeftJoinIT extends OperatorITBase
                 LEFT_JOIN,
                 KEEP_PARENT);
         RowType paRowType = flattenPA.rowType();
-        checkRowTypeFields(paRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
+        checkRowFields(paRowType);
         RowType pcRowType = plan.rowType();
-        checkRowTypeFields(pcRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
+        checkRowFields(pcRowType);
         RowBase[] expected = new RowBase[]{
             row(ancestorRowType, 2L, "a2"),
             row(parentRowType, 22L, 2L, "p2"),
@@ -444,9 +455,9 @@ public class FlattenLeftJoinIT extends OperatorITBase
                 LEFT_JOIN,
                 KEEP_PARENT);
         RowType paRowType = flattenPA.rowType();
-        checkRowTypeFields(paRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
+        checkRowFields(paRowType);
         RowType pcRowType = plan.rowType();
-        checkRowTypeFields(pcRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
+        checkRowFields(pcRowType);
         RowBase[] expected = new RowBase[]{
             row(ancestorRowType, 3L, "a3"),
             row(parentRowType, 33L, 3L, "p3"),
@@ -478,9 +489,9 @@ public class FlattenLeftJoinIT extends OperatorITBase
                 LEFT_JOIN,
                 KEEP_PARENT);
         RowType paRowType = flattenPA.rowType();
-        checkRowTypeFields(paRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
+        checkRowFields(paRowType);
         RowType pcRowType = plan.rowType();
-        checkRowTypeFields(pcRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
+        checkRowFields(pcRowType);
         RowBase[] expected = new RowBase[]{
             row(ancestorRowType, 4L, "a4"),
             row(parentRowType, 41L, 4L, "p41"),
@@ -514,7 +525,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
                 LEFT_JOIN,
                 KEEP_PARENT);
         RowType pcRowType = plan.rowType();
-        checkRowTypeFields(pcRowType, INT, INT, VARCHAR, INT, INT, VARCHAR);
+        checkRowFields(pcRowType);
         RowBase[] expected = new RowBase[]{
             row(parentRowType, 42L, 4L, "p42"),
             row(pcRowType, 42L, 4L, "p42", null, null, null),

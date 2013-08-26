@@ -27,6 +27,7 @@ import com.foundationdb.util.ByteSource;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
+@Deprecated
 public abstract class ValueSource {
 
     public abstract boolean isNull();
@@ -79,9 +80,6 @@ public abstract class ValueSource {
 
     public long hash(StoreAdapter adapter, AkCollator collator)
     {
-        return
-            collator == null
-            ? getString().hashCode()
-            : adapter.hash(this, collator);
+        return 0L;
     }
 }

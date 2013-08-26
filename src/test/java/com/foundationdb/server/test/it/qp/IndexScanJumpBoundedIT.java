@@ -1005,17 +1005,13 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         {
             TestRow target = indexRow(idOrdering[start]);
             OverlayingRow nudgedTarget = new OverlayingRow(target);
-            nudgedTarget.overlay(3, target.eval(3).getLong() + nudge);
+            //TODO: Not use pvalue.getInt32()
+            nudgedTarget.overlay(3, (long)(target.pvalue(3).getInt32() + nudge));
             cursor.jump(nudgedTarget, INDEX_ROW_SELECTOR);
             Row row;
             List<Long> actualIds = new ArrayList<>();
             while ((row = cursor.next()) != null) {
-                if (usingPValues()) {
-                    actualIds.add((long)row.pvalue(3).getInt32());
-                }
-                else {
-                    actualIds.add(getLong(row, 3));
-                }
+                actualIds.add((long)row.pvalue(3).getInt32());
             }
 
             assertEquals(expecteds.get(start), actualIds);
@@ -1034,8 +1030,8 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
 
     private IndexKeyRange bounded(long a, long bLo, boolean loInclusive, long bHi, boolean hiInclusive)
     {
-        IndexBound lo = new IndexBound(new TestRow(tRowType, new Object[] {a, bLo}), new SetColumnSelector(0, 1));
-        IndexBound hi = new IndexBound(new TestRow(tRowType, new Object[] {a, bHi}), new SetColumnSelector(0, 1));
+        IndexBound lo = new IndexBound(new TestRow(tRowType, new Object[] {a, bLo, null, null}), new SetColumnSelector(0, 1));
+        IndexBound hi = new IndexBound(new TestRow(tRowType, new Object[] {a, bHi, null, null}), new SetColumnSelector(0, 1));
         return IndexKeyRange.bounded(idxRowType, lo, loInclusive, hi, hiInclusive);
     }
 

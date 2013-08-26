@@ -17,11 +17,17 @@
 
 package com.foundationdb.server.types.typestests;
 
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.ValueSource;
-import com.foundationdb.server.types.ValueTarget;
-import com.foundationdb.server.types.extract.Extractors;
-import com.foundationdb.server.types.extract.LongExtractor;
+import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.aksql.aktypes.AkBool;
+import com.foundationdb.server.types3.aksql.aktypes.AkInterval;
+import com.foundationdb.server.types3.mcompat.mtypes.MApproximateNumber;
+import com.foundationdb.server.types3.mcompat.mtypes.MBinary;
+import com.foundationdb.server.types3.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueTarget;
 import com.foundationdb.util.ByteSource;
 import com.foundationdb.util.Undef;
 
@@ -29,7 +35,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 
-import static com.foundationdb.server.types.AkType.*;
 import static com.foundationdb.server.types.typestests.TestCase.TestCaseType.*;
 
 import static org.junit.Assert.assertEquals;
@@ -41,90 +46,98 @@ public final class TestCase<T> {
     }
 
     public static <T> TestCase<T> forDate(long value, T expectedState) {
-        return new TestCase<>(DATE, value, TC_LONG, expectedState);
+        return new TestCase<>(MDatetimes.DATE.instance(true), value, TC_LONG, expectedState);
     }
 
     public static <T> TestCase<T> forDateTime(long value, T expectedState) {
-        return new TestCase<>(DATETIME, value, TC_LONG, expectedState);
+        return new TestCase<>(MDatetimes.DATETIME.instance(true), value, TC_LONG, expectedState);
     }
 
     public static <T> TestCase<T> forDecimal(BigDecimal value, long precision, long scale, T expectedState) {
-        return new TestCase<>(DECIMAL, value, TC_OBJECT, precision, scale, expectedState);
+        return new TestCase<>(MNumeric.DECIMAL.instance(true), value, TC_OBJECT, precision, scale, expectedState);
     }
 
     public static <T> TestCase<T> forDouble(double value, T expectedState) {
-        return new TestCase<>(DOUBLE, value, TC_DOUBLE, expectedState);
+        return new TestCase<>(MApproximateNumber.DOUBLE.instance(true), value, TC_DOUBLE, expectedState);
     }
 
     public static <T> TestCase<T> forFloat(float value, T expectedState) {
-        return new TestCase<>(FLOAT, value, TC_FLOAT, expectedState);
+        return new TestCase<>(MApproximateNumber.FLOAT.instance(true), value, TC_FLOAT, expectedState);
     }
 
+    public static <T> TestCase<T> forTinyInt (long value, T expectedState) {
+        return new TestCase<>(MNumeric.TINYINT.instance(true), value, TC_LONG, expectedState);
+    }
+    
     public static <T> TestCase<T> forInt(long value, T expectedState) {
-        return new TestCase<>(INT, value, TC_LONG, expectedState);
+        return new TestCase<>(MNumeric.INT.instance(true), value, TC_LONG, expectedState);
     }
 
     public static <T> TestCase<T> forLong(long value, T expectedState) {
-        return new TestCase<>(LONG, value, TC_LONG, expectedState);
+        return new TestCase<>(MNumeric.BIGINT.instance(true), value, TC_LONG, expectedState);
     }
 
+    public static <T> TestCase<T> forChar (char value, T expectedState) {
+        return new TestCase<>(MNumeric.MEDIUMINT_UNSIGNED.instance(true), value, TC_LONG, expectedState);
+    }
+    
     public static <T> TestCase<T> forString(String value, long maxWidth, String charset, T expectedState) {
-        return new TestCase<>(VARCHAR, value, TC_OBJECT, maxWidth, charset, expectedState);
+        return new TestCase<>(MString.VARCHAR.instance(true), value, TC_OBJECT, maxWidth, charset, expectedState);
     }
 
     public static <T> TestCase<T> forText(String value, long maxWidth, String charset, T expectedState) {
-        return new TestCase<>(TEXT, value, TC_OBJECT, maxWidth, charset, expectedState);
+        return new TestCase<>(MString.TEXT.instance(true), value, TC_OBJECT, maxWidth, charset, expectedState);
     }
 
     public static <T> TestCase<T> forTime(long value, T expectedState) {
-        return new TestCase<>(TIME, value, TC_LONG, expectedState);
+        return new TestCase<>(MDatetimes.TIME.instance(true), value, TC_LONG, expectedState);
     }
 
     public static <T> TestCase<T> forTimestamp(long value, T expectedState) {
-        return new TestCase<>(TIMESTAMP, value, TC_LONG, expectedState);
+        return new TestCase<>(MDatetimes.TIMESTAMP.instance(true), value, TC_LONG, expectedState);
     }
 
     public static <T> TestCase<T> forInterval_Millis(long value, T expectedState) {
-        return new TestCase<>(INTERVAL_MILLIS, value, TC_LONG, expectedState);
+        return new TestCase<>(AkInterval.SECONDS.instance(true), value, TC_LONG, expectedState);
     }
 
     public static <T> TestCase<T> forInterval_Month(long value, T expectedState) {
-        return new TestCase<>(INTERVAL_MONTH, value, TC_LONG, expectedState);
+        return new TestCase<>(AkInterval.MONTHS.instance(true), value, TC_LONG, expectedState);
     }
     public static <T> TestCase<T> forUBigInt(BigInteger value, T expectedState) {
-        return new TestCase<>(U_BIGINT, value, TC_OBJECT, expectedState);
+        return new TestCase<>(MNumeric.BIGINT_UNSIGNED.instance(true), value, TC_OBJECT, expectedState);
     }
 
     public static <T> TestCase<T> forUDouble(double value, T expectedState) {
-        return new TestCase<>(U_DOUBLE, value, TC_DOUBLE, expectedState);
+        return new TestCase<>(MApproximateNumber.DOUBLE_UNSIGNED.instance(true), value, TC_DOUBLE, expectedState);
     }
 
     public static <T> TestCase<T> forUFloat(float value, T expectedState) {
-        return new TestCase<>(U_FLOAT, value, TC_FLOAT, expectedState);
+        return new TestCase<>(MApproximateNumber.FLOAT_UNSIGNED.instance(true), value, TC_FLOAT, expectedState);
     }
 
     public static <T> TestCase<T> forUInt(long value, T expectedState) {
-        return new TestCase<>(U_INT, value, TC_LONG, expectedState);
+        return new TestCase<>(MNumeric.INT_UNSIGNED.instance(true), value, TC_LONG, expectedState);
     }
 
     public static <T> TestCase<T> forVarBinary(ByteSource value, long maxWidth, T expectedState) {
-        return new TestCase<>(VARBINARY, value, TC_OBJECT, maxWidth, expectedState);
+        return new TestCase<>(MBinary.VARBINARY.instance(true), value, TC_OBJECT, maxWidth, expectedState);
     }
 
     public static <T> TestCase<T> forYear(long value, T expectedState) {
-        return new TestCase<>(YEAR, value, TC_LONG, expectedState);
+        return new TestCase<>(MDatetimes.YEAR.instance(true), value, TC_LONG, expectedState);
     }
 
     public static <T> TestCase<T> forBool(boolean value, T expectedState) {
-        return new TestCase<>(BOOL, bool2long(value), TC_LONG, expectedState);
+        return new TestCase<>(AkBool.INSTANCE.instance(true), bool2long(value), TC_LONG, expectedState);
     }
 
     static <T> TestCase<T> derive(TestCase<?> source, T newState) {
         return new TestCase<>(source, newState);
     }
 
-    public AkType type() {
-        return type;
+    public TInstance type() {
+        return tInstance;
     }
 
     public Long param1() {
@@ -139,72 +152,91 @@ public final class TestCase<T> {
         return charset;
     }
 
-    public void put(ValueTarget target) {
-        switch (type) {
-        case DATE: target.putDate(valLong); break;
-        case DATETIME: target.putDateTime(valLong); break;
-        case DECIMAL: target.putDecimal((BigDecimal)valObject); break;
-        case DOUBLE: target.putDouble(valDouble); break;
-        case FLOAT: target.putFloat(valFloat); break;
-        case INT: target.putInt(valLong); break;
-        case LONG: target.putLong(valLong); break;
-        case VARCHAR: target.putString((String)valObject); break;
-        case TEXT: target.putText((String)valObject); break;
-        case TIME: target.putTime(valLong); break;
-        case TIMESTAMP: target.putTimestamp(valLong); break;
-        case INTERVAL_MILLIS: target.putInterval_Millis(valLong); break;
-        case INTERVAL_MONTH:  target.putInterval_Month(valLong); break;
-        case U_BIGINT: target.putUBigInt((BigInteger)valObject); break;
-        case U_DOUBLE: target.putUDouble(valDouble); break;
-        case U_FLOAT: target.putUFloat(valFloat); break;
-        case U_INT: target.putUInt(valLong); break;
-        case VARBINARY: target.putVarBinary((ByteSource)valObject); break;
-        case YEAR: target.putYear(valLong); break;
-        case BOOL: target.putBool(long2bool(valLong)); break;
-        default: throw new UnsupportedOperationException(type().name());
+    public void put(PValueTarget target) {
+        if (TClass.comparisonNeedsCasting(target.tInstance(), tInstance)) {
+            throw new WrongValueGetException (target.tInstance(), tInstance);
+        }
+        switch (TInstance.pUnderlying(target.tInstance())) {
+        case BOOL:
+            target.putBool(long2bool(valLong)); break;
+        case BYTES:
+            target.putBytes(((ByteSource)valObject).byteArray()); break;
+        case DOUBLE:
+            target.putDouble(valDouble);
+            break;
+        case FLOAT:
+            target.putFloat(valFloat);
+            break;
+        case INT_16:
+            target.putInt16((short)valLong);
+            break;
+        case INT_32:
+            target.putInt32((int)valLong);
+            break;
+        case INT_64:
+            target.putInt64(valLong);
+            break;
+        case INT_8:
+            target.putInt8((byte)valLong);
+            break;
+        case STRING:
+            target.putString((String)valObject, null);
+            break;
+        case UINT_16:
+            target.putUInt16((char)valLong);
+            break;
+        default:
+            throw new UnsupportedOperationException(type().toString());
         }
     }
 
     // for use in this package
 
-    void check(ValueSource source) {
-        switch (type) {
-        case DATE: assertEquals(niceString(), valLong, source.getDate()); break;
-        case DATETIME: assertEquals(niceString(), valLong, source.getDateTime()); break;
-        case DECIMAL: assertEquals(niceString(), valObject, source.getDecimal()); break;
-        case DOUBLE: assertEquals(niceString(), valDouble, source.getDouble(), EPSILON); break;
-        case FLOAT: assertEquals(niceString(), valFloat, source.getFloat(), EPSILON); break;
-        case INT: assertEquals(niceString(), valLong, source.getInt()); break;
-        case LONG: assertEquals(niceString(), valLong, source.getLong()); break;
-        case VARCHAR: assertEquals(niceString(), valObject, source.getString()); break;
-        case TEXT: assertEquals(niceString(), valObject, source.getText()); break;
-        case TIME: assertEquals(niceString(), valLong, source.getTime()); break;
-        case TIMESTAMP: assertEquals(niceString(), valLong, source.getTimestamp()); break;
-        case INTERVAL_MILLIS: assertEquals(niceString(), valLong, source.getInterval_Millis()); break;
-        case INTERVAL_MONTH: assertEquals(niceString(), valLong, source.getInterval_Month()); break;
-        case U_BIGINT: assertEquals(niceString(), valObject, source.getUBigInt()); break;
-        case U_DOUBLE: assertEquals(niceString(), valDouble, source.getUDouble(), EPSILON); break;
-        case U_FLOAT: assertEquals(niceString(), valFloat, source.getUFloat(), EPSILON); break;
-        case U_INT: assertEquals(niceString(), valLong, source.getUInt()); break;
-        case VARBINARY: assertEquals(niceString(), valObject, source.getVarBinary()); break;
-        case YEAR: assertEquals(niceString(), valLong, source.getYear()); break;
-        case BOOL: assertEquals(niceString(), long2bool(valLong), source.getBool()); break;
-        default: throw new UnsupportedOperationException(type().name());
+    void check(PValueSource source) {
+        switch (TInstance.pUnderlying(source.tInstance())) {
+        case BOOL:
+            assertEquals(niceString(), long2bool(valLong), source.getBoolean());
+            break;
+        case BYTES:
+            assertEquals(niceString(), ((ByteSource)valObject).byteArray(), source.getBytes());
+            break;
+        case DOUBLE:
+            assertEquals(niceString(), valDouble, source.getDouble(), EPSILON);
+            break;
+        case FLOAT:
+            assertEquals(niceString(), valFloat, source.getFloat(), EPSILON);
+            break;
+        case INT_16:
+            assertEquals(niceString(), valLong, source.getInt16());
+            break;
+        case INT_32:
+            assertEquals(niceString(), valLong, source.getInt32());
+            break;
+        case INT_64:
+            assertEquals(niceString(), valLong, source.getInt64());
+            break;
+        case INT_8:
+            assertEquals(niceString(), valLong, source.getInt8());
+            break;
+        case STRING:
+            assertEquals(niceString(), (String)valObject, source.getString());
+            break;
+        case UINT_16:
+            assertEquals(niceString(), valLong, source.getUInt16());
+            break;
+        default:
+            throw new UnsupportedOperationException(type().toString());
         }
     }
 
     private String niceString() {
-        String result = type.name();
+        String result = tInstance.toString();
         result += niceLongValue();
         return result;
     }
 
     private String niceLongValue() {
-        LongExtractor longConverter = Extractors.getLongExtractor(type);
-        if (longConverter != null) {
-            return "(" + valLong + "->\"" + longConverter.asString(valLong) + "\")";
-        }
-        return "ERR";
+        return "(" + valLong + "->\"" + valLong +"\")";
     }
 
     private static long bool2long(boolean value) {
@@ -215,29 +247,9 @@ public final class TestCase<T> {
         return value != 0;
     }
 
-    void get(ValueSource source) {
-        switch (type) {
-        case DATE: source.getDate(); break;
-        case DATETIME: source.getDateTime(); break;
-        case DECIMAL: source.getDecimal(); break;
-        case DOUBLE: source.getDouble(); break;
-        case FLOAT: source.getFloat(); break;
-        case INT: source.getInt(); break;
-        case LONG: source.getLong(); break;
-        case VARCHAR: source.getString(); break;
-        case TEXT: source.getText(); break;
-        case TIME: source.getTime(); break;
-        case TIMESTAMP: source.getTimestamp(); break;
-        case INTERVAL_MILLIS: source.getInterval_Millis(); break;
-        case INTERVAL_MONTH: source.getInterval_Month(); break;
-        case U_BIGINT: source.getUBigInt(); break;
-        case U_DOUBLE: source.getUDouble(); break;
-        case U_FLOAT: source.getUFloat(); break;
-        case U_INT: source.getUInt(); break;
-        case VARBINARY: source.getVarBinary(); break;
-        case YEAR: source.getYear(); break;
-        case BOOL: source.getBool(); break;
-        default: throw new UnsupportedOperationException(type().name());
+    void get(PValueSource source) {
+        if (TClass.comparisonNeedsCasting(source.tInstance(), tInstance)) {
+            throw new WrongValueGetException (source.tInstance(), tInstance);
         }
     }
     
@@ -272,45 +284,45 @@ public final class TestCase<T> {
                 break;
             }
         }
-        return String.format("TestCase(%s = %s: %s)", type, value, expectedState == NO_STATE ? "std" : expectedState);
+        return String.format("TestCase(%s = %s: %s)", tInstance.toString(), value, expectedState == NO_STATE ? "std" : expectedState);
     }
 
 
     // for use in this class
 
-    private TestCase(AkType type, double value, TestCaseType testCaseType, T expectedState) {
-        this(testCaseType, type, value, NO_FLOAT, NO_LONG, NO_OBJECT, null, null, null, expectedState);
+    private TestCase(TInstance tInstance, double value, TestCaseType testCaseType, T expectedState) {
+        this(testCaseType, tInstance, value, NO_FLOAT, NO_LONG, NO_OBJECT, null, null, null, expectedState);
         checkTestCaseType(TC_DOUBLE, testCaseType);
     }
-    private TestCase(AkType type, float value, TestCaseType testCaseType, T expectedState) {
-        this(testCaseType, type, NO_DOUBLE, value, NO_LONG, NO_OBJECT, null, null, null, expectedState);
+    private TestCase(TInstance tInstance, float value, TestCaseType testCaseType, T expectedState) {
+        this(testCaseType, tInstance, NO_DOUBLE, value, NO_LONG, NO_OBJECT, null, null, null, expectedState);
         checkTestCaseType(TC_FLOAT, testCaseType);
     }
-    private TestCase(AkType type, long value, TestCaseType testCaseType, T expectedState) {
-        this(testCaseType, type, NO_DOUBLE, NO_FLOAT, value, NO_OBJECT, null, null, null, expectedState);
+    private TestCase(TInstance tInstance, long value, TestCaseType testCaseType, T expectedState) {
+        this(testCaseType, tInstance, NO_DOUBLE, NO_FLOAT, value, NO_OBJECT, null, null, null, expectedState);
         checkTestCaseType(TC_LONG, testCaseType);
     }
-    private TestCase(AkType type, Object value, TestCaseType testCaseType, T expectedState) {
-        this(testCaseType, type, NO_DOUBLE, NO_FLOAT, NO_LONG, value, null, null, null, expectedState);
+    private TestCase(TInstance tInstance, Object value, TestCaseType testCaseType, T expectedState) {
+        this(testCaseType, tInstance, NO_DOUBLE, NO_FLOAT, NO_LONG, value, null, null, null, expectedState);
         checkTestCaseType(TC_OBJECT, testCaseType);
     }
-    private TestCase(AkType type, Object value, TestCaseType testCaseType, long param1, T expectedState) {
-        this(testCaseType, type, NO_DOUBLE, NO_FLOAT, NO_LONG, value, param1, null, null, expectedState);
+    private TestCase(TInstance tInstance, Object value, TestCaseType testCaseType, long param1, T expectedState) {
+        this(testCaseType, tInstance, NO_DOUBLE, NO_FLOAT, NO_LONG, value, param1, null, null, expectedState);
         checkTestCaseType(TC_OBJECT, testCaseType);
     }
-    private TestCase(AkType type, Object value, TestCaseType testCaseType, long param1, long param2, T expectedState) {
-        this(testCaseType, type, NO_DOUBLE, NO_FLOAT, NO_LONG, value, param1, param2, null, expectedState);
+    private TestCase(TInstance tInstance, Object value, TestCaseType testCaseType, long param1, long param2, T expectedState) {
+        this(testCaseType, tInstance, NO_DOUBLE, NO_FLOAT, NO_LONG, value, param1, param2, null, expectedState);
         checkTestCaseType(TC_OBJECT, testCaseType);
     }
-    private TestCase(AkType type, Object value, TestCaseType testCaseType, long param1, String charset, T expectedState) {
-        this(testCaseType, type, NO_DOUBLE, NO_FLOAT, NO_LONG, value, param1, null, charset, expectedState);
+    private TestCase(TInstance tInstance, Object value, TestCaseType testCaseType, long param1, String charset, T expectedState) {
+        this(testCaseType, tInstance, NO_DOUBLE, NO_FLOAT, NO_LONG, value, param1, null, charset, expectedState);
         checkTestCaseType(TC_OBJECT, testCaseType);
     }
 
     public TestCase(TestCase<?> source, T newState) {
         this(
                 source.testCaseType,
-                source.type,
+                source.tInstance,
                 source.valDouble,
                 source.valFloat,
                 source.valLong,
@@ -323,11 +335,12 @@ public final class TestCase<T> {
     }
 
     private TestCase(TestCaseType tct,
-                     AkType type, double valDouble, float valFloat, long valLong, Object valObject,
+                     TInstance tinstance, double valDouble, float valFloat, long valLong, Object valObject,
                      Long param1, Long param2, String charset,
                      T expectedState) {
         this.testCaseType = tct;
-        this.type = type;
+        this.tInstance = tinstance;
+        //this.type = type;
         this.valDouble = valDouble;
         this.valFloat = valFloat;
         this.valLong = valLong;
@@ -342,9 +355,12 @@ public final class TestCase<T> {
         assertEquals("test case type", expected, actual);
     }
 
+    
+    
     // Object state
     private final TestCaseType testCaseType;
-    private final AkType type;
+    private final TInstance tInstance;
+    //private final AkType type;
     private final double valDouble;
     private final float valFloat;
     private final long valLong;

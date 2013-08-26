@@ -54,9 +54,8 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
                      List<String> columnNames,
                      List<PostgresType> columnTypes,
                      PostgresType[] parameterTypes,
-                     CostEstimate costEstimate,
-                     boolean usesPValues) {
-        super.init(resultRowType, columnNames, columnTypes, parameterTypes, usesPValues);
+                     CostEstimate costEstimate) {
+        super.init(resultRowType, columnNames, columnTypes, parameterTypes);
         this.resultOperator = resultOperator;
         this.costEstimate = costEstimate;
     }
@@ -113,7 +112,7 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
                 Row row;
                 while ((row = cursor.next()) != null) {
                     assert (getResultRowType() == null) || (row.rowType() == getResultRowType()) : row;
-                    outputter.output(row, usesPValues());
+                    outputter.output(row);
                     nrows++;
                     if ((maxrows > 0) && (nrows >= maxrows)) {
                         suspended = true;

@@ -21,7 +21,6 @@ import com.foundationdb.qp.expression.ExpressionRow;
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.expression.RowBasedUnboundExpressions;
-import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.IndexScanSelector;
 import com.foundationdb.qp.operator.Operator;
@@ -30,26 +29,20 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types3.pvalue.PValue;
 import com.foundationdb.server.types3.texpressions.TPreparedExpression;
 import com.foundationdb.server.types3.texpressions.TPreparedLiteral;
 
-import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static com.foundationdb.qp.operator.API.*;
 import static com.foundationdb.server.test.ExpressionGenerators.*;
@@ -104,11 +97,11 @@ public class GroupLookup_DefaultLookaheadIT extends GroupLookup_DefaultIT
     public void testAncestorLookupMap()
     {
         moreDB();
-        RowType cidValueRowType = schema.newValuesType(AkType.INT);
+        RowType cidValueRowType = schema.newValuesType(MNumeric.INT.instance(true));
         List<ExpressionGenerator> cidExprs = Arrays.asList(boundField(cidValueRowType, 1, 0));
         IndexBound cidBound =
             new IndexBound(
-                new RowBasedUnboundExpressions(orderCidIndexRowType, cidExprs),
+                new RowBasedUnboundExpressions(orderCidIndexRowType, cidExprs, true),
                 new SetColumnSelector(0));
         IndexKeyRange cidRange = IndexKeyRange.bounded(orderCidIndexRowType, cidBound, true, cidBound, true);
         Operator plan =
@@ -147,13 +140,13 @@ public class GroupLookup_DefaultLookaheadIT extends GroupLookup_DefaultIT
     private Row intRow(RowType rowType, int x)
     {
         List<TPreparedExpression> pExpressions = Arrays.<TPreparedExpression>asList(new TPreparedLiteral(MNumeric.INT.instance(false), new PValue(MNumeric.INT.instance(false), x)));
-        return new ExpressionRow(rowType, queryContext, queryBindings, null, pExpressions);
+        return new ExpressionRow(rowType, queryContext, queryBindings, pExpressions);
     }
 
     private Collection<? extends BindableRow> bindableExpressions(Row... rows) {
         List<BindableRow> result = new ArrayList<>();
         for (Row row : rows) {
-            result.add(BindableRow.of(row, true));
+            result.add(BindableRow.of(row));
         }
         return result;
     }

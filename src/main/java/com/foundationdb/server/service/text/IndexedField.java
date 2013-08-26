@@ -25,7 +25,6 @@ import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.util.AkibanAppender;
 
-import org.apache.lucene.document.Document;
 import org.apache.lucene.document.DoubleField;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FloatField;
@@ -33,8 +32,6 @@ import org.apache.lucene.document.IntField;
 import org.apache.lucene.document.LongField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexWriterConfig;
 
 public class IndexedField
 {

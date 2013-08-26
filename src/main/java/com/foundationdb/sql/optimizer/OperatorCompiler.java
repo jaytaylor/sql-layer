@@ -36,7 +36,6 @@ import com.foundationdb.sql.parser.SQLParserContext;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.server.error.SQLParserInternalException;
-import com.foundationdb.server.service.functions.FunctionsRegistry;
 
 import com.foundationdb.sql.IncomparableException;
 import java.util.List;
@@ -71,15 +70,9 @@ public class OperatorCompiler extends SchemaRulesContext
     }
 
     @Override
-    protected void initFunctionsRegistry(FunctionsRegistry functionsRegistry) {
+    protected void initFunctionsRegistry(T3RegistryService functionsRegistry) {
         super.initFunctionsRegistry(functionsRegistry);
         typeComputer = new FunctionsTypeComputer(functionsRegistry);
-        binder.setFunctionDefined(new AISBinder.FunctionDefined() {
-                @Override
-                public boolean isDefined(String name) {
-                    return (getFunctionsRegistry().getFunctionKind(name) != null);
-                }
-            });
     }
 
     @Override
@@ -95,10 +88,10 @@ public class OperatorCompiler extends SchemaRulesContext
     }
 
     @Override
-    protected void initCostEstimator(CostEstimator costEstimator, boolean usePValues) {
-        super.initCostEstimator(costEstimator, usePValues);
+    protected void initCostEstimator(CostEstimator costEstimator) {
+        super.initCostEstimator(costEstimator);
 
-        List<BaseRule> rules = usePValues ? DEFAULT_RULES_NEWTYPES : DEFAULT_RULES_OLDTYPES;
+        List<BaseRule> rules = DEFAULT_RULES_NEWTYPES;
         initRules(rules);
     }
 

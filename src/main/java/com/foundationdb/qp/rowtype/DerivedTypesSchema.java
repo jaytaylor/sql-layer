@@ -18,9 +18,6 @@
 package com.foundationdb.qp.rowtype;
 
 import com.foundationdb.ais.model.HKey;
-import com.foundationdb.server.aggregation.AggregatorFactory;
-import com.foundationdb.server.expression.Expression;
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.texpressions.TPreparedExpression;
 
@@ -41,9 +38,9 @@ public class DerivedTypesSchema {
         return descendentTypes;
     }
 
-    public synchronized AggregatedRowType newAggregateType(RowType parent, int inputsIndex, List<AggregatorFactory> aggregatorFactories, List<? extends TInstance> pAggrTypes)
+    public synchronized AggregatedRowType newAggregateType(RowType parent, int inputsIndex, List<? extends TInstance> pAggrTypes)
     {
-        return new AggregatedRowType(this, nextTypeId(), parent, inputsIndex, aggregatorFactories, pAggrTypes);
+        return new AggregatedRowType(this, nextTypeId(), parent, inputsIndex, pAggrTypes);
     }
 
     public synchronized FlattenedRowType newFlattenType(RowType parent, RowType child)
@@ -51,9 +48,9 @@ public class DerivedTypesSchema {
         return new FlattenedRowType(this, nextTypeId(), parent, child);
     }
 
-    public synchronized ProjectedRowType newProjectType(List<? extends Expression> columns, List<? extends TPreparedExpression> tExprs)
+    public synchronized ProjectedRowType newProjectType(List<? extends TPreparedExpression> tExprs)
     {
-        return new ProjectedRowType(this, nextTypeId(), columns, tExprs);
+        return new ProjectedRowType(this, nextTypeId(), tExprs);
     }
 
     public ProductRowType newProductType(RowType leftType, UserTableRowType branchType, RowType rightType)
@@ -62,11 +59,6 @@ public class DerivedTypesSchema {
     }
 
     public synchronized ValuesRowType newValuesType(TInstance... fields)
-    {
-        return new ValuesRowType(this, nextTypeId(), fields);
-    }
-
-    public synchronized ValuesRowType newValuesType(AkType... fields)
     {
         return new ValuesRowType(this, nextTypeId(), fields);
     }

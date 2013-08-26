@@ -32,30 +32,22 @@ public abstract class PostgresDMLStatement extends PostgresBaseStatement
     private List<String> columnNames;
     private List<PostgresType> columnTypes;
     private PostgresType[] parameterTypes;
-    private boolean usesPValues;
 
     protected PostgresDMLStatement() {
     }
 
-    protected void init(PostgresType[] parameterTypes, boolean usesPValues) {
+    protected void init(PostgresType[] parameterTypes) {
         this.parameterTypes = parameterTypes;
-        this.usesPValues = usesPValues;
     }
 
     protected void init(RowType resultsRowType,
                         List<String> columnNames,
                         List<PostgresType> columnTypes,
-                        PostgresType[] parameterTypes,
-                        boolean usesPValues) {
+                        PostgresType[] parameterTypes) {
         this.resultRowType = resultsRowType;
         this.columnNames = columnNames;
         this.columnTypes = columnTypes;
         this.parameterTypes = parameterTypes;
-        this.usesPValues = usesPValues;
-    }
-
-    public boolean usesPValues() {
-        return usesPValues;
     }
 
     public List<String> getColumnNames() {

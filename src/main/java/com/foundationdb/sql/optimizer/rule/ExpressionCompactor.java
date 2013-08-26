@@ -17,11 +17,10 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
-import com.foundationdb.server.types3.TPreptimeValue;
-import com.foundationdb.server.types3.Types3Switch;
-import com.foundationdb.server.types3.aksql.aktypes.AkBool;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.BooleanOperationExpression.Operation;
+import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.sql.types.TypeId;
 
 import com.foundationdb.server.expression.std.Comparison;
 
@@ -133,8 +132,8 @@ public class ExpressionCompactor extends BaseRule
                     condition = new BooleanOperationExpression(Operation.AND,
                                                                left,
                                                                condition,
-                                                               null, null);
-                    condition.setPreptimeValue(new TPreptimeValue(AkBool.INSTANCE.instance(nullable)));
+                                                               new DataTypeDescriptor (TypeId.BOOLEAN_ID, nullable),
+                                                               null);
                 }
             }
             conditions.add(condition);
@@ -142,12 +141,7 @@ public class ExpressionCompactor extends BaseRule
     }
 
     private static boolean isNullable(ExpressionNode condition) {
-        if (Types3Switch.ON)
-            return condition.getPreptimeValue().isNullable();
-        else if (condition.getSQLtype() != null)
-            return condition.getSQLtype().isNullable();
-        else
-            return true;
+        return condition.getPreptimeValue().isNullable();
     }
 
     static final Comparator<ColumnSource> tableSourceById = 

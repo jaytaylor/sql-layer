@@ -37,7 +37,7 @@ public class JDBCParameterMetaData implements ParameterMetaData
         private String name;    // null for ordinary (non-CALL) prepared statements
         private DataTypeDescriptor sqlType;
         private int jdbcType;
-        private AkType akType;
+        //private AkType akType;
         private TInstance tInstance;
         private int mode;       // parameterModeXxx (In for non-CALL)
 
@@ -71,7 +71,7 @@ public class JDBCParameterMetaData implements ParameterMetaData
             this.sqlType = sqlType;
             if (sqlType != null) {
                 jdbcType = sqlType.getJDBCTypeId();
-                akType = TypesTranslation.sqlTypeToAkType(sqlType);
+                //akType = TypesTranslation.sqlTypeToAkType(sqlType);
                 tInstance = TypesTranslation.toTInstance(sqlType);
             }
             mode = parameterModeIn;
@@ -89,8 +89,9 @@ public class JDBCParameterMetaData implements ParameterMetaData
             return jdbcType;
         }
 
+        @Deprecated
         public AkType getAkType() {
-            return akType;
+            return null;
         }
 
         public TInstance getTInstance() {

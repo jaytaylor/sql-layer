@@ -18,7 +18,6 @@
 package com.foundationdb.server.types3;
 
 import com.foundationdb.server.error.AkibanInternalException;
-import com.google.common.base.Predicate;
 import com.google.common.collect.ObjectArrays;
 
 import java.util.HashSet;

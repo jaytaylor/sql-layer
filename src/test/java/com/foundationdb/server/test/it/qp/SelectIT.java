@@ -22,9 +22,9 @@ import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.expression.Expression;
 import com.foundationdb.server.expression.std.Comparison;
-import org.junit.Before;
+import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+
 import org.junit.Test;
 
 import static com.foundationdb.server.test.ExpressionGenerators.compare;
@@ -79,7 +79,7 @@ public class SelectIT extends OperatorITBase
     @Test(expected = IllegalArgumentException.class)
     public void testNullPredicate()
     {
-        select_HKeyOrdered(groupScan_Default(coi), customerRowType, (Expression)null);
+        select_HKeyOrdered(groupScan_Default(coi), customerRowType, (TPreparedExpression)null);
     }
 
     // Runtime tests

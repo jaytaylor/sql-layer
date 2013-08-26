@@ -18,17 +18,10 @@
 package com.foundationdb.sql.server;
 
 import com.foundationdb.server.error.NoSuchCastException;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.FromObjectValueSource;
-import com.foundationdb.server.types.ToObjectValueTarget;
-import com.foundationdb.server.types.ValueSource;
-import com.foundationdb.server.types.extract.Extractors;
 import com.foundationdb.server.types3.TCast;
 import com.foundationdb.server.types3.TClass;
 import com.foundationdb.server.types3.TExecutionContext;
 import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.TPreptimeValue;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.server.types3.aksql.aktypes.AkBool;
 import com.foundationdb.server.types3.aksql.aktypes.AkResultSet;
 import com.foundationdb.server.types3.common.BigDecimalWrapper;
@@ -81,23 +74,13 @@ public abstract class ServerJavaValues
 
     protected abstract int size();
     protected abstract ServerQueryContext getContext();
-    protected abstract ValueSource getValue(int index);
     protected abstract PValueSource getPValue(int index);
-    protected abstract AkType getAkType(int index);
     protected abstract TInstance getTInstance(int index);
-    protected abstract void setValue(int index, ValueSource source, AkType akType);
     protected abstract void setPValue(int index, PValueSource source);
     protected abstract ResultSet toResultSet(int index, Object resultSet);
 
     private boolean wasNull;
-    private FromObjectValueSource objectSource;
     private CachedCast[] cachedCasts;
-
-    protected ValueSource value(int index) {
-        ValueSource value = getValue(index);
-        wasNull = value.isNull();
-        return value;
-    }
 
     protected PValueSource pvalue(int index) {
         PValueSource pvalue = getPValue(index);
@@ -154,44 +137,33 @@ public abstract class ServerJavaValues
         return cast.apply(pvalue);
     }
 
+    protected void setValue(int index, Object value, TInstance sourceType) {
+        TInstance targetType = this.getTInstance(index);
+        if (sourceType == null) {
+            sourceType = targetType;
+        }
+        setPValue(index, PValueSources.pValuefromObject(value, sourceType));
+    }
+
+    /*
     protected void setValue(int index, Object value, AkType sourceType) {
         AkType targetType = getAkType(index);
-        if (Types3Switch.ON) {
-            if (sourceType == null)
-                sourceType = targetType;
-            PValueSource source = PValueSources.fromObject(value, sourceType).value();
-            setPValue(index, source);
-        }
-        else {
-            if (objectSource == null)
-                objectSource = new FromObjectValueSource();
-            if (sourceType != null)
-                objectSource.setExplicitly(value, sourceType);
-            else
-                objectSource.setReflectively(value);
-            setValue(index, objectSource, targetType);
-        }
+        if (sourceType == null)
+            sourceType = targetType;
+        PValueSource source = PValueSources.fromObject(value, sourceType).value();
+        setPValue(index, source);
     }
-    
+    */
     public boolean wasNull() {
         return wasNull;
     }
 
     public String getString(int index) {
-        if (Types3Switch.ON) {
-            PValueSource pvalue = pvalue(index);
-            if (wasNull)
-                return null;
-            else
-                return cachedCast(index, pvalue, MString.VARCHAR).getString();
-        }
-        else {
-            ValueSource value = value(index);
-            if (wasNull)
-                return null;
-            else
-                return Extractors.getStringExtractor().getObject(value);
-        }
+        PValueSource pvalue = pvalue(index);
+        if (wasNull)
+            return null;
+        else
+            return cachedCast(index, pvalue, MString.VARCHAR).getString();
     }
 
     public String getNString(int index) {
@@ -199,207 +171,99 @@ public abstract class ServerJavaValues
     }
 
     public boolean getBoolean(int index) {
-        if (Types3Switch.ON) {
-            PValueSource pvalue = pvalue(index);
-            if (wasNull)
-                return false;
-            else
-                return cachedCast(index, pvalue, AkBool.INSTANCE).getBoolean();
-        }
-        else {
-            ValueSource value = value(index);
-            if (wasNull)
-                return false;
-            else
-                return Extractors.getBooleanExtractor().getBoolean(value, false);
-        }
+        PValueSource pvalue = pvalue(index);
+        if (wasNull)
+            return false;
+        else
+            return cachedCast(index, pvalue, AkBool.INSTANCE).getBoolean();
     }
 
     public byte getByte(int index) {
-        if (Types3Switch.ON) {
-            PValueSource pvalue = pvalue(index);
-            if (wasNull)
-                return 0;
-            else
-                return cachedCast(index, pvalue, MNumeric.TINYINT).getInt8();
-        }
-        else {
-            ValueSource value = value(index);
-            if (wasNull)
-                return 0;
-            else
-                return (byte)Extractors.getLongExtractor(AkType.INT).getLong(value);
-        }
+        PValueSource pvalue = pvalue(index);
+        if (wasNull)
+            return 0;
+        else
+            return cachedCast(index, pvalue, MNumeric.TINYINT).getInt8();
     }
 
     public short getShort(int index) {
-        if (Types3Switch.ON) {
-            PValueSource pvalue = pvalue(index);
-            if (wasNull)
-                return 0;
-            else
-                return cachedCast(index, pvalue, MNumeric.SMALLINT).getInt16();
-        }
-        else {
-            ValueSource value = value(index);
-            if (wasNull)
-                return 0;
-            else
-                return (short)Extractors.getLongExtractor(AkType.INT).getLong(value);
-        }
+        PValueSource pvalue = pvalue(index);
+        if (wasNull)
+            return 0;
+        else
+            return cachedCast(index, pvalue, MNumeric.SMALLINT).getInt16();
     }
 
     public int getInt(int index) {
-        if (Types3Switch.ON) {
-            PValueSource pvalue = pvalue(index);
-            if (wasNull)
-                return 0;
-            else
-                return cachedCast(index, pvalue, MNumeric.INT).getInt32();
-        }
-        else {
-            ValueSource value = value(index);
-            if (wasNull)
-                return 0;
-            else
-                return (int)Extractors.getLongExtractor(AkType.INT).getLong(value);
-        }
+        PValueSource pvalue = pvalue(index);
+        if (wasNull)
+            return 0;
+        else
+            return cachedCast(index, pvalue, MNumeric.INT).getInt32();
     }
 
     public long getLong(int index) {
-        if (Types3Switch.ON) {
-            PValueSource pvalue = pvalue(index);
-            if (wasNull)
-                return 0;
-            else
-                return cachedCast(index, pvalue, MNumeric.BIGINT).getInt64();
-        }
-        else {
-            ValueSource value = value(index);
-            if (wasNull)
-                return 0;
-            else
-                return Extractors.getLongExtractor(AkType.LONG).getLong(value);
-        }
+        PValueSource pvalue = pvalue(index);
+        if (wasNull)
+            return 0;
+        else
+            return cachedCast(index, pvalue, MNumeric.BIGINT).getInt64();
     }
 
     public float getFloat(int index) {
-        if (Types3Switch.ON) {
-            PValueSource pvalue = pvalue(index);
-            if (wasNull)
-                return 0.0f;
-            else
-                return cachedCast(index, pvalue, MApproximateNumber.FLOAT).getFloat();
-        }
-        else {
-            ValueSource value = value(index);
-            if (wasNull)
-                return 0.0f;
-            else
-                return (float)Extractors.getDoubleExtractor().getDouble(value);
-        }
+        PValueSource pvalue = pvalue(index);
+        if (wasNull)
+            return 0.0f;
+        else
+            return cachedCast(index, pvalue, MApproximateNumber.FLOAT).getFloat();
     }
 
     public double getDouble(int index) {
-        if (Types3Switch.ON) {
-            PValueSource pvalue = pvalue(index);
-            if (wasNull)
-                return 0.0;
-            else
-                return cachedCast(index, pvalue, MApproximateNumber.DOUBLE).getDouble();
-        }
-        else {
-            ValueSource value = value(index);
-            if (wasNull)
-                return 0.0;
-            else
-                return Extractors.getDoubleExtractor().getDouble(value);
-        }
+        PValueSource pvalue = pvalue(index);
+        if (wasNull)
+            return 0.0;
+        else
+            return cachedCast(index, pvalue, MApproximateNumber.DOUBLE).getDouble();
     }
 
     public BigDecimal getBigDecimal(int index) {
-        if (Types3Switch.ON) {
-            PValueSource pvalue = pvalue(index);
-            if (wasNull)
-                return null;
-            else
-                return ((BigDecimalWrapper)cachedCast(index, pvalue, MNumeric.DECIMAL).getObject()).asBigDecimal();
-        }
-        else {
-            ValueSource value = value(index);
-            if (wasNull)
-                return null;
-            else
-                return Extractors.getDecimalExtractor().getObject(value);
-        }
+        PValueSource pvalue = pvalue(index);
+        if (wasNull)
+            return null;
+        else
+            return ((BigDecimalWrapper)cachedCast(index, pvalue, MNumeric.DECIMAL).getObject()).asBigDecimal();
     }
 
     public byte[] getBytes(int index) {
-        if (Types3Switch.ON) {
-            PValueSource pvalue = pvalue(index);
-            if (wasNull)
-                return null;
-            else
-                return cachedCast(index, pvalue, MBinary.VARBINARY).getBytes();
-        }
-        else {
-            ValueSource value = value(index);
-            if (wasNull)
-                return null;
-            else
-                return Extractors.getByteSourceExtractor().getObject(value).toByteSubarray();
-        }
+        PValueSource pvalue = pvalue(index);
+        if (wasNull)
+            return null;
+        else
+            return cachedCast(index, pvalue, MBinary.VARBINARY).getBytes();
     }
 
     public Date getDate(int index) {
-        if (Types3Switch.ON) {
-            PValueSource pvalue = pvalue(index);
-            if (wasNull)
-                return null;
-            else
-                return new Date(timestampMillis(index, pvalue));
-        }
-        else {
-            ValueSource value = value(index);
-            if (wasNull)
-                return null;
-            else
-                return new Date(timestampMillis(value));
-        }
+        PValueSource pvalue = pvalue(index);
+        if (wasNull)
+            return null;
+        else
+            return new Date(timestampMillis(index, pvalue));
     }
 
     public Time getTime(int index) {
-        if (Types3Switch.ON) {
-            PValueSource pvalue = pvalue(index);
-            if (wasNull)
-                return null;
-            else
-                return new Time(timestampMillis(index, pvalue));
-        }
-        else {
-            ValueSource value = value(index);
-            if (wasNull)
-                return null;
-            else
-                return new Time(timestampMillis(value));
-        }
+        PValueSource pvalue = pvalue(index);
+        if (wasNull)
+            return null;
+        else
+            return new Time(timestampMillis(index, pvalue));
     }
 
     public Timestamp getTimestamp(int index) {
-        if (Types3Switch.ON) {
-            PValueSource pvalue = pvalue(index);
-            if (wasNull)
-                return null;
-            else
-                return new Timestamp(timestampMillis(index, pvalue));
-        }
-        else {
-            ValueSource value = value(index);
-            if (wasNull)
-                return null;
-            else
-                return new Timestamp(timestampMillis(value));
-        }
+        PValueSource pvalue = pvalue(index);
+        if (wasNull)
+            return null;
+        else
+            return new Timestamp(timestampMillis(index, pvalue));
     }
 
     public Date getDate(int index, Calendar cal) {
@@ -414,76 +278,50 @@ public abstract class ServerJavaValues
         return getTimestamp(index);
     }
 
-    protected static long timestampMillis(ValueSource value) {
-        return Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value) * 1000;
-    }
-
     protected long timestampMillis(int index, PValueSource pvalue) {
         return cachedCast(index, pvalue, MDatetimes.TIMESTAMP).getInt32() * 1000L;
     }
 
     public Object getObject(int index) {
-        if (Types3Switch.ON) {
-            PValueSource pvalue = pvalue(index);
-            if (wasNull)
-                return null;
-            else {
-                TClass tclass = getTInstance(index).typeClass();
-                if (tclass.equals(AkBool.INSTANCE))
-                    return pvalue.getBoolean();
-                else if (tclass.equals(MNumeric.TINYINT))
-                    return pvalue.getInt8();
-                else if (tclass.equals(MNumeric.SMALLINT))
-                    return pvalue.getInt16();
-                else if (tclass.equals(MNumeric.INT))
-                    return pvalue.getInt32();
-                else if (tclass.equals(MNumeric.BIGINT))
-                    return pvalue.getInt64();
-                else if (tclass.equals(MApproximateNumber.FLOAT))
-                    return pvalue.getFloat();
-                else if (tclass.equals(MApproximateNumber.DOUBLE))
-                    return pvalue.getDouble();
-                else if (tclass.equals(MString.CHAR) ||
-                         tclass.equals(MString.VARCHAR) ||
-                         tclass.equals(MString.TINYTEXT) ||
-                         tclass.equals(MString.MEDIUMTEXT) ||
-                         tclass.equals(MString.TEXT) ||
-                         tclass.equals(MString.LONGTEXT))
-                    return pvalue.getString();
-                else if (tclass.equals(MBinary.VARBINARY))
-                    return pvalue.getBytes();
-                else if (tclass.equals(MDatetimes.DATE))
-                    return new Date(timestampMillis(index, pvalue));
-                else if (tclass.equals(MDatetimes.TIME))
-                    return new Time(timestampMillis(index, pvalue));
-                else if (tclass.equals(MDatetimes.DATETIME) ||
-                         tclass.equals(MDatetimes.TIMESTAMP))
-                    return new Timestamp(timestampMillis(index, pvalue));
-                else if (tclass.equals(AkResultSet.INSTANCE))
-                    return toResultSet(index, pvalue.getObject());
-                else
-                    return pvalue.getObject();
-            }
-        }
+        PValueSource pvalue = pvalue(index);
+        if (wasNull)
+            return null;
         else {
-            ValueSource value = value(index);
-            if (wasNull)
-                return null;
-            else {
-                switch (value.getConversionType()) {
-                case DATE:
-                    return new Date(timestampMillis(value));
-                case TIME:
-                    return new Time(timestampMillis(value));
-                case DATETIME:
-                case TIMESTAMP:
-                    return new Timestamp(timestampMillis(value));
-                case RESULT_SET:
-                    return toResultSet(index, value.getResultSet());
-                default:
-                    return new ToObjectValueTarget().convertFromSource(value);
-                }
-            }
+            TClass tclass = getTInstance(index).typeClass();
+            if (tclass.equals(AkBool.INSTANCE))
+                return pvalue.getBoolean();
+            else if (tclass.equals(MNumeric.TINYINT))
+                return pvalue.getInt8();
+            else if (tclass.equals(MNumeric.SMALLINT))
+                return pvalue.getInt16();
+            else if (tclass.equals(MNumeric.INT))
+                return pvalue.getInt32();
+            else if (tclass.equals(MNumeric.BIGINT))
+                return pvalue.getInt64();
+            else if (tclass.equals(MApproximateNumber.FLOAT))
+                return pvalue.getFloat();
+            else if (tclass.equals(MApproximateNumber.DOUBLE))
+                return pvalue.getDouble();
+            else if (tclass.equals(MString.CHAR) ||
+                     tclass.equals(MString.VARCHAR) ||
+                     tclass.equals(MString.TINYTEXT) ||
+                     tclass.equals(MString.MEDIUMTEXT) ||
+                     tclass.equals(MString.TEXT) ||
+                     tclass.equals(MString.LONGTEXT))
+                return pvalue.getString();
+            else if (tclass.equals(MBinary.VARBINARY))
+                return pvalue.getBytes();
+            else if (tclass.equals(MDatetimes.DATE))
+                return new Date(timestampMillis(index, pvalue));
+            else if (tclass.equals(MDatetimes.TIME))
+                return new Time(timestampMillis(index, pvalue));
+            else if (tclass.equals(MDatetimes.DATETIME) ||
+                     tclass.equals(MDatetimes.TIMESTAMP))
+                return new Timestamp(timestampMillis(index, pvalue));
+            else if (tclass.equals(AkResultSet.INSTANCE))
+                return toResultSet(index, pvalue.getObject());
+            else
+                return pvalue.getObject();
         }
     }
 
@@ -601,78 +439,78 @@ public abstract class ServerJavaValues
     }
 
     public void setNull(int index) {
-        setValue(index, (Object)null, AkType.NULL);
+        setValue(index, (Object)null, MNumeric.INT.instance(true));
     }
 
     public void setBoolean(int index, boolean x) {
-        setValue(index, x, AkType.BOOL);
+        setValue(index, x, AkBool.INSTANCE.instance(true));
     }
 
     public void setByte(int index, byte x) {
-        setValue(index, (int)x, AkType.INT); // TODO: Types3 has separate type.
+        setValue(index, (int)x, MNumeric.TINYINT.instance(true));
     }
 
     public void setShort(int index, short x) {
-        setValue(index, (int)x, AkType.INT); // TODO: Types3 has separate type.
+        setValue(index, (int)x, MNumeric.MEDIUMINT.instance(true)); 
     }
 
     public void setInt(int index, int x) {
-        setValue(index, x, AkType.INT);
+        setValue(index, x, MNumeric.INT.instance(true));
     }
 
     public void setLong(int index, long x) {
-        setValue(index, x, AkType.LONG);
+        setValue(index, x, MNumeric.BIGINT.instance(true));
     }
 
     public void setFloat(int index, float x) {
-        setValue(index, x, AkType.FLOAT);
+        setValue(index, x, MApproximateNumber.FLOAT.instance(true));
     }
 
     public void setDouble(int index, double x) {
-        setValue(index, x, AkType.DOUBLE);
+        setValue(index, x, MApproximateNumber.DOUBLE.instance(true));
     }
 
     public void setBigDecimal(int index, BigDecimal x) {
-        setValue(index, x, AkType.DECIMAL);
+        setValue(index, x, MNumeric.DECIMAL.instance(true));
     }
 
     public void setString(int index, String x) {
-        setValue(index, x, AkType.VARCHAR);
+        setValue(index, x, MString.varchar());
     }
 
     public void setBytes(int index, byte x[]) {
-        setValue(index, new WrappingByteSource(x), AkType.VARBINARY);
+        setValue(index, new WrappingByteSource(x), MBinary.VARBINARY.instance(true));
     }
 
     public void setDate(int index, Date x) {
         // TODO: Aren't there system routines to do this someplace?
         DateTime dt = new DateTime(x, DateTimeZone.getDefault());
         long encoded = dt.getYear() * 512 + dt.getMonthOfYear() * 32 + dt.getDayOfMonth();
-        setValue(index, encoded, AkType.DATE);
+        setValue(index, encoded, MDatetimes.DATE.instance(true));
     }
 
     public void setTime(int index, Time x) {
         DateTime dt = new DateTime(x, DateTimeZone.getDefault());
         long encoded = dt.getHourOfDay() * 10000 + dt.getMinuteOfHour() * 100 + dt.getSecondOfMinute();
-        setValue(index, encoded, AkType.TIME);
+        setValue(index, encoded, MDatetimes.TIME.instance(true));
     }
 
     public void setTimestamp(int index, Timestamp x) {
-        setValue(index, x.getTime() / 1000, AkType.TIMESTAMP);
+        setValue(index, x.getTime() / 1000, MDatetimes.TIMESTAMP.instance(true));
     }
 
     public void setDate(int index, Date x, Calendar cal) {
         cal.setTime(x);
         DateTime dt = new DateTime(cal);
         long encoded = dt.getYear() * 512 + dt.getMonthOfYear() * 32 + dt.getDayOfMonth();
-        setValue(index, encoded, AkType.DATE);
+        setValue(index, encoded, MDatetimes.DATE.instance(true));
     }
 
     public void setTime(int index, Time x, Calendar cal) {
         cal.setTime(x);
         DateTime dt = new DateTime(cal);
         long encoded = dt.getHourOfDay() * 10000 + dt.getMinuteOfHour() * 100 + dt.getSecondOfMinute();
-        setValue(index, encoded, AkType.TIME);
+        setValue(index, encoded, MDatetimes.TIME.instance(true));
     }
 
     public void setTimestamp(int index, Timestamp x, Calendar cal) {
@@ -739,7 +577,7 @@ public abstract class ServerJavaValues
         byte[] b = new byte[length];
         int l = x.read(b);
         value = new String(b, 0, l, "ASCII");
-        setValue(index, value, AkType.VARCHAR);
+        setValue(index, value, MString.varchar());
     }
 
     public void setUnicodeStream(int index, InputStream x, int length) throws IOException {
@@ -747,7 +585,7 @@ public abstract class ServerJavaValues
         byte[] b = new byte[length];
         int l = x.read(b);
         value = new String(b, 0, l, "UTF-8");
-        setValue(index, value, AkType.VARCHAR);
+        setValue(index, value, MString.VARCHAR.instance(true));
     }
 
     public void setBinaryStream(int index, InputStream x, int length) throws IOException {
@@ -755,7 +593,7 @@ public abstract class ServerJavaValues
         byte[] b = new byte[length];
         int l = x.read(b);
         value = new WrappingByteSource().wrap(b, 0, l);
-        setValue(index, value, AkType.VARBINARY);
+        setValue(index, value, MBinary.VARBINARY.instance(true));
     }
 
     public void setCharacterStream(int index, Reader reader, int length) throws IOException {
@@ -763,7 +601,7 @@ public abstract class ServerJavaValues
         char[] c = new char[length];
         int l = reader.read(c);
         value = new String(c, 0, l);
-        setValue(index, value, AkType.VARCHAR);
+        setValue(index, value, MString.varchar());
     }
 
     public void setNCharacterStream(int index, Reader value, long length) throws IOException {
@@ -792,7 +630,7 @@ public abstract class ServerJavaValues
             ostr.write(buf, 0, len);
         }
         value = new String(ostr.toByteArray(), "ASCII");
-        setValue(index, value, AkType.VARCHAR);
+        setValue(index, value, MString.varchar());
     }
 
     public void setBinaryStream(int index, InputStream x) throws IOException {
@@ -805,7 +643,7 @@ public abstract class ServerJavaValues
             ostr.write(buf, 0, len);
         }
         value = new WrappingByteSource(ostr.toByteArray());
-        setValue(index, value, AkType.VARBINARY);
+        setValue(index, value, MBinary.VARBINARY.instance(true));
     }
 
     public void setCharacterStream(int index, Reader reader) throws IOException {
@@ -818,7 +656,7 @@ public abstract class ServerJavaValues
             ostr.write(buf, 0, len);
         }
         value = ostr.toString();
-        setValue(index, value, AkType.VARCHAR);
+        setValue(index, value, MString.varchar());
     }
 
     public void setNCharacterStream(int index, Reader value) throws IOException {

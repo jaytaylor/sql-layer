@@ -22,8 +22,6 @@ import com.foundationdb.server.rowdata.RowDataExtractor;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.DMLError;
-import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.store.Store;
 
 import java.util.Map;
 

@@ -34,8 +34,8 @@ public final class DropTablesInNewSessionIT extends ITBase {
         TableName groupName = getUserTable(c).getGroup().getName();
         createGroupIndex(groupName, "name_placed", "customers.name,orders.placed");
 
-        writeRow(c, 1L, "bob");
-        writeRow(o, 11L, 1L, "2012-01-01");
+        writeRow(c, 1, "bob");
+        writeRow(o, 11, 1, "2012-01-01");
 
         Collection<String> indexesToUpdate = Collections.singleton("name_placed");
         ddl().updateTableStatistics(session(), TableName.create("schema", "customers"), indexesToUpdate);

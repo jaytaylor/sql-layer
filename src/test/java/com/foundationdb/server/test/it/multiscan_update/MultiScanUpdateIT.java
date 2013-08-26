@@ -64,7 +64,7 @@ public class MultiScanUpdateIT extends ITBase {
         PK {
             @Override
             public void updateInPlace(NewRow row) {
-                long id = get(row, 0, Long.class);
+                long id = get(row, 0, Integer.class);
                 row.put(0, id + (MAX_ID * 10));
             }
 
@@ -163,7 +163,7 @@ public class MultiScanUpdateIT extends ITBase {
         }
         String nickname = builder.toString();
         builder.setLength(0);
-        return createNewRow(tableId, (long) i, name, nickname);
+        return createNewRow(tableId, i, name, nickname);
     }
 
     @Test(expected=ConcurrentScanAndUpdateException.class)
@@ -205,7 +205,7 @@ public class MultiScanUpdateIT extends ITBase {
         try {
             while (scanIterator.hasNext()) {
                 NewRow oldRow = scanIterator.next();
-                assertTrue("saw updated row: " + oldRow, get(oldRow, 0, Long.class) <= MAX_ID);
+                assertTrue("saw updated row: " + oldRow, get(oldRow, 0, Integer.class) <= MAX_ID);
                 NewRow newRow = new NiceRow(oldRow);
                 updateColumn.updateInPlace(newRow);
                 doUpdate(oldRow, newRow);

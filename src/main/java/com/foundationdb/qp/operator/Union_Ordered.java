@@ -131,8 +131,7 @@ class Union_Ordered extends Operator
                          int leftOrderingFields,
                          int rightOrderingFields,
                          boolean[] ascending,
-                         boolean outputEqual,
-                         boolean usePValues)
+                         boolean outputEqual)
     {
         ArgumentValidation.notNull("left", left);
         ArgumentValidation.notNull("right", right);
@@ -157,7 +156,6 @@ class Union_Ordered extends Operator
         this.ascending = Arrays.copyOf(ascending, ascending.length);
         this.outputEqual = outputEqual;
         // TODO (in Execution): Check that ascending bits are consistent with IndexCursor directions.
-        this.usePValues = usePValues;
     }
 
     // For use by this class
@@ -177,7 +175,6 @@ class Union_Ordered extends Operator
     private final int fieldsToCompare;
     private final boolean[] ascending;
     private final boolean outputEqual;
-    private final boolean usePValues;
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context) {
@@ -434,22 +431,15 @@ class Union_Ordered extends Operator
                                         Row suffixRow,
                                         int suffixRowFixedFields)
         {
-            boolean usingPValues = Union_Ordered.this.usePValues;
             if (suffixRow == null) {
                 for (int f = 0; f < fieldsToCompare; f++) {
-                    if (usingPValues)
-                        skipRow.pvalueAt(skipRowFixedFields + f).putNull();
-                    else
-                        skipRow.holderAt(skipRowFixedFields + f).putNull();
+                    skipRow.pvalueAt(skipRowFixedFields + f).putNull();
                 }
             } else {
                 for (int f = 0; f < fieldsToCompare; f++) {
-                    if (usingPValues)
-                        PValueTargets.copyFrom(suffixRow.pvalue(
-                                suffixRowFixedFields + f),
-                                skipRow.pvalueAt(skipRowFixedFields + f));
-                    else
-                        skipRow.holderAt(skipRowFixedFields + f).copyFrom(suffixRow.eval(suffixRowFixedFields + f));
+                    PValueTargets.copyFrom(suffixRow.pvalue(
+                            suffixRowFixedFields + f),
+                            skipRow.pvalueAt(skipRowFixedFields + f));
                 }
             }
         }
@@ -457,23 +447,16 @@ class Union_Ordered extends Operator
         private ValuesHolderRow leftSkipRow()
         {
             if (!leftSkipRowFixed) {
-                boolean usingPValues = Union_Ordered.this.usePValues;
                 if (leftSkipRow == null)
-                    leftSkipRow = new ValuesHolderRow(rowType, usingPValues);
+                    leftSkipRow = new ValuesHolderRow(rowType);
                 assert leftRow.isHolding();
                 int f = 0;
                 while (f < fixedFields) {
-                    if (usingPValues)
-                        PValueTargets.copyFrom(leftRow.get().pvalue(f), leftSkipRow.pvalueAt(f));
-                    else
-                        leftSkipRow.holderAt(f).copyFrom(leftRow.get().eval(f));
+                    PValueTargets.copyFrom(leftRow.get().pvalue(f), leftSkipRow.pvalueAt(f));
                     f++;
                 }
                 while (f < rowType.nFields()) {
-                    if (usingPValues)
-                        leftSkipRow.pvalueAt(f++).putNull();
-                    else
-                        leftSkipRow.holderAt(f++).putNull();
+                    leftSkipRow.pvalueAt(f++).putNull();
                 }
                 leftSkipRowFixed = true;
             }
@@ -483,23 +466,16 @@ class Union_Ordered extends Operator
         private ValuesHolderRow rightSkipRow()
         {
             if (!rightSkipRowFixed) {
-                boolean usingPValues = Union_Ordered.this.usePValues;
                 if (rightSkipRow == null)
-                    rightSkipRow = new ValuesHolderRow(rowType, usingPValues);
+                    rightSkipRow = new ValuesHolderRow(rowType);
                 assert rightRow.isHolding();
                 int f = 0;
                 while (f < fixedFields) {
-                    if (usingPValues)
-                        PValueTargets.copyFrom(rightRow.get().pvalue(f), rightSkipRow.pvalueAt(f));
-                    else
-                        rightSkipRow.holderAt(f).copyFrom(rightRow.get().eval(f));
+                    PValueTargets.copyFrom(rightRow.get().pvalue(f), rightSkipRow.pvalueAt(f));
                     f++;
                 }
                 while (f < rowType.nFields()) {
-                    if (usingPValues)
-                        rightSkipRow.pvalueAt(f++).putNull();
-                    else
-                        rightSkipRow.holderAt(f++).putNull();
+                    rightSkipRow.pvalueAt(f++).putNull();
                 }
                 rightSkipRowFixed = true;
             }

@@ -34,7 +34,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.server.PersistitKeyValueSource;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.InvalidOperationException;
@@ -72,14 +71,12 @@ public class FDBAdapter extends StoreAdapter {
                                     IndexKeyRange keyRange,
                                     API.Ordering ordering,
                                     IndexScanSelector scanSelector,
-                                    boolean usePValues,
                                     boolean openAllSubCursors) {
         return new PersistitIndexCursor(context,
                                         schema.indexRowType(index),
                                         keyRange,
                                         ordering,
                                         scanSelector,
-                                        usePValues,
                                         openAllSubCursors);
     }
 
@@ -89,7 +86,7 @@ public class FDBAdapter extends StoreAdapter {
     }
 
     @Override
-    public void updateRow(Row oldRow, Row newRow, boolean usePValues) {
+    public void updateRow(Row oldRow, Row newRow) {
         RowDef rowDef = newRow.rowType().userTable().rowDef();
         RowData oldRowData = rowData(rowDef, oldRow, new PValueRowDataCreator());
         RowData newRowData = rowData(rowDef, newRow, new PValueRowDataCreator());
@@ -104,7 +101,7 @@ public class FDBAdapter extends StoreAdapter {
     }
 
     @Override
-    public void writeRow(Row newRow, Index[] indexes, boolean usePValues) {
+    public void writeRow(Row newRow, Index[] indexes) {
         RowDef rowDef = newRow.rowType().userTable().rowDef();
         RowData newRowData = rowData(rowDef, newRow, new PValueRowDataCreator());
         try {
@@ -116,7 +113,7 @@ public class FDBAdapter extends StoreAdapter {
     }
 
     @Override
-    public void deleteRow(Row oldRow, boolean usePValues, boolean cascadeDelete) {
+    public void deleteRow(Row oldRow, boolean cascadeDelete) {
         RowDef rowDef = oldRow.rowType().userTable().rowDef();
         RowData oldRowData = rowData(rowDef, oldRow, new PValueRowDataCreator());
         try {
@@ -146,25 +143,6 @@ public class FDBAdapter extends StoreAdapter {
     @Override
     public long sequenceCurrentValue(TableName sequenceName) {
         return store.curSequenceValue(getSession(), store.getAIS(getSession()).getSequence(sequenceName));
-    }
-
-    @Override
-    public long hash(ValueSource valueSource, AkCollator collator) {
-        assert collator != null; // Caller should have hashed in this case
-        long hash;
-        Key key;
-        int depth;
-        if (valueSource instanceof PersistitKeyValueSource) {
-            PersistitKeyValueSource persistitKeyValueSource = (PersistitKeyValueSource) valueSource;
-            key = persistitKeyValueSource.key();
-            depth = persistitKeyValueSource.depth();
-        } else {
-            key = createKey();
-            collator.append(key, valueSource.getString());
-            depth = 0;
-        }
-        hash = keyHasher.hash(key, depth);
-        return hash;
     }
 
     @Override

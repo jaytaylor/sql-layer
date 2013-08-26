@@ -17,17 +17,12 @@
 
 package com.foundationdb.qp.operator;
 
-import com.foundationdb.qp.exec.Plannable;
 import com.foundationdb.qp.row.ImmutableRow;
 import com.foundationdb.qp.row.ProjectedRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.explain.std.SortOperatorExplainer;
-import com.foundationdb.server.expression.ExpressionEvaluation;
-import com.foundationdb.server.types.ToObjectValueTarget;
-import com.foundationdb.server.types.ValueSource;
-import com.foundationdb.server.types.conversion.Converters;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.server.types3.pvalue.PValueSources;
 import com.foundationdb.server.types3.texpressions.TEvaluatableExpression;

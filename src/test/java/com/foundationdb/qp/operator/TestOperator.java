@@ -23,8 +23,6 @@ import java.util.Collection;
 import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types3.Types3Switch;
-
 
 public final class TestOperator extends ValuesScan_Default {
 
@@ -39,7 +37,7 @@ public final class TestOperator extends ValuesScan_Default {
     private static Collection<? extends BindableRow> bindableRows(Collection<? extends Row> rows) {
         Collection<BindableRow> result = new ArrayList<>();
         for (Row row : rows) {
-            result.add(BindableRow.of(row, Types3Switch.ON));
+            result.add(BindableRow.of(row));
         }
         return result;
     }

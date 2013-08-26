@@ -25,9 +25,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.qp.util.HKeyCache;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types.util.ValueSources;
 import com.foundationdb.server.types3.TClass;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.tap.InOutTap;
@@ -153,7 +151,7 @@ class HKeyUnion_Ordered extends Operator
         this.outputHKeyRowType = outputHKeyTableRowType.schema().newHKeyRowType(outputHKeyDefinition);
         this.outputHKeySegments = outputHKeyDefinition.segments().size();
         // Setup for row comparisons
-        RowsComparator comparator = Types3Switch.ON ? newComparator : oldComparator;
+        RowsComparator comparator = newComparator;
         fieldRankingExpressions = new RankExpressions(
                 leftRowType, rightRowType,
                 leftOrderingFields, rightOrderingFields,
@@ -413,16 +411,6 @@ class HKeyUnion_Ordered extends Operator
     private interface RowsComparator {
         public abstract int compare(Row left, Row right, int leftIndex, int rightIndex);
     }
-
-    private static final RowsComparator oldComparator = new RowsComparator() {
-        @Override
-        public int compare(Row left, Row right, int leftIndex, int rightIndex) {
-            long c = ValueSources.compare(left.eval(leftIndex), right.eval(rightIndex));
-            if (c == 0)
-                return 0;
-            return c < 0 ? -1 : 1;
-        }
-    };
 
     private static final RowsComparator newComparator = new RowsComparator() {
         @Override

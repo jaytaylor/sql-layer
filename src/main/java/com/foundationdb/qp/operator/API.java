@@ -22,19 +22,15 @@ import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.exec.UpdatePlannable;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.row.BindableRow;
-import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.UserTableRowType;
-import com.foundationdb.server.aggregation.AggregatorRegistry;
-import com.foundationdb.server.aggregation.Aggregators;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.expression.Expression;
 import com.foundationdb.server.types3.TAggregator;
 import com.foundationdb.server.types3.TComparison;
 import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.server.types3.texpressions.TPreparedExpression;
 import com.foundationdb.server.types3.texpressions.TPreparedField;
 
@@ -42,27 +38,7 @@ import java.util.*;
 
 public class API
 {
-    private static final boolean USE_PVALUES = Types3Switch.DEFAULT;
-
     // Aggregate
-
-    public static Operator aggregate_Partial(Operator inputOperator,
-                                                     RowType rowType,
-                                                     int inputsIndex,
-                                                     AggregatorRegistry registry,
-                                                     List<String> aggregatorNames,
-                                                     List<Object> options)
-    {
-        return new Aggregate_Partial(
-                inputOperator, rowType,
-                inputsIndex,
-                Aggregators.factories(
-                        registry,
-                        Aggregators.aggregatorIds(aggregatorNames, rowType, inputsIndex)
-                ),
-                options
-        );
-    }
 
     public static Operator aggregate_Partial(Operator inputOperator,
                                              RowType rowType,
@@ -77,13 +53,14 @@ public class API
 
     // Project
 
-    public static Operator project_Default(Operator inputOperator,
+    public static Operator project_DefaultTest(Operator inputOperator,
                                            RowType rowType,
                                            List<ExpressionGenerator> projections)
     {
-        return new Project_Default(inputOperator, rowType, generateOld(projections), generateNew(projections));
+        return new Project_Default(inputOperator, rowType, generateNew(projections));
     }
 
+    /*
     public static List<Expression> generateOld(List<? extends ExpressionGenerator> expressionGenerators) {
         if ((expressionGenerators == null) || Types3Switch.ON)
             return null;
@@ -93,9 +70,9 @@ public class API
         }
         return results;
     }
-
+*/
     public static List<TPreparedExpression> generateNew(List<? extends ExpressionGenerator> expressionGenerators) {
-        if ((expressionGenerators == null) || (!Types3Switch.ON) )
+        if (expressionGenerators == null)
             return null;
         List<TPreparedExpression> results = new ArrayList<>(expressionGenerators.size());
         for (ExpressionGenerator generator : expressionGenerators) {
@@ -106,19 +83,24 @@ public class API
 
     public static Operator project_Default(Operator inputOperator,
                                                    RowType rowType,
-                                                   List<Expression> projections,
                                                    List<? extends TPreparedExpression> pExpressions)
     {
-        return new Project_Default(inputOperator, rowType, projections, pExpressions);
+        return new Project_Default(inputOperator, rowType, pExpressions);
+    }
+    
+    public static Operator project_Default(Operator inputOperator, 
+                                            List<ExpressionGenerator> expressionGenerators,
+                                            RowType rowType) 
+    {
+        return new Project_Default(inputOperator, rowType, generateNew(expressionGenerators));
     }
     
     public static Operator project_Table(Operator inputOperator,
                                                  RowType inputRowType,
                                                  RowType outputRowType,
-                                                 List<Expression> projections,
                                                  List<? extends TPreparedExpression> pExpressions)
     {
-        return new Project_Default(inputOperator, inputRowType, outputRowType, projections, pExpressions);
+        return new Project_Default(inputOperator, inputRowType, outputRowType, pExpressions);
     }
     // Flatten
 
@@ -197,7 +179,7 @@ public class API
         List<UserTableRowType> outputRowTypes = new ArrayList<>();
         outputRowTypes.add(outputRowType);
         Schema schema = (Schema)outputRowType.schema();
-        for (RowType rowType : schema.descendentTypes(outputRowType, schema.userTableTypes())) {
+        for (RowType rowType : Schema.descendentTypes(outputRowType, schema.userTableTypes())) {
             outputRowTypes.add((UserTableRowType)rowType);
         }
         return outputRowTypes;
@@ -260,7 +242,7 @@ public class API
 
     public static Operator limit_Default(Operator inputOperator, int limitRows)
     {
-        return new Limit_Default(inputOperator, limitRows, Types3Switch.ON);
+        return new Limit_Default(inputOperator, limitRows);
     }
 
     public static Operator limit_Default(Operator inputOperator,
@@ -269,7 +251,7 @@ public class API
                                                  int limitRows,
                                                  boolean limitIsBinding)
     {
-        return new Limit_Default(inputOperator, skipRows, skipIsBinding, limitRows, limitIsBinding, Types3Switch.ON);
+        return new Limit_Default(inputOperator, skipRows, skipIsBinding, limitRows, limitIsBinding);
     }
 
     // AncestorLookup
@@ -315,7 +297,7 @@ public class API
     @SuppressWarnings("deprecation")
     public static Operator indexScan_Default(IndexRowType indexType)
     {
-        return indexScan_Default(indexType, false, IndexKeyRange.unbounded(indexType, USE_PVALUES));
+        return indexScan_Default(indexType, false, IndexKeyRange.unbounded(indexType));
     }
 
     /**
@@ -330,7 +312,7 @@ public class API
     @SuppressWarnings("deprecation")
     public static Operator indexScan_Default(IndexRowType indexType, boolean reverse)
     {
-        return indexScan_Default(indexType, reverse, IndexKeyRange.unbounded(indexType, USE_PVALUES));
+        return indexScan_Default(indexType, reverse, IndexKeyRange.unbounded(indexType));
     }
 
     /**
@@ -345,7 +327,7 @@ public class API
     public static Operator indexScan_Default(IndexRowType indexType, boolean reverse, IndexKeyRange indexKeyRange)
     {
         if (indexKeyRange == null) {
-            indexKeyRange = IndexKeyRange.unbounded(indexType, USE_PVALUES);
+            indexKeyRange = IndexKeyRange.unbounded(indexType);
         }
         return indexScan_Default(indexType, reverse, indexKeyRange, indexType.tableType());
     }
@@ -443,7 +425,7 @@ public class API
                                              IndexScanSelector indexScanSelector,
                                              int lookaheadQuantum)
     {
-        return new IndexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector, lookaheadQuantum, USE_PVALUES);
+        return new IndexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector, lookaheadQuantum);
     }
 
     // Select
@@ -455,20 +437,19 @@ public class API
         return new Select_HKeyOrdered(inputOperator, predicateRowType, predicate);
     }
 
+    @Deprecated
     public static Operator select_HKeyOrdered(Operator inputOperator,
                                                       RowType predicateRowType,
                                                       Expression predicate)
     {
-        return new Select_HKeyOrdered(inputOperator, predicateRowType, predicate);
+        throw new UnsupportedOperationException("Type2 only function");
     }
 
     public static Operator select_HKeyOrdered(Operator inputOperator,
                                               RowType predicateRowType,
                                               ExpressionGenerator predicate)
     {
-        if (Types3Switch.ON)
-            return new Select_HKeyOrdered(inputOperator, predicateRowType, predicate.getTPreparedExpression());
-        return new Select_HKeyOrdered(inputOperator, predicateRowType, predicate.getExpression());
+        return new Select_HKeyOrdered(inputOperator, predicateRowType, predicate.getTPreparedExpression());
     }
 
     // Filter
@@ -518,12 +499,12 @@ public class API
     public static Operator count_Default(Operator input,
                                          RowType countType)
     {
-        return new Count_Default(input, countType, USE_PVALUES);
+        return new Count_Default(input, countType);
     }
 
     public static Operator count_TableStatus(RowType tableType)
     {
-        return new Count_TableStatus(tableType, USE_PVALUES);
+        return new Count_TableStatus(tableType);
     }
 
     // Sort
@@ -553,14 +534,14 @@ public class API
     // Distinct
     public static Operator distinct_Partial(Operator input, RowType distinctType)
     {
-        return new Distinct_Partial(input, distinctType, null, USE_PVALUES);
+        return new Distinct_Partial(input, distinctType, null);
     }
 
     public static Operator distinct_Partial(Operator input,
                                             RowType distinctType,
                                             List<AkCollator> collators)
     {
-        return new Distinct_Partial(input, distinctType, collators, USE_PVALUES);
+        return new Distinct_Partial(input, distinctType, collators);
     }
 
     // Map
@@ -578,25 +559,24 @@ public class API
     // IfEmpty
 
     public static Operator ifEmpty_Default(Operator input, RowType rowType,
-                                           List<? extends Expression> expressions,
                                            List<? extends TPreparedExpression> pExpressions,
                                            InputPreservationOption inputPreservation)
     {
-        return new IfEmpty_Default(input, rowType, expressions, pExpressions, inputPreservation);
+        return new IfEmpty_Default(input, rowType, pExpressions, inputPreservation);
     }
 
-    public static Operator ifEmpty_Default(Operator input, RowType rowType,
+    public static Operator ifEmpty_DefaultTest(Operator input, RowType rowType,
                                            List<? extends ExpressionGenerator> expressions,
                                            InputPreservationOption inputPreservation)
     {
-        return new IfEmpty_Default(input, rowType, generateOld(expressions), generateNew(expressions), inputPreservation);
+        return new IfEmpty_Default(input, rowType, generateNew(expressions), inputPreservation);
     }
 
     // Union
 
     public static Operator unionAll_Default(Operator input1, RowType input1RowType, Operator input2, RowType input2RowType, boolean openBoth)
     {
-        return new UnionAll_Default(input1, input1RowType, input2, input2RowType, USE_PVALUES, openBoth);
+        return new UnionAll_Default(input1, input1RowType, input2, input2RowType, openBoth);
     }
     
     // Intersect
@@ -622,7 +602,6 @@ public class API
                                      ascending,
                                      joinType,
                                      EnumSet.of(intersectOutput),
-                                     USE_PVALUES,
                                      comparisons);
     }
 
@@ -642,7 +621,6 @@ public class API
                                      ascending,
                                      joinType,
                                      intersectOptions,
-                                     USE_PVALUES,
                                      comparisons);
     }
     
@@ -659,8 +637,7 @@ public class API
                                  leftRowType, rightRowType,
                                  leftOrderingFields,
                                  rightOrderingFields,
-                                 ascending, outputEqual,
-                                 USE_PVALUES);
+                                 ascending, outputEqual);
     }
 
     // HKeyUnion
@@ -691,8 +668,7 @@ public class API
                                      estimatedRowCount,
                                      filterBindingPosition,
                                      streamInput,
-                                     null,
-                                     USE_PVALUES);
+                                     null);
     }
 
     public static Operator using_BloomFilter(Operator filterInput,
@@ -707,36 +683,33 @@ public class API
                                      estimatedRowCount,
                                      filterBindingPosition,
                                      streamInput,
-                                     collators,
-                                     USE_PVALUES);
+                                     collators);
     }
 
     // Select_BloomFilter
 
-    public static Operator select_BloomFilter(Operator input,
+    public static Operator select_BloomFilterTest(Operator input,
                                               Operator onPositive,
                                               List<? extends ExpressionGenerator> filterFields,
                                               int bindingPosition,
                                               boolean pipeline,
                                               int depth)
     {
-        return select_BloomFilter(input, onPositive, generateOld(filterFields), generateNew(filterFields), null, bindingPosition, pipeline, depth);
+        return select_BloomFilter(input, onPositive, generateNew(filterFields), null, bindingPosition, pipeline, depth);
     }
 
     public static Operator select_BloomFilter(Operator input,
                                               Operator onPositive,
-                                              List<? extends Expression> filterFields,
                                               List<? extends TPreparedExpression> tFilterFields,
                                               int bindingPosition,
                                               boolean pipeline,
                                               int depth)
     {
-        return select_BloomFilter(input, onPositive, filterFields, tFilterFields, null, bindingPosition, pipeline, depth);
+        return select_BloomFilter(input, onPositive, tFilterFields, null, bindingPosition, pipeline, depth);
     }
 
     public static Operator select_BloomFilter(Operator input,
                                               Operator onPositive,
-                                              List<? extends Expression> filterFields,
                                               List<? extends TPreparedExpression> tFilterFields,
                                               List<AkCollator> collators,
                                               int bindingPosition,
@@ -745,7 +718,6 @@ public class API
     {
         return new Select_BloomFilter(input,
                                       onPositive,
-                                      filterFields,
                                       tFilterFields,
                                       collators,
                                       bindingPosition,
@@ -764,7 +736,6 @@ public class API
     {
         return new Select_BloomFilter(input,
                 onPositive,
-                generateOld(filterFields),
                 generateNew(filterFields),
                 collators,
                 bindingPosition,
@@ -788,12 +759,12 @@ public class API
     // Insert
     public static UpdatePlannable insert_Default(Operator inputOperator)
     {
-        return new Insert_Default(inputOperator, USE_PVALUES);
+        return new Insert_Default(inputOperator);
     }
 
     public static Operator insert_Returning (Operator inputOperator)
     {
-        return new Insert_Returning(inputOperator, USE_PVALUES);
+        return new Insert_Returning(inputOperator);
     }
 
     // Update
@@ -807,19 +778,19 @@ public class API
     public static Operator update_Returning (Operator inputOperator,
                                             UpdateFunction updateFunction)
     {
-        return new Update_Returning (inputOperator, updateFunction, USE_PVALUES);
+        return new Update_Returning (inputOperator, updateFunction);
     }
     
     // Delete
 
     public static UpdatePlannable delete_Default(Operator inputOperator)
     {
-        return new Delete_Default(inputOperator, USE_PVALUES);
+        return new Delete_Default(inputOperator);
     }
 
     public static Operator delete_Returning (Operator inputOperator, boolean cascadeDelete)
     {
-        return new Delete_Returning(inputOperator, USE_PVALUES, cascadeDelete);
+        return new Delete_Returning(inputOperator, cascadeDelete);
     }
 
     // Execution interface

@@ -164,7 +164,6 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
                         columnNames, columnTypes,
                         parameterTypes,
                         update.getCostEstimate(),
-                        usesPValues(),
                         update.isRequireStepIsolation(),
                         update.putInCache());
         } else { 
@@ -172,7 +171,6 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
                         (Operator)update.getPlannable(),
                         parameterTypes,
                         update.getCostEstimate(),
-                        usesPValues(),
                         update.isRequireStepIsolation(),
                         update.putInCache());
         }
@@ -200,8 +198,7 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
                     select.getResultRowType(),
                     columnNames, columnTypes,
                     parameterTypes,
-                    select.getCostEstimate(),
-                    usesPValues());
+                    select.getCostEstimate());
         return postmt;
     }
 }

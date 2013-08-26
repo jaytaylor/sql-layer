@@ -19,11 +19,8 @@ package com.foundationdb.qp.rowtype;
 
 import com.foundationdb.ais.model.*;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-
-import java.util.*;
 
 public abstract class IndexRowType extends AisRowType
 {
@@ -45,15 +42,9 @@ public abstract class IndexRowType extends AisRowType
     @Override
     public int nFields()
     {
-        return akTypes.length;
+        return index.getAllColumns().size();
     }
 
-    @Override
-    public AkType typeAt(int index)
-    {
-        return akTypes[index];
-    }
-    
     @Override
     public HKey hKey()
     {
@@ -100,7 +91,7 @@ public abstract class IndexRowType extends AisRowType
 
     // For use by subclasses
 
-    protected IndexRowType(Schema schema, UserTableRowType tableType, Index index, int nFields)
+    protected IndexRowType(Schema schema, UserTableRowType tableType, Index index)
     {
         super(schema, schema.nextTypeId());
         if (index.isGroupIndex()) {
@@ -109,7 +100,6 @@ public abstract class IndexRowType extends AisRowType
         }
         this.tableType = tableType;
         this.index = index;
-        this.akTypes = new AkType[nFields];
     }
 
     // Object state
@@ -117,7 +107,6 @@ public abstract class IndexRowType extends AisRowType
     // If index is a GroupIndex, then tableType.userTable() is the leafmost table of the GroupIndex.
     private final UserTableRowType tableType;
     private final Index index;
-    protected final AkType[] akTypes;
 
     // Inner classes
 
@@ -131,12 +120,7 @@ public abstract class IndexRowType extends AisRowType
 
         public Conventional(Schema schema, UserTableRowType tableType, Index index)
         {
-            super(schema, tableType, index, index.getAllColumns().size());
-            List<IndexColumn> indexColumns = index.getAllColumns();
-            for (int i = 0; i < indexColumns.size(); i++) {
-                Column column = indexColumns.get(i).getColumn();
-                akTypes[i] = column.getType().akType();
-            }
+            super(schema, tableType, index);
             spatialIndexRowType = index.isSpatial() ? new Spatial(schema, tableType, index) : null;
         }
 
@@ -156,19 +140,12 @@ public abstract class IndexRowType extends AisRowType
 
         public Spatial(Schema schema, UserTableRowType tableType, Index index)
         {
-            super(schema, tableType, index, index.getAllColumns().size() - index.dimensions() + 1);
-            List<IndexColumn> indexColumns = index.getAllColumns();
-            int i = 0, t = 0;
-            while (i < indexColumns.size()) {
-                if (i == index.firstSpatialArgument()) {
-                    akTypes[t++] = AkType.LONG;
-                    i += index.dimensions();
-                }
-                else {
-                    Column column = indexColumns.get(i++).getColumn();
-                    akTypes[t++] = column.getType().akType();
-                }
-            }
+            super(schema, tableType, index);
+        }
+        @Override
+        public int nFields()
+        {
+            return index().getAllColumns().size() - index().dimensions() + 1;
         }
 
         @Override

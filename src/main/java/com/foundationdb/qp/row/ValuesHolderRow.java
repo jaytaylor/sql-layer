@@ -19,7 +19,6 @@ package com.foundationdb.qp.row;
 
 
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types.util.ValueHolder;
 import com.foundationdb.server.types3.pvalue.PValue;
 
 public class ValuesHolderRow extends AbstractValuesHolderRow {
@@ -32,21 +31,11 @@ public class ValuesHolderRow extends AbstractValuesHolderRow {
     }
 
     @Override
-    public ValueHolder holderAt(int index) {
-        return super.holderAt(index);
-    }
-
-    @Override
     public PValue pvalueAt(int index) {
         return super.pvalueAt(index);
     }
 
-    @Deprecated
     public ValuesHolderRow(RowType rowType) {
-        this(rowType, true);
-    }
-
-    public ValuesHolderRow(RowType rowType, boolean usePValues) {
-        super(rowType, true, usePValues);
+        super(rowType, true);
     }
 }

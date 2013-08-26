@@ -1,7 +1,4 @@
 # Test TIMEDIFF related bugs fixed in  types3
-
----
-- Newtypes: true
 ---
 - Include: all-types-schema.yaml
 
@@ -52,7 +49,4 @@
 ---
 - Statement: select TIMEDIFF('2012-04-05 13:59:59', '03:34:55');
 - output: [[null]]
-
----
-- Newtypes: null
 ...

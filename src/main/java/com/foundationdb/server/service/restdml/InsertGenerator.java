@@ -31,7 +31,6 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.server.t3expressions.OverloadResolver;
 import com.foundationdb.server.t3expressions.OverloadResolver.OverloadResult;
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.types3.TCast;
 import com.foundationdb.server.types3.TExecutionContext;
 import com.foundationdb.server.types3.TInstance;
@@ -70,9 +69,8 @@ public class InsertGenerator extends OperatorGenerator{
     protected RowStream assembleProjectTable (RowStream input, UserTable table) {
         
         int nfields = input.rowType.nFields();
-        List<TPreparedExpression> insertsP = null;
         UserTableRowType targetRowType = schema().userTableRowType(table);
-        insertsP = new ArrayList<>(targetRowType.nFields());
+        List<TPreparedExpression> insertsP = new ArrayList<>(targetRowType.nFields());
         
         for (int i = 0; i < nfields; ++i) {
             insertsP.add(new TPreparedField(input.rowType.typeInstanceAt(i), i));
@@ -123,7 +121,7 @@ public class InsertGenerator extends OperatorGenerator{
         insertsP = Arrays.asList(row);
         
         input.operator = API.project_Table(input.operator, input.rowType,
-                targetRowType, null, insertsP);
+                targetRowType, insertsP);
         input.rowType = targetRowType;
         return input;
     }
@@ -133,8 +131,8 @@ public class InsertGenerator extends OperatorGenerator{
         TInstance instance = column.tInstance();
         
         List<TPreptimeValue> input = new ArrayList<>(2);
-        input.add(PValueSources.fromObject(sequence.getSequenceName().getSchemaName(), AkType.VARCHAR));
-        input.add(PValueSources.fromObject(sequence.getSequenceName().getTableName(), AkType.VARCHAR));
+        input.add(PValueSources.fromObject(sequence.getSequenceName().getSchemaName(), MString.varchar()));
+        input.add(PValueSources.fromObject(sequence.getSequenceName().getTableName(), MString.varchar()));
     
         TValidatedScalar overload = resolver.get("NEXTVAL", input).getOverload();
     

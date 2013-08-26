@@ -21,7 +21,8 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.server.expression.std.Comparison;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
 import com.foundationdb.sql.optimizer.plan.ColumnExpression;
 import com.foundationdb.sql.optimizer.plan.ComparisonCondition;
 import com.foundationdb.sql.optimizer.plan.ConditionExpression;
@@ -39,11 +40,11 @@ import java.util.Collections;
 final class TUtils {
 
     public static ConstantExpression constant(String value) {
-        return new ConstantExpression(value, AkType.VARCHAR);
+        return new ConstantExpression(value, MString.VARCHAR.instance(true).dataTypeDescriptor(), null);
     }
 
     public static ConstantExpression constant(long value) {
-        return new ConstantExpression(value, AkType.LONG);
+        return new ConstantExpression(value, MNumeric.BIGINT.instance(true).dataTypeDescriptor(), null);
     }
 
     public static ConditionExpression compare(ColumnExpression column, Comparison comparison, ConstantExpression value) {

@@ -25,10 +25,6 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.error.AkibanInternalException;
-import com.foundationdb.server.expression.Expression;
-import com.foundationdb.server.expression.ExpressionEvaluation;
-import com.foundationdb.server.types.ValueSource;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.server.types3.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types3.texpressions.TPreparedExpression;
@@ -36,40 +32,21 @@ import com.foundationdb.server.types3.texpressions.TPreparedExpression;
 public class ExpressionRow extends AbstractRow
 {
     private RowType rowType;
-    private List<? extends Expression> expressions;
-    private List<ExpressionEvaluation> evaluations;
     private List<? extends TPreparedExpression> pExpressions;
     private List<TEvaluatableExpression> pEvaluations;
 
-    public ExpressionRow(RowType rowType, QueryContext context, QueryBindings bindings, List<? extends Expression> expressions,
+    public ExpressionRow(RowType rowType, QueryContext context, QueryBindings bindings, 
                          List<? extends TPreparedExpression> pExpressions) {
         this.rowType = rowType;
-        this.expressions = expressions;
         this.pExpressions = pExpressions;
-        if (pExpressions != null) {
-            assert expressions == null : "can't have both types be non-null";
-            this.pEvaluations = new ArrayList<>(pExpressions.size());
-            for (TPreparedExpression expression : pExpressions) {
-                TEvaluatableExpression evaluation = expression.build();
-                evaluation.with(context);
-                evaluation.with(bindings);
-                this.pEvaluations.add(evaluation);
-            }
+        assert pExpressions != null : "pExpressions can not be null";
+        this.pEvaluations = new ArrayList<>(pExpressions.size());
+        for (TPreparedExpression expression : pExpressions) {
+            TEvaluatableExpression evaluation = expression.build();
+            evaluation.with(context);
+            evaluation.with(bindings);
+            this.pEvaluations.add(evaluation);
         }
-        else if (expressions != null) {
-            this.evaluations = new ArrayList<>(expressions.size());
-            for (Expression expression : expressions) {
-                if (expression.needsRow()) {
-                    throw new AkibanInternalException("expression needed a row: " + expression + " in " + expressions);
-                }
-                ExpressionEvaluation evaluation = expression.evaluation();
-                evaluation.of(context);
-                evaluation.of(bindings);
-                this.evaluations.add(evaluation);
-            }
-        }
-        else
-            throw new AssertionError("can't have both lists be null");
     }
 
     /* AbstractRow */
@@ -77,11 +54,6 @@ public class ExpressionRow extends AbstractRow
     @Override
     public RowType rowType() {
         return rowType;
-    }
-
-    @Override
-    public ValueSource eval(int i) {
-        return evaluations.get(i).eval();
     }
 
     @Override
@@ -119,7 +91,7 @@ public class ExpressionRow extends AbstractRow
         int nf = rowType().nFields();
         for (int i = 0; i < nf; i++) {
             if (i > 0) str.append(", ");
-            Object expression = (pExpressions != null) ? pExpressions.get(i) : expressions.get(i);
+            Object expression = pExpressions.get(i);
             if (expression != null)
                 str.append(expression);
         }

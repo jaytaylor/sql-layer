@@ -39,12 +39,11 @@ public class PostgresJsonStatement extends PostgresOperatorStatement
     public void init(Operator resultOperator, RowType resultRowType,
                      List<JsonResultColumn> resultColumns,
                      PostgresType[] parameterTypes,
-                     CostEstimate costEstimate,
-                     boolean usePValues) {
+                     CostEstimate costEstimate) {
         super.init(resultOperator, resultRowType,
                    // Looks like just one unlimited VARCHAR to the client.
                    jsonColumnNames(), jsonColumnTypes(),
-                   parameterTypes, costEstimate, usePValues);
+                   parameterTypes, costEstimate);
         this.resultColumns = resultColumns;
     }
 

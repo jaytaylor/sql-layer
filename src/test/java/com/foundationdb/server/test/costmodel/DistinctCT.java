@@ -112,7 +112,7 @@ public class DistinctCT extends CostModelBase
             projectFields.add(ExpressionGenerators.field(tRowType, f));
         }
         Operator setup =
-            project_Default(
+            project_DefaultTest(
                 groupScan_Default(group),
                 tRowType,
                 projectFields);

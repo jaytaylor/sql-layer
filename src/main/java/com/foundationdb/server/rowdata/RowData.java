@@ -459,7 +459,7 @@ public class RowData {
             return toStringWithoutRowDef("No RowDef provided");
         }
         final AkibanAppender sb = AkibanAppender.of(new StringBuilder());
-        RowDataValueSource source = new RowDataValueSource();
+        RowDataPValueSource source = new RowDataPValueSource();
         try {
             sb.append(rowDef.getTableName());
             for (int i = 0; i < getFieldCount(); i++) {
@@ -471,7 +471,7 @@ public class RowData {
                     // sb.append("null");
                 } else {
                     source.bind(fieldDef, this);
-                    source.appendAsString(sb, Quote.SINGLE_QUOTE);
+                    fieldDef.column().tInstance().format(source, sb);
                 }
             }
             sb.append(')');
@@ -486,7 +486,7 @@ public class RowData {
     }
 
     public void toJSONString(final RowDef rowDef, AkibanAppender sb) throws IOException {
-        RowDataValueSource source = new RowDataValueSource();
+        RowDataPValueSource source = new RowDataPValueSource();
         for(int i = 0; i < getFieldCount(); i++) {
             final FieldDef fieldDef = rowDef.getFieldDef(i);
             final long location = fieldDef.getRowDef().fieldLocation(this, fieldDef.getFieldIndex());
@@ -506,7 +506,7 @@ public class RowData {
 
             if(location != 0) {
                 source.bind(fieldDef, this);
-                source.appendAsString(sb, Quote.JSON_QUOTE);
+                rowDef.getFieldDef(i).column().tInstance().formatAsJson(source, sb);
             }
             else {
                 sb.append("null");

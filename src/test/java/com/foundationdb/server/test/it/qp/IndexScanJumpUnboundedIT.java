@@ -338,17 +338,12 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
             TestRow target = indexRow(idOrdering[start]);
             // Add nudge to last field
             OverlayingRow nudgedTarget = new OverlayingRow(target);
-            nudgedTarget.overlay(3, target.eval(3).getLong() + nudge);
+            nudgedTarget.overlay(3, ((long)target.pvalue(3).getInt32() + nudge));
             cursor.jump(nudgedTarget, INDEX_ROW_SELECTOR);
             Row row;
             List<Long> actualIds = new ArrayList<>();
             while ((row = cursor.next()) != null) {
-                if (usingPValues()) {
-                    actualIds.add((long)row.pvalue(3).getInt32());
-                }
-                else {
-                    actualIds.add(getLong(row, 3));
-                }
+                actualIds.add((long)row.pvalue(3).getInt32());
             }
             List<Long> expectedIds = new ArrayList<>();
             for (int i = start; i < idOrdering.length; i++) {

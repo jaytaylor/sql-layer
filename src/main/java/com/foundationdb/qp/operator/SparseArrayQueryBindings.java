@@ -19,20 +19,12 @@ package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.error.*;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.ValueSource;
-import com.foundationdb.server.types.conversion.Converters;
-import com.foundationdb.server.types.util.ValueHolder;
 import com.foundationdb.server.types3.pvalue.PValue;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.server.types3.pvalue.PValueTargets;
 import com.foundationdb.util.BloomFilter;
 import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.SparseArray;
-
-import java.math.BigDecimal;
-import java.math.BigInteger;
 
 public class SparseArrayQueryBindings implements QueryBindings
 {
@@ -102,75 +94,6 @@ public class SparseArrayQueryBindings implements QueryBindings
         PValueTargets.copyFrom(value, holder);
     }
     
-    @Override
-    public ValueSource getValue(int index) {
-        if (bindings.isDefined(index)) {
-            return (ValueSource)bindings.get(index);
-        }
-        else if (parent != null) {
-            return parent.getValue(index);
-        }
-        else {
-            throw new BindingNotSetException(index);
-        }
-    }
-
-    @Override
-    public void setValue(int index, ValueSource value, AkType type)
-    {
-        ValueHolder holder;
-        if (bindings.isDefined(index))
-            holder = (ValueHolder)bindings.get(index);
-        else {
-            holder = new ValueHolder();
-            bindings.set(index, holder);
-        }
-        
-        holder.expectType(type);
-        try
-        {
-            Converters.convert(value, holder);
-        }
-        catch (InvalidDateFormatException e)
-        {
-            errorCase(e, holder);
-        }
-        catch (InconvertibleTypesException e)
-        {
-            errorCase(e, holder);
-        }
-        catch (InvalidCharToNumException e)
-        {
-            errorCase(e, holder);
-        }
-    }
-    
-    private void errorCase (InvalidOperationException e, ValueHolder holder)
-    {
-        //warnClient(e);
-        switch(holder.getConversionType())
-        {
-            case DECIMAL:   holder.putDecimal(BigDecimal.ZERO); break;
-            case U_BIGINT:  holder.putUBigInt(BigInteger.ZERO); break;
-            case LONG:
-            case U_INT:
-            case INT:        holder.putRaw(holder.getConversionType(), 0L); break;
-            case U_DOUBLE:   
-            case DOUBLE:     holder.putRaw(holder.getConversionType(), 0.0d);
-            case U_FLOAT:
-            case FLOAT:      holder.putRaw(holder.getConversionType(), 0.0f); break;
-            case TIME:       holder.putTime(0L);
-            default:         holder.putNull();
-
-        }
-    }
-
-    @Override
-    public void setValue(int index, ValueSource value)
-    {
-        setValue(index, value, value.getConversionType());
-    }
-
     @Override
     public Row getRow(int index) {
         if (bindings.isDefined(index)) {

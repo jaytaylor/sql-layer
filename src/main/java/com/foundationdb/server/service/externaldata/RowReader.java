@@ -157,8 +157,8 @@ public abstract class RowReader
                 TableName sequenceName = sequence.getSequenceName();
                 functionName = "NEXTVAL";
                 input = new ArrayList<>(2);
-                input.add(PValueSources.fromObject(sequenceName.getSchemaName(), AkType.VARCHAR));
-                input.add(PValueSources.fromObject(sequenceName.getTableName(), AkType.VARCHAR));
+                input.add(PValueSources.fromObject(sequenceName.getSchemaName(), MString.varcharFor(sequenceName.getSchemaName())));
+                input.add(PValueSources.fromObject(sequenceName.getTableName(), MString.varcharFor(sequenceName.getTableName())));
                 arguments = new ArrayList<>(input.size());
                 for (TPreptimeValue tpv : input) {
                     arguments.add(new TPreparedLiteral(tpv.instance(), tpv.value()));

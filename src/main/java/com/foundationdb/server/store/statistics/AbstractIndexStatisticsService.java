@@ -595,15 +595,15 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
     private static AkibanInformationSchema createStatsTables() {
         NewAISBuilder builder = AISBBasedBuilder.create(INDEX_STATISTICS_TABLE_NAME.getSchemaName());
         builder.userTable(INDEX_STATISTICS_TABLE_NAME.getTableName())
-                .colLong("table_id", false)
-                .colLong("index_id", false)
+                .colBigInt("table_id", false)
+                .colBigInt("index_id", false)
                 .colTimestamp("analysis_timestamp", true)
                 .colBigInt("row_count", true)
                 .colBigInt("sampled_count", true)
                 .pk("table_id", "index_id");
         builder.userTable(INDEX_STATISTICS_ENTRY_TABLE_NAME.getTableName())
-                .colLong("table_id", false)
-                .colLong("index_id", false)
+                .colBigInt("table_id", false)
+                .colBigInt("index_id", false)
                 .colLong("column_count", false)
                 .colLong("item_number", false)
                 .colString("key_string", 2048, true, "latin1")

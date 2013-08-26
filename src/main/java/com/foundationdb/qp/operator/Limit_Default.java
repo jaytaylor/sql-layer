@@ -21,9 +21,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.error.NegativeLimitException;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.ValueSource;
-import com.foundationdb.server.types.extract.Extractors;
 import com.foundationdb.server.types3.TExecutionContext;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
@@ -130,14 +127,13 @@ final class Limit_Default extends Operator
 
     // Limit_Default interface
 
-    Limit_Default(Operator inputOperator, int limit, boolean usePVals) {
-        this(inputOperator, 0, false, limit, false, usePVals);
+    Limit_Default(Operator inputOperator, int limit) {
+        this(inputOperator, 0, false, limit, false);
     }
 
     Limit_Default(Operator inputOperator,
                   int skip, boolean skipIsBinding,
-                  int limit, boolean limitIsBinding,
-                  boolean usePVals) {
+                  int limit, boolean limitIsBinding) {
         ArgumentValidation.isGTE("skip", skip, 0);
         ArgumentValidation.isGTE("limit", limit, 0);
         this.skip = skip;
@@ -145,7 +141,6 @@ final class Limit_Default extends Operator
         this.limit = limit;
         this.limitIsBinding = limitIsBinding;
         this.inputOperator = inputOperator;
-        this.usePVals = usePVals;
     }
 
     public int skip() {
@@ -172,7 +167,6 @@ final class Limit_Default extends Operator
     private final int skip, limit;
     private final boolean skipIsBinding, limitIsBinding;
     private final Operator inputOperator;
-    private final boolean usePVals;
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
@@ -198,16 +192,9 @@ final class Limit_Default extends Operator
                 super.open();
                 closed = false;
                 if (isSkipBinding()) {
-                    if (usePVals) {
-                        PValueSource value = bindings.getPValue(skip());
-                        if (!value.isNull())
-                            this.skipLeft = value.getInt32();
-                    }
-                    else {
-                        ValueSource value = bindings.getValue(skip());
-                        if (!value.isNull())
-                            this.skipLeft = (int)Extractors.getLongExtractor(AkType.LONG).getLong(value);
-                    }
+                    PValueSource value = bindings.getPValue(skip());
+                    if (!value.isNull())
+                        this.skipLeft = value.getInt32();
                 }
                 else {
                     this.skipLeft = skip();
@@ -215,25 +202,16 @@ final class Limit_Default extends Operator
                 if (skipLeft < 0)
                     throw new NegativeLimitException("OFFSET", skipLeft);
                 if (isLimitBinding()) {
-                    if (usePVals) {
-                        PValueSource value = bindings.getPValue(limit());
-                        if (value.isNull())
-                            this.limitLeft = Integer.MAX_VALUE;
-                        else {
-                            TInstance tinst = MNumeric.INT.instance(true);
-                            TExecutionContext executionContext = 
-                                new TExecutionContext(null, tinst, context);
-                            PValue pvalue = new PValue(MNumeric.INT.instance(true));
-                            MNumeric.INT.fromObject(executionContext, value, pvalue);
-                            this.limitLeft = pvalue.getInt32();
-                        }
-                    }
+                    PValueSource value = bindings.getPValue(limit());
+                    if (value.isNull())
+                        this.limitLeft = Integer.MAX_VALUE;
                     else {
-                        ValueSource value = bindings.getValue(limit());
-                        if (value.isNull())
-                            this.limitLeft = Integer.MAX_VALUE;
-                        else
-                            this.limitLeft = (int)Extractors.getLongExtractor(AkType.LONG).getLong(value);
+                        TInstance tinst = MNumeric.INT.instance(true);
+                        TExecutionContext executionContext = 
+                            new TExecutionContext(null, tinst, context);
+                        PValue pvalue = new PValue(MNumeric.INT.instance(true));
+                        MNumeric.INT.fromObject(executionContext, value, pvalue);
+                        this.limitLeft = pvalue.getInt32();
                     }
                 }
                 else {

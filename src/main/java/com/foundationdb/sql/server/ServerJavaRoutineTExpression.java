@@ -27,8 +27,6 @@ import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.Label;
 import com.foundationdb.server.explain.Type;
 import com.foundationdb.server.explain.std.TExpressionExplainer;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.ValueSource;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.TPreptimeValue;
 import com.foundationdb.server.types3.pvalue.PValue;
@@ -68,7 +66,7 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
             }
             if (allConstant && routine.isDeterministic()) {
                 ValueRoutineInvocation invocation = new TPreptimeValueRoutineInvocation(routine, values);
-                ServerJavaRoutine javaRoutine = javaRoutine = javaRoutine((ServerQueryContext)context, null, invocation);
+                ServerJavaRoutine javaRoutine = javaRoutine((ServerQueryContext)context, null, invocation);
                 evaluate(javaRoutine);
                 constantSource = invocation.getReturnValue();
             }
@@ -152,21 +150,6 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
         }
 
         @Override
-        protected ValueSource getValue(int index) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        protected AkType getAkType(int index) {
-            Parameter parameter;
-            if (index == RETURN_VALUE_INDEX)
-                parameter = routine.getReturnValue();
-            else
-                parameter = routine.getParameters().get(index);
-            return parameter.getType().akType();
-        }
-
-        @Override
         protected TInstance getTInstance(int index) {
             Parameter parameter;
             if (index == RETURN_VALUE_INDEX)
@@ -174,11 +157,6 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
             else
                 parameter = routine.getParameters().get(index);
             return parameter.tInstance();
-        }
-
-        @Override
-        protected void setValue(int index, ValueSource source, AkType akType) {
-            throw new UnsupportedOperationException();
         }
 
         @Override

@@ -16,11 +16,10 @@
  */
 package com.foundationdb.qp.persistitadapter.indexcursor;
 
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.types3.TInstance;
 import com.persistit.Key;
 
 public interface SortKeySource<S> {
-    void attach(Key key, int i, AkType fieldType, TInstance tInstance);
+    void attach(Key key, int i, TInstance tInstance);
     S asSource();
 }

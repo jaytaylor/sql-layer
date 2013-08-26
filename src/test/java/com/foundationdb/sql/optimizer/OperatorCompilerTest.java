@@ -18,9 +18,7 @@
 package com.foundationdb.sql.optimizer;
 
 
-import com.foundationdb.server.service.functions.FunctionsRegistryImpl;
 import com.foundationdb.server.t3expressions.T3RegistryServiceImpl;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.sql.NamedParamsTestBase;
 import com.foundationdb.sql.TestBase;
 
@@ -115,14 +113,12 @@ public class OperatorCompilerTest extends NamedParamsTestBase
             compiler.initProperties(properties);
             compiler.initAIS(ais, OptimizerTestBase.DEFAULT_SCHEMA);
             compiler.initParser(parser);
-            compiler.initFunctionsRegistry(new FunctionsRegistryImpl());
-            boolean usePValues = Types3Switch.ON;
-            if (usePValues) {
-                T3RegistryServiceImpl t3Registry = new T3RegistryServiceImpl();
-                t3Registry.start();
-                compiler.initT3Registry(t3Registry);
-            }
-            compiler.initCostEstimator(new TestCostEstimator(ais, compiler.getSchema(), statsFile, false, properties), usePValues);
+            T3RegistryServiceImpl t3Registry = new T3RegistryServiceImpl();
+            t3Registry.start();
+            compiler.initFunctionsRegistry(t3Registry);
+            compiler.initT3Registry(t3Registry);
+
+            compiler.initCostEstimator(new TestCostEstimator(ais, compiler.getSchema(), statsFile, false, properties));
             compiler.initPipelineConfiguration(new PipelineConfiguration());
             compiler.initDone();
             return compiler;
@@ -165,7 +161,7 @@ public class OperatorCompilerTest extends NamedParamsTestBase
                         propertiesFile = compilerPropertiesFile;
                     // If the is a t3expected file, this 
                     File t3Results = new File (subdir, args[0] + ".t3expected");
-                    if (t3Results.exists() && Types3Switch.ON) {
+                    if (t3Results.exists()) {
                         args[2] = fileContents(t3Results);
                     }
                     Object[] nargs = new Object[args.length+3];

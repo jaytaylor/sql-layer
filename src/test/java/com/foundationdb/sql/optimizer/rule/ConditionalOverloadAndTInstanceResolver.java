@@ -17,7 +17,6 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.sql.optimizer.rule.PlanContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,9 +37,7 @@ public final class ConditionalOverloadAndTInstanceResolver extends BaseRule {
     }
 
     public ConditionalOverloadAndTInstanceResolver() {
-        delegate = Types3Switch.ON
-                ? new OverloadAndTInstanceResolver()
-                : null;
+        delegate = new OverloadAndTInstanceResolver();
     }
 
     private final BaseRule delegate;
