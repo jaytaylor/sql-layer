@@ -52,7 +52,7 @@ public class FDBIndexStatisticsService extends AbstractIndexStatisticsService {
 
     @Override
     protected AbstractStoreIndexStatistics createStoreIndexStatistics() {
-        return new FDBStoreIndexStatistics(store, this, txnService);
+        return new FDBStoreIndexStatistics(store, this, txnService, configurationService);
     }
 
     @Override

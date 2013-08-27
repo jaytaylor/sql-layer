@@ -22,6 +22,7 @@ import com.foundationdb.server.error.QueryCanceledException;
 import com.foundationdb.server.rowdata.IndexDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.FDBStore;
@@ -36,13 +37,17 @@ import java.util.Iterator;
 import static com.foundationdb.server.store.statistics.IndexStatisticsVisitor.VisitorCreator;
 
 public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBStore> implements VisitorCreator<Key,byte[]> {
+    public static final String SAMPLER_COUNT_LIMIT_PROPERTY = "fdbsql.index_statistics.sampler_count_limit";
+
     private final IndexStatisticsService indexStatisticsService;
     private final FDBTransactionService txnService;
+    private final long samplerCountLimit;
 
-    public FDBStoreIndexStatistics(FDBStore store, IndexStatisticsService indexStatisticsService, TransactionService txnService) {
+    public FDBStoreIndexStatistics(FDBStore store, IndexStatisticsService indexStatisticsService, TransactionService txnService, ConfigurationService configurationService) {
         super(store);
         this.indexStatisticsService = indexStatisticsService;
         this.txnService = (FDBTransactionService)txnService;
+        this.samplerCountLimit = Long.parseLong(configurationService.getProperty(SAMPLER_COUNT_LIMIT_PROPERTY));
     }
 
 
