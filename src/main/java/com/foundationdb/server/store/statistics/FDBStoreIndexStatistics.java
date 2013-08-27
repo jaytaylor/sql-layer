@@ -111,7 +111,7 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
             nextCommitTime = txn.getStartTime() + scanTimeLimit;
         }
         long indexRowCount = indexStatisticsService.countEntries(session, index);
-        IndexStatisticsVisitor<Key,byte[]> visitor = new IndexStatisticsVisitor<>(session, index, indexRowCount, this);
+        IndexStatisticsVisitor<Key,byte[]> visitor = new IndexStatisticsVisitor<>(session, index, indexRowCount, indexRowCount, this);
         int bucketCount = indexStatisticsService.bucketCount();
         visitor.init(bucketCount);
         Iterator<KeyValue> it = getStore().indexIterator(session, index, false);

@@ -39,7 +39,7 @@ public class FDBSingleColumnIndexStatisticsVisitor extends IndexStatisticsGenera
 
 
     @Override
-    public void init(int bucketCount, long distinctCount) {
+    public void init(int bucketCount, long expectedRowCount) {
         // Does not do generator init until finish because just
         // buffering counts in this pass.
     }
