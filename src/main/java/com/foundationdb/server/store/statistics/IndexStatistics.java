@@ -132,8 +132,7 @@ public class IndexStatistics
             str.append("\n");
             str.append(h.toString(index));
         }
-        // Don't bother with multiColumnHistograms[0]. Same thing as singleColumnHistograms[0].
-        for (int i = 1; i < multiColumnHistograms.length; i++) {
+        for (int i = 0; i < multiColumnHistograms.length; i++) {
             Histogram h = multiColumnHistograms[i];
             if (h == null) continue;
             str.append("\n");

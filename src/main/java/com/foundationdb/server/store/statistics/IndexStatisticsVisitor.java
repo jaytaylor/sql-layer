@@ -44,9 +44,10 @@ public class IndexStatisticsVisitor<K extends Comparable<? super K>, V> extends 
         this.indexRowCount = indexRowCount;
         this.expectedSampleCount = expectedSampleCount;
         this.multiColumnVisitor = creator.multiColumnVisitor(index);
-        this.singleColumnVisitors = new ArrayList<>();
         this.nIndexColumns = index.getKeyColumns().size();
-        for (int f = 0; f < nIndexColumns; f++) {
+        this.singleColumnVisitors = new ArrayList<>(nIndexColumns-1);
+        // Single column 0 is handled as leading column of multi-column.
+        for (int f = 1; f < nIndexColumns; f++) {
             singleColumnVisitors.add(
                     creator.singleColumnVisitor(session, index.getKeyColumns().get(f))
             );
@@ -56,24 +57,24 @@ public class IndexStatisticsVisitor<K extends Comparable<? super K>, V> extends 
     public void init(int bucketCount)
     {
         multiColumnVisitor.init(bucketCount, expectedSampleCount);
-        for (int c = 0; c < nIndexColumns; c++) {
-            singleColumnVisitors.get(c).init(bucketCount, expectedSampleCount);
+        for (int c = 1; c < nIndexColumns; c++) {
+            singleColumnVisitors.get(c-1).init(bucketCount, expectedSampleCount);
         }
     }
 
     public void finish(int bucketCount)
     {
         multiColumnVisitor.finish(bucketCount);
-        for (int c = 0; c < nIndexColumns; c++) {
-            singleColumnVisitors.get(c).finish(bucketCount);
+        for (int c = 1; c < nIndexColumns; c++) {
+            singleColumnVisitors.get(c-1).finish(bucketCount);
         }
     }
 
     protected void visit(K key, V value)
     {
         multiColumnVisitor.visit(key, value);
-        for (int c = 0; c < nIndexColumns; c++) {
-            singleColumnVisitors.get(c).visit(key, value);
+        for (int c = 1; c < nIndexColumns; c++) {
+            singleColumnVisitors.get(c-1).visit(key, value);
         }
     }
 
@@ -86,8 +87,8 @@ public class IndexStatisticsVisitor<K extends Comparable<? super K>, V> extends 
         indexStatistics.setRowCount(indexRowCount);
         indexStatistics.setSampledCount(sampledCount);
         multiColumnVisitor.getIndexStatistics(indexStatistics);
-        for (IndexStatisticsGenerator<K,V> singleColumnVisitor : singleColumnVisitors) {
-            singleColumnVisitor.getIndexStatistics(indexStatistics);
+        for (int c = 1; c < nIndexColumns; c++) {
+            singleColumnVisitors.get(c-1).getIndexStatistics(indexStatistics);
         }
         return indexStatistics;
     }
