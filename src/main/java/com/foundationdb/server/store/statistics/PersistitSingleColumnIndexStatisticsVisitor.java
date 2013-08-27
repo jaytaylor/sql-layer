@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class PersistitSingleColumnIndexStatisticsVisitor extends IndexStatisticsGenerator<Key,Value>
 {
     @Override
-    public void init(int bucketCount, long distinctCount)
+    public void init(int bucketCount, long expectedRowCount)
     {
         exchange = TempVolume.takeExchange(store, session, treeName);
     }
