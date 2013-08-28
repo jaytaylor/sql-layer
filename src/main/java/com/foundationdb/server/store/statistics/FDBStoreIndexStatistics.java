@@ -22,6 +22,7 @@ import com.foundationdb.server.error.QueryCanceledException;
 import com.foundationdb.server.rowdata.IndexDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.FDBStore;
@@ -31,18 +32,26 @@ import com.foundationdb.KeyValue;
 import com.foundationdb.tuple.Tuple;
 import com.persistit.Key;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Iterator;
 
 import static com.foundationdb.server.store.statistics.IndexStatisticsVisitor.VisitorCreator;
 
 public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBStore> implements VisitorCreator<Key,byte[]> {
+    public static final String SAMPLER_COUNT_LIMIT_PROPERTY = "fdbsql.index_statistics.sampler_count_limit";
+    private static final Logger logger = LoggerFactory.getLogger(FDBStoreIndexStatistics.class);
+
     private final IndexStatisticsService indexStatisticsService;
     private final FDBTransactionService txnService;
+    private final long samplerCountLimit;
 
-    public FDBStoreIndexStatistics(FDBStore store, IndexStatisticsService indexStatisticsService, TransactionService txnService) {
+    public FDBStoreIndexStatistics(FDBStore store, IndexStatisticsService indexStatisticsService, TransactionService txnService, ConfigurationService configurationService) {
         super(store);
         this.indexStatisticsService = indexStatisticsService;
         this.txnService = (FDBTransactionService)txnService;
+        this.samplerCountLimit = Long.parseLong(configurationService.getProperty(SAMPLER_COUNT_LIMIT_PROPERTY));
     }
 
 
@@ -70,6 +79,9 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
             } else {
                 decodeEntry(kv, indexStatisticsEntryRowDef, result);
             }
+        }
+        if ((result != null) && logger.isDebugEnabled()) {
+            logger.debug("Loaded: " + result.toString(index));
         }
         return result;
     }
@@ -106,15 +118,33 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
             nextCommitTime = txn.getStartTime() + scanTimeLimit;
         }
         long indexRowCount = indexStatisticsService.countEntries(session, index);
-        IndexStatisticsVisitor<Key,byte[]> visitor = new IndexStatisticsVisitor<>(session, index, indexRowCount, this);
+        long expectedSampleCount = indexRowCount;
+        int sampleRate = 1, skippedSamples = 0;
+        int nSingle = index.getKeyColumns().size() - 1;
+        if (nSingle > 0) {
+            // Multi-column index might need sampling.  In the worst case, the visitor
+            // will need to retain one copy of the key for each non-leading column for
+            // each sampled row. Keep that below samplerCountLimit by sampling every few
+            // rows. We could still send everything for the leading column, except that
+            // the sample count applies to the whole, not per histograms.
+            sampleRate = (int)((indexRowCount * nSingle + samplerCountLimit - 1) / samplerCountLimit); // Round up.
+            if (sampleRate > 1) {
+                expectedSampleCount = indexRowCount / sampleRate;
+                logger.debug("Sampling rate for {} is {}", index, sampleRate);
+            }
+        }
+        IndexStatisticsVisitor<Key,byte[]> visitor = new IndexStatisticsVisitor<>(session, index, indexRowCount, expectedSampleCount, this);
         int bucketCount = indexStatisticsService.bucketCount();
         visitor.init(bucketCount);
+        Key key = getStore().createKey();
         Iterator<KeyValue> it = getStore().indexIterator(session, index, false);
         while(it.hasNext()) {
             KeyValue kv = it.next();
+            if (++skippedSamples < sampleRate)
+                continue;       // This value not sampled.
+            skippedSamples = 0;
             // TODO: Consolidate KeyValue -> (Key,[byte[]|RowData])
             byte[] keyBytes = Tuple.fromBytes(kv.getKey()).getBytes(2);
-            Key key = getStore().createKey();
             System.arraycopy(keyBytes, 0, key.getEncodedBytes(), 0, keyBytes.length);
             key.setEncodedSize(keyBytes.length);
             visitor.visit(key, kv.getValue());
@@ -137,7 +167,11 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
             }
         }
         visitor.finish(bucketCount);
-        return visitor.getIndexStatistics();
+        IndexStatistics indexStatistics = visitor.getIndexStatistics();
+        if (logger.isDebugEnabled()) {
+            logger.debug("Analyzed: " + indexStatistics.toString(index));
+        }
+        return indexStatistics;
     }
 
     @Override

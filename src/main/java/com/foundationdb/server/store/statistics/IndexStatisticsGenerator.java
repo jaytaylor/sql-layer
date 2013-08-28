@@ -117,8 +117,11 @@ abstract class IndexStatisticsGenerator<K extends Comparable<? super K>, V>
                 indexStatistics.addHistogram(new Histogram(0, colCountSegment + 1, entries));
             } else if (singleColumnPosition > 0) {
                 indexStatistics.addHistogram(new Histogram(singleColumnPosition, 1, entries));
-            } // else: Single-column histogram for leading column is handled as a multi-column histogram with
-              // column count = 1.
+            } else {
+                // Single-column histogram for leading column is handled as a multi-column
+                // histogram with column count = 1.
+                assert false : "unnecesary sampler " + this;
+            }
         }
     }
 }

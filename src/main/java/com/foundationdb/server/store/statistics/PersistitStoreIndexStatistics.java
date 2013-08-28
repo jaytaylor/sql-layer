@@ -77,7 +77,7 @@ public class PersistitStoreIndexStatistics extends AbstractStoreIndexStatistics<
     @Override
     public IndexStatistics computeIndexStatistics(Session session, Index index, long scanTimeLimit, long sleepTime) {
         long indexRowCount = indexStatsService.countEntries(session, index);
-        IndexStatisticsVisitor<Key,Value> visitor = new IndexStatisticsVisitor<>(session, index, indexRowCount, this);
+        IndexStatisticsVisitor<Key,Value> visitor = new IndexStatisticsVisitor<>(session, index, indexRowCount, indexRowCount, this);
         int bucketCount = indexStatsService.bucketCount();
         visitor.init(bucketCount);
         getStore().traverse(session, index, visitor, scanTimeLimit, sleepTime);
