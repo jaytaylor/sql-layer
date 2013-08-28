@@ -53,6 +53,7 @@ public class Type
         return encoding;
     }
 
+    @Deprecated
     public AkType akType() {
         return akType;
     }

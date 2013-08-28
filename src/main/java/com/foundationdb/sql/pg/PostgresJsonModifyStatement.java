@@ -25,8 +25,6 @@ import static com.foundationdb.sql.pg.PostgresJsonStatement.jsonColumnTypes;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
 
 import java.util.*;
 
@@ -42,13 +40,12 @@ public class PostgresJsonModifyStatement extends PostgresModifyOperatorStatement
                      List<JsonResultColumn> resultColumns,
                      PostgresType[] parameterTypes,
                      CostEstimate costEstimate,
-                     boolean usePValues,
                      boolean requireStepIsolation,
                      boolean putInCache) {
         super.init(statementType, resultOperator, resultRowType,
                    // Looks like just one unlimited VARCHAR to the client.
                    jsonColumnNames(), jsonColumnTypes(),
-                   parameterTypes, costEstimate, usePValues, 
+                   parameterTypes, costEstimate,  
                    requireStepIsolation, putInCache);
         this.resultColumns = resultColumns;
     }

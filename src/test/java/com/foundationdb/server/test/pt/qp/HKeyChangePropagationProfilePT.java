@@ -150,21 +150,10 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
                            new UpdateFunction()
                            {
                                @Override
-                               public boolean usePValues() {
-                                   return usingPValues();
-                               }
-
-                               @Override
                                public Row evaluate(Row original, QueryContext context, QueryBindings bindings)
                                {
                                    OverlayingRow updatedRow = new OverlayingRow(original);
-                                   long i;
-                                   if (usePValues()) {
-                                       i = original.pvalue(1).getInt64();
-                                   }
-                                   else {
-                                       i = getLong(original, 1);
-                                   }
+                                   long i = original.pvalue(1).getInt64();
                                    updatedRow.overlay(1, i - 1000000);
                                    return updatedRow;
                                }
@@ -224,21 +213,10 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
                            new UpdateFunction()
                            {
                                @Override
-                               public boolean usePValues() {
-                                   return usingPValues();
-                               }
-
-                               @Override
                                public Row evaluate(Row original, QueryContext context, QueryBindings bindings)
                                {
                                    OverlayingRow updatedRow = new OverlayingRow(original);
-                                   long i;
-                                   if (usePValues()) {
-                                       i = original.pvalue(0).getInt64();
-                                   }
-                                   else {
-                                       i = getLong(original, 0);
-                                   }
+                                   long i = original.pvalue(0).getInt64();
                                    updatedRow.overlay(0, i - 1000000);
                                    return updatedRow;
                                }
@@ -254,21 +232,10 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
                            new UpdateFunction()
                            {
                                @Override
-                               public boolean usePValues() {
-                                   return usingPValues();
-                               }
-
-                               @Override
                                public Row evaluate(Row original, QueryContext context, QueryBindings bindings)
                                {
                                    OverlayingRow updatedRow = new OverlayingRow(original);
-                                   long i;
-                                   if (usePValues()) {
-                                       i = original.pvalue(0).getInt64();
-                                   }
-                                   else {
-                                       i = getLong(original, 0);
-                                   }
+                                   long i = original.pvalue(0).getInt64();
                                    updatedRow.overlay(0, i + 1000000);
                                    return updatedRow;
                                }

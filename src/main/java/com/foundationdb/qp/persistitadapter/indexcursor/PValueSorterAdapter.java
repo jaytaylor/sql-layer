@@ -24,11 +24,9 @@ import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.PersistitValuePValueSource;
 import com.foundationdb.server.PersistitValuePValueTarget;
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueTargets;
 import com.foundationdb.server.types3.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types3.texpressions.TNullExpression;
 import com.foundationdb.server.types3.texpressions.TPreparedExpression;
@@ -45,18 +43,14 @@ final class PValueSorterAdapter extends SorterAdapter<PValueSource, TPreparedExp
         return new TInstance[size];
     }
 
-    @Override
-    protected AkType[] aktypes(int size) {
-        return null;
-    }
 
     @Override
-    protected void initTypes(RowType rowType, AkType[] ofFieldTypes, TInstance[] tFieldTypes, int i) {
+    protected void initTypes(RowType rowType, TInstance[] tFieldTypes, int i) {
         tFieldTypes[i] = rowType.typeInstanceAt(i);
     }
 
     @Override
-    protected void initTypes(API.Ordering ordering, int i, AkType[] akTypes, TInstance[] tInstances) {
+    protected void initTypes(API.Ordering ordering, int i, TInstance[] tInstances) {
         tInstances[i] = ordering.tInstance(i);
     }
 
@@ -86,7 +80,7 @@ final class PValueSorterAdapter extends SorterAdapter<PValueSource, TPreparedExp
     }
 
     @Override
-    protected void putFieldToTarget(PValueSource value, int i, AkType[] oFieldTypes, TInstance[] tFieldTypes) {
+    protected void putFieldToTarget(PValueSource value, int i, TInstance[] tFieldTypes) {
         tFieldTypes[i].writeCanonical(value, valueTarget);
     }
 
@@ -102,9 +96,9 @@ final class PValueSorterAdapter extends SorterAdapter<PValueSource, TPreparedExp
         }
 
         @Override
-        public void putToHolders(ValuesHolderRow row, int i, AkType[] oFieldTypes) {
-            valueSource.getReady(row.rowType().typeInstanceAt(i));
-            PValueTargets.copyFrom(valueSource, row.pvalueAt(i));
+        public void putToHolders(ValuesHolderRow row, int i, TInstance[] fieldTypes) {
+            valueSource.getReady(fieldTypes[i]);
+            fieldTypes[i].writeCanonical(valueSource, row.pvalueAt(i));
         }
 
         private final PersistitValuePValueSource valueSource = new PersistitValuePValueSource();

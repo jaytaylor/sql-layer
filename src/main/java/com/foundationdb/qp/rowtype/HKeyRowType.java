@@ -18,7 +18,6 @@
 package com.foundationdb.qp.rowtype;
 
 import com.foundationdb.ais.model.HKey;
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.types3.TInstance;
 
 public class HKeyRowType extends DerivedRowType
@@ -42,12 +41,6 @@ public class HKeyRowType extends DerivedRowType
     @Override
     public TInstance typeInstanceAt(int index) {
         return hKey().column(index).tInstance();
-    }
-
-    @Override
-    public AkType typeAt(int index)
-    {
-        return hKey().columnType(index);
     }
 
     @Override

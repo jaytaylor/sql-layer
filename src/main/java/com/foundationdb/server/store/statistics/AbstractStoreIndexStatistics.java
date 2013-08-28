@@ -96,7 +96,7 @@ public abstract class AbstractStoreIndexStatistics<S extends Store> {
                                                              Index index) {
         LegacyRowWrapper row = new LegacyRowWrapper(indexStatisticsRowDef, rowData);
 
-        long analysisTimestamp = (Long)row.get(ANALYSIS_TIMESTAMP_FIELD_INDEX);
+        long analysisTimestamp = ((Integer)row.get(ANALYSIS_TIMESTAMP_FIELD_INDEX)).longValue();
         long rowCount = (Long)row.get(ROW_COUNT_FIELD_INDEX);
         long sampledCount = (Long)row.get(SAMPLED_COUNT_FIELD_INDEX);
 
@@ -112,8 +112,8 @@ public abstract class AbstractStoreIndexStatistics<S extends Store> {
                                                        IndexStatistics indexStatistics) {
         LegacyRowWrapper row = new LegacyRowWrapper(indexStatisticsEntryRowDef, rowData);
 
-        int columnCount = ((Long)row.get(COLUMN_COUNT_FIELD_INDEX)).intValue();
-        int itemNumber = ((Long)row.get(ITEM_NUMBER_FIELD_INDEX)).intValue();
+        int columnCount = ((Integer)row.get(COLUMN_COUNT_FIELD_INDEX)).intValue();
+        int itemNumber = ((Integer)row.get(ITEM_NUMBER_FIELD_INDEX)).intValue();
         String keyString = (String)row.get(KEY_STRING_FIELD_INDEX);
 
         WrappingByteSource byteSource = (WrappingByteSource)row.get(KEY_BYTES_FIELD_INDEX);

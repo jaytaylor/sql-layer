@@ -101,7 +101,7 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
             }
             Row row;
             while ((row = cursor.next()) != null) {
-                outputter.output(row, outputStream, usesPValues());
+                outputter.output(row, outputStream);
                 nrows++;
             }
         }

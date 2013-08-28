@@ -23,13 +23,8 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.DerivedTypesSchema;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.ValuesRowType;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.FromObjectValueSource;
-import com.foundationdb.server.types.ValueSource;
-import com.foundationdb.server.types.util.ValueHolder;
 import com.foundationdb.server.types3.TExecutionContext;
 import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.server.types3.pvalue.PValue;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.server.types3.pvalue.PValueSources;
@@ -58,51 +53,24 @@ public final class RowsBuilder {
     }
 
     public RowsBuilder row(Object... values) {
-        if (usingPValues()) {
-            PValueSource[] pvalues = new PValueSource[values.length];
-            for (int i = 0; i < values.length; ++i) {
-                PValueSource psource = (values[i] == null) ?
-                        PValueSources.getNullSource(tinsts[i]) :
-                        PValueSources.fromObject(values[i], null).value();
-                if (!psource.tInstance().equalsExcludingNullable(tinsts[i])) {
-                    // This assumes that anything that doesn't match is a string.
-                    TExecutionContext context = new TExecutionContext(null,
-                                                                      tinsts[i],
-                                                                      null);
-                    PValue pvalue = new PValue(tinsts[i]);
-                    tinsts[i].typeClass().fromObject(context, psource, pvalue);
-                    psource = pvalue;
-                }
-                pvalues[i] = psource;
+        PValueSource[] pvalues = new PValueSource[values.length];
+        for (int i = 0; i < values.length; ++i) {
+            pvalues[i] = PValueSources.pValuefromObject(values[i], tinsts[i]);
+/*            
+            PValueSource psource = PValueSources.fromObject(values[i], tinsts[i]).value();
+            if (!psource.tInstance().equalsExcludingNullable(tinsts[i])) {
+                // This assumes that anything that doesn't match is a string.
+                TExecutionContext context = new TExecutionContext(null,
+                                                                  tinsts[i],
+                                                                  null);
+                PValue pvalue = new PValue(tinsts[i]);
+                tinsts[i].typeClass().fromObject(context, psource, pvalue);
+                psource = pvalue;
             }
-            return row(pvalues);
+            pvalues[i] = psource;
+*/            
         }
-        else {
-            ValueHolder[] holders = new ValueHolder[values.length];
-            FromObjectValueSource tmpSource = new FromObjectValueSource();
-            for (int i = 0; i < values.length; ++i) {
-                ValueHolder holder = new ValueHolder();
-                tmpSource.setExplicitly(values[i], types[i]);
-                holder.copyFrom(tmpSource);
-                holders[i] = holder;
-            }
-            return row(holders);
-        }
-    }
-
-    public RowsBuilder row(ValueSource... values) {
-        ArgumentValidation.isEQ("values.length", values.length, types.length);
-        for (int i=0; i < values.length; ++i) {
-            ValueSource value = values[i];
-            AkType valueType = value.getConversionType();
-            AkType requiredType = types[i];
-            if (valueType != AkType.NULL && valueType != requiredType) {
-                throw new IllegalArgumentException("type at " + i + " must be " + requiredType + ", is " + valueType);
-            }
-        }
-        InternalValuesRow row = new InternalValuesRow(rowType, Arrays.asList(values));
-        rows.add(row);
-        return this;
+        return row(pvalues);
     }
 
     public RowsBuilder row(PValueSource... pvalues) {
@@ -120,52 +88,27 @@ public final class RowsBuilder {
         return this;
     }
 
-    public RowsBuilder(AkType... types) {
-        this.rowType = new ValuesRowType(null, COUNT.incrementAndGet(), types);
-        this.types = types;
-        this.tinsts = null;
-    }
-
-    public RowsBuilder(DerivedTypesSchema schema, AkType... types) {
-        this.rowType = schema.newValuesType(types);
-        this.types = types;
-        this.tinsts = null;
-    }
-
     public RowsBuilder(TInstance... tinsts) {
         this.rowType = new ValuesRowType(null, COUNT.incrementAndGet(), tinsts);
         this.tinsts = tinsts;
-        this.types = null;
     }
 
     public RowsBuilder(DerivedTypesSchema schema, TInstance... tinsts) {
         this.rowType = schema.newValuesType(tinsts);
         this.tinsts = tinsts;
-        this.types = null;
     }
 
     public RowsBuilder(RowType rowType) {
         this.rowType = rowType;
-        if (Types3Switch.ON) {
-            tinsts = new TInstance[this.rowType.nFields()];
-            for (int i=0; i < tinsts.length; ++i) {
-                tinsts[i] = this.rowType.typeInstanceAt(i);
-            }
-            types = null;
-        }
-        else {
-            types = new AkType[this.rowType.nFields()];
-            for (int i=0; i < types.length; ++i) {
-                types[i] = this.rowType.typeAt(i);
-            }
-            tinsts = null;
+        tinsts = new TInstance[this.rowType.nFields()];
+        for (int i=0; i < tinsts.length; ++i) {
+            tinsts[i] = this.rowType.typeInstanceAt(i);
         }
     }
 
     // object state
 
     private final RowType rowType;
-    private final AkType[] types;
     private final TInstance[] tinsts;
     private final Deque<Row> rows = new ArrayDeque<>();
 
@@ -174,38 +117,6 @@ public final class RowsBuilder {
     private static final AtomicInteger COUNT = new AtomicInteger();
 
     // nested classes
-
-    private static class InternalValuesRow extends AbstractRow {
-        @Override
-        public RowType rowType() {
-            return rowType;
-        }
-
-        @Override
-        public HKey hKey() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public ValueSource eval(int i) {
-            return values.get(i);
-        }
-
-        // Note that this also handles pvalue(int) by converting.
-
-        @Override
-        public String toString() {
-            return Strings.join(values, ", ");
-        }
-
-        private InternalValuesRow(RowType rowType, List<? extends ValueSource> values) {
-            this.rowType = rowType;
-            this.values = new ArrayList<>(values);
-        }
-
-        private final RowType rowType;
-        private final List<ValueSource> values;
-    }
 
     private static class InternalPValuesRow extends AbstractRow {
         @Override

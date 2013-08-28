@@ -1,9 +1,0 @@
-SelectQuery@aac1284
-  ResultSet@26f39d95[name]
-    Project@43eeb52d[customers.name]
-      Select@6cb8c032[ANY(Subquery@55524a61)]
-        TableSource@5d01ea52(customers)
-
-Subquery@55524a61
-  Project@d91520a[customers.cid == VALUES[0]]
-    ExpressionsSource@28bedd32([[$0], [Cast(minute(Cast(now() AS MCOMPAT_ TIME)) AS MCOMPAT_ BIGINT(21) NOT NULL)], [Cast(second(Cast(now() AS MCOMPAT_ TIME)) AS MCOMPAT_ BIGINT(21) NOT NULL)]])

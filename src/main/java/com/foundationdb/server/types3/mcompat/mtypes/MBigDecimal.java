@@ -42,7 +42,6 @@ import com.foundationdb.server.types3.texpressions.SerializeAs;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.util.AkibanAppender;
-import com.foundationdb.util.ByteSource;
 
 import java.math.BigDecimal;
 

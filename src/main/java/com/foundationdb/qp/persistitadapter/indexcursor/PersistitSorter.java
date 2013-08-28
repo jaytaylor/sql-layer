@@ -28,7 +28,6 @@ import com.foundationdb.qp.persistitadapter.indexcursor.SorterAdapter.PersistitV
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.util.tap.InOutTap;
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -73,7 +72,6 @@ public class PersistitSorter implements Sorter
                            API.SortOption sortOption,
                            InOutTap loadTap)
     {
-        this.usePValues = Types3Switch.ON;
         this.context = context;
         this.bindings = bindings;
         this.adapter = (PersistitAdapter)context.getStore();
@@ -85,9 +83,7 @@ public class PersistitSorter implements Sorter
         this.key = exchange.getKey();
         this.value = exchange.getValue();
         this.rowFields = rowType.nFields();
-        sorterAdapter = usePValues
-                ? new PValueSorterAdapter()
-                : new OldSorterAdapter();
+        sorterAdapter = new PValueSorterAdapter();
         sorterAdapter.init(this.rowType, this.ordering, key, value, this.context, this.bindings, sortOption);
         iterationHelper = new SorterIterationHelper(sorterAdapter.createValueAdapter());
         this.loadTap = loadTap;
@@ -147,7 +143,7 @@ public class PersistitSorter implements Sorter
     private RowCursor cursor()
     {
         exchange.clear();
-        IndexCursor indexCursor = IndexCursor.create(context, null, ordering, iterationHelper, usePValues, false);
+        IndexCursor indexCursor = IndexCursor.create(context, null, ordering, iterationHelper, false);
         indexCursor.rebind(bindings);
         return indexCursor;
     }
@@ -198,7 +194,6 @@ public class PersistitSorter implements Sorter
     final Key key;
     final Value value;
     final int rowFields;
-    private final boolean usePValues;
     Exchange exchange;
     long rowCount = 0;
     private final InOutTap loadTap;
@@ -212,10 +207,10 @@ public class PersistitSorter implements Sorter
         @Override
         public Row row()
         {
-            ValuesHolderRow row = new ValuesHolderRow(rowType, usePValues);
+            ValuesHolderRow row = new ValuesHolderRow(rowType);
             value.setStreamMode(true);
             for (int i = 0; i < rowFields; i++) {
-                valueAdapter.putToHolders(row, i, sorterAdapter.oFieldTypes());
+                valueAdapter.putToHolders(row, i, sorterAdapter.tFieldTypes());
             }
             return row;
         }

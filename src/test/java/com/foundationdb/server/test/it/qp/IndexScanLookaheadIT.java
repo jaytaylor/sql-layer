@@ -31,7 +31,6 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types3.pvalue.PValue;
 import com.foundationdb.server.types3.texpressions.TPreparedExpression;
@@ -41,14 +40,11 @@ import static com.foundationdb.qp.operator.API.*;
 import static com.foundationdb.server.test.ExpressionGenerators.*;
 
 import org.junit.Test;
-import static junit.framework.Assert.assertEquals;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class IndexScanLookaheadIT extends OperatorITBase
 {
@@ -126,11 +122,11 @@ public class IndexScanLookaheadIT extends OperatorITBase
     @Test
     public void testMap()
     {
-        RowType cidValueRowType = schema.newValuesType(AkType.INT);
+        RowType cidValueRowType = schema.newValuesType(MNumeric.INT.instance(true));
         List<ExpressionGenerator> cidExprs = Arrays.asList(boundField(cidValueRowType, 1, 0));
         IndexBound cidBound =
             new IndexBound(
-                new RowBasedUnboundExpressions(orderCidIndexRowType, cidExprs),
+                new RowBasedUnboundExpressions(orderCidIndexRowType, cidExprs, true),
                 new SetColumnSelector(0));
         IndexKeyRange cidRange = IndexKeyRange.bounded(orderCidIndexRowType, cidBound, true, cidBound, true);
         Operator plan =
@@ -150,17 +146,17 @@ public class IndexScanLookaheadIT extends OperatorITBase
     @Test
     public void testNested()
     {
-        RowType cidValueRowType = schema.newValuesType(AkType.INT);
+        RowType cidValueRowType = schema.newValuesType(MNumeric.INT.instance(true));
         List<ExpressionGenerator> cidExprs = Arrays.asList(boundField(cidValueRowType, 1, 0));
         IndexBound cidBound =
             new IndexBound(
-                new RowBasedUnboundExpressions(orderCidIndexRowType, cidExprs),
+                new RowBasedUnboundExpressions(orderCidIndexRowType, cidExprs, true),
                 new SetColumnSelector(0));
         IndexKeyRange cidRange = IndexKeyRange.bounded(orderCidIndexRowType, cidBound, true, cidBound, true);
         List<ExpressionGenerator> oidExprs = Arrays.asList(boundField(orderCidIndexRowType, 2, 1));
         IndexBound oidBound =
             new IndexBound(
-                new RowBasedUnboundExpressions(itemOidIndexRowType, oidExprs),
+                new RowBasedUnboundExpressions(itemOidIndexRowType, oidExprs, true),
                 new SetColumnSelector(0));
         IndexKeyRange oidRange = IndexKeyRange.bounded(itemOidIndexRowType, oidBound, true, oidBound, true);
         Operator plan =
@@ -195,13 +191,13 @@ public class IndexScanLookaheadIT extends OperatorITBase
     private Row intRow(RowType rowType, int x)
     {
         List<TPreparedExpression> pExpressions = Arrays.<TPreparedExpression>asList(new TPreparedLiteral(MNumeric.INT.instance(false), new PValue(MNumeric.INT.instance(false), x)));
-        return new ExpressionRow(rowType, queryContext, queryBindings, null, pExpressions);
+        return new ExpressionRow(rowType, queryContext, queryBindings, pExpressions);
     }
 
     private Collection<? extends BindableRow> bindableExpressions(Row... rows) {
         List<BindableRow> result = new ArrayList<>();
         for (Row row : rows) {
-            result.add(BindableRow.of(row, true));
+            result.add(BindableRow.of(row));
         }
         return result;
     }

@@ -70,9 +70,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
     private void createAndLoadSingleTableGroup() {
         cid = createTable(SCHEMA, "c", "id int not null primary key, c1 char(5)");
         writeRows(
-                createNewRow(cid, 1L, "10"),
-                createNewRow(cid, 2L, "20"),
-                createNewRow(cid, 3L, "30")
+                createNewRow(cid, 1, "10"),
+                createNewRow(cid, 2, "20"),
+                createNewRow(cid, 3, "30")
         );
     }
 
@@ -86,15 +86,15 @@ public class AlterTableBasicIT extends AlterTableITBase {
         iid = createTable(schema, "i", "id int not null primary key, oid int, i1 int, grouping foreign key(oid) references o(id)");
         writeRows(
                 createNewRow(cid, 1L, "a"),
-                    createNewRow(oid, 10L, 1L, 11L),
-                        createNewRow(iid, 100L, 10L, 110L),
-                        createNewRow(iid, 101L, 10L, 111L),
-                    createNewRow(oid, 11L, 1L, 12L),
-                        createNewRow(iid, 111L, 11L, 122L),
+                    createNewRow(oid, 10, 1, 11),
+                        createNewRow(iid, 100, 10, 110),
+                        createNewRow(iid, 101, 10, 111),
+                    createNewRow(oid, 11, 1, 12),
+                        createNewRow(iid, 111, 11, 122),
                 createNewRow(cid, 2L, "b"),
                 // no 3L
-                    createNewRow(oid, 30L, 3L, 33L),
-                        createNewRow(iid, 300L, 30L, 330L)
+                    createNewRow(oid, 30, 3, 33),
+                        createNewRow(iid, 300, 30, 330)
         );
     }
 
@@ -141,22 +141,22 @@ public class AlterTableBasicIT extends AlterTableITBase {
     public void dropSingleColumnFromMultiColumnPK() throws StandardException {
         cid = createTable(SCHEMA, "c", "c1 int not null, c2 char(1), c3 int not null, primary key(c1,c3)");
         writeRows(
-                createNewRow(cid, 1L, "A", 50L),
-                createNewRow(cid, 2L, "B", 20L),
-                createNewRow(cid, 5L, "C", 10L)
+                createNewRow(cid, 1, "A", 50L),
+                createNewRow(cid, 2, "B", 20L),
+                createNewRow(cid, 5, "C", 10L)
         );
         runAlter(ChangeLevel.GROUP, "ALTER TABLE c DROP COLUMN c1");
         expectFullRows(
                 cid,
-                createNewRow(cid, "C", 10L),
-                createNewRow(cid, "B", 20L),
-                createNewRow(cid, "A", 50L)
+                createNewRow(cid, "C", 10),
+                createNewRow(cid, "B", 20),
+                createNewRow(cid, "A", 50)
         );
         expectRows(
                 scanAllIndexRequest(getUserTable(SCHEMA, "c").getIndex(Index.PRIMARY_KEY_CONSTRAINT)),
-                createNewRow(cid, UNDEF, 10L),
-                createNewRow(cid, UNDEF, 20L),
-                createNewRow(cid, UNDEF, 50L)
+                createNewRow(cid, UNDEF, 10),
+                createNewRow(cid, UNDEF, 20),
+                createNewRow(cid, UNDEF, 50)
         );
     }
 
@@ -172,23 +172,23 @@ public class AlterTableBasicIT extends AlterTableITBase {
         RowType oType = schema.userTableRowType(getUserTable(SCHEMA, "o"));
         RowType iType = schema.userTableRowType(getUserTable(SCHEMA, "i"));
         StoreAdapter adapter = newStoreAdapter(schema);
-        long pk = 1;
+        int pk = 1;
         compareRows(
                 new RowBase[]{
-                        testRow(cType, 1L, "a"),
-                        testRow(oType, 10L, 1L, 11L, pk++),
-                        testRow(oType, 11L, 1L, 12L, pk++),
-                        testRow(cType, 2L, "b"),
-                        testRow(oType, 30L, 3L, 33L, pk++),
+                        testRow(cType, 1, "a"),
+                        testRow(oType, 10, 1, 11, pk++),
+                        testRow(oType, 11, 1, 12, pk++),
+                        testRow(cType, 2, "b"),
+                        testRow(oType, 30, 3, 33, pk++),
                 },
                 adapter.newGroupCursor(cType.userTable().getGroup())
         );
         compareRows(
                 new RowBase[]{
-                        testRow(iType, 100L, 10L, 110L),
-                        testRow(iType, 101L, 10L, 111L),
-                        testRow(iType, 111L, 11L, 122L),
-                        testRow(iType, 300L, 30L, 330L)
+                        testRow(iType, 100, 10, 110),
+                        testRow(iType, 101, 10, 111),
+                        testRow(iType, 111, 11, 122),
+                        testRow(iType, 300, 30, 330)
                 },
                 adapter.newGroupCursor(iType.userTable().getGroup())
         );
@@ -209,9 +209,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
         updateAISGeneration();
         expectFullRows(
                 cid,
-                createNewRow(cid, 1L, "10"),
-                createNewRow(cid, 2L, "20"),
-                createNewRow(cid, 3L, "30")
+                createNewRow(cid, 1, "10"),
+                createNewRow(cid, 2, "20"),
+                createNewRow(cid, 3, "30")
         );
     }
 
@@ -221,9 +221,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
         runAlter("ALTER TABLE c ADD COLUMN c2 INT NOT NULL DEFAULT 0");
         expectFullRows(
                 cid,
-                createNewRow(cid, 1L, "10", 0L),
-                createNewRow(cid, 2L, "20", 0L),
-                createNewRow(cid, 3L, "30", 0L)
+                createNewRow(cid, 1, "10", 0),
+                createNewRow(cid, 2, "20", 0),
+                createNewRow(cid, 3, "30", 0)
         );
     }
 
@@ -233,9 +233,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
         runAlter("ALTER TABLE c ADD COLUMN c2 INT NULL");
         expectFullRows(
                 cid,
-                createNewRow(cid, 1L, "10", null),
-                createNewRow(cid, 2L, "20", null),
-                createNewRow(cid, 3L, "30", null)
+                createNewRow(cid, 1, "10", null),
+                createNewRow(cid, 2, "20", null),
+                createNewRow(cid, 3, "30", null)
         );
     }
 
@@ -266,9 +266,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         expectFullRows(
                 tableId,
-                createNewRow(tableId, 1L, 2L, 3L, null),
-                createNewRow(tableId, 4L, 5L, 6L, null),
-                createNewRow(tableId, 7L, 8L, 9L, null)
+                createNewRow(tableId, 1, 2, 3, null),
+                createNewRow(tableId, 4, 5, 6, null),
+                createNewRow(tableId, 7, 8, 9, null)
         );
 
         expectRows(
@@ -287,8 +287,8 @@ public class AlterTableBasicIT extends AlterTableITBase {
         runAlter("ALTER TABLE c ADD COLUMN c2 INT NULL");
         expectFullRows(
                 cid,
-                createNewRow(cid, 1L, "a", null),
-                createNewRow(cid, 2L, "b", null)
+                createNewRow(cid, 1, "a", null),
+                createNewRow(cid, 2, "b", null)
         );
     }
 
@@ -298,9 +298,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
         runAlter("ALTER TABLE o ADD COLUMN o2 INT NULL");
         expectFullRows(
                 oid,
-                createNewRow(oid, 10L, 1L, 11L, null),
-                createNewRow(oid, 11L, 1L, 12L, null),
-                createNewRow(oid, 30L, 3L, 33L, null)
+                createNewRow(oid, 10, 1, 11, null),
+                createNewRow(oid, 11, 1, 12, null),
+                createNewRow(oid, 30, 3, 33, null)
         );
     }
 
@@ -310,10 +310,10 @@ public class AlterTableBasicIT extends AlterTableITBase {
         runAlter("ALTER TABLE i ADD COLUMN i2 INT NULL");
         expectFullRows(
                 iid,
-                createNewRow(iid, 100L, 10L, 110L, null),
-                createNewRow(iid, 101L, 10L, 111L, null),
-                createNewRow(iid, 111L, 11L, 122L, null),
-                createNewRow(iid, 300L, 30L, 330L, null)
+                createNewRow(iid, 100, 10, 110, null),
+                createNewRow(iid, 101, 10, 111, null),
+                createNewRow(iid, 111, 11, 122, null),
+                createNewRow(iid, 300, 30, 330, null)
         );
     }
 
@@ -323,9 +323,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
         runAlter("ALTER TABLE c DROP COLUMN c1");
         expectFullRows(
                 cid,
-                createNewRow(cid, 1L),
-                createNewRow(cid, 2L),
-                createNewRow(cid, 3L)
+                createNewRow(cid, 1),
+                createNewRow(cid, 2),
+                createNewRow(cid, 3)
         );
     }
 
@@ -335,8 +335,8 @@ public class AlterTableBasicIT extends AlterTableITBase {
         runAlter("ALTER TABLE c DROP COLUMN c1");
         expectFullRows(
                 cid,
-                createNewRow(cid, 1L),
-                createNewRow(cid, 2L)
+                createNewRow(cid, 1),
+                createNewRow(cid, 2)
         );
     }
 
@@ -346,9 +346,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
         runAlter("ALTER TABLE o DROP COLUMN o1");
         expectFullRows(
                 oid,
-                createNewRow(oid, 10L, 1L),
-                createNewRow(oid, 11L, 1L),
-                createNewRow(oid, 30L, 3L)
+                createNewRow(oid, 10, 1),
+                createNewRow(oid, 11, 1),
+                createNewRow(oid, 30, 3)
         );
     }
 
@@ -358,10 +358,10 @@ public class AlterTableBasicIT extends AlterTableITBase {
         runAlter("ALTER TABLE i DROP COLUMN i1");
         expectFullRows(
                 iid,
-                createNewRow(iid, 100L, 10L),
-                createNewRow(iid, 101L, 10L),
-                createNewRow(iid, 111L, 11L),
-                createNewRow(iid, 300L, 30L)
+                createNewRow(iid, 100, 10),
+                createNewRow(iid, 101, 10),
+                createNewRow(iid, 111, 11),
+                createNewRow(iid, 300, 30)
         );
     }
 
@@ -375,9 +375,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
         expectIndexes(cid, "PRIMARY");
         expectFullRows(
                 cid,
-                createNewRow(cid,  1L),
-                createNewRow(cid,  2L),
-                createNewRow(cid,  3L)
+                createNewRow(cid,  1),
+                createNewRow(cid,  2),
+                createNewRow(cid,  3)
         );
     }
 
@@ -386,20 +386,20 @@ public class AlterTableBasicIT extends AlterTableITBase {
         cid = createTable(SCHEMA, "c", "id int not null primary key, c1 int, c2 int");
         createIndex(SCHEMA, "c", "c1_c2", "c1", "c2");
         writeRows(
-                createNewRow(cid,  1L,  11L,  12L),
-                createNewRow(cid,  2L,  21L,  22L),
-                createNewRow(cid,  3L,  31L,  32L),
-                createNewRow(cid, 10L, 101L, 102L)
+                createNewRow(cid,  1,  11,  12),
+                createNewRow(cid,  2,  21,  22),
+                createNewRow(cid,  3,  31,  32),
+                createNewRow(cid, 10, 101, 102)
         );
 
         runAlter("ALTER TABLE c DROP COLUMN c1");
 
         expectRows(
                 scanAllIndexRequest(getUserTable(SCHEMA, "c").getIndex("c1_c2")),
-                createNewRow(cid, UNDEF, 12L),
-                createNewRow(cid, UNDEF, 22L),
-                createNewRow(cid, UNDEF, 32L),
-                createNewRow(cid, UNDEF, 102L)
+                createNewRow(cid, UNDEF, 12),
+                createNewRow(cid, UNDEF, 22),
+                createNewRow(cid, UNDEF, 32),
+                createNewRow(cid, UNDEF, 102)
         );
     }
 
@@ -423,9 +423,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
         QueryBindings queryBindings = queryContext.createBindings();
         compareRows(
                 new RowBase[] {
-                        testRow(indexRowType, "a", 110L, 1L, 10L, 100L),
-                        testRow(indexRowType, "a", 111L, 1L, 10L, 101L),
-                        testRow(indexRowType, "a", 122L, 1L, 11L, 111L),
+                        testRow(indexRowType, "a", 110, 1, 10, 100),
+                        testRow(indexRowType, "a", 111, 1, 10, 101),
+                        testRow(indexRowType, "a", 122, 1, 11, 111),
                 },
                 API.cursor(
                         API.indexScan_Default(indexRowType, false, IndexKeyRange.unbounded(indexRowType)),
@@ -454,9 +454,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
         runAlter("ALTER TABLE c ALTER COLUMN c1 SET DATA TYPE int");
         expectFullRows(
                 cid,
-                createNewRow(cid, 1L, 10L),
-                createNewRow(cid, 2L, 20L),
-                createNewRow(cid, 3L, 30L)
+                createNewRow(cid, 1, 10),
+                createNewRow(cid, 2, 20),
+                createNewRow(cid, 3, 30)
         );
     }
 
@@ -467,15 +467,15 @@ public class AlterTableBasicIT extends AlterTableITBase {
         runAlter("ALTER TABLE c ALTER COLUMN c1 SET DATA TYPE int");
         expectFullRows(
                 cid,
-                createNewRow(cid, 1L, 10L),
-                createNewRow(cid, 2L, 20L),
-                createNewRow(cid, 3L, 30L)
+                createNewRow(cid, 1, 10),
+                createNewRow(cid, 2, 20),
+                createNewRow(cid, 3, 30)
         );
         expectRows(
                 scanAllIndexRequest(getUserTable(SCHEMA, "c").getIndex("c1")),
-                createNewRow(cid, UNDEF, 10L),
-                createNewRow(cid, UNDEF, 20L),
-                createNewRow(cid, UNDEF, 30L)
+                createNewRow(cid, UNDEF, 10),
+                createNewRow(cid, UNDEF, 20),
+                createNewRow(cid, UNDEF, 30)
         );
     }
 
@@ -483,10 +483,10 @@ public class AlterTableBasicIT extends AlterTableITBase {
     public void addDropAndAlterColumnSingleTableGroup() throws StandardException {
         cid = createTable(SCHEMA, "c", "c1 int not null primary key, c2 char(5), c3 int, c4 char(1)");
         writeRows(
-                createNewRow(cid, 1L, "one", 10, "A"),
-                createNewRow(cid, 2L, "two", 20, "B"),
-                createNewRow(cid, 3L, "three", 30, "C"),
-                createNewRow(cid, 10L, "ten", 100, "D")
+                createNewRow(cid, 1, "one", 10, "A"),
+                createNewRow(cid, 2, "two", 20, "B"),
+                createNewRow(cid, 3, "three", 30, "C"),
+                createNewRow(cid, 10, "ten", 100, "D")
         );
 
         // Our parser doesn't (yet) support multi-action alters, manually build parameters
@@ -515,10 +515,10 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         expectFullRows(
                 cid,
-                createNewRow(cid, 1L, "10", "A", null),
-                createNewRow(cid, 2L, "20", "B", null),
-                createNewRow(cid, 3L, "30", "C", null),
-                createNewRow(cid, 10L, "100", "D", null)
+                createNewRow(cid, 1, "10", "A", null),
+                createNewRow(cid, 2, "20", "B", null),
+                createNewRow(cid, 3, "30", "C", null),
+                createNewRow(cid, 10, "100", "D", null)
         );
     }
 
@@ -539,9 +539,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
     public void alterColumnNotNullToNull() throws StandardException {
         cid = createTable(SCHEMA, "c", "id int not null primary key, c1 char(5) not null");
         writeRows(
-                createNewRow(cid, 1L, "10"),
-                createNewRow(cid, 2L, "20"),
-                createNewRow(cid, 3L, "30")
+                createNewRow(cid, 1, "10"),
+                createNewRow(cid, 2, "20"),
+                createNewRow(cid, 3, "30")
         );
         runAlter(ChangeLevel.METADATA, "ALTER TABLE c ALTER COLUMN c1 NULL");
         // Just check metadata
@@ -554,9 +554,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
     public void alterColumnNullToNotNull() throws StandardException {
         cid = createTable(SCHEMA, "c", "id int not null primary key, c1 char(5) null");
         writeRows(
-                createNewRow(cid, 1L, "10"),
-                createNewRow(cid, 2L, "20"),
-                createNewRow(cid, 3L, "30")
+                createNewRow(cid, 1, "10"),
+                createNewRow(cid, 2, "20"),
+                createNewRow(cid, 3, "30")
         );
         runAlter(ChangeLevel.METADATA_NOT_NULL, "ALTER TABLE c ALTER COLUMN c1 NOT NULL");
         // Just check metadata
@@ -569,9 +569,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
     public void dropUniqueAddIndexSameName() {
         cid = createTable(SCHEMA, "c", "id int not null primary key, c1 char(1), c2 char(1), constraint foo unique(c1)");
         writeRows(
-                createNewRow(cid, 1L, "A", "3"),
-                createNewRow(cid, 2L, "B", "2"),
-                createNewRow(cid, 3L, "C", "1")
+                createNewRow(cid, 1, "A", "3"),
+                createNewRow(cid, 2, "B", "2"),
+                createNewRow(cid, 3, "C", "1")
         );
 
         AkibanInformationSchema ais = AISCloner.clone(ddl().getAIS(session()));
@@ -657,9 +657,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         expectFullRows(
                 oid,
-                createNewRow(oid, 10L, 1L, null),
-                createNewRow(oid, 11L, 1L, null),
-                createNewRow(oid, 30L, 3L, null)
+                createNewRow(oid, 10, 1, null),
+                createNewRow(oid, 11, 1, null),
+                createNewRow(oid, 30, 3, null)
         );
 
         expectIndexes(oid, "PRIMARY", "x", "y");
@@ -673,9 +673,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         expectRows(
                 scanAllIndexRequest(getUserTable(SCHEMA, "o").getIndex("y")),
-                createNewRow(oid, UNDEF, 1L, UNDEF),
-                createNewRow(oid, UNDEF, 1L, UNDEF),
-                createNewRow(oid, UNDEF, 3L, UNDEF)
+                createNewRow(oid, UNDEF, 1, UNDEF),
+                createNewRow(oid, UNDEF, 1, UNDEF),
+                createNewRow(oid, UNDEF, 3, UNDEF)
         );
     }
 
@@ -999,9 +999,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         expectFullRows(
                 cid,
-                createNewRow(cid, 10L, 1L),
-                createNewRow(cid, 20L, 2L),
-                createNewRow(cid, 30L, 3L)
+                createNewRow(cid, 10, 1),
+                createNewRow(cid, 20, 2),
+                createNewRow(cid, 30, 3)
         );
 
         // Let base class check index contents
@@ -1014,10 +1014,10 @@ public class AlterTableBasicIT extends AlterTableITBase {
         cid = createTable(SCHEMA, C_TABLE, "id int not null primary key, state varchar(2)");
         createIndex(SCHEMA, C_TABLE, "state", "state");
         NewRow[] rows = {
-                createNewRow(cid, 1L, "AZ"),
-                createNewRow(cid, 2L, "NY"),
-                createNewRow(cid, 3L, "MA"),
-                createNewRow(cid, 4L, "WA")
+                createNewRow(cid, 1, "AZ"),
+                createNewRow(cid, 2, "NY"),
+                createNewRow(cid, 3, "MA"),
+                createNewRow(cid, 4, "WA")
         };
         writeRows(rows);
         runAlter(ChangeLevel.TABLE, "ALTER TABLE c ALTER COLUMN state SET DATA TYPE varchar(3)");

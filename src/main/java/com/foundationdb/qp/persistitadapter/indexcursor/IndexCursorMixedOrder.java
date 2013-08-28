@@ -145,7 +145,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
                         }
                     }
                     if (startKey != null) {
-                        startKey.append(fieldValue, akTypeAt(field), tInstanceAt(field), collatorAt(field));
+                        startKey.append(fieldValue, tInstanceAt(field));
                         loBoundColumns = field + 1;
                     }
                 } else {
@@ -304,12 +304,10 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             loBoundColumns = keyRange.boundColumns();
             List<IndexColumn> indexColumns = index.getAllColumns();
             int nColumns = indexColumns.size();
-            collators = sortKeyAdapter.createAkCollators(nColumns);
-            akTypes = sortKeyAdapter.createAkTypes(nColumns);
             tInstances = sortKeyAdapter.createTInstances(nColumns);
             for (int f = 0; f < nColumns; f++) {
                 Column column = indexColumns.get(f).getColumn();
-                sortKeyAdapter.setColumnMetadata(column, f, akTypes, collators, tInstances);
+                sortKeyAdapter.setColumnMetadata(column, f, tInstances);
             }
             if (index.isUnique()) {
                 startKey = adapter.takeIndexRow(keyRange.indexRowType());
@@ -390,8 +388,8 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
                     startExpressions = hiExpressions;
                     endExpressions = loExpressions;
                 }
-                startKey.append(sortKeyAdapter.get(startExpressions, f), akTypeAt(f), tInstanceAt(f), collatorAt(f));
-                endKey.append(sortKeyAdapter.get(endExpressions, f), akTypeAt(f), tInstanceAt(f), collatorAt(f));
+                startKey.append(sortKeyAdapter.get(startExpressions, f), tInstanceAt(f));
+                endKey.append(sortKeyAdapter.get(endExpressions, f), tInstanceAt(f));
             }
             loInclusive = keyRange.loInclusive();
             hiInclusive = keyRange.hiInclusive();
@@ -440,14 +438,6 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
         return hiBoundColumns == 0;
     }
 
-    public AkCollator collatorAt(int field) {
-        return collators == null ? null : collators[field];
-    }
-    
-    public AkType akTypeAt(int field) {
-        return akTypes == null ? null : akTypes[field];
-    }
-    
     public TInstance tInstanceAt(int field) {
         return tInstances == null ? null : tInstances[field];
     }
@@ -465,8 +455,8 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     private boolean hiInclusive;
     private boolean more;
     private boolean justOpened;
-    private AkCollator[] collators;
-    private AkType[] akTypes;
+    //private AkCollator[] collators;
+    //private AkType[] akTypes;
     private TInstance[] tInstances;
     private boolean[] ascending;
     // Used for checking first and last row in case of unique indexes. These indexes have some key state in

@@ -28,7 +28,6 @@ import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.RowBase;
-import com.foundationdb.qp.row.RowValuesHolder;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.*;
 import com.foundationdb.qp.rowtype.Schema;
@@ -37,8 +36,6 @@ import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.test.it.ITBase;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.util.ValueHolder;
 import com.foundationdb.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.foundationdb.server.types3.pvalue.PUnderlying;
 import com.foundationdb.server.types3.pvalue.PValue;
@@ -338,55 +335,32 @@ public class OperatorITBase extends ITBase
         return new TestRow(rowType, fields, hKeyString);
     }
 
-    protected TestRow row(RowType rowType, Object[] fields, AkType[] types)
-    {
-        return new TestRow(rowType, new RowValuesHolder(fields, types), null);
-    }
-
     protected RowBase row(IndexRowType indexRowType, Object... values) {
 /*
         try {
 */
-            ValuesHolderRow row = new ValuesHolderRow(indexRowType, usingPValues());
+            ValuesHolderRow row = new ValuesHolderRow(indexRowType);
             for (int i = 0; i < values.length; i++) {
                 Object value = values[i];
-                if (row.usingPValues()) {
-                    PValue pvalue = row.pvalueAt(i);
-                    if (value == null) {
-                        pvalue.putNull();
-                    } else if (value instanceof Integer) {
-                        if (PValueSources.pUnderlying(pvalue) == PUnderlying.INT_64)
-                            pvalue.putInt64(((Integer) value).longValue());
-                        else
-                            pvalue.putInt32((Integer) value);
-                    } else if (value instanceof Long) {
-                        if (PValueSources.pUnderlying(pvalue) == PUnderlying.INT_32)
-                            pvalue.putInt32(((Long) value).intValue());
-                        else
-                            pvalue.putInt64((Long) value);
-                    } else if (value instanceof String) {
-                        pvalue.putString((String) value, null);
-                    } else if (value instanceof BigDecimal) {
-                        pvalue.putObject(new MBigDecimalWrapper((BigDecimal) value));
-                    } else {
-                        fail();
-                    }
-                }
-                else {
-                    ValueHolder valueHolder = row.holderAt(i);
-                    if (value == null) {
-                        valueHolder.putRawNull();
-                    } else if (value instanceof Integer) {
-                        valueHolder.putInt((Integer) value);
-                    } else if (value instanceof Long) {
-                        valueHolder.putLong((Long) value);
-                    } else if (value instanceof String) {
-                        valueHolder.putString((String) value);
-                    } else if (value instanceof BigDecimal) {
-                        valueHolder.putDecimal((BigDecimal) value);
-                    } else {
-                        fail();
-                    }
+                PValue pvalue = row.pvalueAt(i);
+                if (value == null) {
+                    pvalue.putNull();
+                } else if (value instanceof Integer) {
+                    if (PValueSources.pUnderlying(pvalue) == PUnderlying.INT_64)
+                        pvalue.putInt64(((Integer) value).longValue());
+                    else
+                        pvalue.putInt32((Integer) value);
+                } else if (value instanceof Long) {
+                    if (PValueSources.pUnderlying(pvalue) == PUnderlying.INT_32)
+                        pvalue.putInt32(((Long) value).intValue());
+                    else
+                        pvalue.putInt64((Long) value);
+                } else if (value instanceof String) {
+                    pvalue.putString((String) value, null);
+                } else if (value instanceof BigDecimal) {
+                    pvalue.putObject(new MBigDecimalWrapper((BigDecimal) value));
+                } else {
+                    fail();
                 }
             }
             return row;
@@ -504,7 +478,7 @@ public class OperatorITBase extends ITBase
             } else if(type != newType) {
                 fail("Multiple row types: " + type + " vs " + newType);
             }
-            bindableRows.add(BindableRow.of(row, usingPValues()));
+            bindableRows.add(BindableRow.of(row));
         }
         return API.valuesScan_Default(bindableRows, type);
     }

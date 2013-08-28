@@ -21,18 +21,12 @@ import com.foundationdb.qp.exec.UpdatePlannable;
 import com.foundationdb.qp.exec.UpdateResult;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
-import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.RowBase;
-import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types3.Types3Switch;
+
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
 import static com.foundationdb.qp.operator.API.cursor;
 import static com.foundationdb.qp.operator.API.delete_Default;
@@ -40,7 +34,6 @@ import static com.foundationdb.qp.operator.API.filter_Default;
 import static com.foundationdb.qp.operator.API.groupScan_Default;
 import static com.foundationdb.qp.operator.API.indexScan_Default;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 public class DeleteIT extends OperatorITBase {
     @Test
@@ -100,7 +93,7 @@ public class DeleteIT extends OperatorITBase {
 
     private void doDelete() {
         Row[] rows = {
-                row(customerRowType, new Object[]{2, "abc"}, new AkType[]{AkType.INT, AkType.VARCHAR})
+                row(customerRowType, new Object[]{2, "abc"})
         };
         UpdatePlannable insertPlan = delete_Default(rowsToValueScan(rows));
         UpdateResult result = insertPlan.run(queryContext, queryBindings);

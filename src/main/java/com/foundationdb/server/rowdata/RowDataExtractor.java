@@ -17,26 +17,19 @@
 
 package com.foundationdb.server.rowdata;
 
-import com.foundationdb.server.types.conversion.Converters;
-import com.foundationdb.server.types.ToObjectValueTarget;
+import com.foundationdb.server.types3.pvalue.PValueSources;
 
 public final class RowDataExtractor {
 
     public Object get(FieldDef fieldDef) {
         int f = fieldDef.getFieldIndex();
-        RowDataValueSource source = sources[f];
+        RowDataPValueSource source = sources[f];
         if (source == null) {
-            source = new RowDataValueSource();
+            source = new RowDataPValueSource();
             sources[f] = source;
         }
-        ToObjectValueTarget target = targets[f];
-        if (target == null) {
-            target = new ToObjectValueTarget();
-            targets[f] = target;
-        }
         source.bind(fieldDef, rowData);
-        target.expectType(fieldDef.getType().akType());
-        return Converters.convert(source, target).lastConvertedValue();
+        return PValueSources.toObject(source);
     }
 
     public RowDataExtractor(RowData rowData, RowDef rowDef)
@@ -45,11 +38,9 @@ public final class RowDataExtractor {
         assert rowData != null;
         assert rowDef != null;
         assert rowData.getRowDefId() == rowDef.getRowDefId();
-        sources = new RowDataValueSource[rowDef.getFieldCount()];
-        targets = new ToObjectValueTarget[rowDef.getFieldCount()];
+        sources = new RowDataPValueSource[rowDef.getFieldCount()];
     }
 
     private final RowData rowData;
-    private final RowDataValueSource[] sources;
-    private final ToObjectValueTarget[] targets;
+    private final RowDataPValueSource[] sources;
 }

@@ -25,16 +25,10 @@ import com.foundationdb.ais.model.TableName;
 
 import com.foundationdb.server.PersistitKeyPValueSource;
 import com.foundationdb.server.PersistitKeyPValueTarget;
-import com.foundationdb.server.PersistitKeyValueSource;
-import com.foundationdb.server.PersistitKeyValueTarget;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.FromObjectValueSource;
-import com.foundationdb.server.types.ToObjectValueTarget;
-import com.foundationdb.server.types.conversion.Converters;
 import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.server.types3.TExecutionContext;
 import com.foundationdb.server.types3.TPreptimeValue;
 import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
@@ -179,77 +173,45 @@ public class IndexStatisticsYamlLoader
             firstSpatialColumn = index.firstSpatialArgument();
         }
         key.clear();
-        if (Types3Switch.ON) {
-            PersistitKeyPValueTarget keyTarget = new PersistitKeyPValueTarget();
-            keyTarget.attach(key);
-            for (int i = 0; i < columnCount; i++) {
-                Object value = values.get(i);
-                if (value instanceof byte[]) {
-                    appendRawSegment((byte[])value);
-                    continue;
-                }
-                TInstance tInstance;
-                AkType akType; 
-                AkCollator collator;
-                if (i == firstSpatialColumn) {
-                    tInstance = MNumeric.BIGINT.instance(true);
-                    akType = AkType.LONG;
-                    collator = null;
-                }
-                else {
-                    int offset = i;
-                    if (i > firstSpatialColumn) {
-                        offset += index.dimensions() - 1;
-                    }
-                    Column column = index.getKeyColumns().get(firstColumn + offset).getColumn();
-                    tInstance = column.tInstance();
-                    akType = column.getType().akType();
-                    collator = column.getCollator();
-                }
-                // For example, for DECIMAL, value will be a
-                // String, pvalue will be a its VARCHAR, and pvalue2
-                // will be a BigDecimalWrapper, which only
-                // MBigDecimal.writeCollating knows how to unwrap into
-                // a Key.
-                TPreptimeValue pvalue = PValueSources.fromObject(value, akType);
-                TExecutionContext context = new TExecutionContext(null,
-                                                                  Collections.singletonList(pvalue.instance()),
-                                                                  tInstance,
-                                                                  null, null, null, null);
-                PValue pvalue2 = new PValue(tInstance);
-                tInstance.typeClass().fromObject(context, pvalue.value(), pvalue2);
-                tInstance.writeCollating(pvalue2, keyTarget);
+        PersistitKeyPValueTarget keyTarget = new PersistitKeyPValueTarget();
+        keyTarget.attach(key);
+        for (int i = 0; i < columnCount; i++) {
+            Object value = values.get(i);
+            if (value instanceof byte[]) {
+                appendRawSegment((byte[])value);
+                continue;
             }
-        }
-        else {
-            FromObjectValueSource valueSource = new FromObjectValueSource();
-            PersistitKeyValueTarget keyTarget = new PersistitKeyValueTarget();
-            keyTarget.attach(key);
-            for (int i = 0; i < columnCount; i++) {
-                Object value = values.get(i);
-                if (value instanceof byte[]) {
-                    appendRawSegment((byte[])value);
-                    continue;
-                }
-                AkType akType; 
-                AkCollator collator;
-                if (i == firstSpatialColumn) {
-                    akType = AkType.LONG;
-                    collator = null;
-                }
-                else {
-                    int offset = i;
-                    if (i > firstSpatialColumn) {
-                        offset += index.dimensions() - 1;
-                    }
-                    Column column = index.getKeyColumns().get(firstColumn + offset).getColumn();
-                    akType = column.getType().akType();
-                    collator = column.getCollator();
-                }
-                valueSource.setReflectively(value);
-                keyTarget.expectingType(akType, collator);
-                Converters.convert(valueSource, keyTarget);
+            TInstance tInstance;
+            if (i == firstSpatialColumn) {
+                tInstance = MNumeric.BIGINT.instance(true);
             }
+            else {
+                int offset = i;
+                if (i > firstSpatialColumn) {
+                    offset += index.dimensions() - 1;
+                }
+                Column column = index.getKeyColumns().get(firstColumn + offset).getColumn();
+                tInstance = column.tInstance();
+                column.getCollator();
+            }
+            // For example, for DECIMAL, value will be a
+            // String, pvalue will be a its VARCHAR, and pvalue2
+            // will be a BigDecimalWrapper, which only
+            // MBigDecimal.writeCollating knows how to unwrap into
+            // a Key.
+            
+            TPreptimeValue pvalue= null;
+            if (value == null)
+                pvalue = PValueSources.fromObject(value, tInstance);
+            else
+                pvalue = PValueSources.fromObject(value, (TInstance)null);
+            TExecutionContext context = new TExecutionContext(null,
+                                                              Collections.singletonList(pvalue.instance()),
+                                                              tInstance,
+                                                              null, null, null, null);
+            PValue pvalue2 = new PValue(tInstance);
+            tInstance.typeClass().fromObject(context, pvalue.value(), pvalue2);
+            tInstance.writeCollating(pvalue2, keyTarget);
         }
         return key;
     }
@@ -333,91 +295,51 @@ public class IndexStatisticsYamlLoader
             firstSpatialColumn = index.firstSpatialArgument();
         }
         List<Object> result = new ArrayList<>(columnCount);
-        if (Types3Switch.ON) {
-            for (int i = 0; i < columnCount; i++) {
-                TInstance tInstance;
-                AkType akType; 
-                boolean useRawSegment;
-                if (i == firstSpatialColumn) {
-                    tInstance = MNumeric.BIGINT.instance(true);
-                    akType = AkType.LONG;
-                    useRawSegment = false;
+
+        for (int i = 0; i < columnCount; i++) {
+            TInstance tInstance;
+            AkType akType; 
+            boolean useRawSegment;
+            if (i == firstSpatialColumn) {
+                tInstance = MNumeric.BIGINT.instance(true);
+                akType = AkType.LONG;
+                useRawSegment = false;
+            }
+            else {
+                int offset = i;
+                if (i > firstSpatialColumn) {
+                    offset += index.dimensions() - 1;
+                }
+                Column column = index.getKeyColumns().get(firstColumn + offset).getColumn();
+                tInstance = column.tInstance();
+                akType = column.getType().akType();
+                AkCollator collator = column.getCollator();
+                useRawSegment = ((collator != null) && !collator.isRecoverable());
+            }
+            Object keyValue;
+            if (useRawSegment) {
+                keyValue = getRawSegment(key, i);
+            }
+            else {
+                PersistitKeyPValueSource keySource = new PersistitKeyPValueSource(tInstance);
+                keySource.attach(key, i, tInstance);
+                if (convertToType(akType)) {
+                    keyValue = PValueSources.toObject(keySource, akType);
+                }
+                else if (keySource.isNull()) {
+                    keyValue = null;
                 }
                 else {
-                    int offset = i;
-                    if (i > firstSpatialColumn) {
-                        offset += index.dimensions() - 1;
-                    }
-                    Column column = index.getKeyColumns().get(firstColumn + offset).getColumn();
-                    tInstance = column.tInstance();
-                    akType = column.getType().akType();
-                    AkCollator collator = column.getCollator();
-                    useRawSegment = ((collator != null) && !collator.isRecoverable());
+                    StringBuilder str = new StringBuilder();
+                    tInstance.format(keySource, AkibanAppender.of(str));
+                    keyValue = str.toString();
                 }
-                Object keyValue;
-                if (useRawSegment) {
+                if (willUseBinaryTag(keyValue)) {
+                    // Otherwise it would be ambiguous when reading.
                     keyValue = getRawSegment(key, i);
                 }
-                else {
-                    PersistitKeyPValueSource keySource = new PersistitKeyPValueSource(tInstance);
-                    keySource.attach(key, i, tInstance);
-                    if (convertToType(akType)) {
-                        keyValue = PValueSources.toObject(keySource, akType);
-                    }
-                    else if (keySource.isNull()) {
-                        keyValue = null;
-                    }
-                    else {
-                        StringBuilder str = new StringBuilder();
-                        tInstance.format(keySource, AkibanAppender.of(str));
-                        keyValue = str.toString();
-                    }
-                    if (willUseBinaryTag(keyValue)) {
-                        // Otherwise it would be ambiguous when reading.
-                        keyValue = getRawSegment(key, i);
-                    }
-                }
-                result.add(keyValue);
             }
-        }
-        else {
-            PersistitKeyValueSource keySource = new PersistitKeyValueSource();
-            ToObjectValueTarget valueTarget = new ToObjectValueTarget();
-            for (int i = 0; i < columnCount; i++) {
-                AkType akType; 
-                AkCollator collator;
-                boolean useRawSegment;
-                if (i == firstSpatialColumn) {
-                    akType = AkType.LONG;
-                    collator = null;
-                    useRawSegment = false;
-                }
-                else {
-                    int offset = i;
-                    if (i > firstSpatialColumn) {
-                        offset += index.dimensions() - 1;
-                    }
-                    Column column = index.getKeyColumns().get(firstColumn + offset).getColumn();
-                    akType = column.getType().akType();
-                    collator = column.getCollator();
-                    useRawSegment = ((collator != null) && !collator.isRecoverable());
-                }
-                Object keyValue;
-                if (useRawSegment) {
-                    keyValue = getRawSegment(key, i);
-                }
-                else {
-                    keySource.attach(key, i, akType, collator);
-                    valueTarget.expectType(convertToType(akType) ? akType : AkType.VARCHAR);
-                    Converters.convert(keySource, valueTarget);
-                    keyValue = valueTarget.lastConvertedValue();
-                    if (willUseBinaryTag(keyValue)) {
-                        // Otherwise it would be ambiguous when reading.
-                        keyValue = getRawSegment(key, i);
-                    }
-                }
-                result.add(keyValue);
-            }
+            result.add(keyValue);
         }
         return result;
     }

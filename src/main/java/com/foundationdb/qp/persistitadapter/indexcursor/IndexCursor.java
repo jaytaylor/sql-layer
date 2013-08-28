@@ -30,7 +30,6 @@ import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
 import com.persistit.Key;
 import com.persistit.Key.Direction;
-import com.persistit.exception.PersistitException;
 
 public abstract class IndexCursor implements BindingsAwareCursor
 {
@@ -128,13 +127,10 @@ public abstract class IndexCursor implements BindingsAwareCursor
                                      IndexKeyRange keyRange,
                                      API.Ordering ordering,
                                      IterationHelper iterationHelper,
-                                     boolean usePValues,
                                      boolean openAllSubCursors)
     {
-        SortKeyAdapter<?, ?> adapter =
-            usePValues
-            ? PValueSortKeyAdapter.INSTANCE
-            : OldExpressionsSortKeyAdapter.INSTANCE;
+        SortKeyAdapter<?, ?> adapter =PValueSortKeyAdapter.INSTANCE;
+
         return
             keyRange != null && keyRange.spatial()
             ? keyRange.hi() == null

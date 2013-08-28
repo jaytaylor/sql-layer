@@ -18,8 +18,6 @@
 package com.foundationdb.server.test.it;
 
 import com.foundationdb.ais.model.Index;
-import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.row.Row;
@@ -30,11 +28,9 @@ import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.test.ApiTestBase;
 import com.foundationdb.server.test.it.qp.TestRow;
-import com.foundationdb.server.types.ToObjectValueTarget;
 import com.foundationdb.server.types3.TClass;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSources;
 import com.foundationdb.util.ShareHolder;
 
 import java.util.ArrayList;
@@ -128,38 +124,17 @@ public abstract class ITBase extends ApiTestBase {
         if (space != null) {
             nFields = nFields - space.dimensions() + 1;
         }
-        if (usingPValues()) {
-            for (int i = 0; i < nFields; i++) {
-                PValueSource expectedField = expected.pvalue(i);
-                PValueSource actualField = actual.pvalue(i);
-                TInstance expectedType = expected.rowType().typeInstanceAt(i);
-                TInstance actualType = actual.rowType().typeInstanceAt(i);
-                assertTrue(expectedType + " != " + actualType, expectedType.equalsExcludingNullable(actualType));
-                int c = TClass.compare(expectedType, expectedField, actualType, actualField);
-                if (c != 0)
-                    return false;
-            }
-            return true;
+        for (int i = 0; i < nFields; i++) {
+            PValueSource expectedField = expected.pvalue(i);
+            PValueSource actualField = actual.pvalue(i);
+            TInstance expectedType = expected.rowType().typeInstanceAt(i);
+            TInstance actualType = actual.rowType().typeInstanceAt(i);
+            assertTrue(expectedType + " != " + actualType, expectedType.equalsExcludingNullable(actualType));
+            int c = TClass.compare(expectedType, expectedField, actualType, actualField);
+            if (c != 0)
+                return false;
         }
-        else {
-            ToObjectValueTarget target = new ToObjectValueTarget();
-            for (int i = 0; equal && i < nFields; i++) {
-                Object expectedField = target.convertFromSource(expected.eval(i));
-                Object actualField = target.convertFromSource(actual.eval(i));
-                if (expectedField == null && actualField == null) {
-                    equal = true;
-                } else if (expectedField == null || actualField == null) {
-                    equal = false;
-                } else if (collator(collators, i) != null &&
-                           expectedField instanceof String &&
-                           actualField instanceof String) {
-                    collator(collators, i).compare((String) expectedField, (String) actualField);
-                } else {
-                    equal = expectedField.equals(actualField);
-                }
-            }
-            return equal;
-        }
+        return true;
     }
 
     private Space space(RowType rowType)

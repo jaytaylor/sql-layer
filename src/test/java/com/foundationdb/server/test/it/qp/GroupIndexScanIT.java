@@ -28,9 +28,6 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.server.test.it.ITBase;
-import com.foundationdb.server.types.ToObjectValueTarget;
-import com.foundationdb.server.types.ValueSource;
-import com.foundationdb.server.types3.Types3Switch;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -137,7 +134,6 @@ public final class GroupIndexScanIT extends ITBase {
         Cursor cursor =  API.cursor(plan, queryContext, queryBindings);
         cursor.openTopLevel();
         try {
-            ToObjectValueTarget target = new ToObjectValueTarget();
             for (Row row = cursor.next(); row != null; row = cursor.next()) {
                 RowType rowType = row.rowType();
                 int fields =
@@ -147,13 +143,7 @@ public final class GroupIndexScanIT extends ITBase {
                 Object[] rowArray = new Object[fields];
                 for (int i=0; i < rowArray.length; ++i) {
                     Object fromRow;
-                    if (Types3Switch.ON) {
-                        fromRow = getObject(row.pvalue(i));
-                    }
-                    else {
-                        ValueSource source = row.eval(i);
-                        fromRow = target.convertFromSource(source);
-                    }
+                    fromRow = getObject(row.pvalue(i));
                     rowArray[i] = fromRow;
                 }
                 actualResults.add(Arrays.asList(rowArray));

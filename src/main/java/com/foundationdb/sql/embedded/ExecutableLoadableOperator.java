@@ -25,7 +25,6 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.SparseArrayQueryBindings;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.parser.CallStatementNode;
 import com.foundationdb.sql.server.ServerCallContextStack;
@@ -94,11 +93,11 @@ class ExecutableLoadableOperator extends ExecutableQueryOperatorStatement
         if (!invocation.parametersInOrder()) {
             if (invocation.hasParameters()) {
                 QueryBindings calleeBindings = new SparseArrayQueryBindings();
-                invocation.copyParameters(bindings, calleeBindings, Types3Switch.ON);
+                invocation.copyParameters(bindings, calleeBindings);
                 bindings = calleeBindings;
             }
             else {
-                invocation.copyParameters(null, bindings, Types3Switch.ON);
+                invocation.copyParameters(null, bindings);
             }
         }
         return bindings;

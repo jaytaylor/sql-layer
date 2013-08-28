@@ -19,13 +19,11 @@ package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.PValuesRow;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.ValuesRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.ValuesRowType;
 import com.foundationdb.server.explain.CompoundExplainer;
 import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.std.CountOperatorExplainer;
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types3.pvalue.PValue;
 import com.foundationdb.util.ArgumentValidation;
@@ -119,15 +117,12 @@ class Count_Default extends Operator
 
     // Count_Default interface
 
-    public Count_Default(Operator inputOperator, RowType countType, boolean usePValues)
+    public Count_Default(Operator inputOperator, RowType countType)
     {
         ArgumentValidation.notNull("countType", countType);
         this.inputOperator = inputOperator;
         this.countType = countType;
-        this.usePValues = usePValues;
-        this.resultType = usePValues
-            ? countType.schema().newValuesType(MNumeric.BIGINT.instance(false))
-            : countType.schema().newValuesType(AkType.LONG);
+        this.resultType = countType.schema().newValuesType(MNumeric.BIGINT.instance(false));
     }
     
     // Class state
@@ -141,7 +136,6 @@ class Count_Default extends Operator
     private final Operator inputOperator;
     private final RowType countType;
     private final ValuesRowType resultType;
-    private final boolean usePValues;
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
@@ -185,9 +179,7 @@ class Count_Default extends Operator
                     row = input.next();
                     if (row == null) {
                         close();
-                        row = usePValues
-                                ? new PValuesRow(resultType, new PValue(MNumeric.BIGINT.instance(false), count))
-                                : new ValuesRow(resultType, new Object[] { count });
+                        row = new PValuesRow(resultType, new PValue(MNumeric.BIGINT.instance(false), count));
                     } else if (row.rowType() == countType) {
                         row = null;
                         count++;

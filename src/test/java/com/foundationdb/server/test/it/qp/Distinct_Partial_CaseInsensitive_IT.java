@@ -81,7 +81,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
     @Test
     public void testCaseSensitiveUsingSortTree()
     {
-        Operator project = project_Default(
+        Operator project = project_DefaultTest(
             groupScan_Default(group),
             tRowType,
             Arrays.asList(field(tRowType, 1)));
@@ -111,7 +111,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
     @Test
     public void testCaseInsensitiveUsingSortTree()
     {
-        Operator project = project_Default(
+        Operator project = project_DefaultTest(
             groupScan_Default(group),
             tRowType,
             Arrays.asList(field(tRowType, 2)));
@@ -120,7 +120,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
         ordering.append(field(project.rowType(), 0), true, caseInsensitiveCollator);
         List<ExpressionGenerator> convertToUpper = Arrays.asList(toUpper(field(projectRowType, 0)));
         Operator plan =
-            project_Default(
+            project_DefaultTest(
                 sort_General(
                     project,
                     projectRowType,
@@ -139,7 +139,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
     @Test
     public void testNonStringUsingSortTree()
     {
-        Operator project = project_Default(
+        Operator project = project_DefaultTest(
             groupScan_Default(group),
             tRowType,
             Arrays.asList(field(tRowType, 3)));
@@ -161,7 +161,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
     @Test
     public void testMultipleColumnsUsingSortTree()
     {
-        Operator project = project_Default(
+        Operator project = project_DefaultTest(
             groupScan_Default(group),
             tRowType,
             Arrays.asList(field(tRowType, 1),
@@ -177,7 +177,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
                           toUpper(field(projectRowType, 1)),
                           field(projectRowType, 2));
         Operator plan =
-            project_Default(
+            project_DefaultTest(
                 sort_General(
                     project,
                     projectRowType,
@@ -202,7 +202,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
     @Test
     public void testCaseSensitiveUsingSortInsertionLimited()
     {
-        Operator project = project_Default(
+        Operator project = project_DefaultTest(
             groupScan_Default(group),
             tRowType,
             Arrays.asList(field(tRowType, 1)));
@@ -233,7 +233,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
     @Test
     public void testCaseInsensitiveUsingSortInsertionLimited()
     {
-        Operator project = project_Default(
+        Operator project = project_DefaultTest(
             groupScan_Default(group),
             tRowType,
             Arrays.asList(field(tRowType, 2)));
@@ -243,7 +243,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
         List<ExpressionGenerator> convertToUpper =
             Arrays.asList(toUpper(field(projectRowType, 0)));
         Operator plan =
-            project_Default(
+            project_DefaultTest(
                 sort_InsertionLimited(
                     project,
                     projectRowType,
@@ -263,7 +263,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
     @Test
     public void testNonStringUsingSortInsertionLimited()
     {
-        Operator project = project_Default(
+        Operator project = project_DefaultTest(
             groupScan_Default(group),
             tRowType,
             Arrays.asList(field(tRowType, 3)));
@@ -286,7 +286,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
     @Test
     public void testMultipleColumnsUsingSortInsertionLimited()
     {
-        Operator project = project_Default(
+        Operator project = project_DefaultTest(
             groupScan_Default(group),
             tRowType,
             Arrays.asList(field(tRowType, 1),
@@ -302,7 +302,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
                           toUpper(field(projectRowType, 1)),
                           field(projectRowType, 2));
         Operator plan =
-            project_Default(
+            project_DefaultTest(
                 sort_InsertionLimited(
                     project,
                     projectRowType,
@@ -328,7 +328,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
     @Test
     public void testCaseSensitiveUsingDistinctPartial()
     {
-        Operator project = project_Default(
+        Operator project = project_DefaultTest(
             groupScan_Default(group),
             tRowType,
             Arrays.asList(field(tRowType, 1)));
@@ -363,7 +363,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
     @Test
     public void testCaseInsensitiveUsingDistinctPartial()
     {
-        Operator project = project_Default(
+        Operator project = project_DefaultTest(
             groupScan_Default(group),
             tRowType,
             Arrays.asList(field(tRowType, 2)));
@@ -373,7 +373,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
         List<ExpressionGenerator> convertToUpper = Arrays.asList(toUpper(field(projectRowType, 0)));
         // Sort, preserving duplicates, so that we can test Distinct_Partial.
         Operator plan =
-            project_Default(
+            project_DefaultTest(
                 distinct_Partial(
                     sort_InsertionLimited(
                         project,
@@ -396,7 +396,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
     @Test
     public void testNonStringUsingDistinctPartial()
     {
-        Operator project = project_Default(
+        Operator project = project_DefaultTest(
             groupScan_Default(group),
             tRowType,
             Arrays.asList(field(tRowType, 3)));
@@ -422,7 +422,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
     @Test
     public void testMultipleColumnsUsingDistinctPartial()
     {
-        Operator project = project_Default(
+        Operator project = project_DefaultTest(
             groupScan_Default(group),
             tRowType,
             Arrays.asList(field(tRowType, 1),
@@ -438,7 +438,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
                           toUpper(field(projectRowType, 1)),
                           field(projectRowType, 2));
         Operator plan =
-            project_Default(
+            project_DefaultTest(
                 distinct_Partial(
                     sort_InsertionLimited(
                         project,

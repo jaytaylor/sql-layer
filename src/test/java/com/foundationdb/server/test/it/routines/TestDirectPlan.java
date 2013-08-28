@@ -61,7 +61,8 @@ public class TestDirectPlan extends LoadableDirectObjectPlan
         @Override
         public void open() {
             i = 0;
-            n = bindings.getValue(0).getLong();
+            //n = bindings.getValue(0).getLong();
+            n = bindings.getPValue(0).getInt64();
         }
 
         @Override

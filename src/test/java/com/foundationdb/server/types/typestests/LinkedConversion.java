@@ -18,14 +18,14 @@
 package com.foundationdb.server.types.typestests;
 
 import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.ValueSource;
-import com.foundationdb.server.types.ValueTarget;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueTarget;
 
 import java.util.Set;
 
 public interface LinkedConversion<T> {
-    ValueSource linkedSource();
-    ValueTarget linkedTarget();
+    PValueSource linkedSource();
+    PValueTarget linkedTarget();
 
     void checkPut(T expected);
     void setUp(TestCase<?> testCase);

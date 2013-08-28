@@ -26,9 +26,6 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.expression.Expression;
-import com.foundationdb.server.expression.std.FieldExpression;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -37,7 +34,7 @@ import java.util.Collections;
 import static com.foundationdb.qp.operator.API.ancestorLookup_Default;
 import static com.foundationdb.qp.operator.API.cursor;
 import static com.foundationdb.qp.operator.API.groupScan_Default;
-import static com.foundationdb.qp.operator.API.ifEmpty_Default;
+import static com.foundationdb.qp.operator.API.ifEmpty_DefaultTest;
 import static com.foundationdb.qp.operator.API.indexScan_Default;
 import static com.foundationdb.server.test.ExpressionGenerators.field;
 import static com.foundationdb.server.test.ExpressionGenerators.literal;
@@ -61,25 +58,25 @@ public class IfEmptyIT extends OperatorITBase
     @Test(expected = IllegalArgumentException.class)
     public void testInputNull()
     {
-        ifEmpty_Default(null, customerRowType, Collections.<ExpressionGenerator>emptyList(), API.InputPreservationOption.KEEP_INPUT);
+        ifEmpty_DefaultTest(null, customerRowType, Collections.<ExpressionGenerator>emptyList(), API.InputPreservationOption.KEEP_INPUT);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testRowTypeNull()
     {
-        ifEmpty_Default(groupScan_Default(coi), null, Collections.<ExpressionGenerator>emptyList(), API.InputPreservationOption.KEEP_INPUT);
+        ifEmpty_DefaultTest(groupScan_Default(coi), null, Collections.<ExpressionGenerator>emptyList(), API.InputPreservationOption.KEEP_INPUT);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testExprsNull()
     {
-        ifEmpty_Default(groupScan_Default(coi), customerRowType, null, API.InputPreservationOption.KEEP_INPUT);
+        ifEmpty_DefaultTest(groupScan_Default(coi), customerRowType, null, API.InputPreservationOption.KEEP_INPUT);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testInputPreservationNull()
     {
-        ifEmpty_Default(groupScan_Default(coi), customerRowType, Collections.<ExpressionGenerator>emptyList(), null);
+        ifEmpty_DefaultTest(groupScan_Default(coi), customerRowType, Collections.<ExpressionGenerator>emptyList(), null);
     }
 
     // Test operator execution
@@ -88,7 +85,7 @@ public class IfEmptyIT extends OperatorITBase
     public void testNonEmptyKeepInput()
     {
         Operator plan =
-            ifEmpty_Default(
+            ifEmpty_DefaultTest(
                 ancestorLookup_Default(
                     indexScan_Default(orderCidIndexRowType, cidKeyRange(2), asc()),
                     coi,
@@ -108,7 +105,7 @@ public class IfEmptyIT extends OperatorITBase
     public void testNonEmptyDiscardInput()
     {
         Operator plan =
-            ifEmpty_Default(
+            ifEmpty_DefaultTest(
                 ancestorLookup_Default(
                     indexScan_Default(orderCidIndexRowType, cidKeyRange(2), asc()),
                     coi,
@@ -126,7 +123,7 @@ public class IfEmptyIT extends OperatorITBase
     public void testEmptyKeepInput()
     {
         Operator plan =
-            ifEmpty_Default(
+            ifEmpty_DefaultTest(
                 ancestorLookup_Default(
                     indexScan_Default(orderCidIndexRowType, cidKeyRange(0), asc()),
                     coi,
@@ -145,7 +142,7 @@ public class IfEmptyIT extends OperatorITBase
     public void testEmptyDiscardInput()
     {
         Operator plan =
-            ifEmpty_Default(
+            ifEmpty_DefaultTest(
                 ancestorLookup_Default(
                     indexScan_Default(orderCidIndexRowType, cidKeyRange(0), asc()),
                     coi,
@@ -164,7 +161,7 @@ public class IfEmptyIT extends OperatorITBase
     public void testCursorNonEmptyDefaultKeepInput()
     {
         Operator plan =
-            ifEmpty_Default(
+            ifEmpty_DefaultTest(
                 ancestorLookup_Default(
                     indexScan_Default(orderCidIndexRowType, cidKeyRange(2), asc()),
                     coi,
@@ -192,7 +189,7 @@ public class IfEmptyIT extends OperatorITBase
     public void testCursorNonEmptyDefaultDiscardInput()
     {
         Operator plan =
-            ifEmpty_Default(
+            ifEmpty_DefaultTest(
                 ancestorLookup_Default(
                     indexScan_Default(orderCidIndexRowType, cidKeyRange(2), asc()),
                     coi,
@@ -218,7 +215,7 @@ public class IfEmptyIT extends OperatorITBase
     public void testCursorEmptyKeepInput()
     {
         Operator plan =
-            ifEmpty_Default(
+            ifEmpty_DefaultTest(
                 ancestorLookup_Default(
                     indexScan_Default(orderCidIndexRowType, cidKeyRange(0), asc()),
                     coi,
@@ -245,7 +242,7 @@ public class IfEmptyIT extends OperatorITBase
     public void testCursorEmptyDiscardInput()
     {
         Operator plan =
-            ifEmpty_Default(
+            ifEmpty_DefaultTest(
                 ancestorLookup_Default(
                     indexScan_Default(orderCidIndexRowType, cidKeyRange(0), asc()),
                     coi,

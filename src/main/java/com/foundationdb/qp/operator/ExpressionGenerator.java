@@ -17,11 +17,9 @@
 
 package com.foundationdb.qp.operator;
 
-import com.foundationdb.server.expression.Expression;
 import com.foundationdb.server.types3.texpressions.TPreparedExpression;
 
 public interface ExpressionGenerator {
-    Expression getExpression();
     TPreparedExpression getTPreparedExpression();
 
     enum ErasureMaker {MARK}

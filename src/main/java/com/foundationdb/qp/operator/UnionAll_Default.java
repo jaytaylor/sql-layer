@@ -24,8 +24,6 @@ import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.ValueSource;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.util.ArgumentValidation;
@@ -106,12 +104,12 @@ final class UnionAll_Default extends Operator {
         return new Execution(context, bindingsCursor);
     }
 
-    UnionAll_Default(Operator input1, RowType input1Type, Operator input2, RowType input2Type, boolean usePValues, boolean openBoth) {
+    UnionAll_Default(Operator input1, RowType input1Type, Operator input2, RowType input2Type, boolean openBoth) {
         ArgumentValidation.notNull("first input", input1);
         ArgumentValidation.notNull("first input type", input1Type);
         ArgumentValidation.notNull("second input", input2);
         ArgumentValidation.notNull("second input type", input2Type);
-        this.outputRowType = rowType(input1Type, input2Type, usePValues);
+        this.outputRowType = rowType(input1Type, input2Type);
         this.inputs = Arrays.asList(input1, input2);
         this.inputTypes = Arrays.asList(input1Type, input2Type);
         ArgumentValidation.isEQ("inputs.size", inputs.size(), "inputTypes.size", inputTypes.size());
@@ -120,12 +118,12 @@ final class UnionAll_Default extends Operator {
 
     // for use in this package (in ctor and unit tests)
 
-    static RowType rowType(RowType rowType1, RowType rowType2, boolean usePValues) {
+    static RowType rowType(RowType rowType1, RowType rowType2) {
         if (rowType1 == rowType2)
             return rowType1;
         if (rowType1.nFields() != rowType2.nFields())
             throw notSameShape(rowType1, rowType2);
-        return usePValues ? rowTypeNew(rowType1, rowType2) : rowTypeOld(rowType1, rowType2);
+        return rowTypeNew(rowType1, rowType2);
     }
 
     private static RowType rowTypeNew(RowType rowType1, RowType rowType2) {
@@ -145,34 +143,17 @@ final class UnionAll_Default extends Operator {
         return rowType1.schema().newValuesType(types);
     }
 
-    private static RowType rowTypeOld(RowType rowType1, RowType rowType2) {
-        AkType[] types = new AkType[rowType1.nFields()];
-        for(int i=0; i<types.length; ++i) {
-            AkType akType1 = rowType1.typeAt(i);
-            AkType akType2 = rowType2.typeAt(i);
-            if (akType1.equals(akType2))
-                types[i] = akType1;
-            else if (akType1 == AkType.NULL)
-                types[i] = akType2;
-            else if (akType2 == AkType.NULL)
-                types[i] = akType1;
-            else
-                throw notSameShape(rowType1, rowType2);
-        }
-        return rowType1.schema().newValuesType(types);
-    }
-
     private static IllegalArgumentException notSameShape(RowType rt1, RowType rt2) {
         return new IllegalArgumentException(String.format("RowTypes not of same shape: %s (%s), %s (%s)",
-                rt1, akTypesOf(rt1),
-                rt2, akTypesOf(rt2)
+                rt1, tInstanceOf(rt1),
+                rt2, tInstanceOf(rt2)
         ));
     }
 
-    private static String akTypesOf(RowType rt) {
-        AkType[] result = new AkType[rt.nFields()];
-        for (int i=0; i < result.length; ++i) {
-            result[i] = rt.typeAt(i);
+    private static String tInstanceOf (RowType rt) {
+        TInstance[] result = new TInstance[rt.nFields()];
+        for (int i = 0; i < result.length; ++i) {
+            result[i] = rt.typeInstanceAt(i);
         }
         return Arrays.toString(result);
     }
@@ -459,11 +440,6 @@ final class UnionAll_Default extends Operator {
         @Override
         public Row subRow(RowType subRowType) {
             return delegate.subRow(subRowType);
-        }
-
-        @Override
-        public ValueSource eval(int index) {
-            return delegate.eval(index);
         }
 
         @Override

@@ -47,5 +47,5 @@ public abstract class PostgresOutputter<T>
 
     public void afterData() throws IOException {}
 
-    public abstract void output(T row, boolean usePVals) throws IOException;
+    public abstract void output(T row) throws IOException;
 }

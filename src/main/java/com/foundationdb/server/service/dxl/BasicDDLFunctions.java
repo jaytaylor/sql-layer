@@ -64,16 +64,12 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.UserTableRowChecker;
 import com.foundationdb.qp.util.SchemaCache;
-import com.foundationdb.server.TableStatus;
 import com.foundationdb.server.error.AlterMadeNoChangeException;
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.error.InvalidAlterException;
 import com.foundationdb.server.error.QueryCanceledException;
 import com.foundationdb.server.error.QueryTimedOutException;
 import com.foundationdb.server.error.ViewReferencesExist;
-import com.foundationdb.server.expression.Expression;
-import com.foundationdb.server.expression.std.FieldExpression;
-import com.foundationdb.server.expression.std.LiteralExpression;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.api.DMLFunctions;
@@ -92,7 +88,6 @@ import com.foundationdb.server.error.ProtectedIndexException;
 import com.foundationdb.server.error.RowDefNotFoundException;
 import com.foundationdb.server.error.UnsupportedDropException;
 import com.foundationdb.server.service.ServiceManager;
-import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.listener.TableListener;
 import com.foundationdb.server.service.lock.LockService;
@@ -100,11 +95,9 @@ import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.service.tree.TreeLink;
 import com.foundationdb.server.t3expressions.T3RegistryService;
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.types3.TCast;
 import com.foundationdb.server.types3.TExecutionContext;
 import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.server.types3.mcompat.mtypes.MString;
 import com.foundationdb.server.types3.pvalue.PValue;
 import com.foundationdb.server.types3.pvalue.PValueSource;
@@ -315,7 +308,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             try {
                 Row oldRow;
                 while((oldRow = cursor.next()) != null) {
-                    checker.checkConstraints(oldRow, Types3Switch.ON);
+                    checker.checkConstraints(oldRow);
                 }
             } finally {
                 cursor.closeTopLevel();
@@ -363,9 +356,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     private void doTableChange(final Session session, QueryContext context, TableName tableName, UserTable newDefinition,
                                final Collection<ChangedTableDescription> changedTables,
                                final AlterTableHelper helper, boolean groupChange) {
-
-        final boolean usePValues = Types3Switch.ON;
-
         final AkibanInformationSchema origAIS = getAIS(session);
         final UserTable origTable = origAIS.getUserTable(tableName);
 
@@ -388,59 +378,44 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         final Schema newSchema = SchemaCache.globalSchema(newAIS);
 
         final List<Column> newColumns = newTable.getColumnsIncludingInternal();
-        final List<Expression> projections;
         final List<TPreparedExpression> pProjections;
-        if(Types3Switch.ON) {
-            projections = null;
-            pProjections = new ArrayList<>(newColumns.size());
-            for(Column newCol : newColumns) {
-                Integer oldPosition = helper.findOldPosition(origTable, newCol);
-                TInstance newInst = newCol.tInstance();
-                if(oldPosition == null) {
-                    final String defaultValue = newCol.getDefaultValue();
-                    final PValueSource defaultValueSource;
-                    if(defaultValue == null) {
-                        defaultValueSource = PValueSources.getNullSource(newInst);
-                    } else {
-                        PValue defaultPValue = new PValue(newInst);
-                        TInstance defInstance = MString.VARCHAR.instance(defaultValue.length(), defaultValue == null);
-                        TExecutionContext executionContext = new TExecutionContext(
-                                Collections.singletonList(defInstance),
-                                newInst,
-                                queryContext
-                        );
-                        PValue defaultSource = new PValue(MString.varcharFor(defaultValue), defaultValue);
-                        newInst.typeClass().fromObject(executionContext, defaultSource, defaultPValue);
-                        defaultValueSource = defaultPValue;
-                    }
-                    pProjections.add(new TPreparedLiteral(newInst, defaultValueSource));
+
+        pProjections = new ArrayList<>(newColumns.size());
+        for(Column newCol : newColumns) {
+            Integer oldPosition = helper.findOldPosition(origTable, newCol);
+            TInstance newInst = newCol.tInstance();
+            if(oldPosition == null) {
+                final String defaultValue = newCol.getDefaultValue();
+                final PValueSource defaultValueSource;
+                if(defaultValue == null) {
+                    defaultValueSource = PValueSources.getNullSource(newInst);
                 } else {
-                    Column oldCol = origTable.getColumnsIncludingInternal().get(oldPosition);
-                    TInstance oldInst = oldCol.tInstance();
-                    TPreparedExpression pExp = new TPreparedField(oldInst, oldPosition);
-                    if(!oldInst.equalsExcludingNullable(newInst)) {
-                        TCast cast = t3Registry.getCastsResolver().cast(oldInst.typeClass(), newInst.typeClass());
-                        pExp = new TCastExpression(pExp, cast, newInst, queryContext);
-                    }
-                    pProjections.add(pExp);
+                    PValue defaultPValue = new PValue(newInst);
+                    TInstance defInstance = MString.VARCHAR.instance(defaultValue.length(), defaultValue == null);
+                    TExecutionContext executionContext = new TExecutionContext(
+                            Collections.singletonList(defInstance),
+                            newInst,
+                            queryContext
+                    );
+                    PValue defaultSource = new PValue(MString.varcharFor(defaultValue), defaultValue);
+                    newInst.typeClass().fromObject(executionContext, defaultSource, defaultPValue);
+                    defaultValueSource = defaultPValue;
                 }
-            }
-        } else {
-            projections = new ArrayList<>(newColumns.size());
-            pProjections = null;
-            for(Column newCol : newColumns) {
-                Integer oldPosition = helper.findOldPosition(origTable, newCol);
-                if(oldPosition == null) {
-                    String defaultValue = newCol.getDefaultValue();
-                    projections.add(new LiteralExpression(AkType.VARCHAR, defaultValue));
-                } else {
-                    projections.add(new FieldExpression(origTableType, oldPosition));
+                pProjections.add(new TPreparedLiteral(newInst, defaultValueSource));
+            } else {
+                Column oldCol = origTable.getColumnsIncludingInternal().get(oldPosition);
+                TInstance oldInst = oldCol.tInstance();
+                TPreparedExpression pExp = new TPreparedField(oldInst, oldPosition);
+                if(!oldInst.equalsExcludingNullable(newInst)) {
+                    TCast cast = t3Registry.getCastsResolver().cast(oldInst.typeClass(), newInst.typeClass());
+                    pExp = new TCastExpression(pExp, cast, newInst, queryContext);
                 }
+                pProjections.add(pExp);
             }
         }
 
         // PUTRT for constraint checking
-        final ProjectedUserTableRowType newTableType = new ProjectedUserTableRowType(newSchema, newTable, projections, pProjections, !groupChange);
+        final ProjectedUserTableRowType newTableType = new ProjectedUserTableRowType(newSchema, newTable, pProjections, !groupChange);
 
         // For any table, group affecting or not, the original rows are never modified.
         // The affected group is scanned fully and every row is inserted into its new
@@ -500,17 +475,16 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                                                   oldRow,
                                                   queryContext,
                                                   queryBindings,
-                                                  projections,
                                                   ProjectedRow.createTEvaluatableExpressions(pProjections),
                                                   TInstance.createTInstances(pProjections));
-                        queryContext.checkConstraints(newRow, usePValues);
+                        queryContext.checkConstraints(newRow);
                         indexes = typeMap.get(oldType).indexes;
                     } else {
                         RowTypeAndIndexes type = typeMap.get(oldType);
-                        newRow = new OverlayingRow(oldRow, type.rowType, usePValues);
+                        newRow = new OverlayingRow(oldRow, type.rowType);
                         indexes = type.indexes;
                     }
-                    adapter.writeRow(newRow, indexes, usePValues);
+                    adapter.writeRow(newRow, indexes);
                 }
             } finally {
                 cursor.closeTopLevel();

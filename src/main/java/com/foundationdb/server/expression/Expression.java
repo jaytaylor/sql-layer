@@ -17,11 +17,9 @@
 
 package com.foundationdb.server.expression;
 
-import com.foundationdb.qp.exec.Plannable;
 import com.foundationdb.server.explain.Explainable;
 import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.types.ValueSource;
-import java.util.Map;
 
 public interface Expression extends Explainable {
     boolean nullIsContaminating();

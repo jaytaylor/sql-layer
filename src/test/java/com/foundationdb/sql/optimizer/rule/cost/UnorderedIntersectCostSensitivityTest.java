@@ -21,7 +21,8 @@ import com.foundationdb.ais.model.*;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.UserTableRowType;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 import com.foundationdb.sql.optimizer.OptimizerTestBase;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.rule.RulesTestHelper;
@@ -193,7 +194,7 @@ public class UnorderedIntersectCostSensitivityTest
 
     private CostEstimate costIndexScan(Index index, int key)
     {
-        List<ExpressionNode> equals = Collections.singletonList(constant(key, AkType.INT));
+        List<ExpressionNode> equals = Collections.singletonList(constant(key, MNumeric.INT.instance(true)));
         return costEstimator.costIndexScan(index, equals, null, false, null, false);
     }
 
@@ -231,9 +232,8 @@ public class UnorderedIntersectCostSensitivityTest
         return table(table).getIndex(name);
     }
 
-    private static ExpressionNode constant(Object value, AkType type)
-    {
-        return new ConstantExpression(value, type);
+    private static ExpressionNode constant(Object value, TInstance type) {
+        return new ConstantExpression (value, type.dataTypeDescriptor(), null);
     }
 
     private void print(String label, double[][] data, String numberFormat)

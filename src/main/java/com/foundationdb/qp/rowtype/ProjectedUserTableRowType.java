@@ -22,19 +22,17 @@ import java.util.List;
 import com.foundationdb.ais.model.HKey;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.expression.Expression;
-import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.texpressions.TPreparedExpression;
 
 public class ProjectedUserTableRowType extends ProjectedRowType {
 
-    public ProjectedUserTableRowType(DerivedTypesSchema schema, UserTable table, List<? extends Expression> projections, List<? extends TPreparedExpression> tExprs) {
-        this(schema, table, projections, tExprs, false);
+    public ProjectedUserTableRowType(DerivedTypesSchema schema, UserTable table, List<? extends TPreparedExpression> tExprs) {
+        this(schema, table, tExprs, false);
     }
 
-    public ProjectedUserTableRowType(DerivedTypesSchema schema, UserTable table, List<? extends Expression> projections, List<? extends TPreparedExpression> tExprs,
+    public ProjectedUserTableRowType(DerivedTypesSchema schema, UserTable table, List<? extends TPreparedExpression> tExprs,
                                      boolean includeInternalColumn) {
-        super(schema, table.getTableId(), projections, tExprs);
+        super(schema, table.getTableId(), tExprs);
         this.nFields = includeInternalColumn ? table.getColumnsIncludingInternal().size() : table.getColumns().size();
         this.table = table;
         this.constraintChecker = new UserTableRowChecker(this);

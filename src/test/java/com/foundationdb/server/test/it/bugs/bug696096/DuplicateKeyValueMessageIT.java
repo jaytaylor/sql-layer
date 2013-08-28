@@ -53,8 +53,8 @@ public final class DuplicateKeyValueMessageIT extends ITBase {
     @After
     public void tearDown() throws InvalidOperationException {
         expectFullRows(tableId,
-                createNewRow(tableId, 10L, 11L, 12L, 13L, "from setup"),
-                createNewRow(tableId, 20L, 21L, 22L, 23L, "from setup")
+                createNewRow(tableId, 10, 11, 12, 13, "from setup"),
+                createNewRow(tableId, 20, 21, 22, 23, "from setup")
         );
     }
 

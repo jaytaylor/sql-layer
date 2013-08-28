@@ -20,18 +20,16 @@ package com.foundationdb.sql.optimizer.plan;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.parser.ValueNode;
 
-import com.foundationdb.server.types.AkType;
-
-/** An operation on Boolean expressions.
+/**
+ * An operation on Boolean expressions.
  */
-public class BooleanOperationExpression extends BaseExpression 
-                                        implements ConditionExpression
-{
+public class BooleanOperationExpression extends BaseExpression implements
+        ConditionExpression {
     public static enum Operation {
         AND("and"), OR("or"), NOT("not");
 
         private String functionName;
-        
+
         Operation(String functionName) {
             this.functionName = functionName;
         }
@@ -43,12 +41,11 @@ public class BooleanOperationExpression extends BaseExpression
 
     private Operation operation;
     private ConditionExpression left, right;
-    
-    public BooleanOperationExpression(Operation operation, 
-                                      ConditionExpression left, 
-                                      ConditionExpression right, 
-                                      DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, AkType.BOOL, sqlSource);
+
+    public BooleanOperationExpression(Operation operation,
+            ConditionExpression left, ConditionExpression right,
+            DataTypeDescriptor sqlType, ValueNode sqlSource) {
+        super(sqlType, sqlSource);
         this.operation = operation;
         this.left = left;
         this.right = right;
@@ -57,13 +54,15 @@ public class BooleanOperationExpression extends BaseExpression
     public Operation getOperation() {
         return operation;
     }
+
     public ConditionExpression getLeft() {
         return left;
     }
+
     public ConditionExpression getRight() {
         return right;
     }
-    
+
     @Override
     public Implementation getImplementation() {
         return Implementation.NORMAL;
@@ -71,11 +70,11 @@ public class BooleanOperationExpression extends BaseExpression
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof BooleanOperationExpression)) return false;
-        BooleanOperationExpression other = (BooleanOperationExpression)obj;
-        return ((operation == other.operation) &&
-                left.equals(other.left) &&
-                right.equals(other.right));
+        if (!(obj instanceof BooleanOperationExpression))
+            return false;
+        BooleanOperationExpression other = (BooleanOperationExpression) obj;
+        return ((operation == other.operation) && left.equals(other.left) && right
+                .equals(other.right));
     }
 
     @Override
@@ -100,10 +99,11 @@ public class BooleanOperationExpression extends BaseExpression
         boolean childrenFirst = v.visitChildrenFirst(this);
         if (!childrenFirst) {
             ExpressionNode result = v.visit(this);
-            if (result != this) return result;
+            if (result != this)
+                return result;
         }
-        left = (ConditionExpression)left.accept(v);
-        right = (ConditionExpression)right.accept(v);
+        left = (ConditionExpression) left.accept(v);
+        right = (ConditionExpression) right.accept(v);
         return (childrenFirst) ? v.visit(this) : this;
     }
 
@@ -118,8 +118,8 @@ public class BooleanOperationExpression extends BaseExpression
     @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
-        left = (ConditionExpression)left.duplicate(map);
-        right = (ConditionExpression)right.duplicate(map);
+        left = (ConditionExpression) left.duplicate(map);
+        right = (ConditionExpression) right.duplicate(map);
     }
 
 }

@@ -39,6 +39,7 @@ public abstract class ServerType
         this.instance = instance;
     }
 
+    @Deprecated
     public AkType getAkType() {
         return akType;
     }

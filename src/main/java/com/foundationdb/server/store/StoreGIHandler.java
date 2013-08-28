@@ -26,11 +26,11 @@ import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.geophile.SpaceLatLon;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.ValueSource;
 import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.common.BigDecimalWrapper;
 import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
@@ -132,7 +132,7 @@ class StoreGIHandler<SDType> {
 
     private void copyFieldToIndexRow(GroupIndex groupIndex, Row row, int flattenedIndex) {
         Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
-        indexRow.append(row.pvalue(flattenedIndex), column.getType().akType(), column.tInstance(), null);
+        indexRow.append(row.pvalue(flattenedIndex), column.tInstance());
     }
 
     private void copyZValueToIndexRow(GroupIndex groupIndex, Row row, IndexRowComposition irc) {
@@ -142,20 +142,20 @@ class StoreGIHandler<SDType> {
         boolean zNull = false;
         for(int d = 0; d < Space.LAT_LON_DIMENSIONS; d++) {
             if(!zNull) {
-                ValueSource columnValue = row.eval(irc.getFieldPosition(firstSpatialColumn + d));
-                if(columnValue.isNull()) {
+                PValueSource columnPValue = row.pvalue(irc.getFieldPosition(firstSpatialColumn + d));
+                if (columnPValue.isNull()) {
                     zNull = true;
                 } else {
-                    coords[d] = columnValue.getDecimal();
+                    coords[d] = ((BigDecimalWrapper)columnPValue.getObject()).asBigDecimal();
                 }
             }
         }
         if (zNull) {
             zSource_t3.putNull();
-            indexRow.append(zSource_t3, AkType.NULL, NON_NULL_Z_TYPE, null);
+            indexRow.append(zSource_t3, NON_NULL_Z_TYPE);
         } else {
             zSource_t3.putInt64(space.shuffle(coords));
-            indexRow.append(zSource_t3, AkType.LONG, NON_NULL_Z_TYPE, null);
+            indexRow.append(zSource_t3, NON_NULL_Z_TYPE);
         }
     }
 

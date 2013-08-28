@@ -17,10 +17,6 @@
 
 package com.foundationdb.server.explain;
 
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.ValueSource;
-import com.foundationdb.server.types.extract.Extractors;
-import com.foundationdb.server.types.extract.LongExtractor;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 

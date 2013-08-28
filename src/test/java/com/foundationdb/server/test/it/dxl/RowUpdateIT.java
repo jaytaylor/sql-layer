@@ -33,11 +33,11 @@ public class RowUpdateIT extends ITBase
     {
         initializeDB();
         NewRow targetUpdated = new NiceRow(t, rowDef);
-        targetUpdated.put(cId, 888L);
-        targetUpdated.put(cA, 800L);
-        targetUpdated.put(cB, 800L);
-        targetUpdated.put(cC, 800L);
-        targetUpdated.put(cD, 800L);
+        targetUpdated.put(cId, 888);
+        targetUpdated.put(cA, 800);
+        targetUpdated.put(cB, 800);
+        targetUpdated.put(cC, 800);
+        targetUpdated.put(cD, 800);
         dml().updateRow(session(), target, targetUpdated, null);
         expectFullRows(t, before, targetUpdated, after);
     }
@@ -53,8 +53,8 @@ public class RowUpdateIT extends ITBase
         //     c: 3
         //     d: 4
         // Generate all combinations of a..d by iterating a mask from 1..31 in steps of 2.
-        long original = 888L;
-        long update = 800L;
+        int original = 888;
+        int update = 800;
         NiceRow fullyUpdatedTarget = new NiceRow(t, rowDef);
         fullyUpdatedTarget.put(cId, original);
         fullyUpdatedTarget.put(cA, update);
@@ -95,25 +95,25 @@ public class RowUpdateIT extends ITBase
         cD = 4;
         rowDef = getRowDef(t);
         target = new NiceRow(t, rowDef);
-        target.put(cId, 888L);
-        target.put(cA, 888L);
-        target.put(cB, 888L);
-        target.put(cC, 888L);
-        target.put(cD, 888L);
+        target.put(cId, 888);
+        target.put(cA, 888);
+        target.put(cB, 888);
+        target.put(cC, 888);
+        target.put(cD, 888);
         dml().writeRow(session(), target);
         before = new NiceRow(t, rowDef);
-        before.put(cId, 777L);
-        before.put(cA, 777L);
-        before.put(cB, 777L);
-        before.put(cC, 777L);
-        before.put(cD, 777L);
+        before.put(cId, 777);
+        before.put(cA, 777);
+        before.put(cB, 777);
+        before.put(cC, 777);
+        before.put(cD, 777);
         dml().writeRow(session(), before);
         after = new NiceRow(t, rowDef);
-        after.put(cId, 999L);
-        after.put(cA, 999L);
-        after.put(cB, 999L);
-        after.put(cC, 999L);
-        after.put(cD, 999L);
+        after.put(cId, 999);
+        after.put(cA, 999);
+        after.put(cB, 999);
+        after.put(cC, 999);
+        after.put(cD, 999);
         dml().writeRow(session(), after);
         expectFullRows(t, before, target, after);
     }

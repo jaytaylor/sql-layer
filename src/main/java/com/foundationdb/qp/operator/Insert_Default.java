@@ -79,9 +79,8 @@ import java.util.List;
 
 class Insert_Default implements UpdatePlannable {
 
-    public Insert_Default(Operator inputOperator, boolean usePValues) {
+    public Insert_Default(Operator inputOperator) {
         this.inputOperator = inputOperator;
-        this.usePValues = usePValues;
     }
 
     @Override
@@ -116,7 +115,6 @@ class Insert_Default implements UpdatePlannable {
     }
 
     private final Operator inputOperator;
-    private final boolean usePValues;
     private static final InOutTap INSERT_TAP = Tap.createTimer("operator: Insert_Default");
     private static final Logger LOG = LoggerFactory.getLogger(Insert_Default.class);
 
@@ -146,8 +144,8 @@ class Insert_Default implements UpdatePlannable {
                     // LOG.warn("About to insert {}: {}", row.rowType().userTable(), row);
                     checkQueryCancelation();
                     ++seen;
-                    context.checkConstraints(row, usePValues);
-                    adapter().writeRow(row, null, usePValues);
+                    context.checkConstraints(row);
+                    adapter().writeRow(row, null);
                     ++modified;
                     if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                         LOG.debug("Insert_Default: inserting {}", row);

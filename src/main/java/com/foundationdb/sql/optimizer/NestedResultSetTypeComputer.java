@@ -22,11 +22,11 @@ import com.foundationdb.sql.parser.*;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 
-import com.foundationdb.server.service.functions.FunctionsRegistry;
+import com.foundationdb.server.t3expressions.T3RegistryService;
 
 public class NestedResultSetTypeComputer extends FunctionsTypeComputer
 {
-    public NestedResultSetTypeComputer(FunctionsRegistry functionsRegistry) {
+    public NestedResultSetTypeComputer(T3RegistryService functionsRegistry) {
         super(functionsRegistry);
     }
 

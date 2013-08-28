@@ -17,32 +17,15 @@
 
 package com.foundationdb.qp.row;
 
-import com.foundationdb.ais.model.Column;
-import com.foundationdb.ais.model.Index;
-import com.foundationdb.qp.expression.BoundExpressions;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.store.PersistitKeyAppender;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.ValueSource;
 import com.foundationdb.server.types3.TInstance;
 import com.persistit.Key;
-import com.persistit.exception.PersistitException;
 
 public abstract class IndexRow extends AbstractRow
 {
-    // BoundExpressions interface
-
-    @Override
-    public ValueSource eval(int index)
-    {
-        throw new UnsupportedOperationException();
-    }
-
     // RowBase interface
 
     public RowType rowType()
@@ -59,12 +42,7 @@ public abstract class IndexRow extends AbstractRow
 
     public abstract void initialize(RowData rowData, Key hKey);
 
-    public final void append(Column column, ValueSource source)
-    {
-        append(source, column.getType().akType(), column.tInstance(), column.getCollator());
-    }
-
-    public abstract <S> void append(S source, AkType type, TInstance tInstance, AkCollator collator);
+    public abstract <S> void append(S source, TInstance tInstance);
 
     public abstract void close(Session session, Store store, boolean forInsert);
 

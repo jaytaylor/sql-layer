@@ -16,9 +16,7 @@
  */
 package com.foundationdb.server.collation;
 
-import java.util.Arrays;
 
-import com.foundationdb.server.types.ValueSource;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.ibm.icu.text.Collator;

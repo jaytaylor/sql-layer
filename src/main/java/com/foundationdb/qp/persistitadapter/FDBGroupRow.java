@@ -25,7 +25,6 @@ import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDataPValueSource;
-import com.foundationdb.server.rowdata.RowDataValueSource;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.types.ValueSource;
 import com.foundationdb.server.types3.pvalue.PValueSource;
@@ -35,7 +34,6 @@ import com.persistit.Key;
 public class FDBGroupRow extends AbstractRow {
     private final FDBAdapter adapter;
     private final HKeyCache<PersistitHKey> hKeyCache;
-    private SparseArray<RowDataValueSource> valueSources;
     private SparseArray<RowDataPValueSource> pvalueSources;
     private RowData rowData;
     private LegacyRowWrapper row;
@@ -64,16 +62,6 @@ public class FDBGroupRow extends AbstractRow {
     public RowType rowType()
     {
         return adapter.schema().userTableRowType(rowDef().userTable());
-    }
-
-    @Override
-    public ValueSource eval(int i)
-    {
-        FieldDef fieldDef = rowDef().getFieldDef(i);
-        RowData rowData = rowData();
-        RowDataValueSource valueSource = valueSource(i);
-        valueSource.bind(fieldDef, rowData);
-        return valueSource;
     }
 
     @Override
@@ -121,21 +109,6 @@ public class FDBGroupRow extends AbstractRow {
     public RowData rowData()
     {
         return rowData;
-    }
-
-    private RowDataValueSource valueSource(int i)
-    {
-        if (valueSources == null) {
-            valueSources = new SparseArray<RowDataValueSource>()
-            {
-                @Override
-                protected RowDataValueSource initialValue()
-                {
-                    return new RowDataValueSource();
-                }
-            };
-        }
-        return valueSources.get(i);
     }
 
     private RowDataPValueSource pValueSource(int i) {

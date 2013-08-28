@@ -68,19 +68,19 @@ public class ProjectIT extends OperatorITBase
     @Test(expected = IllegalArgumentException.class)
     public void testNullRowType()
     {
-        project_Default(groupScan_Default(coi), null, Arrays.asList(field(customerRowType, 0)));
+        project_DefaultTest(groupScan_Default(coi), null, Arrays.asList(field(customerRowType, 0)));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testNullProjections()
     {
-        project_Default(groupScan_Default(coi), customerRowType, null);
+        project_DefaultTest(groupScan_Default(coi), customerRowType, null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testEmptyProjections()
     {
-        project_Default(groupScan_Default(coi), customerRowType, Collections.<ExpressionGenerator>emptyList());
+        project_DefaultTest(groupScan_Default(coi), customerRowType, Collections.<ExpressionGenerator>emptyList());
     }
 
     // Projection tests
@@ -88,7 +88,7 @@ public class ProjectIT extends OperatorITBase
     @Test
     public void testCustomerCid()
     {
-        Operator plan = project_Default(groupScan_Default(coi),
+        Operator plan = project_DefaultTest(groupScan_Default(coi),
                                                 customerRowType,
                                                 Arrays.asList(field(customerRowType, 0)));
         Cursor cursor = cursor(plan, queryContext, queryBindings);
@@ -119,7 +119,7 @@ public class ProjectIT extends OperatorITBase
     @Test
     public void testReverseCustomerColumns()
     {
-        Operator plan = project_Default(groupScan_Default(coi),
+        Operator plan = project_DefaultTest(groupScan_Default(coi),
                                                 customerRowType,
                                                 Arrays.asList(field(customerRowType, 1), field(customerRowType, 0)));
         Cursor cursor = cursor(plan, queryContext, queryBindings);
@@ -162,7 +162,7 @@ public class ProjectIT extends OperatorITBase
                                                           FULL_JOIN);
         RowType coiType = flattenCOI.rowType();
         Operator plan =
-            project_Default(flattenCOI,
+            project_DefaultTest(flattenCOI,
                             coiType,
                             Arrays.asList(
                                 field(coiType, 1), // customer name
@@ -201,7 +201,7 @@ public class ProjectIT extends OperatorITBase
                                                           FULL_JOIN);
         RowType coiType = flattenCOI.rowType();
         Operator plan =
-            project_Default(flattenCOI,
+            project_DefaultTest(flattenCOI,
                             coiType,
                             Arrays.asList(
                                 field(coiType, 1), // customer name

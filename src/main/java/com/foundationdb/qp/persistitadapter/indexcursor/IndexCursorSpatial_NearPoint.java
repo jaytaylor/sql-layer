@@ -30,7 +30,6 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.server.api.dml.IndexRowPrefixSelector;
 import com.foundationdb.server.geophile.SpaceLatLon;
 import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.server.types3.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types3.pvalue.PValue;
@@ -205,11 +204,8 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         long distance;
         if (row == null) {
             distance = Long.MAX_VALUE;
-        } else if (Types3Switch.ON) {
-            long z = row.pvalue(zPosition).getInt64();
-            distance = abs(z - zStart);
         } else {
-            long z = row.eval(zPosition).getLong();
+            long z = row.pvalue(zPosition).getInt64();
             distance = abs(z - zStart);
         }
         return distance;

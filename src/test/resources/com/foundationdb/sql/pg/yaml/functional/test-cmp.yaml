@@ -1,7 +1,5 @@
 # test compar
 ---
-- Newtypes: true
----
 - CreateTable: t (c DECIMAL(6, 2), d DECIMAL(6, 2));
 ---
 - Statement: INSERT INTO t values  
@@ -17,6 +15,4 @@
            ['true'], ['false'], ['false'],
            ['false'], ['true'], ['true'],
            ['true'], ['false']]
----
-- Newtypes: null
 ...

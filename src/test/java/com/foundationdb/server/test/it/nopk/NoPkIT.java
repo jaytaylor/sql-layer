@@ -29,14 +29,14 @@ public final class NoPkIT extends ITBase {
         writeRows(
                 // REPL_C is a no-PK table, so it has an Akiban-supplied __akiban_pk column, (guaranteed to be the
                 // last column). Need to provide a non-null value. This value is ignored, but it must be non-null.
-                createNewRow(tableId, 2L, -1L),
-                createNewRow(tableId, 2L, -1L)
+                createNewRow(tableId, 2, -1L),
+                createNewRow(tableId, 2, -1L)
         );
 
         expectFullRows( tableId,
                 // expectFullRows checks user-visible data, and so does not check the __akiban_pk column.
-                createNewRow(tableId, 2L),
-                createNewRow(tableId, 2L)
+                createNewRow(tableId, 2),
+                createNewRow(tableId, 2)
         );
     }
 
@@ -54,13 +54,13 @@ public final class NoPkIT extends ITBase {
                         "ref int",
                         "grouping foreign key(id) references t1(id)");
         writeRows(
-            createNewRow(t1, 1L),
-            createNewRow(t1, 2L),
-            createNewRow(t1, 3L));
+            createNewRow(t1, 1),
+            createNewRow(t1, 2),
+            createNewRow(t1, 3));
         writeRows( // Bug 1023945 produces NPE when writing rows to t2
-                   createNewRow(t2, 1L, 1L),
-                   createNewRow(t2, 2L, 1L),
-                   createNewRow(t2, 3L, 1L));
+                   createNewRow(t2, 1, 1),
+                   createNewRow(t2, 2, 1),
+                   createNewRow(t2, 3, 1));
         createGroupIndex("t1", "gi", "t2.ref, t2.id, t1.id", Index.JoinType.LEFT);
         ddl().dropTable(session(), new TableName("schema", "t2"));
     }
@@ -80,12 +80,12 @@ public final class NoPkIT extends ITBase {
                         "grouping foreign key(id) references t1(id)");
         createGroupIndex("t1", "gi", "t2.ref, t2.id, t1.id", Index.JoinType.LEFT);
         writeRows(
-            createNewRow(t1, 1L),
-            createNewRow(t1, 2L),
-            createNewRow(t1, 3L));
+            createNewRow(t1, 1),
+            createNewRow(t1, 2),
+            createNewRow(t1, 3));
         writeRows( // Bug 1023945 produces NPE when writing rows to t2
-            createNewRow(t2, 1L, 1L),
-            createNewRow(t2, 2L, 1L),
-            createNewRow(t2, 3L, 1L));
+            createNewRow(t2, 1, 1),
+            createNewRow(t2, 2, 1),
+            createNewRow(t2, 3, 1));
     }
 }

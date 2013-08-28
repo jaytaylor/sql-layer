@@ -17,7 +17,6 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.parser.ValueNode;
 
@@ -26,7 +25,7 @@ public class BooleanCastExpression extends CastExpression
 {
     public BooleanCastExpression(ExpressionNode inner, 
                                  DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(inner, sqlType, AkType.BOOL, sqlSource);
+        super(inner, sqlType, sqlSource);
     }
 
     @Override

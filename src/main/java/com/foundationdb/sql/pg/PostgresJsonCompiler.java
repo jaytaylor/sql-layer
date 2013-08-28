@@ -29,9 +29,9 @@ import com.foundationdb.sql.types.TypeId;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.server.t3expressions.T3RegistryService;
 import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.service.functions.FunctionsRegistry;
 
 import java.util.*;
 
@@ -47,7 +47,7 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
     }
 
     @Override
-    protected void initFunctionsRegistry(FunctionsRegistry functionsRegistry) {
+    protected void initFunctionsRegistry(T3RegistryService functionsRegistry) {
         super.initFunctionsRegistry(functionsRegistry);
         typeComputer = new NestedResultSetTypeComputer(functionsRegistry);
     }
@@ -150,8 +150,7 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
                     select.getResultRowType(),
                     resultColumns,
                     parameterTypes,
-                    select.getCostEstimate(),
-                    usesPValues());
+                    select.getCostEstimate());
         return pjstmt;
     }
 
@@ -181,7 +180,6 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
                          resultColumns,
                          parameterTypes,
                          update.getCostEstimate(),
-                         usesPValues(),
                          update.isRequireStepIsolation(),
                          update.putInCache());
             return pjmstmt;

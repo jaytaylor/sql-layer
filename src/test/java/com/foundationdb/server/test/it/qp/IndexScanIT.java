@@ -552,26 +552,14 @@ public class IndexScanIT extends OperatorITBase
         Cursor cursor = cursor(indexScan, queryContext, queryBindings);
         cursor.openTopLevel();
         Row row = cursor.next();
-        if (usingPValues()) {
-            // Get and checking each field should work
-            assertEquals(11, row.pvalue(0).getInt32());
-            assertEquals(111, row.pvalue(1).getInt32());
-            // Getting all value sources and then using them should also work
-            PValueSource v0 = row.pvalue(0);
-            PValueSource v1 = row.pvalue(1);
-            assertEquals(11, v0.getInt32());
-            assertEquals(111, v1.getInt32());
-        }
-        else {
-            // Get and checking each field should work
-            assertEquals(Long.valueOf(11L), getLong(row, 0));
-            assertEquals(Long.valueOf(111L), getLong(row, 1));
-            // Getting all value sources and then using them should also work
-            ValueSource v0 = row.eval(0);
-            ValueSource v1 = row.eval(1);
-            assertEquals(11L, v0.getInt());
-            assertEquals(111L, v1.getInt());
-        }
+        // Get and checking each field should work
+        assertEquals(11, row.pvalue(0).getInt32());
+        assertEquals(111, row.pvalue(1).getInt32());
+        // Getting all value sources and then using them should also work
+        PValueSource v0 = row.pvalue(0);
+        PValueSource v1 = row.pvalue(1);
+        assertEquals(11, v0.getInt32());
+        assertEquals(111, v1.getInt32());
     }
 
     // For use by this class

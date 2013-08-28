@@ -31,8 +31,6 @@ import com.foundationdb.direct.Direct;
 import com.foundationdb.direct.DirectResultSet;
 import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.ValueSource;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.sql.server.ServerJavaValues;
@@ -70,19 +68,6 @@ public class JDBCResultSet implements DirectResultSet
         }
 
         @Override
-        protected ValueSource getValue(int index) {
-            if (row == null) {
-                if (cursor == null)
-                    throw JDBCException.wrapped("Already closed.");
-                else
-                    throw JDBCException.wrapped("Past end.");
-            }
-            if ((index < 0) || (index >= row.rowType().nFields()))
-                throw JDBCException.wrapped("Column index out of bounds");
-            return row.eval(index);
-        }
-
-        @Override
         protected PValueSource getPValue(int index) {
             if (row == null) {
                 if (cursor == null)
@@ -106,18 +91,8 @@ public class JDBCResultSet implements DirectResultSet
         }
 
         @Override
-        protected AkType getAkType(int index) {
-            return metaData.getColumn(index + 1).getAkType();
-        }
-
-        @Override
         protected TInstance getTInstance(int index) {
             return metaData.getColumn(index + 1).getTInstance();
-        }
-
-        @Override
-        protected void setValue(int index, ValueSource source, AkType akType) {
-            throw new UnsupportedOperationException("Row update not supported");
         }
 
         @Override

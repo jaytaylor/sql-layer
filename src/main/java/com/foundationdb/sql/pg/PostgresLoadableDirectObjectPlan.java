@@ -43,10 +43,9 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
     protected PostgresLoadableDirectObjectPlan(LoadableDirectObjectPlan loadablePlan,
                                                ServerCallInvocation invocation,
                                                List<String> columnNames, List<PostgresType> columnTypes, 
-                                               PostgresType[] parameterTypes,
-                                               boolean usesPValues)
+                                               PostgresType[] parameterTypes)
     {
-        super.init(null, columnNames, columnTypes, parameterTypes, usesPValues);
+        super.init(null, columnNames, columnTypes, parameterTypes);
         this.invocation = invocation;
         plan = loadablePlan.plan();
         outputMode = plan.getOutputMode();
@@ -122,7 +121,7 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
         DirectObjectCursor cursor = null;
         PostgresOutputter<List<?>> outputter = null;
         PostgresDirectObjectCopier copier = null;
-        bindings = PostgresLoadablePlan.setParameters(bindings, invocation, usesPValues());
+        bindings = PostgresLoadablePlan.setParameters(bindings, invocation);
         ServerCallContextStack.push(context, invocation);
         boolean suspended = false;
         try {
@@ -144,7 +143,7 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
                         messenger.flush();
                     }
                     else {
-                        outputter.output(row, usesPValues());
+                        outputter.output(row);
                         nrows++;
                     }
                     if ((maxrows > 0) && (nrows >= maxrows)) {

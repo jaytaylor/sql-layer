@@ -25,6 +25,9 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -157,7 +160,16 @@ public class Product_NestedIT extends OperatorITBase
                 INNER_JOIN);
         Operator product = product_Nested(flattenCA, flattenCO.rowType(), null, flattenCA.rowType(), 0);
         RowType coaRowType = product.rowType();
-        checkRowTypeFields(coaRowType, INT, VARCHAR, INT, INT, VARCHAR, INT, INT, VARCHAR);
+        checkRowTypeFields(null, coaRowType, 
+                MNumeric.INT.instance(false),
+                MString.VARCHAR.instance(20, true),
+                MNumeric.INT.instance(false),
+                MNumeric.INT.instance(true),
+                MString.VARCHAR.instance(20, true),
+                MNumeric.INT.instance(false),
+                MNumeric.INT.instance(true),
+                MString.VARCHAR.instance(100, true));
+        
         Operator plan = map_NestedLoops(flattenCO, product, 0, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{
@@ -195,7 +207,17 @@ public class Product_NestedIT extends OperatorITBase
                 INNER_JOIN);
         Operator product = product_Nested(flattenCA, flattenCO.rowType(), null, flattenCA.rowType(), 0);
         RowType coaRowType = product.rowType();
-        checkRowTypeFields(coaRowType, INT, VARCHAR, INT, INT, VARCHAR, INT, INT, VARCHAR);
+        
+        checkRowTypeFields(null, coaRowType, 
+                MNumeric.INT.instance(false),
+                MString.VARCHAR.instance(20, true),
+                MNumeric.INT.instance(false),
+                MNumeric.INT.instance(true),
+                MString.VARCHAR.instance(20, true),
+                MNumeric.INT.instance(false),
+                MNumeric.INT.instance(true),
+                MString.VARCHAR.instance(100, true));
+        
         Operator plan = map_NestedLoops(flattenCO, product, 0, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[]{

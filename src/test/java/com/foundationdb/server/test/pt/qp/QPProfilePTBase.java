@@ -31,7 +31,6 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.api.dml.scan.ScanLimit;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager.BindingsConfigurationProvider;
@@ -39,7 +38,6 @@ import com.foundationdb.server.store.PersistitStore;
 import com.foundationdb.server.test.it.PersistitITBase;
 import com.foundationdb.server.test.it.qp.TestRow;
 import com.foundationdb.server.test.pt.PTBase;
-import com.foundationdb.server.types.ToObjectValueTarget;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,7 +45,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class QPProfilePTBase extends PTBase
 {
@@ -130,28 +127,6 @@ public class QPProfilePTBase extends PTBase
         return PersistitGroupRow.newPersistitGroupRow(adapter, niceRow.toRowData());
     }
 
-    protected void compareRows(RowBase[] expected, Cursor cursor)
-    {
-        List<RowBase> actualRows = new ArrayList<>(); // So that result is viewable in debugger
-        try {
-            cursor.openTopLevel();
-            RowBase actualRow;
-            while ((actualRow = cursor.next()) != null) {
-                int count = actualRows.size();
-                assertTrue(count < expected.length);
-                if(!equal(expected[count], actualRow)) {
-                    String expectedString = expected[count] == null ? "null" : expected[count].toString();
-                    String actualString = actualRow == null ? "null" : actualRow.toString();
-                    assertEquals(expectedString, actualString);
-                }
-                actualRows.add(actualRow);
-            }
-        } finally {
-            cursor.closeTopLevel();
-        }
-        assertEquals(expected.length, actualRows.size());
-    }
-
     protected void compareRenderedHKeys(String[] expected, Cursor cursor)
     {
         int count;
@@ -169,20 +144,6 @@ public class QPProfilePTBase extends PTBase
             cursor.closeTopLevel();
         }
         assertEquals(expected.length, count);
-    }
-
-    protected boolean equal(RowBase expected, RowBase actual)
-    {
-        boolean equal = expected.rowType().nFields() == actual.rowType().nFields();
-        ToObjectValueTarget target = new ToObjectValueTarget();
-        for (int i = 0; equal && i < actual.rowType().nFields(); i++) {
-            Object expectedField = target.convertFromSource(expected.eval(i));
-            Object actualField = target.convertFromSource(actual.eval(i));
-            equal =
-                expectedField == actualField || // handles case in which both are null
-                expectedField != null && actualField != null && expectedField.equals(actualField);
-        }
-        return equal;
     }
 
     protected static final Limit NO_LIMIT = new PersistitRowLimit(ScanLimit.NONE);

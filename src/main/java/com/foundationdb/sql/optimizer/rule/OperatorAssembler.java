@@ -17,18 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
-import static com.foundationdb.sql.optimizer.rule.OldExpressionAssembler.*;
-
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.server.t3expressions.OverloadResolver;
-import com.foundationdb.server.t3expressions.OverloadResolver.OverloadResult;
-import com.foundationdb.server.t3expressions.T3RegistryService;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSources;
-import com.foundationdb.server.types3.texpressions.TPreparedLiteral;
-import com.foundationdb.server.types3.texpressions.TValidatedScalar;
 import com.foundationdb.sql.optimizer.*;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.ExpressionsSource.DistinctState;
@@ -37,6 +26,9 @@ import com.foundationdb.sql.optimizer.plan.ResultSet.ResultField;
 import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
 import com.foundationdb.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 
+import com.foundationdb.sql.optimizer.rule.ExpressionAssembler.ColumnExpressionContext;
+import com.foundationdb.sql.optimizer.rule.ExpressionAssembler.ColumnExpressionToIndex;
+import com.foundationdb.sql.optimizer.rule.ExpressionAssembler.SubqueryOperatorAssembler;
 import com.foundationdb.sql.optimizer.rule.range.ColumnRanges;
 import com.foundationdb.sql.optimizer.rule.range.RangeSegment;
 import com.foundationdb.sql.types.DataTypeDescriptor;
@@ -52,12 +44,19 @@ import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.operator.API.InputPreservationOption;
 import com.foundationdb.qp.operator.API.JoinType;
 import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.t3expressions.OverloadResolver;
+import com.foundationdb.server.t3expressions.OverloadResolver.OverloadResult;
+import com.foundationdb.server.t3expressions.T3RegistryService;
 import com.foundationdb.server.types3.TCast;
 import com.foundationdb.server.types3.TExecutionContext;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.TPreptimeValue;
-import com.foundationdb.server.types3.Types3Switch;
+import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types3.texpressions.TPreparedLiteral;
+import com.foundationdb.server.types3.texpressions.TValidatedScalar;
 import com.foundationdb.server.types3.texpressions.AnySubqueryTExpression;
 import com.foundationdb.server.types3.texpressions.ExistsSubqueryTExpression;
 import com.foundationdb.server.types3.texpressions.ResultSetSubqueryTExpression;
@@ -70,18 +69,6 @@ import com.foundationdb.server.types3.texpressions.TPreparedFunction;
 
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.UnsupportedSQLException;
-
-import com.foundationdb.server.expression.Expression;
-import com.foundationdb.server.expression.ExpressionType;
-import com.foundationdb.server.expression.std.Expressions;
-import com.foundationdb.server.expression.std.FieldExpression;
-import com.foundationdb.server.expression.std.IfNullExpression;
-import com.foundationdb.server.expression.std.LiteralExpression;
-import com.foundationdb.server.expression.std.SequenceNextValueExpression;
-import com.foundationdb.server.expression.subquery.AnySubqueryExpression;
-import com.foundationdb.server.expression.subquery.ExistsSubqueryExpression;
-import com.foundationdb.server.expression.subquery.ResultSetSubqueryExpression;
-import com.foundationdb.server.expression.subquery.ScalarSubqueryExpression;
 
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.IndexScanSelector;
@@ -122,17 +109,9 @@ public class OperatorAssembler extends BaseRule
 
     public static final int INSERTION_SORT_MAX_LIMIT = 100;
 
-    private final boolean usePValues;
-
-    @SuppressWarnings("unused") // used by reflection in RulesTestHelper
     public OperatorAssembler() {
-        this.usePValues = Types3Switch.ON;
     }
     
-    public OperatorAssembler(boolean usePValues) {
-        this.usePValues = usePValues;
-    }
-
     @Override
     protected Logger getLogger() {
         return logger;
@@ -140,7 +119,7 @@ public class OperatorAssembler extends BaseRule
 
     @Override
     public void apply(PlanContext plan) {
-        new Assembler(plan, usePValues).apply();
+        new Assembler(plan).apply();
     }
 
     interface PartialAssembler<T extends Explainable> extends SubqueryOperatorAssembler<T> {
@@ -434,103 +413,6 @@ public class OperatorAssembler extends BaseRule
             }
         }
 
-        private class OldPartialAssembler extends BasePartialAssembler<Expression> {
-
-            private OldPartialAssembler(PlanContext context) {
-                super(new OldExpressionAssembler(context));
-            }
-
-            @Override
-            public void fillNulls(Index index, Expression[] keys) {
-                for (int i = 0; i < keys.length; ++i) {
-                    if (keys[i] == null)
-                        keys[i] = LiteralExpression.forNull();
-                }
-            }
-
-            @Override
-            public RowType valuesRowType(ExpressionsSource expressionsSource) {
-                AkType[] types = expressionsSource.getFieldTypes();
-                return schema.newValuesType(types);
-            }
-            
-            @Override
-            public Expression sequenceGenerator (Sequence sequence, Column column, Expression expression) {
-
-                Expression seqExpr = new com.foundationdb.server.expression.std.CastExpression (column.getType().akType(),
-                        new SequenceNextValueExpression(AkType.LONG, 
-                        new LiteralExpression (AkType.VARCHAR, sequence.getSequenceName().getSchemaName()),
-                        new LiteralExpression (AkType.VARCHAR, sequence.getSequenceName().getTableName())));
-                // If the row expression is not null (i.e. the user supplied values for this column)
-                // and the column is has "BY DEFAULT" as the identity generator
-                // replace the SequenceNextValue is a IFNULL(<user value>, <sequence>) expression. 
-                if (expression != null && 
-                        column.getDefaultIdentity() != null &&
-                        column.getDefaultIdentity().booleanValue()) { 
-                    List<Expression> expr = new ArrayList<>(2);
-                    expr.add(expression);
-                    expr.add(seqExpr);
-                    seqExpr = new IfNullExpression (expr);
-                }
-                return seqExpr; 
-            }
-
-            @Override
-            protected Expression existsExpression(Operator operator, RowType outerRowType, RowType innerRowType,
-                                                  int bindingPosition) {
-                return new ExistsSubqueryExpression(operator, outerRowType, innerRowType, bindingPosition);
-            }
-
-            @Override
-            protected Expression anyExpression(Operator operator, Expression innerExpression, RowType outerRowType,
-                                               RowType innerRowType,
-                                               int bindingPosition) {
-                return new AnySubqueryExpression(operator, innerExpression, outerRowType, innerRowType,
-                        bindingPosition);
-            }
-
-            @Override
-            protected Expression scalarSubqueryExpression(Operator operator, Expression innerExpression,
-                                                          RowType outerRowType, RowType innerRowType,
-                                                          int bindingPosition) {
-                return new ScalarSubqueryExpression(operator, innerExpression, outerRowType, innerRowType,
-                        bindingPosition);
-            }
-
-            @Override
-            protected Expression resultSetSubqueryExpression(Operator operator, TPreptimeValue preptimeValue,
-                                                             RowType outerRowType, RowType innerRowType,
-                                                             int bindingPosition) {
-                return new ResultSetSubqueryExpression(operator, outerRowType, innerRowType, bindingPosition);
-            }
-
-            @Override
-            public Expression field(RowType rowType, int position) {
-                return new FieldExpression(rowType, position);
-            }
-
-            @Override
-            protected Expression[] array(int size) {
-                return new Expression[size];
-            }
-
-            @Override
-            public Operator ifEmptyNulls(Operator input, RowType rowType,
-                                         InputPreservationOption inputPreservation) {
-                return API.ifEmpty_Default(input, rowType, createNulls(rowType), null, inputPreservation);
-            }
-
-            @Override
-            protected Expression nullExpression(RowType rowType, int i) {
-                return LiteralExpression.forNull();
-            }
-
-            @Override
-            public API.Ordering createOrdering() {
-                throw new IllegalStateException("types3 off");
-            }
-        }
-
         private class NewPartialAssembler extends BasePartialAssembler<TPreparedExpression> {
             private NewPartialAssembler(PlanContext context) {
                 super(new NewExpressionAssembler(context));
@@ -591,7 +473,7 @@ public class OperatorAssembler extends BaseRule
             @Override
             public Operator ifEmptyNulls(Operator input, RowType rowType,
                                          InputPreservationOption inputPreservation) {
-                return API.ifEmpty_Default(input, rowType, null, createNulls(rowType), inputPreservation);
+                return API.ifEmpty_Default(input, rowType, createNulls(rowType), inputPreservation);
             }
 
             @Override
@@ -618,8 +500,8 @@ public class OperatorAssembler extends BaseRule
                 TInstance instance = column.tInstance();
                 
                 List<TPreptimeValue> input = new ArrayList<>(2);
-                input.add(PValueSources.fromObject(sequence.getSequenceName().getSchemaName(), AkType.VARCHAR));
-                input.add(PValueSources.fromObject(sequence.getSequenceName().getTableName(), AkType.VARCHAR));
+                input.add(PValueSources.fromObject(sequence.getSequenceName().getSchemaName(), MString.varchar()));
+                input.add(PValueSources.fromObject(sequence.getSequenceName().getTableName(), MString.varchar()));
 
                 TValidatedScalar overload = resolver.get("NEXTVAL", input).getOverload();
 
@@ -663,30 +545,19 @@ public class OperatorAssembler extends BaseRule
         private SchemaRulesContext rulesContext;
         private PlanExplainContext explainContext;
         private Schema schema;
-        private boolean usePValues;
-        private final PartialAssembler<Expression> oldPartialAssembler;
         private final PartialAssembler<TPreparedExpression> newPartialAssembler;
         private final PartialAssembler<?> partialAssembler;
         private final Set<UserTable> affectedTables;
 
-        public Assembler(PlanContext planContext, boolean usePValues) {
-            this.usePValues = usePValues;
+        public Assembler(PlanContext planContext) {
             this.planContext = planContext;
             rulesContext = (SchemaRulesContext)planContext.getRulesContext();
             affectedTables = new HashSet<>();
             if (planContext instanceof ExplainPlanContext)
                 explainContext = ((ExplainPlanContext)planContext).getExplainContext();
             schema = rulesContext.getSchema();
-            if (usePValues) {
-                newPartialAssembler = new NewPartialAssembler(planContext);
-                oldPartialAssembler = nullAssembler();
-                partialAssembler = newPartialAssembler;
-            }
-            else {
-                newPartialAssembler = nullAssembler();
-                oldPartialAssembler = new OldPartialAssembler(planContext);
-                partialAssembler = oldPartialAssembler;
-            }
+            newPartialAssembler = new NewPartialAssembler(planContext);
+            partialAssembler = newPartialAssembler;
             computeBindingsOffsets();
         }
 
@@ -783,138 +654,86 @@ public class OperatorAssembler extends BaseRule
                     tableRowType(insert.getTargetTable());
             UserTable table = insert.getTargetTable().getTable();
 
-            List<Expression> inserts = null;
             List<TPreparedExpression> insertsP = null;
             if (projectFields != null) {
                 // In the common case, we can project into a wider row
                 // of the correct type directly.
                 insertsP = newPartialAssembler.assembleExpressions(projectFields, input.fieldOffsets);
-                inserts = oldPartialAssembler.assembleExpressions(projectFields, input.fieldOffsets);
             }
             else {
                 // VALUES just needs each field, which will get rearranged below.
                 int nfields = input.rowType.nFields();
-                if (usePValues) {
-                    insertsP = new ArrayList<>(nfields);
-                    for (int i = 0; i < nfields; ++i) {
-                        insertsP.add(new TPreparedField(input.rowType.typeInstanceAt(i), i));
-                    }
-                }
-                else {
-                    inserts = new ArrayList<>(nfields);
-                    for (int i = 0; i < nfields; i++) {
-                        inserts.add(Expressions.field(input.rowType, i));
-                    }
+                insertsP = new ArrayList<>(nfields);
+                for (int i = 0; i < nfields; ++i) {
+                    insertsP.add(new TPreparedField(input.rowType.typeInstanceAt(i), i));
                 }
             }
 
-            // Types 2 processing 
-            if (inserts != null) {
-                Expression[] row = new Expression[targetRowType.nFields()];
-                int ncols = inserts.size();
-
-                for (int i = 0; i < ncols; i++) {
-                    Column column = insert.getTargetColumns().get(i);
-                    int pos = column.getPosition();
-                    row[pos] = inserts.get(i);
-
-                    if (column.getType().akType() != row[pos].valueType() ) {
-                        row[pos] = new com.foundationdb.server.expression.std.CastExpression
-                                (column.getType().akType(), row[pos]);
-                    }
+            TPreparedExpression[] row = new TPreparedExpression[targetRowType.nFields()];
+            int ncols = insertsP.size();
+            for (int i = 0; i < ncols; i++) {
+                Column column = insert.getTargetColumns().get(i);
+                TInstance instance = column.tInstance();
+                int pos = column.getPosition();
+                row[pos] = insertsP.get(i);
+                
+                if (!instance.equals(row[pos].resultType())) {
+                    T3RegistryService registry = rulesContext.getT3Registry();
+                    TCast tcast = registry.getCastsResolver().cast(instance.typeClass(), row[pos].resultType().typeClass());
+                    row[pos] = 
+                            new TCastExpression(row[pos], tcast, instance, planContext.getQueryContext());
                 }
-                // Insert the sequence generator values and default value processing
-                for (int i = 0; i < targetRowType.nFields(); i++) {
-                    Column column = table.getColumnsIncludingInternal().get(i);
-                    if (column.getIdentityGenerator() != null) {
-                        Sequence sequence = table.getColumn(i).getIdentityGenerator();
-                        row[i] = oldPartialAssembler.sequenceGenerator(sequence, column, row[i]);
-                    } else if (row[i] == null) {
-                        Expression defval;
-                        if (column.getDefaultValue() != null) {
-                            defval = new LiteralExpression(AkType.VARCHAR, column.getDefaultValue());
-                        }
-                        else if (column.getDefaultFunction() != null) {
-                            defval = rulesContext.getFunctionsRegistry().composer(column.getDefaultFunction()).compose(Collections.<Expression>emptyList(), Collections.<ExpressionType>emptyList());
-                        }
-                        else {
-                            defval = new LiteralExpression(AkType.NULL, null);
-                        }
-                        if (defval.valueType() != column.getType().akType()) {
-                            defval = new com.foundationdb.server.expression.std.CastExpression(column.getType().akType(), defval);
+            }
+            // Insert the sequence generator and column default values
+            for (int i = 0, len = targetRowType.nFields(); i < len; ++i) {
+                Column column = table.getColumnsIncludingInternal().get(i);
+                if (column.getIdentityGenerator() != null) {
+                    Sequence sequence = table.getColumn(i).getIdentityGenerator();
+                    row[i] = newPartialAssembler.sequenceGenerator(sequence, column, row[i]);
+                } 
+                else if (row[i] == null) {
+                    TInstance tinst = targetRowType.typeInstanceAt(i);
+                    if (column.getDefaultFunction() != null) {
+                        T3RegistryService registry = rulesContext.getT3Registry();
+                        OverloadResolver<TValidatedScalar> resolver = registry.getScalarsResolver();
+                        TValidatedScalar overload = resolver.get(column.getDefaultFunction(), Collections.<TPreptimeValue>emptyList()).getOverload();
+                        TInstance dinst = overload.resultStrategy().fixed(false);
+                        TPreparedExpression defval = new TPreparedFunction(overload, dinst, Collections.<TPreparedExpression>emptyList(), planContext.getQueryContext());
+                        if (!dinst.equals(tinst)) {
+                            TCast tcast = registry.getCastsResolver().cast(dinst.typeClass(), tinst.typeClass());
+                            defval = new TCastExpression(defval, tcast, tinst, planContext.getQueryContext());
                         }
                         row[i] = defval;
                     }
-                }
-                inserts = Arrays.asList(row);
-                // else do the types 3 processing. 
-            } else { 
-                TPreparedExpression[] row = new TPreparedExpression[targetRowType.nFields()];
-                int ncols = insertsP.size();
-                for (int i = 0; i < ncols; i++) {
-                    Column column = insert.getTargetColumns().get(i);
-                    TInstance instance = column.tInstance();
-                    int pos = column.getPosition();
-                    row[pos] = insertsP.get(i);
-                    
-                    if (!instance.equals(row[pos].resultType())) {
-                        T3RegistryService registry = rulesContext.getT3Registry();
-                        TCast tcast = registry.getCastsResolver().cast(instance.typeClass(), row[pos].resultType().typeClass());
-                        row[pos] = 
-                                new TCastExpression(row[pos], tcast, instance, planContext.getQueryContext());
-                    }
-                }
-                // Insert the sequence generator and column default values
-                for (int i = 0, len = targetRowType.nFields(); i < len; ++i) {
-                    Column column = table.getColumnsIncludingInternal().get(i);
-                    if (column.getIdentityGenerator() != null) {
-                        Sequence sequence = table.getColumn(i).getIdentityGenerator();
-                        row[i] = newPartialAssembler.sequenceGenerator(sequence, column, row[i]);
-                    } 
-                    else if (row[i] == null) {
-                        TInstance tinst = targetRowType.typeInstanceAt(i);
-                        if (column.getDefaultFunction() != null) {
-                            T3RegistryService registry = rulesContext.getT3Registry();
-                            OverloadResolver<TValidatedScalar> resolver = registry.getScalarsResolver();
-                            TValidatedScalar overload = resolver.get(column.getDefaultFunction(), Collections.<TPreptimeValue>emptyList()).getOverload();
-                            TInstance dinst = overload.resultStrategy().fixed(false);
-                            TPreparedExpression defval = new TPreparedFunction(overload, dinst, Collections.<TPreparedExpression>emptyList(), planContext.getQueryContext());
-                            if (!dinst.equals(tinst)) {
-                                TCast tcast = registry.getCastsResolver().cast(dinst.typeClass(), tinst.typeClass());
-                                defval = new TCastExpression(defval, tcast, tinst, planContext.getQueryContext());
-                            }
-                            row[i] = defval;
-                        }
-                        else {
-                            final String defaultValue = column.getDefaultValue();
-                            final PValue defaultValueSource;
-                            if(defaultValue == null) {
+                    else {
+                        final String defaultValue = column.getDefaultValue();
+                        final PValue defaultValueSource;
+                        if(defaultValue == null) {
+                            defaultValueSource = new PValue(tinst);
+                            defaultValueSource.putNull();
+                        } else {
+                            TCast cast = tinst.typeClass().castFromVarchar();
+                            if (cast != null) {
                                 defaultValueSource = new PValue(tinst);
-                                defaultValueSource.putNull();
+                                TInstance valInst = MString.VARCHAR.instance(defaultValue.length(), false);
+                                TExecutionContext executionContext = new TExecutionContext(
+                                        Collections.singletonList(valInst),
+                                        tinst, planContext.getQueryContext());
+                                cast.evaluate(executionContext,
+                                              new PValue(MString.varcharFor(defaultValue), defaultValue),
+                                              defaultValueSource);
                             } else {
-                                TCast cast = tinst.typeClass().castFromVarchar();
-                                if (cast != null) {
-                                    defaultValueSource = new PValue(tinst);
-                                    TInstance valInst = MString.VARCHAR.instance(defaultValue.length(), false);
-                                    TExecutionContext executionContext = new TExecutionContext(
-                                            Collections.singletonList(valInst),
-                                            tinst, planContext.getQueryContext());
-                                    cast.evaluate(executionContext,
-                                                  new PValue(MString.varcharFor(defaultValue), defaultValue),
-                                                  defaultValueSource);
-                                } else {
-                                    defaultValueSource = new PValue (tinst, defaultValue);
-                                }
+                                defaultValueSource = new PValue (tinst, defaultValue);
                             }
-                            row[i] = new TPreparedLiteral(tinst, defaultValueSource);
                         }
+                        row[i] = new TPreparedLiteral(tinst, defaultValueSource);
                     }
                 }
                 insertsP = Arrays.asList(row);
             }
             
             input.operator = API.project_Table(input.operator, input.rowType,
-                    targetRowType, inserts, insertsP);
+                    targetRowType, insertsP);
             input.rowType = input.operator.rowType();
             input.fieldOffsets = new ColumnSourceFieldOffsets(insert.getTable(), targetRowType);
             return input;
@@ -955,31 +774,26 @@ public class OperatorAssembler extends BaseRule
             assert (stream.rowType == targetRowType);
 
             List<UpdateColumn> updateColumns = updateStatement.getUpdateColumns();
-            List<Expression> updates = oldPartialAssembler.assembleUpdates(targetRowType, updateColumns,
-                    stream.fieldOffsets);
             List<TPreparedExpression> updatesP = newPartialAssembler.assembleUpdates(targetRowType, updateColumns,
                     stream.fieldOffsets);
             UpdateFunction updateFunction = 
-                new ExpressionRowUpdateFunction(updates, updatesP, targetRowType);
+                new ExpressionRowUpdateFunction(updatesP, targetRowType);
 
             stream.operator = API.update_Returning(stream.operator, updateFunction);
             stream.fieldOffsets = new ColumnSourceFieldOffsets (updateStatement.getTable(), targetRowType);
             if (explainContext != null)
-                explainUpdateStatement(stream.operator, updateStatement, updateColumns, updates, updatesP);            
+                explainUpdateStatement(stream.operator, updateStatement, updateColumns, updatesP);            
             return stream;
         }
 
-        protected void explainUpdateStatement(Operator plan, UpdateStatement updateStatement, List<UpdateColumn> updateColumns, List<Expression> updates, List<TPreparedExpression> updatesP) {
+        protected void explainUpdateStatement(Operator plan, UpdateStatement updateStatement, List<UpdateColumn> updateColumns, List<TPreparedExpression> updatesP) {
             Attributes atts = new Attributes();
             TableName tableName = updateStatement.getTargetTable().getTable().getName();
             atts.put(Label.TABLE_SCHEMA, PrimitiveExplainer.getInstance(tableName.getSchemaName()));
             atts.put(Label.TABLE_NAME, PrimitiveExplainer.getInstance(tableName.getTableName()));
             for (UpdateColumn column : updateColumns) {
                 atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getColumn().getName()));
-                if (usePValues)
-                    atts.put(Label.EXPRESSIONS, updatesP.get(column.getColumn().getPosition()).getExplainer(explainContext));
-                else
-                    atts.put(Label.EXPRESSIONS, updates.get(column.getColumn().getPosition()).getExplainer(explainContext));
+                atts.put(Label.EXPRESSIONS, updatesP.get(column.getColumn().getPosition()).getExplainer(explainContext));
             }
             explainContext.putExtraInfo(plan, new CompoundExplainer(Type.EXTRA_INFO, atts));
         }
@@ -988,7 +802,6 @@ public class OperatorAssembler extends BaseRule
             DELETE_COUNT.hit();
             RowStream stream = assembleQuery(delete.getInput());
             
-            //stream = assembleDeleteProjectTable (stream, projectFields, delete);
             UserTableRowType targetRowType = tableRowType(delete.getTargetTable());
             
             stream.operator = API.delete_Returning(stream.operator, false);
@@ -1323,9 +1136,8 @@ public class OperatorAssembler extends BaseRule
             stream.rowType = partialAssembler.valuesRowType(expressionsSource);
             List<BindableRow> bindableRows = new ArrayList<>();
             for (List<ExpressionNode> exprs : expressionsSource.getExpressions()) {
-                List<Expression> expressions = oldPartialAssembler.assembleExpressions(exprs, stream.fieldOffsets);
                 List<TPreparedExpression> tExprs = newPartialAssembler.assembleExpressions(exprs, stream.fieldOffsets);
-                bindableRows.add(BindableRow.of(stream.rowType, expressions, tExprs, planContext.getQueryContext()));
+                bindableRows.add(BindableRow.of(stream.rowType, tExprs, planContext.getQueryContext()));
             }
             stream.operator = API.valuesScan_Default(bindableRows, stream.rowType);
             stream.fieldOffsets = new ColumnSourceFieldOffsets(expressionsSource, 
@@ -1368,18 +1180,10 @@ public class OperatorAssembler extends BaseRule
                     rowType = tableRowType(table);
                     fieldOffsets = new ColumnSourceFieldOffsets(table, rowType);
                 }
-                if (usePValues) {
-                    stream.operator = API.select_HKeyOrdered(stream.operator,
-                            rowType,
-                            newPartialAssembler.assembleExpression(condition,
-                                    fieldOffsets));
-                }
-                else {
-                    stream.operator = API.select_HKeyOrdered(stream.operator,
-                                                             rowType,
-                                                             oldPartialAssembler.assembleExpression(condition,
-                                                                     fieldOffsets));
-                }
+                stream.operator = API.select_HKeyOrdered(stream.operator,
+                        rowType,
+                        newPartialAssembler.assembleExpression(condition,
+                                fieldOffsets));
             }
             return stream;
         }
@@ -1683,7 +1487,7 @@ public class OperatorAssembler extends BaseRule
                              API.SortOption.PRESERVE_DUPLICATES);
                 break;
             }
-            PartialAssembler<?> partialAssembler = usePValues ? newPartialAssembler : oldPartialAssembler;
+            PartialAssembler<?> partialAssembler = newPartialAssembler;
             stream.operator = partialAssembler.assembleAggregates(stream.operator, stream.rowType, nkeys,
                     aggregateSource);
             stream.rowType = stream.operator.rowType();
@@ -1868,8 +1672,6 @@ public class OperatorAssembler extends BaseRule
             nestedBindingsDepth++;
             RowStream cstream = assembleStream(bloomFilterFilter.getCheck());
             boundRows.set(pos, null);
-            List<Expression> fields = oldPartialAssembler.assembleExpressions(bloomFilterFilter.getLookupExpressions(),
-                    stream.fieldOffsets);
             List<TPreparedExpression> tFields = newPartialAssembler.assembleExpressions(bloomFilterFilter.getLookupExpressions(),
                     stream.fieldOffsets);
             List<AkCollator> collators = new ArrayList<>();
@@ -1878,7 +1680,6 @@ public class OperatorAssembler extends BaseRule
             }
             stream.operator = API.select_BloomFilter(stream.operator,
                                                      cstream.operator,
-                                                     fields,
                                                      tFields,
                                                      collators,
                                                      pos + loopBindingsOffset,
@@ -1890,19 +1691,10 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleProject(Project project) {
             RowStream stream = assembleStream(project.getInput());
-            List<Expression> oldProjections;
             List<? extends TPreparedExpression> pExpressions;
-            if (usePValues) {
-                pExpressions = newPartialAssembler.assembleExpressions(project.getFields(), stream.fieldOffsets);
-                oldProjections = null;
-            }
-            else {
-                pExpressions = null;
-                oldProjections = oldPartialAssembler.assembleExpressions(project.getFields(), stream.fieldOffsets);
-            }
+            pExpressions = newPartialAssembler.assembleExpressions(project.getFields(), stream.fieldOffsets);
             stream.operator = API.project_Default(stream.operator,
                                                   stream.rowType,
-                                                  oldProjections,
                                                   pExpressions);
             stream.rowType = stream.operator.rowType();
             stream.fieldOffsets = new ColumnSourceFieldOffsets(project,
@@ -1967,69 +1759,56 @@ public class OperatorAssembler extends BaseRule
             IndexRowType indexRowType = getIndexRowType(index);
             if ((equalityComparands == null) &&
                     (lowComparand == null) && (highComparand == null))
-                return IndexKeyRange.unbounded(indexRowType, usePValues);
+                return IndexKeyRange.unbounded(indexRowType);
 
             int nkeys = 0;
             if (equalityComparands != null)
                 nkeys = equalityComparands.size();
             if ((lowComparand != null) || (highComparand != null))
                 nkeys++;
-            TPreparedExpression[] pkeys = usePValues ? new TPreparedExpression[nkeys] : null;
-            Expression[] keys = usePValues ? null : new Expression[nkeys];
+            TPreparedExpression[] pkeys = new TPreparedExpression[nkeys];
 
             int kidx = 0;
             if (equalityComparands != null) {
                 for (ExpressionNode comp : equalityComparands) {
                     if (!(comp instanceof IsNullIndexKey)) { // Java null means IS NULL; Null expression wouldn't match.
                         newPartialAssembler.assembleExpressionInto(comp, fieldOffsets, pkeys, kidx);
-                        oldPartialAssembler.assembleExpressionInto(comp, fieldOffsets, keys, kidx);
                     }
                     kidx++;
                 }
             }
 
             if ((lowComparand == null) && (highComparand == null)) {
-                IndexBound eq = getIndexBound(index.getIndex(), keys, pkeys, kidx);
+                IndexBound eq = getIndexBound(index.getIndex(), pkeys, kidx);
                 return IndexKeyRange.bounded(indexRowType, eq, true, eq, true);
             }
             else {
-                Expression[] lowKeys = null, highKeys = null;
                 TPreparedExpression[] lowPKeys = null, highPKeys = null;
                 boolean lowInc = false, highInc = false;
                 int lidx = kidx, hidx = kidx;
                 if ((lidx > 0) || (lowComparand != null)) {
-                    lowKeys = keys;
                     lowPKeys = pkeys;
                     if ((hidx > 0) || (highComparand != null)) {
-                        if (usePValues) {
-                            highPKeys = new TPreparedExpression[nkeys];
-                            System.arraycopy(pkeys, 0, highPKeys, 0, nkeys);
-                        }
-                        else {
-                            highKeys = new Expression[nkeys];
-                            System.arraycopy(keys, 0, highKeys, 0, nkeys);
-                        }
+                        highPKeys = new TPreparedExpression[nkeys];
+                        System.arraycopy(pkeys, 0, highPKeys, 0, nkeys);
                     }
                 }
                 else if (highComparand != null) {
-                    highKeys = keys;
                     highPKeys = pkeys;
                 }
                 if (lowComparand != null) {
-                    oldPartialAssembler.assembleExpressionInto(lowComparand, fieldOffsets, lowKeys, lidx);
                     newPartialAssembler.assembleExpressionInto(lowComparand, fieldOffsets, lowPKeys, lidx);
                     lidx++;
                     lowInc = lowInclusive;
                 }
                 if (highComparand != null) {
-                    oldPartialAssembler.assembleExpressionInto(highComparand, fieldOffsets, highKeys, hidx);
                     newPartialAssembler.assembleExpressionInto(highComparand, fieldOffsets, highPKeys, hidx);
                     hidx++;
                     highInc = highInclusive;
                 }
                 int bounded = lidx > hidx ? lidx : hidx;
-                IndexBound lo = getIndexBound(index.getIndex(), lowKeys, lowPKeys, bounded);
-                IndexBound hi = getIndexBound(index.getIndex(), highKeys, highPKeys, bounded);
+                IndexBound lo = getIndexBound(index.getIndex(), lowPKeys, bounded);
+                IndexBound hi = getIndexBound(index.getIndex(), highPKeys, bounded);
                 assert lo != null || hi != null;
                 if (lo == null) {
                     lo = getNullIndexBound(index.getIndex(), hidx);
@@ -2046,7 +1825,6 @@ public class OperatorAssembler extends BaseRule
             API.Ordering ordering = partialAssembler.createOrdering();
             List<OrderByExpression> indexOrdering = index.getOrdering();
             for (int i = 0; i < indexOrdering.size(); i++) {
-                Expression expr = oldPartialAssembler.field(indexRowType, i);
                 TPreparedExpression tExpr = newPartialAssembler.field(indexRowType, i);
                 ordering.append(tExpr,
                                 indexOrdering.get(i).isAscending(),
@@ -2065,10 +1843,6 @@ public class OperatorAssembler extends BaseRule
             return schema.userTableRowType(userTable);
         }
 
-        protected ValuesRowType valuesRowType(AkType[] fields) {
-            return schema.newValuesType(fields);
-        }
-
         protected IndexRowType getIndexRowType(SingleIndexScan index) {
             Index aisIndex = index.getIndex();
             AkibanInformationSchema ais = schema.ais();
@@ -2083,36 +1857,23 @@ public class OperatorAssembler extends BaseRule
          * @param keys {@link Expression}s for index lookup key
          * @param nBoundKeys number of keys actually in use
          */
-        protected IndexBound getIndexBound(Index index, Expression[] keys, TPreparedExpression[] pKeys,
+        protected IndexBound getIndexBound(Index index, TPreparedExpression[] pKeys,
                                            int nBoundKeys) {
-            if (keys == null && pKeys == null)
+            if (pKeys == null)
                 return null;
-            Expression[] boundKeys;
             TPreparedExpression[] boundPKeys;
-            boolean usePKeys = pKeys != null;
-            int nkeys = usePKeys ? pKeys.length : keys.length;
+            int nkeys = pKeys.length;
             if (nBoundKeys < nkeys) {
                 Object[] source, dest;
-                if (usePKeys) {
-                    boundKeys = null;
-                    boundPKeys = new TPreparedExpression[nBoundKeys];
-                    source = pKeys;
-                    dest = boundPKeys;
-                }
-                else {
-                    boundKeys = new Expression[nBoundKeys];
-                    boundPKeys = null;
-                    source = keys;
-                    dest = boundKeys;
-                }
+                boundPKeys = new TPreparedExpression[nBoundKeys];
+                source = pKeys;
+                dest = boundPKeys;
                 System.arraycopy(source, 0, dest, 0, nBoundKeys);
             } else {
-                boundKeys = keys;
                 boundPKeys = pKeys;
             }
             newPartialAssembler.fillNulls(index, pKeys);
-            oldPartialAssembler.fillNulls(index, keys);
-            return new IndexBound(getIndexExpressionRow(index, boundKeys, boundPKeys),
+            return new IndexBound(getIndexExpressionRow(index, boundPKeys),
                                   getIndexColumnSelector(index, nBoundKeys));
         }
 
@@ -2121,9 +1882,8 @@ public class OperatorAssembler extends BaseRule
          * @param nkeys number of keys actually in use
          */
         protected IndexBound getNullIndexBound(Index index, int nkeys) {
-            Expression[] keys = oldPartialAssembler.createNulls(index, nkeys);
             TPreparedExpression[] pKeys = newPartialAssembler.createNulls(index, nkeys);
-            return new IndexBound(getIndexExpressionRow(index, keys, pKeys),
+            return new IndexBound(getIndexExpressionRow(index, pKeys),
                                   getIndexColumnSelector(index, nkeys));
         }
 
@@ -2176,24 +1936,20 @@ public class OperatorAssembler extends BaseRule
             if (equalityComparands != null)
                 nkeys = equalityComparands.size();
             nkeys += 2;
-            TPreparedExpression[] pkeys = usePValues ? new TPreparedExpression[nkeys] : null;
-            Expression[] keys = usePValues ? null : new Expression[nkeys];
+            TPreparedExpression[] pkeys = new TPreparedExpression[nkeys];
             int kidx = 0;
             if (equalityComparands != null) {
                 for (ExpressionNode comp : equalityComparands) {
                     if (comp != null) {
                         newPartialAssembler.assembleExpressionInto(comp, fieldOffsets, pkeys, kidx);
-                        oldPartialAssembler.assembleExpressionInto(comp, fieldOffsets, keys, kidx);
                     }
                     kidx++;
                 }
             }
-            newPartialAssembler.assembleExpressionInto(y, fieldOffsets, pkeys, kidx);
-            oldPartialAssembler.assembleExpressionInto(y, fieldOffsets, keys, kidx++);
-            newPartialAssembler.assembleExpressionInto(x, fieldOffsets, pkeys, kidx);
-            oldPartialAssembler.assembleExpressionInto(x, fieldOffsets, keys, kidx++);
-            assert (kidx == nkeys);
-            return getIndexBound(index.getIndex(), keys, pkeys, nkeys);
+            newPartialAssembler.assembleExpressionInto(y, fieldOffsets, pkeys, kidx++);
+            newPartialAssembler.assembleExpressionInto(x, fieldOffsets, pkeys, kidx++);
+            assert (kidx == nkeys) : "kidx (" +kidx + ") != nkeys (" + nkeys + ")";
+            return getIndexBound(index.getIndex(), pkeys, nkeys);
         }
 
         /** Return a column selector that enables the first <code>nkeys</code> fields
@@ -2212,11 +1968,10 @@ public class OperatorAssembler extends BaseRule
          * {@link Expression} values.  
          */
         protected UnboundExpressions getIndexExpressionRow(Index index, 
-                                                           Expression[] keys, TPreparedExpression[] pKeys) {
+                                                           TPreparedExpression[] pKeys) {
             RowType rowType = schema.indexRowType(index);
-            List<Expression> expressions = keys == null ? null : Arrays.asList(keys);
-            List<TPreparedExpression> pExprs = pKeys == null ? null : Arrays.asList(pKeys);
-            return new RowBasedUnboundExpressions(rowType, expressions, pExprs);
+            List<TPreparedExpression> pExprs = Arrays.asList(pKeys);
+            return new RowBasedUnboundExpressions(rowType, pExprs);
         }
 
         // Get the required type for any parameters to the statement.

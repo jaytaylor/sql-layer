@@ -37,15 +37,9 @@
 - Statement: SELECT DAYOFYEAR('2009-12-12', 23) FROM all_types;
 - error: !select-engine { sys-mysql: [1582], all: [4250C] }
 ---
-- Newtypes: false
----
 - Statement: SELECT bigint_field from all_types WHERE DAYOFYEAR(19960228.5) = 60;
-- output: [[19001231]]
----
-- Newtypes: true
+- row_count: 0
 ---
 - Statement: SELECT bigint_field from all_types WHERE DAYOFYEAR(19960228.5) IS NULL;
 - output: [[19001231]]
----
-- Newtypes: null
 ...

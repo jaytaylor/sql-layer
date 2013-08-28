@@ -443,26 +443,26 @@ public class KeyUpdateIT extends KeyUpdateBase
     {
         // vendor
         vendorId = createTable("coi", "vendor",
-                               "vid int not null primary key",
-                               "vx int");
+                               "vid bigint not null primary key",
+                               "vx bigint");
         v_vid = 0;
         v_vx = 1;
         // customer
         customerId = createTable("coi", "customer",
-                                 "cid int not null primary key",
-                                 "vid int",
-                                 "cx int",
+                                 "cid bigint not null primary key",
+                                 "vid bigint",
+                                 "cx bigint",
                                  "grouping foreign key (vid) references vendor(vid)");
         c_cid = 0;
         c_vid = 1;
         c_cx = 2;
         // order
         orderId = createTable("coi", "order",
-                              "oid int not null primary key",
-                              "cid int",
-                              "ox int",
-                              "priority int",
-                              "when int",
+                              "oid bigint not null primary key",
+                              "cid bigint",
+                              "ox bigint",
+                              "priority bigint",
+                              "when bigint",
                               "unique(when)",
                               "grouping foreign key (cid) references customer(cid)");
         createIndex("coi", "order", "priority", "priority");
@@ -473,9 +473,9 @@ public class KeyUpdateIT extends KeyUpdateBase
         o_when = 4;
         // item
         itemId = createTable("coi", "item",
-                             "iid int not null primary key",
-                             "oid int",
-                             "ix int",
+                             "iid bigint not null primary key",
+                             "oid bigint",
+                             "ix bigint",
                              "grouping foreign key (oid) references \"order\"(oid)");
         i_iid = 0;
         i_oid = 1;

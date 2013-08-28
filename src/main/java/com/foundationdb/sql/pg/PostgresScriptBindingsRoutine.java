@@ -22,11 +22,9 @@ import com.foundationdb.server.service.routines.ScriptEvaluator;
 import com.foundationdb.server.service.routines.ScriptPool;
 import com.foundationdb.sql.script.ScriptBindingsRoutine;
 import com.foundationdb.sql.server.ServerCallInvocation;
-import com.foundationdb.sql.server.ServerJavaMethod;
 import com.foundationdb.sql.server.ServerJavaRoutine;
 
 import java.util.List;
-import java.io.IOException;
 
 public class PostgresScriptBindingsRoutine extends PostgresJavaRoutine
 {
@@ -36,22 +34,20 @@ public class PostgresScriptBindingsRoutine extends PostgresJavaRoutine
                                                           ServerCallInvocation invocation,
                                                           List<String> columnNames, 
                                                           List<PostgresType> columnTypes,
-                                                          PostgresType[] parameterTypes,
-                                                          boolean usesPValues) {
+                                                          PostgresType[] parameterTypes) {
         ScriptPool<ScriptEvaluator> pool = server.getRoutineLoader()
             .getScriptEvaluator(server.getSession(), invocation.getRoutineName());
         return new PostgresScriptBindingsRoutine(pool, invocation,
                                                  columnNames, columnTypes,
-                                                 parameterTypes, usesPValues);
+                                                 parameterTypes);
     }
 
     protected PostgresScriptBindingsRoutine(ScriptPool<ScriptEvaluator> pool,
                                             ServerCallInvocation invocation,
                                             List<String> columnNames, 
                                             List<PostgresType> columnTypes,
-                                            PostgresType[] parameterTypes,
-                                            boolean usesPValues) {
-        super(invocation, columnNames, columnTypes, parameterTypes, usesPValues);
+                                            PostgresType[] parameterTypes) {
+        super(invocation, columnNames, columnTypes, parameterTypes);
         this.pool = pool;
     }
 

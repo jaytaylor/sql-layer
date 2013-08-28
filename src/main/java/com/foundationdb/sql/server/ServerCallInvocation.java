@@ -30,8 +30,6 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.server.error.NoSuchRoutineException;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.FromObjectValueSource;
-import com.foundationdb.server.types.ValueSource;
 import com.foundationdb.server.types3.TClass;
 import com.foundationdb.server.types3.TExecutionContext;
 import com.foundationdb.server.types3.TInstance;
@@ -141,31 +139,16 @@ public class ServerCallInvocation extends ServerRoutineInvocation
         return true;
     }
 
-    public void copyParameters(QueryBindings source, QueryBindings target,
-                               boolean usePVals) {
-        if (usePVals) {
-            for (int i = 0; i < parameterArgs.length; i++) {
-                if (parameterArgs[i] < 0) {
-                    AkType nullType = null;
-                    if (constantArgs[i] == null)
-                        nullType = getAkType(i);
-                    target.setPValue(i, PValueSources.fromObject(constantArgs[i], nullType).value());
-                }
-                else {
-                    target.setPValue(i, source.getPValue(parameterArgs[i]));
-                }
+    public void copyParameters(QueryBindings source, QueryBindings target) {
+        for (int i = 0; i < parameterArgs.length; i++) {
+            if (parameterArgs[i] < 0) {
+                TInstance tInstance = null;
+                if (constantArgs[i] == null)
+                    tInstance = this.getTInstance(i);
+                target.setPValue(i, PValueSources.pValuefromObject(constantArgs[i], tInstance));
             }
-        }
-        else {
-            FromObjectValueSource value = new FromObjectValueSource();
-            for (int i = 0; i < parameterArgs.length; i++) {
-                if (parameterArgs[i] < 0) {
-                    value.setReflectively(constantArgs[i]);
-                    target.setValue(i, value);
-                }
-                else {
-                    target.setValue(i, source.getValue(parameterArgs[i]));
-                }
+            else {
+                target.setPValue(i, source.getPValue(parameterArgs[i]));
             }
         }
     }
@@ -211,24 +194,13 @@ public class ServerCallInvocation extends ServerRoutineInvocation
         }
 
         @Override
-        protected ValueSource getValue(int index) {
-            if (parameterArgs[index] < 0) {
-                return new FromObjectValueSource().setReflectively(constantArgs[index]);
-            }
-            else {
-                return bindings.getValue(parameterArgs[index]);
-            }
-        }
-
-        @Override
         protected PValueSource getPValue(int index) {
             TInstance tinstance = getTInstance(index);
             TClass tclass = tinstance.typeClass();
             PValueSource source;
             if (parameterArgs[index] < 0) {
-                TPreptimeValue value = PValueSources.fromObject(constantArgs[index], null);
-                source = value.value();
-                if (value.instance().typeClass().equals(tclass))
+                source = PValueSources.pValuefromObject(constantArgs[index], tinstance);
+                if (source.tInstance().typeClass().equals(tclass))
                     return source; // Literal value matches.
             }
             else {
@@ -245,23 +217,8 @@ public class ServerCallInvocation extends ServerRoutineInvocation
         }
 
         @Override
-        protected AkType getAkType(int index) {
-            return ServerCallInvocation.this.getAkType(index);
-        }
-
-        @Override
         protected TInstance getTInstance(int index) {
             return ServerCallInvocation.this.getTInstance(index);
-        }
-
-        @Override
-        protected void setValue(int index, ValueSource source, AkType akType) {
-            if (parameterArgs[index] < 0) {
-                // An INOUT passed as a constant; do not overwrite it.
-            }
-            else {
-                bindings.setValue(parameterArgs[index], source, akType);
-            }
         }
 
         @Override

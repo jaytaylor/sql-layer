@@ -23,9 +23,9 @@ import com.foundationdb.junit.OnlyIfNot;
 import com.foundationdb.junit.Parameterization;
 import com.foundationdb.junit.ParameterizationBuilder;
 import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.ValueSource;
-import com.foundationdb.server.types.ValueTarget;
-import com.foundationdb.server.types.extract.ConverterTestUtils;
+import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.pvalue.PValueTarget;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -123,7 +123,7 @@ public abstract class ConversionTestBase {
     }
 
     protected ConversionTestBase(ConversionSuite<?> suite, int indexWithinSuite) {
-        ConverterTestUtils.setGlobalTimezone("UTC");
+        //ConverterTestUtils.setGlobalTimezone("UTC");
         this.suite = suite;
         this.indexWithinSuite = indexWithinSuite;
     }
@@ -155,12 +155,12 @@ public abstract class ConversionTestBase {
 
     private static class NoCheckLinkedConversion implements LinkedConversion<Object> {
         @Override
-        public ValueSource linkedSource() {
+        public PValueSource linkedSource() {
             return delegate.linkedSource();
         }
 
         @Override
-        public ValueTarget linkedTarget() {
+        public PValueTarget linkedTarget() {
             return delegate.linkedTarget();
         }
 

@@ -45,7 +45,7 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
     private void createAndLoad() {
         tid = createTable(SCHEMA, T1_NAME, T1_DDL);
         for(int i = 0; i < ROW_COUNT; ++i) {
-            rows[i] = createNewRow(tid, i+1L);
+            rows[i] = createNewRow(tid, i+1);
         }
         writeRows(rows);
     }

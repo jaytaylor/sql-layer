@@ -529,20 +529,20 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
     {
         // vendor
         vendorId = createTable("coi", "vendor",
-                               "vid1 int not null",
-                               "vx int",
-                               "vid2 int not null",
+                               "vid1 bigint not null",
+                               "vx bigint",
+                               "vid2 bigint not null",
                                "primary key(vid1, vid2)");
         v_vid1 = 0;
         v_vid2 = 2;
         v_vx = 1;
         // customer
         customerId = createTable("coi", "customer",
-                                 "vid1 int",
-                                 "cid2 int not null",
-                                 "vid2 int",
-                                 "cx int",
-                                 "cid1 int not null",
+                                 "vid1 bigint",
+                                 "cid2 bigint not null",
+                                 "vid2 bigint",
+                                 "cx bigint",
+                                 "cid1 bigint not null",
                                  "primary key(cid1, cid2)",
                                  "grouping foreign key (vid1, vid2) references vendor(vid1, vid2)");
         c_cid1 = 4;
@@ -552,13 +552,13 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
         c_cx = 3;
         // order
         orderId = createTable("coi", "order",
-                              "cid1 int",
-                              "cid2 int",
-                              "oid2 int not null",
-                              "oid1 int not null",
-                              "ox int",
-                              "priority int",
-                              "when int",
+                              "cid1 bigint",
+                              "cid2 bigint",
+                              "oid2 bigint not null",
+                              "oid1 bigint not null",
+                              "ox bigint",
+                              "priority bigint",
+                              "when bigint",
                               "primary key(oid1, oid2)",
                               "unique(when)",
                               "grouping foreign key (cid1, cid2) references customer(cid1, cid2)");
@@ -572,11 +572,11 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
         o_when = 6;
         // item
         itemId = createTable("coi", "item",
-                             "ix int",
-                             "oid1 int",
-                             "oid2 int",
-                             "iid1 int not null",
-                             "iid2 int not null",
+                             "ix bigint",
+                             "oid1 bigint",
+                             "oid2 bigint",
+                             "iid1 bigint not null",
+                             "iid2 bigint not null",
                              "primary key(iid1, iid2)",
                              "grouping foreign key (oid1, oid2) references \"order\"(oid1, oid2)");
         i_iid1 = 3;

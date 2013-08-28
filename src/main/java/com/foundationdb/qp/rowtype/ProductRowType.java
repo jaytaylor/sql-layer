@@ -21,7 +21,6 @@ import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.explain.CompoundExplainer;
 import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.Label;
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.types3.TInstance;
 
 import java.util.HashSet;
@@ -38,13 +37,6 @@ public class ProductRowType extends CompoundRowType
     }
 
     // RowType interface
-
-    @Override
-    public AkType typeAt(int index) {
-        if (index < first().nFields())
-            return first().typeAt(index);
-        return second().typeAt(index - first().nFields() + branchType.nFields());
-    }
 
     @Override
     public TInstance typeInstanceAt(int index) {

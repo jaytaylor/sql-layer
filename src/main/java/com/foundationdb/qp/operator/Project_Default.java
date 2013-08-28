@@ -23,7 +23,6 @@ import com.foundationdb.qp.rowtype.ProjectedRowType;
 import com.foundationdb.qp.rowtype.ProjectedUserTableRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.expression.Expression;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types3.texpressions.TPreparedExpression;
@@ -79,9 +78,9 @@ class Project_Default extends Operator
     public String toString()
     {
         if (projectType.hasUserTable()) {
-            return String.format("project to table %s (%s)", projectType.userTable(), (pExpressions != null) ? pExpressions.toString() : projections.toString());
+            return String.format("project to table %s (%s)", projectType.userTable(), pExpressions.toString());
         } else {
-            return String.format("project(%s)", (pExpressions != null) ? pExpressions.toString() : projections.toString());
+            return String.format("project(%s)", pExpressions.toString());
         }
     }
 
@@ -120,47 +119,32 @@ class Project_Default extends Operator
 
     // Project_Default interface
 
-    public Project_Default(Operator inputOperator, RowType rowType, List<? extends Expression> projections, List<? extends TPreparedExpression> pExpressions)
+    public Project_Default(Operator inputOperator, RowType rowType, List<? extends TPreparedExpression> pExpressions)
     {
         ArgumentValidation.notNull("rowType", rowType);
-        if (projections == null && pExpressions == null)
-            throw new IllegalArgumentException("either projections or pExpressions must be present");
-        if (projections == null)
-            ArgumentValidation.isGT("pExpressions.size()", pExpressions.size(), 0);
-        else if (pExpressions == null)
-            ArgumentValidation.isGT("projections.size()", projections.size(), 0);
-        else
-            throw new IllegalArgumentException("only one of projections or pExpressions must be present");
+        ArgumentValidation.notEmpty("new projections", pExpressions);
+
         this.inputOperator = inputOperator;
         this.rowType = rowType;
         this.pExpressions = pExpressions;
         this.tInstances = TInstance.createTInstances(pExpressions);
-        this.projections = projections;
-        this.projectType = rowType.schema().newProjectType(this.projections, pExpressions);
+        this.projectType = rowType.schema().newProjectType(pExpressions);
     }
 
     // Project_Default constructor, returns ProjectedUserTableRowType rows
     public Project_Default(Operator inputOperator, RowType inputRowType,
-            RowType projectTableRowType, List<? extends Expression> projections, List<? extends TPreparedExpression> pExpressions)
+            RowType projectTableRowType, List<? extends TPreparedExpression> pExpressions)
     {
         ArgumentValidation.notNull("inputRowType", inputRowType);
-        if (pExpressions != null)
-            ArgumentValidation.notEmpty("new projections", pExpressions);
-        else if (projections != null)
-            ArgumentValidation.notEmpty("new projections", projections);
-        else
-            throw new IllegalArgumentException("both expressions lists can't be null");
-        assert (projections == null) || (pExpressions == null) : "both expressions lists can't be non-null";
+        ArgumentValidation.notEmpty("new projections", pExpressions);
         
         this.inputOperator = inputOperator;
         this.rowType = inputRowType;
-        this.projections = projections;
         
         ArgumentValidation.notNull("projectRowType", projectTableRowType);
         ArgumentValidation.isTrue("RowType has UserTable", projectTableRowType.hasUserTable());
         projectType = new ProjectedUserTableRowType(projectTableRowType.schema(),
                                                     projectTableRowType.userTable(),
-                                                    projections,
                                                     pExpressions);
         this.pExpressions = pExpressions; // TODO defensively copy once the old expressions are gone (until then, this may NPE)
         this.tInstances = TInstance.createTInstances(pExpressions);
@@ -177,7 +161,6 @@ class Project_Default extends Operator
 
     protected final Operator inputOperator;
     protected final RowType rowType;
-    protected final List<? extends Expression> projections;
     private final List<? extends TPreparedExpression> pExpressions;
     private final List<? extends TInstance> tInstances;
     protected ProjectedRowType projectType;
@@ -191,12 +174,8 @@ class Project_Default extends Operator
         if (projectType.hasUserTable())
             att.put(Label.PROJECT_OPTION, projectType.getExplainer(context));
         att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(context));
-        if (projections != null)
-            for (Expression ex : projections)
-                att.put(Label.PROJECTION, ex.getExplainer(context));
-        else
-            for (TPreparedExpression ex : pExpressions)
-                att.put(Label.PROJECTION, ex.getExplainer(context));
+        for (TPreparedExpression ex : pExpressions)
+            att.put(Label.PROJECTION, ex.getExplainer(context));
         if (context.hasExtraInfo(this))
             att.putAll(context.getExtraInfo(this).get());
         return new CompoundExplainer(Type.PROJECT, att);
@@ -238,7 +217,7 @@ class Project_Default extends Operator
                 if ((inputRow = input.next()) != null) {
                     projectedRow =
                         inputRow.rowType() == rowType
-                        ? new ProjectedRow(projectType, inputRow, context, bindings, projections, pEvalExpr, tInstances)
+                        ? new ProjectedRow(projectType, inputRow, context, bindings, pEvalExpr, tInstances)
                         : inputRow;
                 }
                 if (projectedRow == null) {

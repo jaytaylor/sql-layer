@@ -27,12 +27,10 @@ import com.foundationdb.ais.model.Routine;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.t3expressions.T3RegistryService;
 import com.foundationdb.server.t3expressions.TCastResolver;
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.server.types3.TClass;
 import com.foundationdb.server.types3.TExecutionContext;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.TPreptimeValue;
-import com.foundationdb.server.types3.Types3Switch;
 import com.foundationdb.server.types3.mcompat.mtypes.MString;
 import com.foundationdb.server.types3.pvalue.PValue;
 import com.foundationdb.server.types3.pvalue.PValueSource;
@@ -52,14 +50,9 @@ public class ConstantFolder extends BaseRule
 {
     private static final Logger logger = LoggerFactory.getLogger(ConstantFolder.class);
     
-    private final boolean usePValues;
+    //private final boolean usePValues;
     
     public ConstantFolder() {
-        this(Types3Switch.ON);
-    }
-
-    public ConstantFolder(boolean usePValues) {
-        this.usePValues = usePValues;
     }
 
     @Override
@@ -69,7 +62,7 @@ public class ConstantFolder extends BaseRule
 
     @Override
     public void apply(PlanContext planContext) {
-        Folder folder = usePValues ? new NewFolder(planContext) : new OldFolder(planContext);
+        Folder folder = new NewFolder(planContext);
         while (folder.foldConstants());
         folder.finishAggregates();
     }
@@ -391,7 +384,7 @@ public class ConstantFolder extends BaseRule
                             Object value = null;
                             if (isAggregateZero(afun))
                                 value = Long.valueOf(0);
-                            return newConstant(value, col.getAkType(), col);
+                            return newConstant(value, col);
                         }
                     }
                     else if (state == State.AGGREGATES) {
@@ -419,7 +412,7 @@ public class ConstantFolder extends BaseRule
                     // TODO: Could do a new ColumnExpression with the
                     // NullSource that replaced it, but then that'd have
                     // to eval specially.
-                    return newConstant(null, AkType.NULL, col);
+                    return newConstant(null, col);
             }
             return col;
         }
@@ -638,7 +631,7 @@ public class ConstantFolder extends BaseRule
         protected ExpressionNode subqueryValueExpression(SubqueryValueExpression expr) {
             SubqueryEmptiness empty = isEmptySubquery(expr.getSubquery());
             if (empty == SubqueryEmptiness.EMPTY) {
-                return newConstant(null, AkType.NULL, expr);
+                return newConstant(null, expr);
             }
             ExpressionNode inner = getSubqueryColumn(expr.getSubquery());
             if (inner != null) {
@@ -647,7 +640,7 @@ public class ConstantFolder extends BaseRule
                     // If it's empty, it's NULL. 
                     // If it selects something, that projects NULL.
                     // NULL either way.
-                    return newConstant(null, AkType.NULL, expr);
+                    return newConstant(null, expr);
                 }
                 else if ((ic == Constantness.CONSTANT) &&
                          (empty == SubqueryEmptiness.NON_EMPTY)) {
@@ -827,96 +820,10 @@ public class ConstantFolder extends BaseRule
             return expr;
         }
 
-        protected abstract ExpressionNode newConstant(Object value, AkType akType, ExpressionNode source);
+        protected abstract ExpressionNode newConstant(Object value, ExpressionNode source);
         protected abstract ExpressionNode genericFunctionExpression(FunctionExpression fun);
         protected abstract Boolean getBooleanObject(ConstantExpression expression);
         protected abstract Constantness isConstant(ExpressionNode expr);
-    }
-
-    private static final class OldFolder extends Folder {
-        private OldExpressionAssembler oldExpressionAssembler;
-        
-        public OldFolder(PlanContext planContext) {
-            this(planContext, new OldExpressionAssembler(planContext));
-        }
-        
-        private OldFolder(PlanContext planContext, OldExpressionAssembler expressionAssembler) {
-            super(planContext, expressionAssembler);
-            this.oldExpressionAssembler = expressionAssembler;
-        }
-
-        protected ExpressionNode newConstant(Object value, AkType akType, ExpressionNode source) {
-            return newExpression(new ConstantExpression(value, source.getSQLtype(), akType, source.getSQLsource()));
-        }
-
-        @Override
-        protected ExpressionNode genericFunctionExpression(FunctionExpression fun) {
-            boolean allConstant = true, anyNull = false;
-            for (ExpressionNode operand : fun.getOperands()) {
-                switch (isConstant(operand)) {
-                case NULL:
-                    anyNull = true;
-                    /* falls through */
-                case VARIABLE:
-                    allConstant = false;
-                    break;
-                }
-            }
-            if (allConstant && isIdempotent(fun))
-                return evalNow(fun);
-
-            if (anyNull)
-                switch(oldExpressionAssembler.getFunctionRegistry().composer(fun.getFunction()).getNullTreating())
-                {
-                case REMOVE_AFTER_FIRST: return removeNull(fun, 1);   
-                case REMOVE:      return removeNull(fun);
-                case RETURN_NULL: return newBooleanConstant(null, fun);
-                }
-
-            return fun;
-        }
-
-        @Override
-        protected Boolean getBooleanObject(ConstantExpression expression) {
-            assert expression != null; // this way, a NPE in the next line unambiguously means getValue() returned null
-            return (Boolean) expression.getValue();
-        }
-        
-        @Override
-        protected Constantness isConstant(ExpressionNode expr) {
-            if (expr.isConstant())
-                return ((((ConstantExpression)expr).getValue() == null) ?
-                        Constantness.NULL :
-                        Constantness.CONSTANT);
-            else
-                return Constantness.VARIABLE;
-        }
-
-        private ExpressionNode removeNull(FunctionExpression fun, int start)
-        {
-            List<ExpressionNode> operands = fun.getOperands();
-
-            if (operands.isEmpty())
-                return newBooleanConstant(null, fun);
-            int i = start;
-            while (i < operands.size())
-            {
-                ExpressionNode operand = operands.get(i);
-                Constantness c = isConstant(operand);
-                if (c == Constantness.NULL)
-                {
-                    operands.remove(i);
-                    continue;
-                }
-                i++;
-            }
-            return fun;
-        }
-
-        private ExpressionNode removeNull(FunctionExpression fun)
-        {
-            return removeNull(fun, 0);
-        }
     }
 
     public static final class NewFolder extends Folder {
@@ -930,13 +837,13 @@ public class ConstantFolder extends BaseRule
             this.resolvingVisitor = resolvingVisitor;
         }
 
-        protected ExpressionNode newConstant(Object value, AkType akType, ExpressionNode source) {
+        protected ExpressionNode newConstant(Object value, ExpressionNode source) {
             return (value == null)
                     ? newExpression(ConstantExpression.typedNull(
                         source.getSQLtype(),
                         source.getSQLsource(),
                         source.getPreptimeValue().instance()))
-                    : newExpression(new ConstantExpression(value, source.getSQLtype(), akType, source.getSQLsource()));
+                    : newExpression(new ConstantExpression(value, source.getSQLtype(), source.getSQLsource()));
         }
 
         @Override
@@ -950,7 +857,7 @@ public class ConstantFolder extends BaseRule
         @Override
         protected Boolean getBooleanObject(ConstantExpression expression) {
             PValueSource value = expression.getPreptimeValue().value();
-            return value.isNull()
+            return value == null || value.isNull()
                     ? null
                     : value.getBoolean();
         }
@@ -1179,10 +1086,8 @@ public class ConstantFolder extends BaseRule
             TInstance lTIns = leftSource.tInstance();
             TInstance rTIns = rightSource.tInstance();
             
-            boolean ret;
             if (TClass.comparisonNeedsCasting(lTIns, rTIns))
             {
-                boolean needCasts = true;
                 boolean nullable = leftSource.isNull() || rightSource.isNull();
                 TCastResolver casts = registry.getCastsResolver();
                 TInstance common = OverloadAndTInstanceResolver.commonInstance(casts, lTIns, rTIns);
@@ -1329,8 +1234,10 @@ public class ConstantFolder extends BaseRule
         private Comparable asComparable(ExpressionNode elem) {
             // TODO Needed because a TKeyComparison may cause the expressions to not be cast to the same type.
             // This will only work as long as all TKeyComparisons are between integer types.
-            Comparable result = (Comparable)((ConstantExpression) elem).getValue();
-            if (result instanceof Byte || result instanceof Short || result instanceof Integer)
+            Object value = ((ConstantExpression)elem).getValue();
+            assert value == null || value instanceof Comparable : "value not a comparable: " + value.getClass();
+            Comparable result = (Comparable)value;
+            if (result instanceof Byte || result instanceof Short || result instanceof Integer || result instanceof Long)
                 result = ((Number)result).longValue();
             return result;
         }

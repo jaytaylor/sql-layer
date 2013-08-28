@@ -20,8 +20,6 @@ package com.foundationdb.server.test.it.qp;
 import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types.NullValueSource;
-import com.foundationdb.server.types.ValueSource;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.server.types3.pvalue.PValueSources;
 
@@ -34,11 +32,6 @@ public final class NullsRow extends AbstractRow {
     @Override
     public HKey hKey() {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public ValueSource eval(int index) {
-        return NullValueSource.only();
     }
 
     @Override
