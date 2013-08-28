@@ -29,6 +29,7 @@ public class FDBHolderImpl implements FDBHolder, Service {
 
     private static final String CONFIG_API_VERSION = "fdbsql.fdb.api_version";
     private static final String CONFIG_CLUSTER_FILE = "fdbsql.fdb.cluster_file";
+    private static final String CONFIG_TRACE_DIRECTORY = "fdbsql.fdb.trace_directory";
 
     private final ConfigurationService configService;
 
@@ -52,6 +53,10 @@ public class FDBHolderImpl implements FDBHolder, Service {
             int apiVersion = Integer.parseInt(configService.getProperty(CONFIG_API_VERSION));
             LOG.info("Staring with API Version {}", apiVersion);
             fdb = FDB.selectAPIVersion(apiVersion);
+        }
+        String traceDirectory = configService.getProperty(CONFIG_TRACE_DIRECTORY);
+        if (!traceDirectory.isEmpty()) {
+            fdb.options().setTraceEnable(traceDirectory);
         }
         String clusterFile = configService.getProperty(CONFIG_CLUSTER_FILE);
         boolean isDefault = clusterFile.isEmpty();
