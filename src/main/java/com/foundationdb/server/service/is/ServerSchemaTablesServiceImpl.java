@@ -48,7 +48,6 @@ import com.foundationdb.server.service.monitor.UserMonitor;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
-import com.foundationdb.server.types3.pvalue.PValue;
 import com.foundationdb.util.tap.Tap;
 import com.foundationdb.util.tap.TapReport;
 import com.google.inject.Inject;
@@ -218,10 +217,9 @@ public class ServerSchemaTablesServiceImpl
                 PValuesRow row = new PValuesRow(rowType,
                                               server.getServerType(),
                                               (server.getLocalPort() < 0) ? null : Long.valueOf(server.getLocalPort()),
-                                              null, // see below
+                                              server.getStartTimeMillis()/1000,
                                               Long.valueOf(server.getSessionCount()),
                                               ++rowCounter);
-                ((PValue)row.pvalue(2)).putInt64(server.getStartTimeMillis()/1000);
                 return row;
             }
         }
@@ -258,25 +256,19 @@ public class ServerSchemaTablesServiceImpl
                 SessionMonitor session = sessions.next();
                 MonitorStage stage = session.getCurrentStage();
                 PValuesRow row = new PValuesRow(rowType,
-                                              session.getSessionId(),
-                                              session.getCallerSessionId() < 0 ? null : session.getCallerSessionId(),
-                                              null, // see below
+                                              (long)session.getSessionId(),
+                                              session.getCallerSessionId() < 0 ? null : (long)session.getCallerSessionId(),
+                                              (int)(session.getStartTimeMillis()/1000),
                                               session.getServerType(),
                                               session.getRemoteAddress(),
                                               (stage == null) ? null : stage.name(),
-                                              session.getStatementCount(),
+                                              (long)session.getStatementCount(),
                                               session.getCurrentStatement(),
-                                              null, null,
-                                              session.getRowsProcessed() < 0 ? null : session.getRowsProcessed(),
+                                              session.getCurrentStatementStartTimeMillis() > 0 ? (int)(session.getCurrentStatementStartTimeMillis() / 1000) : null,
+                                              session.getCurrentStatementEndTimeMillis() > 0 ? (int)(session.getCurrentStatementEndTimeMillis()/1000) : null,
+                                              session.getRowsProcessed() < 0 ? null : (long)session.getRowsProcessed(),
                                               session.getCurrentStatementPreparedName(),
                                               ++rowCounter);
-                ((PValue)row.pvalue(2)).putInt64(session.getStartTimeMillis()/1000);
-                long queryStartTime = session.getCurrentStatementStartTimeMillis();
-                if (queryStartTime >= 0)
-                    ((PValue)row.pvalue(8)).putInt64(queryStartTime/1000);
-                long queryEndTime = session.getCurrentStatementEndTimeMillis();
-                if (queryEndTime >= 0)
-                    ((PValue)row.pvalue(9)).putInt64(queryEndTime/1000);
                 return row;
             }
         }
@@ -310,9 +302,9 @@ public class ServerSchemaTablesServiceImpl
                 if (rowCounter >= codes.length)
                     return null;
                 return new PValuesRow (rowType,
-                        codes[rowCounter].getFormattedValue(),
-                        codes[rowCounter].name(),
-                        codes[rowCounter].getMessage(),
+                        codes[(int)rowCounter].getFormattedValue(),
+                        codes[(int)rowCounter].name(),
+                        codes[(int)rowCounter].getMessage(),
                         null,
                         ++rowCounter);
             }
@@ -516,13 +508,12 @@ public class ServerSchemaTablesServiceImpl
                 }
                 PreparedStatementMonitor preparedStatement = statements.next();
                 PValuesRow row = new PValuesRow(rowType,
-                                              preparedStatement.getSessionId(),
+                                              (long)preparedStatement.getSessionId(),
                                               preparedStatement.getName(),
                                               preparedStatement.getSQL(),
-                                              null, // see below
-                                              preparedStatement.getEstimatedRowCount() < 0 ? null : preparedStatement.getEstimatedRowCount(),
+                                              preparedStatement.getPrepareTimeMillis()/1000,
+                                              preparedStatement.getEstimatedRowCount() < 0 ? null : (long)preparedStatement.getEstimatedRowCount(),
                                               ++rowCounter);
-                ((PValue)row.pvalue(4)).putInt64(preparedStatement.getPrepareTimeMillis()/1000);
                 return row;
             }
         }
@@ -567,21 +558,19 @@ public class ServerSchemaTablesServiceImpl
                 }
                 CursorMonitor cursor = statements.next();
                 PValuesRow row = new PValuesRow(rowType,
-                                              cursor.getSessionId(),
+                                              (long)cursor.getSessionId(),
                                               cursor.getName(),
                                               cursor.getSQL(),
                                               cursor.getPreparedStatementName(),
-                                              null, // see below
-                                              cursor.getRowCount(),
+                                              cursor.getCreationTimeMillis()/1000,
+                                              (long)cursor.getRowCount(),
                                               ++rowCounter);
-                ((PValue)row.pvalue(4)).putInt64(cursor.getCreationTimeMillis()/1000);
                 return row;
             }
         }
     }
 
     private class Users extends BasicFactoryBase {
-
         public Users(TableName sourceTable) {
             super(sourceTable);
         }
