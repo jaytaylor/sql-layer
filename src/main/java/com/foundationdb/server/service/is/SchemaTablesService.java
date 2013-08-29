@@ -56,7 +56,7 @@ public class SchemaTablesService {
     
     protected abstract class BaseScan implements GroupScan {
         final RowType rowType;
-        int rowCounter = 0;
+        long rowCounter = 0;
         
         public BaseScan (RowType rowType) {
             this.rowType = rowType;
