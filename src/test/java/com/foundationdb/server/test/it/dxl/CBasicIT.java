@@ -566,7 +566,7 @@ public final class CBasicIT extends ITBase {
         expectRowCount(tableId, 0);
         dml().writeRow(session(), createNewRow(tableId, 0, "hello world") );
         expectRowCount(tableId, 1);
-        dml().truncateTable(session(), tableId);
+        dml().truncateTable(session(), tableId, false);
         expectRowCount(tableId, 0);
     }
 

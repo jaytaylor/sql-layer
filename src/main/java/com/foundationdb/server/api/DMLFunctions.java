@@ -254,15 +254,10 @@ public interface DMLFunctions {
     /**
      * Truncates the given table, possibly cascading the truncate to child tables.
      *
-     * <p><strong>NOTE: IGNORE THE FOLLOWING. IT ISN'T VERIFIED, ALMOST DEFINITELY NOT TRUE, ETC. IT'S FOR
-     * FUTURE POSSIBILITIES ONLY</strong></p>
-     *
-     * <p>Because truncating is intended to be fast, this method will simply truncate all child tables whose
-     * relationship is CASCADE; it will not delete rows in those tables based on their existence in the parent table.
-     * In particular, this means that orphan rows will also be deleted,</p>
      * @param tableId the table to truncate
+     * @param descendants <code>true</code> to delete descendants too
      * @throws Exception 
      * @throws NullPointerException if the given tableId is null
      */
-    void truncateTable(Session session, int tableId);
+    void truncateTable(Session session, int tableId, boolean descendants);
 }
