@@ -43,10 +43,12 @@ public class FDBTransactionService implements TransactionService {
     private static final StackKey<Callback> AFTER_ROLLBACK_KEY = StackKey .stackNamed("TXN_AFTER_ROLLBACK");
     private static final String CONFIG_COMMIT_AFTER_MILLIS = "fdbsql.fdb.periodicallCommit.afterMillis";
     private static final String CONFIG_COMMIT_AFTER_BYTES = "fdbsql.fdb.periodicallCommit.afterBytes";
+    private static final String CONFIG_DEFER_UNIQUENESS_CHECKS = "fdbsql.fdb.defer_uniqueness_checks";
 
     private final FDBHolder fdbHolder;
     private final ConfigurationService configService;
-    private static long commitAfterMillis, commitAfterBytes;
+    private long commitAfterMillis, commitAfterBytes;
+    private boolean deferUniquenesChecks;
 
     @Inject
     public FDBTransactionService(FDBHolder fdbHolder,
@@ -55,13 +57,19 @@ public class FDBTransactionService implements TransactionService {
         this.configService = configService;
     }
 
-    public static class TransactionState {
+    public class TransactionState {
         final Transaction transaction;
+        final FDBPendingUniquenessChecks uniquenessChecks;
         long startTime;
         long bytesSet;
+        public long uniquenessTime;
 
-        public TransactionState(Transaction transaction) {
-            this.transaction = transaction;
+        public TransactionState() {
+            this.transaction = fdbHolder.getDatabase().createTransaction();
+            if (deferUniquenesChecks)
+                this.uniquenessChecks = new FDBPendingUniquenessChecks();
+            else
+                this.uniquenessChecks = null;
             reset();
         }
 
@@ -78,16 +86,22 @@ public class FDBTransactionService implements TransactionService {
             bytesSet += value.length;
         }
 
+        public FDBPendingUniquenessChecks getUniquenessChecks() {
+            return uniquenessChecks;
+        }
+
         public void reset() {
             this.startTime = System.currentTimeMillis();
             this.bytesSet = 0;
+            if (uniquenessChecks != null)
+                uniquenessChecks.clear();
         }
 
         public boolean timeToCommit() {
             long dt = System.currentTimeMillis() - startTime;
             if ((dt > commitAfterMillis) ||
                 (bytesSet > commitAfterBytes)) {
-                LOG.debug("Commit after {} ms. / {} bytes", dt, bytesSet);
+                LOG.debug("Periodic commit after {} ms. / {} bytes", dt, bytesSet);
                 return true;
             }
             return false;
@@ -113,6 +127,7 @@ public class FDBTransactionService implements TransactionService {
     public void start() {
         commitAfterMillis = Long.parseLong(configService.getProperty(CONFIG_COMMIT_AFTER_MILLIS));
         commitAfterBytes = Long.parseLong(configService.getProperty(CONFIG_COMMIT_AFTER_BYTES));
+        deferUniquenesChecks = Boolean.parseBoolean(configService.getProperty(CONFIG_DEFER_UNIQUENESS_CHECKS));
     }
 
     @Override
@@ -151,7 +166,7 @@ public class FDBTransactionService implements TransactionService {
     public void beginTransaction(Session session) {
         TransactionState txn = getTransactionInternal(session);
         requireInactive(txn); // No nesting
-        txn = new TransactionState(fdbHolder.getDatabase().createTransaction());
+        txn = new TransactionState();
         session.put(TXN_KEY, txn);
     }
 
@@ -200,13 +215,10 @@ public class FDBTransactionService implements TransactionService {
     protected boolean commitTransactionInternal(Session session, boolean retry) {
         TransactionState txn = getTransactionInternal(session);
         requireActive(txn);
+        boolean retried = false;
         RuntimeException re = null;
         try {
-            long startTime = txn.getTransaction().getReadVersion().get();
-            runCallbacks(session, PRE_COMMIT_KEY, startTime, null);
-            txn.getTransaction().commit().get();
-            long commitTime = txn.getTransaction().getCommittedVersion();
-            runCallbacks(session, AFTER_COMMIT_KEY, commitTime, null);
+            commitTransactionInternal(session, txn);
         } catch(RuntimeException e1) {
             if (retry) {
                 try {
@@ -215,7 +227,7 @@ public class FDBTransactionService implements TransactionService {
                     clearStack(session, AFTER_COMMIT_KEY);
                     clearStack(session, AFTER_ROLLBACK_KEY);
                     clearStack(session, AFTER_END_KEY);
-                    return true;
+                    retried = true;
                 }
                 catch (RuntimeException e2) {
                     re = e2;
@@ -225,9 +237,26 @@ public class FDBTransactionService implements TransactionService {
                 re = e1;
             }
         } finally {
-            end(session, txn, re);
+            if (!retried)
+                end(session, txn, re);
         }
-        return false;
+        return retried;
+    }
+
+    protected void commitTransactionInternal(Session session, TransactionState txn) {
+        if (txn.getUniquenessChecks() != null) {
+            txn.getUniquenessChecks().checkUniqueness(txn, true);
+        }
+        if (LOG.isDebugEnabled()) {
+            long dt = System.currentTimeMillis() - txn.startTime;
+            long ut = Math.round(txn.uniquenessTime / 1.0e6);
+            LOG.debug("Commit after {} ms. / {} ms. uniqueness", dt, ut);
+        }
+        long startTime = txn.getTransaction().getReadVersion().get();
+        runCallbacks(session, PRE_COMMIT_KEY, startTime, null);
+        txn.getTransaction().commit().get();
+        long commitTime = txn.getTransaction().getCommittedVersion();
+        runCallbacks(session, AFTER_COMMIT_KEY, commitTime, null);
     }
 
     @Override
@@ -276,12 +305,7 @@ public class FDBTransactionService implements TransactionService {
         TransactionState txn = getTransactionInternal(session);
         requireActive(txn);
         if (txn.timeToCommit()) {
-            // TODO: Better to leave callbacks until user-initiated commit?
-            long startTime = txn.getTransaction().getReadVersion().get();
-            runCallbacks(session, PRE_COMMIT_KEY, startTime, null);
-            txn.getTransaction().commit().get();
-            long commitTime = txn.getTransaction().getCommittedVersion();
-            runCallbacks(session, AFTER_COMMIT_KEY, commitTime, null);
+            commitTransactionInternal(session, txn);
             txn.getTransaction().reset();
             txn.reset();
         }
