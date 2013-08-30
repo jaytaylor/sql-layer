@@ -184,8 +184,12 @@ public class FDBTableStatusCache implements TableStatusCache {
         @Override
         public long getApproximateRowCount() {
             // TODO: Avoids conflicts but still round trip. Cache locally for some time frame?
-            Transaction txn = db.createTransaction();
-            return unpackForAtomicOp(txn.get(rowCountKey).get());
+            return db.run(new Function<Transaction,Long> () {
+                              @Override
+                              public Long apply(Transaction txn) {
+                                  return unpackForAtomicOp(txn.get(rowCountKey).get());
+                              }
+                          });
         }
 
         @Override
