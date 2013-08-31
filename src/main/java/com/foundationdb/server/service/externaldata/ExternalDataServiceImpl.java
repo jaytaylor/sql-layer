@@ -279,25 +279,32 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                 }
                 if (commit) {
                     logger.debug("Committing {} rows", pending);
-                    if (rowDatas == null)
+                    pending = 0;
+                    if (rowDatas == null) {
+                        transaction = false;
                         transactionService.commitTransaction(session);
+                    }
                     else {
                         for (int i = 1; i <= maxRetries; i++) {
-                            if (i == maxRetries)
+                            if (i == maxRetries) {
+                                transaction = false;
                                 transactionService.commitTransaction(session);
-                            else if (!commitOrRetryTransaction(session))
-                                break;
+                            }
                             else {
-                                logger.debug("Retry #{}", i);
-                                for (RowData rowData : rowDatas) {
-                                    store.writeRow(session, rowData, null);
+                                transaction = commitOrRetryTransaction(session);
+                                if (!transaction) {
+                                    break; // Succeeded
                                 }
+                                else {
+                                    logger.debug("Retry #{}", i);
+                                    for (RowData rowData : rowDatas) {
+                                        store.writeRow(session, rowData, null);
+                                    }
+                               }
                             }
                         }
                         rowDatas.clear();
                     }
-                    transaction = false;
-                    pending = 0;
                 }
             } while (row != null);
         }

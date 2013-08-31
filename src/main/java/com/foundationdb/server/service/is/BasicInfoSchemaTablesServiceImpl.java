@@ -814,7 +814,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                      indexColumn.getColumn().getTable().getName().getSchemaName(),
                                      indexColumn.getColumn().getTable().getName().getTableName(),
                                      indexColumn.getColumn().getName(),
-                                     new Long(indexColumn.getPosition().longValue()),
+                                     indexColumn.getPosition().longValue(),
                                      boolResult(indexColumn.isAscending()),
                                      indexColumn.getIndexedLength(),
                                      ++rowCounter /*hidden pk*/);
@@ -1184,7 +1184,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                              boolResult(false),
                                              (routine.getSQLAllowed() == null) ? null : routine.getSQLAllowed().name().replace('_', ' '),
                                              boolResult(true),
-                                             new Long(routine.getDynamicResultSets()),
+                                             (long)(routine.getDynamicResultSets()),
                                              ++rowCounter /*hidden pk*/);
                     }
                 }

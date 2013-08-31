@@ -246,6 +246,7 @@ public class StorageSchemaTablesServiceImpl
         
         private class Scan extends BeanScan {
             BufferPoolInfo[] bufferPools = null;
+            int bufferPoolCounter = 0;
             public Scan (RowType rowType) {
                 super(rowType, "BufferPool");
                 
@@ -265,20 +266,21 @@ public class StorageSchemaTablesServiceImpl
                     return null;
                 }
                 return new PValuesRow (rowType, 
-                        bufferPools[rowCounter].getBufferSize(),
-                        bufferPools[rowCounter].getBufferCount(),
-                        bufferPools[rowCounter].getValidPageCount(),
-                        bufferPools[rowCounter].getDirtyPageCount(),
-                        bufferPools[rowCounter].getReaderClaimedPageCount(),
-                        bufferPools[rowCounter].getWriterClaimedPageCount(),
-                        bufferPools[rowCounter].getHitCount(),
-                        bufferPools[rowCounter].getMissCount(),
-                        bufferPools[rowCounter].getNewCount(),
-                        bufferPools[rowCounter].getEvictCount(),
-                        bufferPools[rowCounter].getWriteCount(),
-                        bufferPools[rowCounter].getForcedCheckpointWriteCount(),
-                        bufferPools[rowCounter].getForcedWriteCount(),
+                        bufferPools[bufferPoolCounter].getBufferSize(),
+                        bufferPools[bufferPoolCounter].getBufferCount(),
+                        bufferPools[bufferPoolCounter].getValidPageCount(),
+                        bufferPools[bufferPoolCounter].getDirtyPageCount(),
+                        bufferPools[bufferPoolCounter].getReaderClaimedPageCount(),
+                        bufferPools[bufferPoolCounter].getWriterClaimedPageCount(),
+                        bufferPools[bufferPoolCounter].getHitCount(),
+                        bufferPools[bufferPoolCounter].getMissCount(),
+                        bufferPools[bufferPoolCounter].getNewCount(),
+                        bufferPools[bufferPoolCounter].getEvictCount(),
+                        bufferPools[bufferPoolCounter].getWriteCount(),
+                        bufferPools[bufferPoolCounter].getForcedCheckpointWriteCount(),
+                        bufferPools[bufferPoolCounter++].getForcedWriteCount(),
                         ++rowCounter);
+                
             }
         }
     }
@@ -417,9 +419,9 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter >= IOMeterMXBean.OPERATIONS.length - 1) {
                     return null;
                 }
-                parameter.set(0, IOMeterMXBean.OPERATIONS[rowCounter+1]);
+                parameter.set(0, IOMeterMXBean.OPERATIONS[(int)rowCounter+1]);
                 return new PValuesRow (rowType,
-                        IOMeterMXBean.OPERATION_NAMES[rowCounter+1],
+                        IOMeterMXBean.OPERATION_NAMES[(int)rowCounter+1],
                         getJMXInvoke (mbeanName, "totalBytes", parameter.toArray()),
                         getJMXInvoke (mbeanName, "totalOperations", parameter.toArray()),
                         ++rowCounter);
@@ -475,7 +477,7 @@ public class StorageSchemaTablesServiceImpl
                         boolResult(journal.isFastCopying()),
                         boolResult(journal.isCopying()),
                         boolResult(journal.isFlushing()),
-                        journal.getLastValidCheckpointSystemTime(),
+                        journal.getLastValidCheckpointSystemTime()/1000,
                         
                         getJMXAttribute (mbeanName, "PageListSize"),
                         getJMXAttribute(mbeanName, "FlushInterval"),
@@ -486,11 +488,8 @@ public class StorageSchemaTablesServiceImpl
                         getJMXAttribute(mbeanName, "SlowIoAlertThreshold"),
                         boolResult((Boolean) getJMXAttribute(mbeanName, "RollbackPruningEnabled")),
                         getJMXAttribute(mbeanName, "JournalFilePath"),
-                        getJMXAttribute(mbeanName, "JournalCreatedTime"),
+                        ((Long)getJMXAttribute(mbeanName, "JournalCreatedTime")).longValue()/1000,
                         ++rowCounter);
-                
-                ((PValue)row.pvalue(13)).putInt64(journal.getLastValidCheckpointSystemTime()/1000);
-                ((PValue)row.pvalue(23)).putInt64(((Long)getJMXAttribute(mbeanName, "JournalCreatedTime")).longValue()/1000);
                 return row;
             }
         }
@@ -533,10 +532,9 @@ public class StorageSchemaTablesServiceImpl
                             boolResult(db_manage.isShutdownSuspended()),
                             db_manage.getVersion(),
                             db_manage.getCopyright(),
-                            db_manage.getStartTime(),
+                            db_manage.getStartTime()/1000,
                             db_manage.getDefaultCommitPolicy(),
                             ++rowCounter);
-                    ((PValue)row.pvalue(5)).putInt64(db_manage.getStartTime()/1000);
                 } catch (RemoteException e) {
                     logger.error ("Getting Manager items throws exception: " + e.getMessage());
                     return null;
@@ -573,11 +571,9 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                Object activeTransactionFloor = getJMXAttribute(mbeanName, "ActiveTransactionFloor");
-                Object activeTransactionCeiling = getJMXAttribute(mbeanName, "ActiveTransactionCeiling"); 
                 PValuesRow row =  new PValuesRow(rowType,
-                        activeTransactionFloor,
-                        activeTransactionCeiling,
+                        getJMXAttribute(mbeanName, "ActiveTransactionFloor"),
+                        getJMXAttribute(mbeanName, "ActiveTransactionCeiling"),
                         getJMXAttribute(mbeanName, "ActiveTransactionCount"),
                         getJMXAttribute(mbeanName, "CurrentCount"),
                         getJMXAttribute(mbeanName, "LongRunningCount"),
@@ -585,9 +581,6 @@ public class StorageSchemaTablesServiceImpl
                         getJMXAttribute(mbeanName, "FreeCount"),
                         getJMXAttribute(mbeanName, "DroppedCount"),
                         ++rowCounter);
-                
-                //((FromObjectValueSource)row.eval(0)).setExplicitly(activeTransactionFloor, AkType.TIMESTAMP);
-                //((FromObjectValueSource)row.eval(1)).setExplicitly(activeTransactionCeiling, AkType.TIMESTAMP);
                 return row;
             }
         }
@@ -652,7 +645,7 @@ public class StorageSchemaTablesServiceImpl
                         volumes[volumeIndex].getName(),
                         trees[treeIndex].getName(),
                         trees[treeIndex].getStatus(),
-                        trees[treeIndex].getDepth(),
+                        (long)trees[treeIndex].getDepth(),
                         trees[treeIndex].getFetchCounter(),
                         trees[treeIndex].getTraverseCounter(),
                         trees[treeIndex].getStoreCounter(),
@@ -700,6 +693,7 @@ public class StorageSchemaTablesServiceImpl
 
         private class Scan extends BeanScan {
             VolumeInfo[] volumes;
+            int volumeRowCounter = 0;
             public Scan(RowType rowType) {
                 super(rowType, "Volumes");
                 try {
@@ -720,33 +714,29 @@ public class StorageSchemaTablesServiceImpl
                 }
                 
                 PValuesRow row = new PValuesRow (rowType,
-                        volumes[rowCounter].getName(),
-                        volumes[rowCounter].getPath(),
-                        boolResult(volumes[rowCounter].isTransient()),
-                        volumes[rowCounter].getPageSize(),
-                        volumes[rowCounter].getCurrentSize(),
-                        volumes[rowCounter].getMaximumSize(),
-                        volumes[rowCounter].getExtensionSize(),
-                        volumes[rowCounter].getCreateTime().getTime(),
-                        volumes[rowCounter].getOpenTime().getTime(),
-                        volumes[rowCounter].getLastReadTime().getTime(),
-                        volumes[rowCounter].getLastWriteTime().getTime(),
-                        volumes[rowCounter].getLastExtensionTime().getTime(),
-                        volumes[rowCounter].getGeneration(),
-                        volumes[rowCounter].getGetCounter(),
-                        volumes[rowCounter].getReadCounter(),
-                        volumes[rowCounter].getWriteCounter(),
-                        volumes[rowCounter].getFetchCounter(),
-                        volumes[rowCounter].getTraverseCounter(),
-                        volumes[rowCounter].getStoreCounter(),
-                        volumes[rowCounter].getRemoveCounter(),
+                        volumes[volumeRowCounter].getName(),
+                        volumes[volumeRowCounter].getPath(),
+                        boolResult(volumes[volumeRowCounter].isTransient()),
+                        volumes[volumeRowCounter].getPageSize(),
+                        volumes[volumeRowCounter].getCurrentSize(),
+                        volumes[volumeRowCounter].getMaximumSize(),
+                        volumes[volumeRowCounter].getExtensionSize(),
+                        volumes[volumeRowCounter].getCreateTime().getTime()/1000,
+                        volumes[volumeRowCounter].getOpenTime().getTime()/1000,
+                        volumes[volumeRowCounter].getLastReadTime().getTime()/1000,
+                        volumes[volumeRowCounter].getLastWriteTime().getTime()/1000,
+                        volumes[volumeRowCounter].getLastExtensionTime().getTime()/1000,
+                        volumes[volumeRowCounter].getGeneration(),
+                        volumes[volumeRowCounter].getGetCounter(),
+                        volumes[volumeRowCounter].getReadCounter(),
+                        volumes[volumeRowCounter].getWriteCounter(),
+                        volumes[volumeRowCounter].getFetchCounter(),
+                        volumes[volumeRowCounter].getTraverseCounter(),
+                        volumes[volumeRowCounter].getStoreCounter(),
+                        volumes[volumeRowCounter].getRemoveCounter(),
                         rowCounter);
-                ((PValue)row.pvalue(7)).putInt64(volumes[rowCounter].getCreateTime().getTime()/1000);
-                ((PValue)row.pvalue(8)).putInt64(volumes[rowCounter].getOpenTime().getTime()/1000);
-                ((PValue)row.pvalue(9)).putInt64(volumes[rowCounter].getLastReadTime().getTime()/1000);
-                ((PValue)row.pvalue(10)).putInt64(volumes[rowCounter].getLastWriteTime().getTime()/1000);
-                ((PValue)row.pvalue(11)).putInt64(volumes[rowCounter].getLastExtensionTime().getTime()/1000);
                 ++rowCounter;
+                ++volumeRowCounter;
                 return row;
             }
         }
