@@ -95,7 +95,7 @@ public class AlterTableDDL {
         }
 
         if (alterTable.isTruncateTable()) {
-            dmlFunctions.truncateTable(session, table.getTableId());
+            dmlFunctions.truncateTable(session, table.getTableId(), alterTable.isCascade());
             return null;
         }
 

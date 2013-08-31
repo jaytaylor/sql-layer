@@ -705,10 +705,12 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
      * tables in the group must have no rows.
      * @param session Session to operation on
      * @param userTable UserTable to determine if a fast truncate is possible on
+     * @param descendants <code>true</code> to ignore descendants of
+     * <code>userTable</code> in the check
      * @return true if store.truncateGroup() used, false otherwise
      * @throws Exception 
      */
-    private boolean canFastTruncate(Session session, UserTable userTable) {
+    private boolean canFastTruncate(Session session, UserTable userTable, boolean descendants) {
         if(!userTable.getFullTextIndexes().isEmpty()) {
             return false;
         }
@@ -722,8 +724,10 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                     return false;
                 }
             }
-            for(Join join : table.getChildJoins()) {
-                tableList.add(join.getChild());
+            if((table != userTable) || !descendants) {
+                for(Join join : table.getChildJoins()) {
+                    tableList.add(join.getChild());
+                }
             }
         }
         return true;
@@ -732,18 +736,37 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     @Override
     public void truncateTable(final Session session, final int tableId)
     {
+        truncateTable(session, tableId, false);
+    }
+
+    @Override
+    public void truncateTable(final Session session, final int tableId, final boolean descendants)
+    {
         logger.trace("truncating tableId={}", tableId);
         final int knownAIS = ddlFunctions.getGenerationAsInt(session);
         final TableName name = ddlFunctions.getTableName(session, tableId);
         final UserTable utable = ddlFunctions.getUserTable(session, name);
 
-        if(canFastTruncate(session, utable)) {
+        if(canFastTruncate(session, utable, descendants)) {
             store().truncateGroup(session, utable.getGroup());
             // All other tables in the group have no rows. Only need to truncate this table.
             for(TableListener listener : listenerService.getTableListeners()) {
                 listener.onTruncate(session, utable, true);
             }
             return;
+        }
+
+        slowTruncate(session, knownAIS, utable, tableId, descendants);
+    }
+
+    private void slowTruncate(final Session session, final int knownAIS, 
+                              final UserTable utable, final int tableId,
+                              final boolean descendants) {
+        if (descendants) {
+            for(Join join : utable.getChildJoins()) {
+                UserTable ctable = join.getChild();
+                slowTruncate(session, knownAIS, ctable, ctable.getTableId(), descendants);
+            }
         }
 
         // We can't do a "fast truncate" for whatever reason, so we have to delete row by row
