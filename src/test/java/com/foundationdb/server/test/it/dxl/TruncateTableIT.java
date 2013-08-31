@@ -41,7 +41,7 @@ public final class TruncateTableIT extends ITBase {
         }
         expectRowCount(tableId, rowCount);
 
-        dml().truncateTable(session(), tableId);
+        dml().truncateTable(session(), tableId, false);
 
         // Check table stats
         expectRowCount(tableId, 0);
@@ -66,7 +66,7 @@ public final class TruncateTableIT extends ITBase {
                   createNewRow(tableId, 2, 2));
         expectRowCount(tableId, 2);
 
-        dml().truncateTable(session(), tableId);
+        dml().truncateTable(session(), tableId, false);
 
         int indexId = ddl().getAIS(session()).getTable("test", "t").getIndex("pid").getIndexId();
         EnumSet<ScanFlag> scanFlags = EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END);
@@ -90,7 +90,7 @@ public final class TruncateTableIT extends ITBase {
                   createNewRow(tableId, 5, 3409, "99.00", 'e', "eek"));
         expectRowCount(tableId, 5);
 
-        dml().truncateTable(session(), tableId);
+        dml().truncateTable(session(), tableId, false);
 
         // Check table stats
         expectRowCount(tableId, 0);
@@ -130,7 +130,7 @@ public final class TruncateTableIT extends ITBase {
         dml().writeRow(session(), createNewRow(parentId, 1));
         expectRowCount(parentId, 1);
 
-        dml().truncateTable(session(), parentId);
+        dml().truncateTable(session(), parentId, false);
 
         expectRowCount(parentId, 0);
         List<NewRow> rows = scanAll(new ScanAllRequest(parentId, null));
@@ -152,7 +152,7 @@ public final class TruncateTableIT extends ITBase {
         dml().writeRow(session(), createNewRow(childId, 1, 1));
         expectRowCount(childId, 1);
 
-        dml().truncateTable(session(), parentId);
+        dml().truncateTable(session(), parentId, false);
 
         expectRowCount(parentId, 0);
         List<NewRow> rows = scanAll(new ScanAllRequest(parentId, null));
@@ -176,7 +176,7 @@ public final class TruncateTableIT extends ITBase {
                   createNewRow(tableId, "c", -1L));
         expectRowCount(tableId, 7);
 
-        dml().truncateTable(session(), tableId);
+        dml().truncateTable(session(), tableId, false);
 
         // Check table stats
         expectRowCount(tableId, 0);
@@ -200,19 +200,76 @@ public final class TruncateTableIT extends ITBase {
         expectRowCount(oId, 1);
         expectRowCount(iId, 1);
 
-        dml().truncateTable(session(), cId);
+        dml().truncateTable(session(), cId, false);
         expectRowCount(cId, 0);
         expectRowCount(oId, 1);
         expectRowCount(iId, 1);
 
-        dml().truncateTable(session(), oId);
+        dml().truncateTable(session(), oId, false);
         expectRowCount(cId, 0);
         expectRowCount(oId, 0);
         expectRowCount(iId, 1);
 
-        dml().truncateTable(session(), iId);
+        dml().truncateTable(session(), iId, false);
         expectRowCount(cId, 0);
         expectRowCount(oId, 0);
         expectRowCount(iId, 0);
+    }
+
+    @Test
+    public void truncateCascade() throws InvalidOperationException {
+        int cId = createTable("test", "c", "id int not null primary key");
+        int oId = createTable("test", "o", "id int not null primary key, cid int, grouping foreign key (cid) references c(id)");
+        int iId = createTable("test", "i", "id int not null primary key, oid int, grouping foreign key (oid) references o(id)");
+        int aId = createTable("test", "a", "id int not null primary key, cid int, grouping foreign key (cid) references c(id)");
+
+        dml().writeRow(session(), createNewRow(cId, 1));
+        dml().writeRow(session(), createNewRow(oId, 10, 1));
+        dml().writeRow(session(), createNewRow(iId, 100, 10));
+        dml().writeRow(session(), createNewRow(aId, 10, 1));
+        expectRowCount(cId, 1);
+        expectRowCount(oId, 1);
+        expectRowCount(iId, 1);
+        expectRowCount(aId, 1);
+
+        dml().truncateTable(session(), cId, true);
+        expectRowCount(cId, 0);
+        expectRowCount(oId, 0);
+        expectRowCount(iId, 0);
+        expectRowCount(aId, 0);
+
+        dml().writeRow(session(), createNewRow(cId, 1));
+        dml().writeRow(session(), createNewRow(oId, 10, 1));
+        dml().writeRow(session(), createNewRow(iId, 100, 10));
+        dml().writeRow(session(), createNewRow(aId, 10, 1));
+        expectRowCount(cId, 1);
+        expectRowCount(oId, 1);
+        expectRowCount(iId, 1);
+        expectRowCount(aId, 1);
+
+        dml().truncateTable(session(), oId, true);
+        expectRowCount(cId, 1);
+        expectRowCount(oId, 0);
+        expectRowCount(iId, 0);
+        expectRowCount(aId, 1);
+
+        dml().truncateTable(session(), cId, true);
+        expectRowCount(cId, 0);
+        expectRowCount(oId, 0);
+        expectRowCount(iId, 0);
+        expectRowCount(aId, 0);
+
+        dml().writeRow(session(), createNewRow(oId, 10, 1));
+        dml().writeRow(session(), createNewRow(iId, 100, 10));
+        expectRowCount(cId, 0);
+        expectRowCount(oId, 1);
+        expectRowCount(iId, 1);
+        expectRowCount(aId, 0);
+
+        dml().truncateTable(session(), oId, true);
+        expectRowCount(cId, 0);
+        expectRowCount(oId, 0);
+        expectRowCount(iId, 0);
+        expectRowCount(aId, 0);
     }
 }

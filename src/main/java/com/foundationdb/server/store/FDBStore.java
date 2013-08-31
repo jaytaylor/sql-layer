@@ -54,6 +54,7 @@ import com.foundationdb.ReadTransaction;
 import com.foundationdb.Transaction;
 import com.foundationdb.async.AsyncIterator;
 import com.foundationdb.async.Function;
+import com.foundationdb.async.Future;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple;
 import com.google.inject.Inject;
@@ -665,15 +666,26 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
                 segmentCount++;
             }
             key.setDepth(segmentCount);
-            if(keyExistsInIndex(txn, index, key)) {
-                throw new DuplicateKeyException(index.getIndexName().getName(), key);
-            }
+            checkKeyDoesNotExistInIndex(txn, index, key);
         }
     }
 
-    private boolean keyExistsInIndex(TransactionState txn, Index index, Key key) {
+    private void checkKeyDoesNotExistInIndex(TransactionState txn, Index index, Key key) {
         assert index.isUnique() : index;
-        return txn.getTransaction().get(packedTuple(index, key)).get() != null;
+        byte[] bkey = packedTuple(index, key);
+        Future<byte[]> future = txn.getTransaction().get(bkey);
+        if (txn.getUniquenessChecks() == null) {
+            long startNanos = System.nanoTime();
+            future.blockUntilReady();
+            long endNanos = System.nanoTime();
+            txn.uniquenessTime += (endNanos - startNanos);
+            if (future.get() != null) {
+                throw new DuplicateKeyException(index.getIndexName().getName(), key);
+            }
+        }
+        else {
+            txn.getUniquenessChecks().add(txn, index, bkey, future);
+        }
     }
 
 
