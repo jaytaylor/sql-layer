@@ -90,23 +90,6 @@ public abstract class StoreAdapter implements KeyCreator
 
     public abstract long sequenceCurrentValue(TableName sequenceName);
 
-    // Persistit Transaction step related. Way to generalize?
-    public int enterUpdateStep() {
-        throw new UnsupportedOperationException(getClass().getSimpleName());
-    }
-
-    public int enterUpdateStep(boolean evenIfZero) {
-        throw new UnsupportedOperationException(getClass().getSimpleName());
-    }
-
-    public void leaveUpdateStep(int step) {
-        throw new UnsupportedOperationException(getClass().getSimpleName());
-    }
-
-    public void withStepChanging(boolean withStepChanging) {
-        throw new UnsupportedOperationException(getClass().getSimpleName());
-    }
-
     public final Session getSession() {
         return session;
     }

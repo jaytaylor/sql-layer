@@ -136,7 +136,7 @@ public class UpdateIT extends OperatorITBase
     // http://en.wikipedia.org/wiki/Halloween_Problem
     public void halloweenProblem() throws Exception {
         use(db);
-        adapter.enterUpdateStep(true); // Enter isolation mode.
+        //adapter.enterUpdateStep(true); // Enter isolation mode.
 
         Operator scan = filter_Default(
             ancestorLookup_Default(
@@ -166,7 +166,7 @@ public class UpdateIT extends OperatorITBase
         assertEquals("rows touched", 8, result.rowsTouched());
         assertEquals("rows modified", 8, result.rowsModified());
 
-        adapter.enterUpdateStep(); // Make changes visible.
+        //adapter.enterUpdateStep(); // Make changes visible.
 
         Cursor executable = cursor(scan, queryContext, queryBindings);
         RowBase[] expected = new RowBase[] { 
