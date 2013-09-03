@@ -21,6 +21,7 @@ import com.foundationdb.ais.model.*;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.*;
 import com.foundationdb.qp.persistitadapter.indexcursor.IterationHelper;
+import com.foundationdb.qp.persistitadapter.indexcursor.MergeJoinSorter;
 import com.foundationdb.qp.persistitadapter.indexcursor.PersistitSorter;
 import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRowPool;
@@ -89,8 +90,8 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
                                API.SortOption sortOption,
                                InOutTap loadTap)
     {
-        return new PersistitSorter(context, bindings, input, rowType, ordering, sortOption, loadTap);
-        //return new MergeJoinSorter(context, bindings, input, rowType, ordering, sortOption, loadTap);
+        //return new PersistitSorter(context, bindings, input, rowType, ordering, sortOption, loadTap);
+        return new MergeJoinSorter(context, bindings, input, rowType, ordering, sortOption, loadTap);
     }
 
     @Override

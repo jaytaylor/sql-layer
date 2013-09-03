@@ -120,7 +120,7 @@ public class MergeJoinSorter implements Sorter {
         this.ordering = ordering.copy();
         this.loadTap = loadTap;
         
-        this.sortKey = new Key ((Persistit)null);
+        this.sortKey = context.getStore().createKey(); 
         this.sorterAdapter = new PValueSorterAdapter();
         // Note: init may change this.ordering
         sorterAdapter.init(rowType, this.ordering, this.sortKey, null, this.context, this.bindings, sortOption);
@@ -162,7 +162,7 @@ public class MergeJoinSorter implements Sorter {
                 new KeyReaderFactory(), 
                 new KeyWriterFactory(), 
                 compare);
-        s.sort(new KeyReadCursor(), new KeyWriter(new FileOutputStream(finalFile)));
+        s.sort(new KeyReadCursor(input), new KeyWriter(new FileOutputStream(finalFile)));
     }
     
     private RowCursor cursor() {
@@ -176,7 +176,7 @@ public class MergeJoinSorter implements Sorter {
     }
 
     public KeyReadCursor readCursor() { 
-        return new KeyReadCursor(); 
+        return new KeyReadCursor(input); 
     }
     
     private SortConfig getSortConfig (MergeTempFileProvider tmpFileProvider) {
@@ -226,6 +226,10 @@ public class MergeJoinSorter implements Sorter {
         
     }
     
+    /*
+     * Class to reak keys from the sorter (i.e. from disk)
+     * back into memory for processing. 
+     */
     public static class KeyReader extends DataReader<SortKey> {
 
         private InputStream is;
@@ -316,16 +320,18 @@ public class MergeJoinSorter implements Sorter {
         private int rowFields;
         private TInstance tFieldTypes[];
         private PersistitKeyPValueTarget valueTarget;
+        private RowCursor input;
         
-        public KeyReadCursor () {
+        public KeyReadCursor (RowCursor input) {
             this.rowFields = rowType.nFields();
-            this.convertKey = new Key ((Persistit)null);
+            this.convertKey =  context.getStore().createKey();
             this.tFieldTypes = new TInstance[rowFields];
             for (int i = 0; i < rowFields; i++) {
                 tFieldTypes[i] = rowType.typeInstanceAt(i);
             }
             valueTarget = new PersistitKeyPValueTarget();
             valueTarget.attach(convertKey);
+            this.input = input;
         }
         
         @Override
@@ -341,15 +347,19 @@ public class MergeJoinSorter implements Sorter {
         @Override
         public SortKey readNext() throws IOException {
             SortKey sortKey = null;
+            if (!input.isActive()) {
+                return sortKey;
+            }
             loadTap.in();
             try {
+ 
                 Row row = input.next();
                 context.checkQueryCancelation();
     
                 if (row != null) {
                     ++rowCount;
                     sortKey = new SortKey (createKey(row, rowCount), createValue(row));
-                }
+                } 
             } finally {
                 loadTap.out();
             }
