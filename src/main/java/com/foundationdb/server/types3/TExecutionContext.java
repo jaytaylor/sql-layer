@@ -150,6 +150,11 @@ public final class TExecutionContext {
         return queryContext.getCurrentSchema();
     }
     
+    public String getCurrentSetting(String key)
+    {
+        return queryContext.getCurrentSetting(key);
+    }
+
     public int getSessionId()
     {
         return queryContext.getSessionId();

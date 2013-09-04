@@ -175,6 +175,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
 
         @Override
+        public String getCurrentSetting(String key) {
+            return delegate.getCurrentSetting(key);
+        }
+
+        @Override
         public int getSessionId() {
             return delegate.getSessionId();
         }

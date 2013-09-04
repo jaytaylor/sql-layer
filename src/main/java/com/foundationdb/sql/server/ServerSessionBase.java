@@ -140,6 +140,11 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
         sessionChanged();
     }
 
+    @Override
+    public String getSessionSetting(String key) {
+        return getProperty(key);
+    }
+
     protected abstract void sessionChanged();
 
     @Override

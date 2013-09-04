@@ -80,6 +80,11 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
     }
 
     @Override
+    public String getCurrentSetting(String key) {
+        return server.getSessionSetting(key);
+    }
+
+    @Override
     public int getSessionId() {
         return server.getSessionMonitor().getSessionId();
     }

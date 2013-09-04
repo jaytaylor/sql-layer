@@ -86,6 +86,9 @@ public interface ServerSession
     /** Set the default schema for SQL objects. */
     public void setDefaultSchemaName(String defaultSchemaName);
 
+    /** Set the currenet value of a session setting. */
+    public String getSessionSetting(String key);
+
     /** Return server's AIS. */
     public AkibanInformationSchema getAIS();
     
