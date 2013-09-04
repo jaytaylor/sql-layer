@@ -39,8 +39,8 @@ import com.foundationdb.qp.persistitadapter.Sorter;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.PersistitKeyPValueSource;
-import com.foundationdb.server.PersistitKeyPValueTarget;
+import com.foundationdb.server.PersistitValuePValueSource;
+import com.foundationdb.server.PersistitValuePValueTarget;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.error.MergeSortIOException;
 import com.foundationdb.server.types3.TInstance;
@@ -50,6 +50,8 @@ import com.foundationdb.util.tap.InOutTap;
 import com.persistit.Key;
 import com.persistit.KeyState;
 import com.persistit.Persistit;
+import com.persistit.Value;
+import com.persistit.exception.ConversionException;
 import com.persistit.exception.KeyTooLongException;
 
 import com.fasterxml.sort.DataReader;
@@ -104,6 +106,7 @@ public class MergeJoinSorter implements Sorter {
     private final List<Integer> orderChanges;
     private Key sortKey;
     private Comparator<SortKey> compare;
+    private API.SortOption sortOption;
     
     public MergeJoinSorter (QueryContext context,
             QueryBindings bindings,
@@ -119,6 +122,7 @@ public class MergeJoinSorter implements Sorter {
         this.rowType = rowType;
         this.ordering = ordering.copy();
         this.loadTap = loadTap;
+        this.sortOption = sortOption;
         
         this.sortKey = context.getStore().createKey(); 
         this.sorterAdapter = new PValueSorterAdapter();
@@ -168,7 +172,7 @@ public class MergeJoinSorter implements Sorter {
     private RowCursor cursor() {
         KeyFinalCursor cursor = null;
         try {
-            cursor = new KeyFinalCursor (finalFile, rowType);
+            cursor = new KeyFinalCursor (finalFile, rowType, sortOption, compare);
         } catch (FileNotFoundException e) {
             throw new MergeSortIOException(e);
         }
@@ -190,17 +194,17 @@ public class MergeJoinSorter implements Sorter {
      */
     public static class SortKey {
         public List<KeyState> sortKeys;
-        public Key rowKey;
+        public Value rowValue;
      
         public SortKey () {
             this.sortKeys = new ArrayList<>();
-            this.rowKey = new Key ((Persistit)null);
-            rowKey.clear();
+            this.rowValue = new Value((Persistit)null);
+            rowValue.clear();
         }
         
-        public SortKey (List<KeyState> sortKeys, Key rowKey) {
+        public SortKey (List<KeyState> sortKeys, Value value) {
             this.sortKeys = sortKeys;
-            this.rowKey = rowKey;
+            this.rowValue = value;
         }
         
         // Sorter uses size of elements to determine when the 
@@ -211,7 +215,7 @@ public class MergeJoinSorter implements Sorter {
                 size += state.getBytes().length + 4;
                 size += 4;
             }
-            size += rowKey.getEncodedSize() + 4;
+            size += rowValue.getEncodedSize() + 4;
             return size;
         }
     }
@@ -265,7 +269,7 @@ public class MergeJoinSorter implements Sorter {
                 key.sortKeys.add(state);
             }
             
-            key.rowKey = readKey();
+            key.rowValue = readValue();
             
             return key;
         }
@@ -283,19 +287,16 @@ public class MergeJoinSorter implements Sorter {
             return new KeyState(bytes);
         }
         
-        private Key readKey() throws IOException{
+        private Value readValue() throws IOException {
             int size = readLength();
-            if (size < 1) {
-                return null;
-            }
-            Key key = new Key ((Persistit)null);
-            key.setMaximumSize(size);
-            int bytesRead = is.read(key.getEncodedBytes(), 0, size);
-            
-            assert bytesRead == size : "Invalid byte count on key read";
-
-            key.setEncodedSize(size);
-            return key;
+            if (size < 1) { return null; }
+            Value value = new Value ((Persistit)null);
+            value.setMaximumSize(size);
+            value.ensureFit(size);
+            int bytesRead = is.read(value.getEncodedBytes(), 0, size);
+            assert bytesRead == size : "Invalid byte count on value read";
+            value.setEncodedSize(size);
+            return value;
         }
         
         private int readLength() throws IOException {
@@ -316,21 +317,21 @@ public class MergeJoinSorter implements Sorter {
     public class KeyReadCursor extends DataReader<SortKey> {
         
         private int rowCount = 0;
-        private Key convertKey;
+        private Value convertValue;
         private int rowFields;
         private TInstance tFieldTypes[];
-        private PersistitKeyPValueTarget valueTarget;
+        private PersistitValuePValueTarget valueTarget;
         private RowCursor input;
         
         public KeyReadCursor (RowCursor input) {
             this.rowFields = rowType.nFields();
-            this.convertKey =  context.getStore().createKey();
+            this.convertValue =  new Value ((Persistit)null);
             this.tFieldTypes = new TInstance[rowFields];
             for (int i = 0; i < rowFields; i++) {
                 tFieldTypes[i] = rowType.typeInstanceAt(i);
             }
-            valueTarget = new PersistitKeyPValueTarget();
-            valueTarget.attach(convertKey);
+            valueTarget = new PersistitValuePValueTarget();
+            valueTarget.attach(convertValue);
             this.input = input;
         }
         
@@ -392,23 +393,32 @@ public class MergeJoinSorter implements Sorter {
             return Arrays.asList(states);
         }
 
-        private Key createValue(Row row)
+        private Value createValue(Row row)
         {
             while(true) {
                 try {
-                    convertKey.clear();
+                    convertValue.clear();
+                    convertValue.setStreamMode(true);
                     for (int i = 0; i < rowFields; i++) {
                         //sorterAdapter.evaluateToTarget(row, i);
                         PValueSource field = row.pvalue(i);
                         //putFieldToTarget(field, i, oFieldTypes, tFieldTypes);
                         tFieldTypes[i].writeCanonical(field, valueTarget);
+                        //tFieldTypes[i].writeCollating(field, valueTarget);
                     }
                     break;
-                } catch (KeyTooLongException e) {
-                    enlargeKey(convertKey);
+                } catch (ConversionException e) {
+                    enlargeValue(convertValue);
                 }
             }
-            return new Key(convertKey);
+            return new Value(convertValue);
+        }
+        
+        private void enlargeValue (Value value) {
+            if (value.getMaximumSize() == Value.MAXIMUM_SIZE) {
+                throw new KeyTooLongException("Maximum size exceeded=" + Value.MAXIMUM_SIZE);
+            }
+            value.setMaximumSize(Math.min(value.getMaximumSize() *2, Value.MAXIMUM_SIZE));
         }
         
         private void enlargeKey (Key key) {
@@ -452,7 +462,7 @@ public class MergeJoinSorter implements Sorter {
             for (KeyState state : arg0.sortKeys) {
                 writeKeyState (state);
             }
-            writeKey (arg0.rowKey);
+            writeKey (arg0.rowValue);
         }
         
         private void writeKeyState (KeyState state) throws IOException {
@@ -460,7 +470,7 @@ public class MergeJoinSorter implements Sorter {
             os.write(state.getBytes());
         }
         
-        private void writeKey (Key key) throws IOException {
+        private void writeKey (Value key) throws IOException {
             writeInt(key.getEncodedSize());
             os.write(key.getEncodedBytes(), 0, key.getEncodedSize());
         }
@@ -507,53 +517,101 @@ public class MergeJoinSorter implements Sorter {
 
         private final KeyReader read; 
         private final RowType rowType;
-        private PersistitKeyPValueSource valueSources[]; 
+        private PersistitValuePValueSource valueSource; 
+        private SortKey key = null;
+        private API.SortOption sortOption;
+        private Comparator<SortKey> compare;
         
-        public KeyFinalCursor (File inputFile, RowType rowType) throws FileNotFoundException {
-            this (new FileInputStream(inputFile), rowType);
+        public KeyFinalCursor (File inputFile, RowType rowType, API.SortOption sortOption, Comparator<SortKey> compare) throws FileNotFoundException {
+            this (new FileInputStream(inputFile), rowType, sortOption, compare);
         }
         
-        public KeyFinalCursor(InputStream stream, RowType rowType) {
+        public KeyFinalCursor(InputStream stream, RowType rowType, API.SortOption sortOption, Comparator<SortKey> compare) {
             read = new KeyReader(stream);
             this.rowType = rowType;
-            valueSources = new PersistitKeyPValueSource[rowType.nFields()];
-            for (int i = 0; i < rowType.nFields(); i++) {
-                valueSources[i] = new PersistitKeyPValueSource (rowType.typeInstanceAt(i));
-            }
+            this.sortOption = sortOption;
+            this.compare = compare;
+            valueSource = new PersistitValuePValueSource();
         }
         
         @Override
         public void open() {
             CursorLifecycle.checkIdle(this);
             isIdle = false;
-        }
-
-        @Override
-        public Row next() {
-            CursorLifecycle.checkIdleOrActive(this);
-            SortKey key;
-            Row row = null;
             try {
                 key = read.readNext();
             } catch (IOException e) {
                 throw new MergeSortIOException (e);
             }
+        }
+
+        @Override
+        public Row next() {
+            CursorLifecycle.checkIdleOrActive(this);
+            Row row = null;
+           
             if (key != null) {
                 row = createRow (key);
+            
+                try {
+                    if (sortOption == API.SortOption.SUPPRESS_DUPLICATES) {
+                        key = skipDuplicates (key);
+                    } else {
+                        key = read.readNext();
+                    }
+                } catch (IOException e) {
+                    throw new MergeSortIOException (e);
+                }
                 return row;
-            }
+            }            
             return null;
+        }
+
+        /*
+         * The FasterXML.Sort isn't capable of removing duplicates, it just 
+         * puts them in order in the sort output. Skip the duplicates by reading
+         * until the end of the stream or until a different key appears 
+         */
+        private SortKey skipDuplicates (SortKey startKey) throws IOException {
+            while (true) {
+                SortKey newKey = read.readNext();
+                if (newKey == null || compare.compare(startKey, newKey) != 0) {
+                    return newKey;
+                }
+            }
         }
         
         private Row createRow (SortKey key) {
             ValuesHolderRow rowCopy = new ValuesHolderRow(rowType);
+            valueSource.attach(key.rowValue);
             for(int i = 0 ; i < rowType.nFields(); ++i) {
-                valueSources[i].attach(key.rowKey, i, valueSources[i].tInstance());
-                PValueTargets.copyFrom(valueSources[i], rowCopy.pvalueAt(i));
+                valueSource.getReady(rowType.typeInstanceAt(i));
+                rowType.typeInstanceAt(i).writeCanonical(valueSource, rowCopy.pvalueAt(i));
+                //PValueTargets.copyFrom(valueSource, rowCopy.pvalueAt(i));
             }
             return rowCopy;
         }
-        
+/*
+ *             this.tFieldTypes = new TInstance[rowFields];
+            for (int i = 0; i < rowFields; i++) {
+                tFieldTypes[i] = rowType.typeInstanceAt(i);
+            }
+
+                try {
+                    convertKey.clear();
+                    for (int i = 0; i < rowFields; i++) {
+                        //sorterAdapter.evaluateToTarget(row, i);
+                        PValueSource field = row.pvalue(i);
+                        //putFieldToTarget(field, i, oFieldTypes, tFieldTypes);
+                        tFieldTypes[i].writeCanonical(field, valueTarget);
+                        //tFieldTypes[i].writeCollating(field, valueTarget);
+                    }
+                    break;
+                } catch (KeyTooLongException e) {
+                    enlargeKey(convertKey);
+                }
+            }
+ */
         @Override
         public void close() {
             CursorLifecycle.checkIdleOrActive(this);
