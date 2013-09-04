@@ -137,14 +137,18 @@ public class PostgresMessenger implements DataInput, DataOutput
             type = PostgresMessages.STARTUP_MESSAGE_TYPE;
             code = 0;
         }
-            
+
         if (code < 0) 
             return PostgresMessages.EOF_TYPE;                            // EOF
+
         recvTap.in();
         try {
+            int count = 0;
+            if (code > 0) count++;
             int len = dataInput.readInt();
             if ((len < 0) || (len > type.maxSize()))
                 throw new IOException(String.format("Implausible message length (%d) received.", len));
+            count += len;
             len -= 4;
             try {
                 rawMessageInput = new byte[len];
@@ -153,6 +157,7 @@ public class PostgresMessenger implements DataInput, DataOutput
             } catch (OutOfMemoryError ex) {
                 throw new IOException (String.format("Unable to allocate read buffer of length (%d)", len));
             }
+            bytesRead(count);
             return type;
         }
         finally {
@@ -182,6 +187,7 @@ public class PostgresMessenger implements DataInput, DataOutput
         msg[3] = (byte)(len >> 8);
         msg[4] = (byte)len;
         outputStream.write(msg);
+        bytesWritten(len + 1);
     }
 
     /** Send outgoing message and optionally flush stream. */
@@ -356,4 +362,8 @@ public class PostgresMessenger implements DataInput, DataOutput
     public void idle() {
     }
 
+    public void bytesRead(int count) {
+    }
+    public void bytesWritten(int count) {
+    }
 }
