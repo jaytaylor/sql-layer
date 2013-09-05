@@ -33,7 +33,6 @@ import java.util.Set;
 /** Physical INSERT/UPDATE/DELETE statement */
 public class PhysicalUpdate extends BasePlannable
 {
-    private boolean requireStepIsolation;
     private boolean returning;
     private boolean putInCache;
 
@@ -42,12 +41,10 @@ public class PhysicalUpdate extends BasePlannable
                           RowType rowType, 
                           List<PhysicalResultColumn> resultColumns,
                           boolean returning, 
-                          boolean requireStepIsolation,
                           boolean putInCache,
                           CostEstimate costEstimate,
                           Set<UserTable> affectedTables) {
         super (resultsOperator, paramterTypes, rowType, resultColumns, costEstimate, affectedTables);
-        this.requireStepIsolation = requireStepIsolation;
         this.returning = returning;
         this.putInCache = putInCache;
     }
@@ -56,11 +53,7 @@ public class PhysicalUpdate extends BasePlannable
         return (UpdatePlannable)getPlannable();
     }
 
-    public boolean isRequireStepIsolation() {
-        return requireStepIsolation;
-    }
-    
-    public boolean isReturning() { 
+    public boolean isReturning() {
         return returning;
     }
 
@@ -77,8 +70,6 @@ public class PhysicalUpdate extends BasePlannable
     protected String withIndentedExplain(StringBuilder str, ExplainContext context, String defaultSchemaName) {
         if (getParameterTypes() != null)
             str.append(Arrays.toString(getParameterTypes()));
-        if (requireStepIsolation)
-            str.append("/STEP_ISOLATE");
         if (!putInCache)
             str.append("/NO_CACHE");
         return super.withIndentedExplain(str, context, defaultSchemaName);

@@ -88,13 +88,11 @@ public class HalloweenRecognizer extends BaseRule
 
             if (!bufferRequired) {
                 Checker checker = new Checker(stmt, updateColumns);
-                bufferRequired = checker.check(stmt.getQuery());
-
+                checker.check(stmt.getQuery());
                 if(checker.newDMLStmt != null) {
                     plan.setPlan(checker.newDMLStmt);
                 }
             }
-            stmt.setRequireStepIsolation(bufferRequired);
         }
     }
 

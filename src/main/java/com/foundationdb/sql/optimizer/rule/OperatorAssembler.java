@@ -619,7 +619,6 @@ public class OperatorAssembler extends BaseRule
                                       stream.rowType,
                                       resultColumns,
                                       returning,
-                                      statement.isRequireStepIsolation(),
                                       returning || !isBulkInsert(planQuery),
                                       statement.getCostEstimate(),
                                       affectedTables);

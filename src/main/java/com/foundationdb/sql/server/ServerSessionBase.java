@@ -357,11 +357,10 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
                 break;
             case WRITE:
             case NEW_WRITE:
-            case WRITE_STEP_ISOLATED:
                 if (transactionDefaultReadOnly)
                     throw new TransactionReadOnlyException();
                 localTransaction = new ServerTransaction(this, false, false);
-                localTransaction.beforeUpdate(true);
+                localTransaction.beforeUpdate();
                 break;
             }
         }
@@ -397,8 +396,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             switch (transactionMode) {
             case REQUIRED_WRITE:
             case WRITE:
-            case WRITE_STEP_ISOLATED:
-                transaction.afterUpdate(transactionMode == ServerStatement.TransactionMode.WRITE_STEP_ISOLATED);
+                transaction.afterUpdate();
                 break;
             }
             // Give periodic commit a chance if enabled.
