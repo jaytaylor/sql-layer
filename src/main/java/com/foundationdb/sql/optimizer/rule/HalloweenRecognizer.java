@@ -157,12 +157,9 @@ public class HalloweenRecognizer extends BaseRule
      * <pre>Out() <- Buffer() <- IndexScan()</pre>
      */
     private static void injectBufferNode(PlanNode node) {
-        // Todo: check and move above Flatten?
         PlanWithInput origDest = node.getOutput();
         PlanWithInput newInput = new Buffer(node);
-        if(origDest != null) {
-            origDest.replaceInput(node, newInput);
-        }
+        origDest.replaceInput(node, newInput);
     }
 
     static class Checker implements PlanVisitor, ExpressionVisitor {
