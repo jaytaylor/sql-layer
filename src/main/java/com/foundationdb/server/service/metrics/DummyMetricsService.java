@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class DummyMetricsService implements MetricsService, Service
 {
-    private final ConcurrentHashMap<String,BaseMetric<?>> metrics = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String,BaseMetricImpl<?>> metrics = new ConcurrentHashMap<>();
 
     static abstract class BaseMetricImpl<T> implements BaseMetric<T> {
         private final String name;
@@ -42,6 +42,11 @@ public class DummyMetricsService implements MetricsService, Service
         @Override
         public boolean isEnabled() {
             return false;
+        }
+
+        @Override
+        public String toString() {
+            return name + " = " + getObject();
         }
     }
 
@@ -126,19 +131,14 @@ public class DummyMetricsService implements MetricsService, Service
 
     @Override
     public BooleanMetric addBooleanMetric(String name) {
-        BooleanMetric metric = new BooleanMetricImpl(name);
-        if (metrics.putIfAbsent(name, metric) != null) {
-            throw new IllegalArgumentException("There is already a metric named " + name);
-        }
+        BooleanMetricImpl metric = new BooleanMetricImpl(name);
+        addMetric(metric);
         return metric;
     }
 
     @Override
     public LongMetric addLongMetric(String name) {
-        LongMetric metric = new LongMetricImpl(name);
-        if (metrics.putIfAbsent(name, metric) != null) {
-            throw new IllegalArgumentException("There is already a metric named " + name);
-        }
+        LongMetricImpl metric = new LongMetricImpl(name);
         return metric;
     }
 
@@ -159,5 +159,13 @@ public class DummyMetricsService implements MetricsService, Service
 
     @Override
     public void crash() {
+    }
+
+    /* Internal */
+
+    protected void addMetric(BaseMetricImpl<?> metric) {
+        if (metrics.putIfAbsent(metric.getName(), metric) != null) {
+            throw new IllegalArgumentException("There is already a metric named " + metric.getName());
+        }
     }
 }
