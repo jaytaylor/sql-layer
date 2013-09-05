@@ -434,7 +434,9 @@ public class MergeJoinSorter implements Sorter {
                     enlargeValue(convertValue);
                 }
             }
-            return convertValue;
+            // reset some more un-needed internal state. But this requires 
+            // making a copy of the internal data, again. 
+            return new Value(convertValue);
         }
         
         private void enlargeValue (Value value) {
