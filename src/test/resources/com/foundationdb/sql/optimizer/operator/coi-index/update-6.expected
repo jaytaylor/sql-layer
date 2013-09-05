@@ -1,4 +1,4 @@
-PhysicalUpdate/STEP_ISOLATE
+PhysicalUpdate
   Update_Returning(items SET quan = 66)
     Map_NestedLoops()
       Filter_Default(items)
@@ -8,5 +8,6 @@ PhysicalUpdate/STEP_ISOLATE
           Filter_Default(orders - items)
             Flatten_HKeyOrdered(orders INNER items)
               Select_HKeyOrdered(orders.order_date > DATE '2011-03-02')
-                GroupLookup_Default(Index(orders.PRIMARY) -> orders, items)
-                  IndexScan_Default(Index(orders.PRIMARY), oid = items.oid)
+                Buffer_Default()
+                  GroupLookup_Default(Index(orders.PRIMARY) -> orders, items)
+                    IndexScan_Default(Index(orders.PRIMARY), oid = items.oid)
