@@ -17,7 +17,6 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.sql.optimizer.plan.*;
 
 import com.foundationdb.ais.model.Column;
@@ -82,13 +81,18 @@ public class HalloweenRecognizer extends BaseRule
                 }
 
                 if(bufferRequired) {
-                    transformUpdate(updateStmt);
+                    DMLStatement newDMLStmt = transformUpdate(stmt, updateStmt);
+                    plan.setPlan(newDMLStmt);
                 }
             }
 
             if (!bufferRequired) {
                 Checker checker = new Checker(stmt, updateColumns);
                 bufferRequired = checker.check(stmt.getQuery());
+
+                if(checker.newDMLStmt != null) {
+                    plan.setPlan(checker.newDMLStmt);
+                }
             }
             stmt.setRequireStepIsolation(bufferRequired);
         }
@@ -120,25 +124,30 @@ public class HalloweenRecognizer extends BaseRule
      * to
      * <pre>Out() <- Insert() <- Project(col=5) <- Buffer() <- Delete() <- In()</pre>
      */
-    private static void transformUpdate(UpdateStatement update) {
+    private static DMLStatement transformUpdate(DMLStatement dml, UpdateStatement update) {
+        assert dml.getOutput() == null;
+
+        TableSource tableSource = dml.getSelectTable();
         PlanNode scanSource = update.getInput();
         PlanWithInput updateDest = update.getOutput();
 
-        TableSourceFinder finder = new TableSourceFinder(update.getTargetTable().getTable());
-        update.accept(finder);
-        if(finder.found == null) {
-            // No existing references (e.g. ColumnExpressions)
-            finder.found = new TableSource(update.getTargetTable(), true, update.getTargetTable().getTable().getName().getTableName());
-        }
-        PlanWithInput newInput = new DeleteStatement(scanSource, update.getTargetTable(), finder.found);
-        newInput = new Buffer(newInput);
-        newInput = new Project(newInput, updateListToProjectList(update, finder.found));
-        newInput = new InsertStatement(newInput, update.getTargetTable(), update.getTargetTable().getTable().getColumns(), finder.found);
+        InsertStatement insert = new InsertStatement(
+            new Project(
+                new Buffer(
+                    new DeleteStatement(scanSource, update.getTargetTable(), tableSource)
+                ),
+                updateListToProjectList(update, tableSource)
+            ),
+            update.getTargetTable(),
+            tableSource.getTable().getTable().getColumns(),
+            tableSource
+        );
 
-        scanSource.setOutput(newInput);
-        if(updateDest != null) {
-            updateDest.replaceInput(update, newInput);
-        }
+        scanSource.setOutput(insert);
+        updateDest.replaceInput(update, insert);
+
+        return new DMLStatement(insert, StatementType.INSERT, dml.getSelectTable(), dml.getTargetTable(),
+                                dml.getResultField(), dml.getReturningTable(), dml.getColumnEquivalencies());
     }
 
     /**
@@ -156,67 +165,13 @@ public class HalloweenRecognizer extends BaseRule
         }
     }
 
-    static class TableSourceFinder implements PlanVisitor, ExpressionVisitor {
-        private final UserTable lookFor;
-        private TableSource found;
-
-        public TableSourceFinder(UserTable lookFor) {
-            this.lookFor = lookFor;
-        }
-
-        private boolean isDone() {
-            return found == null;
-        }
-
-        @Override
-        public boolean visitEnter(PlanNode n) {
-            return visit(n);
-        }
-
-        @Override
-        public boolean visitLeave(PlanNode n) {
-            return isDone();
-        }
-
-        @Override
-        public boolean visit(PlanNode n) {
-            if(n instanceof DMLStatement) {
-                TableSource source = ((DMLStatement)n).getSelectTable();
-                if(source != null && source.getTable().getTable() == lookFor) {
-                    found = source;
-                }
-            }
-            return isDone();
-        }
-
-        @Override
-        public boolean visitEnter(ExpressionNode n) {
-            return visit(n);
-        }
-
-        @Override
-        public boolean visitLeave(ExpressionNode n) {
-            return isDone();
-        }
-
-        @Override
-        public boolean visit(ExpressionNode n) {
-            if(n instanceof ColumnExpression) {
-                ColumnExpression ce = ((ColumnExpression)n);
-                if(ce.getColumn().getTable() == lookFor && ce.getTable() instanceof TableSource) {
-                    found = (TableSource)ce.getTable();
-                }
-            }
-            return isDone();
-        }
-    }
-
     static class Checker implements PlanVisitor, ExpressionVisitor {
         private final DMLStatement dmlStmt;
         private final TableNode targetTable;
         private final Set<Column> updateColumns;
         private int targetMaxUses;
         private boolean bufferRequired;
+        private DMLStatement newDMLStmt;
 
         public Checker(DMLStatement dmlStmt, Set<Column> updateColumns) {
             assert updateColumns != null;
@@ -263,7 +218,7 @@ public class HalloweenRecognizer extends BaseRule
                             break;
                         case UPDATE:
                             if(single.getIndex().isUnique()) {
-                                transformUpdate(findUpdateStmt(dmlStmt));
+                                newDMLStmt = transformUpdate(dmlStmt, findUpdateStmt(dmlStmt));
                             } else {
                                 injectBufferNode(single);
                             }

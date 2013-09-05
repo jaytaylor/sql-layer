@@ -138,4 +138,47 @@
 - Statement: SELECT * FROM t ORDER BY id
 - output: [ [1,2] ]
 
+
+#
+# RETURNING
+#
+---
+- DropTable: t
+---
+- CreateTable: t (id INT NOT NULL PRIMARY KEY, n INT);
+---
+- Statement: INSERT INTO t VALUES(1,1),(2,2);
+---
+- Statement: CREATE INDEX t_n ON t(n);
+---
+- Statement: ALTER TABLE t ALL UPDATE STATISTICS;
+
+---
+- Statement: UPDATE t SET id=id+1 RETURNING *
+- output: [ [2,1], [3,2] ]
+---
+- Statement: SELECT * FROM t ORDER BY id;
+- output: [ [2,1], [3,2] ]
+
+---
+- Statement: UPDATE t SET n=n+1 WHERE n > 1 RETURNING *
+- output: [ [3,3] ]
+---
+- Statement: SELECT * FROM t ORDER BY id;
+- output: [ [2,1], [3,3] ]
+
+---
+- Statement: INSERT INTO t SELECT id+10,n+10 FROM t WHERE n > 2 RETURNING *
+- output: [ [13,13] ]
+---
+- Statement: SELECT * FROM t ORDER BY id;
+- output: [ [2,1], [3,3], [13,13] ]
+
+---
+- Statement: DELETE FROM t WHERE n IN (SELECT n FROM t WHERE id > 10) RETURNING *
+- output: [ [13,13] ]
+---
+- Statement: SELECT * FROM t ORDER BY id;
+- output: [ [2,1], [3,3] ]
+
 ...
