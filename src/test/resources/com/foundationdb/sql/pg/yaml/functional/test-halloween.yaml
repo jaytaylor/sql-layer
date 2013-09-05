@@ -88,13 +88,13 @@
 - Statement: SELECT * FROM t ORDER BY id
 - row_count: 0
 
-#---
-#- Statement: INSERT INTO t VALUES(1,1),(2,2);
-#---
-#- Statement: DELETE FROM t WHERE n IN (SELECT n FROM t WHERE n > 1)
-#---
-#- Statement: SELECT * FROM t ORDER BY id
-#- output: [ [1,1] ]
+---
+- Statement: INSERT INTO t VALUES(1,1),(2,2);
+---
+- Statement: DELETE FROM t WHERE n IN (SELECT n FROM t WHERE n > 1)
+---
+- Statement: SELECT * FROM t ORDER BY id
+- output: [ [1,1] ]
 
 
 #
@@ -131,5 +131,11 @@
 ---
 - Statement: SELECT * FROM t ORDER BY id;
 - output: [ [1,2], [2,3], [101,102], [102,103] ]
+
+---
+- Statement: DELETE FROM t WHERE n IN (SELECT n FROM t WHERE n > 2)
+---
+- Statement: SELECT * FROM t ORDER BY id
+- output: [ [1,2] ]
 
 ...

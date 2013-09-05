@@ -25,6 +25,7 @@ import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.JoinColumn;
 
+import com.foundationdb.sql.optimizer.plan.BaseUpdateStatement.StatementType;
 import com.foundationdb.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,18 +54,11 @@ public class HalloweenRecognizer extends BaseRule
         if (plan.getPlan() instanceof DMLStatement) {
             DMLStatement stmt = (DMLStatement)plan.getPlan();
             TableNode targetTable = stmt.getTargetTable();
-            boolean requireStepIsolation = false;
+            boolean bufferRequired = false;
             Set<Column> updateColumns = new HashSet<>();
 
-            UpdateStatement updateStmt = null;
             if (stmt.getType() == BaseUpdateStatement.StatementType.UPDATE) {
-                BasePlanWithInput node = stmt;
-                do {
-                    node = (BasePlanWithInput) node.getInput();
-                } while (node != null && !(node instanceof UpdateStatement));
-                assert node != null;
-                
-                updateStmt = (UpdateStatement)node;
+                UpdateStatement updateStmt = findUpdateStmt(stmt);
                 
                 update: { 
                     for (UpdateStatement.UpdateColumn updateColumn : updateStmt.getUpdateColumns()) {
@@ -72,7 +66,7 @@ public class HalloweenRecognizer extends BaseRule
                     }
                     for (Column pkColumn : targetTable.getTable().getPrimaryKeyIncludingInternal().getColumns()) {
                         if (updateColumns.contains(pkColumn)) {
-                            requireStepIsolation = true;
+                            bufferRequired = true;
                             break update;
                         }
                     }
@@ -80,32 +74,33 @@ public class HalloweenRecognizer extends BaseRule
                     if (parentJoin != null) {
                         for (JoinColumn joinColumn : parentJoin.getJoinColumns()) {
                             if (updateColumns.contains(joinColumn.getChild())) {
-                                requireStepIsolation = true;
+                                bufferRequired = true;
                                 break update;
                             }
                         }
                     }
                 }
 
-                if(requireStepIsolation) {
+                if(bufferRequired) {
                     transformUpdate(updateStmt);
-                } else {
-                    requireStepIsolation = false;
                 }
             }
-            if (!requireStepIsolation) {
-                Checker checker = new Checker(targetTable,
-                                              (stmt.getType() == BaseUpdateStatement.StatementType.INSERT) ? 0 : 1,
-                                              updateColumns);
-                requireStepIsolation = checker.check(stmt.getQuery());
 
-                if(requireStepIsolation && checker.indexWasUnique) {
-                    assert updateStmt != null;
-                    transformUpdate(updateStmt);
-                }
+            if (!bufferRequired) {
+                Checker checker = new Checker(stmt, updateColumns);
+                bufferRequired = checker.check(stmt.getQuery());
             }
-            stmt.setRequireStepIsolation(requireStepIsolation);
+            stmt.setRequireStepIsolation(bufferRequired);
         }
+    }
+
+    private static UpdateStatement findUpdateStmt(DMLStatement stmt) {
+        BasePlanWithInput node = stmt;
+        do {
+            node = (BasePlanWithInput) node.getInput();
+        } while (node != null && !(node instanceof UpdateStatement));
+        assert node != null;
+        return (UpdateStatement)node;
     }
 
     private static List<ExpressionNode> updateListToProjectList(UpdateStatement update, TableSource tableSource) {
@@ -152,11 +147,12 @@ public class HalloweenRecognizer extends BaseRule
      * to
      * <pre>Out() <- Buffer() <- IndexScan()</pre>
      */
-    private static void transformScan(SingleIndexScan scan) {
-        PlanWithInput origDest = scan.getOutput();
-        PlanWithInput newInput = new Buffer(scan);
+    private static void injectBufferNode(PlanNode node) {
+        // Todo: check and move above Flatten?
+        PlanWithInput origDest = node.getOutput();
+        PlanWithInput newInput = new Buffer(node);
         if(origDest != null) {
-            origDest.replaceInput(scan, newInput);
+            origDest.replaceInput(node, newInput);
         }
     }
 
@@ -216,23 +212,24 @@ public class HalloweenRecognizer extends BaseRule
     }
 
     static class Checker implements PlanVisitor, ExpressionVisitor {
+        private final DMLStatement dmlStmt;
         private final TableNode targetTable;
         private final Set<Column> updateColumns;
         private int targetMaxUses;
-        private boolean requireStepIsolation;
-        private boolean indexWasUnique;
+        private boolean bufferRequired;
 
-        public Checker(TableNode targetTable, int targetMaxUses, Set<Column> updateColumns) {
+        public Checker(DMLStatement dmlStmt, Set<Column> updateColumns) {
             assert updateColumns != null;
-            this.targetTable = targetTable;
-            this.targetMaxUses = targetMaxUses;
+            this.dmlStmt = dmlStmt;
+            this.targetTable = dmlStmt.getTargetTable();
+            this.targetMaxUses = (dmlStmt.getType() == StatementType.INSERT) ? 0 : 1;
             this.updateColumns = updateColumns;
         }
 
         public boolean check(PlanNode root) {
-            requireStepIsolation = false;
+            bufferRequired = false;
             root.accept(this);
-            return requireStepIsolation;
+            return bufferRequired;
         }
 
         private void indexScan(IndexScan scan) {
@@ -243,7 +240,7 @@ public class HalloweenRecognizer extends BaseRule
                         if (table.getTable() == targetTable) {
                             targetMaxUses--;
                             if (targetMaxUses < 0) {
-                                requireStepIsolation = true;
+                                bufferRequired = true;
                             }
                             break;
                         }
@@ -252,15 +249,28 @@ public class HalloweenRecognizer extends BaseRule
                 if (!updateColumns.isEmpty()) {
                     for (IndexColumn indexColumn : single.getIndex().getAllColumns()) {
                         if (updateColumns.contains(indexColumn.getColumn())) {
-                            indexWasUnique = single.getIndex().isUnique();
-                            requireStepIsolation = true;
+                            bufferRequired = true;
                             break;
                         }
                     }
                 }
 
-                if(requireStepIsolation && (!indexWasUnique || updateColumns.isEmpty())) {
-                    transformScan(single);
+                if(bufferRequired) {
+                    switch(dmlStmt.getType()) {
+                        case INSERT:
+                        case DELETE:
+                            injectBufferNode(single);
+                            break;
+                        case UPDATE:
+                            if(single.getIndex().isUnique()) {
+                                transformUpdate(findUpdateStmt(dmlStmt));
+                            } else {
+                                injectBufferNode(single);
+                            }
+                        break;
+                        default:
+                            assert false : dmlStmt.getType();
+                    }
                 }
             }
             else if (scan instanceof MultiIndexIntersectScan) {
@@ -277,7 +287,7 @@ public class HalloweenRecognizer extends BaseRule
 
         @Override
         public boolean visitLeave(PlanNode n) {
-            return !requireStepIsolation;
+            return !bufferRequired;
         }
 
         @Override
@@ -290,13 +300,14 @@ public class HalloweenRecognizer extends BaseRule
                     if (table.getTable() == targetTable) {
                         targetMaxUses--;
                         if (targetMaxUses < 0) {
-                            requireStepIsolation = true;
+                            bufferRequired = true;
+                            injectBufferNode(n);
                             break;
                         }
                     }
                 }
             }
-            return !requireStepIsolation;
+            return !bufferRequired;
         }
 
         @Override
@@ -306,12 +317,12 @@ public class HalloweenRecognizer extends BaseRule
 
         @Override
         public boolean visitLeave(ExpressionNode n) {
-            return !requireStepIsolation;
+            return !bufferRequired;
         }
 
         @Override
         public boolean visit(ExpressionNode n) {
-            return !requireStepIsolation;
+            return !bufferRequired;
         }
     }
 }
