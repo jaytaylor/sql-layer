@@ -266,6 +266,9 @@ public class DefaultFormatter
         case UNION:
             appendUnionOperator(name, atts);
             break;
+        case BUFFER_OPERATOR:
+            appendBufferOperator(name, atts);
+            break;
         default:
             throw new UnsupportedOperationException("Formatter does not recognize " + 
                                                     explainer.getType());
@@ -754,6 +757,9 @@ public class DefaultFormatter
     }
 
     protected void appendUnionOperator(String name, Attributes atts) {
+    }
+
+    protected void appendBufferOperator(String name, Attributes atts) {
     }
 
     protected void appendProcedure(CompoundExplainer explainer, int depth) {
