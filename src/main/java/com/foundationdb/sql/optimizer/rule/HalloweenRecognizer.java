@@ -55,7 +55,8 @@ public class HalloweenRecognizer extends BaseRule
             TableNode targetTable = stmt.getTargetTable();
             boolean requireStepIsolation = false;
             Set<Column> updateColumns = new HashSet<>();
-            
+
+            UpdateStatement updateStmt = null;
             if (stmt.getType() == BaseUpdateStatement.StatementType.UPDATE) {
                 BasePlanWithInput node = stmt;
                 do {
@@ -63,7 +64,7 @@ public class HalloweenRecognizer extends BaseRule
                 } while (node != null && !(node instanceof UpdateStatement));
                 assert node != null;
                 
-                UpdateStatement updateStmt = (UpdateStatement)node;
+                updateStmt = (UpdateStatement)node;
                 
                 update: { 
                     for (UpdateStatement.UpdateColumn updateColumn : updateStmt.getUpdateColumns()) {
@@ -97,6 +98,11 @@ public class HalloweenRecognizer extends BaseRule
                                               (stmt.getType() == BaseUpdateStatement.StatementType.INSERT) ? 0 : 1,
                                               updateColumns);
                 requireStepIsolation = checker.check(stmt.getQuery());
+
+                if(requireStepIsolation && checker.indexWasUnique) {
+                    assert updateStmt != null;
+                    transformUpdate(updateStmt);
+                }
             }
             stmt.setRequireStepIsolation(requireStepIsolation);
         }
@@ -137,6 +143,20 @@ public class HalloweenRecognizer extends BaseRule
         scanSource.setOutput(newInput);
         if(updateDest != null) {
             updateDest.replaceInput(update, newInput);
+        }
+    }
+
+    /**
+     * Transform
+     * <pre>Out() <- IndexScan()</pre>
+     * to
+     * <pre>Out() <- Buffer() <- IndexScan()</pre>
+     */
+    private static void transformScan(SingleIndexScan scan) {
+        PlanWithInput origDest = scan.getOutput();
+        PlanWithInput newInput = new Buffer(scan);
+        if(origDest != null) {
+            origDest.replaceInput(scan, newInput);
         }
     }
 
@@ -196,12 +216,14 @@ public class HalloweenRecognizer extends BaseRule
     }
 
     static class Checker implements PlanVisitor, ExpressionVisitor {
-        private TableNode targetTable;
+        private final TableNode targetTable;
+        private final Set<Column> updateColumns;
         private int targetMaxUses;
-        private Set<Column> updateColumns;
         private boolean requireStepIsolation;
+        private boolean indexWasUnique;
 
         public Checker(TableNode targetTable, int targetMaxUses, Set<Column> updateColumns) {
+            assert updateColumns != null;
             this.targetTable = targetTable;
             this.targetMaxUses = targetMaxUses;
             this.updateColumns = updateColumns;
@@ -227,13 +249,18 @@ public class HalloweenRecognizer extends BaseRule
                         }
                     }
                 }
-                if (updateColumns != null) {
+                if (!updateColumns.isEmpty()) {
                     for (IndexColumn indexColumn : single.getIndex().getAllColumns()) {
                         if (updateColumns.contains(indexColumn.getColumn())) {
+                            indexWasUnique = single.getIndex().isUnique();
                             requireStepIsolation = true;
                             break;
                         }
                     }
+                }
+
+                if(requireStepIsolation && (!indexWasUnique || updateColumns.isEmpty())) {
+                    transformScan(single);
                 }
             }
             else if (scan instanceof MultiIndexIntersectScan) {
