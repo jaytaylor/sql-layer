@@ -45,7 +45,6 @@ import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.error.MergeSortIOException;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueTargets;
 import com.foundationdb.util.tap.InOutTap;
 import com.persistit.Key;
 import com.persistit.KeyState;
@@ -317,7 +316,6 @@ public class MergeJoinSorter implements Sorter {
     public class KeyReadCursor extends DataReader<SortKey> {
         
         private int rowCount = 0;
-        private Value convertValue;
         private int rowFields;
         private TInstance tFieldTypes[];
         private PersistitValuePValueTarget valueTarget;
@@ -325,13 +323,11 @@ public class MergeJoinSorter implements Sorter {
         
         public KeyReadCursor (RowCursor input) {
             this.rowFields = rowType.nFields();
-            this.convertValue =  new Value ((Persistit)null);
             this.tFieldTypes = new TInstance[rowFields];
             for (int i = 0; i < rowFields; i++) {
                 tFieldTypes[i] = rowType.typeInstanceAt(i);
             }
             valueTarget = new PersistitValuePValueTarget();
-            valueTarget.attach(convertValue);
             this.input = input;
         }
         
@@ -393,8 +389,35 @@ public class MergeJoinSorter implements Sorter {
             return Arrays.asList(states);
         }
 
+        private static final int SIZE_GRANULARITY = 256;
         private Value createValue(Row row)
         {
+            // Do a rough calculation of size of the row data
+            int size = 0;
+            for (int i = 0; i < rowFields; i++) {
+                if (tFieldTypes[i].typeClass().hasFixedSerializationSize()) {
+                    size += tFieldTypes[i].typeClass().fixedSerializationSize() + 2;
+                } else {
+                    PValueSource src = row.pvalue(i);
+                    if (!src.isNull()) {
+                        if (src.getString() != null) {
+                            size += src.getString().length() * 2 + 3;
+                        } else if (src.getBytes() != null) {
+                            size += src.getBytes().length;
+                        }
+                    } else {
+                        size += 1;
+                    }
+                }
+            }
+            size = ((size  + SIZE_GRANULARITY - 1) / SIZE_GRANULARITY) * SIZE_GRANULARITY;
+            
+            // Create a new conversion value 
+            Value convertValue =  new Value ((Persistit)null, 
+                        Math.max(size, Value.INITIAL_SIZE), 
+                        Math.max(size, Value.DEFAULT_MAXIMUM_SIZE));
+            valueTarget.attach(convertValue);            
+            // Covert the row to the Value for storage in the SortKey
             while(true) {
                 try {
                     convertValue.clear();
@@ -411,7 +434,7 @@ public class MergeJoinSorter implements Sorter {
                     enlargeValue(convertValue);
                 }
             }
-            return new Value(convertValue);
+            return convertValue;
         }
         
         private void enlargeValue (Value value) {
@@ -587,31 +610,9 @@ public class MergeJoinSorter implements Sorter {
             for(int i = 0 ; i < rowType.nFields(); ++i) {
                 valueSource.getReady(rowType.typeInstanceAt(i));
                 rowType.typeInstanceAt(i).writeCanonical(valueSource, rowCopy.pvalueAt(i));
-                //PValueTargets.copyFrom(valueSource, rowCopy.pvalueAt(i));
             }
             return rowCopy;
         }
-/*
- *             this.tFieldTypes = new TInstance[rowFields];
-            for (int i = 0; i < rowFields; i++) {
-                tFieldTypes[i] = rowType.typeInstanceAt(i);
-            }
-
-                try {
-                    convertKey.clear();
-                    for (int i = 0; i < rowFields; i++) {
-                        //sorterAdapter.evaluateToTarget(row, i);
-                        PValueSource field = row.pvalue(i);
-                        //putFieldToTarget(field, i, oFieldTypes, tFieldTypes);
-                        tFieldTypes[i].writeCanonical(field, valueTarget);
-                        //tFieldTypes[i].writeCollating(field, valueTarget);
-                    }
-                    break;
-                } catch (KeyTooLongException e) {
-                    enlargeKey(convertKey);
-                }
-            }
- */
         @Override
         public void close() {
             CursorLifecycle.checkIdleOrActive(this);
