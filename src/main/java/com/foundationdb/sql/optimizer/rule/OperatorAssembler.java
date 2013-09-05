@@ -874,6 +874,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleDistinct((Distinct) node);
             else if (node instanceof Sort)
                 return assembleSort((Sort) node);
+            else if (node instanceof Buffer)
+                return assembleBuffer((Buffer) node);
             else if (node instanceof Limit)
                 return assembleLimit((Limit) node);
             else if (node instanceof NullIfEmpty)
@@ -1607,6 +1609,12 @@ public class OperatorAssembler extends BaseRule
                                 (collators == null) ? null : collators.get(i));
             }
             assembleSort(stream, ordering, input, null, sortOption);
+        }
+
+        protected RowStream assembleBuffer(Buffer buffer) {
+            RowStream stream = assembleStream(buffer.getInput());
+            stream.operator = API.buffer_Default(stream.operator);
+            return stream;
         }
 
         protected RowStream assembleLimit(Limit limit) {

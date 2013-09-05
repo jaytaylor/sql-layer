@@ -9,22 +9,76 @@
 - Statement: CREATE INDEX t_n ON t(n);
 ---
 - Statement: ALTER TABLE t ALL UPDATE STATISTICS;
+
+#
+# Vulnerable UPDATEs
+#
 ---
-- Statement: BEGIN;
+- Statement: UPDATE t SET id = 2 WHERE id = 1
+- error: ['23501']
 ---
-- Statement: UPDATE t SET n = n + 1 WHERE n > 1;
+- Statement: SELECT * FROM t ORDER BY id
+- output: [ [1,1], [2,2] ]
+
 ---
-- Statement: SELECT * FROM t ORDER BY id;
-- output: [[1,1],[2,3]]
+- Statement: UPDATE t SET id = 3
+- error: ['23501']
 ---
-- Statement: ROLLBACK;
+- Statement: SELECT * FROM t ORDER BY id
+- output: [ [1,1], [2,2] ]
+
 ---
-- Statement: BEGIN;
+- Statement: UPDATE t SET id = id + 1
 ---
-- Statement: INSERT INTO t SELECT id + 100, n FROM t;
+- Statement: SELECT * FROM t ORDER BY id
+- output: [ [2,1], [3,2] ]
+
 ---
-- Statement: SELECT * FROM t ORDER BY id;
-- output: [[1,1],[2,2],[101,1],[102,2]]
+- Statement: UPDATE t SET id = id - 1
 ---
-- Statement: COMMIT;
+- Statement: SELECT * FROM t ORDER BY id
+- output: [ [1,1], [2,2] ]
+
+---
+- Statement: UPDATE t SET id = id + 1 WHERE id IN (SELECT id FROM t ORDER BY id DESC)
+---
+- Statement: SELECT * FROM t ORDER BY id
+- output: [ [2,1], [3,2] ]
+
+#---
+#- Statement: UPDATE t SET n = n + 1 WHERE n > 1
+#---
+#- Statement: SELECT * FROM t ORDER BY id;
+#- output: [[2,1],[3,3]]
+#
+#---
+#- Statement: UPDATE t SET n = n + 1 WHERE n > 0 AND n > (SELECT t1.n from t t1 WHERE t1.n = t.n - 1)
+#---
+#- Statement: SELECT * FROM t ORDER BY id
+#- output: [ [2,1], [3,4] ]
+#
+#
+##
+## Vulnerable INSERTs
+##
+#---
+#- Statement: TRUNCATE TABLE t
+#---
+#- Statement: INSERT INTO t VALUES(1,1),(2,2);
+#
+#---
+#- Statement: INSERT INTO t SELECT id + 100, n FROM t
+#---
+#- Statement: SELECT * FROM t ORDER BY id;
+#- output: [ [1,1], [2,2], [101,1], [102,2] ]
+#
+#
+##
+## Vulnerable DELETEs
+##
+#---
+#- Statement: TRUNCATE TABLE t
+#---
+#- Statement: INSERT INTO t VALUES(1,1),(2,2);
+
 ...

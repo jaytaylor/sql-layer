@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
+import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.sql.optimizer.plan.*;
 
 import com.foundationdb.ais.model.Column;
@@ -24,6 +25,7 @@ import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.JoinColumn;
 
+import com.foundationdb.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,6 +85,12 @@ public class HalloweenRecognizer extends BaseRule
                         }
                     }
                 }
+
+                if(requireStepIsolation) {
+                    transformUpdate(updateStmt);
+                } else {
+                    requireStepIsolation = false;
+                }
             }
             if (!requireStepIsolation) {
                 Checker checker = new Checker(targetTable,
@@ -91,6 +99,99 @@ public class HalloweenRecognizer extends BaseRule
                 requireStepIsolation = checker.check(stmt.getQuery());
             }
             stmt.setRequireStepIsolation(requireStepIsolation);
+        }
+    }
+
+    private static List<ExpressionNode> updateListToProjectList(UpdateStatement update, TableSource tableSource) {
+        List<ExpressionNode> projects = new ArrayList<>();
+        for(Column c : update.getTargetTable().getTable().getColumns()) {
+            projects.add(new ColumnExpression(tableSource, c));
+        }
+        for(UpdateColumn updateCol : update.getUpdateColumns()) {
+            projects.set(updateCol.getColumn().getPosition(), updateCol.getExpression());
+        }
+        return projects;
+    }
+
+    /**
+     * Transform
+     * <pre>Out() <- Update(col=5) <- In()</pre>
+     * to
+     * <pre>Out() <- Insert() <- Project(col=5) <- Buffer() <- Delete() <- In()</pre>
+     */
+    private static void transformUpdate(UpdateStatement update) {
+        PlanNode scanSource = update.getInput();
+        PlanWithInput updateDest = update.getOutput();
+
+        TableSourceFinder finder = new TableSourceFinder(update.getTargetTable().getTable());
+        update.accept(finder);
+        if(finder.found == null) {
+            // No existing references (e.g. ColumnExpressions)
+            finder.found = new TableSource(update.getTargetTable(), true, update.getTargetTable().getTable().getName().getTableName());
+        }
+        PlanWithInput newInput = new DeleteStatement(scanSource, update.getTargetTable(), finder.found);
+        newInput = new Buffer(newInput);
+        newInput = new Project(newInput, updateListToProjectList(update, finder.found));
+        newInput = new InsertStatement(newInput, update.getTargetTable(), update.getTargetTable().getTable().getColumns(), finder.found);
+
+        scanSource.setOutput(newInput);
+        if(updateDest != null) {
+            updateDest.replaceInput(update, newInput);
+        }
+    }
+
+    static class TableSourceFinder implements PlanVisitor, ExpressionVisitor {
+        private final UserTable lookFor;
+        private TableSource found;
+
+        public TableSourceFinder(UserTable lookFor) {
+            this.lookFor = lookFor;
+        }
+
+        private boolean isDone() {
+            return found == null;
+        }
+
+        @Override
+        public boolean visitEnter(PlanNode n) {
+            return visit(n);
+        }
+
+        @Override
+        public boolean visitLeave(PlanNode n) {
+            return isDone();
+        }
+
+        @Override
+        public boolean visit(PlanNode n) {
+            if(n instanceof DMLStatement) {
+                TableSource source = ((DMLStatement)n).getSelectTable();
+                if(source != null && source.getTable().getTable() == lookFor) {
+                    found = source;
+                }
+            }
+            return isDone();
+        }
+
+        @Override
+        public boolean visitEnter(ExpressionNode n) {
+            return visit(n);
+        }
+
+        @Override
+        public boolean visitLeave(ExpressionNode n) {
+            return isDone();
+        }
+
+        @Override
+        public boolean visit(ExpressionNode n) {
+            if(n instanceof ColumnExpression) {
+                ColumnExpression ce = ((ColumnExpression)n);
+                if(ce.getColumn().getTable() == lookFor && ce.getTable() instanceof TableSource) {
+                    found = (TableSource)ce.getTable();
+                }
+            }
+            return isDone();
         }
     }
 
