@@ -55,21 +55,12 @@ public class DMLStatement extends BaseStatement {
     public TableNode getTargetTable() {
         return targetTable;
     }
-    
-    public boolean isRequireStepIsolation() {
-        return requireStepIsolation;
-    }
-    public void setRequireStepIsolation(boolean requireStepIsolation) {
-        this.requireStepIsolation = requireStepIsolation;
-    }
-    
+
     @Override
     public String summaryString() {
         StringBuilder str = new StringBuilder(super.summaryString());
         str.append('(');
         str.append(targetTable);
-        if (requireStepIsolation)
-            str.append(", HALLOWEEN");
         str.append(')');
         return str.toString();
     }
@@ -83,6 +74,5 @@ public class DMLStatement extends BaseStatement {
     private final List<ResultField> results;
     private final TableSource selectTable, returningTable;
     private TableNode targetTable;
-    private boolean requireStepIsolation;
 
 }

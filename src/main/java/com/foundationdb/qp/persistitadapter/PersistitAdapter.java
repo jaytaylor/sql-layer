@@ -109,12 +109,10 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
         }
 
         RowData oldRowData = rowData(rowDef, oldRow, rowDataCreator());
-        int oldStep = 0;
         try {
             // For Update row, the new row (value being inserted) does not
             // need the default value (including identity set)
             RowData newRowData = rowData(rowDefNewRow, newRow, rowDataCreator());
-            oldStep = enterUpdateStep();
             oldRowData.setExplicitRowDef(rowDef);
             newRowData.setExplicitRowDef(rowDefNewRow);
             store.updateRow(getSession(), oldRowData, newRowData, null);
@@ -122,25 +120,17 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
             rollbackIfNeeded(e);
             throw e;
         }
-        finally {
-            leaveUpdateStep(oldStep);
-        }
     }
     @Override
     public void writeRow (Row newRow, Index[] indexes) {
         RowDef rowDef = newRow.rowType().userTable().rowDef();
-        int oldStep = 0;
         try {
             RowData newRowData = rowData (rowDef, newRow, rowDataCreator());
             newRowData.setExplicitRowDef(rowDef);
-            oldStep = enterUpdateStep();
             store.writeRow(getSession(), newRowData, indexes);
         } catch (InvalidOperationException e) {
             rollbackIfNeeded(e);
             throw e;
-        }
-        finally {
-            leaveUpdateStep(oldStep);
         }
     }
 
@@ -149,15 +139,11 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
         RowDef rowDef = oldRow.rowType().userTable().rowDef();
         RowData oldRowData = rowData(rowDef, oldRow, rowDataCreator());
         oldRowData.setExplicitRowDef(rowDef);
-        int oldStep = enterUpdateStep();
         try {
             store.deleteRow(getSession(), oldRowData, true, cascadeDelete);
         } catch (InvalidOperationException e) {
             rollbackIfNeeded(e);
             throw e;
-        }
-        finally {
-            leaveUpdateStep(oldStep);
         }
     }
 
@@ -267,54 +253,15 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
         return treeService.getTransaction(getSession());
     }
 
-    public void withStepChanging(boolean withStepChanging) {
-        this.withStepChanging = withStepChanging;
-    }
-
-    @Override
-    public int enterUpdateStep()
-    {
-        return enterUpdateStep(false);
-    }
-
-    @Override
-    public int enterUpdateStep(boolean evenIfZero)
-    {
-        Transaction transaction = transaction();
-        int step = transaction.getStep();
-        if ((evenIfZero || step > 0) && withStepChanging)
-            transaction.incrementStep();
-        return step;
-    }
-
-    @Override
-    public void leaveUpdateStep(int step) {
-        Transaction txn = transaction();
-        if(txn.isActive() && !txn.isRollbackPending()) {
-            txn.setStep(step);
-        }
-    }
-
     public PersistitAdapter(Schema schema,
                             PersistitStore store,
                             TreeService treeService,
                             Session session,
                             ConfigurationService config)
     {
-        this(schema, store, treeService, session, config, true);
-    }
-
-    public PersistitAdapter(Schema schema,
-                            PersistitStore store,
-                            TreeService treeService,
-                            Session session,
-                            ConfigurationService config,
-                            boolean withStepChanging)
-    {
         super(schema, session, config);
         this.store = store;
         this.treeService = treeService;
-        this.withStepChanging = withStepChanging;
         session.put(STORE_ADAPTER_KEY, this);
     }
 
@@ -370,6 +317,4 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
 
     private final TreeService treeService;
     private final PersistitStore store;
-    private boolean withStepChanging;
-    private final PersistitKeyHasher keyHasher = new PersistitKeyHasher();
 }

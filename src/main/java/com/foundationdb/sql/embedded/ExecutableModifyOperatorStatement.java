@@ -40,16 +40,12 @@ import java.util.List;
 
 class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
 {
-    private boolean requireStepIsolation;
-
     private static final Logger logger = LoggerFactory.getLogger(ExecutableModifyOperatorStatement.class);
 
     protected ExecutableModifyOperatorStatement(Operator resultOperator,
                                                 JDBCResultSetMetaData resultSetMetaData, 
-                                                JDBCParameterMetaData parameterMetaData,
-                                                boolean requireStepIsolation) {
+                                                JDBCParameterMetaData parameterMetaData) {
         super(resultOperator, resultSetMetaData, parameterMetaData);
-        this.requireStepIsolation = requireStepIsolation;
     }
     
     @Override
@@ -101,10 +97,7 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
 
     @Override
     public TransactionMode getTransactionMode() {
-        if (requireStepIsolation)
-            return TransactionMode.WRITE_STEP_ISOLATED;
-        else
-            return TransactionMode.WRITE;
+        return TransactionMode.WRITE;
     }
 
     @Override

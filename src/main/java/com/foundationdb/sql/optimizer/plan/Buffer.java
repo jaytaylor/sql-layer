@@ -15,37 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.qp.row;
+package com.foundationdb.sql.optimizer.plan;
 
-
-import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types3.pvalue.PValue;
-
-import java.util.List;
-
-public class ValuesHolderRow extends AbstractValuesHolderRow {
-
-    // ValuesHolderRow interface -- mostly just promoting visiblity
-
-    @Override
-    public void clear() {
-        super.clear();
+public class Buffer extends BasePlanWithInput
+{
+    public Buffer(PlanNode input) {
+        super(input);
     }
 
     @Override
-    public PValue pvalueAt(int index) {
-        return super.pvalueAt(index);
-    }
-
-    public List<PValue> pvalues() {
-        return super.pValues;
-    }
-
-    public ValuesHolderRow(RowType rowType) {
-        super(rowType, true);
-    }
-
-    public ValuesHolderRow(RowType rowType, List<PValue> values) {
-        super(rowType, values);
+    public String summaryString() {
+        return super.summaryString() + "()";
     }
 }

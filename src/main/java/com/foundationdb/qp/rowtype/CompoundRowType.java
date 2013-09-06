@@ -55,9 +55,16 @@ public class CompoundRowType extends DerivedRowType {
         this.second = second; 
         this.nFields = first.nFields() + second.nFields();
 
-        List<UserTable> tables = new ArrayList<>(first.typeComposition().tables());
-        tables.addAll(second.typeComposition().tables());
-        typeComposition(new TypeComposition(this, tables));
+        List<UserTable> tables = new ArrayList<>();
+        if(first.typeComposition() != null) {
+            tables.addAll(first.typeComposition().tables());
+        }
+        if(second.typeComposition() != null) {
+            tables.addAll(second.typeComposition().tables());
+        }
+        if(!tables.isEmpty()) {
+            typeComposition(new TypeComposition(this, tables));
+        }
     }
     
     

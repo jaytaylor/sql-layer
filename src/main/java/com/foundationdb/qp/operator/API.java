@@ -793,6 +793,13 @@ public class API
         return new Delete_Returning(inputOperator, cascadeDelete);
     }
 
+    // Buffer
+
+    public static Operator buffer_Default(Operator inputOperator, RowType inputRowType)
+    {
+        return new Buffer_Default(inputOperator, inputRowType);
+    }
+
     // Execution interface
 
     public static Cursor cursor(Operator root, QueryContext context, QueryBindingsCursor bindingsCursor)
