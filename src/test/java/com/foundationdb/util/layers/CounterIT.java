@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.foundationdb.util;
+package com.foundationdb.util.layers;
 
 import com.foundationdb.server.store.FDBHolder;
 import com.foundationdb.server.test.it.ITBase;
@@ -27,20 +27,18 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.nio.charset.Charset;
-
 import static org.junit.Assert.assertEquals;
 
-public class FDBCounterIT extends ITBase {
+public class CounterIT extends ITBase {
     private static final String KEY_PREFIX = "test";
 
     private FDBHolder holder;
-    private FDBCounter counter;
+    private Counter counter;
 
     @Before
     public void createCounter() {
         holder = serviceManager().getServiceByClass(FDBHolder.class);
-        counter = new FDBCounter(holder.getDatabase(), KEY_PREFIX);
+        counter = new Counter(holder.getDatabase(), KEY_PREFIX);
     }
 
     @After
@@ -192,13 +190,13 @@ public class FDBCounterIT extends ITBase {
 
     private static class WorkerThread extends Thread {
         private final Database db;
-        private final FDBCounter counter;
+        private final Counter counter;
         private final int txnCount;
         private final int inc;
         private volatile int retryCount;
         private volatile int failureCount;
 
-        public WorkerThread(Database db, FDBCounter counter, int txnCount, int inc) {
+        public WorkerThread(Database db, Counter counter, int txnCount, int inc) {
             this.db = db;
             this.counter = counter;
             this.txnCount = txnCount;
