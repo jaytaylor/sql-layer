@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.service.metrics;
 
+import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.store.FDBHolder;
@@ -26,6 +27,7 @@ import com.foundationdb.Range;
 import com.foundationdb.Transaction;
 import com.foundationdb.async.Function;
 import com.foundationdb.async.Future;
+import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple;
 
 import com.google.inject.Inject;
@@ -33,7 +35,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
+import java.util.Arrays;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -55,6 +59,7 @@ public class FDBMetricsService implements MetricsService, Service
     public static final byte[] PREFIX_BYTES = { 
         (byte)0xFF, (byte)'/', (byte)'a', (byte)'/' 
     };
+    public static final boolean BINARY_STRINGS = true;
     public static final String METRIC_KEY = "TDMetric";
     public static final String METRIC_CONF_KEY = "TDMetricConf";
     public static final String METRIC_CONF_CHANGES_KEY = "TDMetricConfChanges";
@@ -81,7 +86,7 @@ public class FDBMetricsService implements MetricsService, Service
     private Random random;
     protected Thread backgroundThread;
     protected volatile boolean running, anyEnabled, confChanged, metricsChanged, backgroundIdle;
-    private volatile Map<Tuple,byte[]> conf;
+    private volatile Map<List<String>,byte[]> conf;
     private List<KeyValue> pendingWrites = new ArrayList<>();
     private BooleanMetric sqlLayerRunningMetric;
 
@@ -476,6 +481,7 @@ public class FDBMetricsService implements MetricsService, Service
         // enabled metrics are synchronized.
         metric.changeTime = timebase + System.nanoTime();
         metric.valueChanged = true;
+        metricsChanged = true;
         
         int level;
         if (lastTime == 0) {
@@ -561,26 +567,39 @@ public class FDBMetricsService implements MetricsService, Service
     // We can't tell which are SQL layer metrics, so we get them all.
     protected void loadConf() {
         conf = fdbService.getDatabase()
-            .run(new Function<Transaction,Map<Tuple,byte[]>>() {
+            .run(new Function<Transaction,Map<List<String>,byte[]>>() {
                      @Override
-                     public Map<Tuple,byte[]> apply(Transaction tr) {
+                     public Map<List<String>,byte[]> apply(Transaction tr) {
                          return readConf(tr);
                      }
                  });
         logger.debug("Loaded {}: {}", METRIC_CONF_KEY, conf);
     }
 
-    protected Map<Tuple,byte[]> readConf(Transaction tr) {
+    protected Map<List<String>,byte[]> readConf(Transaction tr) {
         tr.options().setAccessSystemKeys();
         List<KeyValue> kvs = tr.getRange(Range.startsWith(metricKey(METRIC_CONF_KEY))).asList().get();
-        Map<Tuple,byte[]> result = new HashMap<>();
+        Map<List<String>,byte[]> result = new HashMap<>();
         for (KeyValue kv : kvs) {
             byte[] tupleBytes = new byte[kv.getKey().length - PREFIX_BYTES.length];
             System.arraycopy(kv.getKey(), PREFIX_BYTES.length, tupleBytes, 0, tupleBytes.length);
             // TODO: It's a shame that there isn't a fromBytes with index offets.
             Tuple tuple = Tuple.fromBytes(tupleBytes);
-            tuple = tuple.popFront();   // Always METRIC_CONF_KEY.
-            result.put(tuple, kv.getValue());
+            List<String> list = new ArrayList<>(tuple.size() - 1);
+            for (int i = 1; i < tuple.size(); i++) {
+                if (BINARY_STRINGS) {
+                    try {
+                        list.add(new String(tuple.getBytes(i), "UTF-8"));
+                    }
+                    catch (UnsupportedEncodingException ex) {
+                        throw new AkibanInternalException("Error decoding binary string", ex);
+                    }
+                }
+                else {
+                    list.add(tuple.getString(i));
+                }
+            }
+            result.put(list, kv.getValue());
         }
         // Initiate a watch (from this same transaction) for changes to the key
         // used to signal configuration changes.
@@ -595,6 +614,18 @@ public class FDBMetricsService implements MetricsService, Service
     }
 
     protected static byte[] metricKey(Object... keys) {
+        if (BINARY_STRINGS) {
+            try {
+                for (int i = 0; i < keys.length; i++) {
+                    if (keys[i] instanceof String) {
+                        keys[i] = ((String)keys[i]).getBytes("UTF-8");
+                    }
+                }
+            }
+            catch (UnsupportedEncodingException ex) {
+                throw new AkibanInternalException("Error encoding binary string", ex);
+            }
+        }
         Tuple tuple = Tuple.from(keys);
         byte[] tupleBytes = tuple.pack();
         byte[] result = new byte[PREFIX_BYTES.length + tupleBytes.length];
@@ -604,14 +635,14 @@ public class FDBMetricsService implements MetricsService, Service
     }
 
     protected void updateEnabled(BaseMetricImpl<?> metric) {
-        Tuple tuple = Tuple.from(metric.getType(), metric.getName(), address, DEFAULT_ID, 
-                                 ENABLED_OPTION);
-        byte[] enabled = conf.get(tuple);
+        List<String> keys = Arrays.asList(metric.getType(), metric.getName(), 
+                                          address, DEFAULT_ID, ENABLED_OPTION);
+        byte[] enabled = conf.get(keys);
         if (enabled == null) {
             metric.confChanged = true; // Write conf key for brand new metric.
             // Check wildcard enabling.
-            tuple = Tuple.from(metric.getType(), metric.getName(), "", "", ENABLED_OPTION);
-            enabled = conf.get(tuple);
+            keys.set(2, "");
+            enabled = conf.get(keys);
             if (enabled != null) {
                 setEnabled(metric, enabled[0] != 0, false);
             }
@@ -687,6 +718,9 @@ public class FDBMetricsService implements MetricsService, Service
             // way.
             byte[] bytes = new byte[16];
             random.nextBytes(bytes);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Writing {}: {}", METRIC_CONF_CHANGES_KEY, ByteArrayUtil.printable(bytes));
+            }
             pendingWrites.add(new KeyValue(metricKey(METRIC_CONF_CHANGES_KEY), bytes));
         }
         if (!pendingWrites.isEmpty()) {
