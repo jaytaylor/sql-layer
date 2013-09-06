@@ -20,6 +20,7 @@ import com.foundationdb.server.store.FDBTransactionService.TransactionState;
 
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.server.error.DuplicateKeyException;
+import com.foundationdb.server.service.metrics.LongMetric;
 
 import com.foundationdb.async.Future;
 import com.foundationdb.tuple.Tuple;
@@ -39,6 +40,11 @@ public class FDBPendingUniquenessChecks
 {
     private static final Logger LOG = LoggerFactory.getLogger(FDBPendingUniquenessChecks.class);
     private final Map<Index,Map<byte[],Future<byte[]>>> pending = new HashMap<>();
+    private final LongMetric metric;
+
+    public FDBPendingUniquenessChecks(LongMetric metric) {
+        this.metric = metric;
+    }
 
     public void add(TransactionState txn, Index index, byte[] key, Future<byte[]> future) {
         // Do this periodically just to keep the size of things down.
@@ -49,9 +55,11 @@ public class FDBPendingUniquenessChecks
             pending.put(index, futures);
         }
         futures.put(key, future);
+        metric.increment();
     }
     
     protected void checkUniqueness(TransactionState txn, boolean wait) {
+        int count = 0;
         for (Map.Entry<Index,Map<byte[],Future<byte[]>>> pentry : pending.entrySet()) {
             Iterator<Map.Entry<byte[],Future<byte[]>>> iter = pentry.getValue().entrySet().iterator();
             while (iter.hasNext()) {
@@ -74,13 +82,22 @@ public class FDBPendingUniquenessChecks
                     throw new DuplicateKeyException(index.getIndexName().toString(), key);
                 }
                 iter.remove();
+                count++;
             }
+        }
+        if (count > 0) {
+            metric.increment(- count);
         }
     }
 
     public void clear() {
+        int count = 0;
         for (Map<byte[],Future<byte[]>> futures : pending.values()) {
+            count += futures.size();
             futures.clear();
+        }
+        if (count > 0) {
+            metric.increment(- count);
         }
     }
 }
