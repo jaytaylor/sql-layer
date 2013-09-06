@@ -53,19 +53,21 @@ public class HalloweenRecognizer extends BaseRule
         if (plan.getPlan() instanceof DMLStatement) {
             DMLStatement stmt = (DMLStatement)plan.getPlan();
             TableNode targetTable = stmt.getTargetTable();
+            boolean indexWasUnique = false;
             boolean bufferRequired = false;
-            Set<Column> updateColumns = new HashSet<>();
+            Set<Column> updateColumns = null;
+            UpdateStatement updateStmt = null;
 
-            if (stmt.getType() == BaseUpdateStatement.StatementType.UPDATE) {
-                UpdateStatement updateStmt = findUpdateStmt(stmt);
-                
-                update: { 
+            if (stmt.getType() == StatementType.UPDATE) {
+                updateStmt = findBaseUpdateStatement(stmt, UpdateStatement.class);
+                updateColumns = new HashSet<>();
+                update: {
                     for (UpdateStatement.UpdateColumn updateColumn : updateStmt.getUpdateColumns()) {
                         updateColumns.add(updateColumn.getColumn());
                     }
                     for (Column pkColumn : targetTable.getTable().getPrimaryKeyIncludingInternal().getColumns()) {
                         if (updateColumns.contains(pkColumn)) {
-                            bufferRequired = true;
+                            indexWasUnique = true;
                             break update;
                         }
                     }
@@ -73,38 +75,55 @@ public class HalloweenRecognizer extends BaseRule
                     if (parentJoin != null) {
                         for (JoinColumn joinColumn : parentJoin.getJoinColumns()) {
                             if (updateColumns.contains(joinColumn.getChild())) {
-                                bufferRequired = true;
+                                indexWasUnique = true;
                                 break update;
                             }
                         }
                     }
                 }
-
-                if(bufferRequired) {
-                    DMLStatement newDMLStmt = transformUpdate(stmt, updateStmt);
-                    plan.setPlan(newDMLStmt);
-                }
+                bufferRequired = indexWasUnique;
             }
 
             if (!bufferRequired) {
-                Checker checker = new Checker(stmt, updateColumns);
-                checker.check(stmt.getQuery());
-                if(checker.newDMLStmt != null) {
-                    plan.setPlan(checker.newDMLStmt);
+                Checker checker = new Checker(targetTable,
+                                              (stmt.getType() == StatementType.INSERT) ? 0 : 1,
+                                              updateColumns);
+                checker.check(stmt.getInput());
+                bufferRequired = checker.bufferRequired;
+                indexWasUnique = checker.indexWasUnique;
+            }
+
+            if(bufferRequired) {
+                switch(stmt.getType()) {
+                    case INSERT:
+                    case DELETE:
+                        injectBufferNode(stmt);
+                        break;
+                    case UPDATE:
+                        if(indexWasUnique) {
+                            DMLStatement newDML = transformUpdate(stmt, updateStmt);
+                            plan.setPlan(newDML);
+                        } else {
+                            injectBufferNode(stmt);
+                        }
+                        break;
+                    default:
+                        assert false : stmt.getType();
                 }
             }
         }
     }
 
-    private static UpdateStatement findUpdateStmt(DMLStatement stmt) {
+    private static <T extends BaseUpdateStatement> T findBaseUpdateStatement(DMLStatement stmt, Class<T> clazz) {
         BasePlanWithInput node = stmt;
         do {
-            node = (BasePlanWithInput) node.getInput();
-        } while (node != null && !(node instanceof UpdateStatement));
+            node = (BasePlanWithInput)node.getInput();
+        } while (node != null && !clazz.isInstance(node));
         assert node != null;
-        return (UpdateStatement)node;
+        return clazz.cast(node);
     }
 
+    /** Convert {@link UpdateStatement#getUpdateColumns()} to a list of expressions suitable for Project */
     private static List<ExpressionNode> updateListToProjectList(UpdateStatement update, TableSource tableSource) {
         List<ExpressionNode> projects = new ArrayList<>();
         for(Column c : update.getTargetTable().getTable().getColumns()) {
@@ -149,37 +168,49 @@ public class HalloweenRecognizer extends BaseRule
     }
 
     /**
-     * Transform
-     * <pre>Out() <- IndexScan()</pre>
+     * Add a buffer below the top level I/U/D.
+     * <pre>
+     * Insert/Update/Delete()
+     *   Scan/Map/Etc()
+     * </pre>
      * to
-     * <pre>Out() <- Buffer() <- IndexScan()</pre>
+     * <pre>
+     * Insert/Update/Delete()
+     *   Buffer()
+     *     Scan/Map/Etc()
+     * </pre>
      */
-    private static void injectBufferNode(PlanNode node) {
+    private static void injectBufferNode(DMLStatement dml) {
+        PlanNode node = findBaseUpdateStatement(dml, BaseUpdateStatement.class).getInput();
+        // Push it below a Project to avoid excess pack and unpack
+        if(node instanceof Project) {
+            node = ((Project)node).getInput();
+        }
         PlanWithInput origDest = node.getOutput();
         PlanWithInput newInput = new Buffer(node);
         origDest.replaceInput(node, newInput);
     }
 
     static class Checker implements PlanVisitor, ExpressionVisitor {
-        private final DMLStatement dmlStmt;
         private final TableNode targetTable;
         private final Set<Column> updateColumns;
         private int targetMaxUses;
         private boolean bufferRequired;
-        private DMLStatement newDMLStmt;
+        private boolean indexWasUnique;
 
-        public Checker(DMLStatement dmlStmt, Set<Column> updateColumns) {
-            assert updateColumns != null;
-            this.dmlStmt = dmlStmt;
-            this.targetTable = dmlStmt.getTargetTable();
-            this.targetMaxUses = (dmlStmt.getType() == StatementType.INSERT) ? 0 : 1;
+        public Checker(TableNode targetTable, int targetMaxUse, Set<Column> updateColumns) {
+            this.targetTable = targetTable;
+            this.targetMaxUses = targetMaxUse;
             this.updateColumns = updateColumns;
         }
 
-        public boolean check(PlanNode root) {
+        public void check(PlanNode root) {
             bufferRequired = false;
             root.accept(this);
-            return bufferRequired;
+        }
+
+        private boolean shouldContinue() {
+            return !(bufferRequired && indexWasUnique);
         }
 
         private void indexScan(IndexScan scan) {
@@ -196,7 +227,7 @@ public class HalloweenRecognizer extends BaseRule
                         }
                     }
                 }
-                if (!updateColumns.isEmpty()) {
+                if (updateColumns != null) {
                     for (IndexColumn indexColumn : single.getIndex().getAllColumns()) {
                         if (updateColumns.contains(indexColumn.getColumn())) {
                             bufferRequired = true;
@@ -206,21 +237,7 @@ public class HalloweenRecognizer extends BaseRule
                 }
 
                 if(bufferRequired) {
-                    switch(dmlStmt.getType()) {
-                        case INSERT:
-                        case DELETE:
-                            injectBufferNode(single);
-                            break;
-                        case UPDATE:
-                            if(single.getIndex().isUnique()) {
-                                newDMLStmt = transformUpdate(dmlStmt, findUpdateStmt(dmlStmt));
-                            } else {
-                                injectBufferNode(single);
-                            }
-                        break;
-                        default:
-                            assert false : dmlStmt.getType();
-                    }
+                    indexWasUnique = single.getIndex().isUnique();
                 }
             }
             else if (scan instanceof MultiIndexIntersectScan) {
@@ -237,7 +254,7 @@ public class HalloweenRecognizer extends BaseRule
 
         @Override
         public boolean visitLeave(PlanNode n) {
-            return !bufferRequired;
+            return shouldContinue();
         }
 
         @Override
@@ -251,13 +268,12 @@ public class HalloweenRecognizer extends BaseRule
                         targetMaxUses--;
                         if (targetMaxUses < 0) {
                             bufferRequired = true;
-                            injectBufferNode(n);
                             break;
                         }
                     }
                 }
             }
-            return !bufferRequired;
+            return shouldContinue();
         }
 
         @Override
@@ -267,12 +283,12 @@ public class HalloweenRecognizer extends BaseRule
 
         @Override
         public boolean visitLeave(ExpressionNode n) {
-            return !bufferRequired;
+            return shouldContinue();
         }
 
         @Override
         public boolean visit(ExpressionNode n) {
-            return !bufferRequired;
+            return shouldContinue();
         }
     }
 }
