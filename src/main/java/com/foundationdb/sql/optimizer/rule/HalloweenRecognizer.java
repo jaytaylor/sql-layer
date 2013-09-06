@@ -182,8 +182,10 @@ public class HalloweenRecognizer extends BaseRule
      */
     private static void injectBufferNode(DMLStatement dml) {
         PlanNode node = findBaseUpdateStatement(dml, BaseUpdateStatement.class).getInput();
-        // Push it below a Project to avoid double pack/unpack, below Flatten and Lookup to buffer smaller rows.
-        while(node instanceof Project|| node instanceof Flatten || node instanceof BaseLookup) {
+        // Push it below a Project to avoid double pack/unpack.
+        // TODO: Pushing below Flatten and BaseLookup would buffer smaller rows but requires RowType.ancestorHKey(),
+        //       which isn't generally true coming out of Sorters (e.g. ValuesHolderRow)
+        while(node instanceof Project) {
             node = ((BasePlanWithInput)node).getInput();
         }
         PlanWithInput origDest = node.getOutput();

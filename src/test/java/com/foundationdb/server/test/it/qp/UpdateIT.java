@@ -196,7 +196,8 @@ public class UpdateIT extends OperatorITBase
                 buffer_Default(
                     delete_Returning(
                         pkScan, false
-                    )
+                    ),
+                    itemRowType
                 ),
                 itemRowType,
                 itemRowType,

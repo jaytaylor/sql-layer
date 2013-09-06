@@ -1612,7 +1612,7 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleBuffer(Buffer buffer) {
             RowStream stream = assembleStream(buffer.getInput());
-            stream.operator = API.buffer_Default(stream.operator);
+            stream.operator = API.buffer_Default(stream.operator, stream.rowType);
             return stream;
         }
 

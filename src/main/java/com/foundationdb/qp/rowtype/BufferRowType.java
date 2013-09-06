@@ -15,37 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.qp.row;
+package com.foundationdb.qp.rowtype;
 
-
-import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types3.pvalue.PValue;
-
-import java.util.List;
-
-public class ValuesHolderRow extends AbstractValuesHolderRow {
-
-    // ValuesHolderRow interface -- mostly just promoting visiblity
-
-    @Override
-    public void clear() {
-        super.clear();
-    }
-
-    @Override
-    public PValue pvalueAt(int index) {
-        return super.pvalueAt(index);
-    }
-
-    public List<PValue> pvalues() {
-        return super.pValues;
-    }
-
-    public ValuesHolderRow(RowType rowType) {
-        super(rowType, true);
-    }
-
-    public ValuesHolderRow(RowType rowType, List<PValue> values) {
-        super(rowType, values);
+public class BufferRowType extends CompoundRowType
+{
+    protected BufferRowType(DerivedTypesSchema schema, int typeId, RowType first, RowType second) {
+        super(schema, typeId, first, second);
     }
 }

@@ -240,9 +240,9 @@ public class API
 
     // Limit
 
-    public static Operator buffer_Default(Operator inputOperator)
+    public static Operator buffer_Default(Operator inputOperator, RowType inputRowType)
     {
-        return new Buffer_Default(inputOperator);
+        return new Buffer_Default(inputOperator, inputRowType);
     }
 
     public static Operator limit_Default(Operator inputOperator, int limitRows)

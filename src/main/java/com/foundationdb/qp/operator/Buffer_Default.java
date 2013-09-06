@@ -17,7 +17,12 @@
 
 package com.foundationdb.qp.operator;
 
+import com.foundationdb.qp.operator.API.Ordering;
+import com.foundationdb.qp.operator.API.SortOption;
+import com.foundationdb.qp.row.CompoundRow;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesHolderRow;
+import com.foundationdb.qp.rowtype.BufferRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.Attributes;
 import com.foundationdb.server.explain.CompoundExplainer;
@@ -25,32 +30,68 @@ import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.Label;
 import com.foundationdb.server.explain.PrimitiveExplainer;
 import com.foundationdb.server.explain.Type;
+import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types3.texpressions.TPreparedField;
+import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 public class Buffer_Default extends Operator
 {
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Buffer_Default open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Buffer_Default next");
+    private static final InOutTap TAP_LOAD = OPERATOR_TAP.createSubsidiaryTap("operator: Buffer_Default load");
+    private static final Logger LOG = LoggerFactory.getLogger(Buffer_Default.class);
 
-    // Operator interface
+    private final Operator inputOperator;
+    private final BufferRowType bufferRowType;
+    private final SortOption sortOption;
+    private final Ordering ordering;
+
+
+    Buffer_Default(Operator inputOperator, RowType inputRowType) {
+        ArgumentValidation.notNull("inputOperator", inputOperator);
+        ArgumentValidation.notNull("inputRowType", inputRowType);
+        this.inputOperator = inputOperator;
+        this.bufferRowType = inputRowType.schema().bufferRowType(inputRowType);
+        this.sortOption = SortOption.PRESERVE_DUPLICATES; // There shouldn't be any
+        this.ordering = API.ordering();
+        ordering.append(new TPreparedField(bufferRowType.first().typeInstanceAt(0), 0), true);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder str = new StringBuilder(getClass().getSimpleName());
+        str.append("(");
+        str.append(inputOperator);
+        str.append(")");
+        return str.toString();
+    }
+
+
+    //
+    // Operator
+    //
 
     @Override
     protected Cursor cursor(QueryContext context, QueryBindingsCursor bindingsCursor) {
         return new Execution(context, inputOperator.cursor(context, bindingsCursor));
     }
 
-    // Plannable interface
-
     @Override
-    public void findDerivedTypes(Set<RowType> derivedTypes)
-    {
+    public void findDerivedTypes(Set<RowType> derivedTypes) {
         inputOperator.findDerivedTypes(derivedTypes);
     }
+
+
+    //
+    // Plannable
+    //
 
     @Override
     public List<Operator> getInputOperators() {
@@ -62,33 +103,6 @@ public class Buffer_Default extends Operator
         return super.describePlan();
     }
 
-    // Object interface
-
-    @Override
-    public String toString() {
-        StringBuilder str = new StringBuilder(getClass().getSimpleName());
-        str.append("(");
-        str.append(inputOperator);
-        str.append(")");
-        return str.toString();
-    }
-
-    // Limit_Default interface
-
-    Buffer_Default(Operator inputOperator) {
-        this.inputOperator = inputOperator;
-    }
-
-    // Class state
-
-    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Buffer_Default open");
-    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Buffer_Default next");
-    private static final Logger LOG = LoggerFactory.getLogger(Buffer_Default.class);
-
-    // Object state
-
-    private final Operator inputOperator;
-
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
     {
@@ -98,9 +112,38 @@ public class Buffer_Default extends Operator
         return new CompoundExplainer(Type.BUFFER_OPERATOR, atts);
     }
 
-    // internal classes
+
+    //
+    // Internal
+    //
+
+    private class BufferRowCreatorCursor extends ChainedCursor
+    {
+        private long counter;
+
+        public BufferRowCreatorCursor(QueryContext context, Cursor input) {
+            super(context, input);
+        }
+
+        @Override
+        public Row next() {
+            Row inputRow = input.next();
+            if(inputRow != null) {
+                ValuesHolderRow counterRow = new ValuesHolderRow(bufferRowType.first());
+                counterRow.pvalueAt(0).putInt64(counter++);
+                inputRow = new CompoundRow(bufferRowType, counterRow, inputRow);
+            }
+            return inputRow;
+        }
+    }
 
     private class Execution extends ChainedCursor {
+        private SorterToCursorAdapter sorter;
+        private boolean closed = true;
+
+        public Execution(QueryContext context, Cursor input) {
+            super(context, input);
+        }
 
         // Cursor interface
 
@@ -111,17 +154,10 @@ public class Buffer_Default extends Operator
                 CursorLifecycle.checkIdle(this);
                 super.open();
                 closed = false;
-                for(Row row : buffer) {
-                    row.release();
-                }
-                buffer.clear();
-                // Eager load input
-                Row row;
-                while((row = input.next()) != null) {
-                    row.acquire();
-                    buffer.add(row);
-                }
-                bufferIndex = 0;
+                // Eager load
+                BufferRowCreatorCursor creatorCursor = new BufferRowCreatorCursor(context, input);
+                sorter = new SorterToCursorAdapter(adapter(), context, bindings, creatorCursor, bufferRowType, ordering, sortOption, TAP_LOAD);
+                sorter.open();
             } finally {
                 TAP_OPEN.out();
             }
@@ -136,10 +172,22 @@ public class Buffer_Default extends Operator
                 if (CURSOR_LIFECYCLE_ENABLED) {
                     CursorLifecycle.checkIdleOrActive(this);
                 }
-                if(bufferIndex == buffer.size()) {
-                    return null;
+                Row next = sorter.next();
+                if(next != null) {
+                    assert next.rowType() == bufferRowType;
+                    // Common case coming out of default Sorters
+                    if(next instanceof ValuesHolderRow) {
+                        ValuesHolderRow valuesRow = (ValuesHolderRow)next;
+                        RowType realRowType = bufferRowType.second();
+                        List<PValue> values = valuesRow.pvalues();
+                        next = new ValuesHolderRow(realRowType, values.subList(1, realRowType.nFields() + 1));
+                    } else if(next instanceof CompoundRow) {
+                        next = ((CompoundRow)next).subRow(bufferRowType.second());
+                    } else {
+                        throw new IllegalStateException("Unexpected Row: " + next.getClass());
+                    }
                 }
-                return buffer.get(bufferIndex++);
+                return next;
             } finally {
                 if (TAP_NEXT_ENABLED) {
                     TAP_NEXT.out();
@@ -148,36 +196,23 @@ public class Buffer_Default extends Operator
         }
 
         @Override
-        public void close()
-        {
+        public void close() {
             CursorLifecycle.checkIdleOrActive(this);
             if (!closed) {
                 super.close();
+                sorter.close();
                 closed = true;
             }
         }
 
         @Override
-        public boolean isIdle()
-        {
+        public boolean isIdle() {
             return closed;
         }
 
         @Override
-        public boolean isActive()
-        {
+        public boolean isActive() {
             return !closed;
         }
-
-        // Execution interface
-        Execution(QueryContext context, Cursor input) {
-            super(context, input);
-        }
-
-        // object state
-
-        private boolean closed = true;
-        private int bufferIndex = 0;
-        private final List<Row> buffer = new ArrayList<>();
     }
 }

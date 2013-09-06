@@ -1,5 +1,5 @@
 PhysicalUpdate
   Update_Returning(customers SET name = 'Smyth')
-    GroupLookup_Default(Index(customers.name) -> customers)
-      Buffer_Default()
+    Buffer_Default()
+      GroupLookup_Default(Index(customers.name) -> customers)
         IndexScan_Default(Index(customers.name), name = 'Smith')
