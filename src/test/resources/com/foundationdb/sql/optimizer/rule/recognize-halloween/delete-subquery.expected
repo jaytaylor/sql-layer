@@ -1,11 +1,11 @@
 DMLStatement@d3b0cd9(t)
   DeleteStatement@3a285d0b(t)
-    Select@2ff49b01[EXISTS(Subquery@4b3055)]
-      Flatten@33a3e32e(t)
-        GroupScan@4c97fb7e(Group(test.t), rows = 1, cost = 0.820000)
-          TableSource@48521c99(t - TableGroup@e00347b(t))
+    Buffer@421d7ce3()
+      Select@2ff49b01[EXISTS(Subquery@4b3055)]
+        Flatten@33a3e32e(t)
+          GroupScan@4c97fb7e(Group(test.t), rows = 1, cost = 0.820000)
+            TableSource@48521c99(t - TableGroup@e00347b(t))
 
 Subquery@45061ea3
   Select@10968c3c[t.id != ot.id]
-    Buffer@421d7ce3()
-      SingleIndexScan@26c36197(Index(test.t.t_n[IndexColumn(n)]), covering/NONE, =t.n, rows = 1, cost = 6.84560)
+    SingleIndexScan@26c36197(Index(test.t.t_n[IndexColumn(n)]), covering/NONE, =t.n, rows = 1, cost = 6.84560)
