@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.service.metrics;
 
+/** A metric storing some boolean state. */
 public interface BooleanMetric extends BaseMetric<Boolean>
 {
     /** Get the current value. */

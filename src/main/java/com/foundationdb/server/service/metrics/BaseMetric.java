@@ -17,12 +17,13 @@
 
 package com.foundationdb.server.service.metrics;
 
+/** Base class for all metrics. */
 public interface BaseMetric<T>
 {
     /** Get the unique name of this metric. */
     public String getName();
 
-    /** Is this metric enabled for collection? */
+    /** Is this metric enabled for (usually durable) collection? */
     public boolean isEnabled();
 
     /** Get the current value. */

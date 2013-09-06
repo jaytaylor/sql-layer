@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.service.metrics;
 
+/** A metric storing a 64-bit integer value. */
 public interface LongMetric extends BaseMetric<Long>
 {
     /** Get the current value. */

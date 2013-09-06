@@ -47,6 +47,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+/** Metrics service implemented using system keyspace and compatible
+ * with fdbserver's own metrics.
+ */
 public class FDBMetricsService implements MetricsService, Service
 {
     public static final byte[] PREFIX_BYTES = { 
@@ -57,24 +60,30 @@ public class FDBMetricsService implements MetricsService, Service
     public static final String METRIC_CONF_CHANGES_KEY = "TDMetricConfChanges";
     public static final String BOOLEAN_TYPE = "Bool";
     public static final String LONG_TYPE = "Int64";
+    public static final String DEFAULT_ID = "";
     public static final String ENABLED_OPTION = "Enabled";
     public static final byte[] ENABLED_FALSE = { (byte)0 };
     public static final byte[] ENABLED_TRUE = { (byte)1 };
     public static final int NLEVELS = 25;
     public static final int LEVEL_VALUE_MAX_SIZE = 50000;
     public static final double METRIC_LEVEL_DIVISOR = Math.log(4);
+    public static final String SQL_LAYER_RUNNING_NAME = "SQLLayerRunning";
+
     private static final Logger logger = LoggerFactory.getLogger(FDBMetricsService.class);
+
     private final ConfigurationService configService;
     private final FDBHolder fdbService;
     private final ConcurrentHashMap<String,BaseMetricImpl<?>> metrics = new ConcurrentHashMap<>();
+    // Effectively final, since set by start and so before service is
+    // available to any client thread.
     private long timebase;
     private String address;
     private Random random;
     protected Thread backgroundThread;
-    protected boolean running, anyEnabled, confChanged, backgroundIdle;
-    protected volatile boolean metricsChanged;
-    private Map<Tuple,byte[]> conf;
+    protected volatile boolean running, anyEnabled, confChanged, metricsChanged, backgroundIdle;
+    private volatile Map<Tuple,byte[]> conf;
     private List<KeyValue> pendingWrites = new ArrayList<>();
+    private BooleanMetric sqlLayerRunningMetric;
 
     @Inject
     public FDBMetricsService(ConfigurationService configService, FDBHolder fdbService) {
@@ -243,6 +252,8 @@ public class FDBMetricsService implements MetricsService, Service
             return result;
         }
 
+        // A timestamp and boolean value are stored in a single long
+        // with the time shifted over to make room for the bit.
         private long combine(long time, boolean value) {
             return (time * 2) + (value ? 1 : 0);
         }
@@ -322,6 +333,7 @@ public class FDBMetricsService implements MetricsService, Service
     
         @Override
         protected byte[] encodeValue() {
+            // A timestamp and long value are stored as successive integers.
             return Tuple.from(changeTime, get()).pack();
         }
 
@@ -372,13 +384,11 @@ public class FDBMetricsService implements MetricsService, Service
     
     @Override
     public void start() {
-        // NOTE: Java does not expose a nanosecond wallclock timer,
-        // like CLOCK_REALTIME, only one like CLOCK_MONOTONIC. (Among
-        // other things, 64 bits is only 292 years.) There is a
-        // tradeoff between using synchronized clocks in a multi-node
-        // environment and using clocks that NTP doesn't change so
-        // that small-scale deltas are always accurate.  fdbserver
-        // metrics choose the former.
+        // NOTE: Java does not expose a nanosecond wallclock timer, like POSIX
+        // CLOCK_REALTIME, only one like CLOCK_MONOTONIC. (Among other things, 64 bits is
+        // only 292 years.) There is a tradeoff between using synchronized clocks in a
+        // multi-node environment and using clocks that NTP doesn't change so that
+        // small-scale deltas are always accurate.  fdbserver metrics choose the former.
         timebase = System.currentTimeMillis() * 1000000 - System.nanoTime();
         address = "127.0.0.1";
         try {
@@ -398,10 +408,15 @@ public class FDBMetricsService implements MetricsService, Service
         loadConf();
         running = true;
         backgroundThread.start();
+        sqlLayerRunningMetric = addBooleanMetric(SQL_LAYER_RUNNING_NAME);
+        sqlLayerRunningMetric.set(true);
     }
 
     @Override
     public void stop() {
+        // Getting this stored back reliably is problematic because there is no
+        // systematic notion of orderly shutdown.
+        sqlLayerRunningMetric.set(false);
         running = false;
         notifyBackground();
         try {
@@ -425,13 +440,13 @@ public class FDBMetricsService implements MetricsService, Service
 
     public void completeBackgroundWork() {
         notifyBackground();
-        while (!backgroundIdle) {
+        do {
             try {
                 Thread.sleep(100);
             }
             catch (InterruptedException ex) {
             }
-        }
+        } while (!backgroundIdle);
     }
 
     public void deleteBooleanMetric(Transaction tr, String name) {
@@ -456,9 +471,9 @@ public class FDBMetricsService implements MetricsService, Service
     protected <T> void metricChanged(BaseMetricImpl<T> metric) {
         long lastTime = metric.changeTime;
 
-        // NOTE: changeTime is only accurate for metrics that are
-        // enabled, and to guarantee that is always corresponds to the
-        // value, updates to enabled metrics are synchronized.
+        // NOTE: changeTime is only accurate for metrics that are enabled, and
+        // to guarantee that it always corresponds to the value, updates to
+        // enabled metrics are synchronized.
         metric.changeTime = timebase + System.nanoTime();
         metric.valueChanged = true;
         
@@ -467,6 +482,7 @@ public class FDBMetricsService implements MetricsService, Service
             level = 0;
         }
         else {
+            // Longer duration -> higher level.
             double r = random.nextDouble();
             if (r == 0) {
                 level = NLEVELS-1;
@@ -541,14 +557,17 @@ public class FDBMetricsService implements MetricsService, Service
         }
     }
 
+    // Load configuration settings from storage.
+    // We can't tell which are SQL layer metrics, so we get them all.
     protected void loadConf() {
-        conf = fdbService.getDatabase().run(new Function<Transaction,Map<Tuple,byte[]>>() {
-                                                @Override
-                                                public Map<Tuple,byte[]> apply(Transaction tr) {
-                                                    return readConf(tr);
-                                                }
-                                            });
-        logger.debug("{}: {}", METRIC_CONF_KEY, conf);
+        conf = fdbService.getDatabase()
+            .run(new Function<Transaction,Map<Tuple,byte[]>>() {
+                     @Override
+                     public Map<Tuple,byte[]> apply(Transaction tr) {
+                         return readConf(tr);
+                     }
+                 });
+        logger.debug("Loaded {}: {}", METRIC_CONF_KEY, conf);
     }
 
     protected Map<Tuple,byte[]> readConf(Transaction tr) {
@@ -558,10 +577,13 @@ public class FDBMetricsService implements MetricsService, Service
         for (KeyValue kv : kvs) {
             byte[] tupleBytes = new byte[kv.getKey().length - PREFIX_BYTES.length];
             System.arraycopy(kv.getKey(), PREFIX_BYTES.length, tupleBytes, 0, tupleBytes.length);
+            // TODO: It's a shame that there isn't a fromBytes with index offets.
             Tuple tuple = Tuple.fromBytes(tupleBytes);
             tuple = tuple.popFront();   // Always METRIC_CONF_KEY.
             result.put(tuple, kv.getValue());
         }
+        // Initiate a watch (from this same transaction) for changes to the key
+        // used to signal configuration changes.
         tr.watch(metricKey(METRIC_CONF_CHANGES_KEY)).onReady(new Runnable() {
                 @Override
                 public void run() {
@@ -582,7 +604,7 @@ public class FDBMetricsService implements MetricsService, Service
     }
 
     protected void updateEnabled(BaseMetricImpl<?> metric) {
-        Tuple tuple = Tuple.from(metric.getType(), metric.getName(), address, "", 
+        Tuple tuple = Tuple.from(metric.getType(), metric.getName(), address, DEFAULT_ID, 
                                  ENABLED_OPTION);
         byte[] enabled = conf.get(tuple);
         if (enabled == null) {
@@ -601,6 +623,8 @@ public class FDBMetricsService implements MetricsService, Service
         }
     }
 
+    // Change a metric's enabled flag, either from configuration storage of at
+    // user's request.
     protected void setEnabled(BaseMetricImpl<?> metric, boolean enabled, boolean explicit) {
         if (metric.enabled == enabled) return;
         metric.enabled = enabled;
@@ -632,12 +656,12 @@ public class FDBMetricsService implements MetricsService, Service
             synchronized (metric) {
                 if (metric.confChanged) {
                     anyConfChanges = true;
-                    pendingWrites.add(new KeyValue(metricKey(METRIC_CONF_KEY, metric.getType(), metric.getName(), address, "", ENABLED_OPTION),
+                    pendingWrites.add(new KeyValue(metricKey(METRIC_CONF_KEY, metric.getType(), metric.getName(), address, DEFAULT_ID, ENABLED_OPTION),
                                                    metric.enabled ? ENABLED_TRUE : ENABLED_FALSE));
                     metric.confChanged = false;
                 }
                 if (metric.valueChanged) {
-                    pendingWrites.add(new KeyValue(metricKey(METRIC_KEY, metric.getType(), metric.getName(), address, ""),
+                    pendingWrites.add(new KeyValue(metricKey(METRIC_KEY, metric.getType(), metric.getName(), address, DEFAULT_ID),
                                                    metric.encodeValue()));
                     metric.valueChanged = false;
                 }
@@ -646,7 +670,7 @@ public class FDBMetricsService implements MetricsService, Service
                     while (true) {
                         MetricLevelValues values = metricLevel.values.pollFirst();
                         if (values == null) break;
-                        pendingWrites.add(new KeyValue(metricKey(METRIC_KEY, metric.getType(), metric.getName(), address, "", level, values.start),
+                        pendingWrites.add(new KeyValue(metricKey(METRIC_KEY, metric.getType(), metric.getName(), address, DEFAULT_ID, level, values.start),
                                                        values.bytes));
                         // Continue to fill (will overwrite key with longer value).
                         if (metricLevel.values.isEmpty() && !values.isFull()) {
@@ -658,29 +682,33 @@ public class FDBMetricsService implements MetricsService, Service
             }
         }
         if (anyConfChanges) {
+            // Signal a change in configuration. We will respond to this change,
+            // too, but that seemd harmless and difficult to avoid in a general
+            // way.
             byte[] bytes = new byte[16];
             random.nextBytes(bytes);
             pendingWrites.add(new KeyValue(metricKey(METRIC_CONF_CHANGES_KEY), bytes));
         }
         if (!pendingWrites.isEmpty()) {
-            fdbService.getDatabase().run(new Function<Transaction,Void>() {
-                                             @Override
-                                             public Void apply(Transaction tr) {
-                                                 tr.options().setAccessSystemKeys();
-                                                 for (KeyValue kv : pendingWrites) {
-                                                     tr.set(kv.getKey(), kv.getValue());
-                                                 }
-                                                 return null;
-                                             }
-                                         });
+            fdbService.getDatabase()
+                .run(new Function<Transaction,Void>() {
+                         @Override
+                         public Void apply(Transaction tr) {
+                             tr.options().setAccessSystemKeys();
+                             for (KeyValue kv : pendingWrites) {
+                                 tr.set(kv.getKey(), kv.getValue());
+                             }
+                             return null;
+                         }
+                     });
             pendingWrites.clear();
         }
     }
 
     protected <T> Future<List<FDBMetric.Value<T>>> readAllValues(Transaction tr, final BaseMetricImpl<T> metric) {
         tr.options().setAccessSystemKeys();
-        return tr.getRange(metricKey(METRIC_KEY, metric.getType(), metric.getName(), address, "", 0),
-                           metricKey(METRIC_KEY, metric.getType(), metric.getName(), address, "", NLEVELS))
+        return tr.getRange(metricKey(METRIC_KEY, metric.getType(), metric.getName(), address, DEFAULT_ID, 0),
+                           metricKey(METRIC_KEY, metric.getType(), metric.getName(), address, DEFAULT_ID, NLEVELS))
             .asList()
             .map(new Function<List<KeyValue>,List<FDBMetric.Value<T>>> () {
                     @Override

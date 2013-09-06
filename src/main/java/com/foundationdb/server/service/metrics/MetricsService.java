@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.service.metrics;
 
+/** The service interface to metrics. */
 public interface MetricsService extends MetricCollection
 {
 }

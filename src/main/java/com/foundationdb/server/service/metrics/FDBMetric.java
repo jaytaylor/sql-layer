@@ -22,10 +22,15 @@ import com.foundationdb.async.Future;
 
 import java.util.List;
 
+/** Additional methods for metrics stored in FDB. */
 public interface FDBMetric<T> extends BaseMetric<T>
 {
+    /** Set whether this metric is enabled for this and future sessions. */
     public void setEnabled(boolean enabled);
 
+    /** Simple <code>struct</code> for time / value pair.
+     * @see #readAllValues.
+     */
     public static class Value<T> {
         final long time;
         final T value;
@@ -36,5 +41,6 @@ public interface FDBMetric<T> extends BaseMetric<T>
         }
     }
 
+    /** Retrieve all previously stored values for this metrics. */
     public Future<List<Value<T>>> readAllValues(Transaction tr);
 }
