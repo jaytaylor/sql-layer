@@ -42,6 +42,7 @@ import static com.foundationdb.qp.operator.API.*;
 import static com.foundationdb.server.test.ExpressionGenerators.field;
 
 public final class Sort_MixedColumnTypesIT extends ITBase {
+    
     @Before
     public void createSchema() {
         customer = createTable(
@@ -121,7 +122,7 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
 
     private Cursor cursor(Operator plan) {
         StoreAdapter adapter = newStoreAdapter(schema);
-        QueryContext context = new SimpleQueryContext(adapter);
+        QueryContext context = queryContext(adapter);
         QueryBindings bindings = context.createBindings();
         return API.cursor(plan, context, bindings);
     }
