@@ -182,9 +182,9 @@ public class HalloweenRecognizer extends BaseRule
      */
     private static void injectBufferNode(DMLStatement dml) {
         PlanNode node = findBaseUpdateStatement(dml, BaseUpdateStatement.class).getInput();
-        // Push it below a Project to avoid excess pack and unpack
-        if(node instanceof Project) {
-            node = ((Project)node).getInput();
+        // Push it below a Project to avoid double pack/unpack, below Flatten and Lookup to buffer smaller rows.
+        while(node instanceof Project|| node instanceof Flatten || node instanceof BaseLookup) {
+            node = ((BasePlanWithInput)node).getInput();
         }
         PlanWithInput origDest = node.getOutput();
         PlanWithInput newInput = new Buffer(node);
@@ -210,18 +210,20 @@ public class HalloweenRecognizer extends BaseRule
         }
 
         private boolean shouldContinue() {
+            // Need to identify *any* index that is driving the scan
             return !(bufferRequired && indexWasUnique);
         }
 
         private void indexScan(IndexScan scan) {
             if (scan instanceof SingleIndexScan) {
+                boolean newBufferRequired = false;
                 SingleIndexScan single = (SingleIndexScan)scan;
                 if (single.isCovering()) { // Non-covering loads via XxxLookup.
                     for (TableSource table : single.getTables()) {
                         if (table.getTable() == targetTable) {
                             targetMaxUses--;
                             if (targetMaxUses < 0) {
-                                bufferRequired = true;
+                                newBufferRequired = true;
                             }
                             break;
                         }
@@ -230,13 +232,14 @@ public class HalloweenRecognizer extends BaseRule
                 if (updateColumns != null) {
                     for (IndexColumn indexColumn : single.getIndex().getAllColumns()) {
                         if (updateColumns.contains(indexColumn.getColumn())) {
-                            bufferRequired = true;
+                            newBufferRequired = true;
                             break;
                         }
                     }
                 }
 
-                if(bufferRequired) {
+                if(newBufferRequired) {
+                    bufferRequired = true;
                     indexWasUnique = single.getIndex().isUnique();
                 }
             }
