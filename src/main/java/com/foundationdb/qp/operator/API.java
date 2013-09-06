@@ -240,11 +240,6 @@ public class API
 
     // Limit
 
-    public static Operator buffer_Default(Operator inputOperator, RowType inputRowType)
-    {
-        return new Buffer_Default(inputOperator, inputRowType);
-    }
-
     public static Operator limit_Default(Operator inputOperator, int limitRows)
     {
         return new Limit_Default(inputOperator, limitRows);
@@ -796,6 +791,13 @@ public class API
     public static Operator delete_Returning (Operator inputOperator, boolean cascadeDelete)
     {
         return new Delete_Returning(inputOperator, cascadeDelete);
+    }
+
+    // Buffer
+
+    public static Operator buffer_Default(Operator inputOperator, RowType inputRowType)
+    {
+        return new Buffer_Default(inputOperator, inputRowType);
     }
 
     // Execution interface

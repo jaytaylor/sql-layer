@@ -873,8 +873,6 @@ public class OperatorAssembler extends BaseRule
                 return assembleDistinct((Distinct) node);
             else if (node instanceof Sort)
                 return assembleSort((Sort) node);
-            else if (node instanceof Buffer)
-                return assembleBuffer((Buffer) node);
             else if (node instanceof Limit)
                 return assembleLimit((Limit) node);
             else if (node instanceof NullIfEmpty)
@@ -903,6 +901,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleUpdateStatement((UpdateStatement)node);
             else if (node instanceof UpdateInput)
                 return assembleUpdateInput((UpdateInput)node);
+            else if (node instanceof Buffer)
+                return assembleBuffer((Buffer)node);
             else
                 throw new UnsupportedSQLException("Plan node " + node, null);
         }

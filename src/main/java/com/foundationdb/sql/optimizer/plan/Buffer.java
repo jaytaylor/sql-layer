@@ -25,8 +25,6 @@ public class Buffer extends BasePlanWithInput
 
     @Override
     public String summaryString() {
-        StringBuilder str = new StringBuilder(super.summaryString());
-        str.append("()");
-        return str.toString();
+        return super.summaryString() + "()";
     }
 }

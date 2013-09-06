@@ -200,9 +200,9 @@ public class HalloweenRecognizer extends BaseRule
         private boolean bufferRequired;
         private boolean indexWasUnique;
 
-        public Checker(TableNode targetTable, int targetMaxUse, Set<Column> updateColumns) {
+        public Checker(TableNode targetTable, int targetMaxUses, Set<Column> updateColumns) {
             this.targetTable = targetTable;
-            this.targetMaxUses = targetMaxUse;
+            this.targetMaxUses = targetMaxUses;
             this.updateColumns = updateColumns;
         }
 
