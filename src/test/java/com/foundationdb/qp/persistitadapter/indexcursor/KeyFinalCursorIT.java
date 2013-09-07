@@ -143,6 +143,19 @@ public class KeyFinalCursorIT extends OperatorITBase {
         compareRows (rows.toArray(rowArray), cursor);
     }
     
+    @Test
+    public void cycleBlobRows() throws IOException {
+        RowType rowType = schema.newValuesType(MString.TEXT.instance(false), MString.TINYTEXT.instance(false));
+        List<TestRow> rows = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            rows.add(row(rowType, characters(5+random.nextInt(100)), characters(5+random.nextInt(10))));
+            bindRows.add(BindableRow.of(rows.get(i)));
+        }
+        RowCursor cursor = cycleRows(rowType);
+        TestRow[] rowArray = new TestRow[rows.size()];
+        compareRows (rows.toArray(rowArray), cursor);
+    }
+    
     private RowCursor cycleRows(RowType rowType) throws IOException {
         KeyReadCursor keyCursor = getKeyCursor(rowType , bindRows);
 

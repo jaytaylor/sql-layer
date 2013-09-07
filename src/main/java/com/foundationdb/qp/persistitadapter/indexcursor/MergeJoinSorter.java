@@ -400,10 +400,15 @@ public class MergeJoinSorter implements Sorter {
                 } else {
                     PValueSource src = row.pvalue(i);
                     if (!src.isNull()) {
-                        if (src.getString() != null) {
+                        switch (TInstance.pUnderlying(src.tInstance())) {
+                        case STRING:
                             size += src.getString().length() * 2 + 3;
-                        } else if (src.getBytes() != null) {
+                            break;
+                        case BYTES:
                             size += src.getBytes().length;
+                            break;
+                        default:
+                            throw new IllegalArgumentException("Unexpected UnderlyingType: " + src.tInstance());
                         }
                     } else {
                         size += 1;
