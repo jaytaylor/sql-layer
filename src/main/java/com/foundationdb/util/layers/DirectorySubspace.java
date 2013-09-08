@@ -20,6 +20,7 @@ package com.foundationdb.util.layers;
 import com.foundationdb.Transaction;
 import com.foundationdb.tuple.Tuple;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static com.foundationdb.tuple.ByteArrayUtil.printable;
@@ -54,6 +55,30 @@ public class DirectorySubspace extends Subspace {
     @Override
     public String toString() {
         return getClass().getSimpleName() + '(' + tupleStr(path) + ", " + printable(getKey()) + ')';
+    }
+
+    @Override
+    public boolean equals(Object rhs) {
+        if(this == rhs) {
+            return true;
+        }
+        if(rhs == null || getClass() != rhs.getClass()) {
+            return false;
+        }
+        DirectorySubspace other = (DirectorySubspace)rhs;
+        // TODO: Use path.equals when Tuple.equals() is fixed
+        byte[] pathPacked = path != null ? path.pack() : null;
+        byte[] otherPacked = other.path != null ? other.path.pack() : null;
+        return Arrays.equals(pathPacked, otherPacked) &&
+               Arrays.equals(layer, other.layer);
+    }
+
+    public Tuple getPath() {
+        return path;
+    }
+
+    public byte[] getLayer() {
+        return layer;
     }
 
     public DirectorySubspace createOrOpen(Transaction tr, Tuple subPath) {
