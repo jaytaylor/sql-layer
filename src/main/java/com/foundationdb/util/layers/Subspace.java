@@ -43,8 +43,8 @@ import static com.foundationdb.tuple.ByteArrayUtil.printable;
 */
 public class Subspace
 {
-    private static final Tuple EMPTY_TUPLE = Tuple.from();
-    private static final byte[] EMPTY_BYTES = new byte[0];
+    static final Tuple EMPTY_TUPLE = Tuple.from();
+    static final byte[] EMPTY_BYTES = new byte[0];
 
     private final byte[] rawPrefix;
 
@@ -52,17 +52,29 @@ public class Subspace
         this(EMPTY_TUPLE, EMPTY_BYTES);
     }
 
-    public Subspace(Tuple prefixTuple) {
-        this(prefixTuple, EMPTY_BYTES);
+    public Subspace(Tuple prefix) {
+        this(prefix, EMPTY_BYTES);
     }
 
-    public Subspace(Tuple prefixTuple, byte[] rawPrefix) {
-        this.rawPrefix = join(rawPrefix, prefixTuple.pack());
+    public Subspace(byte[] rawPrefix) {
+        this(EMPTY_TUPLE, rawPrefix);
+    }
+
+    public Subspace(Tuple prefix, byte[] rawPrefix) {
+        this.rawPrefix = join(rawPrefix, prefix.pack());
     }
 
     @Override
     public String toString() {
         return "Subspace(rawPrefix=" + printable(rawPrefix) + ")";
+    }
+
+    public Subspace get(byte[] rawSuffix) {
+        return new Subspace(EMPTY_TUPLE, join(rawPrefix, rawSuffix));
+    }
+
+    public Subspace get(Object o) {
+        return get(Tuple.from(o));
     }
 
     public Subspace get(Tuple name) {
@@ -75,6 +87,10 @@ public class Subspace
 
     public byte[] pack() {
         return rawPrefix;
+    }
+
+    public byte[] pack(Object o) {
+        return pack(Tuple.from(o));
     }
 
     public byte[] pack(Tuple tuple) {
@@ -104,7 +120,7 @@ public class Subspace
     }
 
 
-    private static boolean startsWith(byte[] prefix, byte[] other) {
+    static boolean startsWith(byte[] prefix, byte[] other) {
         if(other.length < prefix.length) {
             return false;
         }
