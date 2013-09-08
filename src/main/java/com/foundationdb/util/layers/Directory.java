@@ -327,6 +327,17 @@ public class Directory
         }
     }
 
+    public static class MismatchedLayerException extends DirectoryException {
+        public final byte[] stored;
+        public final byte[] opened;
+
+        public MismatchedLayerException(Tuple path, byte[] stored, byte[] opened) {
+            super("Mismatched layer: stored=" + printable(stored) + ", opened=" + printable(opened), path);
+            this.stored = stored;
+            this.opened = opened;
+        }
+    }
+
 
     //
     // Internal
@@ -450,7 +461,7 @@ public class Directory
                 throw new DirectoryAlreadyExistsException(path);
             }
             byte[] existingLayer = tr.get(existingNode.get(LAYER_KEY).getKey()).get();
-            checkLayer(layer, existingLayer);
+            checkLayer(path, layer, existingLayer);
             return contentsOfNode(existingNode, path, existingLayer);
         } else {
             if(!allowCreate) {
@@ -507,9 +518,10 @@ public class Directory
         return t;
     }
 
-    public void checkLayer(byte[] a, byte[] b) {
-        if((a != null) && (b != null) && !Arrays.equals(a, b)) {
-            throw new IllegalArgumentException("The directory was created with an incompatible layer.");
+    public static void checkLayer(Tuple path, byte[] stored, byte[] opened) {
+        // Note: Stricter than Python directory layer, which skips check if either is null
+        if(!Arrays.equals(stored, opened)) {
+            throw new MismatchedLayerException(path, stored, opened);
         }
     }
 
