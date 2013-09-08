@@ -30,41 +30,48 @@ import java.util.List;
 import java.util.Random;
 
 import static com.foundationdb.util.layers.Subspace.EMPTY_BYTES;
+import static com.foundationdb.util.layers.Subspace.EMPTY_TUPLE;
 import static com.foundationdb.util.layers.Subspace.startsWith;
 import static com.foundationdb.tuple.ByteArrayUtil.join;
-import static com.foundationdb.tuple.ByteArrayUtil.printable;
 import static com.foundationdb.tuple.ByteArrayUtil.strinc;
 
 /**
- * Provides a DirectoryLayer class for managing directories in FoundationDB.
- * Directories are a recommended approach for administering layers and
- * applications. Directories work in conjunction with subspaces. Each layer or
- * application should create or open at least one directory with which to manage
- * its subspace(s).
+ * Provides a class for managing directories in FoundationDB.
  *
- * Directories are identified by paths (specified as tuples) analogous to the paths
- * in a Unix-like file system. Each directory has an associated subspace that is
- * used to store content. The layer uses a high-contention allocator to efficiently
- * map each path to a short prefix for its corresponding subspace.
- *
- * DirectorLayer exposes methods to create, open, move, remove, or list
- * directories. Creating or opening a directory returns the corresponding subspace.
- *
- * The DirectorySubspace class represents subspaces that store the contents of a
- * directory. An instance of DirectorySubspace can be used for all the usual
- * subspace operations. It can also be used to operate on the directory with which
- * it was opened.
+ * <p>
+ *     Directories are a recommended approach for administering layers and
+ *     applications. Directories work in conjunction with subspaces. Each layer
+ *     or application should create or open at least one directory with which
+ *     to manage its subspace(s).
+ * </p>
+ * <p>
+ *     Directories are identified by paths (specified as {@link Tuple}s)
+ *     analogous to the paths in a Unix-like file system. Each directory
+ *     has an associated subspace that is used to store content. The layer
+ *     uses a high-contention allocator to efficiently map each path to a
+ *     short prefix for its corresponding subspace.
+ * </p>
+ * <p>
+ *     Directory exposes methods to create, open, move, remove, or list
+ *     directories. Creating or opening a directory returns the corresponding
+ *     subspace.
+ * </p>
  */
 public class Directory
 {
-    private static final Subspace DEFAULT_NODE_SUBSPACE = new Subspace(new byte[]{ (byte)254 });
-    private static final Subspace DEFAULT_CONTENT_SUBSPACE = new Subspace();
     private static final byte[] LITTLE_ENDIAN_LONG_ONE = { 1, 0, 0, 0, 0, 0, 0, 0 };
-    private static final long SUBDIRS = 0;
+    private static final byte[] DEFAULT_NODE_SUBSPACE_PREFIX =  { (byte)0xFE };
+    private static final byte[] HIGH_CONTENTION_KEY = { (byte)'h', (byte)'c', (byte)'a' };
+    private static final byte[] LAYER_KEY = { (byte)'l', (byte)'a', (byte)'y', (byte)'e', (byte)'r' };
+    private static final long SUB_DIR_KEY = 0;
 
-    private final Subspace node_subspace;
-    private final Subspace content_subspace;
-    private final Subspace root_node;
+    private static final Subspace DEFAULT_NODE_SUBSPACE = new Subspace(DEFAULT_NODE_SUBSPACE_PREFIX);
+    private static final Subspace DEFAULT_CONTENT_SUBSPACE = new Subspace();
+
+
+    private final Subspace rootNode;
+    private final Subspace nodeSubspace;
+    private final Subspace contentSubspace;
     private final HighContentionAllocator allocator;
 
 
@@ -72,12 +79,12 @@ public class Directory
         this(DEFAULT_NODE_SUBSPACE, DEFAULT_CONTENT_SUBSPACE);
     }
 
-    public Directory(Subspace node_subspace, Subspace content_subspace) {
-        this.node_subspace = node_subspace;
-        this.content_subspace = content_subspace;
+    public Directory(Subspace nodeSubspace, Subspace contentSubspace) {
+        this.nodeSubspace = nodeSubspace;
+        this.contentSubspace = contentSubspace;
         // The root node is the one whose contents are the node subspace
-        this.root_node = node_subspace.get(node_subspace.getKey());
-        this.allocator = new HighContentionAllocator(root_node.get("hca"));
+        this.rootNode = nodeSubspace.get(nodeSubspace.getKey());
+        this.allocator = new HighContentionAllocator(rootNode.get(HIGH_CONTENTION_KEY));
     }
 
     public static Directory createWithNodeSubspace(Subspace node_subspace) {
@@ -90,150 +97,176 @@ public class Directory
 
 
     /**
-     * Opens the directory with the given path.
+     * Creates, or opens, the directory with the given path.
      *
-     * If the directory does not exist, it is created (creating parent
-     * directories if necessary).
-     *
-     * If prefix is specified, the directory is created with the given physical
-     * prefix; otherwise a prefix is allocated automatically.
-     *
-     * If layer is specified, it is checked against the layer of an existing
-     * directory or set as the layer of a new directory.
+     * <p>
+     *     See {@link #create(Transaction, Tuple)} and
+     *     {@link #open(Transaction, Tuple)} for additional details.
+     * </p>
      */
-    public DirectorySubspace create_or_open(Transaction tr,
-                                            Tuple path,
-                                            byte[] layer/*=None*/,
-                                            byte[] prefix/*=None*/,
-                                            boolean allow_create/*=True*/,
-                                            boolean allow_open/*=True*/) {
-        if(path == null || path.size() == 0) {
-            // Root directory contains node metadata and so may not be opened.
-            throw new IllegalArgumentException("The root directory may not be opened.");
-        }
-        Subspace existing_node = _find(tr, path);
-        if(existing_node != null) {
-            if(!allow_open) {
-                throw new IllegalArgumentException("The directory already exists.");
-            }
-            byte[] existing_layer = tr.get( existing_node.get("layer").getKey() ).get();
-            if(layer != null && existing_layer != null && !Arrays.equals(existing_layer, layer)) {
-                throw new IllegalArgumentException("The directory exists but was created with an incompatible layer.");
-            }
-            return _contents_of_node(existing_node, path, existing_layer);
-        }
-        if(!allow_create) {
-            throw new IllegalArgumentException("The directory does not exist.");
-        }
+    public DirectorySubspace createOrOpen(Transaction tr, Tuple path) {
+        return createOrOpen(tr, path, null, null);
+    }
 
-        if(prefix == null) {
-            prefix = allocator.allocate(tr);
-        }
+    /**
+     * Creates, or opens, the directory with the given path and associate with
+     * <code>layer</code>.
+     *
+     * <p>
+     *     See {@link #create(Transaction, Tuple, byte[])} and
+     *     {@link #open(Transaction, Tuple, byte[])} for additional details.
+     * </p>
+     */
+    public DirectorySubspace createOrOpen(Transaction tr, Tuple path, byte[] layer) {
+        return createOrOpen(tr, path, layer, null);
+    }
 
-        if(!_is_prefix_free(tr, prefix)) {
-            throw new IllegalArgumentException("The given prefix is already in use.");
-        }
-
-        final Subspace parent_node;
-        if(path.size() > 1) {
-            parent_node = _node_with_prefix(create_or_open(tr, removeLast(path), null, null, true, true).getKey());
-        } else {
-            parent_node = root_node;
-        }
-
-        if(parent_node == null) {
-            //print repr(path[:-1])
-            throw new IllegalArgumentException("The parent directory doesn't exist.");
-        }
-
-        Subspace node = _node_with_prefix(prefix);
-        tr.set( parent_node.get(SUBDIRS).get( path.get(path.size() - 1) ).getKey(), prefix);
-        if(layer != null) {
-            tr.set( node.get("layer").getKey(), layer);
-        }
-
-        return _contents_of_node(node, path, layer);
+    /**
+     * As {@link #createOrOpen(Transaction, Tuple, byte[])} and use
+     * <code>prefix</code> for the physical location.
+     *
+     * <p>
+     *     See {@link #create(Transaction, Tuple, byte[], byte[])} and
+     *     {@link #open(Transaction, Tuple, byte[])} for additional details.
+     * </p>
+     */
+    public DirectorySubspace createOrOpen(Transaction tr, Tuple path, byte[] layer, byte[] prefix) {
+        return createOrOpenInternal(tr, path, layer, prefix, true, true);
     }
 
     /**
      * Opens the directory with the given path.
      *
-     * An error is raised if the directory does not exist, or if a layer is
-     * specified and a different layer was specified when the directory was
-     * created.
+     * <p>
+     *     An error is raised if the directory does not exist, or if a layer
+     *     was originally associated with the directory.
+     * </p>
      */
-    public DirectorySubspace open(Transaction tr, Tuple path, byte[] layer/*=None*/) {
-        return create_or_open(tr, path, layer, null, false, true);
+    public DirectorySubspace open(Transaction tr, Tuple path) {
+        return open(tr, path, null);
+    }
+
+    /**
+     * Opens the directory with the given path and layer.
+     *
+     * * <p>
+     *     An error is raised if the directory does not exist, or if a
+     *     different layer was originally associated with the directory.
+     * </p>
+     */
+    public DirectorySubspace open(Transaction tr, Tuple path, byte[] layer) {
+        return createOrOpenInternal(tr, path, layer, null, false, true);
     }
 
     /**
      * Creates a directory with the given path (creating parent directories
      * if necessary).
      *
-     * An error is raised if the given directory already exists.
-     *
-     * If prefix is specified, the directory is created with the given physical
-     * prefix; otherwise a prefix is allocated automatically.
-     *
-     * If layer is specified, it is recorded with the directory and will be
-     * checked by future calls to open.
+     * <p>
+     *     An error is raised if the given directory already exists.
+     * </p>
      */
-    public DirectorySubspace create(Transaction tr, Tuple path, byte[] layer/*=None*/, byte[] prefix/*=None*/) {
-        return create_or_open(tr, path, layer, prefix, true, false);
+    public DirectorySubspace create(Transaction tr, Tuple path) {
+        return create(tr, path, null, null);
     }
 
     /**
+     * As {@link #create(Transaction, Tuple)} and associate with
+     * <code>layer</code>.
      *
-     *  Moves the directory found at `old_path` to `new_path`.
-     *
-     * There is no effect on the physical prefix of the given directory, or on
-     * clients that already have the directory open.
-     *
-     * An error is raised if the old directory does not exist, a directory
-     * already exists at `new_path`, or the parent directory of `new_path` does
-     * not exist.
+     * <p>
+     *     If layer is not <code>null</code>, it is recorded with the directory
+     *     and will be checked by future calls to open.
+     * </p>
      */
-    public DirectorySubspace move(Transaction tr, Tuple old_path, Tuple new_path) {
-        if(_find(tr, new_path) != null) {
+    public DirectorySubspace create(Transaction tr, Tuple path, byte[] layer) {
+        return create(tr, path, layer, null);
+    }
+
+    /**
+     * As {@link #create(Transaction, Tuple, byte[])} and use
+     * <code>prefix</code> for the physical location.
+     *
+     * <p>
+     *     If prefix is not <code>null</code>, the directory is created with
+     *     the given physical prefix; otherwise a prefix is allocated
+     *     automatically.
+     * </p>
+     */
+    public DirectorySubspace create(Transaction tr, Tuple path, byte[] layer, byte[] prefix) {
+        return createOrOpenInternal(tr, path, layer, prefix, true, false);
+    }
+
+    /**
+     * Moves the directory found at <code>oldPath</code> to
+     * <code>newPath</code>.
+     *
+     * <p>
+     *     There is no effect on the physical prefix of the given directory, or
+     *     on clients that already have the directory open.
+     * </p>
+     * <p>
+     *     An error is raised if <code>oldPath</code> does not exist, a
+     *     directory already exists at <code>newPath</code>, or the parent
+     *     directory of <code>newPath</code> does not exist.
+     * </p>
+     */
+    public DirectorySubspace move(Transaction tr, Tuple oldPath, Tuple newPath) {
+        if(findNode(tr, newPath) != null) {
             throw new IllegalArgumentException("The destination directory already exists. Remove it first.");
         }
-        Subspace old_node = _find(tr, old_path);
+        Subspace old_node = findNode(tr, oldPath);
         if(old_node == null) {
             throw new IllegalArgumentException("The source directory does not exist.");
         }
-        Subspace parent_node = _find(tr, removeLast(new_path));
+        Subspace parent_node = findNode(tr, removeLast(newPath));
         if(parent_node == null) {
             throw new IllegalArgumentException("The parent of the destination directory does not exist. Create it first.");
         }
-        tr.set(parent_node.get(SUBDIRS).get(new_path.get(new_path.size() - 1)).getKey(),_contents_of_node(old_node, null, null).getKey());
-        _remove_from_parent(tr, old_path);
-        return _contents_of_node(old_node, new_path, tr.get(old_node.get("layer").getKey()).get());
+        tr.set(
+            parent_node.get(SUB_DIR_KEY).get(getLast(newPath)).getKey(),
+            contentsOfNode(old_node, null, null).getKey()
+        );
+        removeFromParent(tr, oldPath);
+        return contentsOfNode(old_node, newPath, tr.get(old_node.get(LAYER_KEY).getKey()).get());
     }
 
     /**
      * Removes the directory, its contents, and all subdirectories.
      *
-     * Warning: Clients that have already opened the directory might still
-     * insert data into its contents after it is removed.
+     * <p>
+     *     <i>
+     *         Warning: Clients that have already opened the directory might
+     *         still insert data into its contents after it is removed.
+     *    </i>
+     * </p>
      */
-    //@fdb.transactional
     public void remove(Transaction tr, Tuple path) {
-        Subspace n = _find(tr, path);
+        Subspace n = findNode(tr, path);
         if(n == null) {
             throw new IllegalArgumentException("The directory doesn't exist.");
         }
-        _remove_recursive(tr, n);
-        _remove_from_parent(tr, path);
+        removeRecursive(tr, n);
+        removeFromParent(tr, path);
     }
 
-    //@fdb.transactional
-    public List<byte[]> list(Transaction tr, Tuple path/*=()*/) {
-        Subspace node = _find(tr, path);
+    /**
+     * List the contents of the root directory.
+     */
+    public List<Object> list(Transaction tr) {
+        return list(tr, EMPTY_TUPLE);
+    }
+
+    /**
+     * List the contents of the given path.
+     */
+    public List<Object> list(Transaction tr, Tuple path) {
+        Subspace node = findNode(tr, path);
         if(node == null) {
             throw new IllegalArgumentException("The given directory does not exist.");
         }
-        List<byte[]> dirNames = new ArrayList<>();
-        for(NameAndNode nn : _subdir_names_and_nodes(tr, node)) {
+        List<Object> dirNames = new ArrayList<>();
+        for(NameAndNode nn : listSubDirs(tr, node)) {
             dirNames.add(nn.name);
         }
         return dirNames;
@@ -244,41 +277,41 @@ public class Directory
     // Internal
     //
 
-    private Subspace _node_containing_key(Transaction tr, byte[] key) {
+    private Subspace nodeWithPrefix(byte[] prefix) {
+        if(prefix == null) {
+            return null;
+        }
+        return nodeSubspace.get(prefix);
+    }
+
+    private Subspace nodeContainingKey(Transaction tr, byte[] key) {
         // Right now this is only used for _is_prefix_free(), but if we add
         // parent pointers to directory nodes, it could also be used to find a
         // path based on a key.
-        if(Subspace.startsWith(node_subspace.getKey(), key)) {
-            return root_node;
+        if(Subspace.startsWith(nodeSubspace.getKey(), key)) {
+            return rootNode;
         }
-        for(KeyValue kv : tr.getRange(node_subspace.range().begin,
-                                      join(node_subspace.pack(key), new byte[]{0x00}),
+        for(KeyValue kv : tr.getRange(nodeSubspace.range().begin,
+                                      join(nodeSubspace.pack(key), new byte[]{ 0x00 }),
                                       1,
                                       true)) {
-            byte[] prev_prefix = node_subspace.unpack(kv.getKey()).getBytes(0);
-            if(startsWith(key, prev_prefix)) {
-                return new Subspace(kv.getKey());  // self.node_subspace[prev_prefix]
+            byte[] prevPrefix = nodeSubspace.unpack(kv.getKey()).getBytes(0);
+            if(startsWith(key, prevPrefix)) {
+                return new Subspace(kv.getKey());
             }
         }
         return null;
     }
 
-    private Subspace _node_with_prefix(byte[] prefix) {
-        if(prefix == null) {
-            return null;
-        }
-        return node_subspace.get(prefix);
+    private DirectorySubspace contentsOfNode(Subspace node, Tuple path, byte[] layer) {
+        byte[] prefix = nodeSubspace.unpack(node.getKey()).getBytes(0);
+        return new DirectorySubspace(path, prefix, this, layer);
     }
 
-    private DirectorySubspace _contents_of_node(Subspace node, Tuple path, byte[] layer/*=None*/) {
-        Object prefix = node_subspace.unpack(node.getKey()).get(0);
-        return new DirectorySubspace(path, Tuple.from(prefix).pack(), this, layer);
-    }
-
-    private Subspace _find(Transaction tr, Tuple path) {
-        Subspace n = root_node;
+    private Subspace findNode(Transaction tr, Tuple path) {
+        Subspace n = rootNode;
         for(Object name : path) {
-            n = _node_with_prefix(tr.get(n.get(SUBDIRS).get(name).getKey()).get());
+            n = nodeWithPrefix(tr.get(n.get(SUB_DIR_KEY).get(name).getKey()).get());
             if(n == null) {
                 return null;
             }
@@ -286,35 +319,35 @@ public class Directory
         return n;
     }
 
-    private void _remove_from_parent(Transaction tr, Tuple path) {
-        Subspace parent = _find(tr, removeLast(path));
-        tr.clear(parent.get(SUBDIRS).get(path.get(path.size() - 1)).getKey());
+    private void removeFromParent(Transaction tr, Tuple path) {
+        Subspace parent = findNode(tr, removeLast(path));
+        tr.clear(parent.get(SUB_DIR_KEY).get(getLast(path)).getKey());
     }
 
-    private void _remove_recursive(Transaction tr, Subspace node) {
-        for(NameAndNode nn : _subdir_names_and_nodes(tr, node)) {
-            _remove_recursive(tr, nn.node);
+    private void removeRecursive(Transaction tr, Subspace node) {
+        for(NameAndNode nn : listSubDirs(tr, node)) {
+            removeRecursive(tr, nn.node);
         }
-        tr.clear(Range.startsWith(_contents_of_node(node, null, null).getKey()));
+        tr.clear(Range.startsWith(contentsOfNode(node, null, null).getKey()));
         tr.clear(node.range());
     }
 
-    private boolean _is_prefix_free(Transaction tr, byte[] prefix) {
+    private boolean isPrefixFree(Transaction tr, byte[] prefix) {
         // Returns true if the given prefix does not "intersect" any currently
         // allocated prefix (including the root node). This means that it neither
         // contains any other prefix nor is contained by any other prefix.
         if(prefix == null || prefix.length == 0) {
             return false;
         }
-        if(_node_containing_key(tr, prefix) != null) {
+        if(nodeContainingKey(tr, prefix) != null) {
             return false;
         }
-        Iterator<KeyValue> it = tr.getRange(node_subspace.pack(prefix), node_subspace.pack(strinc(prefix)), 1).iterator();
+        Iterator<KeyValue> it = tr.getRange(nodeSubspace.pack(prefix), nodeSubspace.pack(strinc(prefix)), 1).iterator();
         return !it.hasNext();
     }
 
-    private Iterable<NameAndNode> _subdir_names_and_nodes(Transaction tr, Subspace node) {
-        final Subspace sd = node.get(SUBDIRS);
+    private Iterable<NameAndNode> listSubDirs(Transaction tr, Subspace node) {
+        final Subspace sd = node.get(SUB_DIR_KEY);
         final Iterator<KeyValue> it = tr.getRange(sd.range()).iterator();
         return new Iterable<NameAndNode>()
         {
@@ -330,9 +363,11 @@ public class Directory
                     @Override
                     public NameAndNode next() {
                         KeyValue kv = it.next();
-                        Object name = sd.unpack(kv.getKey()).get(0);
-                        Subspace node = _node_with_prefix(kv.getValue());
-                        return new NameAndNode(Tuple.from(name).pack(), node);
+                        Tuple unpacked = sd.unpack(kv.getKey());
+                        assert unpacked.size() == 1 : DirectorySubspace.tupleStr(unpacked);
+                        Object name = unpacked.get(0);
+                        Subspace node = nodeWithPrefix(kv.getValue());
+                        return new NameAndNode(name, node);
                     }
 
                     @Override
@@ -344,16 +379,96 @@ public class Directory
         };
     }
 
+    private DirectorySubspace createOrOpenInternal(Transaction tr,
+                                                   Tuple path,
+                                                   byte[] layer,
+                                                   byte[] prefix,
+                                                   boolean allowCreate,
+                                                   boolean allowOpen) {
+        // Root directory contains node metadata and so may not be opened.
+        if(path == null || path.size() == 0) {
+            throw new IllegalArgumentException("The root directory may not be opened.");
+        }
+        Subspace existingNode = findNode(tr, path);
+        if(existingNode != null) {
+            if(!allowOpen) {
+                throw new IllegalArgumentException("The directory already exists.");
+            }
+            byte[] existingLayer = tr.get(existingNode.get(LAYER_KEY).getKey()).get();
+            checkLayer(layer, existingLayer);
+            return contentsOfNode(existingNode, path, existingLayer);
+        } else {
+            if(!allowCreate) {
+                throw new IllegalArgumentException("The directory does not exist.");
+            }
+            return createInternal(tr, path, layer, prefix);
+        }
+    }
+
+    private DirectorySubspace createInternal(Transaction tr, Tuple path, byte[] layer, byte[] prefix) {
+        if(prefix == null) {
+            prefix = allocator.allocate(tr);
+        }
+
+        if(!isPrefixFree(tr, prefix)) {
+            throw new IllegalArgumentException("The given prefix is already in use.");
+        }
+
+        final Subspace parentNode;
+        if(path.size() > 1) {
+            parentNode = nodeWithPrefix(createOrOpen(tr, removeLast(path)).getKey());
+        } else {
+            parentNode = rootNode;
+        }
+        if(parentNode == null) {
+            throw new IllegalArgumentException("The parent directory doesn't exist.");
+        }
+
+        Subspace node = nodeWithPrefix(prefix);
+        tr.set(parentNode.get(SUB_DIR_KEY).get(getLast(path)).getKey(), prefix);
+        if(layer != null) {
+            tr.set(node.get(LAYER_KEY).getKey(), layer);
+        }
+        return contentsOfNode(node, path, layer);
+    }
+
 
     //
     // Helpers
     //
 
+    private static long unpackLittleEndian(byte[] bytes) {
+        assert bytes.length == 8;
+        int value = 0;
+        for(int i = 0; i < 8; ++i) {
+            value += (bytes[i] << (i * 8));
+        }
+        return value;
+    }
+
+    private static Object getLast(Tuple t) {
+        assert t.size() > 0;
+        return t.get(t.size() - 1);
+    }
+
+    private static Tuple removeLast(Tuple t) {
+        if(t.size() > 0) {
+            return Tuple.fromItems(t.getItems().subList(0, t.size() - 1));
+        }
+        return t;
+    }
+
+    public void checkLayer(byte[] a, byte[] b) {
+        if((a != null) && (b != null) && !Arrays.equals(a, b)) {
+            throw new IllegalArgumentException("The directory was created with an incompatible layer.");
+        }
+    }
+
     private static class NameAndNode {
-        public final byte[] name;
+        public final Object name;
         public final Subspace node;
 
-        public NameAndNode(byte[] name, Subspace node) {
+        public NameAndNode(Object name, Subspace node) {
             this.name = name;
             this.node = node;
         }
@@ -378,7 +493,6 @@ public class Directory
          *     <li>is nearly as short as possible given the above</li>
          * </ol>
          */
-        //@fdb.transactional
         public byte[] allocate(Transaction tr) {
             long start = 0, count = 0;
 
@@ -389,7 +503,7 @@ public class Directory
                 count = unpackLittleEndian(kv.getValue());
             }
 
-            int window = _window_size(start);
+            int window = windowSize(start);
             if((count + 1) * 2 >= window) {
                 // Advance the window
                 byte[] begin = counters.getKey();
@@ -397,7 +511,7 @@ public class Directory
                 tr.clear(begin, end);
                 start += window;
                 tr.clear(recent.getKey(), recent.get(start).getKey());
-                window = _window_size(start);
+                window = windowSize(start);
             }
 
             // Increment the allocation count for the current window
@@ -417,7 +531,7 @@ public class Directory
             }
         }
 
-        private static int _window_size(long start) {
+        private static int windowSize(long start) {
             // Larger window sizes are better for high contention, smaller sizes for
             // keeping the keys small.  But if there are many allocations, the keys
             // can't be too small.  So start small and scale up.  We don't want this
@@ -431,21 +545,5 @@ public class Directory
             }
             return 8192;
         }
-    }
-
-    private static long unpackLittleEndian(byte[] bytes) {
-        assert bytes.length == 8;
-        int value = 0;
-        for(int i = 0; i < 8; ++i) {
-            value += (bytes[i] << (i * 8));
-        }
-        return value;
-    }
-
-    private static Tuple removeLast(Tuple t) {
-        if(t.size() > 0) {
-            return Tuple.fromItems(t.getItems().subList(0, t.size() - 1));
-        }
-        return t;
     }
 }

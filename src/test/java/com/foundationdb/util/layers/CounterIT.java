@@ -16,8 +16,6 @@
  */
 package com.foundationdb.util.layers;
 
-import com.foundationdb.server.store.FDBHolder;
-import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.Database;
 import com.foundationdb.FDBException;
 import com.foundationdb.Transaction;
@@ -29,15 +27,13 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class CounterIT extends ITBase {
+public class CounterIT extends LayerITBase {
     private static final String KEY_PREFIX = "test";
 
-    private FDBHolder holder;
     private Counter counter;
 
     @Before
     public void createCounter() {
-        holder = serviceManager().getServiceByClass(FDBHolder.class);
         counter = new Counter(holder.getDatabase(), KEY_PREFIX);
     }
 

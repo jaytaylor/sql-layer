@@ -26,13 +26,12 @@ import static com.foundationdb.tuple.ByteArrayUtil.join;
 import static com.foundationdb.tuple.ByteArrayUtil.printable;
 
 /**
- * Provides a Subspace class to defines subspaces of keys.
+ * Defines subspaces of keys.
  *
  * <p>
  *     Subspaces should be used to manage namespaces for application data.
  *     The use of distinct subspaces helps to avoid conflicts among keys.
  * </p>
- *
  * <p>
  *     Subspaces employ the tuple layer. A Subspace is initialized with a identifier in
  *     the form of a tuple (and, optionally, a raw prefix). An instance of Subspace
@@ -69,20 +68,16 @@ public class Subspace
         return "Subspace(rawPrefix=" + printable(rawPrefix) + ")";
     }
 
-    public Subspace get(byte[] rawSuffix) {
-        return new Subspace(EMPTY_TUPLE, join(rawPrefix, rawSuffix));
-    }
-
     public Subspace get(Object o) {
         return get(Tuple.from(o));
     }
 
     public Subspace get(Tuple name) {
-        return new Subspace(name, rawPrefix);
+        return subspace(name);
     }
 
     public byte[] getKey() {
-        return rawPrefix;
+        return pack();
     }
 
     public byte[] pack() {

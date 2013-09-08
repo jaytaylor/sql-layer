@@ -20,26 +20,35 @@ package com.foundationdb.util.layers;
 import com.foundationdb.Transaction;
 import com.foundationdb.tuple.Tuple;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static com.foundationdb.tuple.ByteArrayUtil.printable;
 
 /**
- *  A DirectorySubspace represents the *contents* of a directory, but it also
- * remembers the path with which it was opened and offers convenience methods
- * to operate on the directory at that path.
+ *  A DirectorySubspace represents the <i>contents</i> of a directory, but it
+ *  also remembers the path with which it was opened and offers convenience
+ *  methods to operate on the directory at that path.
+ *
+ * <p>
+ *     An instance of DirectorySubspace can be used for all the usual subspace
+ *     operations. It can also be used to operate on the directory with which
+ *     it was opened.
+ * </p>
  */
 public class DirectorySubspace extends Subspace {
     private final Tuple path;
-    private final Directory directoryLayer;
     private final byte[] layer;
+    private final Directory directory;
 
-    public DirectorySubspace(Tuple path, byte[] prefix, Directory directoryLayer/*=directory*/, byte[] layer/*=None*/) {
+    public DirectorySubspace(Tuple path, byte[] prefix, Directory directory) {
+        this(path, prefix, directory, null);
+    }
+
+    public DirectorySubspace(Tuple path, byte[] prefix, Directory directory, byte[] layer) {
         super(prefix);
         this.path = path;
-        this.directoryLayer = directoryLayer;
         this.layer = layer;
+        this.directory = directory;
     }
 
     @Override
@@ -47,37 +56,40 @@ public class DirectorySubspace extends Subspace {
         return getClass().getSimpleName() + '(' + tupleStr(path) + ", " + printable(getKey()) + ')';
     }
 
-    public void check_layer(byte[] otherLayer) {
-        if(layer != null && otherLayer != null && !Arrays.equals(layer, otherLayer)) {
-            throw new IllegalArgumentException("The directory was created with an incompatible layer.");
-        }
+    public DirectorySubspace createOrOpen(Transaction tr, Tuple subPath) {
+        return createOrOpen(tr, subPath, layer, null);
     }
 
-    public DirectorySubspace create_or_open(Transaction tr,
-                                            Tuple subPath,
-                                            byte[] layer/*=None*/,
-                                            byte[] prefix/*=None*/) {
-        return directoryLayer.create_or_open(tr, combine(this.path, subPath), layer, prefix, true, true);
+    public DirectorySubspace createOrOpen(Transaction tr, Tuple subPath, byte[] otherLayer, byte[] prefix) {
+        return directory.createOrOpen(tr, combine(path, subPath), otherLayer, prefix);
     }
 
-    public DirectorySubspace open(Transaction tr, Tuple subPath, byte[] layer/*=None*/) {
-        return directoryLayer.open(tr, combine(path, subPath), layer);
+    public DirectorySubspace open(Transaction tr, Tuple subPath) {
+        return open(tr, subPath, layer);
     }
 
-    public DirectorySubspace create(Transaction tr, Tuple subPath, byte[] layer/*=None*/) {
-        return directoryLayer.create(tr, combine(path, subPath), layer, null);
+    public DirectorySubspace open(Transaction tr, Tuple subPath, byte[] otherLayer) {
+        return directory.open(tr, combine(path, subPath), otherLayer);
     }
 
-    public DirectorySubspace move(Transaction tr, Tuple new_path) {
-        return directoryLayer.move(tr, path, new_path);
+    public DirectorySubspace create(Transaction tr, Tuple subPath) {
+        return create(tr, subPath, layer);
+    }
+
+    public DirectorySubspace create(Transaction tr, Tuple subPath, byte[] otherLayer) {
+        return directory.create(tr, combine(path, subPath), otherLayer, null);
+    }
+
+    public DirectorySubspace move(Transaction tr, Tuple newPath) {
+        return directory.move(tr, path, newPath);
     }
 
     public void remove(Transaction tr) {
-        directoryLayer.remove(tr, path);
+        directory.remove(tr, path);
     }
 
-    public List<byte[]> list(Transaction tr) {
-        return directoryLayer.list(tr, path);
+    public List<Object> list(Transaction tr) {
+        return directory.list(tr, path);
     }
 
 
