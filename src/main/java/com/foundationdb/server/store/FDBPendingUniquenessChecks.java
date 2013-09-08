@@ -65,13 +65,21 @@ public class FDBPendingUniquenessChecks
             while (iter.hasNext()) {
                 Map.Entry<byte[],Future<byte[]>> fentry = iter.next();
                 Future<byte[]> future = fentry.getValue();
-                if (!wait && !future.isDone()) {
-                    continue;
+                if (!future.isDone()) {
+                    if (!wait) {
+                        continue;
+                    }
+                    if (count > 0) {
+                        // Don't bother updating count for every one
+                        // done, but do before actually blocking.
+                        metric.increment(- count);
+                        count = 0;
+                    }
+                    long startNanos = System.nanoTime();
+                    future.blockUntilReady();
+                    long endNanos = System.nanoTime();
+                    txn.uniquenessTime += (endNanos - startNanos);
                 }
-                long startNanos = System.nanoTime();
-                future.blockUntilReady();
-                long endNanos = System.nanoTime();
-                txn.uniquenessTime += (endNanos - startNanos);
                 if (future.get() != null) {
                     // Recover Index and Key for error message.
                     Index index = pentry.getKey();
