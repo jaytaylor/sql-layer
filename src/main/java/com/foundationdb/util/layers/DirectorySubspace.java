@@ -97,7 +97,7 @@ public class DirectorySubspace extends Subspace {
     // Helpers
     //
 
-    public static Tuple combine(Tuple a, Tuple b) {
+    static Tuple combine(Tuple a, Tuple b) {
         Tuple out = Tuple.fromItems(a);
         for(Object o : b) {
             out = out.addObject(o);
@@ -105,7 +105,7 @@ public class DirectorySubspace extends Subspace {
         return out;
     }
 
-    public static String tupleStr(Tuple t) {
+    static String tupleStr(Tuple t) {
         StringBuilder sb = new StringBuilder();
         sb.append('(');
         boolean first = true;

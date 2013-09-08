@@ -19,6 +19,7 @@ package com.foundationdb.util.layers;
 
 import com.foundationdb.Transaction;
 import com.foundationdb.tuple.Tuple;
+import com.foundationdb.util.layers.Directory.NoSuchDirectoryException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -34,22 +35,23 @@ public class DirectoryIT extends LayerITBase
     private Transaction tr;
 
     @Before
-    public void cleanSlate() {
+    public final void cleanSlate() {
         tr = holder.getDatabase().createTransaction();
         tr.clear(new byte[]{ 0x00 }, new byte[]{ (byte)0xFF });
     }
 
+    // Complete-ish test, which is a port of the original dirtest2.py
     @Test
-    public void test() {
+    public void dirTest2() {
         DirectorySubspace evilDir = new Directory().create(tr, Tuple.from("evil"), null, new byte[]{ 0x14 });
-        System.out.println(evilDir.toString());
+        //System.out.println(evilDir.toString());
 
         Directory directory = Directory.createWithContentSubspace(new Subspace(new byte[]{0x01}));
 
         // Make a new directory
         DirectorySubspace stuff = directory.create(tr, Tuple.from("stuff"));
-        System.out.println("stuff is in: " + stuff);
-        System.out.println("stuff[0] is: " + DirectorySubspace.tupleStr(Tuple.fromBytes(stuff.get(0).getKey())));
+        //System.out.println("stuff is in: " + stuff);
+        //System.out.println("stuff[0] is: " + DirectorySubspace.tupleStr(Tuple.fromBytes(stuff.get(0).getKey())));
 
         // Open it again
         DirectorySubspace stuff2 = directory.open(tr, Tuple.from("stuff"));
@@ -57,7 +59,7 @@ public class DirectoryIT extends LayerITBase
 
         // Make another directory
         DirectorySubspace items = directory.createOrOpen(tr, Tuple.from("items"));
-        System.out.println("items are in: " + items);
+        //System.out.println("items are in: " + items);
 
         // List the root directory
         assertEquals(
@@ -90,8 +92,8 @@ public class DirectoryIT extends LayerITBase
         directory.remove(tr, Tuple.from("app", "stuff"));
         try {
             directory.open(tr, Tuple.from("app", "stuff"));
-            fail("expected error");
-        } catch(IllegalArgumentException e) {
+            fail("expected NoSuchDirectoryException");
+        } catch(NoSuchDirectoryException e) {
             // Expected
         }
 

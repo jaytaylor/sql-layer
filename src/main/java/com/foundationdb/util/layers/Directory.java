@@ -29,11 +29,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
+import static com.foundationdb.tuple.ByteArrayUtil.join;
+import static com.foundationdb.tuple.ByteArrayUtil.printable;
+import static com.foundationdb.tuple.ByteArrayUtil.strinc;
+import static com.foundationdb.util.layers.DirectorySubspace.tupleStr;
 import static com.foundationdb.util.layers.Subspace.EMPTY_BYTES;
 import static com.foundationdb.util.layers.Subspace.EMPTY_TUPLE;
 import static com.foundationdb.util.layers.Subspace.startsWith;
-import static com.foundationdb.tuple.ByteArrayUtil.join;
-import static com.foundationdb.tuple.ByteArrayUtil.strinc;
 
 /**
  * Provides a class for managing directories in FoundationDB.
@@ -103,6 +105,9 @@ public class Directory
      *     See {@link #create(Transaction, Tuple)} and
      *     {@link #open(Transaction, Tuple)} for additional details.
      * </p>
+     *
+     * @throws NoSuchDirectoryException
+     * @throws DirectoryAlreadyExistsException
      */
     public DirectorySubspace createOrOpen(Transaction tr, Tuple path) {
         return createOrOpen(tr, path, null, null);
@@ -116,6 +121,9 @@ public class Directory
      *     See {@link #create(Transaction, Tuple, byte[])} and
      *     {@link #open(Transaction, Tuple, byte[])} for additional details.
      * </p>
+     *
+     * @throws NoSuchDirectoryException
+     * @throws DirectoryAlreadyExistsException
      */
     public DirectorySubspace createOrOpen(Transaction tr, Tuple path, byte[] layer) {
         return createOrOpen(tr, path, layer, null);
@@ -129,6 +137,9 @@ public class Directory
      *     See {@link #create(Transaction, Tuple, byte[], byte[])} and
      *     {@link #open(Transaction, Tuple, byte[])} for additional details.
      * </p>
+     *
+     * @throws NoSuchDirectoryException
+     * @throws DirectoryAlreadyExistsException
      */
     public DirectorySubspace createOrOpen(Transaction tr, Tuple path, byte[] layer, byte[] prefix) {
         return createOrOpenInternal(tr, path, layer, prefix, true, true);
@@ -141,6 +152,8 @@ public class Directory
      *     An error is raised if the directory does not exist, or if a layer
      *     was originally associated with the directory.
      * </p>
+     *
+     * @throws NoSuchDirectoryException
      */
     public DirectorySubspace open(Transaction tr, Tuple path) {
         return open(tr, path, null);
@@ -153,6 +166,8 @@ public class Directory
      *     An error is raised if the directory does not exist, or if a
      *     different layer was originally associated with the directory.
      * </p>
+     *
+     * @throws NoSuchDirectoryException
      */
     public DirectorySubspace open(Transaction tr, Tuple path, byte[] layer) {
         return createOrOpenInternal(tr, path, layer, null, false, true);
@@ -165,6 +180,8 @@ public class Directory
      * <p>
      *     An error is raised if the given directory already exists.
      * </p>
+     *
+     * @throws DirectoryAlreadyExistsException
      */
     public DirectorySubspace create(Transaction tr, Tuple path) {
         return create(tr, path, null, null);
@@ -178,6 +195,8 @@ public class Directory
      *     If layer is not <code>null</code>, it is recorded with the directory
      *     and will be checked by future calls to open.
      * </p>
+     *
+     * @throws DirectoryAlreadyExistsException
      */
     public DirectorySubspace create(Transaction tr, Tuple path, byte[] layer) {
         return create(tr, path, layer, null);
@@ -192,6 +211,8 @@ public class Directory
      *     the given physical prefix; otherwise a prefix is allocated
      *     automatically.
      * </p>
+     *
+     * @throws DirectoryAlreadyExistsException
      */
     public DirectorySubspace create(Transaction tr, Tuple path, byte[] layer, byte[] prefix) {
         return createOrOpenInternal(tr, path, layer, prefix, true, false);
@@ -210,25 +231,29 @@ public class Directory
      *     directory already exists at <code>newPath</code>, or the parent
      *     directory of <code>newPath</code> does not exist.
      * </p>
+     *
+     * @throws NoSuchDirectoryException
+     * @throws DirectoryAlreadyExistsException
      */
     public DirectorySubspace move(Transaction tr, Tuple oldPath, Tuple newPath) {
         if(findNode(tr, newPath) != null) {
-            throw new IllegalArgumentException("The destination directory already exists. Remove it first.");
+            throw new DirectoryAlreadyExistsException(newPath);
         }
-        Subspace old_node = findNode(tr, oldPath);
-        if(old_node == null) {
-            throw new IllegalArgumentException("The source directory does not exist.");
+        Subspace oldNode = findNode(tr, oldPath);
+        if(oldNode == null) {
+            throw new NoSuchDirectoryException(oldPath);
         }
-        Subspace parent_node = findNode(tr, removeLast(newPath));
-        if(parent_node == null) {
-            throw new IllegalArgumentException("The parent of the destination directory does not exist. Create it first.");
+        Tuple parentPath = removeLast(newPath);
+        Subspace parentNode = findNode(tr, parentPath);
+        if(parentNode == null) {
+            throw new NoSuchDirectoryException(parentPath);
         }
         tr.set(
-            parent_node.get(SUB_DIR_KEY).get(getLast(newPath)).getKey(),
-            contentsOfNode(old_node, null, null).getKey()
+            parentNode.get(SUB_DIR_KEY).get(getLast(newPath)).getKey(),
+            contentsOfNode(oldNode, null, null).getKey()
         );
         removeFromParent(tr, oldPath);
-        return contentsOfNode(old_node, newPath, tr.get(old_node.get(LAYER_KEY).getKey()).get());
+        return contentsOfNode(oldNode, newPath, tr.get(oldNode.get(LAYER_KEY).getKey()).get());
     }
 
     /**
@@ -240,11 +265,13 @@ public class Directory
      *         still insert data into its contents after it is removed.
      *    </i>
      * </p>
+     *
+     * @throws NoSuchDirectoryException
      */
     public void remove(Transaction tr, Tuple path) {
         Subspace n = findNode(tr, path);
         if(n == null) {
-            throw new IllegalArgumentException("The directory doesn't exist.");
+            throw new NoSuchDirectoryException(path);
         }
         removeRecursive(tr, n);
         removeFromParent(tr, path);
@@ -259,17 +286,45 @@ public class Directory
 
     /**
      * List the contents of the given path.
+     *
+     * @throws NoSuchDirectoryException
      */
     public List<Object> list(Transaction tr, Tuple path) {
         Subspace node = findNode(tr, path);
         if(node == null) {
-            throw new IllegalArgumentException("The given directory does not exist.");
+            throw new NoSuchDirectoryException(path);
         }
         List<Object> dirNames = new ArrayList<>();
         for(NameAndNode nn : listSubDirs(tr, node)) {
             dirNames.add(nn.name);
         }
         return dirNames;
+    }
+
+
+    //
+    // Errors consumers can trigger
+    //
+
+    public static class DirectoryException extends RuntimeException {
+        public final Tuple path;
+
+        public DirectoryException(String baseMsg, Tuple path) {
+            super(baseMsg + ": path=" + tupleStr(path));
+            this.path = path;
+        }
+    }
+
+    public static class NoSuchDirectoryException extends DirectoryException {
+        public NoSuchDirectoryException(Tuple path) {
+            super("No such directory", path);
+        }
+    }
+
+    public static class DirectoryAlreadyExistsException extends DirectoryException {
+        public DirectoryAlreadyExistsException(Tuple path) {
+            super("Directory already exists", path);
+        }
     }
 
 
@@ -364,7 +419,7 @@ public class Directory
                     public NameAndNode next() {
                         KeyValue kv = it.next();
                         Tuple unpacked = sd.unpack(kv.getKey());
-                        assert unpacked.size() == 1 : DirectorySubspace.tupleStr(unpacked);
+                        assert unpacked.size() == 1 : tupleStr(unpacked);
                         Object name = unpacked.get(0);
                         Subspace node = nodeWithPrefix(kv.getValue());
                         return new NameAndNode(name, node);
@@ -384,7 +439,7 @@ public class Directory
                                                    byte[] layer,
                                                    byte[] prefix,
                                                    boolean allowCreate,
-                                                   boolean allowOpen) {
+                                                   boolean allowOpen) throws NoSuchDirectoryException, DirectoryAlreadyExistsException {
         // Root directory contains node metadata and so may not be opened.
         if(path == null || path.size() == 0) {
             throw new IllegalArgumentException("The root directory may not be opened.");
@@ -392,44 +447,38 @@ public class Directory
         Subspace existingNode = findNode(tr, path);
         if(existingNode != null) {
             if(!allowOpen) {
-                throw new IllegalArgumentException("The directory already exists.");
+                throw new DirectoryAlreadyExistsException(path);
             }
             byte[] existingLayer = tr.get(existingNode.get(LAYER_KEY).getKey()).get();
             checkLayer(layer, existingLayer);
             return contentsOfNode(existingNode, path, existingLayer);
         } else {
             if(!allowCreate) {
-                throw new IllegalArgumentException("The directory does not exist.");
+                throw new NoSuchDirectoryException(path);
             }
-            return createInternal(tr, path, layer, prefix);
-        }
-    }
+            if(prefix == null) {
+                prefix = allocator.allocate(tr);
+            }
 
-    private DirectorySubspace createInternal(Transaction tr, Tuple path, byte[] layer, byte[] prefix) {
-        if(prefix == null) {
-            prefix = allocator.allocate(tr);
-        }
+            if(!isPrefixFree(tr, prefix)) {
+                throw new IllegalStateException("Prefix already in use: " + printable(prefix));
+            }
 
-        if(!isPrefixFree(tr, prefix)) {
-            throw new IllegalArgumentException("The given prefix is already in use.");
-        }
+            final Subspace parentNode;
+            if(path.size() > 1) {
+                parentNode = nodeWithPrefix(createOrOpen(tr, removeLast(path)).getKey());
+            } else {
+                parentNode = rootNode;
+            }
+            assert parentNode != null : "No parent directory: " + tupleStr(path);
 
-        final Subspace parentNode;
-        if(path.size() > 1) {
-            parentNode = nodeWithPrefix(createOrOpen(tr, removeLast(path)).getKey());
-        } else {
-            parentNode = rootNode;
+            Subspace node = nodeWithPrefix(prefix);
+            tr.set(parentNode.get(SUB_DIR_KEY).get(getLast(path)).getKey(), prefix);
+            if(layer != null) {
+                tr.set(node.get(LAYER_KEY).getKey(), layer);
+            }
+            return contentsOfNode(node, path, layer);
         }
-        if(parentNode == null) {
-            throw new IllegalArgumentException("The parent directory doesn't exist.");
-        }
-
-        Subspace node = nodeWithPrefix(prefix);
-        tr.set(parentNode.get(SUB_DIR_KEY).get(getLast(path)).getKey(), prefix);
-        if(layer != null) {
-            tr.set(node.get(LAYER_KEY).getKey(), layer);
-        }
-        return contentsOfNode(node, path, layer);
     }
 
 
