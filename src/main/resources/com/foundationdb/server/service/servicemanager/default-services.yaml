@@ -36,6 +36,7 @@
     #com.foundationdb.server.store.Store : com.foundationdb.server.store.PersistitStore
     #com.foundationdb.server.store.statistics.IndexStatisticsService : com.foundationdb.server.store.statistics.PersistitIndexStatisticsService
     #com.foundationdb.server.service.transaction.TransactionService : com.foundationdb.server.store.PersistitTransactionService
+    #com.foundationdb.server.service.metrics.MetricsService : com.foundationdb.server.service.metrics.DummyMetricsService
     #
     #
     # FoundationDB
@@ -46,3 +47,4 @@
     com.foundationdb.server.store.Store : com.foundationdb.server.store.FDBStore
     com.foundationdb.server.store.statistics.IndexStatisticsService : com.foundationdb.server.store.statistics.FDBIndexStatisticsService
     com.foundationdb.server.service.transaction.TransactionService : com.foundationdb.server.store.FDBTransactionService
+    com.foundationdb.server.service.metrics.MetricsService : com.foundationdb.server.service.metrics.FDBMetricsService

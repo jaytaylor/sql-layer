@@ -40,6 +40,8 @@ import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.lock.LockService;
+import com.foundationdb.server.service.metrics.LongMetric;
+import com.foundationdb.server.service.metrics.MetricsService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.service.tree.TreeLink;
@@ -78,6 +80,12 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     private final ConfigurationService configService;
     private final SchemaManager schemaManager;
     private final FDBTransactionService txnService;
+    private final MetricsService metricsService;
+
+    private static final String ROWS_FETCHED_METRIC = "SQLLayerRowsFetched";
+    private static final String ROWS_STORED_METRIC = "SQLLayerRowsStored";
+    private static final String ROWS_CLEARED_METRIC = "SQLLayerRowsCleared";
+    private LongMetric rowsFetchedMetric, rowsStoredMetric, rowsClearedMetric;
 
     @Inject
     public FDBStore(FDBHolder holder,
@@ -85,7 +93,8 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
                     SchemaManager schemaManager,
                     TransactionService txnService,
                     LockService lockService,
-                    ListenerService listenerService) {
+                    ListenerService listenerService,
+                    MetricsService metricsService) {
         super(lockService, schemaManager, listenerService);
         this.holder = holder;
         this.configService = configService;
@@ -95,6 +104,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         } else {
             throw new IllegalStateException("Only usable with FDBTransactionService, found: " + txnService);
         }
+        this.metricsService = metricsService;
     }
 
     public Iterator<KeyValue> groupIterator(Session session, Group group) {
@@ -258,6 +268,9 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
 
     @Override
     public void start() {
+        rowsFetchedMetric = metricsService.addLongMetric(ROWS_FETCHED_METRIC);
+        rowsStoredMetric = metricsService.addLongMetric(ROWS_STORED_METRIC);
+        rowsClearedMetric = metricsService.addLongMetric(ROWS_CLEARED_METRIC);
     }
 
     @Override
@@ -299,6 +312,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             value = storeData.value;
         }
         txn.setBytes(packedKey, value);
+        rowsStoredMetric.increment();
     }
 
     @Override
@@ -306,6 +320,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         TransactionState txn = txnService.getTransaction(session);
         byte[] packedKey = packedTuple(storeData.link, storeData.key);
         storeData.value = txn.getTransaction().get(packedKey).get();
+        rowsFetchedMetric.increment();
         return (storeData.value != null);
     }
 
@@ -316,6 +331,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         // TODO: Remove get when clear() API changes
         boolean existed = (txn.getTransaction().get(packed).get() != null);
         txn.getTransaction().clear(packed);
+        rowsClearedMetric.increment();
         return existed;
     }
 

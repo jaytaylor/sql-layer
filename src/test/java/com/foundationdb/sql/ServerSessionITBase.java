@@ -20,6 +20,7 @@ package com.foundationdb.sql;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.service.functions.FunctionsRegistry;
+import com.foundationdb.server.service.metrics.MetricsService;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.security.User;
 import com.foundationdb.server.service.session.Session;
@@ -71,6 +72,7 @@ public class ServerSessionITBase extends ITBase {
                                                 routineLoader(),
                                                 txnService(),
                                                 new DummySecurityService(),
+                                                serviceManager().getServiceByClass(MetricsService.class),
                                                 serviceManager()));
             session = session();
             ais = ais();

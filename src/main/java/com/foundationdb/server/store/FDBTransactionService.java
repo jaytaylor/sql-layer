@@ -17,6 +17,8 @@
 package com.foundationdb.server.store;
 
 import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.server.service.metrics.LongMetric;
+import com.foundationdb.server.service.metrics.MetricsService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.util.MultipleCauseException;
@@ -44,17 +46,22 @@ public class FDBTransactionService implements TransactionService {
     private static final String CONFIG_COMMIT_AFTER_MILLIS = "fdbsql.fdb.periodicallCommit.afterMillis";
     private static final String CONFIG_COMMIT_AFTER_BYTES = "fdbsql.fdb.periodicallCommit.afterBytes";
     private static final String CONFIG_DEFER_UNIQUENESS_CHECKS = "fdbsql.fdb.defer_uniqueness_checks";
+    private static final String UNIQUENESS_CHECKS_METRIC = "SQLLayerUniquenessPending";
 
     private final FDBHolder fdbHolder;
     private final ConfigurationService configService;
+    private final MetricsService metricsService;
     private long commitAfterMillis, commitAfterBytes;
     private boolean deferUniquenesChecks;
+    private LongMetric uniquenessChecksMetric;
 
     @Inject
     public FDBTransactionService(FDBHolder fdbHolder,
-                                 ConfigurationService configService) {
+                                 ConfigurationService configService,
+                                 MetricsService metricsService) {
         this.fdbHolder = fdbHolder;
         this.configService = configService;
+        this.metricsService = metricsService;
     }
 
     public class TransactionState {
@@ -67,7 +74,7 @@ public class FDBTransactionService implements TransactionService {
         public TransactionState() {
             this.transaction = fdbHolder.getDatabase().createTransaction();
             if (deferUniquenesChecks)
-                this.uniquenessChecks = new FDBPendingUniquenessChecks();
+                this.uniquenessChecks = new FDBPendingUniquenessChecks(uniquenessChecksMetric);
             else
                 this.uniquenessChecks = null;
             reset();
@@ -128,6 +135,9 @@ public class FDBTransactionService implements TransactionService {
         commitAfterMillis = Long.parseLong(configService.getProperty(CONFIG_COMMIT_AFTER_MILLIS));
         commitAfterBytes = Long.parseLong(configService.getProperty(CONFIG_COMMIT_AFTER_BYTES));
         deferUniquenesChecks = Boolean.parseBoolean(configService.getProperty(CONFIG_DEFER_UNIQUENESS_CHECKS));
+        if (deferUniquenesChecks) {
+            uniquenessChecksMetric = metricsService.addLongMetric(UNIQUENESS_CHECKS_METRIC);
+        }
     }
 
     @Override
