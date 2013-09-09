@@ -143,10 +143,7 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
             if (++skippedSamples < sampleRate)
                 continue;       // This value not sampled.
             skippedSamples = 0;
-            // TODO: Consolidate KeyValue -> (Key,[byte[]|RowData])
-            byte[] keyBytes = Tuple.fromBytes(kv.getKey()).getBytes(2);
-            System.arraycopy(keyBytes, 0, key.getEncodedBytes(), 0, keyBytes.length);
-            key.setEncodedSize(keyBytes.length);
+            FDBStore.unpackTuple(key, kv.getKey());
             visitor.visit(key, kv.getValue());
             if ((scanTimeLimit >= 0) &&
                 (System.currentTimeMillis() >= nextCommitTime)) {

@@ -20,6 +20,7 @@ import com.foundationdb.qp.persistitadapter.indexcursor.IterationHelper;
 import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.util.ShareHolder;
 import com.foundationdb.KeyValue;
 import com.foundationdb.tuple.Tuple;
@@ -233,9 +234,7 @@ public class FDBIterationHelper implements IterationHelper
     }
 
     private void updateKey() {
-        byte[] keyBytes = Tuple.fromBytes(lastKV.getKey()).getBytes(2);
-        System.arraycopy(keyBytes, 0, key.getEncodedBytes(), 0, keyBytes.length);
-        key.setEncodedSize(keyBytes.length);
+        FDBStore.unpackTuple(key, lastKV.getKey());
         lastKeyGen = key.getGeneration();
     }
 

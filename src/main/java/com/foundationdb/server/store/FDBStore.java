@@ -46,6 +46,7 @@ import com.foundationdb.server.service.metrics.LongMetric;
 import com.foundationdb.server.service.metrics.MetricsService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.service.tree.TreeLink;
 import com.foundationdb.server.store.FDBTransactionService.TransactionState;
 import com.foundationdb.server.util.ReadWriteMap;
@@ -66,6 +67,7 @@ import com.persistit.Key;
 import com.persistit.Persistit;
 import com.persistit.Value;
 
+import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -375,13 +377,8 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             @Override
             public Void next() {
                 KeyValue kv = storeData.it.next();
-                Tuple tuple = Tuple.fromBytes(kv.getKey());
-
-                byte[] keyBytes = tuple.getBytes(2);
-                System.arraycopy(keyBytes, 0, storeData.key.getEncodedBytes(), 0, keyBytes.length);
-                storeData.key.setEncodedSize(keyBytes.length);
+                unpackTuple(storeData.key, kv.getKey());
                 storeData.value = kv.getValue();
-
                 return null;
             }
 
@@ -721,6 +718,16 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     // Static
     //
 
+    public static void unpackTuple(Key key, byte[] tupleBytes) {
+        Tuple t = Tuple.fromBytes(tupleBytes);
+        byte[] keyBytes = t.getBytes(t.size() - 1);
+        if(key.getMaximumSize() < keyBytes.length) {
+            key.setMaximumSize(keyBytes.length);
+        }
+        System.arraycopy(keyBytes, 0, key.getEncodedBytes(), 0, keyBytes.length);
+        key.setEncodedSize(keyBytes.length);
+    }
+
     private static byte[] packedTuple(Index index) {
         return packedTuple(index.indexDef());
     }
@@ -738,12 +745,13 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     }
 
     private static byte[] packedTuple(String treeName) {
-        return Tuple.from(treeName, "/").pack();
+        return Base64.decodeBase64(treeName);
     }
 
     private static byte[] packedTuple(String treeName, Key key) {
+        byte[] treeBytes = packedTuple(treeName);
         byte[] keyBytes = Arrays.copyOf(key.getEncodedBytes(), key.getEncodedSize());
-        return Tuple.from(treeName, "/", keyBytes).pack();
+        return ByteArrayUtil.join(treeBytes, Tuple.from(keyBytes).pack());
     }
 
     private static byte[] packedTupleGICount(GroupIndex index) {
