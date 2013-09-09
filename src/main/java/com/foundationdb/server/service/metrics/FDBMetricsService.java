@@ -65,7 +65,7 @@ public class FDBMetricsService implements MetricsService, Service
     public static final String METRIC_CONF_CHANGES_KEY = "TDMetricConfChanges";
     public static final String BOOLEAN_TYPE = "Bool";
     public static final String LONG_TYPE = "Int64";
-    public static final String DEFAULT_ID = "";
+    public static final String DEFAULT_ID = "0";
     public static final String ENABLED_OPTION = "Enabled";
     public static final byte[] ENABLED_FALSE = { (byte)0 };
     public static final byte[] ENABLED_TRUE = { (byte)1 };
