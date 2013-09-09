@@ -18,8 +18,10 @@ package com.foundationdb.server.store;
 
 import com.foundationdb.Database;
 import com.foundationdb.FDB;
+import com.foundationdb.util.layers.DirectorySubspace;
 
 public interface FDBHolder {
     FDB getFDB();
     Database getDatabase();
+    DirectorySubspace getRootDirectory();
 }
