@@ -243,10 +243,9 @@ public class Directory
         if(oldNode == null) {
             throw new NoSuchDirectoryException(oldPath);
         }
-        Tuple parentPath = removeLast(newPath);
-        Subspace parentNode = findNode(tr, parentPath);
+        Subspace parentNode = findNode(tr, newPath.popBack());
         if(parentNode == null) {
-            throw new NoSuchDirectoryException(parentPath);
+            throw new NoSuchDirectoryException(newPath.popBack());
         }
         tr.set(
             parentNode.get(SUB_DIR_KEY).get(getLast(newPath)).getKey(),
@@ -386,7 +385,7 @@ public class Directory
     }
 
     private void removeFromParent(Transaction tr, Tuple path) {
-        Subspace parent = findNode(tr, removeLast(path));
+        Subspace parent = findNode(tr, path.popBack());
         tr.clear(parent.get(SUB_DIR_KEY).get(getLast(path)).getKey());
     }
 
@@ -477,7 +476,7 @@ public class Directory
 
             final Subspace parentNode;
             if(path.size() > 1) {
-                parentNode = nodeWithPrefix(createOrOpen(tr, removeLast(path)).getKey());
+                parentNode = nodeWithPrefix(createOrOpen(tr, path.popBack()).getKey());
             } else {
                 parentNode = rootNode;
             }
@@ -509,13 +508,6 @@ public class Directory
     private static Object getLast(Tuple t) {
         assert t.size() > 0;
         return t.get(t.size() - 1);
-    }
-
-    private static Tuple removeLast(Tuple t) {
-        if(t.size() > 0) {
-            return Tuple.fromItems(t.getItems().subList(0, t.size() - 1));
-        }
-        return t;
     }
 
     public static void checkLayer(Tuple path, byte[] stored, byte[] opened) {
