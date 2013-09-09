@@ -146,28 +146,6 @@ public class FDBAdapter extends StoreAdapter {
     }
 
     @Override
-    public int enterUpdateStep() {
-        // TODO
-        return 0;
-    }
-
-    @Override
-    public int enterUpdateStep(boolean evenIfZero) {
-        // TODO
-        return 0;
-    }
-
-    @Override
-    public void leaveUpdateStep(int step) {
-        // TODO
-    }
-
-    @Override
-    public void withStepChanging(boolean withStepChanging) {
-        // TODO
-    }
-
-    @Override
     public PersistitIndexRow takeIndexRow(IndexRowType indexRowType)
     {
         return indexRowPool.takeIndexRow(this, indexRowType);

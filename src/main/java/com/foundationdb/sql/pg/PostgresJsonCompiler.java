@@ -180,7 +180,6 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
                          resultColumns,
                          parameterTypes,
                          update.getCostEstimate(),
-                         update.isRequireStepIsolation(),
                          update.putInCache());
             return pjmstmt;
         }

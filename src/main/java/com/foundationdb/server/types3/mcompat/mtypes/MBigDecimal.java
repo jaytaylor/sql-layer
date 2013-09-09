@@ -276,7 +276,16 @@ public class MBigDecimal extends TClassBase {
 
         @Override
         public void readCollating(PValueSource in, TInstance typeInstance, PValueTarget out) {
-            BigDecimal bigDecimal = (BigDecimal) in.getObject();
+            Object input = in.getObject();
+            BigDecimal bigDecimal;
+            if (input instanceof MBigDecimalWrapper) {
+                bigDecimal = ((MBigDecimalWrapper)input).asBigDecimal();
+            } else if (input instanceof BigDecimal) {
+                bigDecimal = (BigDecimal)input;
+            } else {
+                bigDecimal = null;
+                assert false : "bad PValueSource input type: " + input.getClass().toString();
+            }
             int allowedScale = typeInstance.attribute(Attrs.SCALE);
             int allowedPrecision = typeInstance.attribute(Attrs.PRECISION);
             if (allowedPrecision < bigDecimal.precision()) {

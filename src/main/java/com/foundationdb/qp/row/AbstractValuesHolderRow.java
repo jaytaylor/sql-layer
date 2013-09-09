@@ -24,6 +24,7 @@ import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.server.types3.pvalue.PValueTargets;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -77,6 +78,12 @@ class AbstractValuesHolderRow extends AbstractRow {
         }
     }
 
+    AbstractValuesHolderRow(RowType rowType, List<PValue> values) {
+        this.isMutable = false;
+        this.rowType = rowType;
+        this.pValues = Collections.unmodifiableList(values);
+    }
+
     AbstractValuesHolderRow(RowType rowType, boolean isMutable,
                             Iterator<? extends PValueSource> initialPValues)
     {
@@ -113,6 +120,6 @@ class AbstractValuesHolderRow extends AbstractRow {
     }
 
     private final RowType rowType;
-    private final List<PValue> pValues;
+    protected final List<PValue> pValues;
     private final boolean isMutable;
 }

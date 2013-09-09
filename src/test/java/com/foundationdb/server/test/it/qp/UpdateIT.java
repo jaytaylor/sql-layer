@@ -29,15 +29,20 @@ import com.foundationdb.qp.operator.UpdateFunction;
 import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.RowBase;
-import static com.foundationdb.qp.operator.API.*;
 
-import org.junit.Ignore;
+import com.foundationdb.server.test.ExpressionGenerators;
+import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types3.texpressions.TPreparedFunction;
+import com.foundationdb.server.types3.texpressions.TValidatedScalar;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 import java.util.Collections;
+
+import static com.foundationdb.qp.operator.API.*;
+import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
 
 public class UpdateIT extends OperatorITBase
 {
@@ -133,45 +138,85 @@ public class UpdateIT extends OperatorITBase
         compareRows(expected, executable);
     }
 
-    @Ignore("Halloween support")
+    /**
+     * http://en.wikipedia.org/wiki/Halloween_Problem
+     *
+     * <p>
+     * Test the UPDATE of a PRIMARY column driven by a scan of the PRIMARY index itself.
+     * </p>
+     *
+     * For example,
+     * <pre>
+     * Update_Returning(id+1000)
+     *   Filter(item)
+     *     AncestorLookup()
+     *       IndexScan(item.PRIMARY)
+     * </pre>
+     *
+     * Will get transformed during optimization to:
+     * <pre>
+     * Insert_Returning()
+     *   Project(id+1000)
+     *     Buffer()
+     *       Delete_Returning()
+     *         Filter(item)
+     *           AncestorLookup(item)
+     *             IndexScan(item.PRIMARY)
+     * </pre>
+     */
     @Test
-    // http://en.wikipedia.org/wiki/Halloween_Problem
     public void halloweenProblem() throws Exception {
         use(db);
-        adapter.enterUpdateStep(true); // Enter isolation mode.
 
-        Operator scan = filter_Default(
+        // Basic scan
+        final Operator pkScan = filter_Default(
             ancestorLookup_Default(
                 indexScan_Default(itemIidIndexRowType),
                 coi,
                 itemIidIndexRowType,
-                Arrays.asList(itemRowType),
-                InputPreservationOption.DISCARD_INPUT),
-            Arrays.asList(itemRowType));
-        
-        UpdateFunction updateFunction = new UpdateFunction() {
+                asList(itemRowType),
+                InputPreservationOption.DISCARD_INPUT
+            ),
+            Arrays.asList(itemRowType)
+        );
 
-                @Override
-                public boolean rowIsSelected(Row row) {
-                    return row.rowType().equals(itemRowType);
-                }
+        // Build UPDATE-replacing project
+        TPreparedExpression field0 = ExpressionGenerators.field(itemRowType, 0).getTPreparedExpression();
+        TPreparedExpression field1 = ExpressionGenerators.field(itemRowType, 1).getTPreparedExpression();
+        TPreparedExpression literal = ExpressionGenerators.literal(1000).getTPreparedExpression();
+        TValidatedScalar plus = t3Registry().getScalarsResolver().get(
+            "plus", asList(new TPreptimeValue(field0.resultType()), new TPreptimeValue(literal.resultType()))
+        ).getOverload();
+        TPreparedFunction prepFunc = new TPreparedFunction(
+            plus, plus.resultType().fixed(false), Arrays.asList(field0, literal), queryContext
+        );
 
-                @Override
-                public Row evaluate(Row original, QueryContext context, QueryBindings bindings) {
-                    long id = original.pvalue(0).getInt64();
-                    return new OverlayingRow(original).overlay(0, 1000 + id);
-                }
-            };
+        // Buffer, delete, insert scan
+        final Operator update = insert_Returning(
+            project_Table(
+                buffer_Default(
+                    delete_Returning(
+                        pkScan, false
+                    ),
+                    itemRowType
+                ),
+                itemRowType,
+                itemRowType,
+                asList(prepFunc, field1)
+            )
+        );
 
-        UpdatePlannable updateOperator = update_Default(scan, updateFunction);
-        UpdateResult result = updateOperator.run(queryContext, queryBindings);
-        assertEquals("rows touched", 8, result.rowsTouched());
-        assertEquals("rows modified", 8, result.rowsModified());
+        int modified = 0;
+        Cursor updateCursor = cursor(update, queryContext, queryBindings);
+        updateCursor.open();
+        while(updateCursor.next() != null) {
+            ++modified;
+        }
+        updateCursor.close();
+        assertEquals("rows modified", 8, modified);
 
-        adapter.enterUpdateStep(); // Make changes visible.
-
-        Cursor executable = cursor(scan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[] { 
+        Cursor executable = cursor(pkScan, queryContext, queryBindings);
+        RowBase[] expected = new RowBase[]{
             row(itemRowType, 1111L, 11L),
             row(itemRowType, 1112L, 11L),
             row(itemRowType, 1121L, 12L),

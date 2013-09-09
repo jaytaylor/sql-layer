@@ -76,6 +76,11 @@ public class SimpleQueryContext extends QueryContextBase
     }
 
     @Override
+    public String getCurrentSetting(String key) {
+        return null;
+    }
+
+    @Override
     public int getSessionId() {
         if (adapter != null) {
             return (int)adapter.getSession().sessionId();

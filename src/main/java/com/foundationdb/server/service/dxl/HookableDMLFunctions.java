@@ -344,6 +344,25 @@ public final class HookableDMLFunctions implements DMLFunctions {
     }
 
     @Override
+    public void truncateTable(final Session session, final int tableId) {
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.TRUNCATE_TABLE);
+            delegate.truncateTable(session, tableId);
+        } catch (RuntimeException t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.TRUNCATE_TABLE, t);
+            throw t;
+        } catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.TRUNCATE_TABLE, t);
+            throw throwAlways(t);
+        } finally {
+            hook.hookFunctionFinally(session, DXLFunction.TRUNCATE_TABLE, thrown);
+        }
+    }
+
+    @Override
     public void truncateTable(final Session session, final int tableId, boolean descendants) {
         Throwable thrown = null;
         try {

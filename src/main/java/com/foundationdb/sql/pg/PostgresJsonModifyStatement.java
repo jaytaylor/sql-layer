@@ -40,13 +40,12 @@ public class PostgresJsonModifyStatement extends PostgresModifyOperatorStatement
                      List<JsonResultColumn> resultColumns,
                      PostgresType[] parameterTypes,
                      CostEstimate costEstimate,
-                     boolean requireStepIsolation,
                      boolean putInCache) {
         super.init(statementType, resultOperator, resultRowType,
                    // Looks like just one unlimited VARCHAR to the client.
                    jsonColumnNames(), jsonColumnTypes(),
                    parameterTypes, costEstimate,  
-                   requireStepIsolation, putInCache);
+                   putInCache);
         this.resultColumns = resultColumns;
     }
 

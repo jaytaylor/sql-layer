@@ -619,7 +619,6 @@ public class OperatorAssembler extends BaseRule
                                       stream.rowType,
                                       resultColumns,
                                       returning,
-                                      statement.isRequireStepIsolation(),
                                       returning || !isBulkInsert(planQuery),
                                       statement.getCostEstimate(),
                                       affectedTables);
@@ -902,6 +901,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleUpdateStatement((UpdateStatement)node);
             else if (node instanceof UpdateInput)
                 return assembleUpdateInput((UpdateInput)node);
+            else if (node instanceof Buffer)
+                return assembleBuffer((Buffer)node);
             else
                 throw new UnsupportedSQLException("Plan node " + node, null);
         }
@@ -1607,6 +1608,12 @@ public class OperatorAssembler extends BaseRule
                                 (collators == null) ? null : collators.get(i));
             }
             assembleSort(stream, ordering, input, null, sortOption);
+        }
+
+        protected RowStream assembleBuffer(Buffer buffer) {
+            RowStream stream = assembleStream(buffer.getInput());
+            stream.operator = API.buffer_Default(stream.operator, stream.rowType);
+            return stream;
         }
 
         protected RowStream assembleLimit(Limit limit) {

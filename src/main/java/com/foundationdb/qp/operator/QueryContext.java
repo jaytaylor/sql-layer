@@ -77,6 +77,11 @@ public interface QueryContext
     public String getCurrentSchema();
 
     /**
+     * Get the current value of a session setting.
+     */
+    public String getCurrentSetting(String key);
+
+    /**
      * Get the server session id.
      */
     public int getSessionId();

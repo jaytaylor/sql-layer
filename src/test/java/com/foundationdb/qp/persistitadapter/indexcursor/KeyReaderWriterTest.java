@@ -54,7 +54,7 @@ public class KeyReaderWriterTest {
     public void cycleSimple() throws IOException {
         testKey.append(1);
         startKey.sortKeys.add(new KeyState(testKey));
-        startKey.rowKey.append(1);
+        startKey.rowValue.put(1);
         writer.writeEntry(startKey);
         verifyInput();
     }
@@ -63,7 +63,7 @@ public class KeyReaderWriterTest {
     public void cycleString() throws IOException {
         testKey.append("abcd");
         startKey.sortKeys.add(new KeyState(testKey));
-        startKey.rowKey.append("abcd");
+        startKey.rowValue.put("abcd");
         writer.writeEntry(startKey);
         verifyInput();
     }
@@ -72,7 +72,7 @@ public class KeyReaderWriterTest {
     public void cycleNIntegers() throws IOException {
         for (int i = 0; i < 400; i++) {
             testKey.append(i);
-            startKey.rowKey.append(i);
+            startKey.rowValue.put(i);
         }
         startKey.sortKeys.add(new KeyState(testKey));
         writer.writeEntry(startKey);
@@ -84,7 +84,7 @@ public class KeyReaderWriterTest {
         
         testKey.append(1);
         startKey.sortKeys.add(new KeyState(testKey));
-        startKey.rowKey.append(1);
+        startKey.rowValue.put(1);
         writer.writeEntry(startKey);
         writer.writeEntry(startKey);
         
@@ -92,10 +92,10 @@ public class KeyReaderWriterTest {
         KeyReader reader = new KeyReader (is);
 
         SortKey endKey = reader.readNext();
-        assertTrue (startKey.rowKey.compareTo(endKey.rowKey) == 0);
+        assertTrue (startKey.rowValue.get().equals(endKey.rowValue.get()));
         assertTrue (startKey.sortKeys.get(0).compareTo(endKey.sortKeys.get(0)) == 0);
         endKey = reader.readNext();
-        assertTrue (startKey.rowKey.compareTo(endKey.rowKey) == 0);
+        assertTrue (startKey.rowValue.get().equals(endKey.rowValue.get()));
         assertTrue (startKey.sortKeys.get(0).compareTo(endKey.sortKeys.get(0)) == 0);
         endKey = reader.readNext();
         assertNull (endKey);
@@ -106,7 +106,7 @@ public class KeyReaderWriterTest {
         List<SortKey> keys = new ArrayList<>(100);
         for (int i = 0; i < 100; i++) {
             SortKey newKey = new SortKey();
-            newKey.rowKey.append(i);
+            newKey.rowValue.put(i);
             testKey.clear();
             testKey.append(i);
             newKey.sortKeys.add(new KeyState (testKey));
@@ -121,7 +121,7 @@ public class KeyReaderWriterTest {
         for (int i = 0; i < 100; i++) {
             SortKey newKey = new SortKey();
             String value = characters(5+random.nextInt(1000));
-            newKey.rowKey.append(value);
+            newKey.rowValue.put(value);
             testKey.clear();
             testKey.append(value);
             newKey.sortKeys.add(new KeyState (testKey));
@@ -135,10 +135,11 @@ public class KeyReaderWriterTest {
         List<SortKey> keys = new ArrayList<>(100);
         for (int i = 0; i < 100; i++) {
             SortKey newKey = new SortKey();
-            newKey.rowKey.append(random.nextInt());
-            newKey.rowKey.append(null);
-            newKey.rowKey.append(characters(3+random.nextInt(25)));
-            newKey.rowKey.append(characters(3+random.nextInt(25)));
+            newKey.rowValue.setStreamMode(true);
+            newKey.rowValue.put(random.nextInt());
+            newKey.rowValue.putNull();
+            newKey.rowValue.put(characters(3+random.nextInt(25)));
+            newKey.rowValue.put(characters(3+random.nextInt(25)));
             testKey.clear();
             testKey.append(i);
             newKey.sortKeys.add(new KeyState (testKey));
@@ -151,7 +152,7 @@ public class KeyReaderWriterTest {
         is = new ByteArrayInputStream (os.toByteArray());
         KeyReader reader = new KeyReader (is);
         SortKey endKey = reader.readNext();
-        assertTrue (startKey.rowKey.compareTo(endKey.rowKey) == 0);
+        assertTrue (startKey.rowValue.get().equals(endKey.rowValue.get()));
         assertTrue (startKey.sortKeys.get(0).compareTo(endKey.sortKeys.get(0)) == 0);
         
     }
@@ -166,7 +167,9 @@ public class KeyReaderWriterTest {
         SortKey endKey;
         for (SortKey startKey : keys) {
             endKey = reader.readNext();
-            assertTrue (startKey.rowKey.compareTo(endKey.rowKey) == 0);
+            endKey.rowValue.setStreamMode(true);
+            startKey.rowValue.setStreamMode(true);
+            assertTrue (startKey.rowValue.get().equals(endKey.rowValue.get()));
             assertTrue (startKey.sortKeys.get(0).compareTo(endKey.sortKeys.get(0)) == 0);
         }
     }

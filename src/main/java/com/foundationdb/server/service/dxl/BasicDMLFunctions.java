@@ -734,6 +734,12 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
+    public void truncateTable(final Session session, final int tableId)
+    {
+        truncateTable(session, tableId, false);
+    }
+
+    @Override
     public void truncateTable(final Session session, final int tableId, final boolean descendants)
     {
         logger.trace("truncating tableId={}", tableId);

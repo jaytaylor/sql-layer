@@ -126,8 +126,7 @@ public class EmbeddedOperatorCompiler extends ServerOperatorCompiler
         if (result.isUpdate())
             return new ExecutableModifyOperatorStatement(resultOperator,
                                                          resultSetMetaData,
-                                                         parameterMetaData,
-                                                         ((PhysicalUpdate)result).isRequireStepIsolation());
+                                                         parameterMetaData);
         else
             return new ExecutableQueryOperatorStatement(resultOperator,
                                                         resultSetMetaData,

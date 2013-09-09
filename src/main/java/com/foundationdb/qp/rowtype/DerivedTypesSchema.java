@@ -19,6 +19,7 @@ package com.foundationdb.qp.rowtype;
 
 import com.foundationdb.ais.model.HKey;
 import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types3.texpressions.TPreparedExpression;
 
 import java.util.HashSet;
@@ -66,6 +67,12 @@ public class DerivedTypesSchema {
     public HKeyRowType newHKeyRowType(HKey hKey)
     {
         return new HKeyRowType(this, hKey);
+    }
+
+    public BufferRowType bufferRowType(RowType rightType)
+    {
+        ValuesRowType leftType = newValuesType(MNumeric.BIGINT.instance(false));
+        return new BufferRowType(this, nextTypeId(), leftType, rightType);
     }
 
     synchronized final int nextTypeId()

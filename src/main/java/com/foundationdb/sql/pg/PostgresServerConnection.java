@@ -457,7 +457,7 @@ public class PostgresServerConnection extends ServerSessionBase
             {
                 String user = properties.getProperty("user");
                 logger.debug("Login {}", user);
-                authenticationOkay(user);
+                authenticationOkay();
             }
             break;
         case CLEAR_TEXT:
@@ -535,28 +535,26 @@ public class PostgresServerConnection extends ServerSessionBase
             break;
         }
         logger.debug("Login {}", (principal != null) ? principal : user);
-        authenticationOkay(user);
+        authenticationOkay();
         sessionMonitor.setUserMonitor(reqs.monitor().getUserMonitor(user));
     }
     
-    protected void authenticationOkay(String user) throws IOException {
-        Properties status = new Properties();
-        // This is enough to make the JDBC driver happy.
-        status.put("client_encoding", properties.getProperty("client_encoding", "UTF8"));
-        status.put("server_encoding", messenger.getEncoding());
-        status.put("server_version", "8.4.7"); // Not sure what the min it'll accept is.
-        status.put("session_authorization", user);
-        status.put("DateStyle", "ISO, MDY");
-        
+    // This is enough to make the JDBC driver happy.
+    protected static final String[] INITIAL_STATUS_SETTINGS = {
+        "client_encoding", "server_encoding", "server_version", "session_authorization",
+        "DateStyle"
+    };
+
+    protected void authenticationOkay() throws IOException {
         {
             messenger.beginMessage(PostgresMessages.AUTHENTICATION_TYPE.code());
             messenger.writeInt(PostgresMessenger.AUTHENTICATION_OK);
             messenger.sendMessage();
         }
-        for (String prop : status.stringPropertyNames()) {
+        for (String prop : INITIAL_STATUS_SETTINGS) {
             messenger.beginMessage(PostgresMessages.PARAMETER_STATUS_TYPE.code());
             messenger.writeString(prop);
-            messenger.writeString(status.getProperty(prop));
+            messenger.writeString(getSessionSetting(prop));
             messenger.sendMessage();
         }
         {
@@ -587,7 +585,8 @@ public class PostgresServerConnection extends ServerSessionBase
                                                  }
                                              });
         logger.debug("Login {}", authenticated);
-        authenticationOkay(authenticated.toString());
+        properties.setProperty("user", authenticated.toString());
+        authenticationOkay();
     }
     
     protected GSSName gssNegotation(Subject gssLogin) {
@@ -1102,13 +1101,6 @@ public class PostgresServerConnection extends ServerSessionBase
     protected int executeStatement(PostgresStatement pstmt, PostgresQueryContext context, QueryBindings bindings, int maxrows)
             throws IOException {
         int rowsProcessed;
-        StoreAdapter storeAdapter = null;
-        if ((transaction != null) &&
-            // As opposed to WRITE_STEP_ISOLATED.
-            (pstmt.getTransactionMode() == PostgresStatement.TransactionMode.WRITE)) {
-            storeAdapter = adapters.get(StoreAdapter.AdapterType.STORE_ADAPTER);
-            storeAdapter.withStepChanging(false);
-        }
         try {
             if (pstmt.getAISGenerationMode() == ServerStatement.AISGenerationMode.NOT_ALLOWED) {
                 updateAIS(context);
@@ -1120,8 +1112,6 @@ public class PostgresServerConnection extends ServerSessionBase
             rowsProcessed = pstmt.execute(context, bindings, maxrows);
         }
         finally {
-            if (storeAdapter != null)
-                storeAdapter.withStepChanging(true); // Keep conservative default.
             sessionMonitor.leaveStage();
         }
         return rowsProcessed;
@@ -1320,6 +1310,8 @@ public class PostgresServerConnection extends ServerSessionBase
         return valueEncoder;
     }
 
+    /* ServerSession */
+
     @Override
     protected boolean propertySet(String key, String value) {
         if ("client_encoding".equals(key)) {
@@ -1344,6 +1336,26 @@ public class PostgresServerConnection extends ServerSessionBase
         return super.propertySet(key, value);
     }
     
+    @Override
+    public String getSessionSetting(String key) {
+        String prop = super.getSessionSetting(key);
+        if (prop != null) return prop;
+        if ("client_encoding".equals(key))
+            return "UTF8";
+        else if ("server_encoding".equals(key))
+            return messenger.getEncoding();
+        else if ("server_version".equals(key))
+            return "8.4.7";     // Not sure what the min it'll accept is.
+        else if ("session_authorization".equals(key))
+            return properties.getProperty("user");
+        else if ("DateStyle".equals(key))
+            return "ISO, MDY";
+        else if ("transaction_isolation".equals(key))
+            return "serializable";
+        else
+            return null;
+    }
+
     public PostgresServer getServer() {
         return server;
     }

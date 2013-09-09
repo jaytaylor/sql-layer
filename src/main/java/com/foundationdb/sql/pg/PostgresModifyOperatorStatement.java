@@ -43,8 +43,6 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
 {
     private String statementType;
     private Operator resultOperator;
-    // Until fully initialized, play it safe by claiming to need isolation
-    private boolean requireStepIsolation = true;
     private boolean outputResult;
     private boolean putInCache = true;
     private CostEstimate costEstimate;
@@ -61,13 +59,11 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
                      Operator resultsOperator,
                      PostgresType[] parameterTypes,
                      CostEstimate costEstimate,
-                     boolean requireStepIsolation,
                      boolean putInCache) {
         super.init(parameterTypes);
         this.statementType = statementType;
         this.resultOperator = resultsOperator;
         this.costEstimate = costEstimate;
-        this.requireStepIsolation = requireStepIsolation;
         outputResult = false;
         this.putInCache = putInCache;
     }
@@ -79,13 +75,11 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
                      List<PostgresType> columnTypes,
                      PostgresType[] parameterTypes,
                      CostEstimate costEstimate,
-                     boolean requireStepIsolation,
                      boolean putInCache) {
         super.init(resultRowType, columnNames, columnTypes, parameterTypes);
         this.statementType = statementType;
         this.resultOperator = resultOperator;
         this.costEstimate = costEstimate;
-        this.requireStepIsolation = requireStepIsolation;
         outputResult = true;
         this.putInCache = putInCache;
     }
@@ -96,10 +90,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
 
     @Override
     public TransactionMode getTransactionMode() {
-        if (requireStepIsolation)
-            return TransactionMode.WRITE_STEP_ISOLATED;
-        else
-            return TransactionMode.WRITE;
+        return TransactionMode.WRITE;
     }
 
     @Override

@@ -23,6 +23,7 @@ import static com.foundationdb.qp.operator.API.valuesScan_Default;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -127,6 +128,34 @@ public class KeyFinalCursorIT extends OperatorITBase {
         
     }
     
+    @Test
+    public void cycleDecimalRows() throws IOException {
+        RowType rowType = schema.newValuesType(MNumeric.INT.instance(false), MNumeric.DECIMAL.instance(11,0, false), MString.varchar());
+        List<TestRow> rows = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            BigDecimal value = new BigDecimal (random.nextInt(100000));
+            rows.add(row(rowType, random.nextInt(), value, characters(5+random.nextInt(10))));
+            bindRows.add(BindableRow.of(rows.get(i)));
+        }
+        
+        RowCursor cursor = cycleRows(rowType);
+        TestRow[] rowArray = new TestRow[rows.size()];
+        compareRows (rows.toArray(rowArray), cursor);
+    }
+    
+    @Test
+    public void cycleBlobRows() throws IOException {
+        RowType rowType = schema.newValuesType(MString.TEXT.instance(false), MString.TINYTEXT.instance(false));
+        List<TestRow> rows = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            rows.add(row(rowType, characters(5+random.nextInt(100)), characters(5+random.nextInt(10))));
+            bindRows.add(BindableRow.of(rows.get(i)));
+        }
+        RowCursor cursor = cycleRows(rowType);
+        TestRow[] rowArray = new TestRow[rows.size()];
+        compareRows (rows.toArray(rowArray), cursor);
+    }
+    
     private RowCursor cycleRows(RowType rowType) throws IOException {
         KeyReadCursor keyCursor = getKeyCursor(rowType , bindRows);
 
@@ -137,7 +166,7 @@ public class KeyFinalCursorIT extends OperatorITBase {
         }
         
         is = new ByteArrayInputStream (os.toByteArray());
-        RowCursor cursor = new KeyFinalCursor(is, rowType);
+        RowCursor cursor = new KeyFinalCursor(is, rowType, API.SortOption.PRESERVE_DUPLICATES, null);
         return cursor;
         
     }

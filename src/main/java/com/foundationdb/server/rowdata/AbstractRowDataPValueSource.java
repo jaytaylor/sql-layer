@@ -29,7 +29,6 @@ import com.foundationdb.server.types3.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types3.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSources;
 import com.foundationdb.util.AkibanAppender;
 
 

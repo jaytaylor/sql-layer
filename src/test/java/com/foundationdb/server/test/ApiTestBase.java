@@ -519,8 +519,12 @@ public class ApiTestBase {
         return sm;
     }
 
+    protected final T3RegistryService t3Registry() {
+        return sm.getServiceByClass(T3RegistryService.class);
+    }
+
     protected final TCastResolver castResolver() {
-        return sm.getServiceByClass(T3RegistryService.class).getCastsResolver();
+        return t3Registry().getCastsResolver();
     }
 
     protected final ConfigurationService configService() {
