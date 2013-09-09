@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package com.foundationdb.qp.persistitadapter;
 
 import com.foundationdb.ais.model.Group;
@@ -27,14 +28,13 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.persistitadapter.indexcursor.IterationHelper;
-import com.foundationdb.qp.persistitadapter.indexcursor.MemorySorter;
+import com.foundationdb.qp.persistitadapter.indexcursor.MergeJoinSorter;
 import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRowPool;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.rowdata.RowData;
@@ -42,7 +42,6 @@ import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.FDBStore;
-import com.foundationdb.server.types.ValueSource;
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.FDBException;
 import com.persistit.Key;
@@ -53,7 +52,6 @@ public class FDBAdapter extends StoreAdapter {
     private static final PersistitIndexRowPool indexRowPool = new PersistitIndexRowPool();
 
     private final FDBStore store;
-    private final PersistitKeyHasher keyHasher = new PersistitKeyHasher();
 
     public FDBAdapter(FDBStore store, Schema schema, Session session, ConfigurationService config) {
         super(schema, session, config);
@@ -132,7 +130,7 @@ public class FDBAdapter extends StoreAdapter {
                                API.Ordering ordering,
                                API.SortOption sortOption,
                                InOutTap loadTap) {
-        return new MemorySorter(context, bindings, input, rowType, ordering, sortOption, loadTap, store.createKey());
+        return new MergeJoinSorter(context, bindings, input, rowType, ordering, sortOption, loadTap);
     }
 
     @Override
