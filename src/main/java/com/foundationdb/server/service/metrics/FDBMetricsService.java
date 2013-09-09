@@ -73,6 +73,7 @@ public class FDBMetricsService implements MetricsService, Service
     public static final int LEVEL_VALUE_MAX_SIZE = 50000;
     public static final double METRIC_LEVEL_DIVISOR = Math.log(4);
     public static final String SQL_LAYER_RUNNING_NAME = "SQLLayerRunning";
+    public static final String CONFIG_FLUSH_INTERVAL = "fdbsql.fdb.metrics.flush_interval";
 
     private static final Logger logger = LoggerFactory.getLogger(FDBMetricsService.class);
 
@@ -83,9 +84,10 @@ public class FDBMetricsService implements MetricsService, Service
     // available to any client thread.
     private long timebase;
     private String address;
+    private long flushInterval;
     private Random random;
     protected Thread backgroundThread;
-    protected volatile boolean running, anyEnabled, confChanged, metricsChanged, backgroundIdle;
+    protected volatile boolean running, anyEnabled, confChanged, metricsConfChanged, metricsDataChanged, backgroundIdle;
     private volatile Map<List<String>,byte[]> conf;
     private List<KeyValue> pendingWrites = new ArrayList<>();
     private BooleanMetric sqlLayerRunningMetric;
@@ -402,6 +404,7 @@ public class FDBMetricsService implements MetricsService, Service
         catch (IOException ex) {
         }
         address = address + ":" + configService.getProperty("fdbsql.postgres.port");
+        flushInterval = Long.parseLong(configService.getProperty(CONFIG_FLUSH_INTERVAL));
         random = new Random();
         
         backgroundThread = new Thread() {
@@ -481,7 +484,7 @@ public class FDBMetricsService implements MetricsService, Service
         // enabled metrics are synchronized.
         metric.changeTime = timebase + System.nanoTime();
         metric.valueChanged = true;
-        metricsChanged = true;
+        metricsDataChanged = true;
         
         int level;
         if ((lastTime == 0) ||
@@ -501,12 +504,12 @@ public class FDBMetricsService implements MetricsService, Service
         MetricLevel<T> metricLevel = metric.levels.get(level);
         MetricLevelValues values = metricLevel.values.peekLast();
         if ((values == null) || values.isFull()) {
-            logger.debug("New level {} entry for {}", level, metric);
+            logger.trace("New level {} entry for {}", level, metric);
             values = new MetricLevelValues(metric.changeTime, metric.encodeValue());
             metricLevel.values.addLast(values);
         }
         else {
-            logger.debug("Adding to level {} entry for {}", level, metric);
+            logger.trace("Adding to level {} entry for {}", level, metric);
             values.append(metric.encodeValue(metricLevel));
         }
         metricLevel.lastValue = metric.getObject();
@@ -524,12 +527,12 @@ public class FDBMetricsService implements MetricsService, Service
     protected void backgroundThread() {
         try {
             while (running) {
-                if (!confChanged && !metricsChanged) {
+                if (!confChanged && !metricsConfChanged) {
                     try {
                         synchronized (backgroundThread) {
                             backgroundIdle = true;
                             if (anyEnabled)
-                                backgroundThread.wait(1000);
+                                backgroundThread.wait(flushInterval);
                             else
                                 backgroundThread.wait();
                             backgroundIdle = false;
@@ -544,9 +547,9 @@ public class FDBMetricsService implements MetricsService, Service
                     confChanged = false;
                     updateConf();
                 }
-                if (metricsChanged) {
+                if (metricsConfChanged || metricsDataChanged) {
                     logger.debug("Metrics have changed and need to be saved.");
-                    metricsChanged = false;
+                    metricsConfChanged = metricsDataChanged = false;
                     writeMetrics();
                 }
             }
@@ -647,7 +650,7 @@ public class FDBMetricsService implements MetricsService, Service
             if (enabled != null) {
                 setEnabled(metric, enabled[0] != 0, false);
             }
-            metricsChanged = true;
+            metricsConfChanged = true;
             notifyBackground();
         }
         else {
@@ -663,7 +666,7 @@ public class FDBMetricsService implements MetricsService, Service
         boolean notifyBackground = false;
         if (explicit) {
             metric.confChanged = true;
-            metricsChanged = true;
+            metricsConfChanged = true;
             notifyBackground = true;
         }
         if (enabled) {
