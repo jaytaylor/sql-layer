@@ -109,8 +109,16 @@ public class DirectorySubspace extends Subspace {
         return directory.move(tr, path, newPath);
     }
 
+    public DirectorySubspace move(Transaction tr, Tuple oldSubPath, Tuple newSubPath) {
+        return directory.move(tr, combine(path, oldSubPath), combine(path, newSubPath));
+    }
+
     public void remove(Transaction tr) {
         directory.remove(tr, path);
+    }
+
+    public void remove(Transaction tr, Tuple subPath) {
+        directory.remove(tr, combine(path, subPath));
     }
 
     public List<Object> list(Transaction tr) {

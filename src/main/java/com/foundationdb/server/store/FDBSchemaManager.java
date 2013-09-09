@@ -21,6 +21,7 @@ import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Columnar;
 import com.foundationdb.ais.model.DefaultNameGenerator;
+import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.SQLJJar;
@@ -38,7 +39,6 @@ import com.foundationdb.server.error.AISTooLargeException;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.rowdata.RowDefCache;
 import com.foundationdb.server.service.Service;
-import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.session.SessionService;
@@ -57,7 +57,6 @@ import org.slf4j.LoggerFactory;
 import java.nio.BufferOverflowException;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
 
 /**
  * Directory usage:
@@ -187,7 +186,12 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
 
     @Override
     protected NameGenerator getNameGenerator(Session session, boolean memoryTable) {
-        return nameGenerator;
+        if(memoryTable) {
+            // Tree names are still required (unfortunately), but nothing is ever persisted so skip directory.
+            return nameGenerator;
+        }
+        Transaction txn = txnService.getTransaction(session).getTransaction();
+        return new FDBNameGenerator(txn, smDirectory, nameGenerator);
     }
 
     @Override
@@ -265,7 +269,12 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
 
     @Override
     protected void renamingTable(Session session, TableName oldName, TableName newName) {
-        // None
+        Transaction txn = txnService.getTransaction(session).getTransaction();
+        smDirectory.move(
+            txn,
+            FDBNameGenerator.makePath(oldName.getSchemaName(), oldName.getTableName()),
+            FDBNameGenerator.makePath(newName.getSchemaName(), newName.getTableName())
+        );
     }
 
     @Override
