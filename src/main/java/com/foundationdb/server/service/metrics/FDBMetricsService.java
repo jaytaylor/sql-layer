@@ -484,7 +484,8 @@ public class FDBMetricsService implements MetricsService, Service
         metricsChanged = true;
         
         int level;
-        if (lastTime == 0) {
+        if ((lastTime == 0) ||
+            (metric.changeTime == lastTime)) {
             level = 0;
         }
         else {
