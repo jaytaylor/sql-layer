@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.foundationdb.util;
+package com.foundationdb.util.layers;
 
 import com.foundationdb.Database;
 import com.foundationdb.FDBException;
@@ -41,8 +41,9 @@ import java.util.Random;
  *     transaction, to compact the number of outstanding keys.
  * </p>
  */
-public class FDBCounter {
-    private static final Logger LOG = LoggerFactory.getLogger(FDBCounter.class);
+public class Counter
+{
+    private static final Logger LOG = LoggerFactory.getLogger(Counter.class);
     private static final int RANDOM_KEY_SIZE = 20;
     private static final int COALESCE_LIMIT = 20;
     private static final double COALESCE_PROBABILITY = 0.1;
@@ -54,7 +55,7 @@ public class FDBCounter {
     private final ThreadLocal<Future<Void>> coalesceCommit = new ThreadLocal<>();
 
 
-    public FDBCounter(Database db, Object... keyPrefix) {
+    public Counter(Database db, Object... keyPrefix) {
         this.keyPrefix = Tuple.from(keyPrefix);
         // Note: Making use of 'very likely random' seed so multiple counters with same prefix can co-exist correctly
         this.random = new Random();
