@@ -90,9 +90,9 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     private static final long CURRENT_DATA_VERSION = 1;
     private static final long CURRENT_META_VERSION = 1;
 
-
     private static final Session.Key<AkibanInformationSchema> SESSION_AIS_KEY = Session.Key.named("AIS_KEY");
     private static final AkibanInformationSchema SENTINEL_AIS = new AkibanInformationSchema(Integer.MIN_VALUE);
+
 
     private final FDBHolder holder;
     private final FDBTransactionService txnService;
@@ -337,6 +337,9 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     }
 
     private void checkAndSerialize(TransactionState txn, GrowableByteBuffer buffer, AkibanInformationSchema newAIS, String schema) {
+        // reads of data versions already done in loadAISFromStorage, checkDataVersions
+        txn.setBytes(smDirectory.pack(DATA_VERSION_KEY), Tuple.from(CURRENT_DATA_VERSION).pack());
+        txn.setBytes(smDirectory.pack(META_VERSION_KEY), Tuple.from(CURRENT_META_VERSION).pack());
         saveProtobuf(txn, buffer, newAIS, schema);
     }
 
@@ -414,12 +417,32 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
         rowDefCache.setAIS(session, newAIS);
     }
 
+    private boolean checkDataVersions(Transaction txn) {
+        byte[] dataVerValue = txn.get(smDirectory.pack(DATA_VERSION_KEY)).get();
+        byte[] metaVerValue = txn.get(smDirectory.pack(META_VERSION_KEY)).get();
+        if(dataVerValue == null || metaVerValue == null) {
+            assert dataVerValue == metaVerValue;
+            return false;
+        }
+        long storedDataVer = Tuple.fromBytes(dataVerValue).getLong(0);
+        long storedMetaVer = Tuple.fromBytes(metaVerValue).getLong(0);
+        if((storedDataVer != CURRENT_DATA_VERSION) || (storedMetaVer != CURRENT_META_VERSION)) {
+            throw new AkibanInternalException(String.format(
+                "Unsupported data versions: Stored(%d,%d) vs Current(%d,%d)",
+                storedDataVer, storedMetaVer, CURRENT_DATA_VERSION, CURRENT_META_VERSION
+            ));
+        }
+        return true;
+    }
+
     private AkibanInformationSchema loadAISFromStorage(final Session session) {
         // Start with existing memory tables, merge in stored ones
         // TODO: Is this vulnerable to table ID conflicts if another node creates a persisted I_S table?
         final AkibanInformationSchema newAIS = AISCloner.clone(memoryTableAIS);
 
         TransactionState txn = txnService.getTransaction(session);
+        boolean dataPresent = checkDataVersions(txn.getTransaction());
+
         ProtobufReader reader = new ProtobufReader(newAIS);
         byte[] packedPBKey = smDirectory.createOrOpen(txn.getTransaction(), PROTOBUF_DIR_PATH).pack();
         for(KeyValue kv : txn.getTransaction().getRange(Range.startsWith(packedPBKey))) {
@@ -433,6 +456,10 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
             // nameGenerator is only needed to generate hidden PK, which shouldn't happen here
             table.endTable(null);
         }
+
+        // If there were any stored tables, checkDataVersions should have seen versions
+        assert dataPresent == ((newAIS.getUserTables().size() - memoryTableAIS.getUserTables().size() +
+                                newAIS.getSequences().size() - memoryTableAIS.getSequences().size()) > 0);
 
         validateAndFreeze(session, newAIS, false);
         return newAIS;
