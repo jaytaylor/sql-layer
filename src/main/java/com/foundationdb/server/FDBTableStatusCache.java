@@ -14,8 +14,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package com.foundationdb.server;
 
+import com.foundationdb.server.store.FDBHolder;
+import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBTransactionService;
 import com.foundationdb.server.store.FDBTransactionService.TransactionState;
 import com.foundationdb.Database;
@@ -27,20 +30,35 @@ import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple;
+import com.foundationdb.util.layers.DirectorySubspace;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class FDBTableStatusCache implements TableStatusCache {
+    private static final Tuple TABLE_STATUS_DIR_PATH = Tuple.from("tableStatus");
+
     private final Database db;
     private final FDBTransactionService txnService;
     private final Map<Integer,MemoryTableStatus> memoryTableStatusMap = new HashMap<>();
 
+    private byte[] packedTableStatusPrefix;
 
-    public FDBTableStatusCache(Database db, FDBTransactionService txnService) {
-        this.db = db;
+
+    public FDBTableStatusCache(final FDBHolder holder, FDBTransactionService txnService) {
+        this.db = holder.getDatabase();
         this.txnService = txnService;
+
+        this.packedTableStatusPrefix = db.run(new Function<Transaction, byte[]>()
+        {
+            @Override
+            public byte[] apply(Transaction txn) {
+                DirectorySubspace dirSub = holder.getRootDirectory().createOrOpen(txn, TABLE_STATUS_DIR_PATH);
+                return dirSub.pack();
+            }
+        });
     }
 
 
@@ -137,10 +155,10 @@ public class FDBTableStatusCache implements TableStatusCache {
                 this.rowCountKey = null;
             } else {
                 assert rowDef.getRowDefId() == tableID;
-                String treeName = rowDef.getPKIndex().indexDef().getTreeName();
-                this.autoIncKey = Tuple.from("tableStatus", treeName, "autoInc").pack();
-                this.uniqueKey = Tuple.from("tableStatus", treeName, "unique").pack();
-                this.rowCountKey = Tuple.from("tableStatus", treeName, "rowCount").pack();
+                byte[] treePrefix = FDBStore.packTreeName(rowDef.getPKIndex().indexDef().getTreeName());
+                this.autoIncKey = ByteArrayUtil.join(packedTableStatusPrefix, treePrefix, Tuple.from("autoInc").pack());
+                this.uniqueKey = ByteArrayUtil.join(packedTableStatusPrefix, treePrefix, Tuple.from("unique").pack());
+                this.rowCountKey = ByteArrayUtil.join(packedTableStatusPrefix, treePrefix, Tuple.from("rowCount").pack());
             }
         }
 

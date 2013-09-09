@@ -142,7 +142,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
         packedGenKey = smDirectory.pack(GENERATION_KEY);
 
         this.memoryTableAIS = new AkibanInformationSchema();
-        this.tableStatusCache = new FDBTableStatusCache(holder.getDatabase(), txnService);
+        this.tableStatusCache = new FDBTableStatusCache(holder, txnService);
         this.rowDefCache = new RowDefCache(tableStatusCache);
 
         try(Session session = sessionService.createSession()) {
