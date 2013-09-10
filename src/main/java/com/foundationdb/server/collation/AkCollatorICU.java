@@ -22,6 +22,7 @@ import com.google.common.hash.Hashing;
 import com.ibm.icu.text.Collator;
 import com.persistit.Key;
 import com.persistit.util.Util;
+import java.util.Arrays;
 
 public class AkCollatorICU extends AkCollator {
 
@@ -86,11 +87,12 @@ public class AkCollatorICU extends AkCollator {
      * 
      * @param value
      *            the String
-     * @return sort key bytes, last byte only is zero
+     * @return sort key bytes
      */
     @Override
     byte[] encodeSortKeyBytes(String value) {
-        return collator.get().getCollationKey(value).toByteArray();
+        byte[] bytes = collator.get().getCollationKey(value).toByteArray();
+        return Arrays.copyOf(bytes, bytes.length - 1); // Remove terminating null.
     }
 
     /**

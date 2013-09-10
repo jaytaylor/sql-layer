@@ -453,13 +453,7 @@ public final class PValueSources {
             hash = Arrays.hashCode(source.getBytes());
             break;
         case STRING:
-            String stringVal;
-            if (source.canGetRawValue())
-                stringVal = source.getString();
-            else if (source.hasCacheValue())
-                stringVal = (String) source.getObject();
-            else
-                throw new AssertionError("no value to hash from");
+            String stringVal = AkCollator.getString(source, collator);
             hash = collator.hashCode(stringVal);
             break;
         default:

@@ -117,10 +117,10 @@ public class AkCollatorMySQL extends AkCollator {
      * 
      * @param value
      *            the String
-     * @return sort key bytes, last byte only is zero
+     * @return sort key bytes
      */
     byte[] encodeSortKeyBytes(String value) {
-        byte[] sortBytes = new byte[value.length() + 1];
+        byte[] sortBytes = new byte[value.length()];
         for (int i = 0; i < value.length(); i++) {
             final int c = value.charAt(i);
             assert c < 256;
@@ -199,7 +199,7 @@ public class AkCollatorMySQL extends AkCollator {
 
     @Override
     public int hashCode(String value) {
-        int result = 0;
+        int result = 1;         // Compatible with Arrays.hashCode(byte[]).
         for (int i = 0; i < value.length(); i++) {
             final int c = value.charAt(i);
             assert c < 256;
