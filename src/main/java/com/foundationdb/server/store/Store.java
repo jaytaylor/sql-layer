@@ -23,6 +23,7 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.ColumnSelector;
@@ -36,6 +37,7 @@ import com.persistit.Key;
 import com.persistit.Value;
 
 import java.util.Collection;
+import java.util.Map;
 
 public interface Store extends KeyCreator {
 
@@ -145,6 +147,8 @@ public interface Store extends KeyCreator {
      * otherwise be considered duplicates due to nulls.
      */
     long nullIndexSeparatorValue(Session session, Index index);
+
+    void finishedAlter(Session session, Map<TableName,TableName> tableNames, ChangeLevel changeLevel);
 
     // TODO: Better abstraction
     void traverse(Session session, Group group, TreeRecordVisitor visitor);
