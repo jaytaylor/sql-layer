@@ -18,10 +18,10 @@
 package com.foundationdb.server.store;
 
 import com.foundationdb.ais.AISCloner;
-import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Columnar;
 import com.foundationdb.ais.model.DefaultNameGenerator;
+import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.SQLJJar;
@@ -48,7 +48,6 @@ import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.UnsupportedMetadataTypeException;
 import com.foundationdb.server.error.UnsupportedMetadataVersionException;
 import com.foundationdb.server.rowdata.RowDefCache;
-import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
@@ -226,7 +225,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     }
 
     @Override
-    protected NameGenerator getNameGenerator() {
+    protected NameGenerator getNameGenerator(Session session, boolean memoryTable) {
         return nameGenerator;
     }
 
@@ -1047,6 +1046,11 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     @Override
     protected void clearTableStatus(Session session, UserTable table) {
         treeService.getTableStatusCache().clearTableStatus(session, table);
+    }
+
+    @Override
+    protected void renamingTable(Session session, TableName oldName, TableName newName) {
+        // None
     }
 
     /**
