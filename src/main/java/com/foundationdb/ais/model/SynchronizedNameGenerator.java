@@ -91,6 +91,13 @@ public class SynchronizedNameGenerator implements NameGenerator {
     }
 
     @Override
+    public void generatedTreeName(String treeName) {
+        synchronized(LOCK) {
+            realNamer.generatedTreeName(treeName);
+        }
+    }
+
+    @Override
     public void mergeAIS(AkibanInformationSchema ais) {
         synchronized(LOCK) {
             realNamer.mergeAIS(ais);
