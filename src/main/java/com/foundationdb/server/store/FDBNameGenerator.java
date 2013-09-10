@@ -35,31 +35,50 @@ import java.util.Set;
 
 public class FDBNameGenerator implements NameGenerator
 {
+    public static final String DATA_PATH_NAME = "data";
+    public static final String ALTER_PATH_NAME = "dataAlter";
+    public static final String TABLE_PATH_NAME = "table";
+    public static final String SEQUENCE_PATH_NAME = "sequence";
+
+
     private final Transaction txn;
     private final DirectorySubspace directory;
     private final String path;
     private final NameGenerator wrapped;
 
 
-    public FDBNameGenerator(Transaction txn, DirectorySubspace directory, String path, NameGenerator wrapped) {
+    public FDBNameGenerator(Transaction txn, DirectorySubspace dir, String pathPrefix, NameGenerator wrapped) {
         this.txn = txn;
-        this.directory = directory;
-        this.path = path;
+        this.directory = dir;
+        this.path = pathPrefix;
         this.wrapped = wrapped;
     }
 
-    public static Tuple makePath(String path, String schemaName, String groupName) {
-        return Tuple.from(path, "table", schemaName, groupName);
+    public static FDBNameGenerator createForDataPath(Transaction txn, DirectorySubspace dir, NameGenerator wrapped) {
+        return new FDBNameGenerator(txn, dir, DATA_PATH_NAME, wrapped);
     }
 
-    public static Tuple makePath(String path, Index index) {
+    public static FDBNameGenerator createForAlterPath(Transaction txn, DirectorySubspace dir, NameGenerator wrapped) {
+        return new FDBNameGenerator(txn, dir, ALTER_PATH_NAME, wrapped);
+    }
+
+
+    public static Tuple makePath(String pathPrefix, TableName tableName) {
+        return makePath(pathPrefix, tableName.getSchemaName(), tableName.getTableName());
+    }
+
+    public static Tuple makePath(String pathPrefix, String schemaName, String groupName) {
+        return Tuple.from(pathPrefix, TABLE_PATH_NAME, schemaName, groupName);
+    }
+
+    public static Tuple makePath(String pathPrefix, Index index) {
         IndexName name = index.getIndexName();
-        return Tuple.from(path, "table", name.getSchemaName(), name.getTableName(), name.getName());
+        return Tuple.from(pathPrefix, TABLE_PATH_NAME, name.getSchemaName(), name.getTableName(), name.getName());
     }
 
-    public static Tuple makePath(String path, Sequence sequence) {
+    public static Tuple makePath(String pathPrefix, Sequence sequence) {
         TableName seqName = sequence.getSequenceName();
-        return Tuple.from(path, "sequence", seqName.getSchemaName(), seqName.getTableName());
+        return Tuple.from(pathPrefix, SEQUENCE_PATH_NAME, seqName.getSchemaName(), seqName.getTableName());
     }
 
 

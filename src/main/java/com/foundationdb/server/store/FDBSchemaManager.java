@@ -193,9 +193,10 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
             // Tree names are still required (unfortunately), but nothing is ever persisted so skip directory.
             return nameGenerator;
         }
-        String path = isAlterTableActive(session) ? "dataAltering" : "data";
         Transaction txn = txnService.getTransaction(session).getTransaction();
-        return new FDBNameGenerator(txn, rootDir, path, nameGenerator);
+        return isAlterTableActive(session) ?
+            FDBNameGenerator.createForAlterPath(txn, rootDir, nameGenerator) :
+            FDBNameGenerator.createForDataPath(txn, rootDir, nameGenerator);
     }
 
     @Override
@@ -276,8 +277,8 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
         Transaction txn = txnService.getTransaction(session).getTransaction();
         rootDir.move(
             txn,
-            FDBNameGenerator.makePath("data", oldName.getSchemaName(), oldName.getTableName()),
-            FDBNameGenerator.makePath("data", newName.getSchemaName(), newName.getTableName())
+            FDBNameGenerator.makePath(FDBNameGenerator.DATA_PATH_NAME, oldName.getSchemaName(), oldName.getTableName()),
+            FDBNameGenerator.makePath(FDBNameGenerator.DATA_PATH_NAME, newName.getSchemaName(), newName.getTableName())
         );
     }
 

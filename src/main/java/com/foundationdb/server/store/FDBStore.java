@@ -84,6 +84,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     private static final Tuple INDEX_COUNT_DIR_PATH = Tuple.from("indexCount");
+    private static final Tuple INDEX_NULL_DIR_PATH = Tuple.from("indexNull");
     private static final Logger LOG = LoggerFactory.getLogger(FDBStore.class);
 
     private final FDBHolder holder;
@@ -99,6 +100,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
 
     private DirectorySubspace rootDir;
     private byte[] packedIndexCountPrefix;
+    private byte[] packedIndexNullPrefix;
 
 
     @Inject
@@ -292,6 +294,14 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             @Override
             public byte[] apply(Transaction txn) {
                 DirectorySubspace dirSub = holder.getRootDirectory().createOrOpen(txn, INDEX_COUNT_DIR_PATH);
+                return dirSub.pack();
+            }
+        });
+        packedIndexNullPrefix = holder.getDatabase().run(new Function<Transaction, byte[]>()
+        {
+            @Override
+            public byte[] apply(Transaction txn) {
+                DirectorySubspace dirSub = holder.getRootDirectory().createOrOpen(txn, INDEX_NULL_DIR_PATH);
                 return dirSub.pack();
             }
         });
@@ -521,7 +531,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     public void deleteIndexes(Session session, Collection<? extends Index> indexes) {
         Transaction txn = txnService.getTransaction(session).getTransaction();
         for(Index index : indexes) {
-            rootDir.removeIfExists(txn, FDBNameGenerator.makePath("data", index));
+            rootDir.removeIfExists(txn, FDBNameGenerator.makePath(FDBNameGenerator.DATA_PATH_NAME, index));
             if(index.isGroupIndex()) {
                 txn.clear(packedTupleGICount((GroupIndex)index));
             }
@@ -534,7 +544,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         // Table and indexes (and group and group indexes if root table)
         rootDir.removeIfExists(
             txn,
-            FDBNameGenerator.makePath("data", table.getName().getSchemaName(), table.getName().getTableName())
+            FDBNameGenerator.makePath(FDBNameGenerator.DATA_PATH_NAME, table.getName())
         );
         // Sequence
         if(table.getIdentityColumn() != null) {
@@ -573,7 +583,8 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         for (Sequence sequence : sequences) {
             sequenceCache.remove(sequence.getTreeName());
             rootDir.removeIfExists(
-                txnService.getTransaction(session).getTransaction(), FDBNameGenerator.makePath("data", sequence)
+                txnService.getTransaction(session).getTransaction(),
+                FDBNameGenerator.makePath(FDBNameGenerator.DATA_PATH_NAME, sequence)
             );
         }
     }
@@ -608,7 +619,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             holder.getDatabase().run(new Function<Transaction,Void>() {
                 @Override
                 public Void apply(Transaction txn) {
-                    byte[] keyBytes = Tuple.from("indexNull", index.indexDef().getTreeName()).pack();
+                    byte[] keyBytes = ByteArrayUtil.join(packedIndexNullPrefix, packTreeName(index.getTreeName()));
                     byte[] valueBytes = txn.get(keyBytes).get();
                     value[0] = 1;
                     if(valueBytes != null) {
@@ -648,8 +659,8 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             TableName oldName = entry.getKey();
             TableName newName = entry.getValue();
 
-            Tuple dataPath = FDBNameGenerator.makePath("data", oldName.getSchemaName(), oldName.getTableName());
-            Tuple alterPath = FDBNameGenerator.makePath("dataAltering", newName.getSchemaName(), newName.getTableName());
+            Tuple dataPath = FDBNameGenerator.makePath(FDBNameGenerator.DATA_PATH_NAME, oldName.getSchemaName(), oldName.getTableName());
+            Tuple alterPath = FDBNameGenerator.makePath(FDBNameGenerator.ALTER_PATH_NAME, newName.getSchemaName(), newName.getTableName());
 
             if(!rootDir.exists(txn, alterPath)) {
                 continue;
