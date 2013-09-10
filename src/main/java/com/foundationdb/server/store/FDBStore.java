@@ -22,6 +22,7 @@ import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import com.foundationdb.qp.persistitadapter.FDBAdapter;
 import com.foundationdb.qp.persistitadapter.PersistitHKey;
@@ -74,8 +75,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -94,6 +97,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     private static final String ROWS_CLEARED_METRIC = "SQLLayerRowsCleared";
     private LongMetric rowsFetchedMetric, rowsStoredMetric, rowsClearedMetric;
 
+    private DirectorySubspace rootDir;
     private byte[] packedIndexCountPrefix;
 
 
@@ -282,6 +286,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         rowsStoredMetric = metricsService.addLongMetric(ROWS_STORED_METRIC);
         rowsClearedMetric = metricsService.addLongMetric(ROWS_CLEARED_METRIC);
 
+        rootDir = holder.getRootDirectory();
         packedIndexCountPrefix = holder.getDatabase().run(new Function<Transaction, byte[]>()
         {
             @Override
@@ -509,7 +514,32 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     @Override
     public void truncateTree(Session session, TreeLink treeLink) {
         TransactionState txn = txnService.getTransaction(session);
-        txn.getTransaction().clearRangeStartsWith(packedTuple(treeLink));
+        txn.getTransaction().clear(Range.startsWith(packedTuple(treeLink)));
+    }
+
+    @Override
+    public void deleteIndexes(Session session, Collection<? extends Index> indexes) {
+        Transaction txn = txnService.getTransaction(session).getTransaction();
+        for(Index index : indexes) {
+            rootDir.removeIfExists(txn, FDBNameGenerator.makePath("data", index));
+            if(index.isGroupIndex()) {
+                txn.clear(packedTupleGICount((GroupIndex)index));
+            }
+        }
+    }
+
+    @Override
+    public void removeTrees(Session session, UserTable table) {
+        Transaction txn = txnService.getTransaction(session).getTransaction();
+        // Table and indexes (and group and group indexes if root table)
+        rootDir.removeIfExists(
+            txn,
+            FDBNameGenerator.makePath("data", table.getName().getSchemaName(), table.getName().getTableName())
+        );
+        // Sequence
+        if(table.getIdentityColumn() != null) {
+            deleteSequences(session, Collections.singleton(table.getIdentityColumn().getIdentityGenerator()));
+        }
     }
 
     @Override
@@ -542,8 +572,10 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     public void deleteSequences(Session session, Collection<? extends Sequence> sequences) {
         for (Sequence sequence : sequences) {
             sequenceCache.remove(sequence.getTreeName());
+            rootDir.removeIfExists(
+                txnService.getTransaction(session).getTransaction(), FDBNameGenerator.makePath("data", sequence)
+            );
         }
-        removeTrees(session, sequences);
     }
 
     @Override
@@ -594,7 +626,61 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
 
     @Override
     public void finishedAlter(Session session, Map<TableName, TableName> tableNames, ChangeLevel changeLevel) {
-        // None
+        final boolean moveTables;
+        switch(changeLevel) {
+            case NONE:
+            case METADATA:
+            case METADATA_NOT_NULL:
+                return;
+            case INDEX:
+                moveTables = false;
+                break;
+            case TABLE:
+            case GROUP:
+                moveTables = true;
+                break;
+            default:
+                throw new AkibanInternalException("Unexpected ChangeLevel: " + changeLevel);
+        }
+
+        Transaction txn = txnService.getTransaction(session).getTransaction();
+        for(Entry<TableName, TableName> entry : tableNames.entrySet()) {
+            TableName oldName = entry.getKey();
+            TableName newName = entry.getValue();
+
+            Tuple dataPath = FDBNameGenerator.makePath("data", oldName.getSchemaName(), oldName.getTableName());
+            Tuple alterPath = FDBNameGenerator.makePath("dataAltering", newName.getSchemaName(), newName.getTableName());
+
+            if(!rootDir.exists(txn, alterPath)) {
+                continue;
+            }
+
+            if(moveTables) {
+                // - move everything from data/foo/ to dataAltering/foo/
+                // - remove data/foo
+                // - move dataAltering/foo to data/foo/
+                if(rootDir.exists(txn, dataPath)) {
+                    for(Object subPath : rootDir.list(txn, dataPath)) {
+                        Tuple subDataPath = dataPath.addObject(subPath);
+                        Tuple subAlterPath = alterPath.addObject(subPath);
+                        if(!rootDir.exists(txn, subAlterPath)) {
+                            rootDir.move(txn, subDataPath, subAlterPath);
+                        }
+                    }
+                    rootDir.remove(txn, dataPath);
+                }
+                rootDir.move(txn, alterPath, dataPath);
+            } else {
+                // - Move everything from dataAltering/foo/ to data/foo/
+                // - remove dataAltering/foo/
+                for(Object subPath : rootDir.list(txn, alterPath)) {
+                    Tuple subDataPath = dataPath.addObject(subPath);
+                    Tuple subAlterPath = alterPath.addObject(subPath);
+                    rootDir.move(txn, subAlterPath, subDataPath);
+                }
+                rootDir.remove(txn, alterPath);
+            }
+        }
     }
 
     @Override

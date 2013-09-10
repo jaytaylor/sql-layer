@@ -19,7 +19,6 @@ package com.foundationdb.server.store;
 
 import com.foundationdb.Transaction;
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.DefaultNameGenerator;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexName;
 import com.foundationdb.ais.model.JoinColumn;
@@ -30,34 +29,37 @@ import com.foundationdb.tuple.Tuple;
 import com.foundationdb.util.layers.DirectorySubspace;
 import org.apache.commons.codec.binary.Base64;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 public class FDBNameGenerator implements NameGenerator
 {
     private final Transaction txn;
-    private final DirectorySubspace smDirectory;
+    private final DirectorySubspace directory;
+    private final String path;
     private final NameGenerator wrapped;
 
 
-    public FDBNameGenerator(Transaction txn, DirectorySubspace smDirectory, NameGenerator wrapped) {
+    public FDBNameGenerator(Transaction txn, DirectorySubspace directory, String path, NameGenerator wrapped) {
         this.txn = txn;
-        this.smDirectory = smDirectory;
+        this.directory = directory;
+        this.path = path;
         this.wrapped = wrapped;
     }
 
-    public static Tuple makePath(String schemaName, String groupName) {
-        return Tuple.from("data", "table", schemaName, groupName);
+    public static Tuple makePath(String path, String schemaName, String groupName) {
+        return Tuple.from(path, "table", schemaName, groupName);
     }
 
-    public static Tuple makePath(Index index) {
+    public static Tuple makePath(String path, Index index) {
         IndexName name = index.getIndexName();
-        return Tuple.from("data", "table", name.getSchemaName(), name.getTableName(), name.getName());
+        return Tuple.from(path, "table", name.getSchemaName(), name.getTableName(), name.getName());
     }
 
-    public static Tuple makePath(Sequence sequence) {
+    public static Tuple makePath(String path, Sequence sequence) {
         TableName seqName = sequence.getSequenceName();
-        return Tuple.from("data", "sequence", seqName.getSchemaName(), seqName.getTableName());
+        return Tuple.from(path, "sequence", seqName.getSchemaName(), seqName.getTableName());
     }
 
 
@@ -66,27 +68,30 @@ public class FDBNameGenerator implements NameGenerator
     //
 
     private String generate(Tuple path) {
-        // create(): Expected to be unique and unused
-        DirectorySubspace indexDir = smDirectory.create(txn, path);
+        // Using createOrOpen() as uniqueness is confirmed elsewhere
+        boolean existed = directory.exists(txn, path);
+        DirectorySubspace indexDir = directory.createOrOpen(txn, path);
         byte[] packedPrefix = indexDir.pack();
         String treeName = Base64.encodeBase64String(packedPrefix);
-        generatedTreeName(treeName);
+        if(!existed) {
+            generatedTreeName(treeName);
+        }
         return treeName;
     }
 
     @Override
     public String generateIndexTreeName(Index index) {
-        return generate(makePath(index));
+        return generate(makePath(path, index));
     }
 
     @Override
     public String generateGroupTreeName(String schemaName, String groupName) {
-        return generate(makePath(schemaName, groupName));
+        return generate(makePath(path, schemaName, groupName));
     }
 
     @Override
     public String generateSequenceTreeName(Sequence sequence) {
-        return generate(makePath(sequence));
+        return generate(makePath(path, sequence));
     }
 
     @Override

@@ -21,7 +21,6 @@ import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Columnar;
 import com.foundationdb.ais.model.DefaultNameGenerator;
-import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.SQLJJar;
@@ -57,6 +56,8 @@ import org.slf4j.LoggerFactory;
 import java.nio.BufferOverflowException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * Directory usage:
@@ -97,6 +98,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     private final FDBTransactionService txnService;
     private final Object AIS_LOCK = new Object();
 
+    private DirectorySubspace rootDir;
     private DirectorySubspace smDirectory;
     private byte[] packedGenKey;
     private FDBTableStatusCache tableStatusCache;
@@ -130,6 +132,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
         super.start();
         AkCollatorFactory.setUseKeyCoder(false);
 
+        rootDir = holder.getRootDirectory();
         smDirectory = holder.getDatabase().run(new Function<Transaction, DirectorySubspace>()
         {
             @Override
@@ -190,8 +193,9 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
             // Tree names are still required (unfortunately), but nothing is ever persisted so skip directory.
             return nameGenerator;
         }
+        String path = isAlterTableActive(session) ? "dataAltering" : "data";
         Transaction txn = txnService.getTransaction(session).getTransaction();
-        return new FDBNameGenerator(txn, smDirectory, nameGenerator);
+        return new FDBNameGenerator(txn, rootDir, path, nameGenerator);
     }
 
     @Override
@@ -270,10 +274,10 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     @Override
     protected void renamingTable(Session session, TableName oldName, TableName newName) {
         Transaction txn = txnService.getTransaction(session).getTransaction();
-        smDirectory.move(
+        rootDir.move(
             txn,
-            FDBNameGenerator.makePath(oldName.getSchemaName(), oldName.getTableName()),
-            FDBNameGenerator.makePath(newName.getSchemaName(), newName.getTableName())
+            FDBNameGenerator.makePath("data", oldName.getSchemaName(), oldName.getTableName()),
+            FDBNameGenerator.makePath("data", newName.getSchemaName(), newName.getTableName())
         );
     }
 
