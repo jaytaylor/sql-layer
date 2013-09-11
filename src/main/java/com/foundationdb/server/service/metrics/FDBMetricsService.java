@@ -150,12 +150,12 @@ public class FDBMetricsService implements MetricsService, Service
 
         @Override
         public void setEnabled(boolean enabled) {
-            setEnabled(this, enabled, true);
+            FDBMetricsService.this.setEnabled(this, enabled, true);
         }
 
         @Override
         public Future<List<FDBMetric.Value<T>>> readAllValues(Transaction tr) {
-            return readAllValues(tr, this);
+            return FDBMetricsService.this.readAllValues(tr, this);
         }
 
         protected abstract String getType();
