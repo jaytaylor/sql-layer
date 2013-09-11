@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
+import com.foundationdb.Range;
 import com.foundationdb.server.store.FDBHolder;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.Transaction;
@@ -252,13 +253,11 @@ public class ApiTestBase {
     }
 
     private void clearFDBData() throws Exception {
-        FDBHolder holder = sm.getServiceByClass(FDBHolder.class);
-        final byte[] begin = { 0x00 };
-        final byte[] end = { (byte)0xFF };
+        final FDBHolder holder = sm.getServiceByClass(FDBHolder.class);
         holder.getDatabase().run(new Function<Transaction,Void>() {
             @Override
             public Void apply(Transaction txn) {
-                txn.clear(begin, end);
+                holder.getRootDirectory().remove(txn);
                 return null;
             }
         });

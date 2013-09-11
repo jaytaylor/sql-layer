@@ -14,13 +14,16 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package com.foundationdb.server.store;
 
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.PrimaryKey;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import com.foundationdb.qp.persistitadapter.FDBAdapter;
 import com.foundationdb.qp.persistitadapter.PersistitHKey;
@@ -61,27 +64,50 @@ import com.foundationdb.async.Function;
 import com.foundationdb.async.Future;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple;
+import com.foundationdb.util.layers.DirectorySubspace;
 import com.google.inject.Inject;
 import com.persistit.Key;
 import com.persistit.Persistit;
 import com.persistit.Value;
 
+import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * Directory usage:
+ * <pre>
+ * &lt;root_dir&gt;/
+ *   indexCount/
+ *   indexNull/
+ * </pre>
+ *
+ * <p>
+ *     The above directories are used in servicing per-group index row counts
+ *     and NULL-able UNIQUE index separator values, respectively. The former
+ *     is stored as a little endian long, for {@link Transaction#mutate} usage,
+ *     and the latter is stored as {@link Tuple} encoded long. The keys for
+ *     each entry are created by pre-pending the directory prefix onto the
+ *     prefix of the given index.
+ * </p>
+ */
 public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
-    private static final Logger LOG = LoggerFactory.getLogger(FDBStore.class.getName());
+    private static final Tuple INDEX_COUNT_DIR_PATH = Tuple.from("indexCount");
+    private static final Tuple INDEX_NULL_DIR_PATH = Tuple.from("indexNull");
+    private static final Logger LOG = LoggerFactory.getLogger(FDBStore.class);
 
     private final FDBHolder holder;
     private final ConfigurationService configService;
-    private final SchemaManager schemaManager;
+    private final FDBSchemaManager schemaManager;
     private final FDBTransactionService txnService;
     private final MetricsService metricsService;
 
@@ -89,6 +115,11 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     private static final String ROWS_STORED_METRIC = "SQLLayerRowsStored";
     private static final String ROWS_CLEARED_METRIC = "SQLLayerRowsCleared";
     private LongMetric rowsFetchedMetric, rowsStoredMetric, rowsClearedMetric;
+
+    private DirectorySubspace rootDir;
+    private byte[] packedIndexCountPrefix;
+    private byte[] packedIndexNullPrefix;
+
 
     @Inject
     public FDBStore(FDBHolder holder,
@@ -101,7 +132,11 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         super(lockService, schemaManager, listenerService);
         this.holder = holder;
         this.configService = configService;
-        this.schemaManager = schemaManager;
+        if(schemaManager instanceof FDBSchemaManager) {
+            this.schemaManager = (FDBSchemaManager)schemaManager;
+        } else {
+            throw new IllegalStateException("Only usable with FDBSchemaManager, found: " + txnService);
+        }
         if(txnService instanceof FDBTransactionService) {
             this.txnService = (FDBTransactionService)txnService;
         } else {
@@ -274,6 +309,24 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         rowsFetchedMetric = metricsService.addLongMetric(ROWS_FETCHED_METRIC);
         rowsStoredMetric = metricsService.addLongMetric(ROWS_STORED_METRIC);
         rowsClearedMetric = metricsService.addLongMetric(ROWS_CLEARED_METRIC);
+
+        rootDir = holder.getRootDirectory();
+        packedIndexCountPrefix = holder.getDatabase().run(new Function<Transaction, byte[]>()
+        {
+            @Override
+            public byte[] apply(Transaction txn) {
+                DirectorySubspace dirSub = holder.getRootDirectory().createOrOpen(txn, INDEX_COUNT_DIR_PATH);
+                return dirSub.pack();
+            }
+        });
+        packedIndexNullPrefix = holder.getDatabase().run(new Function<Transaction, byte[]>()
+        {
+            @Override
+            public byte[] apply(Transaction txn) {
+                DirectorySubspace dirSub = holder.getRootDirectory().createOrOpen(txn, INDEX_NULL_DIR_PATH);
+                return dirSub.pack();
+            }
+        });
     }
 
     @Override
@@ -375,13 +428,8 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             @Override
             public Void next() {
                 KeyValue kv = storeData.it.next();
-                Tuple tuple = Tuple.fromBytes(kv.getKey());
-
-                byte[] keyBytes = tuple.getBytes(2);
-                System.arraycopy(keyBytes, 0, storeData.key.getEncodedBytes(), 0, keyBytes.length);
-                storeData.key.setEncodedSize(keyBytes.length);
+                unpackTuple(storeData.key, kv.getKey());
                 storeData.value = kv.getValue();
-
                 return null;
             }
 
@@ -470,9 +518,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             constructIndexRow(session, indexKey, rowData, index, hKey, indexRow, false);
             for(KeyValue kv : txn.getTransaction().getRange(Range.startsWith(packedTuple(index, indexKey)))) {
                 // Key
-                byte[] keyBytes = Tuple.fromBytes(kv.getKey()).getBytes(2);
-                spareKey.setEncodedSize(keyBytes.length);
-                System.arraycopy(keyBytes, 0, spareKey.getEncodedBytes(), 0, keyBytes.length);
+                unpackTuple(spareKey, kv.getKey());
                 // Value
                 byte[] valueBytes = kv.getValue();
                 spareValue.clear();
@@ -500,7 +546,29 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     @Override
     public void truncateTree(Session session, TreeLink treeLink) {
         TransactionState txn = txnService.getTransaction(session);
-        txn.getTransaction().clearRangeStartsWith(packedTuple(treeLink));
+        txn.getTransaction().clear(Range.startsWith(packedTuple(treeLink)));
+    }
+
+    @Override
+    public void deleteIndexes(Session session, Collection<? extends Index> indexes) {
+        Transaction txn = txnService.getTransaction(session).getTransaction();
+        for(Index index : indexes) {
+            rootDir.removeIfExists(txn, FDBNameGenerator.dataPath(index));
+            if(index.isGroupIndex()) {
+                txn.clear(packedTupleGICount((GroupIndex)index));
+            }
+        }
+    }
+
+    @Override
+    public void removeTrees(Session session, UserTable table) {
+        Transaction txn = txnService.getTransaction(session).getTransaction();
+        // Table and indexes (and group and group indexes if root table)
+        rootDir.removeIfExists(txn, FDBNameGenerator.dataPath(table.getName()));
+        // Sequence
+        if(table.getIdentityColumn() != null) {
+            deleteSequences(session, Collections.singleton(table.getIdentityColumn().getIdentityGenerator()));
+        }
     }
 
     @Override
@@ -533,8 +601,11 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     public void deleteSequences(Session session, Collection<? extends Sequence> sequences) {
         for (Sequence sequence : sequences) {
             sequenceCache.remove(sequence.getTreeName());
+            rootDir.removeIfExists(
+                txnService.getTransaction(session).getTransaction(),
+                FDBNameGenerator.dataPath(sequence)
+            );
         }
-        removeTrees(session, sequences);
     }
 
     @Override
@@ -545,7 +616,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     @Override
     public boolean treeExists(Session session, String schemaName, String treeName) {
         TransactionState txn = txnService.getTransaction(session);
-        return txn.getTransaction().getRange(Range.startsWith(packedTuple(treeName)), 1).iterator().hasNext();
+        return txn.getTransaction().getRange(Range.startsWith(packTreeName(treeName)), 1).iterator().hasNext();
     }
 
     @Override
@@ -561,31 +632,81 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     // TODO: A little ugly and slow, but unique indexes will get refactored soon and need for separator goes away.
     @Override
     public long nullIndexSeparatorValue(Session session, final Index index) {
-        final long[] value = { 1 };
-        try {
-            // New txn to avoid spurious conflicts
-            holder.getDatabase().run(new Function<Transaction,Void>() {
-                @Override
-                public Void apply(Transaction txn) {
-                    byte[] keyBytes = Tuple.from("indexNull", index.indexDef().getTreeName()).pack();
-                    byte[] valueBytes = txn.get(keyBytes).get();
-                    value[0] = 1;
-                    if(valueBytes != null) {
-                        value[0] += Tuple.fromBytes(valueBytes).getLong(0);
-                    }
-                    txn.set(keyBytes, Tuple.from(value[0]).pack());
-                    return null;
+        // New txn to avoid spurious conflicts
+        return holder.getDatabase().run(new Function<Transaction,Long>() {
+            @Override
+            public Long apply(Transaction txn) {
+                byte[] keyBytes = ByteArrayUtil.join(packedIndexNullPrefix, packTreeName(index.getTreeName()));
+                byte[] valueBytes = txn.get(keyBytes).get();
+                long outValue = 1;
+                if(valueBytes != null) {
+                    outValue += Tuple.fromBytes(valueBytes).getLong(0);
                 }
-            });
-        } catch(Throwable t) {
-            throw new AkibanInternalException("Unexpected", t);
-        }
-        return value[0];
+                txn.set(keyBytes, Tuple.from(outValue).pack());
+                return outValue;
+            }
+        });
     }
 
     @Override
     public void finishedAlter(Session session, Map<TableName, TableName> tableNames, ChangeLevel changeLevel) {
-        // None
+        if(changeLevel == ChangeLevel.NONE) {
+            return;
+        }
+
+        Transaction txn = txnService.getTransaction(session).getTransaction();
+        for(Entry<TableName, TableName> entry : tableNames.entrySet()) {
+            TableName oldName = entry.getKey();
+            TableName newName = entry.getValue();
+
+            Tuple dataPath = FDBNameGenerator.dataPath(oldName);
+            Tuple alterPath = FDBNameGenerator.alterPath(newName);
+
+            switch(changeLevel) {
+                case METADATA:
+                case METADATA_NOT_NULL:
+                    // - move renamed directories
+                    if(!oldName.equals(newName)) {
+                        schemaManager.renamingTable(session, oldName, newName);
+                    }
+                break;
+                case INDEX:
+                    if(!rootDir.exists(txn, alterPath)) {
+                        continue;
+                    }
+                    // - Move everything from dataAltering/foo/ to data/foo/
+                    // - remove dataAltering/foo/
+                    for(Object subPath : rootDir.list(txn, alterPath)) {
+                        Tuple subDataPath = dataPath.addObject(subPath);
+                        Tuple subAlterPath = alterPath.addObject(subPath);
+                        rootDir.move(txn, subAlterPath, subDataPath);
+                    }
+                    rootDir.remove(txn, alterPath);
+                break;
+                case TABLE:
+                case GROUP:
+                    if(!rootDir.exists(txn, alterPath)) {
+                        continue;
+                    }
+                    // - move everything from data/foo/ to dataAltering/foo/
+                    // - remove data/foo
+                    // - move dataAltering/foo to data/foo/
+                    if(rootDir.exists(txn, dataPath)) {
+                        for(Object subPath : rootDir.list(txn, dataPath)) {
+                            Tuple subDataPath = dataPath.addObject(subPath);
+                            Tuple subAlterPath = alterPath.addObject(subPath);
+                            if(!rootDir.exists(txn, subAlterPath)) {
+                                rootDir.move(txn, subDataPath, subAlterPath);
+                            }
+                        }
+                        rootDir.remove(txn, dataPath);
+                    }
+                    rootDir.move(txn, alterPath, dataPath);
+                break;
+                default:
+                    throw new AkibanInternalException("Unexpected ChangeLevel: " + changeLevel);
+            }
+        }
     }
 
     @Override
@@ -595,10 +716,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         Key key = createKey();
         for(KeyValue kv : txn.getTransaction().getRange(Range.startsWith(packedTuple(group)))) {
             // Key
-            key.clear();
-            byte[] keyBytes = Tuple.fromBytes(kv.getKey()).getBytes(2);
-            key.setEncodedSize(keyBytes.length);
-            System.arraycopy(keyBytes, 0, key.getEncodedBytes(), 0, keyBytes.length);
+            unpackTuple(key, kv.getKey());
             // Value
             RowData rowData = new RowData();
             expandRowData(rowData, kv, true);
@@ -624,10 +742,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             KeyValue kv = it.next();
 
             // Key
-            key.clear();
-            byte[] keyBytes = Tuple.fromBytes(kv.getKey()).getBytes(2);
-            System.arraycopy(keyBytes, 0, key.getEncodedBytes(), 0, keyBytes.length);
-            key.setEncodedSize(keyBytes.length);
+            unpackTuple(key, kv.getKey());
 
             // Value
             value.clear();
@@ -721,6 +836,17 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     // Static
     //
 
+    public static void unpackTuple(Key key, byte[] tupleBytes) {
+        Tuple t = Tuple.fromBytes(tupleBytes);
+        byte[] keyBytes = t.getBytes(t.size() - 1);
+        key.clear();
+        if(key.getMaximumSize() < keyBytes.length) {
+            key.setMaximumSize(keyBytes.length);
+        }
+        System.arraycopy(keyBytes, 0, key.getEncodedBytes(), 0, keyBytes.length);
+        key.setEncodedSize(keyBytes.length);
+    }
+
     private static byte[] packedTuple(Index index) {
         return packedTuple(index.indexDef());
     }
@@ -730,27 +856,28 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     }
 
     private static byte[] packedTuple(TreeLink treeLink) {
-        return packedTuple(treeLink.getTreeName());
+        return packTreeName(treeLink.getTreeName());
     }
 
     private static byte[] packedTuple(TreeLink treeLink, Key key) {
         return packedTuple(treeLink.getTreeName(), key);
     }
 
-    private static byte[] packedTuple(String treeName) {
-        return Tuple.from(treeName, "/").pack();
+    public static byte[] packTreeName(String treeName) {
+        return Base64.decodeBase64(treeName);
     }
 
     private static byte[] packedTuple(String treeName, Key key) {
+        byte[] treeBytes = packTreeName(treeName);
         byte[] keyBytes = Arrays.copyOf(key.getEncodedBytes(), key.getEncodedSize());
-        return Tuple.from(treeName, "/", keyBytes).pack();
+        return ByteArrayUtil.join(treeBytes, Tuple.from(keyBytes).pack());
     }
 
-    private static byte[] packedTupleGICount(GroupIndex index) {
-        return Tuple.from("indexCount", index.indexDef().getTreeName()).pack();
+    private byte[] packedTupleGICount(GroupIndex index) {
+        return ByteArrayUtil.join(packedIndexCountPrefix, packTreeName(index.indexDef().getTreeName()));
     }
 
-    private static long getGICountInternal(ReadTransaction txn, GroupIndex index) {
+    private long getGICountInternal(ReadTransaction txn, GroupIndex index) {
         byte[] key = packedTupleGICount(index);
         byte[] value = txn.get(key).get();
         return FDBTableStatusCache.unpackForAtomicOp(value);

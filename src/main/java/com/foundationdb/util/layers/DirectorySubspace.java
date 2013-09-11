@@ -81,6 +81,14 @@ public class DirectorySubspace extends Subspace {
         return layer;
     }
 
+    public boolean exists(Transaction tr) {
+        return directory.exists(tr, path);
+    }
+
+    public boolean exists(Transaction tr, Tuple subPath) {
+        return directory.exists(tr, combine(path, subPath));
+    }
+
     public DirectorySubspace createOrOpen(Transaction tr, Tuple subPath) {
         return createOrOpen(tr, subPath, layer, null);
     }
@@ -109,12 +117,32 @@ public class DirectorySubspace extends Subspace {
         return directory.move(tr, path, newPath);
     }
 
+    public DirectorySubspace move(Transaction tr, Tuple oldSubPath, Tuple newSubPath) {
+        return directory.move(tr, combine(path, oldSubPath), combine(path, newSubPath));
+    }
+
     public void remove(Transaction tr) {
         directory.remove(tr, path);
     }
 
+    public void remove(Transaction tr, Tuple subPath) {
+        directory.remove(tr, combine(path, subPath));
+    }
+
+    public void removeIfExists(Transaction tr) {
+        directory.removeIfExists(tr, path);
+    }
+
+    public void removeIfExists(Transaction tr, Tuple subPath) {
+        directory.removeIfExists(tr, combine(path, subPath));
+    }
+
     public List<Object> list(Transaction tr) {
         return directory.list(tr, path);
+    }
+
+    public List<Object> list(Transaction tr, Tuple subPath) {
+        return directory.list(tr, combine(path, subPath));
     }
 
 
@@ -122,7 +150,7 @@ public class DirectorySubspace extends Subspace {
     // Helpers
     //
 
-    static Tuple combine(Tuple a, Tuple b) {
+    public static Tuple combine(Tuple a, Tuple b) {
         Tuple out = Tuple.fromItems(a);
         for(Object o : b) {
             out = out.addObject(o);
@@ -131,6 +159,9 @@ public class DirectorySubspace extends Subspace {
     }
 
     static String tupleStr(Tuple t) {
+        if(t == null) {
+            return String.valueOf(t);
+        }
         StringBuilder sb = new StringBuilder();
         sb.append('(');
         boolean first = true;

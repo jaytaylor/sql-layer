@@ -97,6 +97,12 @@ public class Directory
         return new Directory(DEFAULT_NODE_SUBSPACE, content_subspace);
     }
 
+    /**
+     * Check if the given path exists.
+     */
+    public boolean exists(Transaction tr, Tuple path) {
+        return findNode(tr, path) != null;
+    }
 
     /**
      * Creates, or opens, the directory with the given path.
@@ -256,7 +262,8 @@ public class Directory
     }
 
     /**
-     * Removes the directory, its contents, and all subdirectories.
+     * Removes the directory, all subdirectories and the contents of all
+     * directories therein.
      *
      * <p>
      *     <i>
@@ -268,12 +275,25 @@ public class Directory
      * @throws NoSuchDirectoryException
      */
     public void remove(Transaction tr, Tuple path) {
-        Subspace n = findNode(tr, path);
-        if(n == null) {
-            throw new NoSuchDirectoryException(path);
-        }
-        removeRecursive(tr, n);
-        removeFromParent(tr, path);
+        removeInternal(tr, path, true);
+    }
+
+    /**
+     * As {@link #remove(Transaction, Tuple)} but do not throw if the path does
+     * not actually exist.
+     *
+     * <p>
+     * Equivalent to:
+     *
+     * <code><pre>
+     * if(dir.exists(tr, path)) {
+     *     dir.remove(tr, path);
+     * }
+     * </pre></code>
+     * </p>
+     */
+    public void removeIfExists(Transaction tr, Tuple path) {
+        removeInternal(tr, path, false);
     }
 
     /**
@@ -382,6 +402,18 @@ public class Directory
             }
         }
         return n;
+    }
+
+    private void removeInternal(Transaction tr, Tuple path, boolean mustExist) {
+        Subspace n = findNode(tr, path);
+        if(n == null) {
+            if(mustExist) {
+                throw new NoSuchDirectoryException(path);
+            }
+        } else {
+            removeRecursive(tr, n);
+            removeFromParent(tr, path);
+        }
     }
 
     private void removeFromParent(Transaction tr, Tuple path) {

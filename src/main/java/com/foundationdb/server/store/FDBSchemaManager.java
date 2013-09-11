@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package com.foundationdb.server.store;
 
 import com.foundationdb.ais.AISCloner;
@@ -30,13 +31,13 @@ import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.validation.AISValidations;
 import com.foundationdb.ais.protobuf.ProtobufReader;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
+import com.foundationdb.async.Function;
 import com.foundationdb.server.FDBTableStatusCache;
 import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.error.AISTooLargeException;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.rowdata.RowDefCache;
 import com.foundationdb.server.service.Service;
-import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.session.SessionService;
@@ -47,6 +48,7 @@ import com.foundationdb.KeyValue;
 import com.foundationdb.Range;
 import com.foundationdb.Transaction;
 import com.foundationdb.tuple.Tuple;
+import com.foundationdb.util.layers.DirectorySubspace;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,39 +56,50 @@ import org.slf4j.LoggerFactory;
 import java.nio.BufferOverflowException;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
 
 /**
- * Keyspace Usage:
- * sm/
- * sm/ais/
- * sm/ais/generation => [current generation number]
- * sm/ais/pb
- * sm/ais/pb/[schema name] => [protobuf data]
+ * Directory usage:
+ * <pre>
+ * &lt;root_dir&gt;/
+ *   schemaManager/
+ *     protobuf/
+ *       schema_name => byte[]
+ *     generation => long
+ *     dataVersion => long
+ *     metaDataVersion => long
+ * </pre>
  *
- * Transactionality:
- * - All consumers of getAis() do a full read of the sm/ais/generation key to determine the proper version.
- * - All DDL executors increment the generation while making the AIS changes
- * - Whenever a new AIS is read, the name generator and table version map is re-set
- * - Since there can be exactly one change to the generation at a time, all generated names and ids will be unique
+ * Transactional Reasoning:
+ * <ul>
+ *     <li>All consumers of getAis() do a full read of the generation key to determine the proper version.</li>
+ *     <li>All DDL executors increment the generation while making the AIS changes</li>
+ *     <li>Whenever a new AIS is read, the name generator and table version map is re-set</li>
+ *     <li>Since there can be exactly one change to the generation at a time, all generated names and ids will be unique</li>
+ * </ul>
  */
 public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     private static final Logger LOG = LoggerFactory.getLogger(FDBSchemaManager.class);
 
-    private static final String SM_PREFIX = "sm/";
-    private static final String AIS_PREFIX = "ais/";
-    private static final String AIS_GENERATION_KEY = "generation";
-    private static final String AIS_PB_PREFIX = "pb/";
-    private static final byte[] PACKED_GENERATION_KEY = Tuple.from(SM_PREFIX, AIS_PREFIX, AIS_GENERATION_KEY).pack();
+    private static final Tuple SM_DIR_PATH = Tuple.from("schemaManager");
+    private static final Tuple PROTOBUF_DIR_PATH = Tuple.from("protobuf");
+    private static final String GENERATION_KEY = "generation";
+    private static final String DATA_VERSION_KEY = "dataVersion";
+    private static final String META_VERSION_KEY = "metaDataVersion";
+
+    private static final long CURRENT_DATA_VERSION = 1;
+    private static final long CURRENT_META_VERSION = 1;
+
     private static final Session.Key<AkibanInformationSchema> SESSION_AIS_KEY = Session.Key.named("AIS_KEY");
     private static final AkibanInformationSchema SENTINEL_AIS = new AkibanInformationSchema(Integer.MIN_VALUE);
 
-    // TODO: versioning?
 
     private final FDBHolder holder;
     private final FDBTransactionService txnService;
     private final Object AIS_LOCK = new Object();
 
+    private DirectorySubspace rootDir;
+    private DirectorySubspace smDirectory;
+    private byte[] packedGenKey;
     private FDBTableStatusCache tableStatusCache;
     private RowDefCache rowDefCache;
     private AkibanInformationSchema curAIS;
@@ -118,8 +131,20 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
         super.start();
         AkCollatorFactory.setUseKeyCoder(false);
 
+        rootDir = holder.getRootDirectory();
+        smDirectory = holder.getDatabase().run(new Function<Transaction, DirectorySubspace>()
+        {
+            @Override
+            public DirectorySubspace apply(Transaction tr) {
+                return holder.getRootDirectory().createOrOpen(tr, SM_DIR_PATH);
+            }
+        });
+
+        // Cache as it used for every AIS access,
+        packedGenKey = smDirectory.pack(GENERATION_KEY);
+
         this.memoryTableAIS = new AkibanInformationSchema();
-        this.tableStatusCache = new FDBTableStatusCache(holder.getDatabase(), txnService);
+        this.tableStatusCache = new FDBTableStatusCache(holder, txnService);
         this.rowDefCache = new RowDefCache(tableStatusCache);
 
         try(Session session = sessionService.createSession()) {
@@ -163,7 +188,14 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
 
     @Override
     protected NameGenerator getNameGenerator(Session session, boolean memoryTable) {
-        return nameGenerator;
+        if(memoryTable) {
+            // Tree names are still required (unfortunately), but nothing is ever persisted so skip directory.
+            return nameGenerator;
+        }
+        Transaction txn = txnService.getTransaction(session).getTransaction();
+        return isAlterTableActive(session) ?
+            FDBNameGenerator.createForAlterPath(txn, rootDir, nameGenerator) :
+            FDBNameGenerator.createForDataPath(txn, rootDir, nameGenerator);
     }
 
     @Override
@@ -241,7 +273,10 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
 
     @Override
     protected void renamingTable(Session session, TableName oldName, TableName newName) {
-        // None
+        Transaction txn = txnService.getTransaction(session).getTransaction();
+        // Ensure destination schema exists. Can go away if schema lifetime becomes explicit.
+        rootDir.createOrOpen(txn, FDBNameGenerator.dataPath(newName).popBack());
+        rootDir.move(txn, FDBNameGenerator.dataPath(oldName), FDBNameGenerator.dataPath(newName));
     }
 
     @Override
@@ -304,7 +339,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
         if(isNewGeneration) {
             ++generation;
             byte[] packedGen = Tuple.from(generation).pack();
-            txn.setBytes(PACKED_GENERATION_KEY, packedGen);
+            txn.setBytes(packedGenKey, packedGen);
         }
 
         newAIS.setGeneration(generation);
@@ -313,6 +348,9 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     }
 
     private void checkAndSerialize(TransactionState txn, GrowableByteBuffer buffer, AkibanInformationSchema newAIS, String schema) {
+        // reads of data versions already done in loadAISFromStorage, checkDataVersions
+        txn.setBytes(smDirectory.pack(DATA_VERSION_KEY), Tuple.from(CURRENT_DATA_VERSION).pack());
+        txn.setBytes(smDirectory.pack(META_VERSION_KEY), Tuple.from(CURRENT_META_VERSION).pack());
         saveProtobuf(txn, buffer, newAIS, schema);
     }
 
@@ -342,7 +380,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
             selector = new ProtobufWriter.SingleSchemaSelector(schema);
         }
 
-        byte[] packed = makePBTuple().add(schema).pack();
+        byte[] packed = smDirectory.createOrOpen(txn.getTransaction(), PROTOBUF_DIR_PATH).pack(schema);
         if(newAIS.getSchema(schema) != null) {
             buffer.clear();
             new ProtobufWriter(buffer, selector).save(newAIS);
@@ -390,16 +428,35 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
         rowDefCache.setAIS(session, newAIS);
     }
 
+    private boolean checkDataVersions(Transaction txn) {
+        byte[] dataVerValue = txn.get(smDirectory.pack(DATA_VERSION_KEY)).get();
+        byte[] metaVerValue = txn.get(smDirectory.pack(META_VERSION_KEY)).get();
+        if(dataVerValue == null || metaVerValue == null) {
+            assert dataVerValue == metaVerValue;
+            return false;
+        }
+        long storedDataVer = Tuple.fromBytes(dataVerValue).getLong(0);
+        long storedMetaVer = Tuple.fromBytes(metaVerValue).getLong(0);
+        if((storedDataVer != CURRENT_DATA_VERSION) || (storedMetaVer != CURRENT_META_VERSION)) {
+            throw new AkibanInternalException(String.format(
+                "Unsupported data versions: Stored(%d,%d) vs Current(%d,%d)",
+                storedDataVer, storedMetaVer, CURRENT_DATA_VERSION, CURRENT_META_VERSION
+            ));
+        }
+        return true;
+    }
+
     private AkibanInformationSchema loadAISFromStorage(final Session session) {
         // Start with existing memory tables, merge in stored ones
         // TODO: Is this vulnerable to table ID conflicts if another node creates a persisted I_S table?
         final AkibanInformationSchema newAIS = AISCloner.clone(memoryTableAIS);
 
         TransactionState txn = txnService.getTransaction(session);
+        boolean dataPresent = checkDataVersions(txn.getTransaction());
+
         ProtobufReader reader = new ProtobufReader(newAIS);
-        Iterator<KeyValue> iterator = txn.getTransaction().getRange(Range.startsWith(makePBTuple().pack())).iterator();
-        while(iterator.hasNext()) {
-            KeyValue kv = iterator.next();
+        byte[] packedPBKey = smDirectory.createOrOpen(txn.getTransaction(), PROTOBUF_DIR_PATH).pack();
+        for(KeyValue kv : txn.getTransaction().getRange(Range.startsWith(packedPBKey))) {
             byte[] storedAIS = kv.getValue();
             GrowableByteBuffer buffer = GrowableByteBuffer.wrap(storedAIS);
             reader.loadBuffer(buffer);
@@ -411,6 +468,10 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
             table.endTable(null);
         }
 
+        // If there were any stored tables, checkDataVersions should have seen versions
+        assert dataPresent == ((newAIS.getUserTables().size() - memoryTableAIS.getUserTables().size() +
+                                newAIS.getSequences().size() - memoryTableAIS.getSequences().size()) > 0);
+
         validateAndFreeze(session, newAIS, false);
         return newAIS;
     }
@@ -418,7 +479,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     private long getTransactionalGeneration(Session session) {
         TransactionState txn = txnService.getTransaction(session);
         long generation = 0;
-        byte[] packedGen = txn.getTransaction().get(PACKED_GENERATION_KEY).get();
+        byte[] packedGen = txn.getTransaction().get(packedGenKey).get();
         if(packedGen != null) {
             generation = Tuple.fromBytes(packedGen).getLong(0);
         }
@@ -454,10 +515,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     //
     // Static helpers
     //
-
-    private static Tuple makePBTuple() {
-        return Tuple.from(SM_PREFIX, AIS_PREFIX, AIS_PB_PREFIX);
-    }
 
     private static final TransactionService.Callback CLEAR_SESSION_KEY_CALLBACK = new TransactionService.Callback() {
         @Override

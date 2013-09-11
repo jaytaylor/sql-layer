@@ -16,10 +16,15 @@
  */
 package com.foundationdb.server.store;
 
+import com.foundationdb.Transaction;
+import com.foundationdb.async.Function;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.Database;
 import com.foundationdb.FDB;
+import com.foundationdb.tuple.Tuple;
+import com.foundationdb.util.layers.Directory;
+import com.foundationdb.util.layers.DirectorySubspace;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,11 +35,13 @@ public class FDBHolderImpl implements FDBHolder, Service {
     private static final String CONFIG_API_VERSION = "fdbsql.fdb.api_version";
     private static final String CONFIG_CLUSTER_FILE = "fdbsql.fdb.cluster_file";
     private static final String CONFIG_TRACE_DIRECTORY = "fdbsql.fdb.trace_directory";
+    private static final String CONFIG_ROOT_DIR = "fdbsql.fdb.root_directory";
 
     private final ConfigurationService configService;
 
     private FDB fdb;
     private Database db;
+    private DirectorySubspace rootDirectory;
 
     @Inject
     public FDBHolderImpl(ConfigurationService configService) {
@@ -62,6 +69,17 @@ public class FDBHolderImpl implements FDBHolder, Service {
         boolean isDefault = clusterFile.isEmpty();
         LOG.info("Opening cluster file {}", isDefault ? "DEFAULT" : clusterFile);
         db = isDefault ? fdb.open() : fdb.open(clusterFile);
+        final String rootDirName = configService.getProperty(CONFIG_ROOT_DIR);
+        rootDirectory = db.run(
+            new Function<Transaction, DirectorySubspace>()
+            {
+                @Override
+                public DirectorySubspace apply(Transaction tr) {
+                    Directory dir = new Directory();
+                    return dir.createOrOpen(tr, Tuple.from(rootDirName));
+                }
+            }
+        );
     }
 
     @Override
@@ -89,5 +107,10 @@ public class FDBHolderImpl implements FDBHolder, Service {
     @Override
     public Database getDatabase() {
         return db;
+    }
+
+    @Override
+    public DirectorySubspace getRootDirectory() {
+        return rootDirectory;
     }
 }

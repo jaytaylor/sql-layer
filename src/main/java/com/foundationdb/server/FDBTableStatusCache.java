@@ -14,8 +14,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package com.foundationdb.server;
 
+import com.foundationdb.server.store.FDBHolder;
+import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBTransactionService;
 import com.foundationdb.server.store.FDBTransactionService.TransactionState;
 import com.foundationdb.Database;
@@ -24,23 +27,57 @@ import com.foundationdb.Transaction;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.async.Function;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
-import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple;
+import com.foundationdb.util.layers.DirectorySubspace;
 
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Directory usage:
+ * <pre>
+ * &lt;root_dir&gt;
+ *   tableStatus/
+ * </pre>
+ *
+ * <p>
+ *     The above directory is used to store auto-inc, unique and/or row count
+ *     information on a per-table basis. Each key is formed by pre-pending the
+ *     directory prefix with the primary key's prefix and  the string
+ *     "autoInc", "unique" or "rowCount". The auto-inc and unique values are
+ *     {@link Tuple} encoded longs and the row count is a little-endian encoded
+ *     long (for {@link Transaction#mutate} usage).
+ * </p>
+ */
 public class FDBTableStatusCache implements TableStatusCache {
+    private static final Tuple TABLE_STATUS_DIR_PATH = Tuple.from("tableStatus");
+    private static final byte[] AUTO_INC_PACKED = Tuple.from("autoInc").pack();
+    private static final byte[] UNIQUE_PACKED = Tuple.from("unique").pack();
+    private static final byte[] ROW_COUNT_PACKED = Tuple.from("rowCount").pack();
+
+
     private final Database db;
     private final FDBTransactionService txnService;
     private final Map<Integer,MemoryTableStatus> memoryTableStatusMap = new HashMap<>();
 
+    private byte[] packedTableStatusPrefix;
 
-    public FDBTableStatusCache(Database db, FDBTransactionService txnService) {
-        this.db = db;
+
+    public FDBTableStatusCache(final FDBHolder holder, FDBTransactionService txnService) {
+        this.db = holder.getDatabase();
         this.txnService = txnService;
+
+        this.packedTableStatusPrefix = db.run(new Function<Transaction, byte[]>()
+        {
+            @Override
+            public byte[] apply(Transaction txn) {
+                DirectorySubspace dirSub = holder.getRootDirectory().createOrOpen(txn, TABLE_STATUS_DIR_PATH);
+                return dirSub.pack();
+            }
+        });
     }
 
 
@@ -137,35 +174,28 @@ public class FDBTableStatusCache implements TableStatusCache {
                 this.rowCountKey = null;
             } else {
                 assert rowDef.getRowDefId() == tableID;
-                String treeName = rowDef.getPKIndex().indexDef().getTreeName();
-                this.autoIncKey = Tuple.from("tableStatus", treeName, "autoInc").pack();
-                this.uniqueKey = Tuple.from("tableStatus", treeName, "unique").pack();
-                this.rowCountKey = Tuple.from("tableStatus", treeName, "rowCount").pack();
+                byte[] treeNamePacked = FDBStore.packTreeName(rowDef.getPKIndex().indexDef().getTreeName());
+                this.autoIncKey = ByteArrayUtil.join(packedTableStatusPrefix, treeNamePacked, AUTO_INC_PACKED);
+                this.uniqueKey = ByteArrayUtil.join(packedTableStatusPrefix, treeNamePacked, UNIQUE_PACKED);
+                this.rowCountKey = ByteArrayUtil.join(packedTableStatusPrefix, treeNamePacked, ROW_COUNT_PACKED);
             }
         }
 
         @Override
         public long createNewUniqueID(Session session) {
             // Use new transaction to avoid conflicts. Can result in gaps, but that's OK.
-            final long[] newValue = { 0 };
-            try {
-                db.run(new Function<Transaction,Void>() {
+            return db.run(
+                new Function<Transaction, Long>()
+                {
                     @Override
-                    public Void apply(Transaction txn) {
+                    public Long apply(Transaction txn) {
                         byte[] curBytes = txn.get(uniqueKey).get();
-                        newValue[0] = 1 + decodeOrZero(curBytes);
-                        txn.set(uniqueKey, Tuple.from(newValue[0]).pack());
-                        return null;
+                        long newValue = 1 + decodeOrZero(curBytes);
+                        txn.set(uniqueKey, Tuple.from(newValue).pack());
+                        return newValue;
                     }
-                });
-            } catch(Exception e) {
-                throw new AkibanInternalException("", e);
-            } catch(Throwable t) {
-                Error e = new Error();
-                e.initCause(t);
-                throw e;
-            }
-            return newValue[0];
+                }
+            );
         }
 
         @Override
@@ -183,7 +213,7 @@ public class FDBTableStatusCache implements TableStatusCache {
 
         @Override
         public long getApproximateRowCount() {
-            // TODO: Avoids conflicts but still round trip. Cache locally for some time frame?
+            // TODO: Avoids conflicts but still round trip. Pass in Session and/or cache locally for some time frame?
             return db.run(new Function<Transaction,Long> () {
                               @Override
                               public Long apply(Transaction txn) {
@@ -195,24 +225,16 @@ public class FDBTableStatusCache implements TableStatusCache {
         @Override
         public long getUniqueID(Session session) {
             // Use new transaction to avoid conflicts.
-            final long[] currentValue = { 0 };
-            try {
-                db.run(new Function<Transaction,Void>() {
+            return db.run(
+                new Function<Transaction, Long>()
+                {
                     @Override
-                    public Void apply(Transaction txn) {
-                        byte[] curBytes = txn.snapshot().get(uniqueKey).get();
-                        currentValue[0] = decodeOrZero(curBytes);
-                        return null;
+                    public Long apply(Transaction txn) {
+                        byte[] curBytes = txn.get(uniqueKey).get();
+                        return decodeOrZero(curBytes);
                     }
-                });
-            } catch(Exception e) {
-                throw new AkibanInternalException("", e);
-            } catch(Throwable t) {
-                Error e = new Error();
-                e.initCause(t);
-                throw e;
-            }
-            return currentValue[0];
+                }
+            );
         }
 
         @Override
@@ -228,7 +250,7 @@ public class FDBTableStatusCache implements TableStatusCache {
 
         @Override
         public long getApproximateUniqueID() {
-            // TODO: Avoids conflicts but still round trip. Cache locally for some time frame?
+            // TODO: Avoids conflicts but still round trip. Pass in Session and/or cache locally for some time frame?
             Transaction txn = db.createTransaction();
             byte[] bytes = txn.get(uniqueKey).get();
             return decodeOrZero(bytes);

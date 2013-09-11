@@ -25,7 +25,6 @@ import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.KeyValue;
-import com.foundationdb.tuple.Tuple;
 import com.persistit.Key;
 
 import java.util.Iterator;
@@ -78,10 +77,8 @@ public class FDBGroupCursor implements GroupCursor {
             if (next) {
                 KeyValue kv = groupScan.getCurrent();
                 // Key
-                byte[] keyBytes = Tuple.fromBytes(kv.getKey()).getBytes(2);
                 Key key = adapter.createKey();
-                System.arraycopy(keyBytes, 0, key.getEncodedBytes(), 0, keyBytes.length);
-                key.setEncodedSize(keyBytes.length);
+                FDBStore.unpackTuple(key, kv.getKey());
                 // Value
                 RowData rowData = new RowData();
                 FDBStore.expandRowData(rowData, kv, true);

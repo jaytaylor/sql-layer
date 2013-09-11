@@ -19,10 +19,7 @@ package com.foundationdb.util.layers;
 
 import com.foundationdb.Database;
 import com.foundationdb.FDBException;
-import com.foundationdb.MutationType;
 import com.foundationdb.Transaction;
-import com.foundationdb.async.Function;
-import com.foundationdb.sql.optimizer.plan.HashJoinNode;
 import com.foundationdb.tuple.Tuple;
 import com.foundationdb.util.layers.Directory.DirectoryAlreadyExistsException;
 import com.foundationdb.util.layers.Directory.MismatchedLayerException;
@@ -34,12 +31,10 @@ import org.junit.Test;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -67,6 +62,34 @@ public class DirectoryIT extends LayerITBase
         tr = holder.getDatabase().createTransaction();
         tr.clear(new byte[]{ 0x00 }, new byte[]{ (byte)0xFF });
         dir = new Directory();
+    }
+
+    @Test
+    public void exists() {
+        assertEquals(false, dir.exists(tr, PATH_A));
+        dir.create(tr, PATH_A);
+        assertEquals(true, dir.exists(tr, PATH_A));
+        dir.remove(tr, PATH_A);
+        assertEquals(false, dir.exists(tr, PATH_A));
+    }
+
+    @Test
+    public void existsDeep() {
+        Tuple paths[] = {
+            Tuple.from("a"),
+            Tuple.from("a", "b"),
+            Tuple.from("a", "b", "c"),
+            Tuple.from("a", "b", "c", "d"),
+        };
+        for(boolean b : new boolean[]{false, true}) {
+            for(Tuple p : paths) {
+                assertEquals(b, dir.exists(tr, p));
+            }
+            if(!b) {
+                dir.create(tr, paths[paths.length -1]);
+            }
+        }
+        assertEquals(false, dir.exists(tr, Tuple.from("z")));
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -194,6 +217,36 @@ public class DirectoryIT extends LayerITBase
     }
 
     @Test
+    public void removeIfExists() {
+        assertEquals(false, dir.exists(tr, PATH_A));
+        dir.removeIfExists(tr, PATH_A);
+        dir.create(tr, PATH_A);
+        assertEquals(true, dir.exists(tr, PATH_A));
+        dir.removeIfExists(tr, PATH_A);
+        assertEquals(false, dir.exists(tr, PATH_A));
+    }
+
+    @Test
+    public void removeIfExistsDeep() {
+        Tuple paths[] = {
+            Tuple.from("a", "b", "c", "d"),
+            Tuple.from("a", "b", "c"),
+            Tuple.from("a", "b"),
+            Tuple.from("a"),
+        };
+        for(boolean b : new boolean[]{false, true}) {
+            for(Tuple p : paths) {
+                assertEquals(b, dir.exists(tr, p));
+                dir.removeIfExists(tr, p);
+            }
+            if(!b) {
+                dir.create(tr, paths[0]);
+            }
+        }
+        assertEquals(false, dir.exists(tr, Tuple.from("z")));
+    }
+
+    @Test
     public void createAndList() {
         dir.create(tr, Tuple.from("a"));
         dir.create(tr, Tuple.from("a", "b"));
@@ -223,10 +276,11 @@ public class DirectoryIT extends LayerITBase
         dir.open(tr, Tuple.from("a"));
     }
 
+
     // Complete-ish test, which is a port of the original dirtest2.py
     @Test
     public void dirTest2() {
-        DirectorySubspace evilDir = new Directory().create(tr, Tuple.from("evil"), null, new byte[]{ 0x14 });
+        new Directory().create(tr, Tuple.from("evil"), null, new byte[]{ 0x14 });
         //System.out.println(evilDir.toString());
 
         Directory directory = Directory.createWithContentSubspace(new Subspace(new byte[]{0x01}));
