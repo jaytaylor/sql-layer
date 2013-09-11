@@ -160,8 +160,8 @@ public class MString extends TString
 
         @Override
         public void writeCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
-            final int collatorId = inInstance.attribute(StringAttribute.COLLATION);
-            out.putString(AkCollator.getString(inValue), AkCollatorFactory.getAkCollator(collatorId));
+            final AkCollator collator = getCollator(inInstance);
+            out.putString(AkCollator.getString(inValue, collator), collator);
         }
 
         @Override

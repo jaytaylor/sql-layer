@@ -276,7 +276,7 @@ class Distinct_Partial extends Operator
         private boolean eqP(PValueSource x, PValueSource y, TInstance tinst)
         {
             if (tinst.typeClass() instanceof TString) {
-                AkCollator collator = ((TString)tinst.typeClass()).getCollator(tinst);
+                AkCollator collator = TString.getCollator(tinst);
                 if (collator != null) {
                     return collator.compare(x, y) == 0;
                 }

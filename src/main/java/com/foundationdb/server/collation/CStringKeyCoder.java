@@ -56,13 +56,13 @@ public class CStringKeyCoder implements KeyDisplayer, KeyRenderer {
             byte[] sortBytes = collator.encodeSortKeyBytes(cs.getString());
             byte[] keyBytes = key.getEncodedBytes();
             int size = key.getEncodedSize();
-            if (size + sortBytes.length + 1 > key.getMaximumSize()) {
-                throw new KeyTooLongException("Too long: " + size + sortBytes.length);
+            if (size + 1 + sortBytes.length > key.getMaximumSize()) {
+                throw new KeyTooLongException("Too long: " + size + 1 + sortBytes.length);
             }
             assert cs.getCollationId() > 0 && cs.getCollationId() < AkCollatorFactory.MAX_COLLATION_ID;
             Util.putByte(keyBytes, size, cs.getCollationId());
-            System.arraycopy(sortBytes, 0, keyBytes, size + 1, sortBytes.length - 1);
-            key.setEncodedSize(size + sortBytes.length);
+            System.arraycopy(sortBytes, 0, keyBytes, size + 1, sortBytes.length);
+            key.setEncodedSize(size + 1 + sortBytes.length);
         } else {
             throw new ConversionException("Wrong object type: " + (object == null ? null : object.getClass()));
         }
@@ -70,7 +70,7 @@ public class CStringKeyCoder implements KeyDisplayer, KeyRenderer {
 
     /**
      * TODO Temporarily returns an approximate version of the string. This is
-     * necessary for now to support the Index Histogram code.
+     * necessary for now to support Index Histograms and Bloom Filters.
      * 
      * @throws ConversionException
      *             because in general CStrings cannot be decoded

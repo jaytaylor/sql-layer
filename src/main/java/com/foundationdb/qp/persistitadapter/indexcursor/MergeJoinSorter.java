@@ -42,8 +42,10 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.PersistitValuePValueSource;
 import com.foundationdb.server.PersistitValuePValueTarget;
 import com.foundationdb.server.api.dml.ColumnSelector;
+import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.error.MergeSortIOException;
 import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types3.common.types.TString;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.util.tap.InOutTap;
 import com.persistit.Key;
@@ -318,14 +320,19 @@ public class MergeJoinSorter implements Sorter {
         private int rowCount = 0;
         private int rowFields;
         private TInstance tFieldTypes[];
+        private AkCollator collators[];
         private PersistitValuePValueTarget valueTarget;
         private RowCursor input;
         
         public KeyReadCursor (RowCursor input) {
             this.rowFields = rowType.nFields();
             this.tFieldTypes = new TInstance[rowFields];
+            this.collators = new AkCollator[rowFields];
             for (int i = 0; i < rowFields; i++) {
                 tFieldTypes[i] = rowType.typeInstanceAt(i);
+                if (tFieldTypes[i].typeClass() instanceof TString) {
+                    collators[i] = TString.getCollator(tFieldTypes[i]);
+                }
             }
             valueTarget = new PersistitValuePValueTarget();
             this.input = input;
@@ -402,7 +409,7 @@ public class MergeJoinSorter implements Sorter {
                     if (!src.isNull()) {
                         switch (TInstance.pUnderlying(src.tInstance())) {
                         case STRING:
-                            size += src.getString().length() * 2 + 3;
+                            size += AkCollator.getString(src, collators[i]).length() * 2 + 3;
                             break;
                         case BYTES:
                             size += src.getBytes().length;

@@ -96,7 +96,8 @@ public abstract class TString extends TClass
                         logger.warn("couldn't append TString directly; bad cached object. {}", source);
                     }
                 }
-                out.append(source.getString());
+                AkCollator collator = getCollator(instance);
+                out.append(AkCollator.getString(source, collator));
             }
 
             @Override
@@ -248,7 +249,7 @@ public abstract class TString extends TClass
         }
     }
 
-    public AkCollator getCollator(TInstance instance) {
+    public static AkCollator getCollator(TInstance instance) {
         return AkCollatorFactory.getAkCollator((int)instance.attribute(StringAttribute.COLLATION));
     }
 
