@@ -643,7 +643,6 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
                     outValue += Tuple.fromBytes(valueBytes).getLong(0);
                 }
                 txn.set(keyBytes, Tuple.from(outValue).pack());
-                System.out.println("outValue: " + outValue);
                 return outValue;
             }
         });
