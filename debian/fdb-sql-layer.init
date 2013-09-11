@@ -37,10 +37,10 @@ if [ ! -d $PIDFILE_DIR ]; then
 fi
 
 [ -e "$JAR_FILE" ] || exit 0
-[ -e "$FDBSQL_CONF/config/jvm.options" ] || exit 0
+[ -e "$FDBSQL_CONF/jvm.options" ] || exit 0
 
 # read JVM options
-. /etc/foundationdb-sql/config/jvm.options
+. /etc/foundationdb-sql/jvm.options
 
 if [ -z "$JVM_OPTS" ]; then
     echo "Initialization failed; \$JVM_OPTS not set!" >&2

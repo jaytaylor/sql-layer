@@ -110,8 +110,8 @@ launch_service()
         fdbsql_parms="$fdbsql_parms -Dfdbsql.pidfile=$pidpath"
     fi
 
-    if [ -f "$FDBSQL_CONF/config/jvm.options" ]; then
-        . "$FDBSQL_CONF/config/jvm.options"
+    if [ -f "$FDBSQL_CONF/jvm.options" ]; then
+        . "$FDBSQL_CONF/jvm.options"
     fi
 
     if [ -n "$usegui" ]; then
@@ -119,7 +119,7 @@ launch_service()
     fi
 
     fdbsql_parms="$fdbsql_parms -Dfdbsql.home=$FDBSQL_HOME -Dfdbsql.config_dir=$FDBSQL_CONF"
-    fdbsql_parms="$fdbsql_parms -Dservices.config=$FDBSQL_CONF/config/services-config.yaml -Dlog4j.configuration=file:$FDBSQL_CONF/config/log4j.properties"
+    fdbsql_parms="$fdbsql_parms -Dservices.config=$FDBSQL_CONF/services-config.yaml -Dlog4j.configuration=file:$FDBSQL_CONF/log4j.properties"
     fdbsql_parms="$fdbsql_parms $print_compilation $props"
 
     CLASSPATH=$JAR_FILE:$DEP_DIR/*

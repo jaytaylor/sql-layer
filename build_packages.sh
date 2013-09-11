@@ -133,7 +133,7 @@ elif [ ${platform} == "binary" ]; then
     cp ./target/fdb-sql-layerr-*.jar ${BINARY_NAME}/lib
     cp ./target/dependency/* ${BINARY_NAME}/lib/server/
     cp -R ./conf ${BINARY_NAME}/
-    rm -f ${BINARY_NAME}/conf/config/*.cmd
+    rm -f ${BINARY_NAME}/conf/*.cmd
     cp ./bin/fdbsqllayer ${BINARY_NAME}/bin
     cp packages-common/fdbsql* ${BINARY_NAME}/bin
     cp packages-common/foundationdb-sql-layer-client-*.jar ${BINARY_NAME}/lib

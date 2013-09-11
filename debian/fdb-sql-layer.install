@@ -1,7 +1,7 @@
-debian/log4j.properties etc/foundationdb-sql/config
-debian/server.properties etc/foundationdb-sql/config
-debian/services-config.yaml etc/foundationdb-sql/config
-debian/jvm.options etc/foundationdb-sql/config
+debian/log4j.properties etc/foundationdb-sql
+debian/server.properties etc/foundationdb-sql
+debian/services-config.yaml etc/foundationdb-sql
+debian/jvm.options etc/foundationdb-sql
 bin/fdbsqllayer usr/sbin
 debian/fdbsql* usr/bin
 debian/server/* usr/share/foundationdb-sql/server
