@@ -49,7 +49,7 @@
 
                 <!-- Files are copied into bundle and set as classpath -->
                 <classpath dir="target/">
-                    <include name="foundationdb-sql-layer-*.jar" />
+                    <include name="fdb-sql-layer-*.jar" />
                     <include name="dependency/*.jar" />
                 </classpath>
                 

@@ -41,8 +41,8 @@ fi
 
 infer_jar_file()
 {
-    local loc_local="${FDBSQL_HOME}/target/foundationdb-sql-layer-2.0.0-SNAPSHOT.jar"
-    local loc_global="/usr/share/foundationdb-sql/foundationdb-sql-layer.jar"
+    local loc_local="${FDBSQL_HOME}/target/fdb-sql-layer-2.0.0-SNAPSHOT.jar"
+    local loc_global="/usr/share/foundationdb-sql/fdb-sql-layer.jar"
 
     # Only infer if passed no argument
     if [ -z "$1" ]; then
@@ -207,7 +207,7 @@ while true; do
             # this is not ideal but is only intended to be
             # called by a developer in their environment when
             # they want to quickly kill a running process.
-            pgrep -u `whoami` -f foundationdb-sql-layer | xargs kill -9
+            pgrep -u `whoami` -f fdb-sql-layer | xargs kill -9
             exit 0
         ;;
         -s)

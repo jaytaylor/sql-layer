@@ -72,7 +72,7 @@ cd client-tools
 mvn -DskipTests=true install 
 rm -f target/*-tests.jar target/*-sources.jar
 cp bin/fdbsql{dump,load} ../../packages-common/
-cp target/foundationdb-sql-layer-client-tools-*.jar ../../packages-common/
+cp target/fdb-sql-layer-client-tools-*.jar ../../packages-common/
 cp target/dependency/* ../../packages-common/client/
 popd
 
@@ -136,12 +136,12 @@ elif [ ${platform} == "binary" ]; then
     rm -f ${BINARY_NAME}/conf/*.cmd
     cp ./bin/fdbsqllayer ${BINARY_NAME}/bin
     cp packages-common/fdbsql* ${BINARY_NAME}/bin
-    cp packages-common/foundationdb-sql-layer-client-*.jar ${BINARY_NAME}/lib
+    cp packages-common/fdb-sql-layer-client-*.jar ${BINARY_NAME}/lib
     cp packages-common/client/* ${BINARY_NAME}/lib/client
     cp ${license} ${BINARY_NAME}/LICENSE.txt
     tar zcf ${BINARY_TAR_NAME} ${BINARY_NAME}    
 elif [ ${platform} == "macosx" ]; then
-    client_jar=packages-common/foundationdb-sql-layer-client-tools-*.jar
+    client_jar=packages-common/fdb-sql-layer-client-tools-*.jar
     client_deps=packages-common/client
     fdbsqldump_bin=packages-common/fdbsql*
     plugins_dir=packages-common/plugins
