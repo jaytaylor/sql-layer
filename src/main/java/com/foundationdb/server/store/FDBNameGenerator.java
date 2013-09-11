@@ -63,6 +63,10 @@ public class FDBNameGenerator implements NameGenerator
     }
 
 
+    public static Tuple makePath(String pathPrefix, String schemaName) {
+        return Tuple.from(pathPrefix, TABLE_PATH_NAME, schemaName);
+    }
+
     public static Tuple makePath(String pathPrefix, TableName tableName) {
         return makePath(pathPrefix, tableName.getSchemaName(), tableName.getTableName());
     }

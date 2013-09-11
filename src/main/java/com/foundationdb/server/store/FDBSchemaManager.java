@@ -275,6 +275,8 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     @Override
     protected void renamingTable(Session session, TableName oldName, TableName newName) {
         Transaction txn = txnService.getTransaction(session).getTransaction();
+        // Ensure destination schema exists. Can go away if schema lifetime becomes explicit.
+        rootDir.createOrOpen(txn, FDBNameGenerator.makePath(FDBNameGenerator.DATA_PATH_NAME, newName.getSchemaName()));
         rootDir.move(
             txn,
             FDBNameGenerator.makePath(FDBNameGenerator.DATA_PATH_NAME, oldName),

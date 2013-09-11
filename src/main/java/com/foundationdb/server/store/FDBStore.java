@@ -20,6 +20,7 @@ package com.foundationdb.server.store;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.PrimaryKey;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.UserTable;
@@ -89,7 +90,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
 
     private final FDBHolder holder;
     private final ConfigurationService configService;
-    private final SchemaManager schemaManager;
+    private final FDBSchemaManager schemaManager;
     private final FDBTransactionService txnService;
     private final MetricsService metricsService;
 
@@ -114,7 +115,11 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         super(lockService, schemaManager, listenerService);
         this.holder = holder;
         this.configService = configService;
-        this.schemaManager = schemaManager;
+        if(schemaManager instanceof FDBSchemaManager) {
+            this.schemaManager = (FDBSchemaManager)schemaManager;
+        } else {
+            throw new IllegalStateException("Only usable with FDBSchemaManager, found: " + txnService);
+        }
         if(txnService instanceof FDBTransactionService) {
             this.txnService = (FDBTransactionService)txnService;
         } else {
@@ -543,8 +548,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         Transaction txn = txnService.getTransaction(session).getTransaction();
         // Table and indexes (and group and group indexes if root table)
         rootDir.removeIfExists(
-            txn,
-            FDBNameGenerator.makePath(FDBNameGenerator.DATA_PATH_NAME, table.getName())
+            txn, FDBNameGenerator.makePath(FDBNameGenerator.DATA_PATH_NAME, table.getName())
         );
         // Sequence
         if(table.getIdentityColumn() != null) {
@@ -613,26 +617,21 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     // TODO: A little ugly and slow, but unique indexes will get refactored soon and need for separator goes away.
     @Override
     public long nullIndexSeparatorValue(Session session, final Index index) {
-        final long[] value = { 1 };
-        try {
-            // New txn to avoid spurious conflicts
-            holder.getDatabase().run(new Function<Transaction,Void>() {
-                @Override
-                public Void apply(Transaction txn) {
-                    byte[] keyBytes = ByteArrayUtil.join(packedIndexNullPrefix, packTreeName(index.getTreeName()));
-                    byte[] valueBytes = txn.get(keyBytes).get();
-                    value[0] = 1;
-                    if(valueBytes != null) {
-                        value[0] += Tuple.fromBytes(valueBytes).getLong(0);
-                    }
-                    txn.set(keyBytes, Tuple.from(value[0]).pack());
-                    return null;
+        // New txn to avoid spurious conflicts
+        return holder.getDatabase().run(new Function<Transaction,Long>() {
+            @Override
+            public Long apply(Transaction txn) {
+                byte[] keyBytes = ByteArrayUtil.join(packedIndexNullPrefix, packTreeName(index.getTreeName()));
+                byte[] valueBytes = txn.get(keyBytes).get();
+                long outValue = 1;
+                if(valueBytes != null) {
+                    outValue += Tuple.fromBytes(valueBytes).getLong(0);
                 }
-            });
-        } catch(Throwable t) {
-            throw new AkibanInternalException("Unexpected", t);
-        }
-        return value[0];
+                txn.set(keyBytes, Tuple.from(outValue).pack());
+                System.out.println("outValue: " + outValue);
+                return outValue;
+            }
+        });
     }
 
     @Override
@@ -654,14 +653,13 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
                 case METADATA_NOT_NULL:
                     // - move renamed directories
                     if(!oldName.equals(newName)) {
-                        rootDir.move(
-                            txn,
-                            dataPath,
-                            FDBNameGenerator.makePath(FDBNameGenerator.DATA_PATH_NAME, newName)
-                        );
+                        schemaManager.renamingTable(session, oldName, newName);
                     }
                 break;
                 case INDEX:
+                    if(!rootDir.exists(txn, alterPath)) {
+                        continue;
+                    }
                     // - Move everything from dataAltering/foo/ to data/foo/
                     // - remove dataAltering/foo/
                     for(Object subPath : rootDir.list(txn, alterPath)) {
