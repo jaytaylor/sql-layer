@@ -505,6 +505,20 @@ public class AISMerge {
             }
         }
 
+        // Ugly: groupingIsComplete() will set PRIMARY index tree names if missing.
+        //       Clear them here as to only set them once.
+        for(Map.Entry<IndexName,IndexInfo> entry : indexesToFix.entrySet()) {
+            IndexName name = entry.getKey();
+            IndexInfo info = entry.getValue();
+            UserTable table = targetAIS.getUserTable(name.getSchemaName(), name.getTableName());
+            Index index = table.getIndexIncludingInternal(name.getName());
+            if(info.tree == null) {
+                index.setTreeName(null);
+            } else {
+                index.setTreeName(info.tree);
+            }
+        }
+
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
 
@@ -514,7 +528,9 @@ public class AISMerge {
             UserTable table = targetAIS.getUserTable(name.getSchemaName(), name.getTableName());
             Index index = table.getIndexIncludingInternal(name.getName());
             index.setIndexId((info.id != null) ? info.id : newIndexID(table.getGroup()));
-            index.setTreeName((info.tree != null) ? info.tree : nameGenerator.generateIndexTreeName(index));
+            if(info.tree == null && !index.isPrimaryKey()) {
+                index.setTreeName(nameGenerator.generateIndexTreeName(index));
+            }
         }
 
         for(IdentityInfo info : identityToFix) {

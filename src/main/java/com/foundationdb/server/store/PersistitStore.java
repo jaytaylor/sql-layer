@@ -18,6 +18,7 @@
 package com.foundationdb.server.store;
 
 import com.foundationdb.ais.model.*;
+import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.persistitadapter.PersistitAdapter;
 import com.foundationdb.qp.persistitadapter.PersistitHKey;
@@ -565,6 +566,11 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         Tree tree = index.indexDef().getTreeCache().getTree();
         AccumulatorAdapter accumulator = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.UNIQUE_ID, tree);
         return accumulator.seqAllocate();
+    }
+
+    @Override
+    public void finishedAlter(Session session, Map<TableName, TableName> tableNames, ChangeLevel changeLevel) {
+        // None
     }
 
     @Override

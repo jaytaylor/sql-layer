@@ -678,6 +678,11 @@ public class BasicInfoSchemaTablesServiceImplTest {
 
 
         @Override
+        public void setAlterTableActive(Session session, boolean isActive) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public TableName registerStoredInformationSchemaTable(UserTable newTable, int version) {
             throw new UnsupportedOperationException();
         }
@@ -793,7 +798,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
 
         @Override
-        public Set<String> getTreeNames() {
+        public Set<String> getTreeNames(Session session) {
             throw new UnsupportedOperationException();
         }
 

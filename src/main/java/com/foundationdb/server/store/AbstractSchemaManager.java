@@ -32,15 +32,12 @@ import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.NopVisitor;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.SQLJJar;
-import com.foundationdb.ais.model.Schema;
 import com.foundationdb.ais.model.Sequence;
-import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.ais.util.ChangedTableDescription;
-import com.foundationdb.ais.util.DDLGenerator;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.server.error.DuplicateRoutineNameException;
 import com.foundationdb.server.error.DuplicateSQLJJarNameException;
@@ -61,6 +58,7 @@ import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.session.Session.Key;
 import com.foundationdb.server.service.session.SessionService;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.util.ReadWriteMap;
@@ -79,8 +77,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.UUID;
 
 public abstract class AbstractSchemaManager implements Service, SchemaManager {
@@ -97,8 +93,9 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     public static final String DEFAULT_CHARSET = "fdbsql.default_charset";
     public static final String DEFAULT_COLLATION = "fdbsql.default_collation";
 
-    private static final String CREATE_SCHEMA_FORMATTER = "create schema if not exists `%s`;";
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractSchemaManager.class.getName());
+    private static final Key<Boolean> ALTER_TABLE_ACTIVE_KEY = Key.named("ALTER_TABLE_ACTIVE");
+
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractSchemaManager.class);
 
     protected final SessionService sessionService;
     protected final ConfigurationService config;
@@ -135,7 +132,12 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         }
     }
 
-    protected abstract NameGenerator getNameGenerator();
+    protected boolean isAlterTableActive(Session session) {
+        return session.get(ALTER_TABLE_ACTIVE_KEY) == Boolean.TRUE;
+    }
+
+
+    protected abstract NameGenerator getNameGenerator(Session session, boolean memoryTable);
     /** validateAndFreeze, checkAndSerialize, buildRowDefCache */
     protected abstract void saveAISChangeWithRowDefs(Session session, AkibanInformationSchema newAIS, Collection<String> schemaNames);
     /** validateAndFreeze, serializeMemoryTables, buildRowDefCache */
@@ -144,6 +146,8 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     protected abstract <V> V transactionally(Session session, ThrowingCallable<V> callable);
     /** Remove any persisted table status state associated with the given table. */
     protected abstract void clearTableStatus(Session session, UserTable table);
+    /** Called immediately prior to {@link #saveAISChangeWithRowDefs} when renaming a table */
+    protected abstract void renamingTable(Session session, TableName oldName, TableName newName);
 
 
     //
@@ -174,6 +178,11 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     //
     // SchemaManager
     //
+
+    @Override
+    public void setAlterTableActive(Session session, boolean isActive) {
+        session.put(ALTER_TABLE_ACTIVE_KEY, isActive ? Boolean.TRUE : Boolean.FALSE);
+    }
 
     @Override
     public TableName registerStoredInformationSchemaTable(final UserTable newTable, final int version) {
@@ -248,6 +257,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
 
+        renamingTable(session, currentName, newName);
         final String curSchema = currentName.getSchemaName();
         final String newSchema = newName.getSchemaName();
         if(curSchema.equals(newSchema)) {
@@ -265,7 +275,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         if (indexesToAdd.isEmpty()) { 
             return Collections.emptyList();
         }
-        AISMerge merge = AISMerge.newForAddIndex(getNameGenerator(), getAis(session));
+        AISMerge merge = AISMerge.newForAddIndex(getNameGenerator(session, false), getAis(session));
         Set<String> schemas = new HashSet<>();
 
         Collection<Integer> tableIDs = new ArrayList<>(indexesToAdd.size());
@@ -323,7 +333,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     }
 
     @Override
-    public void alterTableDefinitions(Session session, Collection<ChangedTableDescription> alteredTables) {
+    public void alterTableDefinitions(Session session, final Collection<ChangedTableDescription> alteredTables) {
         ArgumentValidation.isTrue("Altered list is not empty", !alteredTables.isEmpty());
 
         AkibanInformationSchema oldAIS = getAis(session);
@@ -345,9 +355,9 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             tableIDs.add(oldAIS.getUserTable(oldName).getTableId());
         }
 
-        AISMerge merge = AISMerge.newForModifyTable(getNameGenerator(), getAis(session), alteredTables);
+        AISMerge merge = AISMerge.newForModifyTable(getNameGenerator(session, false), getAis(session), alteredTables);
         merge.merge();
-        AkibanInformationSchema newAIS = merge.getAIS();
+        final AkibanInformationSchema newAIS = merge.getAIS();
         trackBumpTableVersion(session,newAIS, tableIDs);
 
         // This is hacky. PK trees have to be preserved because there is no way to duplicate
@@ -386,7 +396,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         AkibanInformationSchema newAIS = AISCloner.clone(oldAIS);
         newAIS.removeSequence(sequenceName);
         Sequence newSequence = Sequence.create(newAIS, newDefinition);
-        newSequence.setTreeName(getNameGenerator().generateSequenceTreeName(newDefinition));
+        newSequence.setTreeName(getNameGenerator(session, false).generateSequenceTreeName(newDefinition));
 
         // newAIS may have mixed references to sequenceName. Re-clone to resolve.
         newAIS = AISCloner.clone(newAIS);
@@ -421,7 +431,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     @Override
     public void createSequence(Session session, Sequence sequence) {
         checkSequenceName(session, sequence.getSequenceName(), false);
-        AISMerge merge = AISMerge.newForOther(getNameGenerator(), getAis(session));
+        AISMerge merge = AISMerge.newForOther(getNameGenerator(session, false), getAis(session));
         AkibanInformationSchema newAIS = merge.mergeSequence(sequence);
         saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(sequence.getSchemaName()));
     }
@@ -509,8 +519,8 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     }
 
     @Override
-    public Set<String> getTreeNames() {
-        return getNameGenerator().getTreeNames();
+    public Set<String> getTreeNames(Session session) {
+        return getNameGenerator(session, false).getTreeNames();
     }
 
     @Override
@@ -560,7 +570,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
                 newColumn.setUuid(UUID.randomUUID());
         }
 
-        AISMerge merge = AISMerge.newForAddTable(getNameGenerator(), getAis(session), newTable);
+        AISMerge merge = AISMerge.newForAddTable(getNameGenerator(session, factory != null), getAis(session), newTable);
         merge.merge();
         AkibanInformationSchema newAIS = merge.getAIS();
         UserTable mergedTable = newAIS.getUserTable(newName);

@@ -32,6 +32,9 @@ public interface NameGenerator
     String generateGroupTreeName(String schemaName, String groupName);
     String generateSequenceTreeName(Sequence sequence);
 
+    // External generation. Still required to be unique.
+    void generatedTreeName(String treeName);
+
     // Bulk add
     void mergeAIS(AkibanInformationSchema ais);
 

@@ -169,6 +169,13 @@ public class DefaultNameGenerator implements NameGenerator {
     }
 
     @Override
+    public void generatedTreeName(String treeName) {
+        if(!treeNames.add(treeName)) {
+            throw new IllegalArgumentException("Tree name already present: " + treeName);
+        }
+    }
+
+    @Override
     public void mergeAIS(AkibanInformationSchema ais) {
         treeNames.addAll(collectTreeNames(ais));
         sequenceNames.addAll(ais.getSequences().keySet());
