@@ -637,21 +637,8 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
 
     @Override
     public void finishedAlter(Session session, Map<TableName, TableName> tableNames, ChangeLevel changeLevel) {
-        final boolean moveTables;
-        switch(changeLevel) {
-            case NONE:
-            case METADATA:
-            case METADATA_NOT_NULL:
-                return;
-            case INDEX:
-                moveTables = false;
-                break;
-            case TABLE:
-            case GROUP:
-                moveTables = true;
-                break;
-            default:
-                throw new AkibanInternalException("Unexpected ChangeLevel: " + changeLevel);
+        if(changeLevel == ChangeLevel.NONE) {
+            return;
         }
 
         Transaction txn = txnService.getTransaction(session).getTransaction();
@@ -659,37 +646,53 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             TableName oldName = entry.getKey();
             TableName newName = entry.getValue();
 
-            Tuple dataPath = FDBNameGenerator.makePath(FDBNameGenerator.DATA_PATH_NAME, oldName.getSchemaName(), oldName.getTableName());
-            Tuple alterPath = FDBNameGenerator.makePath(FDBNameGenerator.ALTER_PATH_NAME, newName.getSchemaName(), newName.getTableName());
+            Tuple dataPath = FDBNameGenerator.makePath(FDBNameGenerator.DATA_PATH_NAME, oldName);
+            Tuple alterPath = FDBNameGenerator.makePath(FDBNameGenerator.ALTER_PATH_NAME, newName);
 
-            if(!rootDir.exists(txn, alterPath)) {
-                continue;
-            }
-
-            if(moveTables) {
-                // - move everything from data/foo/ to dataAltering/foo/
-                // - remove data/foo
-                // - move dataAltering/foo to data/foo/
-                if(rootDir.exists(txn, dataPath)) {
-                    for(Object subPath : rootDir.list(txn, dataPath)) {
+            switch(changeLevel) {
+                case METADATA:
+                case METADATA_NOT_NULL:
+                    // - move renamed directories
+                    if(!oldName.equals(newName)) {
+                        rootDir.move(
+                            txn,
+                            dataPath,
+                            FDBNameGenerator.makePath(FDBNameGenerator.DATA_PATH_NAME, newName)
+                        );
+                    }
+                break;
+                case INDEX:
+                    // - Move everything from dataAltering/foo/ to data/foo/
+                    // - remove dataAltering/foo/
+                    for(Object subPath : rootDir.list(txn, alterPath)) {
                         Tuple subDataPath = dataPath.addObject(subPath);
                         Tuple subAlterPath = alterPath.addObject(subPath);
-                        if(!rootDir.exists(txn, subAlterPath)) {
-                            rootDir.move(txn, subDataPath, subAlterPath);
-                        }
+                        rootDir.move(txn, subAlterPath, subDataPath);
                     }
-                    rootDir.remove(txn, dataPath);
-                }
-                rootDir.move(txn, alterPath, dataPath);
-            } else {
-                // - Move everything from dataAltering/foo/ to data/foo/
-                // - remove dataAltering/foo/
-                for(Object subPath : rootDir.list(txn, alterPath)) {
-                    Tuple subDataPath = dataPath.addObject(subPath);
-                    Tuple subAlterPath = alterPath.addObject(subPath);
-                    rootDir.move(txn, subAlterPath, subDataPath);
-                }
-                rootDir.remove(txn, alterPath);
+                    rootDir.remove(txn, alterPath);
+                break;
+                case TABLE:
+                case GROUP:
+                    if(!rootDir.exists(txn, alterPath)) {
+                        continue;
+                    }
+                    // - move everything from data/foo/ to dataAltering/foo/
+                    // - remove data/foo
+                    // - move dataAltering/foo to data/foo/
+                    if(rootDir.exists(txn, dataPath)) {
+                        for(Object subPath : rootDir.list(txn, dataPath)) {
+                            Tuple subDataPath = dataPath.addObject(subPath);
+                            Tuple subAlterPath = alterPath.addObject(subPath);
+                            if(!rootDir.exists(txn, subAlterPath)) {
+                                rootDir.move(txn, subDataPath, subAlterPath);
+                            }
+                        }
+                        rootDir.remove(txn, dataPath);
+                    }
+                    rootDir.move(txn, alterPath, dataPath);
+                break;
+                default:
+                    throw new AkibanInternalException("Unexpected ChangeLevel: " + changeLevel);
             }
         }
     }

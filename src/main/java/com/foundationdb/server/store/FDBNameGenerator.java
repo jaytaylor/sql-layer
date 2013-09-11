@@ -87,15 +87,11 @@ public class FDBNameGenerator implements NameGenerator
     //
 
     private String generate(Tuple path) {
-        // Using createOrOpen() as uniqueness is confirmed elsewhere
-        boolean existed = directory.exists(txn, path);
+        // Directory should always hand out unique prefixes.
+        // So use createOrOpen() and do not pass to wrapped for unique check as AISValidation confirms
         DirectorySubspace indexDir = directory.createOrOpen(txn, path);
         byte[] packedPrefix = indexDir.pack();
-        String treeName = Base64.encodeBase64String(packedPrefix);
-        if(!existed) {
-            generatedTreeName(treeName);
-        }
-        return treeName;
+        return Base64.encodeBase64String(packedPrefix);
     }
 
     @Override

@@ -277,8 +277,8 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
         Transaction txn = txnService.getTransaction(session).getTransaction();
         rootDir.move(
             txn,
-            FDBNameGenerator.makePath(FDBNameGenerator.DATA_PATH_NAME, oldName.getSchemaName(), oldName.getTableName()),
-            FDBNameGenerator.makePath(FDBNameGenerator.DATA_PATH_NAME, newName.getSchemaName(), newName.getTableName())
+            FDBNameGenerator.makePath(FDBNameGenerator.DATA_PATH_NAME, oldName),
+            FDBNameGenerator.makePath(FDBNameGenerator.DATA_PATH_NAME, newName)
         );
     }
 
