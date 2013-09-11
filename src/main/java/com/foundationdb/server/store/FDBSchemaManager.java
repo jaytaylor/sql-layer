@@ -162,7 +162,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     //
 
     @Override
-    protected NameGenerator getNameGenerator() {
+    protected NameGenerator getNameGenerator(Session session, boolean memoryTable) {
         return nameGenerator;
     }
 
@@ -237,6 +237,11 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     @Override
     protected void clearTableStatus(Session session, UserTable table) {
         tableStatusCache.clearTableStatus(session, table);
+    }
+
+    @Override
+    protected void renamingTable(Session session, TableName oldName, TableName newName) {
+        // None
     }
 
     @Override

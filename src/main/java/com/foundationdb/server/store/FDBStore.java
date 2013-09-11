@@ -20,6 +20,8 @@ import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import com.foundationdb.qp.persistitadapter.FDBAdapter;
 import com.foundationdb.qp.persistitadapter.PersistitHKey;
 import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRow;
@@ -70,6 +72,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -392,7 +395,11 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     @Override
     protected void sumAddGICount(Session session, FDBStoreData storeData, GroupIndex index, int count) {
         TransactionState txn = txnService.getTransaction(session);
-        txn.getTransaction().mutate(MutationType.ADD, packedTupleGICount(index), FDBTableStatusCache.packForAtomicOp(count));
+        txn.getTransaction().mutate(
+            MutationType.ADD,
+            packedTupleGICount(index),
+            FDBTableStatusCache.packForAtomicOp(count)
+        );
     }
 
     @Override
@@ -574,6 +581,11 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             throw new AkibanInternalException("Unexpected", t);
         }
         return value[0];
+    }
+
+    @Override
+    public void finishedAlter(Session session, Map<TableName, TableName> tableNames, ChangeLevel changeLevel) {
+        // None
     }
 
     @Override

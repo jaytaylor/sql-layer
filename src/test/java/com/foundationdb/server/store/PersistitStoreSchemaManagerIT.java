@@ -67,19 +67,19 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
 
         String groupTreeName = getUserTable(tid).getGroup().getTreeName();
         String pkTreeName = getUserTable(tid).getPrimaryKey().getIndex().getTreeName();
-        Set<String> treeNames = pssm.getTreeNames();
+        Set<String> treeNames = pssm.getTreeNames(session());
         assertEquals("Group tree is in set before drop", true, treeNames.contains(groupTreeName));
         assertEquals("PK tree is in set before drop", true, treeNames.contains(pkTreeName));
 
         ddl().dropTable(session(), TABLE_NAME);
 
-        treeNames = pssm.getTreeNames();
+        treeNames = pssm.getTreeNames(session());
         assertEquals("Group tree is in set after drop", true, treeNames.contains(groupTreeName));
         assertEquals("PK tree is in set after drop", true, treeNames.contains(pkTreeName));
 
         safeRestart();
 
-        treeNames = pssm.getTreeNames();
+        treeNames = pssm.getTreeNames(session());
         assertEquals("Group tree is in set after restart", false, treeNames.contains(groupTreeName));
         assertEquals("PK tree is in set after restart", false, treeNames.contains(pkTreeName));
         assertEquals("Group tree exist after restart", false, store().treeExists(session(), SCHEMA, groupTreeName));

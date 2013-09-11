@@ -87,8 +87,8 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         dropTableWhileScanning(
                 tableId,
                 "PRIMARY",
-                createNewRow(tableId, 1L, "the snowman"),
-                createNewRow(tableId, 2L, "mr melty")
+                createNewRow(tableId, 1, "the snowman"),
+                createNewRow(tableId, 2, "mr melty")
         );
     }
 
@@ -98,8 +98,8 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         dropTableWhileScanning(
                 tableId,
                 "name",
-                createNewRow(tableId, 2L, "mr melty"),
-                createNewRow(tableId, 1L, "the snowman")
+                createNewRow(tableId, 2, "mr melty"),
+                createNewRow(tableId, 1, "the snowman")
         );
     }
 
@@ -192,8 +192,8 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
         // Has to happen before the table is dropped!
         List<NewRow> rowsExpected = Arrays.asList(
-                createNewRow(tableId, 1L, "the snowman"),
-                createNewRow(tableId, 2L, "mr melty")
+                createNewRow(tableId, 1, "the snowman"),
+                createNewRow(tableId, 2, "mr melty")
         );
 
         ExecutorService executor = Executors.newFixedThreadPool(2);
@@ -444,8 +444,8 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         new TimePointsComparison(scanResult, dropIndexResult).verify(expected);
         List<NewRow> rowsScanned = scanResult.getItem();
         List<NewRow> rowsExpected = Arrays.asList(
-                createNewRow(tableId, 2L, "mr melty"),
-                createNewRow(tableId, 1L, "the snowman")
+                createNewRow(tableId, 2, "mr melty"),
+                createNewRow(tableId, 1, "the snowman")
         );
         assertEquals("rows scanned (in order)", rowsExpected, rowsScanned);
     }
@@ -734,9 +734,9 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         int tid = tableId(TABLE_NAME);
         expectFullRows(
                 tid,
-                createNewRow(tid, 1L, "the snowman", "10"),
-                createNewRow(tid, 2L, "mr melty", "20"),
-                createNewRow(tid, 100L, "BOBSLED", "1000")
+                createNewRow(tid, 1, "the snowman", "10"),
+                createNewRow(tid, 2, "mr melty", "20"),
+                createNewRow(tid, 100, "BOBSLED", "1000")
         );
     }
 
@@ -990,8 +990,8 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         updateAISGeneration();
         expectFullRows(
                 iid,
-                createNewRow(iid, 1L, 1L),
-                createNewRow(iid, 2L, 2L)
+                createNewRow(iid, 1, 1),
+                createNewRow(iid, 2, 2)
         );
     }
 

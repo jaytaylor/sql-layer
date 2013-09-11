@@ -530,14 +530,14 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 }
             }
 
-            // If this is a GROUPING change, we need to lock all the way up the old and new branches
-            if(validator.getFinalChangeLevel() == ChangeLevel.GROUP) {
+            // If this is a TABLE or GROUP change, we're using a new group tree. Need to lock entire group.
+            if(validator.getFinalChangeLevel() == ChangeLevel.TABLE || validator.getFinalChangeLevel() == ChangeLevel.GROUP) {
                 // Old branch. Defensive because there can't currently be old parents
                 UserTable parent = origTable.parentTable();
-                collectAncestorTableIDs(tableIDs, parent);
+                collectGroupTableIDs(tableIDs, parent);
                 // New branch
                 if(newParentName != null) {
-                    collectAncestorTableIDs(tableIDs, getUserTable(session, newParentName));
+                    collectGroupTableIDs(tableIDs, getUserTable(session, newParentName));
                 }
             }
 
@@ -550,15 +550,18 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         final ChangeLevel level;
         txnService.beginTransaction(session);
         try {
-            level = alterTableInternal(session, tableName, newDefinition, columnChanges, indexChanges, validator, context);
+            schemaManager().setAlterTableActive(session, true);
+            level = alterTableInternal(session, tableIDs, tableName, newDefinition, columnChanges, indexChanges, validator, context);
             txnService.commitTransaction(session);
         } finally {
             txnService.rollbackTransactionIfOpen(session);
+            schemaManager().setAlterTableActive(session, false);
         }
         return level;
     }
 
-    private ChangeLevel alterTableInternal(Session session, TableName tableName, UserTable newDefinition,
+    private ChangeLevel alterTableInternal(Session session, Collection<Integer> affectedTableIDs,
+                                           TableName tableName, UserTable newDefinition,
                                            List<TableChange> columnChanges, List<TableChange> indexChanges,
                                            TableChangeValidator validator,
                                            QueryContext context)
@@ -708,6 +711,15 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 store().removeTree(session, newParentOldTable.getGroup());
             }
         }
+
+        Map<TableName,TableName> allTableNames = new HashMap<>();
+        for(Integer tableID : affectedTableIDs) {
+            UserTable table = origAIS.getUserTable(tableID);
+            allTableNames.put(table.getName(), table.getName());
+        }
+        allTableNames.put(tableName, newDefinition.getName());
+        store().finishedAlter(session, allTableNames, changeLevel);
+
         return changeLevel;
     }
 
@@ -1267,6 +1279,18 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 cursor.setDDLModified();
             }
         }
+    }
+
+    private void collectGroupTableIDs(final Collection<Integer> tableIDs, UserTable table) {
+        if(table == null) {
+            return;
+        }
+        table.getGroup().getRoot().traverseTableAndDescendants(new NopVisitor() {
+            @Override
+            public void visitUserTable(UserTable table) {
+                tableIDs.add(table.getTableId());
+            }
+        });
     }
 
     private void collectAncestorTableIDs(Collection<Integer> tableIDs, UserTable table) {

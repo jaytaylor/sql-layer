@@ -90,14 +90,14 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
                 scanCallable,
                 updateCallable,
                 Arrays.asList(
-                        createNewRow(tableId, 1L, "the snowman"),
-                        createNewRow(tableId, 2L, "mr melty"),
-                        createNewRow(tableId, 99L, "zebras in snow")
+                        createNewRow(tableId, 1, "the snowman"),
+                        createNewRow(tableId, 2, "mr melty"),
+                        createNewRow(tableId, 99, "zebras in snow")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 1L, "the snowman"),
-                        createNewRow(tableId, 2L, "icebox"),
-                        createNewRow(tableId, 99L, "zebras in snow")
+                        createNewRow(tableId, 1, "the snowman"),
+                        createNewRow(tableId, 2, "icebox"),
+                        createNewRow(tableId, 99, "zebras in snow")
                 )
         );
     }
@@ -129,14 +129,14 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
                 scanCallable,
                 updateCallable,
                 Arrays.asList(
-                        createNewRow(tableId, 1L, "the snowman"),
-                        createNewRow(tableId, 2L, "mr melty"),
-                        createNewRow(tableId, 99L, "zebras in snow")
+                        createNewRow(tableId, 1, "the snowman"),
+                        createNewRow(tableId, 2, "mr melty"),
+                        createNewRow(tableId, 99, "zebras in snow")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 2L, "mr melty"),
-                        createNewRow(tableId, 5L, "the snowman"),
-                        createNewRow(tableId, 99L, "zebras in snow")
+                        createNewRow(tableId, 2, "mr melty"),
+                        createNewRow(tableId, 5, "the snowman"),
+                        createNewRow(tableId, 99, "zebras in snow")
                 )
         );
     }
@@ -175,14 +175,14 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
                 scanCallable,
                 updateCallable,
                 Arrays.asList(
-                        createNewRow(tableId, 2L, "mr melty"),
-                        createNewRow(tableId, 1L, "the snowman"),
-                        createNewRow(tableId, 99L, "zebras in snow")
+                        createNewRow(tableId, 2, "mr melty"),
+                        createNewRow(tableId, 1, "the snowman"),
+                        createNewRow(tableId, 99, "zebras in snow")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 1L, "a snowman"),
-                        createNewRow(tableId, 2L, "xtreme weather"),
-                        createNewRow(tableId, 99L, "zebras in snow")
+                        createNewRow(tableId, 1, "a snowman"),
+                        createNewRow(tableId, 2, "xtreme weather"),
+                        createNewRow(tableId, 99, "zebras in snow")
                 )
         );
     }
@@ -221,14 +221,14 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
                 scanCallable,
                 updateCallable,
                 Arrays.asList(
-                        createNewRow(tableId, 2L, "mr melty"),
-                        createNewRow(tableId, 1L, "the snowman"),
-                        createNewRow(tableId, 99L, "zebras in snow")
+                        createNewRow(tableId, 2, "mr melty"),
+                        createNewRow(tableId, 1, "the snowman"),
+                        createNewRow(tableId, 99, "zebras in snow")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 2L, "xtreme weather"),
-                        createNewRow(tableId, 10L, "a snowman"),
-                        createNewRow(tableId, 99L, "zebras in snow")
+                        createNewRow(tableId, 2, "xtreme weather"),
+                        createNewRow(tableId, 10, "a snowman"),
+                        createNewRow(tableId, 99, "zebras in snow")
                 )
         );
     }
@@ -280,8 +280,8 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
 
         expectFullRows(
                 tableId,
-                createNewRow(tableId, 2L, "xtreme weather"),
-                createNewRow(tableId, 10L, "a snowman")
+                createNewRow(tableId, 2, "xtreme weather"),
+                createNewRow(tableId, 10, "a snowman")
         );
 
         if (scanFutureException != null) {

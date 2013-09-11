@@ -43,6 +43,8 @@ public interface SchemaManager {
         CASCADE
     }
 
+    void setAlterTableActive(Session session, boolean isActive);
+
     /**
      * <p>
      * Create a new table in the {@link TableName#INFORMATION_SCHEMA}
@@ -186,7 +188,7 @@ public interface SchemaManager {
     void treeWasRemoved(Session session, String schemaName, String treeName);
 
     /** Get all known/allocated tree names */
-    Set<String> getTreeNames();
+    Set<String> getTreeNames(Session session);
 
     /** Get oldest AIS generation still in memory */
     long getOldestActiveAISGeneration();
