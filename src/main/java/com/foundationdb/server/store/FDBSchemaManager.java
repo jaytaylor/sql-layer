@@ -56,21 +56,20 @@ import org.slf4j.LoggerFactory;
 import java.nio.BufferOverflowException;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Map;
-import java.util.Map.Entry;
 
 /**
  * Directory usage:
  * <pre>
- * schemaManager/
- *   protobuf/
- *     schema_name => byte[]
- *   generation => long
- *   dataVersion => long
- *   metaDataVersion => long
+ * &lt;root_dir&gt;/
+ *   schemaManager/
+ *     protobuf/
+ *       schema_name => byte[]
+ *     generation => long
+ *     dataVersion => long
+ *     metaDataVersion => long
  * </pre>
  *
- * Transactionality:
+ * Transactional Reasoning:
  * <ul>
  *     <li>All consumers of getAis() do a full read of the generation key to determine the proper version.</li>
  *     <li>All DDL executors increment the generation while making the AIS changes</li>
@@ -276,12 +275,8 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     protected void renamingTable(Session session, TableName oldName, TableName newName) {
         Transaction txn = txnService.getTransaction(session).getTransaction();
         // Ensure destination schema exists. Can go away if schema lifetime becomes explicit.
-        rootDir.createOrOpen(txn, FDBNameGenerator.makePath(FDBNameGenerator.DATA_PATH_NAME, newName.getSchemaName()));
-        rootDir.move(
-            txn,
-            FDBNameGenerator.makePath(FDBNameGenerator.DATA_PATH_NAME, oldName),
-            FDBNameGenerator.makePath(FDBNameGenerator.DATA_PATH_NAME, newName)
-        );
+        rootDir.createOrOpen(txn, FDBNameGenerator.dataPath(newName).popBack());
+        rootDir.move(txn, FDBNameGenerator.dataPath(oldName), FDBNameGenerator.dataPath(newName));
     }
 
     @Override

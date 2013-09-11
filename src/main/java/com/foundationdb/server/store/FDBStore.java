@@ -83,6 +83,23 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * Directory usage:
+ * <pre>
+ * &lt;root_dir&gt;/
+ *   indexCount/
+ *   indexNull/
+ * </pre>
+ *
+ * <p>
+ *     The above directories are used in servicing per-group index row counts
+ *     and NULL-able UNIQUE index separator values, respectively. The former
+ *     is stored as a little endian long, for {@link Transaction#mutate} usage,
+ *     and the latter is stored as {@link Tuple} encoded long. The keys for
+ *     each entry are created by pre-pending the directory prefix onto the
+ *     prefix of the given index.
+ * </p>
+ */
 public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     private static final Tuple INDEX_COUNT_DIR_PATH = Tuple.from("indexCount");
     private static final Tuple INDEX_NULL_DIR_PATH = Tuple.from("indexNull");
@@ -536,7 +553,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     public void deleteIndexes(Session session, Collection<? extends Index> indexes) {
         Transaction txn = txnService.getTransaction(session).getTransaction();
         for(Index index : indexes) {
-            rootDir.removeIfExists(txn, FDBNameGenerator.makePath(FDBNameGenerator.DATA_PATH_NAME, index));
+            rootDir.removeIfExists(txn, FDBNameGenerator.dataPath(index));
             if(index.isGroupIndex()) {
                 txn.clear(packedTupleGICount((GroupIndex)index));
             }
@@ -547,9 +564,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     public void removeTrees(Session session, UserTable table) {
         Transaction txn = txnService.getTransaction(session).getTransaction();
         // Table and indexes (and group and group indexes if root table)
-        rootDir.removeIfExists(
-            txn, FDBNameGenerator.makePath(FDBNameGenerator.DATA_PATH_NAME, table.getName())
-        );
+        rootDir.removeIfExists(txn, FDBNameGenerator.dataPath(table.getName()));
         // Sequence
         if(table.getIdentityColumn() != null) {
             deleteSequences(session, Collections.singleton(table.getIdentityColumn().getIdentityGenerator()));
@@ -588,7 +603,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             sequenceCache.remove(sequence.getTreeName());
             rootDir.removeIfExists(
                 txnService.getTransaction(session).getTransaction(),
-                FDBNameGenerator.makePath(FDBNameGenerator.DATA_PATH_NAME, sequence)
+                FDBNameGenerator.dataPath(sequence)
             );
         }
     }
@@ -645,8 +660,8 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             TableName oldName = entry.getKey();
             TableName newName = entry.getValue();
 
-            Tuple dataPath = FDBNameGenerator.makePath(FDBNameGenerator.DATA_PATH_NAME, oldName);
-            Tuple alterPath = FDBNameGenerator.makePath(FDBNameGenerator.ALTER_PATH_NAME, newName);
+            Tuple dataPath = FDBNameGenerator.dataPath(oldName);
+            Tuple alterPath = FDBNameGenerator.alterPath(newName);
 
             switch(changeLevel) {
                 case METADATA:
