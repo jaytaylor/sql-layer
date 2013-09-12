@@ -74,7 +74,6 @@
                 
                 <option value="-Dapple.laf.useScreenMenuBar=true" />
                 <option value="-Dlog4j.configuration=file:$APP_ROOT/Contents/Resources/config/log4j.properties" />
-                <option value="-Dservices.config=$APP_ROOT/Contents/Resources/config/services-config.yaml" />
                 <option value="-Dfdbsql.config_dir=$APP_ROOT/Contents/Resources/config" />
                 <option value="-Dfdbsql.home=$APP_ROOT/Contents/Resources" />
 
