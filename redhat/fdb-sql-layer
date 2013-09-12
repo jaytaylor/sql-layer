@@ -9,7 +9,7 @@
 
 . /etc/rc.d/init.d/functions
 
-export JAR_FILE=/usr/share/foundationdb-sql/foundationdb-sql-layer.jar
+export JAR_FILE=/usr/share/foundationdb-sql/fdb-sql-layer.jar
 export DEP_DIR=/usr/share/foundationdb-sql/server
 export FDBSQL_CONF=/etc/foundationdb-sql
 export FDBSQL_HOME=/usr/share/foundationdb-sql

@@ -41,8 +41,8 @@ fi
 
 infer_jar_file()
 {
-    local loc_local="${FDBSQL_HOME}/target/foundationdb-sql-layer-2.0.0-SNAPSHOT.jar"
-    local loc_global="/usr/share/foundationdb-sql/foundationdb-sql-layer.jar"
+    local loc_local="${FDBSQL_HOME}/target/fdb-sql-layer-2.0.0-SNAPSHOT.jar"
+    local loc_global="/usr/share/foundationdb-sql/fdb-sql-layer.jar"
 
     # Only infer if passed no argument
     if [ -z "$1" ]; then
@@ -110,8 +110,8 @@ launch_service()
         fdbsql_parms="$fdbsql_parms -Dfdbsql.pidfile=$pidpath"
     fi
 
-    if [ -f "$FDBSQL_CONF/config/jvm.options" ]; then
-        . "$FDBSQL_CONF/config/jvm.options"
+    if [ -f "$FDBSQL_CONF/jvm.options" ]; then
+        . "$FDBSQL_CONF/jvm.options"
     fi
 
     if [ -n "$usegui" ]; then
@@ -119,7 +119,7 @@ launch_service()
     fi
 
     fdbsql_parms="$fdbsql_parms -Dfdbsql.home=$FDBSQL_HOME -Dfdbsql.config_dir=$FDBSQL_CONF"
-    fdbsql_parms="$fdbsql_parms -Dservices.config=$FDBSQL_CONF/config/services-config.yaml -Dlog4j.configuration=file:$FDBSQL_CONF/config/log4j.properties"
+    fdbsql_parms="$fdbsql_parms -Dservices.config=$FDBSQL_CONF/services-config.yaml -Dlog4j.configuration=file:$FDBSQL_CONF/log4j.properties"
     fdbsql_parms="$fdbsql_parms $print_compilation $props"
 
     CLASSPATH=$JAR_FILE:$DEP_DIR/*
@@ -207,7 +207,7 @@ while true; do
             # this is not ideal but is only intended to be
             # called by a developer in their environment when
             # they want to quickly kill a running process.
-            pgrep -u `whoami` -f foundationdb-sql-layer | xargs kill -9
+            pgrep -u `whoami` -f fdb-sql-layer | xargs kill -9
             exit 0
         ;;
         -s)
