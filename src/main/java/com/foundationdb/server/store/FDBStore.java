@@ -60,7 +60,6 @@ import com.foundationdb.ReadTransaction;
 import com.foundationdb.Transaction;
 import com.foundationdb.async.AsyncIterator;
 import com.foundationdb.async.Function;
-import com.foundationdb.async.Future;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple;
 import com.foundationdb.util.layers.DirectorySubspace;
@@ -826,23 +825,20 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
     private void checkKeyDoesNotExistInIndex(Session session, TransactionState txn, RowData rowData, Index index, Key key) {
         assert index.isUnique() : index;
-        byte[] bkey = packedTuple(index, key);
-        Future<byte[]> future = txn.getTransaction().get(bkey);
-        if (txn.getUniquenessChecks() == null) {
-            long startNanos = System.nanoTime();
-            future.blockUntilReady();
-            long endNanos = System.nanoTime();
-            txn.uniquenessTime += (endNanos - startNanos);
-            if (future.get() != null) {
+        FDBPendingIndexChecks.PendingCheck<?> check =
+            FDBPendingIndexChecks.keyDoesNotExistInIndexCheck(session, txn, index, key);
+        if (txn.getIndexChecks() == null) {
+            check.blockUntilReady(txn);
+            if (!check.check()) {
+                // Using RowData, can give better error than check.throwException().
                 String msg = formatIndexRowString(session, rowData, index);
                 throw new DuplicateKeyException(index.getIndexName(), msg);
             }
         }
         else {
-            txn.getUniquenessChecks().add(txn, index, bkey, future);
+            txn.getIndexChecks().add(session, txn, index, check);
         }
     }
-
 
     //
     // Static
