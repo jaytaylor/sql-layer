@@ -193,6 +193,15 @@ class Product_Nested extends Operator
         // Cursor interface
 
         @Override
+        public void open()
+        {
+            super.open();
+            Row row = bindings.getRow(bindingPosition);
+            assert (row.rowType() == outerType) : row;
+            boundRow.hold(row);
+        }
+
+        @Override
         public Row next()
         {
             if (TAP_NEXT_ENABLED) {
@@ -205,7 +214,7 @@ class Product_Nested extends Operator
                 checkQueryCancelation();
                 Row row = input.next();
                 if ((row != null) && (row.rowType() == inputType)) {
-                    row = new ProductRow(productType, bindings.getRow(bindingPosition), row);
+                    row = new ProductRow(productType, boundRow.get(), row);
                 }
                 if (LOG_EXECUTION) {
                     LOG.debug("Product_Nested: yield {}", row);
@@ -218,11 +227,22 @@ class Product_Nested extends Operator
             }
         }
 
+        @Override
+        public void close()
+        {
+            super.close();
+            boundRow.release();
+        }
+
         // Execution interface
 
         Execution(QueryContext context, Cursor input)
         {
             super(context, input);
         }
+
+        // Object state
+
+        private ShareHolder<Row> boundRow = new ShareHolder<>();
     }
 }
