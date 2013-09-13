@@ -1,11 +1,11 @@
+etc/foundationdb
+etc/foundationdb/sql
 usr/share/doc/fdb-sql-layer
 usr/share/foundationdb
 usr/share/foundationdb/sql
 usr/share/foundationdb/sql/client
 usr/share/foundationdb/sql/plugins
 usr/share/foundationdb/sql/server
-etc/foundationdb
-etc/foundationdb/sql
 var/lib/foundationdb
 var/lib/foundationdb/sql
 var/log/foundationdb
