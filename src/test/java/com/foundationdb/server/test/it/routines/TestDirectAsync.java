@@ -37,7 +37,7 @@ import java.io.*;
  * <code><pre>
 CALL sqlj.install_jar('target/fdb-sql-layer-2.0.0-SNAPSHOT-tests.jar', 'testjar', 0);
 CREATE PROCEDURE system.`exec`(IN cmd VARCHAR(1024)) LANGUAGE java PARAMETER STYLE foundationdb_loadable_plan EXTERNAL NAME 'testjar:com.foundationdb.server.test.it.routines.TestDirectAsync';
-CALL system.`exec`('tail', '-f', '/tmp/foundationdb-sql/server.log');
+CALL system.`exec`('tail', '-f', '/tmp/fdb-sql-layer/layer.log');
  * </pre></code> 
  */
 public class TestDirectAsync extends LoadableDirectObjectPlan
