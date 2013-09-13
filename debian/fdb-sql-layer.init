@@ -5,171 +5,133 @@
 # Required-Stop:     $remote_fs
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: FoundationDB SQL Layer
+# Short-Description: start and stop fdb-sql-layer
 # Description:       FoundationDB SQL Layer
 ### END INIT INFO
 
-# Author: Nathan Williams <nathan.williams@foundationdb.com>
+# Author: FoundationDB <distribution@foundationdb.com>
 
-export JAR_FILE=/usr/share/foundationdb-sql/fdb-sql-layer.jar
-export DEP_DIR=/usr/share/foundationdb-sql/server
-export FDBSQL_CONF=/etc/foundationdb-sql
-export FDBSQL_HOME=/usr/share/foundationdb-sql
-export FDBSQL_OWNR=foundationdb-sql
-SELF=$(cd $(dirname $0); pwd -P)/$(basename $0)
-NAME="foundationdb-sql"
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="FoundationDB SQL Layer"
-log_file=/var/log/foundationdb-sql/server_stdout.log
-PIDFILE_DIR=/var/run/$NAME
-pidfile=$PIDFILE_DIR/server.pid
-timeout=60
-FDBSQL_PROG=/usr/sbin/fdbsqllayer
+NAME=fdb-sql-layer
+PIDFILE=/var/run/$NAME.pid
+SCRIPTNAME=/etc/init.d/$NAME
+USER=foundationdb
 DAEMON=/usr/sbin/fdbsqllayer
+DAEMON_ARGS="-H /usr/share/$USER/sql -c /etc/$USER/sql -p $PIDFILE"
 
-# Read configuration variable file if it is present
-[ -r /etc/default/$NAME ] && . /etc/default/$NAME
+START_TIMEOUT=60
+EXEC_NAME=java
+EXEC_DAEMON=$(which $EXEC_NAME)
 
-# /var/run is a tmpfs filesystem on ubuntu
-# on reboot and during upgrades, its contents can be wiped
-if [ ! -d $PIDFILE_DIR ]; then
-    mkdir $PIDFILE_DIR
-    chown $FDBSQL_OWNR $PIDFILE_DIR
-fi
-
-[ -e "$JAR_FILE" ] || exit 0
-[ -e "$FDBSQL_CONF/jvm.options" ] || exit 0
-
-# read JVM options
-. /etc/foundationdb-sql/jvm.options
-
-if [ -z "$JVM_OPTS" ]; then
-    echo "Initialization failed; \$JVM_OPTS not set!" >&2
-    exit 3
-fi
+# Exit if the package is not installed
+[ -x "$DAEMON" ] || exit 0
 
 # Load the VERBOSE setting and other rcS variables
 . /lib/init/vars.sh
 
 # Define LSB log_* functions.
-# Depend on lsb-base (>= 3.0-6) to ensure that this file is present.
+# Depend on lsb-base (>= 3.2-14) to ensure that this file is present.
 . /lib/lsb/init-functions
 
+# Read configuration variable file if it is present
+[ -r /etc/default/$NAME ] && . /etc/default/$NAME
+
 #
-# Function that returns 0 if process is running, or nonzero if not.
+# Function that starts the daemon/service
 #
-# The nonzero value is 3 if the process is simply not running, and 1 if the
-# process is not running but the pidfile exists (to match the exit codes for
-# the "status" command; see LSB core spec 3.1, section 20.2)
-#
-CMD_PATT="foundationdb-sql"
-is_running()
+do_start()
 {
-    if [ -f $pidfile ]; then
-        pid=`cat $pidfile`
-        grep -Eq "$CMD_PATT" "/proc/$pid/cmdline" 2>/dev/null && return 0
-        return 1
-    fi
-    return 3
+        # Return
+        #   0 if daemon has been started
+        #   1 if daemon was already running
+        #   2 if daemon could not be started
+
+        # Check if we're already running
+        start-stop-daemon --start --quiet --test \
+                          --pidfile $PIDFILE --exec $EXEC_DAEMON --user $USER \
+                > /dev/null || return 1
+
+        # Java process is running as $USER and cannot create pid itself.
+        rm -f $PIDFILE && touch $PIDFILE && chown $USER $PIDFILE
+        start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON \
+                --chuid $USER -- $DAEMON_ARGS || return 2
+
+        # Wait for process to come up
+        local ATTEMPTS=1
+        while [ ! -s $PIDFILE -a $ATTEMPTS -lt $START_TIMEOUT ]; do
+                sleep 1
+                ATTEMPTS=$(expr $ATTEMPTS + 1)
+                # Simple, but generally useful, secondary check that
+                # *any* java process is still active to avoid 60s wait. 
+                pidof $EXEC_NAME >/dev/null || break
+        done
+        if [ ! -s $PIDFILE ]; then
+                return 2
+        fi
 }
 
-check_no_process()
+#
+# Function that stops the daemon/service
+#
+do_stop()
 {
-    if [ ! -e "$pidfile" ]; then
-        check_pid=`pgrep -f "cp $JAR_FILE"`
-        if [ "$check_pid" != "" ]; then
-            return 1
-        fi
-    fi
-    return 0
+        # Return
+        #   0 if daemon has been stopped
+        #   1 if daemon was already stopped
+        #   2 if daemon could not be stopped
+        #   other if a failure occurred
+        start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 \
+                          --pidfile $PIDFILE --name $EXEC_NAME --user $USER
+        RETVAL="$?"
+        [ "$RETVAL" = 2 ] && return 2
+        rm -f $PIDFILE
+        return "$RETVAL"
 }
 
 case "$1" in
-    start)
-        is_running
-        stat=$?
-        if [ "$stat" = "0" ]; then
-            log_failure_msg "$DESC is already running"
-            exit "$stat"
-        fi
-        check_no_process
-        if [ $? -ne 0 ]; then
-            log_failure_msg "$DESC is already running but no pidfile exists"
-            exit 1
-        fi
-        log_daemon_msg "Starting $DESC"
-        start_daemon "$DAEMON --chuid $FDBSQL_OWNR" "-p $pidfile" "-j $JAR_FILE" "-d $DEP_DIR" "-c $FDBSQL_CONF" > $log_file 2>&1 &
-        # we give server 60 seconds to start all services
-        attempts=1
-        while [ ! -f $pidfile ]
-        do
-            attempts=$(($attempts+1))
-            if [ $attempts = $timeout ]; then
-                break
-            fi
-            sleep 1
-        done
-        if [ -f $pidfile ]; then
-            log_end_msg 0
-        else
-            log_failure_msg "$DESC failed to start correctly"
-        fi
-        ;;
-    stop)
-        is_running
-        stat=$?
-        case "$stat" in
-            1) 
-                log_failure_msg "could not access pidfile or PID in pidfile is incorrect for $DESC"
-                exit 0 # zero exit code because apt-get remove fails otherwise
-                ;;
-            3) 
-                log_failure_msg "$DESC is not running or no pidfile exists"
-                exit 0 # zero exit code because apt-get remove fails otherwise
-                ;;
-        esac 
-        log_daemon_msg "Stopping $DESC"
-        if [ -f "$pidfile" ]; then
-            killproc -p "$pidfile" "$DAEMON"
-            log_progress_msg "$DESC"
-        fi
-        # we give server 60 seconds to shut down
-        attempts=1
-        while [ -f $pidfile ]
-        do
-            attempts=$(($attempts+1))
-            if [ $attempts = $timeout ]; then
-                break
-            fi
-            sleep 1
-        done
-        if [ -f $pidfile ]; then
-            log_failure_msg "$DESC failed to shutdown cleanly"
-        else
-            log_end_msg 0
-        fi
-        ;;
-    force-reload|restart)
-        set +e; $SELF stop; set -e
-        sleep 5
-        $SELF start
-        ;;
-    status)
-        check_no_process
-        if [ $? -ne 0 ]; then
-            log_failure_msg "$DESC is running (pid $check_pid) but no pidfile exists"
-            exit 1
-        fi
-        is_running
-        stat=$?
-        case "$stat" in
-          0) log_success_msg "$DESC is running" ;;
-          1) log_failure_msg "could not access pidfile for $DESC" ;;
-          *) log_success_msg "$DESC is not running" ;;
+  start)
+        [ "$VERBOSE" != no ] && log_daemon_msg "Starting $DESC"
+        do_start
+        case "$?" in
+                0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
+                2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
         esac
-        exit "$stat"
         ;;
-    *)
-        echo "Usage: $SELF start|stop|status|restart|force-reload"
+  stop)
+        [ "$VERBOSE" != no ] && log_daemon_msg "Stopping $DESC"
+        do_stop
+        case "$?" in
+                0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
+                2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
+        esac
+        ;;
+  status)
+        status_of_proc "-p $PIDFILE" "$EXEC" "$DESC" && exit 0 || exit $?
+        ;;
+  restart|force-reload)
+        log_daemon_msg "Restarting $DESC"
+        do_stop
+        case "$?" in
+          0|1)
+                do_start
+                case "$?" in
+                        0) log_end_msg 0 ;;
+                        1) log_end_msg 1 ;; # Old process is still running
+                        *) log_end_msg 1 ;; # Failed to start
+                esac
+                ;;
+          *)
+                # Failed to stop
+                log_end_msg 1
+                ;;
+        esac
+        ;;
+  *)
+        echo "Usage: $SCRIPTNAME {start|stop|status|restart|force-reload}" >&2
         exit 3
+        ;;
 esac
+
+:
 
