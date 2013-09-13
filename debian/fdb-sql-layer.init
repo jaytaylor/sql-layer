@@ -67,6 +67,7 @@ do_start()
                 pidof $EXEC_NAME >/dev/null || break
         done
         if [ ! -s $PIDFILE ]; then
+                rm -f $PIDFILE
                 return 2
         fi
 }
