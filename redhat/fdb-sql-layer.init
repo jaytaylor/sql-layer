@@ -1,142 +1,101 @@
 #!/bin/bash
 #
-# /etc/init.d/fdb-sql-layer
+#	/etc/rc.d/init.d/fdb-sql-layer
 #
-# Startup script for $NAME
-# 
-# chkconfig: 2345 20 80
-# description: Starts and stops $NAME
+#	FoundationDB SQL Layer
+#
+# chkconfig: 2345 90 10
+# description: FoundationDB SQL Layer
+# processname: java
+# config: /etc/foundationdb/sql/jvm.options
+# config: /etc/foundationdb/sql/log4j.properties
+# config: /etc/foundationdb/sql/server.properties
+# config: /etc/foundationdb/sql/services-config.yaml
+# pidfile: /var/run/fdb-sql-layer.pid
 
-. /etc/rc.d/init.d/functions
+NAME=fdb-sql-layer
+PIDFILE=/var/run/$NAME.pid
+LOCKFILE=/var/lock/subsys/$NAME
+USER=foundationdb
+DAEMON=/usr/sbin/fdbsqllayer
+DAEMON_ARGS="-H /usr/share/$USER/sql -c /etc/$USER/sql -p $PIDFILE"
 
-export JAR_FILE=/usr/share/foundationdb-sql/fdb-sql-layer.jar
-export DEP_DIR=/usr/share/foundationdb-sql/server
-export FDBSQL_CONF=/etc/foundationdb-sql
-export FDBSQL_HOME=/usr/share/foundationdb-sql
-export FDBSQL_OWNR="foundationdb-sql"
-NAME="FoundationDB SQL Layer"
-log_file=/var/log/foundationdb-sql/server_stdout.log
-pid_file=/var/run/foundationdb-sql/server.pid
-timeout=60
-FDBSQL_PROG=/usr/sbin/fdbsqllayer
+EXEC_NAME=java
+START_TIMEOUT=60
 
-# Use LSB init script functions for printing messages, if possible
-lsb_functions="/lib/lsb/init-functions"
-if test -f $lsb_functions ; then
-  . $lsb_functions
-else
-  log_success_msg()
-  {
-    echo " SUCCESS! $@"
-  }
-  log_failure_msg()
-  {
-    echo " ERROR! $@"
-  }
-fi
+# Source function library
+. /etc/init.d/functions
 
-# Read configuration variable file if it is present
-[ -r /etc/default/fdb-sql-layer ] && . /etc/default/fdb-sql-layer
+start() {
+    echo -n "Starting $NAME: "
 
-check_no_process()
-{
-    if [ ! -e "$pid_file" ]; then
-        check_pid=`pgrep -f "cp $JAR_FILE"`
-        if [ "$check_pid" != "" ]; then
-            return 1
-        fi
+    # Java process is running as $USER and cannot create pid itself.
+    if [ ! -f $PIDFILE ]; then
+        touch $PIDFILE && chown $USER $PIDFILE
     fi
-    return 0
+
+    daemon --check=$NAME --user=$USER --pidfile=$PIDFILE $DAEMON $DAEMON_ARGS &>/dev/null
+    RETVAL=$?
+
+    if [ $RETVAL -eq 0 ]; then
+        # Wait for process to come up
+        local ATTEMPTS=1
+        while [ ! -s $PIDFILE -a $ATTEMPTS -lt $START_TIMEOUT ]; do
+            sleep 1
+            ATTEMPTS=$(expr $ATTEMPTS + 1)
+            # Simple, but generally useful, secondary check that
+            # *any* java process is still active to avoid 60s wait.
+            pidof $EXEC_NAME >/dev/null || break
+        done
+    fi
+
+    if [ -s $PIDFILE ]; then
+        success
+        touch $LOCKFILE
+        RETVAL=0
+    else
+        rm -f $PIDFILE
+        failure
+        RETVAL=2
+    fi
+
+    echo
+}
+
+stop() {
+    echo -n "Shutting down $NAME: "
+    killproc -p $PIDFILE $NAME
+    RETVAL=$?
+    echo
+    [ $RETVAL -eq 0 ] && rm -f $LOCKFILE
+}
+
+restart() {
+    stop
+    start
 }
 
 case "$1" in
     start)
-        if [ -f $pid_file ]; then
-            status -p $pid_file foundationdb-sql
-            exit 1
-        fi
-        check_no_process
-        if [ $? -ne 0 ]; then
-            log_failure_msg "$NAME is already running but no pidfile exists"
-            exit 1
-        fi
-        su $FDBSQL_OWNR -c "$FDBSQL_PROG -p $pid_file -j $JAR_FILE -d $DEP_DIR -c $FDBSQL_CONF" > $log_file 2>&1
-        if [ $? -ne 0 ]; then
-            log_failure_msg "Starting $NAME"
-        fi
-        # we give server 60 seconds to start all services
-        echo -n "Starting $NAME "
-        attempts=1
-        while [ ! -f $pid_file ]
-        do
-            attempts=$(($attempts+1))
-            echo -n "."
-            if [ $attempts = $timeout ]; then
-                break
-            fi
-            sleep 1
-        done
-        if [ -f $pid_file ]; then
-            log_success_msg
-        else
-            log_failure_msg
-        fi
+        start
         ;;
     stop)
-        status -p $pid_file foundationdb-sql > /dev/null 2>&1
-        retval=$?
-        if [ ${retval} -ne 0 ]; then
-            # return codes from status as documented in LSB spec
-            # http://refspecs.linuxbase.org/LSB_4.0.0/LSB-Core-generic/LSB-Core-generic/iniscrptact.html
-            case ${retval} in
-            1) 
-              log_failure_msg "$NAME is not running, but PID file exists"
-              ;;
-            3) 
-              log_failure_msg "$NAME process is not running"
-              ;;
-            *)
-              log_failure_msg "Shutdown $NAME"
-              ;;
-            esac
-            exit 1
-        fi
-        echo -n "Shutdown $NAME "
-        su $FDBSQL_OWNR -c "kill `cat $pid_file`"
-        # we give server 60 seconds to shut down
-        attempts=1
-        while [ -f $pid_file ]
-        do
-            attempts=$(($attempts+1))
-            echo -n "."
-            if [ $attempts = $timeout ]; then
-                break
-            fi
-            sleep 1
-        done
-        if [ -f $pid_file ]; then
-            log_failure_msg
-        else
-            log_success_msg
-        fi
+        stop
         ;;
-    reload|restart)
-        $0 stop
-        sleep 5
-        $0 start
+    restart|reload|force-reload)
+        restart
+        ;;
+    condrestart)
+        [ -f $LOCKFILE ] && restart || :
         ;;
     status)
-        check_no_process
-        if [ $? -ne 0 ]; then
-            echo "$NAME is running (pid $check_pid) but no pidfile exists"
-            exit 1
-        fi
-        status -p $pid_file foundationdb-sql
+        status -p $PIDFILE -l $LOCKFILE $NAME
+        RETVAL=$?
         ;;
     *)
-        echo "Usage: `basename $0` start|stop|status|restart|reload"
-        exit 1
+        echo "Usage: $0 {start|stop|status|restart|reload|force-reload|condrestart}"
+        RETVAL=1
 esac
 
-exit 0
+exit $RETVAL
 

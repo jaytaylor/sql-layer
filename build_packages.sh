@@ -40,7 +40,7 @@ if [ "${1}" = "--git-count" ]; then
 fi
 
 
-mvn_install="mvn clean install -DGIT_COUNT=${git_count} -DGIT_HASH=${git_hash} -DskipTests=true"
+mvn_package="mvn clean package -B -U -DGIT_COUNT=${git_count} -DGIT_HASH=${git_hash} -DskipTests=true"
 
 echo "Building FoundationDB SQL Layer"
 
@@ -54,7 +54,7 @@ if [ ! -d ${common_dir} ]; then
 fi
 echo "-- packages-common directory: ${common_dir} (Linux only)"
 cp ${common_dir}/* packages-common/
-cp bin/fdbsqllayer packages-common/
+cp bin/fdbsqllayer LICENSE.txt packages-common/
 
 #
 # Add client-tools
@@ -66,7 +66,7 @@ cd target
 rm -rf client-tools
 git clone ${TOOLS_LOC} client-tools
 cd client-tools
-mvn -DskipTests=true install 
+mvn clean package -B -U -DskipTests=true
 rm -f target/*-tests.jar target/*-sources.jar
 cp bin/fdbsql{dump,load} ../../packages-common/
 cp target/fdb-sql-layer-client-tools-*.jar ../../packages-common/
@@ -82,37 +82,26 @@ fi
 # Handle platform-specific packaging process
 if [ ${platform} == "debian" ]; then
     cp -R packages-common/* ${platform}
-    $mvn_install
+    ${mvn_package}
     mkdir -p ${platform}/server/
     cp ./target/dependency/* ${platform}/server/
     cp -R packages-common/plugins/ ${platform}/
     # No sign source, no sign changes, binary only
     debuild -us -uc -b
 elif [ ${platform} == "redhat" ]; then
-    rm -rf ${PWD}/redhat/{fdbsql,rpmbuild}
-    mkdir -p ${PWD}/redhat/fdbsql/redhat
+    rm -rf ${PWD}/redhat/rpmbuild
     mkdir -p ${PWD}/redhat/rpmbuild/{BUILD,SOURCES,SRPMS,RPMS/noarch}
-    tar_prefix=fdbsql
-    tar_file=${PWD}/redhat/rpmbuild/SOURCES/${tar_prefix}.tar
-    git archive --format=tar --output="$tar_file" --prefix="${tar_prefix}/" HEAD
-    rm -f ${PWD}/redhat/fdbsql/redhat/* # Clear out old files
-    cp -R packages-common/* ${PWD}/redhat/fdbsql/redhat
-    pushd redhat
-    # git status outputs lines like "?? redhat/fdbsql/"
-    # we want to turn those to just "fdbsql/"
-    for to_add in $(git status --untracked=normal --porcelain | sed 's/\?\+\s\+redhat\///'); do
-        tar --append -f $tar_file $to_add
-    done
-    popd
-    gzip $tar_file
+    BUILD="${PWD}/redhat/rpmbuild/BUILD"
+    ${mvn_package}
+    cp -r packages-common/* target/ redhat/fdb-sql-layer.init "${BUILD}"
     spec_file="$PWD/redhat/fdb-sql-layer.spec"
-    cat "${spec_file}.in" | \
-        sed -e "10,10s/_EPOCH/${epoch}/g" \
-            -e "s/_GIT_COUNT/${git_count}/g" -e "s/_GIT_HASH/${git_hash}/g" \
-        > "${spec_file}"
-    rpmbuild --target=noarch --define "_topdir ${PWD}/redhat/rpmbuild" -ba "${spec_file}"
+    sed -e "s/_EPOCH/${epoch}/g" \
+        -e "s/_GIT_COUNT/${git_count}/g" \
+        -e "s/_GIT_HASH/${git_hash}/g" \
+        "${spec_file}.in" > "${spec_file}"
+    rpmbuild --target=noarch --define "_topdir ${PWD}/redhat/rpmbuild" -bb "${spec_file}"
 elif [ ${platform} == "binary" ]; then
-    $mvn_install
+    ${mvn_package}
     rm -f ./target/*-tests.jar ./target/*-sources.jar
 
     # For releases only
@@ -154,7 +143,7 @@ elif [ ${platform} == "macosx" ]; then
     rm prototype.txt
     
     # build jar
-    $mvn_install
+    ${mvn_package}
     rm -f ./target/*-tests.jar ./target/*-sources.jar
 
     build_dmg() {
