@@ -48,11 +48,11 @@ public class SQLJJarRoutines
         ServerQueryContext context = ServerCallContextStack.current().getContext();
         ServerSession server = context.getServer();
         TableName jarName = jarName(server, jar);
-        server.getRoutineLoader().unloadSQLJJar(server.getSession(), jarName);
         NewAISBuilder aisb = AISBBasedBuilder.create(server.getDefaultSchemaName());
         aisb.sqljJar(jarName).url(url, true);
         SQLJJar sqljJar = aisb.ais().getSQLJJar(jarName);
         server.getDXL().ddlFunctions().replaceSQLJJar(server.getSession(), sqljJar);
+        server.getRoutineLoader().checkUnloadSQLJJar(server.getSession(), jarName);
     }
 
     public static void remove(String jar, long undeploy) {
@@ -62,8 +62,8 @@ public class SQLJJarRoutines
         if (undeploy != 0) {
             new SQLJJarDeployer(context, jarName).undeploy();
         }
-        server.getRoutineLoader().unloadSQLJJar(server.getSession(), jarName);
         server.getDXL().ddlFunctions().dropSQLJJar(server.getSession(), jarName);
+        server.getRoutineLoader().checkUnloadSQLJJar(server.getSession(), jarName);
     }
 
     private static TableName jarName(ServerSession server, String jar) {

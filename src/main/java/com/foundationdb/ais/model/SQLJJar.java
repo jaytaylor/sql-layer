@@ -76,10 +76,18 @@ public class SQLJJar
         this.url = url;
     }
 
+    public long getVersion() {
+        return version;
+    }
+
+    public void setVersion(long version) {
+        this.version = version;
+    }
 
     // State
     protected final AkibanInformationSchema ais;
     protected final TableName name;
     protected URL url;
+    protected long version;
     protected transient final Collection<Routine> routines = new ArrayList<>();
 }
