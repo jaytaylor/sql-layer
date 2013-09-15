@@ -47,7 +47,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     private static final String INITIALLY_ENABLED_TAPS = "taps.initiallyenabled";
 
     /** Server properties. Format specified by server. */
-    public static final String CONFIG_DIR_PROP = "fdbsql.config_dir";
+    public static final String CONFIG_DIR_PROP = "fdbsql.config_dir"; // Note: Also in GuicedServiceManager
     public static final String SERVER_PROPERTIES_FILE_NAME = "server.properties";
 
     private volatile Map<String,String> properties = null;

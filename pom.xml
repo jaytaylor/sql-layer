@@ -100,7 +100,7 @@
         </dependency>
         <dependency>
             <groupId>com.foundationdb</groupId>
-            <artifactId>foundationdb-sql-parser</artifactId>
+            <artifactId>fdb-sql-parser</artifactId>
             <version>1.0.17-SNAPSHOT</version>
         </dependency>
         <dependency>
@@ -122,7 +122,7 @@
         </dependency>
         <dependency>
             <groupId>com.foundationdb</groupId>
-            <artifactId>foundationdb-sql-parser</artifactId>
+            <artifactId>fdb-sql-parser</artifactId>
             <version>1.0.17-SNAPSHOT</version>
             <type>test-jar</type>
             <scope>test</scope>
