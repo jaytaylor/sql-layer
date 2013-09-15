@@ -208,11 +208,13 @@ message Routine {
     optional int32     dynamicResultSets = 12; // result set values
     optional bool      deterministic = 13; // same value from same arguments
     optional bool      calledOnNullInput = 14; // handles null argument specially
+    optional int64     version       = 15; // version of this routine
 }
 
 message SQLJJar {
     optional string jarName = 1; // name of routine
     optional string url     = 2; // location of JAR file
+    optional int64  version = 3; // version of this routine
 }
 
 message Schema {

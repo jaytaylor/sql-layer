@@ -506,6 +506,9 @@ public class ProtobufReader {
                 routine.setDeterministic(pbRoutine.getDeterministic());
             if (pbRoutine.hasCalledOnNullInput())
                 routine.setCalledOnNullInput(pbRoutine.getCalledOnNullInput());
+            if (pbRoutine.hasVersion()) {
+                routine.setVersion(pbRoutine.getVersion());
+            }
         }
     }
     
@@ -581,6 +584,9 @@ public class ProtobufReader {
                                                  schema,
                                                  pbJar.getJarName(),
                                                  new URL(pbJar.getUrl()));
+                if (pbJar.hasVersion()) {
+                    sqljJar.setVersion(pbJar.getVersion());
+                }
             }
             catch (MalformedURLException ex) {
                 throw new ProtobufReadException(
@@ -828,7 +834,8 @@ public class ProtobufReader {
                 AISProtobuf.Routine.SQLALLOWED_FIELD_NUMBER,
                 AISProtobuf.Routine.DYNAMICRESULTSETS_FIELD_NUMBER,
                 AISProtobuf.Routine.DETERMINISTIC_FIELD_NUMBER,
-                AISProtobuf.Routine.CALLEDONNULLINPUT_FIELD_NUMBER
+                AISProtobuf.Routine.CALLEDONNULLINPUT_FIELD_NUMBER,
+                AISProtobuf.Routine.VERSION_FIELD_NUMBER
         );
     }
 
@@ -843,7 +850,8 @@ public class ProtobufReader {
 
     private static void hasRequiredFields(AISProtobuf.SQLJJar pbJar) {
         requireAllFieldsExcept(
-                pbJar
+                pbJar,
+                AISProtobuf.SQLJJar.VERSION_FIELD_NUMBER
         );
     }
 

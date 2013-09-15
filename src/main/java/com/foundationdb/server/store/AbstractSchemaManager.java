@@ -461,6 +461,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         checkSystemSchema(sqljJar.getName(), false);
         if (oldAIS.getSQLJJar(sqljJar.getName()) != null)
             throw new DuplicateSQLJJarNameException(sqljJar.getName());
+        sqljJar.setVersion(oldAIS.getGeneration() + 1);
         final AkibanInformationSchema newAIS = AISMerge.mergeSQLJJar(oldAIS, sqljJar);
         final String schemaName = sqljJar.getName().getSchemaName();
         saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
@@ -473,6 +474,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         SQLJJar oldJar = oldAIS.getSQLJJar(sqljJar.getName());
         if (oldJar == null)
             throw new NoSuchSQLJJarException(sqljJar.getName());
+        sqljJar.setVersion(oldAIS.getGeneration() + 1);
         final AkibanInformationSchema newAIS = AISCloner.clone(oldAIS);
         // Changing old state rather than actually replacing saves having to find
         // referencing routines, possibly in other schemas.
@@ -648,6 +650,11 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         checkSystemSchema(routine.getName(), inSystem);
         if (!replaceExisting && (oldAIS.getRoutine(routine.getName()) != null))
             throw new DuplicateRoutineNameException(routine.getName());
+        // This may not be the generation that newAIS will receive,
+        // but it will still be > than any previous routine, and in
+        // particular any by the same name, whether replaced here or
+        // dropped earlier.
+        routine.setVersion(oldAIS.getGeneration() + 1);
         final AkibanInformationSchema newAIS = AISMerge.mergeRoutine(oldAIS, routine);
         if (inSystem)
             unSavedAISChangeWithRowDefs(session, newAIS);
