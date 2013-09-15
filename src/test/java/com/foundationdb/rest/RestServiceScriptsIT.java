@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -156,8 +157,10 @@ public class RestServiceScriptsIT extends ITBase {
     }
 
     @Override
-    protected Map<String, String> startupConfigProperties() {
-        return uniqueStartupConfigProperties(RestServiceScriptsIT.class);
+    protected Map<String,String> startupConfigProperties() {
+        Map<String,String> config = new HashMap<>(super.startupConfigProperties());
+        config.put("fdbsql.rest.resource", "entity,fulltext,model,procedurecall,sql,security,version,direct,view");
+        return config;
     }
 
     public static File[] gatherRequestFiles(File dir) {
