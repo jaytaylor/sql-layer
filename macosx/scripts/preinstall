@@ -6,9 +6,10 @@ if [ -f /Library/LaunchDaemons/com.foundationdb.layer.sql.plist ]; then
 fi
 
 # Backup any existing config files
-if [ -d /usr/local/etc/foundationdb/sql ]; then
-    for f in $(ls /usr/local/etc/foundationdb/sql); do
-        mv "$f" "${f}.old"
+DIR="/usr/local/etc/foundationdb/sql"
+if [ -d $DIR ]; then
+    for f in $(ls "${DIR}"/*); do
+        mv "${f}" "${f}.old"
     done
 fi
 

@@ -40,25 +40,25 @@
             }
         }
         
-        function findFoundationDBClients() {
+        function findFoundationDBClient() {
             var fdbc = my.target.receiptForIdentifier("FoundationDB-clients");
             if(fdbc == null) {
-                my.result.title = "Clients is not installed."
-                my.result.message = "No FoundationDB Clients library found.";
+                my.result.title = "Client is not installed."
+                my.result.message = "No FoundationDB Client library found.";
                 return false;
             }
             var installedVersion = fdbc.version;
             var versionCmp = system.compareVersions(gMinFDBCVersion, installedVersion);
             if(versionCmp > 0) {
-                my.result.title = "Unsupported Clients Version";
-                my.result.message = "Installed FoundationDB Clients version (" + installedVersion + ") is unsupported.";
+                my.result.title = "Unsupported Client Version";
+                my.result.message = "Installed FoundationDB Client version (" + installedVersion + ") is unsupported.";
                 return false;
             }
             return true;
         }
 
         function dependencyCheck() {
-            if(!findJava() || !findFoundationDBClients()) {
+            if(!findJava() || !findFoundationDBClient()) {
                 my.result.message = my.result.message + " Please review the requirements in the Read Me section.";
                 my.result.type = "Fatal";
             }

@@ -13,10 +13,8 @@ rm -rf /usr/local/foundationdb/sql
 
 pkgutil --forget com.foundationdb.layer.sql >/dev/null
 
-echo
 echo "Your configuration and log files not been removed."
 echo "To remove these files, delete the following directories:"
-echo "  - /usr/local/foundationdb/log/sql"
+echo "  - /usr/local/foundationdb/logs/sql"
 echo "  - /usr/local/etc/foundationdb/sql"
-echo
 

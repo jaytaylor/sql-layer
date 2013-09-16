@@ -27,6 +27,7 @@ fi
 platform=$1
 git_hash=`git rev-parse --short HEAD`
 git_count=`git rev-list --merges HEAD |wc -l |tr -d ' '` # --count is newer
+layer_version=$(mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version |grep -o '^[0-9.]\+')
 
 if [ "${1}" = "--git-hash" ]; then
     echo "${git_hash}"
@@ -127,50 +128,50 @@ elif [ ${platform} == "binary" ]; then
     cp LICENSE.txt ${BINARY_NAME}/LICENSE.txt
     tar zcf ${BINARY_TAR_NAME} ${BINARY_NAME}    
 elif [ ${platform} == "macosx" ]; then
-    layer_version=$(mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version |grep -o '^[0-9.]\+')
-
     ${mvn_package}
     rm -f ./target/*-tests.jar ./target/*-sources.jar
 
-    pkg_dir=target/packaging/osx
-    pkg_root=${pkg_dir}/root
+    PKG_DIR=target/packaging/osx
+    PKG_ROOT=${PKG_DIR}/root
+    PKG_ETC=${PKG_ROOT}/usr/local/etc/foundationdb/sql
+    PKG_LOCAL=${PKG_ROOT}/usr/local/foundationdb
 
-    mkdir -p ${pkg_dir}/
-    mkdir -p ${pkg_root}/Library/LaunchDaemons
-    mkdir -p ${pkg_root}/usr/local/bin
-    mkdir -p ${pkg_root}/usr/local/libexec
-    mkdir -p ${pkg_root}/usr/local/etc/foundationdb/sql
-    mkdir -p ${pkg_root}/usr/local/foundationdb/logs/sql
-    mkdir -p ${pkg_root}/usr/local/foundationdb/sql/client
-    mkdir -p ${pkg_root}/usr/local/foundationdb/sql/plugins
-    mkdir -p ${pkg_root}/usr/local/foundationdb/sql/server
+    mkdir -p ${PKG_DIR}/
+    mkdir -p ${PKG_ROOT}/Library/LaunchDaemons
+    mkdir -p ${PKG_ROOT}/usr/local/bin
+    mkdir -p ${PKG_ROOT}/usr/local/libexec
+    mkdir -p ${PKG_ETC}
+    mkdir -p ${PKG_LOCAL}/logs/sql
+    mkdir -p ${PKG_LOCAL}/sql/client
+    mkdir -p ${PKG_LOCAL}/sql/plugins
+    mkdir -p ${PKG_LOCAL}/sql/server
 
-    cp -r macosx/resources ${pkg_dir}
-    cp LICENSE.txt ${pkg_dir}/resources
+    cp -r macosx/resources ${PKG_DIR}
+    cp LICENSE.txt ${PKG_DIR}/resources
     
-    install -m 0644 LICENSE.txt ${pkg_root}/usr/local/foundationdb/LICENSE-SQL_LAYER
-    install -m 0644 macosx/com.foundationdb.layer.sql.plist ${pkg_root}/Library/LaunchDaemons
+    install -m 0644 macosx/com.foundationdb.layer.sql.plist ${PKG_ROOT}/Library/LaunchDaemons
 
-    install -m 0755 macosx/uninstall-FoundationDB-SQL_Layer.sh ${pkg_root}/usr/local/foundationdb
-    install -m 0644 config-files/* ${pkg_root}/usr/local/etc/foundationdb/sql
-    install -m 0644 macosx/config-files/* ${pkg_root}/usr/local/etc/foundationdb/sql
+    install -m 0644 config-files/* ${PKG_ETC}
+    install -m 0644 macosx/config-files/* ${PKG_ETC}
 
-    install -m 0644 target/fdb-sql-layer-*.jar ${pkg_root}/usr/local/foundationdb/sql
-    install -m 0644 target/dependency/* ${pkg_root}/usr/local/foundationdb/sql/server
-    install -m 0644 packages-common/fdb-sql-layer-client-tools-*.jar ${pkg_root}/usr/local/foundationdb/sql
-    install -m 0644 packages-common/client/* ${pkg_root}/usr/local/foundationdb/sql/client
-    #cp packages-common/plugins/* ${pkg_root}/usr/local/foundationdb/sql/plugins
+    install -m 0644 LICENSE.txt ${PKG_LOCAL}/LICENSE-SQL_LAYER
+    install -m 0755 macosx/uninstall-FoundationDB-SQL_Layer.sh ${PKG_LOCAL}
+    install -m 0644 target/fdb-sql-layer-*.jar ${PKG_LOCAL}/sql
+    install -m 0644 target/dependency/* ${PKG_LOCAL}/sql/server
+    install -m 0644 packages-common/fdb-sql-layer-client-tools-*.jar ${PKG_LOCAL}/sql
+    install -m 0644 packages-common/client/* ${PKG_LOCAL}/sql/client
+    #install -m 0644 packages-common/plugins/* ${PKG_LOCAL}/sql/plugins
 
-    ln -s /usr/local/foundationdb/sql/fdb-sql-layer-2.0.0-SNAPSHOT.jar ${pkg_root}/usr/local/foundationdb/sql/fdb-sql-layer.jar
-    ln -s /usr/local/foundationdb/sql/fdb-sql-layer-client-tools-1.3.7-SNAPSHOT.jar ${pkg_root}/usr/local/foundationdb/sql/fdb-sql-layer-client-tools.jar
+    ln -s /usr/local/foundationdb/sql/fdb-sql-layer-2.0.0-SNAPSHOT.jar ${PKG_LOCAL}/sql/fdb-sql-layer.jar
+    ln -s /usr/local/foundationdb/sql/fdb-sql-layer-client-tools-1.3.7-SNAPSHOT.jar ${PKG_LOCAL}/sql/fdb-sql-layer-client-tools.jar
 
     sed 's/usr\/share/usr\/local/g' bin/fdbsqllayer > packages-common/fdbsqllayer
-    install -m 0755 packages-common/fdbsqldump ${pkg_root}/usr/local/bin
-    install -m 0755 packages-common/fdbsqlload ${pkg_root}/usr/local/bin
-    install -m 0755 packages-common/fdbsqllayer ${pkg_root}/usr/local/libexec
+    install -m 0755 packages-common/fdbsqldump ${PKG_ROOT}/usr/local/bin
+    install -m 0755 packages-common/fdbsqlload ${PKG_ROOT}/usr/local/bin
+    install -m 0755 packages-common/fdbsqllayer ${PKG_ROOT}/usr/local/libexec
 
-    pkgbuild --root ${pkg_root} --identifier com.foundationdb.layer.sql --version $layer_version --scripts macosx/scripts target/SQL_Layer.pkg
-    productbuild --distribution macosx/Distribution.xml --resources ${pkg_dir}/resources --package-path target/ target/FoundationDB-SQL_Layer-${layer_version}.pkg
+    pkgbuild --root ${PKG_ROOT} --identifier com.foundationdb.layer.sql --version ${layer_version} --scripts macosx/scripts target/SQL_Layer.pkg
+    productbuild --distribution macosx/Distribution.xml --resources ${PKG_DIR}/resources --package-path target/ target/FoundationDB-SQL_Layer-${layer_version}.pkg
 else
     echo "Invalid Argument: ${platform}"
     echo "${usage}"
