@@ -1,6 +1,6 @@
 #!/bin/bash
 
-launchctl unload /Library/LaunchDaemons/com.foundationdb.layer.sql.plist &>/dev/null || :
+/bin/launchctl unload /Library/LaunchDaemons/com.foundationdb.layer.sql.plist &>/dev/null || :
 
 rm -f /Library/LaunchDaemons/com.foundationdb.layer.sql.plist
 rm -f /usr/local/bin/fdbsqldump
@@ -11,7 +11,7 @@ rm -f /usr/local/foundationdb/uninstall-FoundationDB-SQL_Layer.sh
 
 rm -rf /usr/local/foundationdb/sql
 
-pkgutil --forget com.foundationdb.layer.sql >/dev/null
+/usr/sbin/pkgutil --forget com.foundationdb.layer.sql >/dev/null
 
 echo "Your configuration and log files not been removed."
 echo "To remove these files, delete the following directories:"
