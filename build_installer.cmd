@@ -61,16 +61,16 @@ COPY target\client-tools\bin\*.cmd target\isstage\bin
 COPY windows\config-files\* target\isstage\config
 ECHO -tests.jar >target\xclude
 ECHO -sources.jar >>target\xclude
-XCOPY target\foundationdb-sql-layer-*.jar target\isstage\lib /EXCLUDE:target\xclude
+XCOPY target\fdb-sql-layer-*.jar target\isstage\lib /EXCLUDE:target\xclude
 COPY target\dependency\* target\isstage\lib\server
-XCOPY target\client-tools\target\foundationdb-sql-layer-client-tools-*.jar target\isstage\lib /EXCLUDE:target\xclude
+XCOPY target\client-tools\target\fdb-sql-layer-client-tools-*.jar target\isstage\lib /EXCLUDE:target\xclude
 COPY target\client-tools\target\dependency\* target\isstage\lib\client
 
 CD target\isstage
 
-FOR %%j IN (lib\foundationdb-sql-layer-*.jar) DO SET JARFILE=%%~nj
+FOR %%j IN (lib\fdb-sql-layer-*.jar) DO SET JARFILE=%%~nj
 FOR /F "delims=- tokens=3" %%n IN ("%JARFILE%") DO SET VERSION=%%n
-SET INSTALLER=foundationdb-sql-layer-%VERSION%-installer
+SET INSTALLER=fdb-sql-layer-%VERSION%-installer
 
 curl -o procrun.zip -L http://archive.apache.org/dist/commons/daemon/binaries/windows/commons-daemon-1.0.11-bin-windows.zip
 

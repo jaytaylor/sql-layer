@@ -62,12 +62,6 @@ JVM_OPTS="$JVM_OPTS -XX:+HeapDumpOnOutOfMemoryError"
 # comment out this entry to enable IPv6 support).
 JVM_OPTS="$JVM_OPTS -Djava.net.preferIPv4Stack=true"
 
-#if [ "`uname`" = "Linux" ] ; then
-#    # reduce the per-thread stack size 
-#    # Only do so on Linux where it is known to be supported.
-#    JVM_OPTS="$JVM_OPTS -Xss165k"
-#fi
-
 # GC tuning options
 JVM_OPTS="$JVM_OPTS -XX:+UseParNewGC" 
 
@@ -77,7 +71,7 @@ JVM_OPTS="$JVM_OPTS -XX:+UseParNewGC"
 # JVM_OPTS="$JVM_OPTS -XX:+PrintClassHistogram"
 # JVM_OPTS="$JVM_OPTS -XX:+PrintTenuringDistribution"
 # JVM_OPTS="$JVM_OPTS -XX:+PrintGCApplicationStoppedTime"
-# JVM_OPTS="$JVM_OPTS -Xloggc:/var/log/foundationdb-sql/gc.log"
+# JVM_OPTS="$JVM_OPTS -Xloggc:/var/log/foundationdb/sql/gc.log"
 
 # jmx: metrics and administration interface
 # 

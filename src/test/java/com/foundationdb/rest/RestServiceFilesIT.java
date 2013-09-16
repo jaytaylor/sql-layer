@@ -50,6 +50,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.foundationdb.util.JsonUtils.readTree;
@@ -112,8 +113,10 @@ public class RestServiceFilesIT extends ITBase {
     }
 
     @Override
-    protected Map<String, String> startupConfigProperties() {
-        return uniqueStartupConfigProperties(RestServiceFilesIT.class);
+    protected Map<String,String> startupConfigProperties() {
+        Map<String,String> config = new HashMap<>(super.startupConfigProperties());
+        config.put("fdbsql.rest.resource", "entity,fulltext,model,procedurecall,sql,security,version,direct,view");
+        return config;
     }
 
     public static File[] gatherRequestFiles(File dir) {

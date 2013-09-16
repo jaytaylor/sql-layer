@@ -26,7 +26,7 @@ import java.lang.reflect.Method;
 public interface RoutineLoader
 {
     public ClassLoader loadSQLJJar(Session session, TableName jarName);
-    public void unloadSQLJJar(Session session, TableName jarName);
+    public void checkUnloadSQLJJar(Session session, TableName jarName);
 
     public LoadablePlan<?> loadLoadablePlan(Session session, TableName routineName);
     public Method loadJavaMethod(Session session, TableName routineName);
@@ -34,5 +34,5 @@ public interface RoutineLoader
     public ScriptPool<ScriptEvaluator> getScriptEvaluator(Session session, TableName routineName);
     public ScriptPool<ScriptInvoker> getScriptInvoker(Session session, TableName routineName);
     public ScriptPool<ScriptLibrary> getScriptLibrary(Session session, TableName routineName);
-    public void unloadRoutine(Session session, TableName routineName);
+    public void checkUnloadRoutine(Session session, TableName routineName);
 }

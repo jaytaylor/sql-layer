@@ -32,7 +32,7 @@ public class MockRoutineLoader implements RoutineLoader
     }
 
     @Override
-    public void unloadSQLJJar(Session session, TableName jarName) {
+    public void checkUnloadSQLJJar(Session session, TableName jarName) {
         throw new UnsupportedOperationException();
     }
 
@@ -67,7 +67,7 @@ public class MockRoutineLoader implements RoutineLoader
     }
 
     @Override
-    public void unloadRoutine(Session session, TableName routineName) {
+    public void checkUnloadRoutine(Session session, TableName routineName) {
         throw new UnsupportedOperationException();
     }
 }

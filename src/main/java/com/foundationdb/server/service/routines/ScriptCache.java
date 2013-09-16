@@ -49,8 +49,12 @@ public class ScriptCache {
         cache.clear();
     }
 
-    public synchronized void remove(TableName routineName) {
-        cache.remove(routineName);
+    public synchronized void checkRemoveRoutine(TableName routineName, 
+                                                long currentVersion) {
+        CacheEntry entry = cache.remove(routineName);
+        if ((entry != null) && (entry.version == currentVersion)) {
+            cache.put(routineName, entry); // Was valid after all.
+        }
     }
 
     public boolean isScriptLanguage(Session session, String language) {
@@ -74,12 +78,13 @@ public class ScriptCache {
     }
 
     protected synchronized CacheEntry getEntry(Session session, TableName routineName) {
-        CacheEntry entry = cache.get(routineName);
-        if (entry != null)
-            return entry;
         Routine routine = dxlService.ddlFunctions().getAIS(session).getRoutine(routineName);
         if (null == routine)
             throw new NoSuchRoutineException(routineName);
+        long currentVersion = routine.getVersion();        
+        CacheEntry entry = cache.get(routineName);
+        if ((entry != null) && (entry.version == currentVersion))
+            return entry;
         ScriptEngine engine = getManager(session).getEngineByName(routine.getLanguage());
         if (engine == null)
             throw new ExternalRoutineInvocationException(routineName, "Cannot find " + routine.getLanguage()
@@ -91,6 +96,7 @@ public class ScriptCache {
 
     class CacheEntry {
         private TableName routineName;
+        private long version;
         private String script;
         private TableName libraryName;
         private String function;
@@ -103,6 +109,7 @@ public class ScriptCache {
 
         public CacheEntry(Routine routine, ScriptEngine engine) {
             routineName = routine.getName();
+            version = routine.getVersion();
             script = routine.getDefinition();
             libraryName = routineName; // TODO: Until qualified EXTERNAL NAME supported.
             function = routine.getMethodName();
