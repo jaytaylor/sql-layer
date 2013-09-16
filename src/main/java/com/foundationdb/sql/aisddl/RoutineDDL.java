@@ -252,9 +252,9 @@ public class RoutineDDL {
         
         Routine routine = builder.akibanInformationSchema().getRoutine(tableName);
         boolean replaceExisting = createAlias.isCreateOrReplace();
-        if (replaceExisting)
-            routineLoader.unloadRoutine(session, tableName);
         ddlFunctions.createRoutine(session, routine, replaceExisting);
+        if (replaceExisting)
+            routineLoader.checkUnloadRoutine(session, tableName);
     }
 
     public static void dropRoutine(DDLFunctions ddlFunctions,
@@ -275,7 +275,7 @@ public class RoutineDDL {
             }
             throw new NoSuchRoutineException(routineName);
         } 
-        routineLoader.unloadRoutine(session, routineName);
         ddlFunctions.dropRoutine(session, routineName);
+        routineLoader.checkUnloadRoutine(session, routineName);
     }
 }

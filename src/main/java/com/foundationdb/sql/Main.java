@@ -191,23 +191,36 @@ public class Main implements Service, JmxManageable, LayerInfoInterface
                     sm.stopServices();
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                LOG.error("Problem stopping services", e);
             }
         }
     }
 
-
-    /**
-     * @param args the command line arguments
-     */
     public static void main(String[] args) throws Exception {
-        GuicedServiceManager.BindingsConfigurationProvider bindingsConfigurationProvider = GuicedServiceManager.standardUrls();
-        ServiceManager serviceManager = new GuicedServiceManager(bindingsConfigurationProvider);
+        try {
+            doStartup();
+        } catch(Throwable t) {
+            LOG.error("Problem starting system", t);
+            System.exit(1);
+        }
+
+        // Services started successfully, write pid to file.
+        try {
+            writePid();
+        } catch(IOException e) {
+            LOG.warn("Problem writing pid file {}", PID_FILE_NAME, e);
+            // Do not abort on error as init scripts handle this fine.
+        }
+    }
+
+    private static void doStartup() throws Exception {
+        GuicedServiceManager.BindingsConfigurationProvider bindings = GuicedServiceManager.standardUrls();
+        final ServiceManager serviceManager = new GuicedServiceManager(bindings);
 
         final ShutdownMXBeanImpl shutdownBean = new ShutdownMXBeanImpl(serviceManager);
-        
 
-        // JVM shutdown hook
+        // JVM shutdown hook.
+        // Register before startServices() so services are still brought down on startup error.
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             @Override
             public void run() {
@@ -217,17 +230,12 @@ public class Main implements Service, JmxManageable, LayerInfoInterface
 
         // Bring system up
         serviceManager.startServices();
-        
-        // JMX shutdown method
-        try {
-            ObjectName name = new ObjectName(ShutdownMXBeanImpl.BEAN_NAME);
-            ManagementFactory.getPlatformMBeanServer().registerMBean(shutdownBean, name);
-        } catch(Exception e) {
-            LOG.error("Exception registering shutdown bean", e);
-        }
-        
-        
-        // services started successfully, now create pidfile and write pid to it
+
+        ObjectName name = new ObjectName(ShutdownMXBeanImpl.BEAN_NAME);
+        ManagementFactory.getPlatformMBeanServer().registerMBean(shutdownBean, name);
+    }
+
+    private static void writePid() throws IOException {
         if (PID_FILE_NAME != null) {
             File pidFile = new File(PID_FILE_NAME);
             pidFile.deleteOnExit();

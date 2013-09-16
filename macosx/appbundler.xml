@@ -49,7 +49,7 @@
 
                 <!-- Files are copied into bundle and set as classpath -->
                 <classpath dir="target/">
-                    <include name="foundationdb-sql-layer-*.jar" />
+                    <include name="fdb-sql-layer-*.jar" />
                     <include name="dependency/*.jar" />
                 </classpath>
                 
@@ -74,8 +74,7 @@
                 
                 <option value="-Dapple.laf.useScreenMenuBar=true" />
                 <option value="-Dlog4j.configuration=file:$APP_ROOT/Contents/Resources/config/log4j.properties" />
-                <option value="-Dservices.config=$APP_ROOT/Contents/Resources/config/services-config.yaml" />
-                <option value="-Dfdbsql.config_dir=$APP_ROOT/Contents/Resources" />
+                <option value="-Dfdbsql.config_dir=$APP_ROOT/Contents/Resources/config" />
                 <option value="-Dfdbsql.home=$APP_ROOT/Contents/Resources" />
 
                 <!-- The displayname should influence the About menu but doesn't. This does. -->

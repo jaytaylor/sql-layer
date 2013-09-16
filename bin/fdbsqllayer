@@ -18,19 +18,10 @@
 
 #
 # CONTROLLING STARTUP:
-# 
-# This script relies on few environment variables to determine startup
-# behavior, those variables are:
+#   - Command line parameters
+#   - JVM_OPTS -- Additional arguments to the JVM.
+#     Influenced by <config>/jvm.options, if it exists.
 #
-#   JVM_OPTS -- Additional arguments to the JVM for heap size, etc
-#   FDBSQL_CONF -- Directory containing configuration files.
-#   FDBSQL_HOME -- Directory passed as fdbsql.home (e.g. plugin loading)
-#
-
-# Use FDBSQL_HOME if set, otherwise assume source checkout
-if [ -z "$FDBSQL_HOME" ]; then
-    FDBSQL_HOME=$(cd $(dirname $0)/..; pwd -P)
-fi
 
 # Use JAVA_HOME if set, otherwise look for java in PATH
 if [ -x $JAVA_HOME/bin/java ]; then
@@ -39,14 +30,32 @@ else
     JAVA=`which java`
 fi
 
-infer_jar_file()
+infer_home_dir()
 {
-    local loc_local="${FDBSQL_HOME}/target/foundationdb-sql-layer-2.0.0-SNAPSHOT.jar"
-    local loc_global="/usr/share/foundationdb-sql/foundationdb-sql-layer.jar"
+    local loc_local="$(cd $(dirname $0)/..; pwd -P)"
+    local loc_global="/usr/share/foundationdb/sql"
 
     # Only infer if passed no argument
     if [ -z "$1" ]; then
-        # Try local first so you can develop *and* nave a system package installed
+        # If this is called via system location, assume global
+        if [ "$0" = "/usr/sbin/fdbsqllayer" ]; then
+            echo $loc_global
+        else
+            echo $loc_local
+        fi
+    else
+        echo "$1"
+    fi
+}
+
+infer_jar_file()
+{
+    local loc_local="${FDBSQL_HOME}/target/fdb-sql-layer-2.0.0-SNAPSHOT.jar"
+    local loc_global="/usr/share/foundationdb/sql/fdb-sql-layer.jar"
+
+    # Only infer if passed no argument
+    if [ -z "$1" ]; then
+        # Try local first so you can develop *and* have a system package installed
         if [ -f "$loc_local" ]; then
             echo $loc_local
         elif [ -f "$loc_global" ]; then
@@ -62,11 +71,11 @@ infer_jar_file()
 infer_dep_dir()
 {
     local loc_local="${FDBSQL_HOME}/target/dependency"
-    local loc_global="/usr/share/foundationdb-sql/server"
+    local loc_global="/usr/share/foundationdb/sql/server"
 
     # Only infer if passed no argument
     if [ -z "$1" ]; then
-        # Try local first so you can develop *and* nave a system package installed
+        # Try local first so you can develop *and* have a system package installed
         if [ -d "$loc_local" ]; then
             echo $loc_local
         elif [ -d "$loc_global" ]; then
@@ -94,13 +103,14 @@ get_version()
 
 launch_service()
 {
-    foreground=$1
-    props=$2
-    usegui=$3
-    pidpath=$4
-    JAR_FILE=$(infer_jar_file $5)
-    DEP_DIR=$(infer_dep_dir $6)
-    FDBSQL_CONF=$7
+    FDBSQL_HOME=$(infer_home_dir $1)
+    foreground=$2
+    props=$3
+    usegui=$4
+    pidpath=$5
+    JAR_FILE=$(infer_jar_file $6)
+    DEP_DIR=$(infer_dep_dir $7)
+    FDBSQL_CONF=$8
 
     if [ -z "$FDBSQL_CONF" ]; then
         FDBSQL_CONF="${FDBSQL_HOME}/conf"
@@ -110,8 +120,8 @@ launch_service()
         fdbsql_parms="$fdbsql_parms -Dfdbsql.pidfile=$pidpath"
     fi
 
-    if [ -f "$FDBSQL_CONF/config/jvm.options" ]; then
-        . "$FDBSQL_CONF/config/jvm.options"
+    if [ -f "$FDBSQL_CONF/jvm.options" ]; then
+        . "$FDBSQL_CONF/jvm.options"
     fi
 
     if [ -n "$usegui" ]; then
@@ -119,7 +129,7 @@ launch_service()
     fi
 
     fdbsql_parms="$fdbsql_parms -Dfdbsql.home=$FDBSQL_HOME -Dfdbsql.config_dir=$FDBSQL_CONF"
-    fdbsql_parms="$fdbsql_parms -Dservices.config=$FDBSQL_CONF/config/services-config.yaml -Dlog4j.configuration=file:$FDBSQL_CONF/config/log4j.properties"
+    fdbsql_parms="$fdbsql_parms -Dlog4j.configuration=file:$FDBSQL_CONF/log4j.properties"
     fdbsql_parms="$fdbsql_parms $print_compilation $props"
 
     CLASSPATH=$JAR_FILE:$DEP_DIR/*
@@ -138,7 +148,6 @@ launch_service()
             exec $JAVA $JVM_OPTS $fdbsql_parms -cp "$CLASSPATH" $main_class
         fi
     else
-        echo ${FDBSQL_HOME}
         if [ -n "$profile" ]
         then
             exec $profile "$JVM_OPTS $fdbsql_parms -cp $CLASSPATH" $JAVA $main_class <&- &
@@ -151,21 +160,17 @@ launch_service()
 }
 
 # Parse any command line options.
-args=`getopt fwkvghsj:d:c:p:D: "$@"`
+args=`getopt c:d:D:fghH:j:kp:swv "$@"`
 eval set -- "$args"
 
 while true; do
     case "$1" in
-        -p)
-            pidfile="$2"
-            shift 2
-        ;;
-        -j)
-            jarfile="$2"
-            shift 2
-        ;;
         -d)
             depdir="$2"
+            shift 2
+        ;;
+        -D)
+            properties="$properties -D$2"
             shift 2
         ;;
         -c)
@@ -185,12 +190,14 @@ while true; do
             shift
         ;;
         -h)
-            echo "Usage: $0 [-c conf_dir] [-d dep_dir] [-f] [-g] [-h] [-j jar_file] [-k] [-p pid_file] [-s] [-w] [-v]"
+            echo "Usage: $0 [-c conf_dir] [-d dep_dir] [-D prop] [-f] [-g] [-h] [-H home_dir] [-j jar_file] [-k] [-p pid_file] [-s] [-w] [-v]"
             echo "-c configuration directory to use"
             echo "-d directory with jar dependencies"
+            echo "-D extra property to pass to JVM, can be repeated"
             echo "-f launch the SQL layer process in the foreground"
             echo "-g launch the persistit GUI"
             echo "-h print this help message"
+            echo "-H directory to use for home"
             echo "-j specify a jar file to use"
             echo "-k kill an existing SQL layer process"
             echo "-p specify a pid file"
@@ -199,16 +206,24 @@ while true; do
             echo "-v print SQL layer version"
             exit 0
         ;;
-        -D)
-            properties="$properties -D$2"
+        -H)
+            homedir="$2"
+            shift 2
+        ;;
+        -j)
+            jarfile="$2"
             shift 2
         ;;
         -k)
             # this is not ideal but is only intended to be
             # called by a developer in their environment when
             # they want to quickly kill a running process.
-            pgrep -u `whoami` -f foundationdb-sql-layer | xargs kill -9
+            pgrep -u `whoami` -f fdb-sql-layer | xargs kill -9
             exit 0
+        ;;
+        -p)
+            pidfile="$2"
+            shift 2
         ;;
         -s)
             profile=`which collect`
@@ -232,7 +247,7 @@ while true; do
 done
 
 # Start up the service
-launch_service "$mode" "$properties" "$gui" "$pidfile" "$jarfile" "$depdir" "$conf"
+launch_service "$homedir" "$mode" "$properties" "$gui" "$pidfile" "$jarfile" "$depdir" "$conf"
 
 exit $?
 

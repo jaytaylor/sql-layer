@@ -200,6 +200,14 @@ public class Routine
         this.calledOnNullInput = calledOnNullInput;
     }
 
+    public long getVersion() {
+        return version;
+    }
+
+    public void setVersion(long version) {
+        this.version = version;
+    }
+
     // State
     protected final AkibanInformationSchema ais;
     protected final TableName name;
@@ -213,4 +221,5 @@ public class Routine
     protected SQLAllowed sqlAllowed;
     protected int dynamicResultSets = 0;
     protected boolean deterministic, calledOnNullInput;
+    protected long version;
 }

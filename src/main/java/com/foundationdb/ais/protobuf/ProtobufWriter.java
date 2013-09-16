@@ -660,6 +660,8 @@ public class ProtobufWriter {
             routineBuilder.setDeterministic(routine.isDeterministic());
         if (routine.isCalledOnNullInput())
             routineBuilder.setCalledOnNullInput(routine.isCalledOnNullInput());
+        if (routine.getVersion() > 0)
+            routineBuilder.setVersion(routine.getVersion());
         schemaBuilder.addRoutines(routineBuilder.build());
     }
 
@@ -733,6 +735,8 @@ public class ProtobufWriter {
         AISProtobuf.SQLJJar.Builder jarBuilder = AISProtobuf.SQLJJar.newBuilder()
             .setJarName(sqljJar.getName().getTableName())
             .setUrl(sqljJar.getURL().toExternalForm());
+        if (sqljJar.getVersion() > 0)
+            jarBuilder.setVersion(sqljJar.getVersion());
         schemaBuilder.addSqljJars(jarBuilder.build());
     }
 
