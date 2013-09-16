@@ -34,6 +34,8 @@ map-join-project: Need both sides of outer loop.
 
 map-join-project-nested: Needed in inner loop because outer loop is like that.
 
+map-join-project-outer: Also need column from inside table feeding added Project.
+
 nested-in: nested semi-joins
 
 nested-not-in: nested anti-joins
