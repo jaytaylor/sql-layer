@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# preinstall backed up previous config files, restore them
+for f in $(ls /usr/local/etc/foundationdb/sql/*.old); do
+    WITHOUT_OLD=${f%.old}
+    mv ${WITHOUT_OLD} ${WITHOUT_OLD}.new
+    mv ${f} ${WITHOUT_OLD}
+done
+
+/bin/launchctl load -w /Library/LaunchDaemons/com.foundationdb.layer.sql.plist
+
+exit 0

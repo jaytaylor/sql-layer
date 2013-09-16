@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Stop running service
+if [ -f /Library/LaunchDaemons/com.foundationdb.layer.sql.plist ]; then
+    /bin/launchctl unload /Library/LaunchDaemons/com.foundationdb.layer.sql.plist || :
+fi
+
+# Backup any existing config files
+if [ -d /usr/local/etc/foundationdb/sql ]; then
+    for f in $(ls /usr/local/etc/foundationdb/sql); do
+        mv "$f" "${f}.old"
+    done
+fi
+
+exit 0
