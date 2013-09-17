@@ -256,7 +256,8 @@ public class MapFolder extends BaseRule
         Project project;
         Set<ColumnSource> allSources, innerSources;
         List<ColumnExpression> columns;
-        boolean foundOuter;
+        boolean singleNodeMode, foundOuter;
+        int nodeDepth;
 
         @Override
         public String toString() {
@@ -289,12 +290,25 @@ public class MapFolder extends BaseRule
         
         // Are any of the inner bindings used outer?
         public boolean find() {
+            singleNodeMode = false;
             columns = new ArrayList<>();
             for (MapJoinProject loop = this; loop != null; loop = loop.nested) {
                 if (loop.parentMap != null) {
                     // Check context within the bindings of any nested loops.
                     loop.parentMap.getInner().accept(this);
                 }
+            }
+            if (foundOuter && (project != childMap.getInner())) {
+                // If we will be using the project, it will cut off anything else coming
+                // from the inside; check between project and inside of loop, if there is
+                // anything there. Need to check one-by-one without any children to keep
+                // spurious (although ultimately harmless) columns out.
+                singleNodeMode = true;
+                PlanNode node = project;
+                do {
+                    node = node.getOutput();
+                    node.accept(this);
+                } while (node != childMap.getInner());
             }
             return foundOuter;
         }
@@ -317,11 +331,13 @@ public class MapFolder extends BaseRule
 
         @Override
         public boolean visitEnter(PlanNode n) {
-            return visit(n);
+            nodeDepth++;
+            return true;
         }
 
         @Override
         public boolean visitLeave(PlanNode n) {
+            nodeDepth--;
             return true;
         }
 
@@ -342,7 +358,9 @@ public class MapFolder extends BaseRule
 
         @Override
         public boolean visit(ExpressionNode n) {
-            if (n instanceof ColumnExpression) {
+            if ((n instanceof ColumnExpression) &&
+                // singleNodeMode: don't check columns from input nodes.
+                (!singleNodeMode || (nodeDepth == 1))) {
                 ColumnExpression column = (ColumnExpression)n;
                 if (allSources.contains(column.getTable())) {
                     columns.add(column);
