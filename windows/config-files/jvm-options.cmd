@@ -57,9 +57,9 @@ REM see
 REM http://blogs.sun.com/jmxetc/entry/troubleshooting_connection_problems_in_jconsole
 REM for more on configuring JMX through firewalls, etc. (Short version:
 REM get it working with no firewall first.)
-SET JMX_PORT=8082
-SET JVM_OPTS=%JVM_OPTS% -Dcom.sun.management.jmxremote.port=%JMX_PORT%
-SET JVM_OPTS=%JVM_OPTS% -Dcom.sun.management.jmxremote.ssl=false
-SET JVM_OPTS=%JVM_OPTS% -Dcom.sun.management.jmxremote.authenticate=false
-
-SET JVM_OPTS=%JVM_OPTS% -Xrunjdwp:transport=dt_socket,address=8000,suspend=n,server=y
+REM SET JMX_PORT=8082
+REM SET JVM_OPTS=%JVM_OPTS% -Dcom.sun.management.jmxremote.port=%JMX_PORT%
+REM SET JVM_OPTS=%JVM_OPTS% -Dcom.sun.management.jmxremote.ssl=false
+REM SET JVM_OPTS=%JVM_OPTS% -Dcom.sun.management.jmxremote.authenticate=false
+REM 
+REM SET JVM_OPTS=%JVM_OPTS% -Xrunjdwp:transport=dt_socket,address=8000,suspend=n,server=y
