@@ -128,72 +128,50 @@ elif [ ${platform} == "binary" ]; then
     cp LICENSE.txt ${BINARY_NAME}/LICENSE.txt
     tar zcf ${BINARY_TAR_NAME} ${BINARY_NAME}    
 elif [ ${platform} == "macosx" ]; then
-    client_jar=packages-common/fdb-sql-layer-client-tools-*.jar
-    client_deps=packages-common/client
-    fdbsqldump_bin=packages-common/fdbsql*
-    plugins_dir=packages-common/plugins
-    app_name='FoundationDB SQL Layer.app'
-    mac_app="target/${app_name}"
-    inst_temp=/tmp/inst_temp
-
-    # copy icon data from a "prototype" file
-    tar xzf macosx/license-icon.tar.gz
-    xattr -wx com.apple.FinderInfo "`xattr -px com.apple.FinderInfo prototype.txt`" ${license}
-    cp prototype.txt/..namedfork/rsrc ${license}/..namedfork/rsrc
-    rm prototype.txt
-    
-    # build jar
     ${mvn_package}
     rm -f ./target/*-tests.jar ./target/*-sources.jar
 
-    build_dmg() {
-        ant_target="$1"
-        mac_dmg="target/$2"
+    PKG_DIR=target/packaging/osx
+    PKG_ROOT=${PKG_DIR}/root
+    PKG_ETC=${PKG_ROOT}/usr/local/etc/foundationdb/sql
+    PKG_LOCAL=${PKG_ROOT}/usr/local/foundationdb
 
-        # build app bundle
-        curl -Ls -o target/appbundler-1.0.jar http://java.net/projects/appbundler/downloads/download/appbundler-1.0.jar
-        ant -f macosx/appbundler.xml ${ant_target} -Djdk.home=$(/usr/libexec/java_home) -Dfdbsql.version="${layer_version}-r${git_count}"
+    mkdir -p ${PKG_DIR}/
+    mkdir -p ${PKG_ROOT}/Library/LaunchDaemons
+    mkdir -p ${PKG_ROOT}/usr/local/bin
+    mkdir -p ${PKG_ROOT}/usr/local/libexec
+    mkdir -p ${PKG_ETC}
+    mkdir -p ${PKG_LOCAL}/logs/sql
+    mkdir -p ${PKG_LOCAL}/sql/client
+    mkdir -p ${PKG_LOCAL}/sql/plugins
+    mkdir -p ${PKG_LOCAL}/sql/server
 
-        # add config files to bundle
-        mkdir "${mac_app}/Contents/Resources/config/"
-        cp macosx/config-files/* "${mac_app}/Contents/Resources/config/"
-
-        # add client dependencies and binaries to bundle
-        mkdir -p "$mac_app/Contents/Resources/tools/lib/client"
-        cp $client_jar "$mac_app/Contents/Resources/tools/lib/"
-        cp $client_deps/* "$mac_app/Contents/Resources/tools/lib/client/"
-        mkdir -p "$mac_app/Contents/Resources/tools/bin"
-        cp $fdbsqldump_bin "$mac_app/Contents/Resources/tools/bin/"
-        cp -R "$plugins_dir" "$mac_app/Contents/Resources/"
-
-        # build disk image template
-        rm -rf $inst_temp
-        rm -f $inst_temp.dmg
-        mkdir $inst_temp
-        mkdir "$inst_temp/${app_name}"
-        hdiutil create -fs HFSX -layout SPUD -size 200m $inst_temp.dmg -format UDRW -volname 'FoundationDB SQL Layer' -srcfolder $inst_temp
-        rm -rf $inst_temp
-
-        # update disk image
-        mkdir $inst_temp
-        hdiutil attach $inst_temp.dmg -noautoopen -mountpoint $inst_temp
-        ditto "$mac_app" "$inst_temp/${app_name}"
-        
-        # == add non-app files here ==
-        ln -s /Applications $inst_temp
-        cp macosx/dmg_background.png ${inst_temp}/.background.png
-        cp macosx/dmg.DS_Store $inst_temp/.DS_Store
-        cp macosx/dmg_VolumeIcon.icns $inst_temp/.VolumeIcon.icns
-        cp LICENSE.txt $inst_temp/LICENSE.txt
-        SetFile -a C $inst_temp
-        hdiutil detach `hdiutil info | grep $inst_temp | grep '^/dev' | cut -f1`
-        hdiutil convert $inst_temp.dmg -format UDZO -imagekey zlib-level=9 -o "$mac_dmg"
-        rm $inst_temp.dmg
-    }
+    cp -r macosx/resources ${PKG_DIR}
+    cp LICENSE.txt ${PKG_DIR}/resources
     
-    dmg_basename="FoundationDB_SQL_Layer_${layer_version}"
-    build_dmg "bundle_app" "${dmg_basename}.dmg"
-    build_dmg "bundle_app_jre" "${dmg_basename}_JRE.dmg"
+    install -m 0644 macosx/com.foundationdb.layer.sql.plist ${PKG_ROOT}/Library/LaunchDaemons
+
+    install -m 0644 config-files/* ${PKG_ETC}
+    install -m 0644 macosx/config-files/* ${PKG_ETC}
+
+    install -m 0644 LICENSE.txt ${PKG_LOCAL}/LICENSE-SQL_LAYER
+    install -m 0755 macosx/uninstall-FoundationDB-SQL_Layer.sh ${PKG_LOCAL}
+    install -m 0644 target/fdb-sql-layer-*.jar ${PKG_LOCAL}/sql
+    install -m 0644 target/dependency/* ${PKG_LOCAL}/sql/server
+    install -m 0644 packages-common/fdb-sql-layer-client-tools-*.jar ${PKG_LOCAL}/sql
+    install -m 0644 packages-common/client/* ${PKG_LOCAL}/sql/client
+    #install -m 0644 packages-common/plugins/* ${PKG_LOCAL}/sql/plugins
+
+    ln -s /usr/local/foundationdb/sql/fdb-sql-layer-2.0.0-SNAPSHOT.jar ${PKG_LOCAL}/sql/fdb-sql-layer.jar
+    ln -s /usr/local/foundationdb/sql/fdb-sql-layer-client-tools-1.3.7-SNAPSHOT.jar ${PKG_LOCAL}/sql/fdb-sql-layer-client-tools.jar
+
+    sed 's/usr\/share/usr\/local/g' bin/fdbsqllayer > packages-common/fdbsqllayer
+    install -m 0755 packages-common/fdbsqldump ${PKG_ROOT}/usr/local/bin
+    install -m 0755 packages-common/fdbsqlload ${PKG_ROOT}/usr/local/bin
+    install -m 0755 packages-common/fdbsqllayer ${PKG_ROOT}/usr/local/libexec
+
+    pkgbuild --root ${PKG_ROOT} --identifier com.foundationdb.layer.sql --version ${layer_version} --scripts macosx/scripts target/SQL_Layer.pkg
+    productbuild --distribution macosx/Distribution.xml --resources ${PKG_DIR}/resources --package-path target/ target/FoundationDB-SQL_Layer-${layer_version}.pkg
 else
     echo "Invalid Argument: ${platform}"
     echo "${usage}"
