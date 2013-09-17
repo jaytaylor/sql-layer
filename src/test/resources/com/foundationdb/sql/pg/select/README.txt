@@ -94,6 +94,8 @@ select-27: side branch with outer join
 
 select-28: IN with key comparison
 
+select-29: Sort from Select
+
 types: select all typed fields
 
 types_a_date: match literal
