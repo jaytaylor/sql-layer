@@ -44,7 +44,7 @@ public class ThrowingFullTextServiceIT extends PostgresServerITBase
     }
 
     @Test
-    public void test() throws Exception {
+    public void createFullTextIndex() throws Exception {
         createTable("test", "t", "id int not null primary key, v varchar(32) collate en_us_ci");
         Statement statement = getConnection().createStatement();
         try {
