@@ -2094,7 +2094,28 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
         "- get: StatementCacheCapacity\n" + 
         "- split_result: [['0']]");
     }
-    
+
+    @Test
+    public void testRetryCountDefault() throws Exception {
+        testYaml("---\n" +
+         "- Statement: SELECT 1\n" +
+         "- retry_count: ");
+    }
+
+    @Test
+    public void testRetryCountExplicit() throws Exception {
+        testYaml("---\n" +
+         "- Statement: SELECT 1\n" +
+        "- retry_count: 5");
+    }
+
+    @Test
+    public void testRetryCountNonInteger() throws Exception {
+        testYamlFail("---\n" +
+         "- Statement: SELECT * FROM t\n" +
+         "- retry_count: [5]");
+    }
+
     /* Other methods */
 
     private void testYaml(String yaml) throws Exception {
