@@ -37,6 +37,7 @@ class SorterToCursorAdapter implements RowCursor
         CursorLifecycle.checkIdle(this);
         sorter = adapter.createSorter(context, bindings, input, rowType, ordering, sortOption, loadTap);
         cursor = sorter.sort();
+        input.close();
         cursor.open();
     }
 

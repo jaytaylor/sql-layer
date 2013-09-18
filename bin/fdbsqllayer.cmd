@@ -30,23 +30,24 @@ REM Installation Configuration
 
 FOR %%P IN ("%~dp0..") DO SET FDBSQL_HOME=%%~fP
 
-SET JAR_FILE=%FDBSQL_HOME%\lib\%SERVER_JAR%
-SET DEP_DIR=%FDBSQL_HOME%\lib\server
-SET FDBSQL_CONF=%FDBSQL_HOME%\config
-SET FDBSQL_LOGDIR=%FDBSQL_HOME%\log
-SET FDBSQL_HOME_DIR=%FDBSQL_HOME%\lib
+SET JAR_FILE=%FDBSQL_HOME%\sql\lib\%SERVER_JAR%
+SET DEP_DIR=%FDBSQL_HOME%\sql\lib\server
+SET FDBSQL_HOME_DIR=%FDBSQL_HOME%\sql
+@REM Replaced during install
+SET FDBSQL_CONF=${confdir}
+SET FDBSQL_LOGDIR=${logdir}
 
 FOR %%P IN (prunsrv.exe) DO SET PRUNSRV=%%~$PATH:P
 FOR %%P IN (prunmgr.exe) DO SET PRUNMGR=%%~$PATH:P
 REM Not in path, assume installed with program.
 IF "%PRUNSRV%"=="" (
   IF "%PROCESSOR_ARCHITECTURE%"=="x86" (
-    SET PRUNSRV=%FDBSQL_HOME%\procrun\prunsrv
+    SET PRUNSRV=%FDBSQL_HOME%\sql\procrun\prunsrv
   ) ELSE (
-    SET PRUNSRV=%FDBSQL_HOME%\procrun\%PROCESSOR_ARCHITECTURE%\prunsrv
+    SET PRUNSRV=%FDBSQL_HOME%\sql\procrun\%PROCESSOR_ARCHITECTURE%\prunsrv
 ) )
 IF "%PRUNMGR%"=="" (
-  SET PRUNMGR=%FDBSQL_HOME%\procrun\prunmgr
+  SET PRUNMGR=%FDBSQL_HOME%\sql\procrun\prunmgr
 )
 
 GOTO PARSE_CMD
@@ -157,9 +158,13 @@ IF EXIST "%FDBSQL_CONF%\jvm-options.cmd" CALL "%FDBSQL_CONF%\jvm-options.cmd"
 IF "%VERB%"=="window" GOTO RUN_CMD
 IF "%VERB%"=="run" GOTO RUN_CMD
 
-SET PRUNSRV_ARGS=--StartMode=jvm --StartClass com.foundationdb.sql.Main --StartMethod=procrunStart --StopMode=jvm --StopClass=com.foundationdb.sql.Main --StopMethod=procrunStop --StdOutput="%FDBSQL_LOGDIR%\stdout.log" --DisplayName="%SERVICE_DNAME%" --Description="%SERVICE_DESC%" --Startup=%SERVICE_MODE% --Classpath="%CLASSPATH%"
+SET PRUNSRV_ARGS=--StartMode=jvm --StartClass com.foundationdb.sql.Main --StartMethod=procrunStart ^
+                 --StopMode=jvm --StopClass=com.foundationdb.sql.Main --StopMethod=procrunStop ^
+                 --StdOutput="%FDBSQL_LOGDIR%\stdout.log" --DisplayName="%SERVICE_DNAME%" ^
+                 --Description="%SERVICE_DESC%" --Startup=%SERVICE_MODE% --Classpath="%CLASSPATH%"
 REM Each value that might have a space needs a separate ++JvmOptions.
-SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmOptions="%JVM_OPTS: =#%" ++JvmOptions="-Dfdbsql.config_dir=%FDBSQL_CONF%" ++JvmOptions="-Dlog4j.configuration=file:%FDBSQL_LOGCONF%"
+SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmOptions="%JVM_OPTS: =#%" ++JvmOptions="-Dfdbsql.config_dir=%FDBSQL_CONF%" ^
+                 ++JvmOptions="-Dlog4j.configuration=file:%FDBSQL_LOGCONF%" ++JvmOptions="-Dfdbsql.home=%FDBSQL_HOME_DIR%"
 IF DEFINED SERVICE_USER SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --ServiceUser=%SERVICE_USER% --ServicePassword=%SERVICE_PASSWORD%
 IF DEFINED MAX_HEAP_SIZE SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmMs=%MAX_HEAP_SIZE% --JvmMx=%MAX_HEAP_SIZE%
 
@@ -194,7 +199,7 @@ SET JVM_OPTS=%JVM_OPTS% -Dfdbsql.config_dir="%FDBSQL_CONF%"
 SET JVM_OPTS=%JVM_OPTS% -Dlog4j.configuration="file:%FDBSQL_LOGCONF%"
 SET JVM_OPTS=%JVM_OPTS% -ea
 SET JVM_OPTS=%JVM_OPTS% -Dfdbsql.home="%FDBSQL_HOME_DIR%"
-IF DEFINED MAX_HEAP_SIZE SET JVM_OPTS=%JVM_OPTS% -Xms%MAX_HEAP_SIZE%-Xmx%MAX_HEAP_SIZE%
+IF DEFINED MAX_HEAP_SIZE SET JVM_OPTS=%JVM_OPTS% -Xms%MAX_HEAP_SIZE% -Xmx%MAX_HEAP_SIZE%
 IF "%VERB%"=="window" GOTO WINDOW_CMD
 java %JVM_OPTS% -cp "%CLASSPATH%" com.foundationdb.sql.Main
 GOTO EOF

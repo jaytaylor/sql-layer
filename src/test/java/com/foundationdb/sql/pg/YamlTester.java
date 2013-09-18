@@ -1468,6 +1468,7 @@ class YamlTester {
 	    yamlConstructors.put(new Tag("!time"), new ConstructSystemTime());
 	    yamlConstructors.put(new Tag("!datetime"),
 		    new ConstructSystemDateTime());
+	    yamlConstructors.put(new Tag("!unicode"), new ConstructUnicode());
 	}
 
 	private static class ConstructDontCare extends AbstractConstruct {
@@ -1549,6 +1550,16 @@ class YamlTester {
 	    @Override
 	    public Object construct(Node node) {
 		return new DateTimeChecker();
+	    }
+	}
+
+	private static class ConstructUnicode extends AbstractConstruct {
+	    @Override
+	    public Object construct(Node node) {
+		if (!(node instanceof ScalarNode)) {
+		    fail("The value of the Unicode tag must be a scalar");
+		}
+		return ((ScalarNode)node).getValue();
 	    }
 	}
 

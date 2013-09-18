@@ -19,26 +19,28 @@
 
 SETLOCAL
 
-FOR /F "usebackq" %%v IN (`git rev-parse --short HEAD`) DO SET GIT_COUNT=%%v
-FOR /F "usebackq" %%v IN (`git rev-list --merges HEAD --count`) DO SET GIT_HASH=%%v
+FOR /F "usebackq" %%v IN (`git rev-parse --short HEAD`) DO SET GIT_HASH=%%v
+FOR /F "usebackq" %%v IN (`git rev-list --merges HEAD --count`) DO SET GIT_COUNT=%%v
 
 SET LICENSE=LICENSE.txt
+SET VERSION=2.0.0
+SET INSTALLER=fdb-sql-layer-%VERSION%
 
 IF NOT DEFINED CERT_FILE SET CERT_FILE=%~dp0\windows\testcert\testcert.pfx
 IF NOT DEFINED CERT_PASSWORD SET CERT_PASSWORD=test
 
 ECHO "Building FoundationDB SQL Layer"
 
-call mvn clean install -DGIT_COUNT=%GIT_COUNT% -DGIT_HASH=%GIT_HASH% -DskipTests=true
+call mvn clean package -U -DGIT_COUNT=%GIT_COUNT% -DGIT_HASH=%GIT_HASH% -DskipTests=true
 IF ERRORLEVEL 1 GOTO EOF
 
-IF NOT DEFINED TOOLS_LOC SET TOOLS_LOC="git@github.com:foundationdb/sql-layer-client-tools"
+IF NOT DEFINED TOOLS_LOC SET TOOLS_LOC="git@github.com:FoundationDB/sql-layer-client-tools.git"
 
 CD target
 git clone %TOOLS_LOC% client-tools
 IF ERRORLEVEL 1 GOTO EOF
 CD client-tools
-call mvn -Dmaven.test.skip clean install
+call mvn clean package -U -DskipTests=true
 IF ERRORLEVEL 1 GOTO EOF
 DEL target\*-sources.jar
 CD ..
@@ -54,7 +56,7 @@ MD target\isstage\lib\server
 MD target\isstage\lib\client
 MD target\isstage\procrun
 
-COPY %LICENSE% target\isstage\LICENSE.TXT
+COPY %LICENSE% target\isstage\LICENSE-SQL_LAYER.txt
 XCOPY /E windows target\isstage
 COPY bin\*.cmd target\isstage\bin
 COPY target\client-tools\bin\*.cmd target\isstage\bin
@@ -68,29 +70,26 @@ COPY target\client-tools\target\dependency\* target\isstage\lib\client
 
 CD target\isstage
 
-FOR %%j IN (lib\fdb-sql-layer-*.jar) DO SET JARFILE=%%~nj
-FOR /F "delims=- tokens=3" %%n IN ("%JARFILE%") DO SET VERSION=%%n
-SET INSTALLER=fdb-sql-layer-%VERSION%-installer
-
-curl -o procrun.zip -L http://archive.apache.org/dist/commons/daemon/binaries/windows/commons-daemon-1.0.11-bin-windows.zip
+curl -o procrun.zip -L http://archive.apache.org/dist/commons/daemon/binaries/windows/commons-daemon-1.0.15-bin-windows.zip
 
 IF ERRORLEVEL 1 GOTO EOF
 7z x -oprocrun procrun.zip
 IF ERRORLEVEL 1 GOTO EOF
 CD procrun
-mt -manifest ..\prunsrv.manifest -outputresource:prunsrv.exe;1
+mt /nologo -manifest ..\prunsrv.manifest -outputresource:prunsrv.exe;1
 IF ERRORLEVEL 1 GOTO EOF
-mt -manifest ..\prunmgr.manifest -outputresource:prunmgr.exe;1
+mt /nologo -manifest ..\prunmgr.manifest -outputresource:prunmgr.exe;1
 IF ERRORLEVEL 1 GOTO EOF
 CD amd64
-mt -manifest ..\..\prunsrv.manifest -outputresource:prunsrv.exe;1
+mt /nologo -manifest ..\..\prunsrv.manifest -outputresource:prunsrv.exe;1
 IF ERRORLEVEL 1 GOTO EOF
 CD ..\ia64
-mt -manifest ..\..\prunsrv.manifest -outputresource:prunsrv.exe;1
+mt /nologo -manifest ..\..\prunsrv.manifest -outputresource:prunsrv.exe;1
 IF ERRORLEVEL 1 GOTO EOF
 CD ..\..
 
-iscc /S"GoDaddy=signtool sign /f $q%CERT_FILE%$q  /p $q%CERT_PASSWORD%$q /t http://tsa.starfieldtech.com/ $f" /O.. /F"%INSTALLER%" /dVERSION=%VERSION% FoundationDBSQLLayer.iss
+REM iscc /S"GoDaddy=signtool sign /f $q%CERT_FILE%$q  /p $q%CERT_PASSWORD%$q /t http://tsa.starfieldtech.com/ $f" /O.. /F"%INSTALLER%" /dVERSION=%VERSION% fdb-sql-layer.iss
+iscc /O.. /F"%INSTALLER%" /dVERSION=%VERSION% fdb-sql-layer.iss
 IF ERRORLEVEL 1 GOTO EOF
 
 CD ..\..
