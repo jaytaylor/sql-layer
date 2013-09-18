@@ -5,6 +5,13 @@
         <key>Label</key>
         <string>com.foundationdb.layer.sql</string>
 
+        <!-- This path was checked during install -->
+        <key>EnvironmentVariables</key>
+        <dict>
+            <key>JAVA_HOME</key>
+            <string>/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Home</string>
+        </dict>
+
         <key>ProgramArguments</key>
         <array>
         <string>/usr/local/libexec/fdbsqllayer</string>
