@@ -19,6 +19,8 @@ package com.foundationdb.server.service.is;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryPoolMXBean;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -177,9 +179,17 @@ public class ServerSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
+                String hostName = null;
+                try {
+                    hostName = InetAddress.getLocalHost().getHostName();
+                } catch (UnknownHostException e) {
+                    // do nothing -> Can't get the local host name/ip address
+                    // return null as a host name
+                }
                 PValuesRow row = new PValuesRow (rowType,
                         serverInterface.getServerName(),
                         serverInterface.getServerVersion(),
+                        hostName,
                         ++rowCounter);
                 return row;
             }
@@ -614,7 +624,8 @@ public class ServerSchemaTablesServiceImpl
         
         builder.userTable(SERVER_INSTANCE_SUMMARY)
             .colString("server_name", DESCRIPTOR_MAX, false)
-            .colString("server_version", DESCRIPTOR_MAX, false);
+            .colString("server_version", DESCRIPTOR_MAX, false)
+            .colString("server_host", DESCRIPTOR_MAX, false);
         
         builder.userTable(SERVER_SERVERS)
             .colString("server_type", IDENT_MAX, false)
