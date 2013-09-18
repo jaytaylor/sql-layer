@@ -644,6 +644,7 @@
 - output: [['{"id":1,"name":"Akiban","props":[{"id":1,"name":"abc"},{"id":2,"name":"xyz"}]}']]
 ---
 - Statement: ALTER TABLE name_props ALL UPDATE STATISTICS
+- retry_count: 5
 ---
 - Statement: SELECT id, name, (SELECT p.id, p.name FROM props p INNER JOIN name_props np ON p.id = np.prop_id WHERE np.name_id = names.id) AS props FROM names WHERE name = ?
 - params: [['Akiban']]

@@ -218,6 +218,7 @@ class YamlTester {
 	    "yyyy-MM-dd");
     private static final DateFormat DEFAULT_DATETIME_FORMAT = new SimpleDateFormat(
 	    "yyyy-MM-dd HH:mm:ss.S z");
+    private static final int DEFAULT_RETRY_COUNT = 5;
 
     /**
      * Creates an instance of this class.
@@ -376,6 +377,8 @@ class YamlTester {
 	Object errorCode;
 	Object errorMessage;
 	boolean sorted;
+        int retryCount = -1;
+        int retriesPerformed = 0;
 
 	/** Handle a statement with the specified statement text. */
 	AbstractStatementCommand(String statement) {
@@ -400,28 +403,32 @@ class YamlTester {
 	    }
 	}
 
-	/**
-	 * Check the specified exception against the error attribute specified
-	 * earlier, if any.
-	 */
-	void checkFailure(SQLException sqlException) {
-	    if (DEBUG) {
-		System.err.println("Generated error code: "
-			+ sqlException.getSQLState() + "\nException: "
-			+ sqlException);
-	    }
-	    if (!errorSpecified) {
-		throw new ContextAssertionError(
-            statement,
-			"Unexpected statement execution failure: "
-				+ sqlException, sqlException);
-	    }
-            checkExpected("error code", errorCode, sqlException.getSQLState());
-	    if (errorMessage != null) {
-                checkExpected("error message", errorMessage,
-                              sqlException.getMessage());
-	    }
-	}
+    /**
+     * Check the specified exception against the error attribute specified earlier, if any.
+     * @return <code>true</code> if the original statement should be retried, <code>false</code> otherwise
+     */
+	boolean checkFailure(SQLException sqlException) {
+        LOG.debug("Generated error code: {}", sqlException.getSQLState(), sqlException);
+        if(!errorSpecified) {
+            if(retriesPerformed < retryCount) {
+                LOG.debug("Unexpected error, retrying statement.");
+                ++retriesPerformed;
+                try {
+                    // Delay a little to try and avoid another immediate conflict
+                    Thread.sleep(100 * retriesPerformed);
+                } catch(InterruptedException e) {
+                    // Ignore
+                }
+                return true;
+            }
+            throw new ContextAssertionError(statement, "Unexpected statement execution failure" , sqlException);
+        }
+        checkExpected("error code", errorCode, sqlException.getSQLState());
+        if(errorMessage != null) {
+            checkExpected("error message", errorMessage, sqlException.getMessage());
+        }
+        return false;
+    }
 
     
     }
@@ -630,6 +637,8 @@ class YamlTester {
 		    parseOutput(attributeValue);
 		} else if ("row_count".equals(attribute)) {
 		    parseRowCount(attributeValue);
+        } else if ("retry_count".equals(attribute)) {
+            parseRetryCount(attributeValue);
 		} else if ("output_types".equals(attribute)) {
 		    parseOutputTypes(attributeValue);
 		} else if ("error".equals(attribute)) {
@@ -739,6 +748,16 @@ class YamlTester {
 		    rowCount >= 0);
 	}
 
+    private void parseRetryCount(Object value) {
+        assertTrue("The retry_count attribute must not appear more than once", retryCount == -1);
+        int count = DEFAULT_RETRY_COUNT;
+        if(value != null) {
+            count = integer(value, "retry_count value");
+            assertTrue("The retry_count value must not be negative", count >= 0);
+        }
+        retryCount = count;
+    }
+
 	private void parseOutputTypes(Object value) {
 	    if (value == null) {
 		return;
@@ -763,62 +782,57 @@ class YamlTester {
 	}
 
 	void execute() throws SQLException {
-	    if (explain != null) {
-		checkExplain();
-	    }
-	    if (params == null) {
-		Statement stmt = connection.createStatement();
-		try {
-		    if (DEBUG) {
-			System.err.println("Executing statement: " + statement);
-		    }
-		    try {
-			stmt.execute(statement);
-		    } catch (SQLException e) {
-			checkFailure(e);
-			return;
-		    }
-		    checkSuccess(stmt, sorted);
-		} finally {
-		    stmt.close();
-		}
-	    } else {
-		PreparedStatement stmt = connection.prepareStatement(statement);
-		try {
-		    int numParams = params.get(0).size();
-		    for (List<Object> paramsList : params) {
-			if (params.size() > 1) {
-			    commandName = "Statement, params list " + paramsRow;
-			}
-			for (int i = 0; i < numParams; i++) {
-			    Object param = paramsList.get(i);
-			    if (paramTypes != null) {
-				stmt.setObject(i + 1, param, paramTypes.get(i));
-			    } else {
-				stmt.setObject(i + 1, param);
-			    }
-			}
-			if (DEBUG) {
-			    System.err
-				    .println("Executing statement: "
-					    + statement + "\nParameters: "
-					    + paramsList);
-			}
-			try {
-			    stmt.execute();
-			} catch (SQLException e) {
-			    checkFailure(e);
-			    continue;
-			}
-			checkSuccess(stmt, sorted);
-			paramsRow++;
-		    }
-		    commandName = "Statement";
-		} finally {
-		    stmt.close();
-		}
-	    }
-	}
+        if(explain != null) {
+            checkExplain();
+        }
+        boolean done = false;
+        while(!done) {
+            if(params == null) {
+                try(Statement stmt = connection.createStatement()) {
+                    LOG.debug("Executing statement: {}", statement);
+                    try {
+                        stmt.execute(statement);
+                    } catch(SQLException e) {
+                        if(checkFailure(e)) {
+                            continue;
+                        }
+                        return;
+                    }
+                    checkSuccess(stmt, sorted);
+                }
+            } else {
+                try(PreparedStatement stmt = connection.prepareStatement(statement)) {
+                    int numParams = params.get(0).size();
+                    for(List<Object> paramsList : params) {
+                        if(params.size() > 1) {
+                            commandName = "Statement, params list " + paramsRow;
+                        }
+                        for(int i = 0; i < numParams; i++) {
+                            Object param = paramsList.get(i);
+                            if(paramTypes != null) {
+                                stmt.setObject(i + 1, param, paramTypes.get(i));
+                            } else {
+                                stmt.setObject(i + 1, param);
+                            }
+                        }
+                        LOG.debug("Executing statement: {}   with Parameters: {}", statement, paramsList);
+                        try {
+                            stmt.execute();
+                        } catch(SQLException e) {
+                            if(checkFailure(e)) {
+                                continue;
+                            }
+                            continue;
+                        }
+                        checkSuccess(stmt, sorted);
+                        paramsRow++;
+                    }
+                    commandName = "Statement";
+                }
+            }
+            done = true;
+        }
+    }
 
 	private void checkExplain() throws SQLException {
 	    Statement stmt = connection.createStatement();
