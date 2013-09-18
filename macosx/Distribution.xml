@@ -17,12 +17,20 @@
                 // Find installed JavaAppletPlugin bundle
                 var bundle = system.files.bundleAtPath("/Library/Internet Plug-Ins/JavaAppletPlugin.plugin");
                 var plist = system.files.plistAtPath("/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Info.plist");
-                if(bundle == null || !plist) {
+                var identifierValid = false;
+
+                // If the default Java stub is present, that bundle above is
+                // actually a link to it instead. Check identifier to be sure.
+                if(bundle != null) {
+                    identifierValid = (bundle.CFBundleIdentifier == 'com.oracle.java.JavaAppletPlugin');
+                }
+
+                if(bundle == null || !plist || !identifierValid) {
                     my.result.title = "Java Not Found";
                     my.result.message = "No Java Runtime Environment found.";
                     return false;
                 }
-                
+
                 // Check version
                 var installedVersion = bundle.CFBundleVersion;
                 var versionCmp = system.compareVersions(gMinJavaVersion, installedVersion);

@@ -24,10 +24,10 @@
 #
 
 # Use JAVA_HOME if set, otherwise look for java in PATH
-if [ -x $JAVA_HOME/bin/java ]; then
-    JAVA=$JAVA_HOME/bin/java
+if [ -x "$JAVA_HOME/bin/java" ]; then
+    JAVA="$JAVA_HOME/bin/java"
 else
-    JAVA=`which java`
+    JAVA=$(which java)
 fi
 
 infer_home_dir()
@@ -95,8 +95,8 @@ get_version()
     dep_dir=$(infer_dep_dir $2)
     CLASSPATH=$jar_file:$dep_dir/*
 
-    server_version=$(exec $JAVA -cp "$CLASSPATH" com.foundationdb.server.GetVersion)
-    persistit_version=$(exec $JAVA -cp "$CLASSPATH" com.persistit.GetVersion)
+    server_version=$(exec "$JAVA" -cp "$CLASSPATH" com.foundationdb.server.GetVersion)
+    persistit_version=$(exec "$JAVA" -cp "$CLASSPATH" com.persistit.GetVersion)
     echo "server   : ${server_version}"
     echo "persistit: ${persistit_version}"
 }
@@ -141,18 +141,18 @@ launch_service()
         fi
         if [ -n "$profile" ]
         then
-            echo $profile "$JVM_OPTS $fdbsql_parms -cp $CLASSPATH" $JAVA  $main_class
-            exec $profile "$JVM_OPTS $fdbsql_parms -cp $CLASSPATH" $JAVA  $main_class
+            echo $profile "$JVM_OPTS $fdbsql_parms -cp $CLASSPATH" "$JAVA" $main_class
+            exec $profile "$JVM_OPTS $fdbsql_parms -cp $CLASSPATH" "$JAVA" $main_class
         else
-            echo $JAVA $JVM_OPTS $fdbsql_parms -cp "$CLASSPATH" $main_class
-            exec $JAVA $JVM_OPTS $fdbsql_parms -cp "$CLASSPATH" $main_class
+            echo "$JAVA" $JVM_OPTS $fdbsql_parms -cp "$CLASSPATH" $main_class
+            exec "$JAVA" $JVM_OPTS $fdbsql_parms -cp "$CLASSPATH" $main_class
         fi
     else
         if [ -n "$profile" ]
         then
-            exec $profile "$JVM_OPTS $fdbsql_parms -cp $CLASSPATH" $JAVA $main_class <&- &
+            exec $profile "$JVM_OPTS $fdbsql_parms -cp $CLASSPATH" "$JAVA" $main_class <&- &
         else
-            exec $JAVA $JVM_OPTS $fdbsql_parms -cp "$CLASSPATH" $main_class <&- &
+            exec "$JAVA" $JVM_OPTS $fdbsql_parms -cp "$CLASSPATH" $main_class <&- &
         fi
     fi
 
