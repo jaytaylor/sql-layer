@@ -410,6 +410,13 @@ class YamlTester {
 	boolean checkFailure(SQLException sqlException) {
         LOG.debug("Generated error code: {}", sqlException.getSQLState(), sqlException);
         if(!errorSpecified) {
+            // If no explicit retry_count, automatically retry DROP and UPDATE STATISTICS
+            if(retryCount == -1) {
+                String upper = statement.trim().toUpperCase();
+                if(upper.startsWith("DROP TABLE") || upper.contains("UPDATE STATISTICS")) {
+                    retryCount = DEFAULT_RETRY_COUNT;
+                }
+            }
             if(retriesPerformed < retryCount) {
                 LOG.debug("Unexpected error, retrying statement.");
                 ++retriesPerformed;
@@ -617,8 +624,8 @@ class YamlTester {
 	 */
 	private int outputRow = 0;
 
-	StatementCommand(String value, List<Object> sequence) {
-	    super(value);
+	StatementCommand(String statement, List<Object> sequence) {
+	    super(statement);
 	    for (int i = 1; i < sequence.size(); i++) {
 		Entry<Object, Object> map = onlyEntry(sequence.get(i),
 			"Statement attribute");
