@@ -125,7 +125,7 @@ IF NOT EXIST "%DEP_DIR%" (
   GOTO EOF
 )
 
-SET CLASSPATH=%JAR_FILE%;%DEP_DIR%/*
+SET CLASSPATH=%JAR_FILE%;%DEP_DIR%\*
 
 IF "%VERB%"=="version" GOTO VERSION
 
@@ -146,7 +146,7 @@ IF "%VERB%"=="start" (
   GOTO EOF
 )
 
-IF NOT EXIST "%FDBSQL_CONF%/services-config.yaml" (
+IF NOT EXIST "%FDBSQL_CONF%\services-config.yaml" (
   ECHO Wrong configuration directory; try -c
   GOTO EOF
 )
