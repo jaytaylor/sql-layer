@@ -24,15 +24,15 @@ SET SERVICE_NAME=fdbsqllayer
 SET SERVICE_DNAME=FoundationDB SQL Layer 
 SET SERVICE_DESC=FoundationDB SQL Layer
 
-IF EXIST "%~dp0../pom.xml" GOTO FROM_BUILD
+IF EXIST "%~dp0..\pom.xml" GOTO FROM_BUILD
 
 REM Installation Configuration
 
 FOR %%P IN ("%~dp0..") DO SET FDBSQL_HOME=%%~fP
 
-SET JAR_FILE=%FDBSQL_HOME%/sql/lib/%SERVER_JAR%
-SET DEP_DIR=%FDBSQL_HOME%/sql/lib/server
-SET FDBSQL_HOME_DIR=%FDBSQL_HOME%/sql
+SET JAR_FILE=%FDBSQL_HOME%\sql\lib\%SERVER_JAR%
+SET DEP_DIR=%FDBSQL_HOME%\sql\lib\server
+SET FDBSQL_HOME_DIR=%FDBSQL_HOME%\sql
 @REM Replaced during install
 SET FDBSQL_CONF=${confdir}
 SET FDBSQL_LOGDIR=${logdir}
@@ -42,12 +42,12 @@ FOR %%P IN (prunmgr.exe) DO SET PRUNMGR=%%~$PATH:P
 REM Not in path, assume installed with program.
 IF "%PRUNSRV%"=="" (
   IF "%PROCESSOR_ARCHITECTURE%"=="x86" (
-    SET PRUNSRV=%FDBSQL_HOME%/sql/procrun/prunsrv
+    SET PRUNSRV=%FDBSQL_HOME%\sql\procrun\prunsrv
   ) ELSE (
-    SET PRUNSRV=%FDBSQL_HOME%/sql/procrun/%PROCESSOR_ARCHITECTURE%/prunsrv
+    SET PRUNSRV=%FDBSQL_HOME%\sql\procrun\%PROCESSOR_ARCHITECTURE%\prunsrv
 ) )
 IF "%PRUNMGR%"=="" (
-  SET PRUNMGR=%FDBSQL_HOME%/sql/procrun/prunmgr
+  SET PRUNMGR=%FDBSQL_HOME%\sql\procrun\prunmgr
 )
 
 GOTO PARSE_CMD
@@ -58,11 +58,11 @@ REM Build Configuration
 
 FOR %%P IN ("%~dp0..") DO SET BUILD_HOME=%%~fP
 
-SET JAR_FILE=%BUILD_HOME%/target/%SERVER_JAR%
-SET DEP_DIR=%BUILD_HOME%/target/dependency
-SET FDBSQL_CONF=%BUILD_HOME%/conf
-SET FDBSQL_LOGDIR=/tmp/fdbsqllayer
-SET FDBSQL_HOME_DIR=%BUILD_HOME%/target
+SET JAR_FILE=%BUILD_HOME%\target\%SERVER_JAR%
+SET DEP_DIR=%BUILD_HOME%\target\dependency
+SET FDBSQL_CONF=%BUILD_HOME%\conf
+SET FDBSQL_LOGDIR=\tmp\fdbsqllayer
+SET FDBSQL_HOME_DIR=%BUILD_HOME%\target
 SET PRUNSRV=prunsrv
 SET PRUNMGR=prunmgr
 SET SERVICE_MODE=manual
@@ -151,16 +151,16 @@ IF NOT EXIST "%FDBSQL_CONF%/services-config.yaml" (
   GOTO EOF
 )
 
-IF NOT DEFINED FDBSQL_LOGCONF SET FDBSQL_LOGCONF=%FDBSQL_CONF%/log4j.properties
+IF NOT DEFINED FDBSQL_LOGCONF SET FDBSQL_LOGCONF=%FDBSQL_CONF%\log4j.properties
 
-IF EXIST "%FDBSQL_CONF%/jvm-options.cmd" CALL "%FDBSQL_CONF%/jvm-options.cmd"
+IF EXIST "%FDBSQL_CONF%\jvm-options.cmd" CALL "%FDBSQL_CONF%\jvm-options.cmd"
 
 IF "%VERB%"=="window" GOTO RUN_CMD
 IF "%VERB%"=="run" GOTO RUN_CMD
 
 SET PRUNSRV_ARGS=--StartMode=jvm --StartClass com.foundationdb.sql.Main --StartMethod=procrunStart ^
                  --StopMode=jvm --StopClass=com.foundationdb.sql.Main --StopMethod=procrunStop ^
-                 --StdOutput="%FDBSQL_LOGDIR%/stdout.log" --DisplayName="%SERVICE_DNAME%" ^
+                 --StdOutput="%FDBSQL_LOGDIR%\stdout.log" --DisplayName="%SERVICE_DNAME%" ^
                  --Description="%SERVICE_DESC%" --Startup=%SERVICE_MODE% --Classpath="%CLASSPATH%"
 REM Each value that might have a space needs a separate ++JvmOptions.
 SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmOptions="%JVM_OPTS: =#%" ++JvmOptions="-Dfdbsql.config_dir=%FDBSQL_CONF%" ^
