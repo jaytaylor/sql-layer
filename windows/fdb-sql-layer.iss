@@ -22,6 +22,9 @@ DirExistsWarning = no
 SetupIconFile = foundationdb.ico
 WizardImageFile = dialog.bmp
 WizardSmallImageFile = banner.bmp
+WizardImageStretch = no
+WizardImageBackColor = clWhite
+InfoAfterFile = conclusion.rtf
 ;SignTool=GoDaddy
 
 [Tasks]
@@ -33,10 +36,10 @@ Name: "{code:AppDataDir}\sql-config"
 
 [Files]
 Source: "LICENSE-SQL_LAYER.txt"; DestDir: "{app}"
-Source: "bin\*"; DestDir: "{app}\bin"
+Source: "bin\*"; DestDir: "{app}\bin"; AfterInstall: EditAfterInstall
+Source: "config\*"; DestDir: "{code:AppDataDir}\sql-config"; AfterInstall: EditAfterInstall; Flags: onlyifdoesntexist uninsneveruninstall
 Source: "lib\*"; DestDir: "{app}\sql\lib"; Flags: recursesubdirs
 Source: "procrun\*"; DestDir: "{app}\sql\procrun"; Flags: recursesubdirs
-Source: "config\*"; DestDir: "{code:AppDataDir}\sql-config"; Flags: onlyifdoesntexist uninsneveruninstall
 
 [Icons]
 ;Name: "{group}\FoundationDB SQL Layer"; Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "window";  WorkingDir: "{app}"; Comment: "Run the server as an application"
@@ -46,10 +49,12 @@ Source: "config\*"; DestDir: "{code:AppDataDir}\sql-config"; Flags: onlyifdoesnt
 ;Name: "{group}\Uninstall FoundationDB SQL Layer"; Filename: "{uninstallexe}"
 
 [Run]
-;See StartNow() below.
+Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "install -m auto"; WorkingDir: "{app}"; StatusMsg: "Installing service ..."; Flags: runhidden
+Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "start"; WorkingDir: "{app}"; StatusMsg: "Starting service ..."; Flags: runminimized
 
 [UninstallRun]
-Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "uninstall";  WorkingDir: "{app}"; StatusMsg: "Removing service ..."
+Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "stop";  WorkingDir: "{app}"; StatusMsg: "Stopping service ..."; Flags: runminimized
+Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "uninstall";  WorkingDir: "{app}"; StatusMsg: "Removing service ..."; Flags: runhidden
 
 [Code]
 function FindJava(): String;
@@ -112,11 +117,6 @@ begin
   end
 end;
 
-function InstallMode(Param: String): String;
-begin
-  Result := 'auto'
-end;
-
 function ExpandKey(Key: String) : String;
 var
   Value: String;
@@ -157,26 +157,15 @@ begin
   end;
 end;
 
-procedure StartNow();
+procedure EditAfterInstall();
 var
-  Command, Dir, Params: String;
-  ResultCode: Integer;
+  Path: String;
+  FileName: String;
 begin
-  Command := ExpandConstant('{app}\bin\fdbsqllayer.cmd');
-  Dir := ExpandConstant('{app}');
-  Params := 'install -m ' + InstallMode('');
-  if Exec(Command, Params, Dir, SW_HIDE, ewWaitUntilTerminated, ResultCode) then
-    Exec(Command, 'start', Dir, SW_HIDE, ewWaitUntilTerminated, ResultCode);
-end;
-
-procedure CurStepChanged(CurStep: TSetupStep);
-begin
-  if CurStep = ssPostInstall then begin
-    EditFile(ExpandConstant('{app}\bin\fdbsqllayer.cmd'));
-    EditFile(ExpandConstant('{code:AppDataDir}\sql-config\log4j.properties'));
-    EditFile(ExpandConstant('{code:AppDataDir}\sql-config\server.properties'));
-    StartNow();
-  end;
+  Path := ExpandConstant(CurrentFileName);
+  FileName := ExtractFileName(Path)
+  if (FileName = 'fdbsqllayer.cmd') or (FileName = 'log4j.properties') or (FileName = 'server.properties') then
+    EditFile(Path)
 end;
 
 function JustVersion(Param: String): String;
