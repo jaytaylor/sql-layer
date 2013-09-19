@@ -236,6 +236,8 @@ public enum ErrorCode {
     // Class 40 - transaction rollback
     QUERY_TIMEOUT           ("40", "000", Importance.ERROR, QueryTimedOutException.class),
     PERSISTIT_ROLLBACK      ("40", "001", Importance.ERROR, PersistitRollbackException.class),
+    FDB_NOT_COMMITTED       ("40", "002", Importance.ERROR, FDBNotCommittedException.class),
+    FDB_COMMIT_UNKNOWN_RESULT ("40", "003", Importance.ERROR, FDBCommitUnknownResultException.class),
 
     // Class 42 - syntax error or access rule violation
     // These exceptions are re-thrown errors from the parser and from the

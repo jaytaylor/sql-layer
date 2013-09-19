@@ -16,6 +16,7 @@
  */
 package com.foundationdb.server.store;
 
+import com.foundationdb.qp.persistitadapter.FDBAdapter;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.metrics.LongMetric;
 import com.foundationdb.server.service.metrics.MetricsService;
@@ -240,11 +241,11 @@ public class FDBTransactionService implements TransactionService {
                     retried = true;
                 }
                 catch (RuntimeException e2) {
-                    re = e2;
+                    re = FDBAdapter.wrapFDBException(session, e2);
                 }
             }
             else {
-                re = e1;
+                re = FDBAdapter.wrapFDBException(session, e1);
             }
         } finally {
             if (!retried)

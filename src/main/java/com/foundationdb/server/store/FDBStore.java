@@ -209,7 +209,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         try {
             rawValue = cache.nextCacheValue();
             if (rawValue < 0) {
-                rawValue = updateCacheFromServer (cache, sequence);
+                rawValue = updateCacheFromServer (session, cache, sequence);
             }
         } finally {
             cache.cacheUnlock();
@@ -220,7 +220,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
 
     // insert or update the sequence value from the server.
     // Works only under the cache lock from nextSequenceValue. 
-    private long updateCacheFromServer (final SequenceCache cache, final Sequence sequence) {
+    private long updateCacheFromServer (Session session, final SequenceCache cache, final Sequence sequence) {
         final long [] rawValue = new long[1];
         
         try {
@@ -239,8 +239,8 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
                     return null;
                 }
             });
-        } catch (Throwable e) {
-            throw new FDBAdapterException(e);
+        } catch (Exception e) {
+            throw FDBAdapter.wrapFDBException(session, e);
         }
         cache.updateCache(rawValue[0], sequence.getCacheSize());
         return rawValue[0];
@@ -625,6 +625,9 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
 
     @Override
     public boolean isRetryableException(Throwable t) {
+        if(t instanceof FDBAdapterException) {
+            t = t.getCause();
+        }
         if(t instanceof FDBException) {
             int code = ((FDBException)t).getCode();
             // not_committed || commit_unknown_result
