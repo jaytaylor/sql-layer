@@ -25,7 +25,8 @@
     com.foundationdb.rest.RestService : com.foundationdb.rest.RestServiceImpl
     com.foundationdb.server.service.restdml.RestDMLService: com.foundationdb.server.service.restdml.RestDMLServiceImpl
     com.foundationdb.server.service.restdml.DirectService: com.foundationdb.server.service.restdml.DirectServiceImpl
-    com.foundationdb.server.service.text.FullTextIndexService: com.foundationdb.server.service.text.FullTextIndexServiceImpl
+    com.foundationdb.server.service.text.FullTextIndexService: com.foundationdb.server.service.text.ThrowingFullTextService
+    #com.foundationdb.server.service.text.FullTextIndexService: com.foundationdb.server.service.text.FullTextIndexServiceImpl
     com.foundationdb.server.service.listener.ListenerService : com.foundationdb.server.service.listener.ListenerServiceImpl
     ##
     ##

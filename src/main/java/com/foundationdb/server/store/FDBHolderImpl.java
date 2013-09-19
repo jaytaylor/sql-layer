@@ -39,6 +39,7 @@ public class FDBHolderImpl implements FDBHolder, Service {
 
     private final ConfigurationService configService;
 
+    private int apiVersion;
     private FDB fdb;
     private Database db;
     private DirectorySubspace rootDirectory;
@@ -57,7 +58,7 @@ public class FDBHolderImpl implements FDBHolder, Service {
     public void start() {
         // Just one FDB for whole JVM and its dispose doesn't do anything.
         if(fdb == null) {
-            int apiVersion = Integer.parseInt(configService.getProperty(CONFIG_API_VERSION));
+            apiVersion = Integer.parseInt(configService.getProperty(CONFIG_API_VERSION));
             LOG.info("Staring with API Version {}", apiVersion);
             fdb = FDB.selectAPIVersion(apiVersion);
         }
@@ -98,6 +99,11 @@ public class FDBHolderImpl implements FDBHolder, Service {
     //
     // FDBHolder
     //
+
+    @Override
+    public int getAPIVersion() {
+        return apiVersion;
+    }
 
     @Override
     public FDB getFDB() {

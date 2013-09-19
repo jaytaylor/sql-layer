@@ -21,6 +21,7 @@ import com.foundationdb.FDB;
 import com.foundationdb.util.layers.DirectorySubspace;
 
 public interface FDBHolder {
+    int getAPIVersion();
     FDB getFDB();
     Database getDatabase();
     DirectorySubspace getRootDirectory();

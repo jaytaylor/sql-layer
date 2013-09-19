@@ -165,7 +165,11 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     public Iterator<KeyValue> indexIterator(Session session, Index index, boolean reverse) {
         TransactionState txn = txnService.getTransaction(session);
         byte[] packedPrefix = packedTuple(index);
-        return txn.getTransaction().getRange(Range.startsWith(packedPrefix), Transaction.ROW_LIMIT_UNLIMITED, reverse).iterator();
+        return txn.getTransaction().getRange(
+            Range.startsWith(packedPrefix),
+            Transaction.ROW_LIMIT_UNLIMITED,
+            reverse
+        ).iterator();
     }
 
     public Iterator<KeyValue> indexIterator(Session session, Index index, Key key, boolean inclusive, boolean reverse) {
@@ -771,6 +775,11 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             }            
         }
         return visitor;
+    }
+
+    @Override
+    public String getName() {
+        return "FoundationDB APIv" + holder.getAPIVersion();
     }
 
 
