@@ -163,7 +163,7 @@ SET PRUNSRV_ARGS=--StartMode=jvm --StartClass com.foundationdb.sql.Main --StartM
                  --StdOutput="%FDBSQL_LOGDIR%\stdout.log" --DisplayName="%SERVICE_DNAME%" ^
                  --Description="%SERVICE_DESC%" --Startup=%SERVICE_MODE% --Classpath="%CLASSPATH%"
 REM Each value that might have a space needs a separate ++JvmOptions.
-SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmOptions="%JVM_OPTS: =#%" ++JvmOptions="-Dfdbsql.config_dir=%FDBSQL_CONF%" ^
+SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmOptions="%JVM_OPTS: =#%" ++JvmOptions=-Xrs ++JvmOptions="-Dfdbsql.config_dir=%FDBSQL_CONF%" ^
                  ++JvmOptions="-Dlog4j.configuration=file:%FDBSQL_LOGCONF%" ++JvmOptions="-Dfdbsql.home=%FDBSQL_HOME_DIR%"
 IF DEFINED SERVICE_USER SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --ServiceUser=%SERVICE_USER% --ServicePassword=%SERVICE_PASSWORD%
 IF DEFINED MAX_HEAP_SIZE SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmMs=%MAX_HEAP_SIZE% --JvmMx=%MAX_HEAP_SIZE%
