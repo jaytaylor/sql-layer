@@ -50,6 +50,7 @@ import com.foundationdb.server.service.monitor.UserMonitor;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
+import com.foundationdb.server.store.Store;
 import com.foundationdb.util.tap.Tap;
 import com.foundationdb.util.tap.TapReport;
 import com.google.inject.Inject;
@@ -74,18 +75,21 @@ public class ServerSchemaTablesServiceImpl
     private final ConfigurationService configService;
     private final LayerInfoInterface serverInterface;
     private final SecurityService securityService;
+    private final Store store;
     
     @Inject
     public ServerSchemaTablesServiceImpl (SchemaManager schemaManager, 
                                           MonitorService monitor, 
                                           ConfigurationService configService,
                                           LayerInfoInterface serverInterface,
-                                          SecurityService securityService) {
+                                          SecurityService securityService,
+                                          Store store) {
         super(schemaManager);
         this.monitor = monitor;
         this.configService = configService;
         this.serverInterface = serverInterface;
         this.securityService = securityService;
+        this.store = store;
     }
 
     @Override
@@ -190,6 +194,7 @@ public class ServerSchemaTablesServiceImpl
                         serverInterface.getServerName(),
                         serverInterface.getServerVersion(),
                         hostName,
+                        store.getName(),
                         ++rowCounter);
                 return row;
             }
@@ -625,7 +630,8 @@ public class ServerSchemaTablesServiceImpl
         builder.userTable(SERVER_INSTANCE_SUMMARY)
             .colString("server_name", DESCRIPTOR_MAX, false)
             .colString("server_version", DESCRIPTOR_MAX, false)
-            .colString("server_host", DESCRIPTOR_MAX, false);
+            .colString("server_host", IDENT_MAX, false)
+            .colString("server_store", IDENT_MAX, false);
         
         builder.userTable(SERVER_SERVERS)
             .colString("server_type", IDENT_MAX, false)
