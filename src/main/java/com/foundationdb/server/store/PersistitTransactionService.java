@@ -111,10 +111,10 @@ public class PersistitTransactionService implements TransactionService {
             runCallbacks(session, PRE_COMMIT_KEY, txn.getStartTimestamp(), null);
             txn.commit();
             runCallbacks(session, AFTER_COMMIT_KEY, txn.getCommitTimestamp(), null);
+        } catch(PersistitException | RollbackException e) {
+            re = PersistitAdapter.wrapPersistitException(session, e);
         } catch(RuntimeException e) {
             re = e;
-        } catch(PersistitException e) {
-            re = PersistitAdapter.wrapPersistitException(session, e);
         } finally {
             end(session, txn, re);
         }

@@ -22,4 +22,10 @@ public class PersistitAdapterException extends StoreAdapterRuntimeException {
         super(ErrorCode.PERSISTIT_ERROR, ex.getMessage());
         initCause(ex);
     }
+
+    protected PersistitAdapterException(ErrorCode errorCode, Throwable ex)
+    {
+        super(errorCode, ex.getMessage());
+        initCause(ex);
+    }
 }

@@ -31,6 +31,7 @@ import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Value;
 import com.persistit.exception.PersistitException;
+import com.persistit.exception.RollbackException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +59,7 @@ public class PersistitStoreIndexStatistics extends AbstractStoreIndexStatistics<
     public IndexStatistics loadIndexStatistics(Session session, Index index) {
         try {
             return loadIndexStatisticsInternal(session, index);
-        } catch(PersistitException e) {
+        } catch(PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         }
     }
@@ -69,7 +70,7 @@ public class PersistitStoreIndexStatistics extends AbstractStoreIndexStatistics<
             RowDef indexStatisticsRowDef = getIndexStatsRowDef(session);
             Exchange exchange = getStore().getExchange(session, indexStatisticsRowDef);
             removeStatisticsInternal(session, index, exchange);
-        } catch(PersistitException e) {
+        } catch(PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         }
     }
