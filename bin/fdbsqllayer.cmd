@@ -158,8 +158,8 @@ IF EXIST "%FDBSQL_CONF%\jvm-options.cmd" CALL "%FDBSQL_CONF%\jvm-options.cmd"
 IF "%VERB%"=="window" GOTO RUN_CMD
 IF "%VERB%"=="run" GOTO RUN_CMD
 
-SET PRUNSRV_ARGS=--StartMode=jvm --StartClass com.foundationdb.sql.Main --StartMethod=procrunStart ^
-                 --StopMode=jvm --StopClass=com.foundationdb.sql.Main --StopMethod=procrunStop ^
+SET PRUNSRV_ARGS=--StartMode=jvm ++StartParams="jvm" --StartClass com.foundationdb.sql.Main --StartMethod=procrunStart ^
+                 --StopMode=jvm ++StopParams="jvm" --StopClass=com.foundationdb.sql.Main --StopMethod=procrunStop ^
                  --StdOutput="%FDBSQL_LOGDIR%\stdout.log" --DisplayName="%SERVICE_DNAME%" ^
                  --Description="%SERVICE_DESC%" --Startup=%SERVICE_MODE% --Classpath="%CLASSPATH%"
 REM Each value that might have a space needs a separate ++JvmOptions.
