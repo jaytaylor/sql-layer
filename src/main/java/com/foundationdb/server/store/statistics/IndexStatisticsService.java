@@ -24,7 +24,6 @@ import com.foundationdb.server.TableStatistics;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.ais.model.Index;
 import com.persistit.exception.PersistitException;
-import com.persistit.exception.PersistitInterruptedException;
 
 import java.io.Writer;
 import java.util.Collection;

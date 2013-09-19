@@ -26,6 +26,7 @@ import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Key.Direction;
 import com.persistit.exception.PersistitException;
+import com.persistit.exception.RollbackException;
 
 public class PersistitIterationHelper implements IterationHelper
 {
@@ -75,7 +76,7 @@ public class PersistitIterationHelper implements IterationHelper
     {
         try {
             return exchange.next(deep);
-        } catch(PersistitException e) {
+        } catch(PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(adapter.getSession(), e);
         }
     }
@@ -85,7 +86,7 @@ public class PersistitIterationHelper implements IterationHelper
     {
         try {
             return exchange.previous(deep);
-        } catch(PersistitException e) {
+        } catch(PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(adapter.getSession(), e);
         }
     }
@@ -95,7 +96,7 @@ public class PersistitIterationHelper implements IterationHelper
     {
         try {
             return exchange.traverse(dir, deep);
-        } catch(PersistitException e) {
+        } catch(PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(adapter.getSession(), e);
         }
     }

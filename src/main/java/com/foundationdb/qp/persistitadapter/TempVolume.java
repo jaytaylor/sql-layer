@@ -25,6 +25,7 @@ import com.persistit.Persistit;
 import com.persistit.Volume;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitIOException;
+import com.persistit.exception.RollbackException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +56,7 @@ public class TempVolume
             Exchange ex = new Exchange(persistit, tempVolumeState.volume(), treeName, true);
             success = true;
             return ex;
-        } catch (PersistitException e) {
+        } catch (PersistitException | RollbackException e) {
             if (!PersistitAdapter.isFromInterruption(e))
                 LOG.debug("Caught exception while getting exchange for sort", e);
             throw PersistitAdapter.wrapPersistitException(session, e);
@@ -83,7 +84,7 @@ public class TempVolume
             try {
                 // Returns disk space used by the volume
                 tempVolumeState.volume().close();
-            } catch(PersistitException e) {
+            } catch(PersistitException | RollbackException e) {
                 throw PersistitAdapter.wrapPersistitException(session, e);
             }
         }

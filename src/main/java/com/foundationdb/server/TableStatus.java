@@ -19,7 +19,6 @@ package com.foundationdb.server;
 
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
-import com.persistit.exception.PersistitInterruptedException;
 
 /**
  * Structure denotes summary information about a table, including row count,

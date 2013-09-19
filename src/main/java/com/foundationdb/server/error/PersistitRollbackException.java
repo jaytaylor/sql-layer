@@ -17,10 +17,10 @@
 
 package com.foundationdb.server.error;
 
-public class QueryRollbackException extends QueryCanceledException
+public class PersistitRollbackException extends PersistitAdapterException
 {
-    public QueryRollbackException()
+    public PersistitRollbackException(Throwable ex)
     {
-         super(ErrorCode.QUERY_ROLLBACK);
+        super(ErrorCode.PERSISTIT_ROLLBACK, ex);
     }
 }

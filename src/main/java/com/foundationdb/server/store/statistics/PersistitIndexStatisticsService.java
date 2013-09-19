@@ -30,7 +30,8 @@ import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
 import com.google.inject.Inject;
 import com.persistit.Exchange;
-import com.persistit.exception.PersistitInterruptedException;
+import com.persistit.exception.PersistitException;
+import com.persistit.exception.RollbackException;
 
 public class PersistitIndexStatisticsService extends AbstractIndexStatisticsService {
     private final PersistitStore store;
@@ -60,7 +61,7 @@ public class PersistitIndexStatisticsService extends AbstractIndexStatisticsServ
         Exchange ex = store.getExchange(session, index);
         try {
             return AccumulatorAdapter.getSnapshot(AccumulatorAdapter.AccumInfo.ROW_COUNT, ex.getTree());
-        } catch(PersistitInterruptedException e) {
+        } catch(PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         } finally {
             store.releaseExchange(session, ex);
