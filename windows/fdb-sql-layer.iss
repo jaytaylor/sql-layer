@@ -10,7 +10,7 @@ AppPublisher = FoundationDB, LCC
 AppPublisherURL = https://foundationdb.com/
 AppVersion = {code:JustVersion|{#VERSION}}
 VersionInfoProductTextVersion = {#VERSION}
-DefaultDirName = {pf}\foundationdb
+DefaultDirName = {code:DefaultInstallPath}
 DefaultGroupName = foundationdb
 Compression = lzma
 SolidCompression = yes
@@ -18,7 +18,10 @@ MinVersion = 5.1
 PrivilegesRequired = admin
 ArchitecturesInstallIn64BitMode=x64 ia64
 LicenseFile=LICENSE-SQL_LAYER.txt
-DisableDirPage = yes
+DirExistsWarning = no
+SetupIconFile = foundationdb.ico
+WizardImageFile = dialog.bmp
+WizardSmallImageFile = banner.bmp
 ;SignTool=GoDaddy
 
 [Tasks]
@@ -181,15 +184,21 @@ var
   DashPos: Integer;
 begin
   DashPos := Pos('-', Param);
-
   if (DashPos <> 0) then
     Result := Copy(Param, 1, DashPos - 1)
   else
     Result := Param;
-
 end;
 
 function AppDataDir(Param: String): String;
 begin
   Result := ExpandConstant('{commonappdata}\foundationdb')
 end;
+
+function DefaultInstallPath(Param: String): String;
+begin;
+  Result := GetEnv('FOUNDATIONDB_INSTALL_PATH');
+  if Length(Result) = 0 then
+    Result := ExpandConstant('{pf}\foundationdb')
+end;
+
