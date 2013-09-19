@@ -622,4 +622,9 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         Tree tree = sequence.getTreeCache().getTree();
         return new AccumulatorAdapter(AccumInfo.SEQUENCE, tree);
     }
+    
+    @Override
+    public String getName() {
+        return "Persistit " + getDb().version();
+    }
 }

@@ -153,4 +153,10 @@ public interface Store extends KeyCreator {
     // TODO: Better abstraction
     void traverse(Session session, Group group, TreeRecordVisitor visitor);
     <V extends IndexVisitor<Key,Value>> V traverse(Session session, Index index, V visitor, long scanTimeLimit, long sleepTime);
+
+    /**
+     * return name of this store, for display to the user
+     * @return name
+     */
+    String getName();
 }
