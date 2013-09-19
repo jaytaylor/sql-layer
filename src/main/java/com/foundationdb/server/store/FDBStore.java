@@ -520,7 +520,9 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             IndexRowType indexRowType = adapter.schema().indexRowType(index);
             PersistitIndexRow indexRow = adapter.takeIndexRow(indexRowType);
             constructIndexRow(session, indexKey, rowData, index, hKey, indexRow, false);
-            for(KeyValue kv : txn.getTransaction().getRange(Range.startsWith(packedTuple(index, indexKey)))) {
+            // indexKey contains index values + 0 for null sep. Start there and iterate until we find hkey.
+            Range r = new Range(packedTuple(index, indexKey), ByteArrayUtil.strinc(packedTuple(index)));
+            for(KeyValue kv : txn.getTransaction().getRange(r)) {
                 // Key
                 unpackTuple(spareKey, kv.getKey());
                 // Value
