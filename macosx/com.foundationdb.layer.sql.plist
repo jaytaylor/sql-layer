@@ -12,6 +12,11 @@
             <string>/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Home</string>
         </dict>
 
+        <key>StandardOutPath</key>
+        <string>/usr/local/foundationdb/logs/sql/stdout.log</string>
+        <key>StandardErrorPath</key>
+        <string>/usr/local/foundationdb/logs/sql/stdout.log</string>
+
         <key>ProgramArguments</key>
         <array>
         <string>/usr/local/libexec/fdbsqllayer</string>
