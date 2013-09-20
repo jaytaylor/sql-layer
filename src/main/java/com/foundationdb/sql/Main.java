@@ -44,6 +44,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.Arrays;
+import java.util.concurrent.Semaphore;
 
 public class Main implements Service, JmxManageable, LayerInfoInterface
 {
@@ -253,7 +254,7 @@ public class Main implements Service, JmxManageable, LayerInfoInterface
      * Start from procrun.
      * @see <a href="http://commons.apache.org/daemon/procrun.html">Daemon: Procrun</a>
      */
-    private static final Object PROC_RUN_MONITOR = new Object();
+    private static final Semaphore PROCRUN_SEMAPHORE = new Semaphore(0);
 
     private static boolean isProcrunJVMMode(String[] args) {
         if(args.length != 1) {
@@ -269,9 +270,7 @@ public class Main implements Service, JmxManageable, LayerInfoInterface
         boolean jvmMode = isProcrunJVMMode(args);
         main(args);
         if(jvmMode) {
-            synchronized(PROC_RUN_MONITOR) {
-                PROC_RUN_MONITOR.wait();
-            }
+            PROCRUN_SEMAPHORE.acquire();
         }
     }
 
@@ -281,9 +280,7 @@ public class Main implements Service, JmxManageable, LayerInfoInterface
         // Stop server from another thread.
         shutdownBean.shutdown();
         if(jvmMode) {
-            synchronized(PROC_RUN_MONITOR) {
-                PROC_RUN_MONITOR.notify();
-            }
+            PROCRUN_SEMAPHORE.release();
         }
     }
 }
