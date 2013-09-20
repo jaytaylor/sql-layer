@@ -64,6 +64,7 @@ import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
 import com.persistit.exception.PersistitException;
+import com.persistit.exception.RollbackException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -274,7 +275,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
                     try {
                         local = loadAISFromStorage(session, GenValue.SNAPSHOT, GenMap.PUT_NEW);
                         buildRowDefCache(session, local.ais);
-                    } catch(PersistitException e) {
+                    } catch(PersistitException | RollbackException e) {
                         throw wrapPersistitException(session, e);
                     }
                 }
@@ -311,7 +312,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
             ex.getValue().put(treeName);
             ex.getValue().setStreamMode(false);
             ex.store();
-        } catch(PersistitException e) {
+        } catch(PersistitException | RollbackException e) {
             throw wrapPersistitException(session, e);
         } finally {
             treeService.releaseExchange(session, ex);
@@ -701,7 +702,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
             addCallbacksForAISChange(session);
         } catch(BufferOverflowException e) {
             throw new AISTooLargeException(byteBuffer.getMaxBurstSize());
-        } catch(PersistitException e) {
+        } catch(PersistitException | RollbackException e) {
             throw wrapPersistitException(session, e);
         } finally {
             if(ex != null) {
@@ -720,7 +721,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
             ex = null;
         } catch(BufferOverflowException e) {
             throw new AISTooLargeException(byteBuffer.getMaxBurstSize());
-        } catch(PersistitException e) {
+        } catch(PersistitException | RollbackException e) {
             throw wrapPersistitException(session, e);
         } finally {
             if(ex != null) {
@@ -736,7 +737,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
             serializeMemoryTables(session, newAIS);
             buildRowDefCache(session, newAIS);
             addCallbacksForAISChange(session);
-        } catch(PersistitException e) {
+        } catch(PersistitException | RollbackException e) {
             throw wrapPersistitException(session, e);
         }
     }
@@ -774,7 +775,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
             }
 
             return type;
-        } catch(PersistitException e) {
+        } catch(PersistitException | RollbackException e) {
             throw wrapPersistitException(session, e);
         }
     }
@@ -924,7 +925,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     private long getGenerationSnapshot(Session session) {
         try {
             return getGenerationAccumulator(session).getSnapshotValue();
-        } catch(PersistitException e) {
+        } catch(PersistitException | RollbackException e) {
             throw wrapPersistitException(session, e);
         }
     }
@@ -932,7 +933,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     private long getNextGeneration(Session session) {
         try {
             return getGenerationAccumulator(session).allocate();
-        } catch(PersistitException e) {
+        } catch(PersistitException | RollbackException e) {
             throw wrapPersistitException(session, e);
         }
     }
@@ -1031,7 +1032,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
             V ret = callable.runAndReturn(session);
             txnService.commitTransaction(session);
             return ret;
-        } catch(PersistitException e) {
+        } catch(PersistitException | RollbackException e) {
             throw wrapPersistitException(session, e);
         } catch(RuntimeException e) {
             throw e;

@@ -45,7 +45,6 @@ import static com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.Tap;
 
-import com.persistit.exception.RollbackException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -301,11 +300,6 @@ public class PostgresServerConnection extends ServerSessionBase
                 } catch (InvalidOperationException ex) {
                     logError(ErrorLogLevel.WARN, "Error in query {} => {}", ex);
                     sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
-                } catch (RollbackException ex) {
-                    QueryRollbackException qe = new QueryRollbackException();
-                    qe.initCause(ex);
-                    logError(ErrorLogLevel.INFO, "Query {} rollback", qe);
-                    sendErrorResponse(type, qe,  qe.getCode(), qe.getMessage());
                 } catch (Exception ex) {
                     logError(ErrorLogLevel.WARN, "Unexpected error in query {}", ex);
                     String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());

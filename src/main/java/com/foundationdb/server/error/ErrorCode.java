@@ -235,7 +235,7 @@ public enum ErrorCode {
     
     // Class 40 - transaction rollback
     QUERY_TIMEOUT           ("40", "000", Importance.ERROR, QueryTimedOutException.class),
-    QUERY_ROLLBACK          ("40", "001", Importance.ERROR, QueryRollbackException.class),
+    PERSISTIT_ROLLBACK      ("40", "001", Importance.ERROR, PersistitRollbackException.class),
 
     // Class 42 - syntax error or access rule violation
     // These exceptions are re-thrown errors from the parser and from the

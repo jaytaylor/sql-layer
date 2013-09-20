@@ -178,7 +178,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         }
         try {
             exchange.fetch();
-        } catch(PersistitException e) {
+        } catch(PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         }
         PersistitIndexRowBuffer indexRow = null;
@@ -199,7 +199,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
                 try {
                     Tree tree = index.indexDef().getTreeCache().getTree();
                     new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, tree).set(0);
-                } catch(PersistitInterruptedException e) {
+                } catch(PersistitException | RollbackException e) {
                     throw PersistitAdapter.wrapPersistitException(session, e);
                 }
             }
@@ -225,7 +225,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
             constructIndexRow(session, iEx, rowData, index, hKey, indexRow, true);
             checkUniqueness(index, rowData, iEx);
             iEx.store();
-        } catch(PersistitException e) {
+        } catch(PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         } finally {
             releaseExchange(session, iEx);
@@ -320,7 +320,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         Exchange iEx = getExchange(session, index);
         try {
             deleteIndexRow(session, index, iEx, rowData, hKey, indexRowBuffer);
-        } catch(PersistitException e) {
+        } catch(PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         } finally {
             releaseExchange(session, iEx);
@@ -337,7 +337,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     public void store(Session session, Exchange ex) {
         try {
             ex.store();
-        } catch(PersistitException e) {
+        } catch(PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         }
     }
@@ -348,7 +348,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
             // ex.isValueDefined() doesn't actually fetch the value
             // ex.fetch() + ex.getValue().isDefined() would give false negatives (i.e. stored key with no value)
             return ex.traverse(EQ, true, Integer.MAX_VALUE);
-        } catch(PersistitException e) {
+        } catch(PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         }
     }
@@ -357,7 +357,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     protected boolean clear(Session session, Exchange ex) {
         try {
             return ex.remove();
-        } catch(PersistitException e) {
+        } catch(PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         }
     }
@@ -389,7 +389,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
                 } else {
                     try {
                         lastExNext = ex.next(filter);
-                    } catch(PersistitException e) {
+                    } catch(PersistitException | RollbackException e) {
                         throw PersistitAdapter.wrapPersistitException(session, e);
                     }
                 }
@@ -426,7 +426,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     protected void preWrite(Session session, Exchange storeData, RowDef rowDef, RowData rowData) {
         try {
             lockKeys(adapter(session), rowDef, rowData, storeData);
-        } catch(PersistitException e) {
+        } catch(PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         }
     }
@@ -452,7 +452,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
                 expandRowData(exchange, rowData);
                 visitor.visit(exchange.getKey(), rowData);
             }
-        } catch(PersistitException e) {
+        } catch(PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         } finally {
             releaseExchange(session, exchange);
@@ -487,7 +487,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
                     nextCommitTime = System.currentTimeMillis() + scanTimeLimit;
                 }
             }
-        } catch(PersistitException e) {
+        } catch(PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         } finally {
             releaseExchange(session, exchange);
@@ -558,6 +558,9 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
 
     @Override
     public boolean isRetryableException(Throwable t) {
+        if (t instanceof PersistitAdapterException) {
+            t = t.getCause();
+        }
         return (t instanceof RollbackException);
     }
 
@@ -578,7 +581,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         Exchange iEx = treeService.getExchange(session, treeLink);
         try {
             iEx.removeAll();
-        } catch (PersistitException e) {
+        } catch (PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         } finally {
             releaseExchange(session, iEx);
@@ -594,7 +597,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
                 // Do not releaseExchange, causes caching and leak for now unused tree
             }
             schemaManager.treeWasRemoved(session, treeLink.getSchemaName(), treeLink.getTreeName());
-        } catch (PersistitException e) {
+        } catch (PersistitException | RollbackException e) {
             LOG.debug("Exception removing tree from Persistit", e);
             throw PersistitAdapter.wrapPersistitException(session, e);
         }
@@ -613,7 +616,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         AccumulatorAdapter accum = getAdapter(sequence);
         try {
             return sequence.realValueForRawNumber(accum.getSnapshot());
-        } catch (PersistitInterruptedException e) {
+        } catch (PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         }
     }
