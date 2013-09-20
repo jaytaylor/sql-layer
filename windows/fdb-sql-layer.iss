@@ -1,15 +1,21 @@
 #ifndef VERSION
-#define VERSION '1.0-UNKNOWN'
+#define VERSION '0.0.0'
 #endif
+
+#ifndef VERSIONFULL
+#define VERSIONFULL '0.0.0-UNKNOWN'
+#endif
+
+#define APPNAME "FoundationDB SQL Layer"
 
 [Setup]
 OutputBaseFilename = fdb-sql-layer
-AppName = FoundationDB SQL Layer
-AppVerName = FoundationDB SQL Layer {#VERSION}
+AppName = {#APPNAME}
+AppVerName = {#APPNAME} {#VERSION}
 AppPublisher = FoundationDB, LCC
 AppPublisherURL = https://foundationdb.com/
-AppVersion = {code:JustVersion|{#VERSION}}
-VersionInfoProductTextVersion = {#VERSION}
+AppVersion = {#VERSION}
+VersionInfoProductTextVersion = {#VERSIONFULL}
 DefaultDirName = {code:DefaultInstallPath}
 DefaultGroupName = foundationdb
 Compression = lzma
@@ -50,13 +56,16 @@ Source: "procrun\*"; DestDir: "{app}\sql\procrun"; Flags: recursesubdirs
 
 [Run]
 Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "install -m auto"; WorkingDir: "{app}"; StatusMsg: "Installing service ..."; Flags: runhidden
-Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "start"; WorkingDir: "{app}"; StatusMsg: "Starting service ..."; Flags: runminimized
+Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "start"; WorkingDir: "{app}"; StatusMsg: "Starting service ..."
 
 [UninstallRun]
-Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "stop";  WorkingDir: "{app}"; StatusMsg: "Stopping service ..."; Flags: runminimized
 Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "uninstall";  WorkingDir: "{app}"; StatusMsg: "Removing service ..."; Flags: runhidden
 
 [Code]
+//
+// Custom functions
+//
+
 function FindJava(): String;
 var
   JavaLoc : String;
@@ -77,13 +86,13 @@ begin
       if RegQueryStringValue(HKLM, JavaLoc, 'CurrentVersion', JavaVersion) then
         begin
           if CompareStr('1.7', JavaVersion) > 0 then
-            Result := 'Java version >= 1.7 is required to run FoundationDB SQL Layer';
+            Result := 'Java version >= 1.7 is required to run {#APPNAME}';
         end
       else 
         Result := 'Unable to detect Java version';
     end
   else
-    Result := 'Java is required to run FoundationDB SQL Layer';
+    Result := 'Java is required to run {#APPNAME}';
 end;
 
 function FindFDBClient(): String;
@@ -94,27 +103,10 @@ begin
   if RegQueryDWordValue(HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{66E3CE1B-CDE3-45E0-9B6F-50949D5F2411}', 'Version', FDBClientVersion) then
     begin
       if FDBClientVersion < $01000000 then
-        Result := 'FoundationDB Client version >= 1.0 is required to run FoundationDB SQL Layer';
+        Result := 'FoundationDB Client version >= 1.0 is required to run {#APPNAME}';
     end
   else
-    Result := 'FoundationDB Client required to run FoundationDB SQL Layer';
-end;
-
-function InitializeSetup(): Boolean;
-var
-  ErrorMsg : String;
-begin
-  Result := true;
-  ErrorMsg := FindJava()
-  if Length(ErrorMsg) > 0 then begin
-    MsgBox(ErrorMsg, mbError, MB_OK);
-    Result := false;
-  end
-  ErrorMsg := FindFDBClient()
-  if Length(ErrorMsg) > 0 then begin
-    MsgBox(ErrorMsg, mbError, MB_OK);
-    Result := false;
-  end
+    Result := 'FoundationDB Client required to run {#APPNAME}';
 end;
 
 function ExpandKey(Key: String) : String;
@@ -168,17 +160,6 @@ begin
     EditFile(Path)
 end;
 
-function JustVersion(Param: String): String;
-var
-  DashPos: Integer;
-begin
-  DashPos := Pos('-', Param);
-  if (DashPos <> 0) then
-    Result := Copy(Param, 1, DashPos - 1)
-  else
-    Result := Param;
-end;
-
 function AppDataDir(Param: String): String;
 begin
   Result := ExpandConstant('{commonappdata}\foundationdb')
@@ -189,5 +170,43 @@ begin;
   Result := GetEnv('FOUNDATIONDB_INSTALL_PATH');
   if Length(Result) = 0 then
     Result := ExpandConstant('{pf}\foundationdb')
+end;
+
+
+//
+// Built-In Events
+//
+
+function InitializeSetup(): Boolean;
+var
+  ErrorMsg : String;
+begin
+  Result := true;
+  ErrorMsg := FindJava()
+  if Length(ErrorMsg) > 0 then begin
+    MsgBox(ErrorMsg, mbError, MB_OK);
+    Result := false;
+  end
+  ErrorMsg := FindFDBClient()
+  if Length(ErrorMsg) > 0 then begin
+    MsgBox(ErrorMsg, mbError, MB_OK);
+    Result := false;
+  end
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  UninstallKey : String;
+  InstallPath : String;
+  CmdPath : String;
+  ResultCode : Integer;
+begin
+  UninstallKey := ExpandConstant('Software\Microsoft\Windows\CurrentVersion\Uninstall\{#APPNAME}_is1');
+  if RegQueryStringValue(HKLM, UninstallKey, 'InstallLocation', InstallPath) then begin
+    CmdPath := InstallPath + '\bin\fdbsqllayer.cmd';
+    if FileExists(CmdPath) then
+      Exec(CmdPath, 'uninstall', InstallPath, SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  end;
+  Result := '';
 end;
 

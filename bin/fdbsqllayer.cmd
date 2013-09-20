@@ -130,9 +130,11 @@ SET CLASSPATH=%JAR_FILE%;%DEP_DIR%\*
 IF "%VERB%"=="version" GOTO VERSION
 
 IF "%VERB%"=="start" (
+  ECHO Starting service ...
   "%PRUNSRV%" //ES//%SERVICE_NAME%
   GOTO CHECK_ERROR
 ) ELSE IF "%VERB%"=="stop" (
+  ECHO Stopping service ...
   "%PRUNSRV%" //SS//%SERVICE_NAME%
   GOTO CHECK_ERROR
 ) ELSE IF "%VERB%"=="uninstall" (
@@ -214,6 +216,7 @@ IF ERRORLEVEL 1 GOTO PAUSE
 GOTO EOF
 
 :PAUSE
+ECHO There was an error. Please check %FDBSQL_LOGDIR% for more information.
 PAUSE
 GOTO EOF
 
