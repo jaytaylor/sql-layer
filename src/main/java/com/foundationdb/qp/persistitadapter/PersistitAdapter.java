@@ -46,6 +46,7 @@ import com.persistit.Key;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
+import com.persistit.exception.RollbackException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -220,7 +221,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
         handlePersistitException(getSession(), e);
     }
 
-    public static boolean isFromInterruption(Exception e) {
+    public static boolean isFromInterruption(Throwable e) {
         Throwable cause = e.getCause();
         return (e instanceof PersistitInterruptedException) ||
                ((cause != null) &&
@@ -229,17 +230,19 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
                  cause instanceof InterruptedException));
     }
 
-    public static RuntimeException wrapPersistitException(Session session, PersistitException e)
+    public static RuntimeException wrapPersistitException(Session session, Throwable e)
     {
         assert e != null;
         if (isFromInterruption(e)) {
             return new QueryCanceledException(session);
+        } else if (e instanceof RollbackException) {
+            return new PersistitRollbackException(e);
         } else {
             return new PersistitAdapterException(e);
         }
     }
 
-    public static void handlePersistitException(Session session, PersistitException e)
+    public static void handlePersistitException(Session session, Throwable e)
     {
         throw wrapPersistitException(session, e);
     }

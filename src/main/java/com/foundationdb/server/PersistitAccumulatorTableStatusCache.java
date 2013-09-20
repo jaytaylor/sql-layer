@@ -28,6 +28,7 @@ import com.foundationdb.server.service.tree.TreeService;
 import com.persistit.Tree;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
+import com.persistit.exception.RollbackException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -115,7 +116,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         public long getAutoIncrement(Session session) {
             try {
                 return autoIncrement.getSnapshot();
-            } catch(PersistitInterruptedException e) {
+            } catch(PersistitException | RollbackException e) {
                 throw PersistitAdapter.wrapPersistitException(null, e);
             }
         }
@@ -124,7 +125,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         public int getOrdinal() {
             try {
                 return (int) ordinal.getSnapshot();
-            } catch(PersistitInterruptedException e) {
+            } catch(PersistitException | RollbackException e) {
                 throw PersistitAdapter.wrapPersistitException(null, e);
             }
         }
@@ -133,7 +134,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         public long getRowCount(Session session) {
             try {
                 return rowCount.getSnapshot();
-            } catch(PersistitInterruptedException e) {
+            } catch(PersistitException | RollbackException e) {
                 throw PersistitAdapter.wrapPersistitException(null, e);
             }
         }
@@ -143,8 +144,8 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             try {
                 internalSetRowCount(rowCount);
             }
-            catch (PersistitInterruptedException e) {
-                throw new PersistitAdapterException(e);
+            catch (PersistitException | RollbackException e) {
+                throw PersistitAdapter.wrapPersistitException(null, e);
             }
         }
 
@@ -157,7 +158,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         public long getUniqueID(Session session) {
             try {
                 return uniqueID.getSnapshot();
-            } catch(PersistitInterruptedException e) {
+            } catch(PersistitException | RollbackException e) {
                 throw PersistitAdapter.wrapPersistitException(null, e);
             }
         }
@@ -192,7 +193,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             try {
                 internalSetRowCount(0);
                 internalSetAutoIncrement(0, true);
-            } catch(PersistitInterruptedException e) {
+            } catch(PersistitException | RollbackException e) {
                 throw PersistitAdapter.wrapPersistitException(null, e);
             }
         }
@@ -223,7 +224,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         private void internalSetAutoIncrement(long autoIncrementValue, boolean evenIfLess) {
             try {
                 autoIncrement.set(autoIncrementValue, evenIfLess);
-            } catch(PersistitInterruptedException e) {
+            } catch(PersistitException | RollbackException e) {
                 throw PersistitAdapter.wrapPersistitException(null, e);
             }
         }

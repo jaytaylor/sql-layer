@@ -35,8 +35,13 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.DuplicateKeyException;
+import com.foundationdb.server.error.FDBAdapterException;
+import com.foundationdb.server.error.FDBCommitUnknownResultException;
+import com.foundationdb.server.error.FDBNotCommittedException;
 import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.error.QueryCanceledException;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.config.ConfigurationService;
@@ -181,6 +186,26 @@ public class FDBAdapter extends StoreAdapter {
         // TODO: Is the IO needed?
         return (e instanceof InterruptedException) || (e instanceof InterruptedIOException) ||
                (c instanceof InterruptedException) || (c instanceof InterruptedIOException);
+    }
+
+    public static RuntimeException wrapFDBException(Session session, Exception e)
+    {
+        if (isFromInterruption(e)) {
+            return new QueryCanceledException(session);
+        } else if (e instanceof FDBException) {
+            switch (((FDBException)e).getCode()) {
+            case 1020:          // not_committed
+                return new FDBNotCommittedException(e);
+            case 1021:          // commit_unknown_result
+                return new FDBCommitUnknownResultException(e);
+            default:
+                return new FDBAdapterException(e);
+            }
+        } else if (e instanceof RuntimeException) {
+            return (RuntimeException)e;
+        } else {
+            return new AkibanInternalException("unexpected error from data layer", e);
+        }
     }
 
     private void rollbackIfNeeded(Session session, Exception e) {

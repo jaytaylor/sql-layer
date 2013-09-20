@@ -35,6 +35,7 @@ import com.persistit.Key.Direction;
 import com.persistit.Value;
 import com.persistit.exception.KeyTooLongException;
 import com.persistit.exception.PersistitException;
+import com.persistit.exception.RollbackException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -237,7 +238,7 @@ public class PersistitSorter implements Sorter
         {
             try {
                 return exchange.next(deep);
-            } catch(PersistitException e) {
+            } catch(PersistitException | RollbackException e) {
                 throw PersistitAdapter.wrapPersistitException(adapter.getSession(), e);
             }
         }
@@ -247,7 +248,7 @@ public class PersistitSorter implements Sorter
         {
             try {
                 return exchange.previous(deep);
-            } catch(PersistitException e) {
+            } catch(PersistitException | RollbackException e) {
                 throw PersistitAdapter.wrapPersistitException(adapter.getSession(), e);
             }
         }
@@ -257,7 +258,7 @@ public class PersistitSorter implements Sorter
         {
             try {
                 return exchange.traverse(dir, deep);
-            } catch(PersistitException e) {
+            } catch(PersistitException | RollbackException e) {
                 throw PersistitAdapter.wrapPersistitException(adapter.getSession(), e);
             }
         }

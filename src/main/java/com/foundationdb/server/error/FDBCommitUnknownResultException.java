@@ -17,10 +17,8 @@
 
 package com.foundationdb.server.error;
 
-public class QueryRollbackException extends QueryCanceledException
-{
-    public QueryRollbackException()
-    {
-         super(ErrorCode.QUERY_ROLLBACK);
+public class FDBCommitUnknownResultException extends FDBAdapterException {
+    public FDBCommitUnknownResultException(Throwable ex) {
+        super(ErrorCode.FDB_COMMIT_UNKNOWN_RESULT, ex);
     }
 }
