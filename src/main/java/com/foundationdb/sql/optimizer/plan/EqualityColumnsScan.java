@@ -17,28 +17,15 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
-import java.util.Set;
+import com.foundationdb.ais.model.Column;
 
-public abstract class BaseScan extends BasePlanNode
+import java.util.List;
+
+/** Something index-like that can match a (sub)set of equality conditions. */
+public interface EqualityColumnsScan
 {
-    // Tables that would still need to be fetched if this scan were used.
-    private Set<TableSource> requiredTables;
-    
-    // Estimated cost of using this scan.
-    private CostEstimate costEstimate;
-
-    public Set<TableSource> getRequiredTables() {
-        return requiredTables;
-    }
-    public void setRequiredTables(Set<TableSource> requiredTables) {
-        this.requiredTables = requiredTables;
-    }
-
-    public CostEstimate getCostEstimate() {
-        return costEstimate;
-    }
-    public void setCostEstimate(CostEstimate costEstimate) {
-        this.costEstimate = costEstimate;
-    }
-
+    public TableSource getLeafMostTable();
+    public List<ExpressionNode> getColumns();
+    public void addEqualityCondition(ConditionExpression condition, 
+                                     ExpressionNode comparand);
 }

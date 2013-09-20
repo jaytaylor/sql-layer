@@ -1012,6 +1012,11 @@ public abstract class CostEstimator implements TableRowCounts
                                                        checkSelectivity));
     }
 
+    public CostEstimate costHKeyRow(List<ExpressionNode> keys) {
+        double cost = model.project(keys.size(), 1);
+        return new CostEstimate(1, cost);
+    }
+
     public interface IndexIntersectionCoster {
         public CostEstimate singleIndexScanCost(SingleIndexScan scan, CostEstimator costEstimator);
 

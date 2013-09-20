@@ -82,6 +82,10 @@ public class PlanCostEstimator
         planEstimator = new GroupLoopEstimator(scan, tableGroup, requiredTables);
     }
 
+    public void hKeyRow(ExpressionsHKeyScan scan) {
+        planEstimator = new HKeyRowEstimator(scan);
+    }
+
     public void select(Collection<ConditionExpression> conditions,
                        SelectivityConditions selectivityConditions) {
         planEstimator = new SelectEstimator(planEstimator,
@@ -317,6 +321,20 @@ public class PlanCostEstimator
         @Override
         protected void estimateCost() {
             costEstimate = costEstimator.costFlattenNested(tableGroup, scan.getOutsideTable(), scan.getInsideTable(), scan.isInsideParent(), requiredTables);
+        }
+    }
+
+    protected class HKeyRowEstimator extends PlanEstimator {
+        private ExpressionsHKeyScan scan;
+
+        protected HKeyRowEstimator(ExpressionsHKeyScan scan) {
+            super(null);
+            this.scan = scan;
+        }
+
+        @Override
+        protected void estimateCost() {
+            costEstimate = costEstimator.costHKeyRow(scan.getKeys());
         }
     }
 

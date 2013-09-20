@@ -903,6 +903,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleUpdateInput((UpdateInput)node);
             else if (node instanceof Buffer)
                 return assembleBuffer((Buffer)node);
+            else if (node instanceof ExpressionsHKeyScan)
+                return assembleExpressionsHKeyScan((ExpressionsHKeyScan) node);
             else
                 throw new UnsupportedSQLException("Plan node " + node, null);
         }
@@ -1148,6 +1150,14 @@ public class OperatorAssembler extends BaseRule
                 assembleSort(stream, stream.rowType.nFields(), expressionsSource,
                              API.SortOption.SUPPRESS_DUPLICATES);
             }
+            return stream;
+        }
+
+        protected RowStream assembleExpressionsHKeyScan(ExpressionsHKeyScan node) {
+            RowStream stream = new RowStream();
+            stream.rowType = schema.newHKeyRowType(node.getHKey());
+            List<TPreparedExpression> keys = newPartialAssembler.assembleExpressions(node.getKeys(), stream.fieldOffsets);
+            stream.operator = API.hKeyRow_Default(stream.rowType, keys);
             return stream;
         }
 

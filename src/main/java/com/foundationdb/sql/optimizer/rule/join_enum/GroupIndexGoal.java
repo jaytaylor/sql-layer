@@ -259,6 +259,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
      * @return <code>false</code> if the index is useless.
      */
     public boolean usable(SingleIndexScan index) {
+        setColumnsAndOrdering(index);
         int nequals = insertLeadingEqualities(index, conditions);
         if (index.getIndex().isSpatial()) return spatialUsable(index, nequals);
         List<ExpressionNode> indexExpressions = index.getColumns();
@@ -298,8 +299,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         return true;
     }
 
-    private int insertLeadingEqualities(SingleIndexScan index, List<ConditionExpression> localConds) {
-        setColumnsAndOrdering(index);
+    private int insertLeadingEqualities(EqualityColumnsScan index, List<ConditionExpression> localConds) {
         int nequals = 0;
         List<ExpressionNode> indexExpressions = index.getColumns();
         int ncols = indexExpressions.size();
@@ -658,9 +658,14 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     /** Get an expression form of the given index column. */
     protected static ExpressionNode getIndexExpression(IndexScan index,
                                                        IndexColumn indexColumn) {
-        Column column = indexColumn.getColumn();
+        return getColumnExpression(index.getLeafMostTable(), indexColumn.getColumn());
+    }
+
+    /** Get an expression form of the given group column. */
+    protected static ExpressionNode getColumnExpression(TableSource leafMostTable,
+                                                        Column column) {
         UserTable indexTable = column.getUserTable();
-        for (TableSource table = index.getLeafMostTable();
+        for (TableSource table = leafMostTable;
              null != table;
              table = table.getParentTable()) {
             if (table.getTable().getTable() == indexTable) {
@@ -722,6 +727,10 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             if ((tableIndex != null) &&
                 ((bestScan == null) || (compare(tableIndex, bestScan) > 0)))
                 bestScan = tableIndex;
+            ExpressionsHKeyScan hKeyRow = pickHKeyRow(table, required);
+            if ((hKeyRow != null) &&
+                ((bestScan == null) || (compare(hKeyRow, bestScan) > 0)))
+                bestScan = hKeyRow;
         }
         bestScan = pickBestIntersection(bestScan, intersections);
 
@@ -1028,6 +1037,27 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         return false;           // Only table in this join tree, shouldn't flatten.
     }
 
+    private ExpressionsHKeyScan pickHKeyRow(TableGroupJoinNode node, Set<TableSource> required) {
+        TableSource table = node.getTable();
+        if (!required.contains(table)) return null;
+        ExpressionsHKeyScan scan = new ExpressionsHKeyScan(table);
+        HKey hKey = scan.getHKey();
+        int ncols = hKey.nColumns();
+        List<ExpressionNode> columns = new ArrayList<>(ncols);
+        for (int i = 0; i < ncols; i++) {
+            ExpressionNode column = getColumnExpression(table, hKey.column(i));
+            if (column == null) return null;
+            columns.add(column);
+        }
+        scan.setColumns(columns);
+        int nequals = insertLeadingEqualities(scan, conditions);
+        if (nequals != ncols) return null;
+        scan.setRequiredTables(required);
+        scan.setCostEstimate(estimateCost(scan));
+        logger.debug("Selecting {}", scan);
+        return scan;
+    }
+
     public int compare(BaseScan i1, BaseScan i2) {
         return i2.getCostEstimate().compareTo(i1.getCostEstimate());
     }
@@ -1223,6 +1253,31 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         return estimator.getCostEstimate();
     }
 
+    public CostEstimate estimateCost(ExpressionsHKeyScan scan) {
+        PlanCostEstimator estimator = 
+            new PlanCostEstimator(queryGoal.getCostEstimator());
+        Set<TableSource> requiredTables = scan.getRequiredTables();
+
+        estimator.hKeyRow(scan);
+        estimator.flatten(tables, scan.getTable(), requiredTables);
+
+        Collection<ConditionExpression> unhandledConditions = 
+            new HashSet<>(conditions);
+        unhandledConditions.removeAll(scan.getConditions());
+        if (!unhandledConditions.isEmpty()) {
+            estimator.select(unhandledConditions,
+                             selectivityConditions(unhandledConditions, requiredTables));
+        }
+
+        if (queryGoal.needSort(IndexScan.OrderEffectiveness.NONE)) {
+            estimator.sort(queryGoal.sortFields());
+        }
+
+        estimator.setLimit(queryGoal.getLimit());
+
+        return estimator.getCostEstimate();
+    }
+
     public double estimateSelectivity(IndexScan index) {
         return queryGoal.getCostEstimator().conditionsSelectivity(selectivityConditions(index.getConditions(), index.getTables()));
     }
@@ -1339,6 +1394,10 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 if (conditions.isEmpty()) {
                     textScan.setLimit((int)queryGoal.getLimit());
                 }
+            }
+            else if (scan instanceof ExpressionsHKeyScan) {
+                installConditions(((ExpressionsHKeyScan)scan).getConditions(), 
+                                  conditionSources);
             }
             if (sortAllowed)
                 queryGoal.installOrderEffectiveness(IndexScan.OrderEffectiveness.NONE);
