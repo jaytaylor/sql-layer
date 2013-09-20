@@ -30,6 +30,7 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import com.foundationdb.qp.persistitadapter.PersistitAdapter;
 import com.foundationdb.server.PersistitAccumulatorTableStatusCache;
 import com.foundationdb.server.TableStatusCache;
 import com.foundationdb.server.collation.AkCollatorFactory;
@@ -298,7 +299,7 @@ public class TreeServiceImpl
             final Tree tree = cache.getTree();
             return getExchange(session, tree);
         } catch (PersistitException e) {
-            throw new PersistitAdapterException(e);
+            throw PersistitAdapter.wrapPersistitException(session, e);
         }
     }
 

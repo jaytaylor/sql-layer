@@ -19,16 +19,19 @@ package com.foundationdb.sql.pg;
 
 import com.foundationdb.server.error.ErrorCode;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import static junit.framework.Assert.*;
 
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
@@ -38,6 +41,16 @@ public class JMXCancelationIT extends PostgresServerITBase
     private static final String SERVER_ADDRESS = "localhost";
     private static final int N = 1000;
 
+    private final List<Throwable> uncaughtExceptions = Collections.synchronizedList(new ArrayList<Throwable>());
+
+    private final UncaughtExceptionHandler UNCAUGHT_HANDLER = new UncaughtExceptionHandler() {
+        @Override
+        public void uncaughtException(Thread t, Throwable e) {
+            uncaughtExceptions.add(e);
+        }
+    };
+
+
     @Before
     public void loadDB() throws Exception {
         Statement statement = getConnection().createStatement();
@@ -46,6 +59,12 @@ public class JMXCancelationIT extends PostgresServerITBase
             statement.execute(String.format("INSERT INTO t VALUES(%s)", id));
         }
         statement.close();
+        uncaughtExceptions.clear();
+    }
+
+    @After
+    public void checkUncaught() {
+        assertEquals("uncaught exceptions", "[]", uncaughtExceptions.toString());
     }
 
     @Test
@@ -59,10 +78,7 @@ public class JMXCancelationIT extends PostgresServerITBase
     }
 
     private void test(String method, boolean forKill) throws Exception {
-        JMXInterpreter jmx = null;
-        try {
-            jmx = new JMXInterpreter(false);
-
+        try(JMXInterpreter jmx = new JMXInterpreter()) {
             Integer[] sessions = (Integer[])
                 jmx.makeBeanCall(SERVER_ADDRESS, SERVER_JMX_PORT,
                                  "com.foundationdb:type=PostgresServer",
@@ -102,11 +118,6 @@ public class JMXCancelationIT extends PostgresServerITBase
 
             queryThread.join();
         }
-        finally {
-            if (jmx != null) {
-                jmx.close();
-            }
-        }
     }
 
     private Thread startQueryThread(final boolean forKill, final CountDownLatch latch) throws Exception {
@@ -133,8 +144,8 @@ public class JMXCancelationIT extends PostgresServerITBase
                             assertEquals(ErrorCode.QUERY_CANCELED.getFormattedValue(), sqlState);
                         }
                     }
-                    catch (Exception ex) {
-                        fail(ex.toString());
+                    catch (Exception e) {
+                        throw new RuntimeException(e);
                     }
                     finally {
                         try {
@@ -143,10 +154,12 @@ public class JMXCancelationIT extends PostgresServerITBase
                             closeConnection(connection);
                         }
                         catch (Exception ex) {
+                            // Ignore
                         }
                     }
                 }
             });
+        thread.setUncaughtExceptionHandler(UNCAUGHT_HANDLER);
         thread.setDaemon(false);
         thread.start();
         return thread;

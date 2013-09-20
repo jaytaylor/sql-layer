@@ -20,81 +20,55 @@ package com.foundationdb.sql.pg;
 import javax.management.MBeanInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanServerConnection;
-import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
-import junit.framework.Assert;
-
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/* test class for JMXIterpreter, which provides a JMX interface to the server in the test framework  */
-public class JMXInterpreterIT extends PostgresServerYamlITBase {
+import static junit.framework.Assert.assertNotNull;
+
+public class JMXInterpreterIT extends PostgresServerYamlITBase
+{
+    private static final Logger LOG = LoggerFactory.getLogger(JMXInterpreterIT.class);
 
     private static final int SERVER_JMX_PORT = 8082;
     private static final String SERVER_ADDRESS = "localhost";
 
     @Test
-    public void testForBasicConstructor()  {
-        JMXInterpreter conn = null;
-        try {
-            conn = new JMXInterpreter(true);
+    public void testForBasicConstructor() throws Exception {
+        try(JMXInterpreter conn = new JMXInterpreter()) {
             conn.ensureConnection(SERVER_ADDRESS, SERVER_JMX_PORT);
-            System.out.println(conn.serviceURL);
-            Assert.assertNotNull(conn);
-            
+            LOG.debug("serviceURL: " + conn.serviceURL);
+            assertNotNull(conn);
+
             final MBeanServerConnection mbs = conn.getAdapter().getConnection();
-            MBeanInfo info = null;
-            ObjectName mxbeanName = null;
-            try {
-                mxbeanName = new ObjectName(
-                        "com.foundationdb:type=IndexStatistics");
-            } catch (MalformedObjectNameException e1) {
-                e1.printStackTrace();
-                Assert.fail(e1.getMessage());
-            } catch (NullPointerException e1) {
-                e1.printStackTrace();
-                Assert.fail(e1.getMessage());   
-            }
-            try {
-                info = mbs.getMBeanInfo(mxbeanName);
-            } catch (Exception e) {
-                e.printStackTrace();
-                return;
-            }
+            ObjectName mxbeanName = new ObjectName("com.foundationdb:type=IndexStatistics");
+            MBeanInfo info = mbs.getMBeanInfo(mxbeanName);
             MBeanOperationInfo[] ops = info.getOperations();
-            for (int x=0;x < ops.length;x++) {
-                System.out.println(x+" Return type("+ops[x].getDescription()+"): "+ ops[x].getReturnType());
-                for (int a=0;a < ops[x].getSignature().length;a++) {
-                  System.out.println("  "+ops[x].getSignature()[a].getDescription()+":"+ops[x].getSignature()[a].getType());
+            for(int x = 0; x < ops.length; x++) {
+                MBeanOperationInfo op = ops[x];
+                LOG.debug("{} Return type({}): {}", new Object[]{x, op.getDescription(), op.getReturnType()});
+                for(int a = 0; a < ops[x].getSignature().length; a++) {
+                    LOG.debug("  {}: {}", op.getSignature()[a].getDescription(), op.getSignature()[a].getType());
                 }
-            }
-        } finally {
-            if (conn != null) {
-                conn.close();
             }
         }
     }
 
     @Test
-    public void testCall() throws Exception  {
-        JMXInterpreter conn = null;
-        try {
-            conn = new JMXInterpreter(true);
-            Object[] parameters = { new String("test") };
-            Object data = conn.makeBeanCall( 
-                    SERVER_ADDRESS, 
-                    SERVER_JMX_PORT, 
-                    "com.foundationdb:type=IndexStatistics", 
-                    "dumpIndexStatisticsToString", 
-                    parameters, "method");
-            System.out.println(""+data);
-            
-        } finally {
-            if (conn != null) {
-                conn.close();
-            }
+    public void testCall() throws Exception {
+        try(JMXInterpreter conn = new JMXInterpreter()) {
+            Object[] parameters = { "test" };
+            Object data = conn.makeBeanCall(
+                SERVER_ADDRESS,
+                SERVER_JMX_PORT,
+                "com.foundationdb:type=IndexStatistics",
+                "dumpIndexStatisticsToString",
+                parameters,
+                "method"
+            );
+            LOG.debug("data: {}", data);
         }
     }
-    
-
 }
