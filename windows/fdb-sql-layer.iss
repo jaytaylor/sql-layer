@@ -1,16 +1,22 @@
 #ifndef VERSION
-#define VERSION '1.0-UNKNOWN'
+#define VERSION '0.0.0'
 #endif
+
+#ifndef VERSIONFULL
+#define VERSIONFULL '0.0.0-UNKNOWN'
+#endif
+
+#define APPNAME "FoundationDB SQL Layer"
 
 [Setup]
 OutputBaseFilename = fdb-sql-layer
-AppName = FoundationDB SQL Layer
-AppVerName = FoundationDB SQL Layer {#VERSION}
+AppName = {#APPNAME}
+AppVerName = {#APPNAME} {#VERSION}
 AppPublisher = FoundationDB, LCC
 AppPublisherURL = https://foundationdb.com/
-AppVersion = {code:JustVersion|{#VERSION}}
-VersionInfoProductTextVersion = {#VERSION}
-DefaultDirName = {pf}\foundationdb
+AppVersion = {#VERSION}
+VersionInfoProductTextVersion = {#VERSIONFULL}
+DefaultDirName = {code:DefaultInstallPath}
 DefaultGroupName = foundationdb
 Compression = lzma
 SolidCompression = yes
@@ -18,7 +24,13 @@ MinVersion = 5.1
 PrivilegesRequired = admin
 ArchitecturesInstallIn64BitMode=x64 ia64
 LicenseFile=LICENSE-SQL_LAYER.txt
-DisableDirPage = yes
+DirExistsWarning = no
+SetupIconFile = foundationdb.ico
+WizardImageFile = dialog.bmp
+WizardSmallImageFile = banner.bmp
+WizardImageStretch = no
+WizardImageBackColor = clWhite
+InfoAfterFile = conclusion.rtf
 ;SignTool=GoDaddy
 
 [Tasks]
@@ -30,10 +42,10 @@ Name: "{code:AppDataDir}\sql-config"
 
 [Files]
 Source: "LICENSE-SQL_LAYER.txt"; DestDir: "{app}"
-Source: "bin\*"; DestDir: "{app}\bin"
+Source: "bin\*"; DestDir: "{app}\bin"; AfterInstall: EditAfterInstall
+Source: "config\*"; DestDir: "{code:AppDataDir}\sql-config"; AfterInstall: EditAfterInstall; Flags: onlyifdoesntexist uninsneveruninstall
 Source: "lib\*"; DestDir: "{app}\sql\lib"; Flags: recursesubdirs
 Source: "procrun\*"; DestDir: "{app}\sql\procrun"; Flags: recursesubdirs
-Source: "config\*"; DestDir: "{code:AppDataDir}\sql-config"; Flags: onlyifdoesntexist uninsneveruninstall
 
 [Icons]
 ;Name: "{group}\FoundationDB SQL Layer"; Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "window";  WorkingDir: "{app}"; Comment: "Run the server as an application"
@@ -43,12 +55,17 @@ Source: "config\*"; DestDir: "{code:AppDataDir}\sql-config"; Flags: onlyifdoesnt
 ;Name: "{group}\Uninstall FoundationDB SQL Layer"; Filename: "{uninstallexe}"
 
 [Run]
-;See StartNow() below.
+Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "install -m auto"; WorkingDir: "{app}"; StatusMsg: "Installing service ..."; Flags: runhidden
+Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "start"; WorkingDir: "{app}"; StatusMsg: "Starting service ..."
 
 [UninstallRun]
-Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "uninstall";  WorkingDir: "{app}"; StatusMsg: "Removing service ..."
+Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "uninstall";  WorkingDir: "{app}"; StatusMsg: "Removing service ..."; Flags: runhidden
 
 [Code]
+//
+// Custom functions
+//
+
 function FindJava(): String;
 var
   JavaLoc : String;
@@ -69,13 +86,13 @@ begin
       if RegQueryStringValue(HKLM, JavaLoc, 'CurrentVersion', JavaVersion) then
         begin
           if CompareStr('1.7', JavaVersion) > 0 then
-            Result := 'Java version >= 1.7 is required to run FoundationDB SQL Layer';
+            Result := 'Java version >= 1.7 is required to run {#APPNAME}';
         end
       else 
         Result := 'Unable to detect Java version';
     end
   else
-    Result := 'Java is required to run FoundationDB SQL Layer';
+    Result := 'Java is required to run {#APPNAME}';
 end;
 
 function FindFDBClient(): String;
@@ -86,32 +103,10 @@ begin
   if RegQueryDWordValue(HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{66E3CE1B-CDE3-45E0-9B6F-50949D5F2411}', 'Version', FDBClientVersion) then
     begin
       if FDBClientVersion < $01000000 then
-        Result := 'FoundationDB Client version >= 1.0 is required to run FoundationDB SQL Layer';
+        Result := 'FoundationDB Client version >= 1.0 is required to run {#APPNAME}';
     end
   else
-    Result := 'FoundationDB Client required to run FoundationDB SQL Layer';
-end;
-
-function InitializeSetup(): Boolean;
-var
-  ErrorMsg : String;
-begin
-  Result := true;
-  ErrorMsg := FindJava()
-  if Length(ErrorMsg) > 0 then begin
-    MsgBox(ErrorMsg, mbError, MB_OK);
-    Result := false;
-  end
-  ErrorMsg := FindFDBClient()
-  if Length(ErrorMsg) > 0 then begin
-    MsgBox(ErrorMsg, mbError, MB_OK);
-    Result := false;
-  end
-end;
-
-function InstallMode(Param: String): String;
-begin
-  Result := 'auto'
+    Result := 'FoundationDB Client required to run {#APPNAME}';
 end;
 
 function ExpandKey(Key: String) : String;
@@ -154,42 +149,64 @@ begin
   end;
 end;
 
-procedure StartNow();
+procedure EditAfterInstall();
 var
-  Command, Dir, Params: String;
-  ResultCode: Integer;
+  Path: String;
+  FileName: String;
 begin
-  Command := ExpandConstant('{app}\bin\fdbsqllayer.cmd');
-  Dir := ExpandConstant('{app}');
-  Params := 'install -m ' + InstallMode('');
-  if Exec(Command, Params, Dir, SW_HIDE, ewWaitUntilTerminated, ResultCode) then
-    Exec(Command, 'start', Dir, SW_HIDE, ewWaitUntilTerminated, ResultCode);
-end;
-
-procedure CurStepChanged(CurStep: TSetupStep);
-begin
-  if CurStep = ssPostInstall then begin
-    EditFile(ExpandConstant('{app}\bin\fdbsqllayer.cmd'));
-    EditFile(ExpandConstant('{code:AppDataDir}\sql-config\log4j.properties'));
-    EditFile(ExpandConstant('{code:AppDataDir}\sql-config\server.properties'));
-    StartNow();
-  end;
-end;
-
-function JustVersion(Param: String): String;
-var
-  DashPos: Integer;
-begin
-  DashPos := Pos('-', Param);
-
-  if (DashPos <> 0) then
-    Result := Copy(Param, 1, DashPos - 1)
-  else
-    Result := Param;
-
+  Path := ExpandConstant(CurrentFileName);
+  FileName := ExtractFileName(Path)
+  if (FileName = 'fdbsqllayer.cmd') or (FileName = 'log4j.properties') or (FileName = 'server.properties') then
+    EditFile(Path)
 end;
 
 function AppDataDir(Param: String): String;
 begin
   Result := ExpandConstant('{commonappdata}\foundationdb')
 end;
+
+function DefaultInstallPath(Param: String): String;
+begin;
+  Result := GetEnv('FOUNDATIONDB_INSTALL_PATH');
+  if Length(Result) = 0 then
+    Result := ExpandConstant('{pf}\foundationdb')
+end;
+
+
+//
+// Built-In Events
+//
+
+function InitializeSetup(): Boolean;
+var
+  ErrorMsg : String;
+begin
+  Result := true;
+  ErrorMsg := FindJava()
+  if Length(ErrorMsg) > 0 then begin
+    MsgBox(ErrorMsg, mbError, MB_OK);
+    Result := false;
+  end
+  ErrorMsg := FindFDBClient()
+  if Length(ErrorMsg) > 0 then begin
+    MsgBox(ErrorMsg, mbError, MB_OK);
+    Result := false;
+  end
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  UninstallKey : String;
+  InstallPath : String;
+  CmdPath : String;
+  ResultCode : Integer;
+begin
+  UninstallKey := ExpandConstant('Software\Microsoft\Windows\CurrentVersion\Uninstall\{#APPNAME}_is1');
+  if RegQueryStringValue(HKLM, UninstallKey, 'InstallLocation', InstallPath) then begin
+    CmdPath := InstallPath + '\bin\fdbsqllayer.cmd';
+    if FileExists(CmdPath) then
+      Exec(CmdPath, 'uninstall', InstallPath, SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  end;
+  Result := '';
+end;
+

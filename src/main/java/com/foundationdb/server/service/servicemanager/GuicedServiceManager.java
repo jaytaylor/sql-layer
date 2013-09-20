@@ -59,7 +59,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
     }
 
     @Override
-    public void startServices() {
+    public synchronized void startServices() {
         logger.info("Starting services.");
         state = State.STARTING;
         getJmxRegistryService().register(this);
@@ -80,7 +80,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
     }
 
     @Override
-    public void stopServices() throws Exception {
+    public synchronized void stopServices() throws Exception {
         logger.info("Stopping services normally.");
         state = State.STOPPING;
         try {
@@ -93,7 +93,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
     }
 
     @Override
-    public void crashServices() throws Exception {
+    public synchronized void crashServices() throws Exception {
         logger.info("Stopping services abnormally.");
         state = State.STOPPING;
         try {
@@ -141,7 +141,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
     }
 
     @Override
-    public <T> T getServiceByClass(Class<T> serviceClass) {
+    public synchronized <T> T getServiceByClass(Class<T> serviceClass) {
         return guicer.get(serviceClass, STANDARD_SERVICE_ACTIONS);
     }
 

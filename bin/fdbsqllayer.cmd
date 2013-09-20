@@ -130,9 +130,11 @@ SET CLASSPATH=%JAR_FILE%;%DEP_DIR%\*
 IF "%VERB%"=="version" GOTO VERSION
 
 IF "%VERB%"=="start" (
+  ECHO Starting service ...
   "%PRUNSRV%" //ES//%SERVICE_NAME%
   GOTO CHECK_ERROR
 ) ELSE IF "%VERB%"=="stop" (
+  ECHO Stopping service ...
   "%PRUNSRV%" //SS//%SERVICE_NAME%
   GOTO CHECK_ERROR
 ) ELSE IF "%VERB%"=="uninstall" (
@@ -158,12 +160,12 @@ IF EXIST "%FDBSQL_CONF%\jvm-options.cmd" CALL "%FDBSQL_CONF%\jvm-options.cmd"
 IF "%VERB%"=="window" GOTO RUN_CMD
 IF "%VERB%"=="run" GOTO RUN_CMD
 
-SET PRUNSRV_ARGS=--StartMode=jvm --StartClass com.foundationdb.sql.Main --StartMethod=procrunStart ^
-                 --StopMode=jvm --StopClass=com.foundationdb.sql.Main --StopMethod=procrunStop ^
+SET PRUNSRV_ARGS=--StartMode=jvm ++StartParams="jvm" --StartClass com.foundationdb.sql.Main --StartMethod=procrunStart ^
+                 --StopMode=jvm ++StopParams="jvm" --StopClass=com.foundationdb.sql.Main --StopMethod=procrunStop ^
                  --StdOutput="%FDBSQL_LOGDIR%\stdout.log" --DisplayName="%SERVICE_DNAME%" ^
                  --Description="%SERVICE_DESC%" --Startup=%SERVICE_MODE% --Classpath="%CLASSPATH%"
 REM Each value that might have a space needs a separate ++JvmOptions.
-SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmOptions="%JVM_OPTS: =#%" ++JvmOptions="-Dfdbsql.config_dir=%FDBSQL_CONF%" ^
+SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmOptions="%JVM_OPTS: =#%" ++JvmOptions=-Xrs ++JvmOptions="-Dfdbsql.config_dir=%FDBSQL_CONF%" ^
                  ++JvmOptions="-Dlog4j.configuration=file:%FDBSQL_LOGCONF%" ++JvmOptions="-Dfdbsql.home=%FDBSQL_HOME_DIR%"
 IF DEFINED SERVICE_USER SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --ServiceUser=%SERVICE_USER% --ServicePassword=%SERVICE_PASSWORD%
 IF DEFINED MAX_HEAP_SIZE SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmMs=%MAX_HEAP_SIZE% --JvmMx=%MAX_HEAP_SIZE%
@@ -214,6 +216,7 @@ IF ERRORLEVEL 1 GOTO PAUSE
 GOTO EOF
 
 :PAUSE
+ECHO There was an error. Please check %FDBSQL_LOGDIR% for more information.
 PAUSE
 GOTO EOF
 

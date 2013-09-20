@@ -43,6 +43,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.util.Arrays;
+import java.util.concurrent.Semaphore;
 
 public class Main implements Service, JmxManageable, LayerInfoInterface
 {
@@ -86,6 +88,8 @@ public class Main implements Service, JmxManageable, LayerInfoInterface
     private static final String GC_INTERVAL_NAME = "fdbsql.gc_monitor.interval";
     private static final String GC_THRESHOLD_NAME = "fdbsql.gc_monitor.log_threshold_ms";
     private static final String PID_FILE_NAME = System.getProperty("fdbsql.pidfile");
+
+    private static volatile ShutdownMXBeanImpl shutdownBean = null;
 
     private final JmxObjectInfo jmxObjectInfo;
     private final ConfigurationService config;
@@ -217,7 +221,7 @@ public class Main implements Service, JmxManageable, LayerInfoInterface
         GuicedServiceManager.BindingsConfigurationProvider bindings = GuicedServiceManager.standardUrls();
         final ServiceManager serviceManager = new GuicedServiceManager(bindings);
 
-        final ShutdownMXBeanImpl shutdownBean = new ShutdownMXBeanImpl(serviceManager);
+        Main.shutdownBean = new ShutdownMXBeanImpl(serviceManager);
 
         // JVM shutdown hook.
         // Register before startServices() so services are still brought down on startup error.
@@ -245,22 +249,38 @@ public class Main implements Service, JmxManageable, LayerInfoInterface
         }
     }
 
-    /** Start from procrun.
+
+    /**
+     * Start from procrun.
      * @see <a href="http://commons.apache.org/daemon/procrun.html">Daemon: Procrun</a>
      */
+    private static final Semaphore PROCRUN_SEMAPHORE = new Semaphore(0);
+
+    private static boolean isProcrunJVMMode(String[] args) {
+        if(args.length != 1) {
+            String message = "Expected exactly one argument (StartMode)";
+            LOG.error("{}: {}", message, Arrays.toString(args));
+            throw new IllegalArgumentException(message);
+        }
+        return "jvm".equals(args[0]);
+    }
+
     @SuppressWarnings("unused") // Called by procrun
     public static void procrunStart(String[] args) throws Exception {
-        // Start server and return from this thread.
-        // Normal entry does that.
+        boolean jvmMode = isProcrunJVMMode(args);
         main(args);
+        if(jvmMode) {
+            PROCRUN_SEMAPHORE.acquire();
+        }
     }
 
     @SuppressWarnings("unused") // Called by procrun
     public static void procrunStop(String[] args) throws Exception {
+        boolean jvmMode = isProcrunJVMMode(args);
         // Stop server from another thread.
-        // Need global access to ServiceManager. Can get it via the shutdown bean.
-        ObjectName name = new ObjectName(ShutdownMXBeanImpl.BEAN_NAME);
-        ManagementFactory.getPlatformMBeanServer().invoke(name, "shutdown",
-                                                          new Object[0], new String[0]);
+        shutdownBean.shutdown();
+        if(jvmMode) {
+            PROCRUN_SEMAPHORE.release();
+        }
     }
 }
