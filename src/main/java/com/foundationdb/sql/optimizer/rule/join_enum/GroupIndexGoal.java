@@ -1052,6 +1052,9 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         scan.setColumns(columns);
         int nequals = insertLeadingEqualities(scan, conditions);
         if (nequals != ncols) return null;
+        required = new HashSet<>(required);
+        // We do not handle any actual data columns.
+        required.addAll(requiredColumns.getTables());
         scan.setRequiredTables(required);
         scan.setCostEstimate(estimateCost(scan));
         logger.debug("Selecting {}", scan);
