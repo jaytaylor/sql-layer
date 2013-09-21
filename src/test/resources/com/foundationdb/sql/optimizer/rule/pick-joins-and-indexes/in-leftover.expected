@@ -10,5 +10,5 @@ SelectQuery@32fb6aed
                   TableSource@23042826(a2 - TableGroupJoin@6a8a9ea5(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(test.customers))))
                   TableSource@53c6c20b(o1 - TableGroupJoin@32b59948(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
                     TableSource@1ded8b25(i1 - TableGroupJoin@30625ffa(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))
-              TableGroupJoinTree@a8b2ee7(TableGroup@13aa21bc(customers), c2 - SingleIndexScan@2d434736(Index(test.customers.PRIMARY[IndexColumn(cid)]), NONE, =c1.cid, rows = 1, cost = 13.7244))
+              TableGroupJoinTree@a8b2ee7(TableGroup@13aa21bc(customers), c2 - ExpressionsHKeyScan@456f54ce(TableSource@3b925c44(c2 - TableGroup@39085afb(customers)), c1.cid, rows = 1, cost = 8.69160))
                 TableSource@564a397c(c2 - TableGroup@13aa21bc(customers))

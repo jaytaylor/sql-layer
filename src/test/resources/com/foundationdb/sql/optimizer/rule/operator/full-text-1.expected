@@ -1,4 +1,4 @@
 PhysicalSelect@46866232[cid, name]
   Project_Default(Field(0), Field(1))
-    GroupLookup_Default(HKey -> test.customers)
+    GroupLookup_Default(test.customers -> test.customers)
       IndexScan_FullText(test.customers.cust_ft, name:john)
