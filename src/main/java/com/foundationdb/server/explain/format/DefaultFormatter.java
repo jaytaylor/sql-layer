@@ -269,6 +269,9 @@ public class DefaultFormatter
         case BUFFER_OPERATOR:
             appendBufferOperator(name, atts);
             break;
+        case HKEY_OPERATOR:
+            appendHKeyOperator(name, atts);
+            break;
         default:
             throw new UnsupportedOperationException("Formatter does not recognize " + 
                                                     explainer.getType());
@@ -760,6 +763,16 @@ public class DefaultFormatter
     }
 
     protected void appendBufferOperator(String name, Attributes atts) {
+    }
+
+    protected void appendHKeyOperator(String name, Attributes atts) {
+        if (levelOfDetail != LevelOfDetail.BRIEF) {
+            append(atts.getAttribute(Label.OUTPUT_TYPE));
+            for (Explainer projection : atts.get(Label.PROJECTION)) {
+                sb.append(", ");
+                append(projection);
+            }
+        }
     }
 
     protected void appendProcedure(CompoundExplainer explainer, int depth) {
