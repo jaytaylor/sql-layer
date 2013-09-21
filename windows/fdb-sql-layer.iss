@@ -35,7 +35,7 @@ WizardSmallImageFile = banner.bmp
 WizardImageStretch = no
 WizardImageBackColor = clWhite
 InfoAfterFile = conclusion.rtf
-;SignTool=GoDaddy
+SignTool=standard
 
 [Tasks]
 ;Always run as Service, SYSTEM user, and start with windows
