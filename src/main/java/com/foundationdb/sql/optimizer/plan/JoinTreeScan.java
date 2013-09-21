@@ -17,12 +17,8 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
-import java.util.List;
-
-/** Something index-like that can match a (sub)set of equality conditions. */
-public interface EqualityColumnsScan extends JoinTreeScan
+/** Something index-like from which group operators are possible. */
+public interface JoinTreeScan
 {
-    public List<ExpressionNode> getColumns();
-    public void addEqualityCondition(ConditionExpression condition, 
-                                     ExpressionNode comparand);
+    public TableSource getLeafMostTable();
 }

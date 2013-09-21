@@ -109,8 +109,8 @@ public class BranchJoiner extends BaseRule
         }
         markBranches(tableGroup, requiredTables);
         top:
-        if (scan instanceof EqualityColumnsScan) {
-            TableSource indexTable = ((EqualityColumnsScan)scan).getLeafMostTable();
+        if (scan instanceof JoinTreeScan) {
+            TableSource indexTable = ((JoinTreeScan)scan).getLeafMostTable();
             TableGroupJoinNode leafTable = rootTable.findTable(indexTable);
             assert (leafTable != null) : scan;
             List<TableSource> ancestors = new ArrayList<>();
