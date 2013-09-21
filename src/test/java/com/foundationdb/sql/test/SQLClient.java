@@ -55,6 +55,7 @@ public class SQLClient implements Runnable
             }
             else {
                 params.add(args[argi]);
+                argi += 1;
             }
         }
         if (printAllTimes && nthreads > 1) {
@@ -90,7 +91,7 @@ public class SQLClient implements Runnable
         }
         if (repeat > 0) {
             total = total / (repeat * ((nthreads == 0) ? 1 : nthreads));
-            System.out.println(total + " ms.");
+            System.out.println(total / 1.0e6 + " ms.");
         }
     }
 
@@ -126,8 +127,8 @@ public class SQLClient implements Runnable
             }
             long startTime = -1, endTime, queryStartTime = -1, queryEndTime;
             for (int pass = start; pass <= repeat; pass++) {
-                if (pass == 1) startTime = System.currentTimeMillis();
-                if (printAllTimes) queryStartTime = System.currentTimeMillis();
+                if (pass == 1) startTime = System.nanoTime();
+                if (printAllTimes) queryStartTime = System.nanoTime();
                 if (stmt.execute()) {
                     ResultSet rs = stmt.getResultSet();
                     ResultSetMetaData md = rs.getMetaData();
@@ -153,12 +154,13 @@ public class SQLClient implements Runnable
                         System.out.println(count + " rows updated.");
                 }
                 if (printAllTimes) {
-                    queryEndTime = System.currentTimeMillis();
-                    System.out.println(String.format("%s: pass %s: %s msec",
-                                                     queryEndTime, pass, queryEndTime - queryStartTime));
+                    queryEndTime = System.nanoTime();
+                    System.out.println(String.format("%s: pass %s: %s ms.",
+                                                     queryEndTime, pass, 
+                                                     (queryEndTime - queryStartTime) / 1.0e6));
                 }
             }
-            endTime =  System.currentTimeMillis();
+            endTime =  System.nanoTime();
             stmt.close();
             conn.close();
             time = endTime - startTime;
