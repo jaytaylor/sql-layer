@@ -6,5 +6,5 @@ PhysicalSelect[name:varchar(32)[VARCHAR], value:MCOMPAT_ DATE]
           GroupLookup_Default(Index(orders.__akiban_fk_0) -> orders)
             IndexScan_Default(Index(orders.__akiban_fk_0), cid ASC)
     Project_Default(customers.name, Bound(0, 1))
-      GroupLookup_Default(Index(customers.PRIMARY) -> customers)
-        IndexScan_Default(Index(customers.PRIMARY), cid = Bound(0, 0))
+      GroupLookup_Default(customers -> customers)
+        HKeyRow_Default(customers, Bound(0, 0))
