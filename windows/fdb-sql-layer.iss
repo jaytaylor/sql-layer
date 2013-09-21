@@ -6,7 +6,11 @@
 #define VERSIONFULL '0.0.0-UNKNOWN'
 #endif
 
-#define APPNAME "FoundationDB SQL Layer"
+#define APPNAME 'FoundationDB SQL Layer'
+#define FDB_UPGRADE_GUID '{A95EA002-686E-4164-8356-C715B7F8B1C8}'
+#define FDB_VERSION_STR '1.0.1'
+#define FDB_VERSION_NUM '$01000001'
+
 
 [Setup]
 OutputBaseFilename = fdb-sql-layer
@@ -65,6 +69,14 @@ Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "uninstall";  WorkingDir: "{a
 //
 // Custom functions
 //
+#ifdef UNICODE
+  #define AW "W"
+#else
+  #define AW "A"
+#endif
+
+function MsiEnumRelatedProducts(lpUpgradeCode: String; dwReserved: DWORD; iProductIndex: DWORD; lpProductBuf: String): UINT;
+  external 'MsiEnumRelatedProducts{#AW}@msi.dll stdcall';
 
 function FindJava(): String;
 var
@@ -97,16 +109,34 @@ end;
 
 function FindFDBClient(): String;
 var
+  I : Integer;
+  ProductGUID : String;
   FDBClientVersion : Cardinal;
 begin
+  I := 0;
+  SetLength(ProductGUID, 39);
+
+  while MsiEnumRelatedProducts('{#FDB_UPGRADE_GUID}', 0, I, ProductGUID) = 0 do
+  begin
+    SetLength(ProductGUID, 39);
+    I := I + 1;
+  end;
+
   Result := '';
-  if RegQueryDWordValue(HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{66E3CE1B-CDE3-45E0-9B6F-50949D5F2411}', 'Version', FDBClientVersion) then
-    begin
-      if FDBClientVersion < $01000000 then
-        Result := 'FoundationDB Client version >= 1.0 is required to run {#APPNAME}';
-    end
+  if I = 0 then
+    Result := 'No FoundationDB found. Version >= {#FDB_VERSION_STR} required to run {#APPNAME}'
+  else if I > 1 then
+    Result := 'Error: Multiple FoundationDB installations found.'
   else
-    Result := 'FoundationDB Client required to run {#APPNAME}';
+    begin
+      if RegQueryDWordValue(HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\' + ProductGUID, 'Version', FDBClientVersion) then
+        begin
+          if FDBClientVersion < {#FDB_VERSION_NUM} then
+            Result := 'FoundationDB Client version >= {#FDB_VERSION_STR} required to run {#APPNAME}';
+        end
+      else
+        Result := 'Error: No such product ' + ProductGUID;
+    end;
 end;
 
 function ExpandKey(Key: String) : String;
@@ -122,7 +152,7 @@ begin
   else if Key = 'tempdir' then
     Value := '{%TEMP}'
   else
-    Value := ''
+    Value := '';
   Value := ExpandConstant(Value);
   StringChange(Value, '\', '/');
   Result := Value;
@@ -186,8 +216,8 @@ begin
   if Length(ErrorMsg) > 0 then begin
     MsgBox(ErrorMsg, mbError, MB_OK);
     Result := false;
-  end
-  ErrorMsg := FindFDBClient()
+  end;
+  ErrorMsg := FindFDBClient();
   if Length(ErrorMsg) > 0 then begin
     MsgBox(ErrorMsg, mbError, MB_OK);
     Result := false;
