@@ -1,0 +1,6 @@
+SelectQuery@21379815
+  ResultSet@48e19bbc[cid, name]
+    Project@53b77905[customers.cid, customers.name]
+      Select@326a6233[]
+        TableGroupJoinTree@66551c20(TableGroup@5da9ad5c(customers), customers - ExpressionsHKeyScan@2eb4a30e(TableSource@39153c82(customers - TableGroup@5da9ad5c(customers)), $0, rows = 1, cost = 7.05160))
+          TableSource@39153c82(customers - TableGroup@5da9ad5c(customers))
