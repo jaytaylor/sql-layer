@@ -45,7 +45,6 @@ import static com.foundationdb.qp.operator.API.indexScan_Default;
 import static java.lang.Math.abs;
 import static org.junit.Assert.*;
 
-@Ignore("Too slow")
 public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
 {
     @Override

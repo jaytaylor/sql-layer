@@ -46,7 +46,6 @@ import static java.lang.Math.abs;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
-@Ignore("Too slow")
 public class SpatialLatLonTableIndexScanIT extends OperatorITBase
 {
     @Override
