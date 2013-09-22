@@ -74,7 +74,9 @@ JVM_OPTS="$JVM_OPTS -XX:+UseParNewGC"
 # JVM_OPTS="$JVM_OPTS -Xloggc:/var/log/foundationdb-sql/gc.log"
 
 # jmx: metrics and administration interface
-# 
+#
+# Note: JMX can also be controlled at any point in time with the JRE jcmd tool
+#
 # add this if you're having trouble connecting:
 # JVM_OPTS="$JVM_OPTS -Djava.rmi.server.hostname=<public name>"
 # 
@@ -82,8 +84,8 @@ JVM_OPTS="$JVM_OPTS -XX:+UseParNewGC"
 # http://blogs.sun.com/jmxetc/entry/troubleshooting_connection_problems_in_jconsole
 # for more on configuring JMX through firewalls, etc. (Short version:
 # get it working with no firewall first.)
-JMX_PORT="8082"
-JVM_OPTS="$JVM_OPTS -Dcom.sun.management.jmxremote.port=$JMX_PORT" 
-JVM_OPTS="$JVM_OPTS -Dcom.sun.management.jmxremote.ssl=false" 
-JVM_OPTS="$JVM_OPTS -Dcom.sun.management.jmxremote.authenticate=false" 
+#JMX_PORT="8082"
+#JVM_OPTS="$JVM_OPTS -Dcom.sun.management.jmxremote.port=$JMX_PORT"
+#JVM_OPTS="$JVM_OPTS -Dcom.sun.management.jmxremote.ssl=false"
+#JVM_OPTS="$JVM_OPTS -Dcom.sun.management.jmxremote.authenticate=false"
 

@@ -24,7 +24,7 @@ FOR /F "usebackq" %%v IN (`git rev-list --merges HEAD --count`) DO SET GIT_COUNT
 
 SET LICENSE=LICENSE.txt
 SET VERSION=2.0.0
-SET VERSION_FULL=2.0.0.%GIT_COUNT%-%GIT_HASH%
+SET VERSIONFULL=2.0.0.%GIT_COUNT%-%GIT_HASH%
 SET INSTALLER=fdb-sql-layer-%VERSION%
 
 IF NOT DEFINED CERT_FILE SET CERT_FILE=%~dp0\windows\testcert\testcert.pfx
@@ -89,8 +89,8 @@ mt /nologo -manifest ..\..\prunsrv.manifest -outputresource:prunsrv.exe;1
 IF ERRORLEVEL 1 GOTO EOF
 CD ..\..
 
-REM iscc /S"GoDaddy=signtool sign /f $q%CERT_FILE%$q  /p $q%CERT_PASSWORD%$q /t http://tsa.starfieldtech.com/ $f" /O.. /F"%INSTALLER%" /dVERSION=%VERSION% fdb-sql-layer.iss
-iscc /O.. /F"%INSTALLER%" /dVERSION=%VERSION% /dVERSIONFULL=%VERSIONFULL% fdb-sql-layer.iss
+iscc /S"standard=signtool sign /f $q%CERT_FILE%$q  /p $q%CERT_PASSWORD%$q /t http://tsa.starfieldtech.com/ $f" ^
+     /O.. /F"%INSTALLER%" /dVERSION=%VERSION% /dVERSIONFULL=%VERSIONFULL% fdb-sql-layer.iss
 IF ERRORLEVEL 1 GOTO EOF
 
 CD ..\..
