@@ -86,27 +86,26 @@ var
   JavaVersion : String;
   JavaInstalled : Boolean;
 begin
-  Result := '';
-  JavaLoc := 'SOFTWARE\JavaSoft\Java Runtime Environment';
-  JavaInstalled := RegKeyExists(HKLM, JavaLoc);
+  Result := 'Java version >= 7 is required to run {#APPNAME}.';
 
+  // If not found at this location, could be x64 with x86 Java. Not supported by fdb-java.
+  JavaInstalled := RegKeyExists(HKLM, 'SOFTWARE\JavaSoft\Java Runtime Environment');
   if not JavaInstalled then begin
-    JavaLoc := 'SOFTWARE\Wow6432Node\JavaSoft\Java Runtime Environment';
-    JavaInstalled := RegKeyExists(HKLM, JavaLoc);
-  end;
+    if RegKeyExists(HKLM, 'SOFTWARE\Wow6432Node\JavaSoft\Java Runtime Environment') then
+      Result := 'Detected 32-bit Java install. Not supported on 64-bit Windows.';
+  else
+    Result := 'No Java found. ' + Result;
 
   if JavaInstalled then
     begin
       if RegQueryStringValue(HKLM, JavaLoc, 'CurrentVersion', JavaVersion) then
         begin
-          if CompareStr('1.7', JavaVersion) > 0 then
-            Result := 'Java version >= 1.7 is required to run {#APPNAME}';
+          if CompareStr('1.7', JavaVersion) <= 0 then
+            Result := ''; // Success
         end
       else 
         Result := 'Unable to detect Java version';
     end
-  else
-    Result := 'Java is required to run {#APPNAME}';
 end;
 
 function FindFDBClient(): String;
