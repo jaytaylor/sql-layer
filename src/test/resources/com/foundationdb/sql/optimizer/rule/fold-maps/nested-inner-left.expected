@@ -15,5 +15,5 @@ SelectQuery@34a7c644
               NullIfEmpty@5edfdfa3
                 Flatten@46572582(t3)
                   AncestorLookup@3bd376fe(t3 -> [t3])
-                    SingleIndexScan@38293c61(Index(test.t3.PRIMARY[IndexColumn(id)]), NONE, =t2.id, rows = 1, cost = 11.9848)
+                    ExpressionsHKeyScan@1e7d48cd(TableSource@5ca04083(t3 - TableGroup@33369a5e(t3)), t2.id, rows = 1, cost = 6.95200)
                     TableSource@6ac8f2e7(t3 - TableGroup@1b3b2115(t3))

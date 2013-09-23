@@ -98,26 +98,21 @@ public class BranchJoiner extends BaseRule
     protected PlanNode joinBranches(TableGroupJoinTree tableGroup) {
         TableGroupJoinNode rootTable = tableGroup.getRoot();
         PlanNode scan = tableGroup.getScan();
-        Set<TableSource> requiredTables = null;
         if (scan instanceof IndexScan) {
             IndexScan indexScan = (IndexScan)scan;
             if (indexScan.isCovering())
                 return indexScan;
-            requiredTables = indexScan.getRequiredTables();
         }
-        else if (scan instanceof GroupLoopScan) {
-            requiredTables = ((GroupLoopScan)scan).getRequiredTables();
-        }
-        else if (scan instanceof FullTextScan) {
-            requiredTables = ((FullTextScan)scan).getRequiredTables();
+        Set<TableSource> requiredTables = null;
+        if (scan instanceof BaseScan) {
+            requiredTables = ((BaseScan)scan).getRequiredTables();
         }
         markBranches(tableGroup, requiredTables);
         top:
-        if (scan instanceof IndexScan) {
-            IndexScan indexScan = (IndexScan)scan;
-            TableSource indexTable = indexScan.getLeafMostTable();
+        if (scan instanceof JoinTreeScan) {
+            TableSource indexTable = ((JoinTreeScan)scan).getLeafMostTable();
             TableGroupJoinNode leafTable = rootTable.findTable(indexTable);
-            assert (leafTable != null) : indexScan;
+            assert (leafTable != null) : scan;
             List<TableSource> ancestors = new ArrayList<>();
             pendingTableSources(leafTable, rootTable, ancestors);
             if (isParent(leafTable)) {

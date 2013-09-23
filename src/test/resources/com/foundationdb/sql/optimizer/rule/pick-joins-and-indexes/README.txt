@@ -139,3 +139,12 @@ full-text-1v: from variable
 full-text-2: terms on multiple branches
 
 full-text-join: joined to another group
+
+keys-1: primary key of root
+
+keys-2: primary key of non-root
+
+keys-2a: primary and foreign key of non-root
+
+keys-3: all keys including those not present
+
