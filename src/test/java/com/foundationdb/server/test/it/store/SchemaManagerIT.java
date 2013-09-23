@@ -657,7 +657,7 @@ public final class SchemaManagerIT extends ITBase {
         assertEquals("minValue", 2, s.getMinValue());
         assertEquals("maxValue", 20, s.getMaxValue());
         assertEquals("cycle", true, s.isCycle());
-        assertEquals("Tree names different", true, !origTreeName.equals(s.getTreeName()));
+        assertEquals("Tree names different", schemaManager.treeRemovalIsDelayed(), !origTreeName.equals(s.getTreeName()));
     }
 
     @Test
