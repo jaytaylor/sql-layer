@@ -93,7 +93,7 @@ begin
   if not JavaInstalled then
     begin
       if RegKeyExists(HKLM, 'SOFTWARE\Wow6432Node\JavaSoft\Java Runtime Environment') then
-        Result := 'Detected 32-bit Java install. Not supported on 64-bit Windows.';
+        Result := 'Unsupported 32-bit Java installation on 64-bit Windows.';
     end
   else
     Result := 'No Java found. ' + Result;
