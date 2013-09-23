@@ -77,36 +77,49 @@ Filename: "{app}\bin\fdbsqllayer.cmd"; Parameters: "uninstall";  WorkingDir: "{a
   #define AW "A"
 #endif
 
+type
+  TVersionNum = Array [1..3] of Integer;
+
 function MsiEnumRelatedProducts(lpUpgradeCode: String; dwReserved: DWORD; iProductIndex: DWORD; lpProductBuf: String): UINT;
   external 'MsiEnumRelatedProducts{#AW}@msi.dll stdcall';
 
+procedure SplitVersionStr(S: String; var Nums: TVersionNum);
+var
+  DecPos : Integer;
+  Index : Integer;
+begin
+  Index := 1;
+  DecPos := Pos('.', S);
+  while (DecPos <> 0) and (Index < 3) do
+    begin
+      Nums[Index] := StrToInt(Copy(S, 1, DecPos - 1));
+      Index := Index + 1;
+      S := Copy(S, DecPos + 1, Length(S) - DecPos);
+      DecPos := Pos('.', S);
+    end;
+  Nums[Index] := StrToInt(S);
+end;
+
 function FindJava(): String;
 var
-  JavaLoc : String;
   JavaVersion : String;
-  JavaInstalled : Boolean;
+  Nums : TVersionNum;
 begin
-  Result := '';
-  JavaLoc := 'SOFTWARE\JavaSoft\Java Runtime Environment';
-  JavaInstalled := RegKeyExists(HKLM, JavaLoc);
-
-  if not JavaInstalled then begin
-    JavaLoc := 'SOFTWARE\Wow6432Node\JavaSoft\Java Runtime Environment';
-    JavaInstalled := RegKeyExists(HKLM, JavaLoc);
-  end;
-
-  if JavaInstalled then
+  Result := 'Java version >= 7 is required to run {#APPNAME}.';
+  if RegQueryStringValue(HKLM, 'SOFTWARE\JavaSoft\Java Runtime Environment', 'CurrentVersion', JavaVersion) then
     begin
-      if RegQueryStringValue(HKLM, JavaLoc, 'CurrentVersion', JavaVersion) then
-        begin
-          if CompareStr('1.7', JavaVersion) > 0 then
-            Result := 'Java version >= 1.7 is required to run {#APPNAME}';
-        end
-      else 
-        Result := 'Unable to detect Java version';
+      SplitVersionStr(JavaVersion, Nums);
+      if (Nums[1] >= 1) and (Nums[2] >= 7) then
+        Result := ''; // Success
     end
   else
-    Result := 'Java is required to run {#APPNAME}';
+    begin
+      // fdb-java is a 64-bit only DLL
+      if RegKeyExists(HKLM, 'SOFTWARE\Wow6432Node\JavaSoft\Java Runtime Environment') then
+        Result := 'Unsupported 32-bit Java installation on 64-bit Windows.'
+      else
+        Result := 'No Java found. ' + Result
+    end;
 end;
 
 function FindFDBClient(): String;
