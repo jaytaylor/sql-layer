@@ -90,9 +90,11 @@ begin
 
   // If not found at this location, could be x64 with x86 Java. Not supported by fdb-java.
   JavaInstalled := RegKeyExists(HKLM, 'SOFTWARE\JavaSoft\Java Runtime Environment');
-  if not JavaInstalled then begin
-    if RegKeyExists(HKLM, 'SOFTWARE\Wow6432Node\JavaSoft\Java Runtime Environment') then
-      Result := 'Detected 32-bit Java install. Not supported on 64-bit Windows.';
+  if not JavaInstalled then
+    begin
+      if RegKeyExists(HKLM, 'SOFTWARE\Wow6432Node\JavaSoft\Java Runtime Environment') then
+        Result := 'Detected 32-bit Java install. Not supported on 64-bit Windows.';
+    end
   else
     Result := 'No Java found. ' + Result;
 
