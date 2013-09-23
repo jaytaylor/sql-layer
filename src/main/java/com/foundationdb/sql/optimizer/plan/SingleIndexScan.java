@@ -31,7 +31,7 @@ import com.foundationdb.sql.optimizer.rule.range.ColumnRanges;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class SingleIndexScan extends IndexScan {
+public final class SingleIndexScan extends IndexScan implements EqualityColumnsScan {
 
     private Index index;
     private ColumnRanges conditionRange;

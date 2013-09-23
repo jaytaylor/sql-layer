@@ -14,7 +14,7 @@ SelectQuery@6dd64b31
               Select@3baf59e6[]
                 Project@406793be[t1.id, t2.id, t1.s, t2.s]
                   Flatten@753729a6(t2)
-                    AncestorLookup@1242f687(t2 -> [t2])
-                      Select@6a47226e[t3.id == t2.id]
-                        SingleIndexScan@64259a44(Index(test.t2.PRIMARY[IndexColumn(id)]), NONE, =t1.id, rows = 1, cost = 11.9848)
-                      TableSource@33189e6d(t2 - TableGroup@60b319b9(t2))
+                    Select@6a47226e[t3.id == t2.id]
+                      AncestorLookup@1242f687(t2 -> [t2])
+                        ExpressionsHKeyScan@64fec7ed(TableSource@778d415b(t2 - TableGroup@12f7cc68(t2)), t1.id, rows = 1, cost = 6.95200)
+                        TableSource@33189e6d(t2 - TableGroup@60b319b9(t2))

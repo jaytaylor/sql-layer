@@ -64,6 +64,7 @@ public enum Type
     ORDERED(GeneralType.OPERATOR),
     BLOOM_FILTER(GeneralType.OPERATOR),
     BUFFER_OPERATOR(GeneralType.OPERATOR),
+    HKEY_OPERATOR(GeneralType.OPERATOR),
     
     // PROCEDURE    
     //--------------------------------------------------------------------------

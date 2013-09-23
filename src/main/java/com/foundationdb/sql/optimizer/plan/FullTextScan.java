@@ -29,7 +29,6 @@ public class FullTextScan extends BaseScan
     private int limit;
     private TableSource indexTable;
     private List<ConditionExpression> conditions;
-    private Set<TableSource> requiredTables;
 
     public FullTextScan(FullTextIndex index, FullTextQuery query,
                         TableSource indexTable, List<ConditionExpression> conditions) {
@@ -60,13 +59,6 @@ public class FullTextScan extends BaseScan
 
     public List<ConditionExpression> getConditions() {
         return conditions;
-    }
-
-    public Set<TableSource> getRequiredTables() {
-        return requiredTables;
-    }
-    public void setRequiredTables(Set<TableSource> requiredTables) {
-        this.requiredTables = requiredTables;
     }
 
     @Override

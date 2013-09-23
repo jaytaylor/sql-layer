@@ -1,0 +1,1 @@
+SELECT items.* FROM customers INNER JOIN orders USING (cid) INNER JOIN items USING (oid) where customers.cid = ? AND orders.oid = ? AND items.iid = ?

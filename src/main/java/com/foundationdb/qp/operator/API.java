@@ -800,6 +800,18 @@ public class API
         return new Buffer_Default(inputOperator, inputRowType);
     }
 
+    public static Operator hKeyRow_Default(RowType rowType,
+                                           List<? extends TPreparedExpression> pExpressions)
+    {
+        return new HKeyRow_Default(rowType, pExpressions);
+    }
+
+    public static Operator hKeyRow_DefaultTest(RowType rowType,
+                                               List<ExpressionGenerator> generators)
+    {
+        return new HKeyRow_Default(rowType, generateNew(generators));
+    }
+
     // Execution interface
 
     public static Cursor cursor(Operator root, QueryContext context, QueryBindingsCursor bindingsCursor)

@@ -18,6 +18,8 @@
 package com.foundationdb.qp.rowtype;
 
 import com.foundationdb.ais.model.HKey;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types3.TInstance;
 
 public class HKeyRowType extends DerivedRowType
@@ -47,6 +49,16 @@ public class HKeyRowType extends DerivedRowType
     public HKey hKey()
     {
         return hKey;
+    }
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        CompoundExplainer explainer = super.getExplainer(context);
+        TableName tableName = hKey.userTable().getName();
+        explainer.addAttribute(Label.TABLE_SCHEMA, PrimitiveExplainer.getInstance(tableName.getSchemaName()));
+        explainer.addAttribute(Label.TABLE_NAME, PrimitiveExplainer.getInstance(tableName.getTableName()));
+        return explainer;
     }
 
     // HKeyRowType interface
