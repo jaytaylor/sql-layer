@@ -41,7 +41,7 @@ public final class TruncateTableIT extends ITBase {
         }
         expectRowCount(tableId, rowCount);
 
-        dml().truncateTable(session(), tableId, false);
+        dml().truncateTable(session(), tableId);
 
         // Check table stats
         expectRowCount(tableId, 0);
@@ -66,7 +66,7 @@ public final class TruncateTableIT extends ITBase {
                   createNewRow(tableId, 2, 2));
         expectRowCount(tableId, 2);
 
-        dml().truncateTable(session(), tableId, false);
+        dml().truncateTable(session(), tableId);
 
         int indexId = ddl().getAIS(session()).getTable("test", "t").getIndex("pid").getIndexId();
         EnumSet<ScanFlag> scanFlags = EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END);
@@ -90,7 +90,7 @@ public final class TruncateTableIT extends ITBase {
                   createNewRow(tableId, 5, 3409, "99.00", 'e', "eek"));
         expectRowCount(tableId, 5);
 
-        dml().truncateTable(session(), tableId, false);
+        dml().truncateTable(session(), tableId);
 
         // Check table stats
         expectRowCount(tableId, 0);
@@ -130,7 +130,7 @@ public final class TruncateTableIT extends ITBase {
         dml().writeRow(session(), createNewRow(parentId, 1));
         expectRowCount(parentId, 1);
 
-        dml().truncateTable(session(), parentId, false);
+        dml().truncateTable(session(), parentId);
 
         expectRowCount(parentId, 0);
         List<NewRow> rows = scanAll(new ScanAllRequest(parentId, null));
@@ -152,7 +152,7 @@ public final class TruncateTableIT extends ITBase {
         dml().writeRow(session(), createNewRow(childId, 1, 1));
         expectRowCount(childId, 1);
 
-        dml().truncateTable(session(), parentId, false);
+        dml().truncateTable(session(), parentId);
 
         expectRowCount(parentId, 0);
         List<NewRow> rows = scanAll(new ScanAllRequest(parentId, null));
@@ -176,7 +176,7 @@ public final class TruncateTableIT extends ITBase {
                   createNewRow(tableId, "c", -1L));
         expectRowCount(tableId, 7);
 
-        dml().truncateTable(session(), tableId, false);
+        dml().truncateTable(session(), tableId);
 
         // Check table stats
         expectRowCount(tableId, 0);
@@ -200,17 +200,17 @@ public final class TruncateTableIT extends ITBase {
         expectRowCount(oId, 1);
         expectRowCount(iId, 1);
 
-        dml().truncateTable(session(), cId, false);
+        dml().truncateTable(session(), cId);
         expectRowCount(cId, 0);
         expectRowCount(oId, 1);
         expectRowCount(iId, 1);
 
-        dml().truncateTable(session(), oId, false);
+        dml().truncateTable(session(), oId);
         expectRowCount(cId, 0);
         expectRowCount(oId, 0);
         expectRowCount(iId, 1);
 
-        dml().truncateTable(session(), iId, false);
+        dml().truncateTable(session(), iId);
         expectRowCount(cId, 0);
         expectRowCount(oId, 0);
         expectRowCount(iId, 0);

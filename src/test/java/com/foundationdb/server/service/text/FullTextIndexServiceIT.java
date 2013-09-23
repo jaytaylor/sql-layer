@@ -367,25 +367,25 @@ public class FullTextIndexServiceIT extends FullTextIndexServiceITBase
         ftScanAndCompare(builder, stateQuery, limit, stateExpected);
         ftScanAndCompare(builder, skuQuery, limit, skuExpected);
 
-        dml().truncateTable(session(), a, false);
+        dml().truncateTable(session(), a);
         waitUpdate();
         ftScanAndCompare(builder, nameQuery, limit, nameExpected);
         ftScanAndCompare(builder, stateQuery, limit, emptyExpected);
         ftScanAndCompare(builder, skuQuery, limit, skuExpected);
 
-        dml().truncateTable(session(), o, false);
+        dml().truncateTable(session(), o);
         waitUpdate();
         ftScanAndCompare(builder, nameQuery, limit, nameExpected);
         ftScanAndCompare(builder, stateQuery, limit, emptyExpected);
         ftScanAndCompare(builder, skuQuery, limit, emptyExpected); // Non-cascading key, connection to c1 is unknown
 
-        dml().truncateTable(session(), i, false);
+        dml().truncateTable(session(), i);
         waitUpdate();
         ftScanAndCompare(builder, nameQuery, limit, nameExpected);
         ftScanAndCompare(builder, stateQuery, limit, emptyExpected);
         ftScanAndCompare(builder, skuQuery, limit, emptyExpected);
 
-        dml().truncateTable(session(), c, false);
+        dml().truncateTable(session(), c);
         waitUpdate();
         ftScanAndCompare(builder, nameQuery, limit, emptyExpected);
         ftScanAndCompare(builder, stateQuery, limit, emptyExpected);
