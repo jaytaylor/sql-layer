@@ -159,8 +159,8 @@ public final class IndexEntryCountIT extends ITBase {
     
     @After
     public void truncateTables() {
-        dml().truncateTable(session(), cId, false);
-        dml().truncateTable(session(), oId, false);
+        dml().truncateTable(session(), cId);
+        dml().truncateTable(session(), oId);
         
         List<Index> allIndexes = new ArrayList<>();
         allIndexes.addAll(getUserTable(cId).getIndexes());

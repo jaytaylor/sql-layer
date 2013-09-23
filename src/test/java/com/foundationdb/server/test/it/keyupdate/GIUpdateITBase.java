@@ -59,7 +59,7 @@ public abstract class GIUpdateITBase extends ITBase {
         for(int i = 5; i >= 0; --i) {
             try {
                 while(idIndex < ids.length) {
-                    dml().truncateTable(session(), ids[idIndex], false);
+                    dml().truncateTable(session(), ids[idIndex]);
                     ++idIndex;
                 }
                 break;
