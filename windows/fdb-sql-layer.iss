@@ -114,6 +114,7 @@ begin
     end
   else
     begin
+      // fdb-java is a 64-bit only DLL
       if RegKeyExists(HKLM, 'SOFTWARE\Wow6432Node\JavaSoft\Java Runtime Environment') then
         Result := 'Unsupported 32-bit Java installation on 64-bit Windows.'
       else
