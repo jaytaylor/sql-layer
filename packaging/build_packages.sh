@@ -101,10 +101,15 @@ case "$1" in
         fi
 
         STAGE_ROOT="${STAGE_DIR}/rpmbuild"
+        BUILD_DIR="${STAGE_ROOT}/BUILD"
+        init_common "${BUILD_DIR}/usr/sbin" "${BUILD_DIR}/etc/foundationdb/sql" "${BUILD_DIR}/usr/share/foundationdb/sql"
+        build_client_tools "${BUILD_DIR}/usr/bin" "${BUILD_DIR}/usr/share/foundationdb/sql"
 
-        init_common "${STAGE_ROOT}" "${STAGE_ROOT}" "${STAGE_ROOT}"
-        build_client_tools "${STAGE_ROOT}" "${STAGE_ROOT}"
-        cp "${PACKAGING_DIR}/rpm/fdb-sql-layer.init" "${STAGE_ROOT}"
+        mkdir -p "${BUILD_DIR}/etc/rc.d/init.d/"
+        cp "${PACKAGING_DIR}/rpm/fdb-sql-layer.init" "${BUILD_DIR}/etc/rc.d/init.d/fdb-sql-layer"
+        
+        mkdir -p "${BUILD_DIR}/usr/share/doc/fdb-sql-layer/"
+        cp "${TOP_DIR}/LICENSE.txt" ${BUILD_DIR}/usr/share/doc/fdb-sql-layer/LICENSE
 
         cd "${STAGE_DIR}"
         SPEC_FILE="fdb-sql-layer.spec"
@@ -113,7 +118,7 @@ case "$1" in
             -e "s/_GIT_HASH/${GIT_HASH}/g" \
             "${PACKAGING_DIR}/rpm/${SPEC_FILE}.in" > "${SPEC_FILE}"
 
-        mkdir -p "${STAGE_ROOT}"/{BUILD,SOURCES,SRPMS,RPMS/noarch}
+        mkdir -p "${STAGE_ROOT}"/{SOURCES,SRPMS,RPMS/noarch}
         rpmbuild --target=noarch --define "_topdir ${STAGE_ROOT}" -bb "${SPEC_FILE}"
 
         mv "${STAGE_ROOT}"/RPMS/noarch/* "${TOP_DIR}/target/"
