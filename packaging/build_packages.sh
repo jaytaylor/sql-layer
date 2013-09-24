@@ -100,18 +100,23 @@ case "$1" in
             epoch=$2
         fi
 
-        rm -rf ${PWD}/redhat/rpmbuild
-        mkdir -p ${PWD}/redhat/rpmbuild/{BUILD,SOURCES,SRPMS,RPMS/noarch}
-        BUILD="${PWD}/redhat/rpmbuild/BUILD"
-        ${mvn_package}
-        cp -r packages-common/* target/ redhat/fdb-sql-layer.init "${BUILD}"
-        spec_file="$PWD/redhat/fdb-sql-layer.spec"
+        STAGE_ROOT="${STAGE_DIR}/rpmbuild"
+
+        init_common "${STAGE_ROOT}" "${STAGE_ROOT}" "${STAGE_ROOT}"
+        build_client_tools "${STAGE_ROOT}" "${STAGE_ROOT}"
+        cp "${PACKAGING_DIR}/rpm/fdb-sql-layer.init" "${STAGE_ROOT}"
+
+        cd "${STAGE_DIR}"
+        SPEC_FILE="fdb-sql-layer.spec"
         sed -e "s/_EPOCH/${epoch}/g" \
             -e "s/_GIT_COUNT/${GIT_COUNT}/g" \
             -e "s/_GIT_HASH/${GIT_HASH}/g" \
-            "${spec_file}.in" > "${spec_file}"
+            "${PACKAGING_DIR}/rpm/${SPEC_FILE}.in" > "${SPEC_FILE}"
 
-        rpmbuild --target=noarch --define "_topdir ${PWD}/redhat/rpmbuild" -bb "${spec_file}"
+        mkdir -p "${STAGE_ROOT}"/{BUILD,SOURCES,SRPMS,RPMS/noarch}
+        rpmbuild --target=noarch --define "_topdir ${STAGE_ROOT}" -bb "${SPEC_FILE}"
+
+        mv "${STAGE_ROOT}"/RPMS/noarch/* "${TOP_DIR}/target/"
     ;;
 
     "targz")
