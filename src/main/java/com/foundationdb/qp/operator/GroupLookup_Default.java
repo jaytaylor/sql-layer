@@ -565,17 +565,19 @@ class GroupLookup_Default extends Operator
                 while (!closed && outputRow == null) {
                     // Get some more input rows, crossing bindings boundaries as
                     // necessary, and open cursors for them.
+                    pipeline:
                     while (!bindingsExhausted && !inputRows[nextIndex].isHolding()) {
                         if (nextBindings == null) {
                             if (newBindings) {
                                 nextBindings = currentBindings;
                                 newBindings = false;
                             }
-                            if (nextBindings == null) {
+                            while ((nextBindings == null) ||
+                                   (nextBindings.getDepth() != currentBindings.getDepth())) {
                                 nextBindings = input.nextBindings();
                                 if (nextBindings == null) {
                                     bindingsExhausted = true;
-                                    break;
+                                    break pipeline;
                                 }
                                 pendingBindings.add(nextBindings);
                             }
