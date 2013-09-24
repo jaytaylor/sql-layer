@@ -115,33 +115,21 @@ case "$1" in
     ;;
 
     "targz")
-        ${mvn_package}
-        rm -f ./target/*-tests.jar ./target/*-sources.jar
+        STAGE_ROOT="${STAGE_DIR}/targz"
 
-        # For releases only
-        # Expects the ${release} to be defined in the env, i.e. through Jenkins
-        if [ -z "$release" ]; then
-            echo 'No release number defined. Define the $release environmental variable.'
-            exit 1
-        fi
-        
-        BINARY_NAME="fdb-sql-layer-${release}"
-        BINARY_TAR_NAME="${BINARY_NAME}.tar.gz"
-        
-        mkdir -p ${BINARY_NAME}
-        mkdir -p ${BINARY_NAME}/lib/server
-        mkdir -p ${BINARY_NAME}/lib/client
-        mkdir -p ${BINARY_NAME}/bin
-        cp ./target/fdb-sql-layerr-*.jar ${BINARY_NAME}/lib
-        cp ./target/dependency/* ${BINARY_NAME}/lib/server/
-        cp -R ./conf ${BINARY_NAME}/
-        rm -f ${BINARY_NAME}/conf/*.cmd
-        cp ./bin/fdbsqllayer ${BINARY_NAME}/bin
-        cp packages-common/fdbsql* ${BINARY_NAME}/bin
-        cp packages-common/fdb-sql-layer-client-*.jar ${BINARY_NAME}/lib
-        cp packages-common/client/* ${BINARY_NAME}/lib/client
-        cp LICENSE.txt ${BINARY_NAME}/LICENSE.txt
-        tar zcf ${BINARY_TAR_NAME} ${BINARY_NAME}    
+        cd "${TOP_DIR}"
+        init_common "${STAGE_ROOT}/bin" "${STAGE_ROOT}/conf" "${STAGE_ROOT}/lib"
+        build_client_tools "${STAGE_ROOT}/bin" "${STAGE_ROOT}/lib"
+
+        cp bin/* "${STAGE_ROOT}/bin/"
+        cp target/client-tools/bin/* "${STAGE_ROOT}/bin/"
+        cp LICENSE.txt "${STAGE_ROOT}/"
+        cp README.md "${STAGE_ROOT}/"
+
+        BINARY_NAME="fdb-sql-layer-${LAYER_VERSION}"
+        cd "${STAGE_DIR}"
+        mv targz "${BINARY_NAME}"
+        tar czf "${TOP_DIR}/target/${BINARY_NAME}.tar.gz" "${BINARY_NAME}"
     ;;
 
     "pkg")
