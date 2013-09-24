@@ -30,7 +30,15 @@ mvn_package() {
     mvn clean package -q -B -U -DGIT_COUNT=${GIT_COUNT} -DGIT_HASH=${GIT_HASH} -DskipTests=true
 }
 
+# $1 - output bin/ dir
+# $2 - output conf/ dir
+# $3 - output lib/ dir
 init_common() {
+    if [ "$1" = "" -o "$2" = "" -o "$3" = "" ]; then
+        echo "Missing argument" >&2
+        exit 1
+    fi
+
     LAYER_MVN_VERSION=$(cd "${TOP_DIR}" ; mvn -o org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version |grep '^[0-9]')
     LAYER_VERSION=${LAYER_MVN_VERSION%-SNAPSHOT}
     
@@ -38,15 +46,16 @@ init_common() {
     pushd .
     cd "${TOP_DIR}"
     mvn_package
-    mkdir -p "${STAGE_DIR}"/{bin,conf,lib/server}
-    cp target/fdb-sql-layer-${LAYER_MVN_VERSION}.jar "${STAGE_DIR}/lib/"
-    cp target/dependency/* "${STAGE_DIR}/lib/server/"
-    cp "${PACKAGING_DIR}"/conf/* "${STAGE_DIR}/conf/"
-    cp "${TOP_DIR}/bin/fdbsqllayer" "${STAGE_DIR}/bin/"
-    cp "${TOP_DIR}/LICENSE.txt" "${STAGE_DIR}/"
+    mkdir -p "${1}" "${2}" "${3}/server"
+    cp "${TOP_DIR}/bin/fdbsqllayer" "${1}/"
+    cp "${PACKAGING_DIR}"/conf/* "${2}/"
+    cp target/fdb-sql-layer-${LAYER_MVN_VERSION}.jar "${3}/"
+    cp target/dependency/* "${3}/server/"
     popd
 }
 
+# $1 - output bin/ dir
+# $2 - output lib/ dir
 build_client_tools() {
     : ${TOOLS_LOC:="git@github.com:FoundationDB/sql-layer-client-tools.git"}
     
@@ -58,10 +67,10 @@ build_client_tools() {
     cd client-tools
     mvn clean package -q -B -U -DskipTests=true
     rm -f target/*-tests.jar target/*-sources.jar
-    mkdir -p "${STAGE_DIR}"/{bin,lib/client}
-    cp bin/fdbsql{dump,load} "${STAGE_DIR}/bin/"
-    cp target/fdb-sql-layer-client-tools-*.jar "${STAGE_DIR}/lib/"
-    cp target/dependency/* "${STAGE_DIR}/lib/client/"
+    mkdir -p "${1}" "${2}/client"
+    cp bin/fdbsql{dump,load} "${1}/"
+    cp target/fdb-sql-layer-client-tools-*.jar "${2}/"
+    cp target/dependency/* "${2}/client/"
     popd
 }
 
@@ -112,7 +121,8 @@ case "$1" in
         # For releases only
         # Expects the ${release} to be defined in the env, i.e. through Jenkins
         if [ -z "$release" ]; then
-            echo "No release number defined. Define the \$release environmental variable."; exit 1
+            echo 'No release number defined. Define the $release environmental variable.'
+            exit 1
         fi
         
         BINARY_NAME="fdb-sql-layer-${release}"
@@ -135,27 +145,22 @@ case "$1" in
     ;;
 
     "pkg")
-        OUTER_STAGE_DIR="${STAGE_DIR}"
-        STAGE_DIR="${STAGE_DIR}/root"
-        STAGE_LOCAL="${STAGE_DIR}/usr/local/"
+        STAGE_ROOT="${STAGE_DIR}/root"
+        STAGE_LOCAL="${STAGE_ROOT}/usr/local"
 
-        init_common
-        build_client_tools
+        init_common "${STAGE_LOCAL}/libexec" "${STAGE_LOCAL}/etc/foundationdb/sql" "${STAGE_LOCAL}/foundationdb/sql"
+        build_client_tools "${STAGE_LOCAL}/bin" "${STAGE_LOCAL}/foundationdb/sql"
 
-        mkdir -p "${STAGE_DIR}"/Library/LaunchDaemons
-        mkdir -p "${STAGE_LOCAL}"/{etc/foundationdb,foundationdb/logs/sql,libexec}
+        mkdir -p "${STAGE_ROOT}/Library/LaunchDaemons"
+        mkdir -p "${STAGE_LOCAL}/foundationdb/logs/sql"
 
-        mv "${STAGE_DIR}/lib" "${STAGE_LOCAL}/foundationdb/sql"
-        mv "${STAGE_DIR}/conf" "${STAGE_LOCAL}/etc/foundationdb/sql"
-        mv "${STAGE_DIR}/bin" "${STAGE_LOCAL}"
-        mv "${STAGE_LOCAL}"/{bin,libexec}/fdbsqllayer
         sed -i "" -e 's/usr\/share/usr\/local/g' "${STAGE_LOCAL}/libexec/fdbsqllayer"
-        mv "${STAGE_DIR}/LICENSE.txt" "${STAGE_LOCAL}/foundationdb/LICENSE-SQL_LAYER"
+        cp "${TOP_DIR}/LICENSE.txt" "${STAGE_LOCAL}/foundationdb/LICENSE-SQL_LAYER"
         
         cd "${PACKAGING_DIR}/pkg/"
-        cp -r resources/ "${OUTER_STAGE_DIR}/"
-        cp "${TOP_DIR}/LICENSE.txt" "${OUTER_STAGE_DIR}/resources/"
-        cp com.foundationdb.layer.sql.plist "${STAGE_DIR}/Library/LaunchDaemons/"
+        cp -r resources/ "${STAGE_DIR}/"
+        cp "${TOP_DIR}/LICENSE.txt" "${STAGE_DIR}/resources/"
+        cp com.foundationdb.layer.sql.plist "${STAGE_ROOT}/Library/LaunchDaemons/"
         cp conf/* "${STAGE_LOCAL}/etc/foundationdb/sql/"
         cp uninstall-FoundationDB-SQL_Layer.sh "${STAGE_LOCAL}/foundationdb"
 
@@ -164,8 +169,8 @@ case "$1" in
         ln -s /usr/local/foundationdb/sql/fdb-sql-layer-client-tools-1.3.7-SNAPSHOT.jar fdb-sql-layer-client-tools.jar
 
         cd "${TOP_DIR}/target"
-        pkgbuild --root "${STAGE_DIR}" --identifier com.foundationdb.layer.sql --version ${LAYER_VERSION} --scripts "${PACKAGING_DIR}/pkg/scripts" "${OUTER_STAGE_DIR}"/SQL_Layer.pkg
-        productbuild --distribution "${PACKAGING_DIR}/pkg/Distribution.xml" --resources "${OUTER_STAGE_DIR}/resources" --package-path "${OUTER_STAGE_DIR}" FoundationDB-SQL_Layer-${LAYER_VERSION}.pkg
+        pkgbuild --root "${STAGE_ROOT}" --identifier com.foundationdb.layer.sql --version ${LAYER_VERSION} --scripts "${PACKAGING_DIR}/pkg/scripts" "${STAGE_DIR}/SQL_Layer.pkg"
+        productbuild --distribution "${PACKAGING_DIR}/pkg/Distribution.xml" --resources "${STAGE_DIR}/resources" --package-path "${STAGE_DIR}" FoundationDB-SQL_Layer-${LAYER_VERSION}.pkg
     ;;
 
     *)
