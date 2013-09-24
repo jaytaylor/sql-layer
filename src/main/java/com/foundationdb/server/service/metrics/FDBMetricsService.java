@@ -253,8 +253,9 @@ public class FDBMetricsService implements MetricsService, Service
             Tuple tuple = Tuple.fromBytes(bytes);
             int nvalues = tuple.size();
             List<FDBMetric.Value<Boolean>> result = new ArrayList<>(nvalues);
+            long tvalue = 0;
             for (int i = 0; i < nvalues; i++) {
-                long tvalue = tuple.getLong(i);
+                tvalue += tuple.getLong(i);
                 long time = tvalue >>> 1;
                 boolean value = ((tvalue & 1) != 0);
                 result.add(new FDBMetric.Value<Boolean>(time, value));
@@ -471,14 +472,14 @@ public class FDBMetricsService implements MetricsService, Service
     }
 
     public void completeBackgroundWork() {
-        notifyBackground();
         do {
+            notifyBackground();
             try {
                 Thread.sleep(100);
             }
             catch (InterruptedException ex) {
             }
-        } while (!backgroundIdle);
+        } while (!backgroundIdle || confChanged || metricsConfChanged || metricsDataChanged);
     }
 
     public void deleteBooleanMetric(Transaction tr, String name) {
@@ -535,12 +536,22 @@ public class FDBMetricsService implements MetricsService, Service
         MetricLevel<T> metricLevel = metric.levels.get(level);
         MetricLevelValues values = metricLevel.values.peekLast();
         if ((values == null) || values.isFull()) {
-            logger.trace("New level {} entry for {}", level, metric);
+            if (logger.isTraceEnabled()) {
+                logger.trace("New level {} entry at {} for {}", 
+                             new Object[] {
+                                 level, metric.changeTime, metric
+                             });
+            }
             values = new MetricLevelValues(metric.changeTime, metric.encodeValue());
             metricLevel.values.addLast(values);
         }
         else {
-            logger.trace("Adding to level {} entry for {}", level, metric);
+            if (logger.isTraceEnabled()) {
+                logger.trace("Adding to level {} entry at {} for {}", 
+                             new Object[] {
+                                 level, metric.changeTime, metric
+                             });
+            }
             values.append(metric.encodeValue(metricLevel));
         }
         metricLevel.lastValue = metric.getObject();

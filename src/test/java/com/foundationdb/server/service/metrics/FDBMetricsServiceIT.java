@@ -55,6 +55,7 @@ public class FDBMetricsServiceIT extends ITBase
             serviceManager().getServiceByClass(MetricsService.class);
         fdbService = serviceManager().getServiceByClass(FDBHolder.class);
 
+        metricsService.completeBackgroundWork();
         fdbService.getDatabase().run(new Function<Transaction,Void>() {
                                          @Override
                                          public Void apply(Transaction tr) {
@@ -96,11 +97,17 @@ public class FDBMetricsServiceIT extends ITBase
         ((FDBMetric<Boolean>)testBoolean).setEnabled(true);
         ((FDBMetric<Long>)testLong).setEnabled(true);
         testBoolean.set(false);
+        try { Thread.sleep(1); } catch (InterruptedException ex) {}
         testBoolean.set(true);
+        try { Thread.sleep(1); } catch (InterruptedException ex) {}
         testBoolean.toggle();
+        try { Thread.sleep(1); } catch (InterruptedException ex) {}
         testLong.set(100);
+        try { Thread.sleep(1); } catch (InterruptedException ex) {}
         testLong.increment();
+        try { Thread.sleep(1); } catch (InterruptedException ex) {}
         testLong.increment(-1);
+        try { Thread.sleep(1); } catch (InterruptedException ex) {}
         metricsService.completeBackgroundWork();
         final FDBMetric<Boolean> m1 = (FDBMetric<Boolean>)testBoolean;
         final FDBMetric<Long> m2 = (FDBMetric<Long>)testLong;
@@ -126,7 +133,7 @@ public class FDBMetricsServiceIT extends ITBase
         long minTime = maxTime - 5 * 1000 * 1000000;
         for (int i = 0; i < expected.length; i++) {
             FDBMetric.Value<T> value = values.get(i);
-            assertEquals("value " + i, expected[i], value.value);
+            assertEquals("value " + i + " of " + values, expected[i], value.value);
             assertTrue("time in range", (minTime < value.time) && (value.time < maxTime));
             minTime = value.time;
         }
