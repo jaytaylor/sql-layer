@@ -39,6 +39,11 @@ public interface FDBMetric<T> extends BaseMetric<T>
             this.time = time;
             this.value = value;
         }
+
+        @Override
+        public String toString() {
+            return value + " at " + time;
+        }
     }
 
     /** Retrieve all previously stored values for this metrics. */
