@@ -490,14 +490,11 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
         nameGenerator.mergeAIS(newAIS);
         tableVersionMap.claimExclusive();
         try {
+            // Any number of changes, or recreations, may have happened to any table ID somewhere else.
+            // The new, transactional state is in newAIS *only*. Take that as the sole source.
+            tableVersionMap.clear();
             for(UserTable table : newAIS.getUserTables().values()) {
-                int newValue = table.getVersion();
-                Integer current = tableVersionMap.get(table.getTableId());
-                if(current == null || newValue > current) {
-                    tableVersionMap.put(table.getTableId(), newValue);
-                } else if(newValue < current) {
-                    LOG.warn("Encountered new AIS generation less than current: {} vs {}", newValue, current);
-                }
+                tableVersionMap.put(table.getTableId(), table.getVersion());
             }
         } finally {
             tableVersionMap.releaseExclusive();
