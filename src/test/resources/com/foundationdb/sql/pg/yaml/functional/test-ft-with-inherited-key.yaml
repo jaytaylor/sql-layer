@@ -1,4 +1,9 @@
 # test full-text updates with inherited keys
+
+---
+- Properties: sys-aksql
+- suppressed: true
+
 ---
 - CreateTable: t1(id INT NOT NULL PRIMARY KEY);
 ---
