@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+    <dict>
+        <key>Label</key>
+        <string>com.foundationdb.layer.sql</string>
+
+        <!-- This path was checked during install -->
+        <key>EnvironmentVariables</key>
+        <dict>
+            <key>JAVA_HOME</key>
+            <string>/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Home</string>
+        </dict>
+
+        <key>StandardOutPath</key>
+        <string>/usr/local/foundationdb/logs/sql/stdout.log</string>
+        <key>StandardErrorPath</key>
+        <string>/usr/local/foundationdb/logs/sql/stdout.log</string>
+
+        <key>ProgramArguments</key>
+        <array>
+        <string>/usr/local/libexec/fdbsqllayer</string>
+            <string>-H</string>
+            <string>/usr/local/foundationdb/sql</string>
+            <string>-c</string>
+            <string>/usr/local/etc/foundationdb/sql</string>
+            <string>-p</string>
+            <string>/var/run/com.foundationdb.layer.sql.pid</string>
+            <string>-f</string>
+        </array>
+
+        <key>KeepAlive</key>
+        <true/>
+    </dict>
+</plist>
