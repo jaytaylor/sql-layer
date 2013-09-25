@@ -22,18 +22,13 @@ PACKAGING_DIR=$(cd $(dirname "${0}") ; echo "${PWD}")
 TOP_DIR=$(cd "${PACKAGING_DIR}/.." ; echo "${PWD}")
 STAGE_DIR="${TOP_DIR}/target/packaging"
 
-
 GIT_HASH=`git rev-parse --short HEAD`
 GIT_COUNT=`git rev-list --merges HEAD |wc -l |tr -d ' '` # --count is newer
-
-mvn_package() {
-    mvn clean package -q -B -U -DGIT_COUNT=${GIT_COUNT} -DGIT_HASH=${GIT_HASH} -DskipTests=true
-}
 
 # $1 - output bin/ dir
 # $2 - output conf/ dir
 # $3 - output share/ dir
-init_common() {
+build_sql_layer() {
     if [ "$1" = "" -o "$2" = "" -o "$3" = "" ]; then
         echo "Missing argument" >&2
         exit 1
@@ -45,7 +40,7 @@ init_common() {
     echo "Building FoundationDB SQL Layer ${LAYER_VERSION}"
     pushd .
     cd "${TOP_DIR}"
-    mvn_package
+    mvn clean package -q -B -U -DGIT_COUNT=${GIT_COUNT} -DGIT_HASH=${GIT_HASH} -DskipTests=true
     mkdir -p "${1}" "${2}" "${3}"/{server,plugins}
     cp "${TOP_DIR}/bin/fdbsqllayer" "${1}/"
     cp "${PACKAGING_DIR}"/conf/* "${2}/"
@@ -84,7 +79,7 @@ case "$1" in
     ;;
 
     "deb")
-        init_common "${STAGE_DIR}/usr/sbin" "${STAGE_DIR}/etc/foundationdb/sql" "${STAGE_DIR}/usr/share/foundationdb/sql"
+        build_sql_layer "${STAGE_DIR}/usr/sbin" "${STAGE_DIR}/etc/foundationdb/sql" "${STAGE_DIR}/usr/share/foundationdb/sql"
         build_client_tools "${STAGE_DIR}/usr/bin" "${STAGE_DIR}/usr/share/foundationdb/sql"
 
         cp -r "${PACKAGING_DIR}/deb" "${STAGE_DIR}/debian"
@@ -105,7 +100,7 @@ case "$1" in
 
         STAGE_ROOT="${STAGE_DIR}/rpmbuild"
         BUILD_DIR="${STAGE_ROOT}/BUILD"
-        init_common "${BUILD_DIR}/usr/sbin" "${BUILD_DIR}/etc/foundationdb/sql" "${BUILD_DIR}/usr/share/foundationdb/sql"
+        build_sql_layer "${BUILD_DIR}/usr/sbin" "${BUILD_DIR}/etc/foundationdb/sql" "${BUILD_DIR}/usr/share/foundationdb/sql"
         build_client_tools "${BUILD_DIR}/usr/bin" "${BUILD_DIR}/usr/share/foundationdb/sql"
 
         mkdir -p "${BUILD_DIR}/etc/rc.d/init.d/"
@@ -131,7 +126,7 @@ case "$1" in
         STAGE_ROOT="${STAGE_DIR}/targz"
 
         cd "${TOP_DIR}"
-        init_common "${STAGE_ROOT}/bin" "${STAGE_ROOT}/conf" "${STAGE_ROOT}/lib"
+        build_sql_layer "${STAGE_ROOT}/bin" "${STAGE_ROOT}/conf" "${STAGE_ROOT}/lib"
         build_client_tools "${STAGE_ROOT}/bin" "${STAGE_ROOT}/lib"
 
         cp bin/* "${STAGE_ROOT}/bin/"
@@ -149,7 +144,7 @@ case "$1" in
         STAGE_ROOT="${STAGE_DIR}/root"
         STAGE_LOCAL="${STAGE_ROOT}/usr/local"
 
-        init_common "${STAGE_LOCAL}/libexec" "${STAGE_LOCAL}/etc/foundationdb/sql" "${STAGE_LOCAL}/foundationdb/sql"
+        build_sql_layer "${STAGE_LOCAL}/libexec" "${STAGE_LOCAL}/etc/foundationdb/sql" "${STAGE_LOCAL}/foundationdb/sql"
         build_client_tools "${STAGE_LOCAL}/bin" "${STAGE_LOCAL}/foundationdb/sql"
 
         mkdir -p "${STAGE_ROOT}/Library/LaunchDaemons"
