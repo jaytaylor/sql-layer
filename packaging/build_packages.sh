@@ -32,7 +32,7 @@ mvn_package() {
 
 # $1 - output bin/ dir
 # $2 - output conf/ dir
-# $3 - output lib/ dir
+# $3 - output share/ dir
 init_common() {
     if [ "$1" = "" -o "$2" = "" -o "$3" = "" ]; then
         echo "Missing argument" >&2
@@ -55,7 +55,7 @@ init_common() {
 }
 
 # $1 - output bin/ dir
-# $2 - output lib/ dir
+# $2 - output share/ dir
 build_client_tools() {
     : ${TOOLS_LOC:="git@github.com:FoundationDB/sql-layer-client-tools.git"}
     
