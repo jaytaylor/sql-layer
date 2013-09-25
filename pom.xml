@@ -395,25 +395,20 @@
                         <!-- General files that can't have or don't need header -->
                         <exclude>.gitignore</exclude>
                         <exclude>.idea/**</exclude>
+                        <exclude>LICENSE.txt</exclude>
                         <!-- No extension. Manually add header and ignore -->
                         <exclude>bin/fdbsqllayer</exclude>
-                        <exclude>**/*.options</exclude>
                         <!-- Files requiring a specific format (packaging control, test output, etc) -->
                         <exclude>README.md</exclude>
-                        <exclude>debian/**</exclude>
-                        <exclude>redhat/**</exclude>
-                        <exclude>macosx/**</exclude>
-                        <exclude>windows/**</exclude>
-                        <exclude>packages-common/**</exclude>
-                        <exclude>**/*.txt</exclude>
-                        <exclude>**/services-config.yaml</exclude>
-                        <exclude>**/default-services.yaml</exclude>
+                        <exclude>conf/**</exclude>
+                        <exclude>packaging/**</exclude>
                         <exclude>src/main/protobuf/*.proto</exclude>
-                        <exclude>src/main/resources/version/fdbsql_version</exclude>
+                        <exclude>src/main/resources/**</exclude>
                         <exclude>src/test/bin/*</exclude>
                         <exclude>src/test/resources/**</exclude>
                     </excludes>
                     <mapping>
+                        <options>SCRIPT_STYLE</options>
                         <yaml>SCRIPT_STYLE</yaml>
                         <yml>SCRIPT_STYLE</yml>
                     </mapping>
