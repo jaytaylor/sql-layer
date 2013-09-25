@@ -9,7 +9,7 @@ Packager:   FoundationDB <distribution@foundationdb.com>
 Summary:    FoundationDB SQL Layer
 Vendor:     FoundationDB
 
-Requires:       jre >= 1.7.0, foundationdb-clients
+Requires:       jre >= 1.7.0, foundationdb-clients >= 1.0.1
 Requires(post): chkconfig >= 0.9, /sbin/service
 Requires(pre):  /usr/sbin/useradd, /usr/sbin/groupadd, /usr/bin/getent
 BuildArch:      noarch

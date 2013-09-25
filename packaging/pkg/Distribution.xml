@@ -10,7 +10,7 @@
     
     <script>
         var gMinJavaVersion = "1.7.0";
-        var gMinFDBCVersion = "1.0.0";
+        var gMinFDBCVersion = "1.0.1";
 
         function findJava() {
             try {
