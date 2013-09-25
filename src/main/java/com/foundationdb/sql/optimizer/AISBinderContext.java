@@ -113,8 +113,7 @@ public class AISBinderContext
         else if (!prop.equals("identifier"))
             throw new InvalidParameterValueException("'" + prop 
                                                      + "' for parserDoubleQuoted");
-        if (getBooleanProperty("parserGeospatialIndexes", false))
-            parserFeatures.add(SQLParserFeature.GEO_INDEX_DEF_FUNC);
+        parserFeatures.add(SQLParserFeature.GEO_INDEX_DEF_FUNC);
         parser.getFeatures().addAll(parserFeatures);
 
         defaultSchemaName = getProperty("database");
