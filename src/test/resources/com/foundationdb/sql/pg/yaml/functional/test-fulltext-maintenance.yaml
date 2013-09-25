@@ -1,4 +1,9 @@
 # test that full text indices are updated (and populated) properly
+
+---
+- Properties: sys-aksql
+- suppressed: true
+
 ---
 - CreateTable: t (id int, name varchar(224));
 ---
