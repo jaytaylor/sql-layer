@@ -26,12 +26,14 @@ SET LICENSE=LICENSE.txt
 SET VERSION=2.0.0
 SET VERSIONFULL=2.0.0.%GIT_COUNT%-%GIT_HASH%
 SET INSTALLER=fdb-sql-layer-%VERSION%
+SET EXE_DIR=%~dp0\exe
 
-IF NOT DEFINED CERT_FILE SET CERT_FILE=%~dp0\windows\testcert\testcert.pfx
+IF NOT DEFINED CERT_FILE SET CERT_FILE=%EXE_DIR%\testcert\testcert.pfx
 IF NOT DEFINED CERT_PASSWORD SET CERT_PASSWORD=test
 
 ECHO "Building FoundationDB SQL Layer"
 
+CD %EXE_DIR%\..\..
 call mvn clean package -U -DGIT_COUNT=%GIT_COUNT% -DGIT_HASH=%GIT_HASH% -DskipTests=true
 IF ERRORLEVEL 1 GOTO EOF
 
@@ -58,10 +60,10 @@ MD target\isstage\lib\client
 MD target\isstage\procrun
 
 COPY %LICENSE% target\isstage\LICENSE-SQL_LAYER.txt
-XCOPY /E windows target\isstage
+XCOPY /E %EXE_DIR% target\isstage
 COPY bin\*.cmd target\isstage\bin
 COPY target\client-tools\bin\*.cmd target\isstage\bin
-COPY windows\config-files\* target\isstage\config
+COPY %EXE_DIR%\conf\* target\isstage\config
 ECHO -tests.jar >target\xclude
 ECHO -sources.jar >>target\xclude
 XCOPY target\fdb-sql-layer-*.jar target\isstage\lib /EXCLUDE:target\xclude
