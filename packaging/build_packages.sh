@@ -46,7 +46,7 @@ init_common() {
     pushd .
     cd "${TOP_DIR}"
     mvn_package
-    mkdir -p "${1}" "${2}" "${3}/server"
+    mkdir -p "${1}" "${2}" "${3}"/{server,plugins}
     cp "${TOP_DIR}/bin/fdbsqllayer" "${1}/"
     cp "${PACKAGING_DIR}"/conf/* "${2}/"
     cp target/fdb-sql-layer-${LAYER_MVN_VERSION}.jar "${3}/"
@@ -84,11 +84,14 @@ case "$1" in
     ;;
 
     "deb")
-        cp -R packages-common/* ${platform}
-        ${mvn_package}
-        mkdir -p ${platform}/server/
-        cp ./target/dependency/* ${platform}/server/
-        cp -R packages-common/plugins/ ${platform}/
+        init_common "${STAGE_DIR}/usr/sbin" "${STAGE_DIR}/etc/foundationdb/sql" "${STAGE_DIR}/usr/share/foundationdb/sql"
+        build_client_tools "${STAGE_DIR}/usr/bin" "${STAGE_DIR}/usr/share/foundationdb/sql"
+
+        cp -r "${PACKAGING_DIR}/deb" "${STAGE_DIR}/debian"
+        mkdir -p "${STAGE_DIR}/usr/share/doc/fdb-sql-layer/"
+        cp "${PACKAGING_DIR}/deb/copyright" "${STAGE_DIR}/usr/share/doc/fdb-sql-layer/"
+
+        cd "${STAGE_DIR}"
         # No sign source, no sign changes, binary only
         debuild -us -uc -b
     ;;
