@@ -67,12 +67,14 @@ public class PostgresServerLargeSortKeysIT extends PostgresServerFilesITBase {
                 "d varchar(65535) CHARACTER SET latin1 COLLATE utf8_bin NOT NULL");
 
         PreparedStatement stmt = getConnection().prepareStatement("insert into t1 (id, a, b, c, d) values (?,?,?,?,?)");
+        getConnection().setAutoCommit(false);
         /*
          * Insert 3 sets of duplicate rows
          */
         int count = 0;
         for (int dup = 0; dup < D; dup++) {
             for (int a : LENGTHS) {
+                getConnection().commit();
                 for (int b : LENGTHS) {
                     for (int c : LENGTHS) {
                         for (int d : LENGTHS) {
@@ -94,6 +96,8 @@ public class PostgresServerLargeSortKeysIT extends PostgresServerFilesITBase {
                 }
             }
         }
+        getConnection().commit();
+        getConnection().setAutoCommit(true);
     }
 
     private String strVal(int len, String replace, int position, boolean caseConvert) {

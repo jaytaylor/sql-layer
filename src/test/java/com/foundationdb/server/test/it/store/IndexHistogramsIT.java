@@ -20,6 +20,8 @@ package com.foundationdb.server.test.it.store;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
 import com.foundationdb.server.store.statistics.*;
 import com.foundationdb.server.store.statistics.histograms.Sampler;
 import com.foundationdb.server.test.it.ITBase;
@@ -387,6 +389,12 @@ public final class IndexHistogramsIT extends ITBase {
     }
 
     private void insertRows(int cTable, int oTable, int startingCid, int endingCid) {
+        try(CloseableTransaction txn = txnService().beginCloseableTransaction(session())) {
+            insertRowsInternal(cTable, oTable, startingCid, endingCid);
+            txn.commit();
+        }
+    }
+    private void insertRowsInternal(int cTable, int oTable, int startingCid, int endingCid) {
         String[] names = {null, "Bob", "Carla", "Dot"};
         for (int cid=startingCid; cid < endingCid; ++cid) {
             // customer
@@ -406,6 +414,8 @@ public final class IndexHistogramsIT extends ITBase {
                     placed = oid;
                 writeRow(oTable, oid, s(cid), s(placed));
             }
+
+            txnService().periodicallyCommit(session());
         }
     }
 

@@ -61,29 +61,26 @@ public class OperatorITBase extends ITBase
 {
     private static final Logger LOG = LoggerFactory.getLogger(OperatorITBase.class.getName());
 
-    @Before
-    public void before_beginTransaction() throws PersistitException {
-        txnService().beginTransaction(session());
-    }
-
-    @After
-    public void after_endTransaction() throws PersistitException {
-        txnService().commitTransaction(session());
+    /** Override if derived IT manages its own transaction */
+    protected boolean doAutoTransaction() {
+        return true;
     }
 
     @Before
     public final void runAllSetup() {
-        // DDL cannot be performed in an open transaction, close (and reopen) if one exists
-        boolean wasActive = txnService().isTransactionActive(session());
-        if(wasActive)
-            txnService().commitTransaction(session());
-        try {
-            setupCreateSchema();
-        } finally {
-            if(wasActive)
-                txnService().beginTransaction(session());
+        setupCreateSchema();
+        if(doAutoTransaction()) {
+            txnService().beginTransaction(session());
         }
         setupPostCreateSchema();
+    }
+
+
+    @After
+    public final void after_endTransaction() {
+        if(doAutoTransaction()) {
+            txnService().commitTransaction(session());
+        }
     }
 
     protected void setupCreateSchema() {

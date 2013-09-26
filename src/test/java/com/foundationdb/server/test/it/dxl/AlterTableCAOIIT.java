@@ -79,6 +79,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         checkedIndexes.put(aid, Arrays.asList("PRIMARY", "cid", "aa"));
         checkedIndexes.put(oid, Arrays.asList("PRIMARY", "cid", "oo"));
         checkedIndexes.put(iid, Arrays.asList("PRIMARY", "oid", "ii"));
+        txnService().beginTransaction(session());
         // Data
         writeRows(
                 createNewRow(cid, 1L, "1"),
@@ -101,6 +102,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
                 // No cust(5L)
                     createNewRow(aid, 50L, 5L, "55")            // Level 1 orphan
         );
+        txnService().commitTransaction(session());
     }
 
     private void groupsMatch(TableName name1, TableName... names) {

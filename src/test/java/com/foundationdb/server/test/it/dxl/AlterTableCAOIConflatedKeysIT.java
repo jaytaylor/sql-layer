@@ -69,6 +69,7 @@ public class AlterTableCAOIConflatedKeysIT extends AlterTableITBase {
         checkedIndexes.put(aid, Arrays.asList("PRIMARY", "aa"));
         checkedIndexes.put(oid, Arrays.asList("PRIMARY", "oo"));
         checkedIndexes.put(iid, Arrays.asList("PRIMARY", "ii"));
+        txnService().beginTransaction(session());
         // Data
         writeRows(
                 createNewRow(cid, 1L, "1"),
@@ -85,6 +86,7 @@ public class AlterTableCAOIConflatedKeysIT extends AlterTableITBase {
                 // No cust(5L)
                     createNewRow(aid, 5L, "55")            // Level 1 orphan
         );
+        txnService().commitTransaction(session());
     }
 
     private void groupsMatch(TableName name1, TableName... names) {
