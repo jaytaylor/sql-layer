@@ -1,7 +1,7 @@
 # test drop full_text index
 
 ---
-- Properties: sys-aksql
+- Properties: fdb-sql
 - suppressed: true
 
 ---
