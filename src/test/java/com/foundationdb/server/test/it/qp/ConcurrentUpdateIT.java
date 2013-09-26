@@ -82,14 +82,9 @@ public class ConcurrentUpdateIT extends OperatorITBase
         queryBindings = queryContext.createBindings();
     }
 
-    @Before
-    public void before_beginTransaction() throws PersistitException {
-        // This test manages its own transactions
-    }
-
-    @After
-    public void after_endTransaction() throws PersistitException {
-        // This test manages its own transactions
+    @Override
+    public boolean doAutoTransaction() {
+        return false;
     }
 
     @Before
