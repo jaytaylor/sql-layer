@@ -71,7 +71,7 @@ JVM_OPTS="$JVM_OPTS -XX:+UseParNewGC"
 # JVM_OPTS="$JVM_OPTS -XX:+PrintClassHistogram"
 # JVM_OPTS="$JVM_OPTS -XX:+PrintTenuringDistribution"
 # JVM_OPTS="$JVM_OPTS -XX:+PrintGCApplicationStoppedTime"
-# JVM_OPTS="$JVM_OPTS -Xloggc:/var/log/foundationdb/sql/gc.log"
+# JVM_OPTS="$JVM_OPTS -Xloggc:${logdir}/gc.log"
 
 # jmx: metrics and administration interface
 #
