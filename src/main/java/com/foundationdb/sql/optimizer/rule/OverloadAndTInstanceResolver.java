@@ -182,10 +182,10 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             TypedPlan typedInput = findTypedPlanNode(n);
             if (typedInput != null) {
                 assert rsFields.size() == typedInput.nFields() : rsFields + " not applicable to " + typedInput;
-                    for (int i = 0, size = rsFields.size(); i < size; i++) {
-                        ResultField rsField = rsFields.get(i);
-                        rsField.setTInstance(typedInput.getTypeAt(i));
-                    }
+                for (int i = 0, size = rsFields.size(); i < size; i++) {
+                    ResultField rsField = rsFields.get(i);
+                    rsField.setTInstance(typedInput.getTypeAt(i));
+                }
             }
             else {
                 logger.warn("no Project node found for result fields: {}", n);

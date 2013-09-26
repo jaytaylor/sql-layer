@@ -32,7 +32,7 @@ public class ResultSet extends BasePlanWithInput
         private String name;
         private DataTypeDescriptor sqlType;
         private Column aisColumn;
-        private TInstance TInstance;
+        private TInstance tInstance;
 
         public ResultField(String name, DataTypeDescriptor sqlType, Column aisColumn) {
             this.name = name;
@@ -49,8 +49,8 @@ public class ResultSet extends BasePlanWithInput
         }
 
         public DataTypeDescriptor getSQLtype() {
-            if (sqlType == null && TInstance != null) {
-                sqlType = TInstance.dataTypeDescriptor();
+            if (sqlType == null && tInstance != null) {
+                sqlType = tInstance.dataTypeDescriptor();
             }
             return sqlType;
         }
@@ -60,11 +60,13 @@ public class ResultSet extends BasePlanWithInput
         }
 
         public TInstance getTInstance() {
-            return TInstance;
+            return tInstance;
         }
 
         public void setTInstance(TInstance tInstance) {
-            this.TInstance = tInstance;
+            this.tInstance = tInstance;
+            if (tInstance != null)
+                sqlType = null;
         }
 
         @Override
