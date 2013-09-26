@@ -63,6 +63,7 @@ COPY %LICENSE% target\isstage\LICENSE-SQL_LAYER.txt
 XCOPY /E %EXE_DIR% target\isstage
 COPY bin\*.cmd target\isstage\bin
 COPY target\client-tools\bin\*.cmd target\isstage\bin
+COPY %EXE_DIR%\..\conf\* target\isstage\config
 COPY %EXE_DIR%\conf\* target\isstage\config
 ECHO -tests.jar >target\xclude
 ECHO -sources.jar >>target\xclude
