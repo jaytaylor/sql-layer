@@ -181,16 +181,8 @@ public class TreeServiceImpl
         // just "appendonly".
         //
         final Properties properties = configService.deriveProperties(PERSISTIT_MODULE_NAME);
-        //
-        // Copies the fdbsql.datapath property to the Persistit properties
-        // set. This allows Persistit to perform substitution of ${datapath}
-        // with the server-specified home directory.
-        //
-        // Sets the property named "buffersize" so that the volume
-        // specifications can use the substitution syntax ${buffersize}.
-        //
-        final String datapath = configService.getProperty("fdbsql." + DATAPATH_PROP_NAME);
-        properties.setProperty(DATAPATH_PROP_NAME, datapath);
+
+        final String datapath = properties.getProperty(DATAPATH_PROP_NAME);
         ensureDirectoryExists(datapath, false);
 
         //

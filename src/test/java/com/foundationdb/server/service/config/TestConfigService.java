@@ -131,7 +131,7 @@ public class TestConfigService extends ConfigurationServiceImpl {
 
     private static final AtomicReference<Map<String, String>> startupConfigPropertiesRef
             = new AtomicReference<>();
-    public final static String DATA_PATH_KEY = "fdbsql.datapath";
+    public final static String DATA_PATH_KEY = "persistit.datapath";
     public final static String TEXT_INDEX_PATH_KEY = "fdbsql.text.indexpath";
     private final static String COMMIT_POLICY_KEY = "persistit.txnpolicy";
     private final static String BUFFER_SIZE_KEY = "persistit.buffersize";
