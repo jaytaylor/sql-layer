@@ -10,5 +10,5 @@
 - output: [[1.5]]
 ---
 - Statement: SELECT  AVG(bigint_field), AVG(bigint_unsigned_field) from all_types;
-- output: [[1.5, 1.5]]
+- output: [[1.5, '1.5000']]
 ...

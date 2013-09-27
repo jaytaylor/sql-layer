@@ -25,11 +25,10 @@ STAGE_DIR="${TOP_DIR}/target/packaging"
 GIT_HASH=`git rev-parse --short HEAD`
 GIT_COUNT=`git rev-list --merges HEAD |wc -l |tr -d ' '` # --count is newer
 
-# $1 - output bin/ dir
-# $2 - output conf/ dir
-# $3 - output share/ dir
+# $1 - output bin dir
+# $2 - output jar dir
 build_sql_layer() {
-    if [ "$1" = "" -o "$2" = "" -o "$3" = "" ]; then
+    if [ "$1" = "" -o "$2" = "" ]; then
         echo "Missing argument" >&2
         exit 1
     fi
@@ -41,16 +40,15 @@ build_sql_layer() {
     pushd .
     cd "${TOP_DIR}"
     mvn clean package -q -B -U -DGIT_COUNT=${GIT_COUNT} -DGIT_HASH=${GIT_HASH} -DskipTests=true
-    mkdir -p "${1}" "${2}" "${3}"/{server,plugins}
+    mkdir -p "${1}" "${2}"/{server,plugins}
     cp "${TOP_DIR}/bin/fdbsqllayer" "${1}/"
-    cp "${PACKAGING_DIR}"/conf/* "${2}/"
-    cp target/fdb-sql-layer-${LAYER_MVN_VERSION}.jar "${3}/"
-    cp target/dependency/* "${3}/server/"
+    cp target/fdb-sql-layer-${LAYER_MVN_VERSION}.jar "${2}/"
+    cp target/dependency/* "${2}/server/"
     popd
 }
 
-# $1 - output bin/ dir
-# $2 - output share/ dir
+# $1 - output bin dir
+# $2 - output jar dir
 build_client_tools() {
     : ${TOOLS_LOC:="git@github.com:FoundationDB/sql-layer-client-tools.git"}
     
@@ -69,6 +67,27 @@ build_client_tools() {
     popd
 }
 
+# $1 = output conf dir
+# $2 = install data dir
+# $3 = install log dir
+# $4 = install temp dir
+filter_config_files() {
+    if [ "$1" = "" -o "$2" = "" -o "$3" = "" -o "$4" = "" ]; then
+        echo "Missing argument" >&2
+        exit 1
+    fi
+    mkdir -p "${1}"
+    pushd .
+    cd "${PACKAGING_DIR}/conf"
+    for f in $(ls); do
+        sed -e "s|\\\${datadir}|${2}|g" \
+            -e "s|\\\${logdir}|${3}|g" \
+            -e "s|\\\${tempdir}|${4}|g" \
+            "${f}" > "${1}/${f}"
+    done
+    popd
+}
+
 case "$1" in
     "--git-hash")
         echo "${GIT_HASH}"
@@ -79,8 +98,9 @@ case "$1" in
     ;;
 
     "deb")
-        build_sql_layer "${STAGE_DIR}/usr/sbin" "${STAGE_DIR}/etc/foundationdb/sql" "${STAGE_DIR}/usr/share/foundationdb/sql"
+        build_sql_layer "${STAGE_DIR}/usr/sbin"  "${STAGE_DIR}/usr/share/foundationdb/sql"
         build_client_tools "${STAGE_DIR}/usr/bin" "${STAGE_DIR}/usr/share/foundationdb/sql"
+        filter_config_files "${STAGE_DIR}/etc/foundationdb/sql" "/var/lib/foundationdb/sql" "/var/log/foundationdb/sql" "/tmp"
 
         cp -r "${PACKAGING_DIR}/deb" "${STAGE_DIR}/debian"
         mkdir -p "${STAGE_DIR}/usr/share/doc/fdb-sql-layer/"
@@ -100,8 +120,9 @@ case "$1" in
 
         STAGE_ROOT="${STAGE_DIR}/rpmbuild"
         BUILD_DIR="${STAGE_ROOT}/BUILD"
-        build_sql_layer "${BUILD_DIR}/usr/sbin" "${BUILD_DIR}/etc/foundationdb/sql" "${BUILD_DIR}/usr/share/foundationdb/sql"
+        build_sql_layer "${BUILD_DIR}/usr/sbin" "${BUILD_DIR}/usr/share/foundationdb/sql"
         build_client_tools "${BUILD_DIR}/usr/bin" "${BUILD_DIR}/usr/share/foundationdb/sql"
+        filter_config_files "${BUILD_DIR}/etc/foundationdb/sql" "/var/lib/foundationdb/sql" "/var/log/foundationdb/sql" "/tmp"
 
         mkdir -p "${BUILD_DIR}/etc/rc.d/init.d/"
         cp "${PACKAGING_DIR}/rpm/fdb-sql-layer.init" "${BUILD_DIR}/etc/rc.d/init.d/fdb-sql-layer"
@@ -126,8 +147,9 @@ case "$1" in
         STAGE_ROOT="${STAGE_DIR}/targz"
 
         cd "${TOP_DIR}"
-        build_sql_layer "${STAGE_ROOT}/bin" "${STAGE_ROOT}/conf" "${STAGE_ROOT}/lib"
+        build_sql_layer "${STAGE_ROOT}/bin" "${STAGE_ROOT}/lib"
         build_client_tools "${STAGE_ROOT}/bin" "${STAGE_ROOT}/lib"
+        filter_config_files "${STAGE_ROOT}/conf" "./data" "./logs" "./tmp"
 
         cp bin/* "${STAGE_ROOT}/bin/"
         cp target/client-tools/bin/* "${STAGE_ROOT}/bin/"
@@ -144,8 +166,9 @@ case "$1" in
         STAGE_ROOT="${STAGE_DIR}/root"
         STAGE_LOCAL="${STAGE_ROOT}/usr/local"
 
-        build_sql_layer "${STAGE_LOCAL}/libexec" "${STAGE_LOCAL}/etc/foundationdb/sql" "${STAGE_LOCAL}/foundationdb/sql"
+        build_sql_layer "${STAGE_LOCAL}/libexec" "${STAGE_LOCAL}/foundationdb/sql"
         build_client_tools "${STAGE_LOCAL}/bin" "${STAGE_LOCAL}/foundationdb/sql"
+        filter_config_files "${STAGE_LOCAL}/etc/foundationdb/sql" "/usr/local/foundationdb/data/sql" "/usr/local/foundationdb/logs/sql" "/tmp"
 
         mkdir -p "${STAGE_ROOT}/Library/LaunchDaemons"
         mkdir -p "${STAGE_LOCAL}/foundationdb/logs/sql"
@@ -157,7 +180,6 @@ case "$1" in
         cp -r resources/ "${STAGE_DIR}/"
         cp "${TOP_DIR}/LICENSE.txt" "${STAGE_DIR}/resources/"
         cp com.foundationdb.layer.sql.plist "${STAGE_ROOT}/Library/LaunchDaemons/"
-        cp conf/* "${STAGE_LOCAL}/etc/foundationdb/sql/"
         cp uninstall-FoundationDB-SQL_Layer.sh "${STAGE_LOCAL}/foundationdb"
 
         cd "${STAGE_LOCAL}/foundationdb/sql/"

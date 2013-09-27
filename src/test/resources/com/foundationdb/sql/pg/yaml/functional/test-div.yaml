@@ -9,8 +9,8 @@
 - output: [[0]]
 ---
 - Statement: SELECT double_field div numeric_field from all_types;
-- output_types: [DOUBLE]
-- output: [[1.0]]
+- output_types: [BIGINT]
+- output: [[1]]
 ---
 - Statement: SELECT 2.5 div 2 from all_types;
 - output: [[1]]

@@ -70,20 +70,30 @@ public class ServerValueDecoder
                     value = encoded;
                     break;
                 case INT_8:
-                    value = (long)getDataStream(encoded).read();
-                    decodedType = MNumeric.TINYINT.instance(true);
-                    break;
                 case INT_16:
-                    value = (long)getDataStream(encoded).readShort();
-                    decodedType = MNumeric.MEDIUMINT.instance(true);
-                    break;
                 case INT_32:
-                    value = (long)getDataStream(encoded).readInt();
-                    decodedType = MNumeric.INT.instance(true);
-                    break;
                 case INT_64:
-                    value = getDataStream(encoded).readLong();
-                    decodedType = MNumeric.BIGINT.instance(true);
+                    // Go by the length sent rather than the implied type.
+                    switch (encoded.length) {
+                    case 1:
+                        value = (long)getDataStream(encoded).read();
+                        decodedType = MNumeric.TINYINT.instance(true);
+                        break;
+                    case 2:
+                        value = (long)getDataStream(encoded).readShort();
+                        decodedType = MNumeric.MEDIUMINT.instance(true);
+                        break;
+                    case 4:
+                        value = (long)getDataStream(encoded).readInt();
+                        decodedType = MNumeric.INT.instance(true);
+                        break;
+                    case 8:
+                        value = getDataStream(encoded).readLong();
+                        decodedType = MNumeric.BIGINT.instance(true);
+                        break;
+                    default:
+                        throw new AkibanInternalException("Not an integer size: " + encoded);
+                    }
                     break;
                 case FLOAT_32:
                     value = getDataStream(encoded).readFloat();

@@ -55,9 +55,12 @@ public class JMXCancelationIT extends PostgresServerITBase
     public void loadDB() throws Exception {
         Statement statement = getConnection().createStatement();
         statement.execute("CREATE TABLE t(id INTEGER NOT NULL PRIMARY KEY)");
+        getConnection().setAutoCommit(false);
         for (int id = 0; id < N; id++) {
             statement.execute(String.format("INSERT INTO t VALUES(%s)", id));
         }
+        getConnection().commit();
+        getConnection().setAutoCommit(true);
         statement.close();
         uncaughtExceptions.clear();
     }
