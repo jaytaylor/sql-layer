@@ -42,7 +42,7 @@ public class MonitorServiceImpl implements Service, MonitorService, MonitorMXBea
 {
     private static final String QUERY_LOG_PROPERTY = "fdbsql.querylog.enabled";
     private static final String QUERY_LOG_FILE_PROPERTY = "fdbsql.querylog.filename";
-    private static final String QUERY_LOG_THRESHOLD = "fdbsql.querylog.exec_time_threshold";
+    private static final String QUERY_LOG_THRESHOLD = "fdbsql.querylog.exec_threshold_ms";
     
     private static final Logger logger = LoggerFactory.getLogger(MonitorServiceImpl.class);
 
