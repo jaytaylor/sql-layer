@@ -3,7 +3,7 @@ REM It is important that none of the property values have spaces in them.
 
 REM The amount of memory to allocate to the JVM at startup, you almost
 REM certainly want to adjust this for your environment.
-REM SET MAX_HEAP_SIZE=1024M
+SET MAX_HEAP_SIZE=512M
 
 REM Here we create the arguments that will get passed to the jvm when starting.
 
