@@ -39,6 +39,7 @@ import com.foundationdb.server.error.AISTooLargeException;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.rowdata.RowDefCache;
 import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.listener.TableListener;
@@ -100,6 +101,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     private final FDBHolder holder;
     private final FDBTransactionService txnService;
     private final ListenerService listenerService;
+    private final ServiceManager serviceManager;
     private final Object AIS_LOCK = new Object();
 
     private DirectorySubspace rootDir;
@@ -117,7 +119,8 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
                             SessionService sessionService,
                             FDBHolder holder,
                             TransactionService txnService,
-                            ListenerService listenerService) {
+                            ListenerService listenerService,
+                            ServiceManager serviceManager) {
         super(config, sessionService, txnService);
         this.holder = holder;
         if(txnService instanceof FDBTransactionService) {
@@ -126,6 +129,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
             throw new IllegalStateException("May only be ran with FDBTransactionService");
         }
         this.listenerService = listenerService;
+        this.serviceManager = serviceManager;
     }
 
 
@@ -363,6 +367,24 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     public void onDropIndex(Session session, Collection<? extends Index> indexes) {
         // None
     }
+
+     // TODO: Remove when FDB shutdown hook issue is resolved
+     @Override
+     public void unRegisterMemoryInformationSchemaTable(TableName tableName) {
+         if(serviceManager.getState() == ServiceManager.State.STOPPING) {
+             return; // Skip as to avoid DB access
+         }
+         super.unRegisterMemoryInformationSchemaTable(tableName);
+     }
+
+     // TODO: Remove when FDB shutdown hook issue is resolved
+     @Override
+     public void unRegisterSystemRoutine(TableName routineName) {
+         if(serviceManager.getState() == ServiceManager.State.STOPPING) {
+             return; // Skip as to avoid DB access
+         }
+         super.unRegisterSystemRoutine(routineName);
+     }
 
 
     //
