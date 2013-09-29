@@ -21,6 +21,7 @@ import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Columnar;
 import com.foundationdb.ais.model.DefaultNameGenerator;
+import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.SQLJJar;
@@ -39,6 +40,8 @@ import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.rowdata.RowDefCache;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.server.service.listener.ListenerService;
+import com.foundationdb.server.service.listener.TableListener;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.session.SessionService;
 import com.foundationdb.server.service.transaction.TransactionService;
@@ -77,7 +80,8 @@ import java.util.Collection;
  *     <li>Since there can be exactly one change to the generation at a time, all generated names and ids will be unique</li>
  * </ul>
  */
-public class FDBSchemaManager extends AbstractSchemaManager implements Service {
+public class FDBSchemaManager extends AbstractSchemaManager implements Service, TableListener
+{
     private static final Logger LOG = LoggerFactory.getLogger(FDBSchemaManager.class);
 
     private static final Tuple SM_DIR_PATH = Tuple.from("schemaManager");
@@ -95,6 +99,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
 
     private final FDBHolder holder;
     private final FDBTransactionService txnService;
+    private final ListenerService listenerService;
     private final Object AIS_LOCK = new Object();
 
     private DirectorySubspace rootDir;
@@ -111,7 +116,8 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     public FDBSchemaManager(ConfigurationService config,
                             SessionService sessionService,
                             FDBHolder holder,
-                            TransactionService txnService) {
+                            TransactionService txnService,
+                            ListenerService listenerService) {
         super(config, sessionService, txnService);
         this.holder = holder;
         if(txnService instanceof FDBTransactionService) {
@@ -119,6 +125,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
         } else {
             throw new IllegalStateException("May only be ran with FDBTransactionService");
         }
+        this.listenerService = listenerService;
     }
 
 
@@ -164,10 +171,13 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
 
         this.nameGenerator = SynchronizedNameGenerator.wrap(new DefaultNameGenerator(curAIS));
         mergeNewAIS(curAIS);
+
+        listenerService.registerTableListener(this);
     }
 
     @Override
     public void stop() {
+        listenerService.deregisterTableListener(this);
         super.stop();
         this.tableStatusCache = null;
         this.rowDefCache = null;
@@ -319,6 +329,39 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service {
     @Override
     public long getOldestActiveAISGeneration() {
         return curAIS.getGeneration();
+    }
+
+
+    //
+    // TableListener
+    //
+
+    @Override
+    public void onCreate(Session session, UserTable table) {
+        // None
+    }
+
+    @Override
+    public void onDrop(Session session, UserTable table) {
+        // TODO: Make this unnecessary
+        // FDBStore mostly deals with directories, but doesn't get notified for drops of non-root
+        Transaction txn = txnService.getTransaction(session).getTransaction();
+        rootDir.removeIfExists(txn, FDBNameGenerator.dataPath(table.getName()));
+    }
+
+    @Override
+    public void onTruncate(Session session, UserTable table, boolean isFast) {
+        // None
+    }
+
+    @Override
+    public void onCreateIndex(Session session, Collection<? extends Index> indexes) {
+        // None
+    }
+
+    @Override
+    public void onDropIndex(Session session, Collection<? extends Index> indexes) {
+        // None
     }
 
 
