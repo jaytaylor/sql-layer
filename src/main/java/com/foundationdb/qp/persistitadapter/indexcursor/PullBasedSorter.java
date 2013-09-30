@@ -182,6 +182,7 @@ public class PullBasedSorter<T> extends Sorter<T> implements PullNextProvider<T>
             for(File input : _inputs) {
                 input.delete();
             }
+            _inputs = null;
         }
     }
 
