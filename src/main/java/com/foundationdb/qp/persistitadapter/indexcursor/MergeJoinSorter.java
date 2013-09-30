@@ -320,6 +320,7 @@ public class MergeJoinSorter implements Sorter {
         private AkCollator collators[];
         private PersistitValuePValueTarget valueTarget;
         private RowCursor input;
+        boolean done = false;
         
         public KeyReadCursor (RowCursor input) {
             this.rowFields = rowType.nFields();
@@ -348,7 +349,7 @@ public class MergeJoinSorter implements Sorter {
         @Override
         public SortKey readNext() throws IOException {
             SortKey sortKey = null;
-            if (!input.isActive()) {
+            if(done) {
                 return sortKey;
             }
             loadTap.in();
@@ -360,7 +361,9 @@ public class MergeJoinSorter implements Sorter {
                 if (row != null) {
                     ++rowCount;
                     sortKey = new SortKey (createKey(row, rowCount), createValue(row));
-                } 
+                } else {
+                    done = true;
+                }
             } finally {
                 loadTap.out();
             }
