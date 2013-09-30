@@ -2,6 +2,12 @@
 ---
 - Properties: sys-mysql
 - suppressed: true
+
+# Modifies and checks connection settings
+---
+- Properties: random-context
+- suppressed: true
+
 ---
 - Statement: SELECT true||false
 - output: [[truefalse]]

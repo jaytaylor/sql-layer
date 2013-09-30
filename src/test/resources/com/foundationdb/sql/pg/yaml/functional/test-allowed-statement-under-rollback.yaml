@@ -1,6 +1,12 @@
 ---
 - Properties: sys-mysql
 - suppressed: true
+
+# Has manual transaction boundaries
+---
+- Properties: random-context
+- suppressed: true
+
 ---
 - CreateTable: t (id INT NOT NULL PRIMARY KEY, x INT, UNIQUE(x));
 ---
