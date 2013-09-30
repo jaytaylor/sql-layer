@@ -615,12 +615,8 @@ public class MergeJoinSorter implements Sorter {
         public void close() {
             CursorLifecycle.checkIdleOrActive(this);
             if(!isIdle) {
-                try {
-                    pullSorter.pullFinish();
-                } catch (IOException e) {
-                    LOG.warn("Problem closing sort", e);
-                }
                 isIdle = true;
+                // pullSorter closed by MergeJoinSorter
             }
         }
 
