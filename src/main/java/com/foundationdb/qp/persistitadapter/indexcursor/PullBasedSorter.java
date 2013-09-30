@@ -37,6 +37,18 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * Stock Sorter is push based, expected an output stream upon write.
+ *
+ * To use in the Operator stack we would need to start another thread or write
+ * the sort output to a temporary file. The former seems excessive and the
+ * latter seems wasteful, both for small sorts (going to disk when it fits in
+ * memory buffer) and for large sorts (double writing and reading the entire
+ * sort stream).
+ *
+ * This class duplicates a bit of Sorter but short circuits the default output
+ * so that it can be used in a pull fashion.
+ */
 public class PullBasedSorter<T> extends Sorter<T> implements PullNextProvider<T>
 {
     private static final Method readMaxMethod;
@@ -73,7 +85,11 @@ public class PullBasedSorter<T> extends Sorter<T> implements PullNextProvider<T>
     }
 
 
-
+    /**
+     * Like Sorter.sort() but don't do any output.
+     * Prepares the sorted stream to be read incrementally with {@link #pullNext()}
+     * Must close {@link #pullFinish()}} when done with the sort.
+     */
     public boolean pullSortBegin(DataReader<T> inputReader) throws IOException {
         // Clean up any previous pull sort
         pullFinish();
@@ -139,6 +155,7 @@ public class PullBasedSorter<T> extends Sorter<T> implements PullNextProvider<T>
 
     @SuppressWarnings("unchecked")
     @Override
+    /** Like writeAll() from fast path in Sorter.sort() and Sorter._merge() in spilled path. */
     public T pullNext() throws IOException {
         if(_items != null) {
             assert _merger == null;
@@ -173,6 +190,7 @@ public class PullBasedSorter<T> extends Sorter<T> implements PullNextProvider<T>
     // Internal
     //
 
+    /** Like Sorter.merge() + Sorter._merge(), without closing inputs */
     private void pullMerge(List<File> presorted) throws IOException {
         // Ok, let's see how many rounds we should have...
         final int mergeFactor = _config.getMergeFactor();
