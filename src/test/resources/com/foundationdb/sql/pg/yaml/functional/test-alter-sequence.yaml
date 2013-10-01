@@ -1,3 +1,8 @@
+# Only valid on single node as each allocates blocks of sequence values
+---
+- Properties: random-context
+- suppressed: true
+
 ---
 - Statement: CREATE SEQUENCE s1 START WITH 1 INCREMENT BY 1
 ---

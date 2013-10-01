@@ -1,3 +1,9 @@
+# Modifies connection state
+---
+- Properties: random-context
+- suppressed: true
+
+
 # Test query timeout
 ---
 - Properties: sys-mysql
