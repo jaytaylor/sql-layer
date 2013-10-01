@@ -23,8 +23,8 @@ FOR /F "usebackq" %%v IN (`git rev-parse --short HEAD`) DO SET GIT_HASH=%%v
 FOR /F "usebackq" %%v IN (`git rev-list --merges HEAD --count`) DO SET GIT_COUNT=%%v
 
 SET LICENSE=LICENSE.txt
-SET VERSION=2.0.0
-SET VERSIONFULL=2.0.0.%GIT_COUNT%-%GIT_HASH%
+SET VERSION=1.9.0
+SET VERSIONFULL=1.9.0.%GIT_COUNT%-%GIT_HASH%
 SET INSTALLER=fdb-sql-layer-%VERSION%
 SET EXE_DIR=%~dp0\exe
 

@@ -30,7 +30,7 @@ import java.util.List;
 
 /** A loadable direct object plan.
  * <code><pre>
-CALL sqlj.install_jar('target/fdb-sql-layer-2.0.0-SNAPSHOT-tests.jar', 'testjar', 0);
+CALL sqlj.install_jar('target/fdb-sql-layer-1.9.0-SNAPSHOT-tests.jar', 'testjar', 0);
 CREATE PROCEDURE test_direct(IN n BIGINT) LANGUAGE java PARAMETER STYLE foundationdb_loadable_plan EXTERNAL NAME 'testjar:com.foundationdb.server.test.it.routines.TestDirectPlan';
 CALL test_direct(10);
  * </pre></code> 
