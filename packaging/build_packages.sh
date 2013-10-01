@@ -183,7 +183,7 @@ case "$1" in
         cp uninstall-FoundationDB-SQL_Layer.sh "${STAGE_LOCAL}/foundationdb"
 
         cd "${STAGE_LOCAL}/foundationdb/sql/"
-        ln -s /usr/local/foundationdb/sql/fdb-sql-layer-2.0.0-SNAPSHOT.jar fdb-sql-layer.jar
+        ln -s /usr/local/foundationdb/sql/fdb-sql-layer-1.9.0-SNAPSHOT.jar fdb-sql-layer.jar
         ln -s /usr/local/foundationdb/sql/fdb-sql-layer-client-tools-1.3.7-SNAPSHOT.jar fdb-sql-layer-client-tools.jar
 
         cd "${TOP_DIR}/target"

@@ -19,7 +19,7 @@
 
 SETLOCAL
 
-SET SERVER_JAR=fdb-sql-layer-2.0.0-SNAPSHOT.jar
+SET SERVER_JAR=fdb-sql-layer-1.9.0-SNAPSHOT.jar
 SET SERVICE_NAME=fdbsqllayer
 SET SERVICE_DNAME=FoundationDB SQL Layer 
 SET SERVICE_DESC=FoundationDB SQL Layer
