@@ -2116,6 +2116,13 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
          "- retry_count: [5]");
     }
 
+    @Test
+    public void testUseContext() throws Exception {
+        testYaml ("---\n" +
+           "- UseContext: default\n" +
+           "- fixed: true"
+                );
+    }
     /* Other methods */
 
     private void testYaml(String yaml) throws Exception {
