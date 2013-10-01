@@ -22,12 +22,15 @@ import static com.foundationdb.qp.operator.API.valuesScan_Default;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import com.foundationdb.qp.persistitadapter.indexcursor.MergeJoinSorter.KeyReader;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -49,9 +52,8 @@ import com.foundationdb.server.types3.mcompat.mtypes.MString;
 import com.foundationdb.server.types3.texpressions.TPreparedField;
 import com.foundationdb.util.tap.Tap;
 
-public class KeyFinalCursorIT extends OperatorITBase {
-
-
+public class KeyFinalCursorIT extends OperatorITBase
+{
     private Schema schema;
     private ByteArrayOutputStream os;
     private ByteArrayInputStream is;
@@ -166,9 +168,8 @@ public class KeyFinalCursorIT extends OperatorITBase {
         }
         
         is = new ByteArrayInputStream (os.toByteArray());
-        RowCursor cursor = new KeyFinalCursor(is, rowType, API.SortOption.PRESERVE_DUPLICATES, null);
-        return cursor;
-        
+        return new KeyFinalCursor(new StreamNextProvider(is), rowType, API.SortOption.PRESERVE_DUPLICATES, null);
+
     }
     
     private KeyReadCursor getKeyCursor (RowType rowType, List<BindableRow> rows) {
@@ -192,4 +193,22 @@ public class KeyFinalCursorIT extends OperatorITBase {
         return sb.toString();
      }
 
+
+    private static class StreamNextProvider implements PullNextProvider<SortKey> {
+        private final KeyReader reader;
+
+        public StreamNextProvider(InputStream stream) throws FileNotFoundException {
+            this.reader = new KeyReader(stream);
+        }
+
+        @Override
+        public SortKey pullNext() throws IOException {
+            return reader.readNext();
+        }
+
+        @Override
+        public void pullFinish() throws IOException {
+            reader.close();
+        }
+    }
 }

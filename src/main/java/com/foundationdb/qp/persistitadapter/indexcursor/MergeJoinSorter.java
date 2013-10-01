@@ -17,9 +17,6 @@
 package com.foundationdb.qp.persistitadapter.indexcursor;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -61,12 +58,14 @@ import com.fasterxml.sort.DataWriter;
 import com.fasterxml.sort.DataWriterFactory;
 import com.fasterxml.sort.SortConfig;
 import com.fasterxml.sort.TempFileProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <h1>Overview</h1>
  *
  * Sort rows by inserting them in sorted order into a memory buffer, then into on-disk files, and performing 
- * a multiway merge sort on the resulting files. 
+ * a multi-way merge sort on the resulting files.
  *
  * <h1>Behavior</h1>
  *
@@ -93,6 +92,7 @@ import com.fasterxml.sort.TempFileProvider;
 */
 
 public class MergeJoinSorter implements Sorter {
+    private static final Logger LOG = LoggerFactory.getLogger(MergeJoinSorter.class);
 
     private QueryContext context;
     private QueryBindings bindings;
@@ -101,10 +101,9 @@ public class MergeJoinSorter implements Sorter {
     private Ordering ordering;
     private InOutTap loadTap;
 
-    private File finalFile;
-
     private final SorterAdapter<?, ?, ?> sorterAdapter;
     private final List<Integer> orderChanges;
+    private PullBasedSorter<SortKey> pullSorter;
     private Key sortKey;
     private Comparator<SortKey> compare;
     private API.SortOption sortOption;
@@ -156,28 +155,26 @@ public class MergeJoinSorter implements Sorter {
 
     @Override
     public void close() {
+        if(pullSorter != null) {
+            try {
+                pullSorter.pullFinish();
+            } catch(IOException e) {
+                LOG.warn("Problem closing sort", e);
+            }
+            pullSorter = null;
+        }
     }
     
-    private void loadTree() throws FileNotFoundException, IOException {
-        MergeTempFileProvider tmpFileProvider = new MergeTempFileProvider(context);
-        finalFile  = tmpFileProvider.provide();
-        
-        com.fasterxml.sort.Sorter<SortKey> s = new com.fasterxml.sort.Sorter<SortKey> (
-                getSortConfig(tmpFileProvider),
-                new KeyReaderFactory(), 
-                new KeyWriterFactory(), 
-                compare);
-        s.sort(new KeyReadCursor(input), new KeyWriter(new FileOutputStream(finalFile)));
+    private void loadTree() throws IOException {
+        pullSorter = new PullBasedSorter<>(getSortConfig(new MergeTempFileProvider(context)),
+                                           new KeyReaderFactory(),
+                                           new KeyWriterFactory(),
+                                           compare);
+        pullSorter.pullSortBegin(new KeyReadCursor(input));
     }
     
     private RowCursor cursor() {
-        KeyFinalCursor cursor = null;
-        try {
-            cursor = new KeyFinalCursor (finalFile, rowType, sortOption, compare);
-        } catch (FileNotFoundException e) {
-            throw new MergeSortIOException(e);
-        }
-        return cursor;
+        return new KeyFinalCursor(pullSorter, rowType, sortOption, compare);
     }
 
     public KeyReadCursor readCursor() { 
@@ -323,6 +320,7 @@ public class MergeJoinSorter implements Sorter {
         private AkCollator collators[];
         private PersistitValuePValueTarget valueTarget;
         private RowCursor input;
+        boolean done = false;
         
         public KeyReadCursor (RowCursor input) {
             this.rowFields = rowType.nFields();
@@ -351,7 +349,7 @@ public class MergeJoinSorter implements Sorter {
         @Override
         public SortKey readNext() throws IOException {
             SortKey sortKey = null;
-            if (!input.isActive()) {
+            if(done) {
                 return sortKey;
             }
             loadTap.in();
@@ -363,7 +361,9 @@ public class MergeJoinSorter implements Sorter {
                 if (row != null) {
                     ++rowCount;
                     sortKey = new SortKey (createKey(row, rowCount), createValue(row));
-                } 
+                } else {
+                    done = true;
+                }
             } finally {
                 loadTap.out();
             }
@@ -552,19 +552,15 @@ public class MergeJoinSorter implements Sorter {
         private boolean isIdle = true;
         private boolean isDestroyed = false;
 
-        private final KeyReader read; 
+        private final PullNextProvider<SortKey> pullSorter;
         private final RowType rowType;
         private PersistitValuePValueSource valueSource; 
-        private SortKey key = null;
         private API.SortOption sortOption;
         private Comparator<SortKey> compare;
+        private SortKey nextKey;
         
-        public KeyFinalCursor (File inputFile, RowType rowType, API.SortOption sortOption, Comparator<SortKey> compare) throws FileNotFoundException {
-            this (new FileInputStream(inputFile), rowType, sortOption, compare);
-        }
-        
-        public KeyFinalCursor(InputStream stream, RowType rowType, API.SortOption sortOption, Comparator<SortKey> compare) {
-            read = new KeyReader(stream);
+        public KeyFinalCursor(PullNextProvider<SortKey> pullSorter, RowType rowType, API.SortOption sortOption, Comparator<SortKey> compare) {
+            this.pullSorter = pullSorter;
             this.rowType = rowType;
             this.sortOption = sortOption;
             this.compare = compare;
@@ -575,33 +571,24 @@ public class MergeJoinSorter implements Sorter {
         public void open() {
             CursorLifecycle.checkIdle(this);
             isIdle = false;
-            try {
-                key = read.readNext();
-            } catch (IOException e) {
-                throw new MergeSortIOException (e);
-            }
         }
 
         @Override
         public Row next() {
             CursorLifecycle.checkIdleOrActive(this);
             Row row = null;
-           
-            if (key != null) {
-                row = createRow (key);
-            
-                try {
-                    if (sortOption == API.SortOption.SUPPRESS_DUPLICATES) {
-                        key = skipDuplicates (key);
-                    } else {
-                        key = read.readNext();
+            try {
+                SortKey key = (nextKey != null) ? nextKey : pullSorter.pullNext();
+                if(key != null) {
+                    if(sortOption == API.SortOption.SUPPRESS_DUPLICATES) {
+                        nextKey = skipDuplicates(key);
                     }
-                } catch (IOException e) {
-                    throw new MergeSortIOException (e);
+                    row = createRow(key);
                 }
-                return row;
-            }            
-            return null;
+            } catch(IOException e) {
+                throw new MergeSortIOException(e);
+            }
+            return row;
         }
 
         /*
@@ -611,7 +598,7 @@ public class MergeJoinSorter implements Sorter {
          */
         private SortKey skipDuplicates (SortKey startKey) throws IOException {
             while (true) {
-                SortKey newKey = read.readNext();
+                SortKey newKey = pullSorter.pullNext();
                 if (newKey == null || compare.compare(startKey, newKey) != 0) {
                     return newKey;
                 }
@@ -631,12 +618,8 @@ public class MergeJoinSorter implements Sorter {
         public void close() {
             CursorLifecycle.checkIdleOrActive(this);
             if(!isIdle) {
-                try {
-                    read.close();
-                } catch (IOException e) {
-                    // TODO: manage this exception? 
-                }
                 isIdle = true;
+                // pullSorter closed by MergeJoinSorter
             }
         }
 

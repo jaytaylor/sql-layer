@@ -15,19 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.test.it.routines;
+package com.foundationdb.qp.persistitadapter.indexcursor;
 
-/** Basic Java stored procedures
- * <code><pre>
-CALL sqlj.install_jar('target/fdb-sql-layer-1.9.0-SNAPSHOT-tests.jar', 'testjar', 0);
-CREATE PROCEDURE test.add_sub(IN x INT, IN y INT, OUT "sum" INT, out diff INT) LANGUAGE java PARAMETER STYLE java EXTERNAL NAME 'testjar:com.foundationdb.server.test.it.routines.TestJavaBasic.addSub';
-CALL test.add_sub(100,59);
- * </pre></code> 
- */
-public class TestJavaBasic
+import java.io.IOException;
+
+public interface PullNextProvider<T>
 {
-    public static void addSub(int x, int y, int[] sum, int[] diff) {
-        sum[0] = x + y;
-        diff[0] = x - y;
-    }
+    T pullNext() throws IOException;
+    void pullFinish() throws IOException;
 }
