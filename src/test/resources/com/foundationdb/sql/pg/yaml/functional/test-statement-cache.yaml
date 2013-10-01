@@ -1,3 +1,8 @@
+# Cache stats are node specific
+---
+- Properties: random-context
+- suppressed: true
+
 # Test statement cache
 ---
 - Properties: sys-mysql

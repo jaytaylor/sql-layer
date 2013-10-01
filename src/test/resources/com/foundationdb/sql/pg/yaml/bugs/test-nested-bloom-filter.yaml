@@ -1,3 +1,8 @@
+# Modifies connection state
+---
+- Properties: random-context
+- suppressed: true
+
 #
 # Bloom filter in subquery of query with parameters.
 # Make sure binding indexes are straight.
