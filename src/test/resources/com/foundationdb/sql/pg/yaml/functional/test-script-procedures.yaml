@@ -1,3 +1,8 @@
+# Modifies connection state
+---
+- Properties: random-context
+- suppressed: true
+
 # Test procedures defined as scripts
 ---
 - Statement: >

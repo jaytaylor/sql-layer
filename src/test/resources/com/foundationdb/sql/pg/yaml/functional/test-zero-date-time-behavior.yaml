@@ -1,3 +1,8 @@
+# Modifies connection state
+---
+- Properties: random-context
+- suppressed: true
+
 # Test MySQL zero date/time handling option.
 ---
 - Include: all-types-schema.yaml

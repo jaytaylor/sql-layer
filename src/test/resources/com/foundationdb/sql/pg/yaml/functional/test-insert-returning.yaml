@@ -75,6 +75,13 @@
 ---
 - Statement: DELETE from all_types
 
+
+# Rest is only valid on single node as each allocates blocks of sequence values
+---
+- Properties: random-context
+- suppressed: true
+
+
 # Testing sequences for basic functionality
 ---
 - CreateTable: t (c1 integer not null primary key, c2 varchar(20))

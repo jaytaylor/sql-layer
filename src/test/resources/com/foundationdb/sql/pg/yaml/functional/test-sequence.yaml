@@ -1,3 +1,8 @@
+# Only valid on single node as each allocates blocks of sequence values
+---
+- Properties: random-context
+- suppressed: true
+
 # Testing sequences for basic functionality
 ---
 - Properties: sys-mysql
