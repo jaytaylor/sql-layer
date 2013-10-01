@@ -256,6 +256,8 @@ class YamlTester
                     messageCommand(value);
                 } else if("JMX".equals(commandName)) {
                     jmxCommand(value, sequence);
+                } else if ("UseContext".equals(commandName)) {
+                    useContextCommand(value, sequence);
                 } else if("Newtypes".equals(commandName)) {
                     fail("No longer supported Newtypes command");
                 } else {
@@ -546,6 +548,22 @@ class YamlTester
         }
     }
 
+    private void useContextCommand(Object value, List<?> sequence) throws SQLException {
+        new UseContextCommand(value, sequence).execute();
+    }
+
+    private class UseContextCommand extends AbstractStatementCommand
+    {
+        UseContextCommand (Object context, List<?>sequence) {
+            super("Use Context: " + string(context, "UseContext Argument"));
+        }
+        
+        void execute() throws SQLException {
+            return;
+        }
+    }
+
+    
     private void statementCommand(Object value, List<?> sequence) throws SQLException {
         assertNotNull("Statement value cannot be null (e.g. null, empty, no matching select-engine)", value);
         new StatementCommand(string(value, "Statement value"), sequence).execute();

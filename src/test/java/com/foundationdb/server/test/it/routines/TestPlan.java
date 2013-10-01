@@ -36,7 +36,7 @@ import static com.foundationdb.qp.operator.API.project_Default;
 DROP TABLE test;
 CREATE TABLE test(id INT PRIMARY KEY NOT NULL, value VARCHAR(10));
 INSERT INTO test VALUES(1, 'aaa'), (2, 'bbb');
-CALL sqlj.install_jar('target/fdb-sql-layer-1.9.0-SNAPSHOT-tests.jar', 'testjar', 0);
+CALL sqlj.install_jar('target/fdb-sql-layer-x.y.z-tests.jar', 'testjar', 0);
 CREATE PROCEDURE test(IN n BIGINT) LANGUAGE java PARAMETER STYLE foundationdb_loadable_plan EXTERNAL NAME 'testjar:com.foundationdb.server.test.it.routines.TestPlan';
 CALL test(666);
  * </pre></code> 

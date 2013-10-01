@@ -50,7 +50,7 @@ infer_home_dir()
 
 infer_jar_file()
 {
-    local loc_local="${FDBSQL_HOME}/target/fdb-sql-layer-1.9.0.jar"
+    local loc_local="${FDBSQL_HOME}/target/fdb-sql-layer-1.9.1-SNAPSHOT.jar"
     local loc_global="/usr/share/foundationdb/sql/fdb-sql-layer.jar"
 
     # Only infer if passed no argument
