@@ -19,12 +19,14 @@ package com.foundationdb.qp.persistitadapter;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.qp.operator.CursorLifecycle;
 import com.foundationdb.qp.operator.GroupCursor;
+import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.KeyValue;
+import com.foundationdb.async.AsyncIterator;
 import com.persistit.Key;
 
 import java.util.Iterator;
@@ -37,13 +39,18 @@ public class FDBGroupCursor implements GroupCursor {
     private GroupScan groupScan;
     private boolean idle;
     private boolean destroyed;
-
+    private int commitFrequency;
 
     public FDBGroupCursor(FDBAdapter adapter, Group group) {
         this.adapter = adapter;
         this.group = group;
         this.idle = true;
         this.destroyed = false;
+    }
+
+    public FDBGroupCursor(FDBAdapter adapter, Group group, int commitFrequency) {
+        this(adapter, group);
+        this.commitFrequency = commitFrequency;
     }
 
     @Override
@@ -56,7 +63,9 @@ public class FDBGroupCursor implements GroupCursor {
     @Override
     public void open() {
         CursorLifecycle.checkIdle(this);
-        if(hKey == null) {
+        if(commitFrequency != 0) {
+            groupScan = new CommittingFullScan();
+        } else if(hKey == null) {
             groupScan = new FullScan();
         } else if(hKeyDeep) {
             groupScan = new HKeyAndDescendantScan(hKey);
@@ -210,4 +219,48 @@ public class FDBGroupCursor implements GroupCursor {
             it = adapter.getUnderlyingStore().groupIterator(adapter.getSession(), group, hKey.key());
         }
     }
+
+    private class CommittingFullScan implements GroupScan {
+        private Iterator<KeyValue> it;
+        private KeyValue current;
+        private boolean auto;
+        private int limit, remaining;
+
+        public CommittingFullScan() {
+            auto = (commitFrequency == StoreAdapter.COMMIT_FREQUENCY_PERIODICALLY);
+            if (auto)
+                limit = adapter.getTransaction().periodicallyCommitScanLimit();
+            else
+                limit = commitFrequency;
+        }
+
+        @Override
+        public void advance() {
+            if (it == null) {
+                it = adapter.getUnderlyingStore().groupIterator(adapter.getSession(), group,
+                                                                limit, current);
+                remaining = limit;
+            }
+            if (it.hasNext()) {
+                current = it.next();
+                remaining--;
+                if ((remaining <= 0) || 
+                    (auto && adapter.getTransaction().timeToCommit())) {
+                    ((AsyncIterator)it).dispose();
+                    it = null;
+                    adapter.getTransaction().commitAndReset(adapter.getSession());
+                }
+            }
+            else {
+                close();
+                current = null;
+            }
+        }
+
+        @Override
+        public KeyValue getCurrent() {
+            return current;
+        }
+    }
+
 }
