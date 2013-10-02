@@ -128,6 +128,9 @@
 - get: VersionString
 - output: [[!dc dc]]
 ---
+- UseContext: default
+- fixed: true
+---
 - JMX: com.foundationdb:type=Configuration
 - set: QueryTimeoutMilli
 - params: ['2000']
@@ -135,4 +138,7 @@
 - JMX: com.foundationdb:type=Configuration
 - get: QueryTimeoutMilli
 - output: [['2000']]
+---
+- UseContext: default
+- fixed: false
 ...
