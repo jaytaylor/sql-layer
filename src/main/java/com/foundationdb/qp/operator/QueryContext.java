@@ -132,6 +132,9 @@ public interface QueryContext
      */
     public long sequenceCurrentValue(TableName sequence); 
 
+    /** Does this context commit periodically? */
+    public boolean isTransactionPeriodicallyCommit();
+
     /**
      * Create a new empty set of bindings.
      */

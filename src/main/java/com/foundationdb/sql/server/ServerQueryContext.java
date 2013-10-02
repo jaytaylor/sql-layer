@@ -113,6 +113,11 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
         return server.getStore().sequenceCurrentValue(sequenceName);
     }
 
+    @Override
+    public boolean isTransactionPeriodicallyCommit() {
+        return server.isTransactionPeriodicallyCommit();
+    }
+
     public void lock(DXLFunction operationType) {
         long timeout = 0;       // No timeout.
         long queryTimeoutMilli = getQueryTimeoutMilli();
