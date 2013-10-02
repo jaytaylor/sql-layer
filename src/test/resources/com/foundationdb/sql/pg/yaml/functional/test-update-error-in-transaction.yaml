@@ -1,8 +1,3 @@
-# Has manual transaction boundaries
----
-- Properties: random-context
-- suppressed: true
-
 #
 # Autocommit case
 #
