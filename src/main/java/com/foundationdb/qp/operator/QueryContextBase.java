@@ -78,6 +78,11 @@ public abstract class QueryContextBase implements QueryContext
     }
 
     @Override
+    public boolean isTransactionPeriodicallyCommit() {
+        return false;
+    }
+
+    @Override
     public QueryBindings createBindings() {
         return new SparseArrayQueryBindings();
     }
