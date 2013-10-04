@@ -3,6 +3,9 @@
 - Properties: sys-mysql
 - suppressed: true
 ---
+- UseContext: default
+- fixed: true
+---
 - CreateTable: t1 (id INT NOT NULL PRIMARY KEY, s VARCHAR(15) NOT NULL)
 ---
 - Statement: INSERT INTO t1 VALUES(1, 'abc'),(2, 'def'),(3, 'ghi'),(4,'jkl'),(5,'mno');
@@ -58,4 +61,7 @@
 ---
 - Statement: FETCH no_such_curs
 - error: [4251C]
+---
+- UseContext: default
+- fixed: false
 ...
