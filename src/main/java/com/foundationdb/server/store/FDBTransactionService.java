@@ -44,8 +44,9 @@ public class FDBTransactionService implements TransactionService {
     private static final StackKey<Callback> AFTER_END_KEY = StackKey.stackNamed("TXN_AFTER_END");
     private static final StackKey<Callback> AFTER_COMMIT_KEY = StackKey.stackNamed("TXN_AFTER_COMMIT");
     private static final StackKey<Callback> AFTER_ROLLBACK_KEY = StackKey .stackNamed("TXN_AFTER_ROLLBACK");
-    private static final String CONFIG_COMMIT_AFTER_MILLIS = "fdbsql.fdb.periodicallCommit.afterMillis";
-    private static final String CONFIG_COMMIT_AFTER_BYTES = "fdbsql.fdb.periodicallCommit.afterBytes";
+    private static final String CONFIG_COMMIT_AFTER_MILLIS = "fdbsql.fdb.periodically_commit.after_millis";
+    private static final String CONFIG_COMMIT_AFTER_BYTES = "fdbsql.fdb.periodically_commit.after_bytes";
+    private static final String CONFIG_COMMIT_SCAN_LIMIT = "fdbsql.fdb.periodically_commit.scan_limit";
     private static final String CONFIG_DEFER_UNIQUENESS_CHECKS = "fdbsql.fdb.defer_uniqueness_checks";
     private static final String UNIQUENESS_CHECKS_METRIC = "SQLLayerUniquenessPending";
 
@@ -53,6 +54,7 @@ public class FDBTransactionService implements TransactionService {
     private final ConfigurationService configService;
     private final MetricsService metricsService;
     private long commitAfterMillis, commitAfterBytes;
+    private int commitScanLimit;
     private boolean deferUniquenesChecks;
     private LongMetric uniquenessChecksMetric;
 
@@ -114,6 +116,16 @@ public class FDBTransactionService implements TransactionService {
             }
             return false;
         }
+
+        public void commitAndReset(Session session) {
+            commitTransactionInternal(session, this);
+            getTransaction().reset();
+            reset();
+        }
+
+        public int periodicallyCommitScanLimit() {
+            return commitScanLimit;
+        }
     }
 
     public TransactionState getTransaction(Session session) {
@@ -135,6 +147,7 @@ public class FDBTransactionService implements TransactionService {
     public void start() {
         commitAfterMillis = Long.parseLong(configService.getProperty(CONFIG_COMMIT_AFTER_MILLIS));
         commitAfterBytes = Long.parseLong(configService.getProperty(CONFIG_COMMIT_AFTER_BYTES));
+        commitScanLimit =  Integer.parseInt(configService.getProperty(CONFIG_COMMIT_SCAN_LIMIT));
         deferUniquenesChecks = Boolean.parseBoolean(configService.getProperty(CONFIG_DEFER_UNIQUENESS_CHECKS));
         if (deferUniquenesChecks) {
             uniquenessChecksMetric = metricsService.addLongMetric(UNIQUENESS_CHECKS_METRIC);
@@ -316,9 +329,7 @@ public class FDBTransactionService implements TransactionService {
         TransactionState txn = getTransactionInternal(session);
         requireActive(txn);
         if (txn.timeToCommit()) {
-            commitTransactionInternal(session, txn);
-            txn.getTransaction().reset();
-            txn.reset();
+            txn.commitAndReset(session);
         }
     }
 

@@ -162,6 +162,19 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         return txn.getTransaction().getRange(packedPrefix, packedAfter).iterator();
     }
 
+    public Iterator<KeyValue> groupIterator(Session session, Group group,
+                                            int limit, KeyValue restart) {
+        TransactionState txn = txnService.getTransaction(session);
+        KeySelector begin, end;
+        byte[] packedPrefix = packedTuple(group);
+        if (restart == null)
+            begin = KeySelector.firstGreaterOrEqual(packedPrefix);
+        else
+            begin = KeySelector.firstGreaterThan(restart.getKey());
+        end = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(packedPrefix));
+        return txn.getTransaction().getRange(begin, end, limit).iterator();
+    }
+
     public Iterator<KeyValue> indexIterator(Session session, Index index, boolean reverse) {
         TransactionState txn = txnService.getTransaction(session);
         byte[] packedPrefix = packedTuple(index);
@@ -616,7 +629,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
 
     @Override
     public FDBAdapter createAdapter(Session session, Schema schema) {
-        return new FDBAdapter(this, schema, session, configService);
+        return new FDBAdapter(this, schema, session, txnService, configService);
     }
 
     @Override

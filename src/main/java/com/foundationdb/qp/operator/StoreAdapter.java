@@ -49,6 +49,12 @@ public abstract class StoreAdapter implements KeyCreator
 {
     public abstract GroupCursor newGroupCursor(Group group);
 
+    public static final int COMMIT_FREQUENCY_PERIODICALLY = -2;
+
+    public GroupCursor newDumpGroupCursor(Group group, int commitFrequency) {
+        return newGroupCursor(group);
+    }
+
     public abstract RowCursor newIndexCursor(QueryContext context,
                                              Index index,
                                              IndexKeyRange keyRange,

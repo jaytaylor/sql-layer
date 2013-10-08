@@ -47,6 +47,7 @@ import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.FDBStore;
+import com.foundationdb.server.store.FDBTransactionService;
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.FDBException;
 import com.persistit.Key;
@@ -57,15 +58,22 @@ public class FDBAdapter extends StoreAdapter {
     private static final PersistitIndexRowPool indexRowPool = new PersistitIndexRowPool();
 
     private final FDBStore store;
+    private final FDBTransactionService txnService;
 
-    public FDBAdapter(FDBStore store, Schema schema, Session session, ConfigurationService config) {
+    public FDBAdapter(FDBStore store, Schema schema, Session session, FDBTransactionService txnService, ConfigurationService config) {
         super(schema, session, config);
         this.store = store;
+        this.txnService = txnService;
     }
 
     @Override
     public FDBGroupCursor newGroupCursor(Group group) {
         return new FDBGroupCursor(this, group);
+    }
+
+    @Override
+    public FDBGroupCursor newDumpGroupCursor(Group group, int commitFrequency) {
+        return new FDBGroupCursor(this, group, commitFrequency);
     }
 
     @Override
@@ -176,6 +184,10 @@ public class FDBAdapter extends StoreAdapter {
         return store.createKey();
     }
 
+
+    public FDBTransactionService.TransactionState getTransaction() {
+        return txnService.getTransaction(getSession());
+    }
 
     //
     // Internal
