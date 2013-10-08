@@ -17,9 +17,9 @@
 
 package com.foundationdb.server.t3expressions;
 
-import com.foundationdb.server.types3.TClass;
-import com.foundationdb.server.types3.TKeyComparable;
-import com.foundationdb.server.types3.service.InstanceFinder;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TKeyComparable;
+import com.foundationdb.server.types.service.InstanceFinder;
 
 import java.util.Collection;
 import java.util.HashMap;

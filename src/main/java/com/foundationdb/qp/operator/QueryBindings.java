@@ -19,7 +19,7 @@ package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.pvalue.PValueSource;
 import com.foundationdb.util.BloomFilter;
 
 /** The bindings associated with the execution of a query.

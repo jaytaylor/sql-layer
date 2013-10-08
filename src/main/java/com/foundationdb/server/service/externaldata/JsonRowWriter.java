@@ -22,7 +22,7 @@ import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.pvalue.PValueSource;
 import com.foundationdb.util.AkibanAppender;
 
 import org.slf4j.Logger;

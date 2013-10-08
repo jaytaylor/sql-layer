@@ -29,7 +29,7 @@ import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.test.ExpressionGenerators;
-import com.foundationdb.server.types3.texpressions.Comparison;
+import com.foundationdb.server.types.texpressions.Comparison;
 import org.junit.Test;
 
 import java.util.Arrays;

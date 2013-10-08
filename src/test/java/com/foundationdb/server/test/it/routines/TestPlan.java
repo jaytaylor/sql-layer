@@ -23,7 +23,7 @@ import com.foundationdb.qp.loadableplan.LoadableOperator;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.test.ExpressionGenerators;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 
 import java.sql.Types;
 import java.util.Arrays;

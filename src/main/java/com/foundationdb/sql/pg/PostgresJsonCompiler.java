@@ -31,7 +31,7 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.server.t3expressions.T3RegistryService;
 import com.foundationdb.server.AkType;
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types.TInstance;
 
 import java.util.*;
 

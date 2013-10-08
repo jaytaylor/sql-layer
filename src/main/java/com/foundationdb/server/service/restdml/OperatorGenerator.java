@@ -37,10 +37,10 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.t3expressions.T3RegistryService;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedField;
-import com.foundationdb.server.types3.texpressions.TPreparedParameter;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedField;
+import com.foundationdb.server.types.texpressions.TPreparedParameter;
 import com.foundationdb.sql.optimizer.rule.PlanGenerator;
 
 public abstract class OperatorGenerator {

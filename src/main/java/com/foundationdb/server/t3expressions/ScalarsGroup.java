@@ -17,8 +17,8 @@
 
 package com.foundationdb.server.t3expressions;
 
-import com.foundationdb.server.types3.TClass;
-import com.foundationdb.server.types3.texpressions.TValidatedOverload;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.texpressions.TValidatedOverload;
 
 import java.util.Collection;
 

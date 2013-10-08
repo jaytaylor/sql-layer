@@ -29,14 +29,12 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.server.error.NoSuchRoutineException;
 import com.foundationdb.server.error.UnsupportedSQLException;
-import com.foundationdb.server.AkType;
-import com.foundationdb.server.types3.TClass;
-import com.foundationdb.server.types3.TExecutionContext;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.TPreptimeValue;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TExecutionContext;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.pvalue.PValue;
+import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.pvalue.PValueSources;
 
 import java.util.Arrays;
 

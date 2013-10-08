@@ -18,8 +18,8 @@
 package com.foundationdb.server.types.typestests;
 
 import com.foundationdb.server.AkType;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueTarget;
+import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.pvalue.PValueTarget;
 import com.foundationdb.util.WrappingByteSource;
 
 import java.math.BigDecimal;

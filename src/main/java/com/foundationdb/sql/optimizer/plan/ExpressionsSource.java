@@ -18,8 +18,8 @@
 package com.foundationdb.sql.optimizer.plan;
 
 import com.foundationdb.server.AkType;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TPreptimeValue;
 
 import java.util.Collections;
 import java.util.List;

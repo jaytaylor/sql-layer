@@ -22,7 +22,7 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.util.FilteringIterator;
 
 import java.util.ArrayList;

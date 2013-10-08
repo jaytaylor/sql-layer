@@ -21,8 +21,8 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Type;
 import com.foundationdb.ais.model.Types;
 import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.pvalue.PValueSource;
 import com.foundationdb.util.AkibanAppender;
 
 import org.apache.lucene.document.DoubleField;

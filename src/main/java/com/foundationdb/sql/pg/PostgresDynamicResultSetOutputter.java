@@ -20,7 +20,7 @@ package com.foundationdb.sql.pg;
 import com.foundationdb.server.error.ExternalRoutineInvocationException;
 import com.foundationdb.server.error.SQLParserInternalException;
 import com.foundationdb.server.AkType;
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.types.DataTypeDescriptor;

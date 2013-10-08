@@ -45,7 +45,6 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.tree.TreeService;
 import com.foundationdb.server.store.SchemaManager;
-import com.foundationdb.server.types3.pvalue.PValue;
 import com.google.inject.Inject;
 import com.persistit.Management;
 import com.persistit.Management.BufferPoolInfo;

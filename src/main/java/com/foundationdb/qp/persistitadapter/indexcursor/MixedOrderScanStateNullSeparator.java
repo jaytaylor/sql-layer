@@ -18,7 +18,7 @@
 package com.foundationdb.qp.persistitadapter.indexcursor;
 
 
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.persistit.Key;
 
 class MixedOrderScanStateNullSeparator<S,E> extends MixedOrderScanStateSingleSegment<S, E>

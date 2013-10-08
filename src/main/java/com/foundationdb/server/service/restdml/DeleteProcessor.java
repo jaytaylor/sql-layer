@@ -28,13 +28,12 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.t3expressions.T3RegistryService;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
-import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.pvalue.PValue;
 
 public class DeleteProcessor extends DMLProcessor {
 

@@ -28,9 +28,9 @@ import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.test.ApiTestBase;
 import com.foundationdb.server.test.it.qp.TestRow;
-import com.foundationdb.server.types3.TClass;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.pvalue.PValueSource;
 import com.foundationdb.util.ShareHolder;
 
 import java.util.ArrayList;

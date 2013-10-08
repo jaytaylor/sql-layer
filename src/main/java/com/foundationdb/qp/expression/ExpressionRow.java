@@ -25,9 +25,9 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.texpressions.TEvaluatableExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
 
 public class ExpressionRow extends AbstractRow
 {

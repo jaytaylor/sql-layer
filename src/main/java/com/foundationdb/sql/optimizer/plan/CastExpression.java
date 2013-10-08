@@ -17,8 +17,8 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.parser.ValueNode;
 

@@ -24,7 +24,7 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.row.PValuesRow;
 import com.foundationdb.server.rowdata.SchemaFactory;
-import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types.pvalue.PValue;
 import com.foundationdb.server.error.NotNullViolationException;
 
 public class UserTableRowCheckerTest {

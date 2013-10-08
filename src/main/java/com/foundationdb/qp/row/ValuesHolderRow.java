@@ -19,7 +19,7 @@ package com.foundationdb.qp.row;
 
 
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types.pvalue.PValue;
 
 import java.util.List;
 

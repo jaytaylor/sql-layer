@@ -19,9 +19,9 @@ package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueTargets;
+import com.foundationdb.server.types.pvalue.PValue;
+import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.pvalue.PValueTargets;
 import com.foundationdb.util.BloomFilter;
 import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.SparseArray;
@@ -72,7 +72,7 @@ public class SparseArrayQueryBindings implements QueryBindings
 
     /*
      * (non-Javadoc)
-     * @see com.foundationdb.qp.operator.QueryContext#setPValue(int, com.foundationdb.server.types3.pvalue.PValueSource)
+     * @see com.foundationdb.qp.operator.QueryContext#setPValue(int, com.foundationdb.server.types.pvalue.PValueSource)
      * This makes a copy of the PValueSource value, rather than simply
      * storing the reference. The assumption is the PValueSource parameter
      * will be reused by the caller as rows are processed, so the QueryContext

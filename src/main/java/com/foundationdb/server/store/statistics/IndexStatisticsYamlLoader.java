@@ -28,12 +28,12 @@ import com.foundationdb.server.PersistitKeyPValueTarget;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.AkType;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.TExecutionContext;
-import com.foundationdb.server.types3.TPreptimeValue;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TExecutionContext;
+import com.foundationdb.server.types.TPreptimeValue;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.pvalue.PValue;
+import com.foundationdb.server.types.pvalue.PValueSources;
 import com.foundationdb.util.AkibanAppender;
 import com.persistit.Key;
 

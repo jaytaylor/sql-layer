@@ -18,7 +18,6 @@
 package com.foundationdb.ais.model;
 
 import com.foundationdb.server.AkType;
-import com.foundationdb.server.types3.pvalue.PUnderlying;
 
 import java.util.ArrayList;
 import java.util.List;

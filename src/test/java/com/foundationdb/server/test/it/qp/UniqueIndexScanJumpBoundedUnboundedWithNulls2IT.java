@@ -19,7 +19,7 @@ package com.foundationdb.server.test.it.qp;
 
 import org.junit.Ignore;
 import com.foundationdb.util.ShareHolder;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.pvalue.PValueSource;
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.operator.Operator;
 import org.junit.Test;

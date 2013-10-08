@@ -17,8 +17,8 @@
 package com.foundationdb.server;
 
 import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.pvalue.PValueTarget;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.pvalue.PValueTarget;
 import com.persistit.Value;
 
 public final class PersistitValuePValueTarget implements PValueTarget {

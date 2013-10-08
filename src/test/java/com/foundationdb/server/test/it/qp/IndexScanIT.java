@@ -25,7 +25,7 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.test.ExpressionGenerators;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.pvalue.PValueSource;
 import org.junit.Test;
 
 import static com.foundationdb.qp.operator.API.cursor;

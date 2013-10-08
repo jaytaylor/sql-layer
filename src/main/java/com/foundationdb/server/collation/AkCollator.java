@@ -17,7 +17,7 @@
 package com.foundationdb.server.collation;
 
 import com.foundationdb.server.PersistitKeyPValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.pvalue.PValueSource;
 import com.persistit.Key;
 
 public abstract class AkCollator {

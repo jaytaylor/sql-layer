@@ -21,7 +21,7 @@ import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.explain.CompoundExplainer;
 import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.Label;
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types.TInstance;
 
 import java.util.HashSet;
 import java.util.Set;

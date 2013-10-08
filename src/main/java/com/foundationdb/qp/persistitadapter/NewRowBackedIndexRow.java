@@ -25,8 +25,8 @@ import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.rowdata.FieldDef;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.pvalue.PValueSources;
 
 public class NewRowBackedIndexRow implements RowBase
 {

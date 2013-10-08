@@ -17,10 +17,10 @@
 
 package com.foundationdb.server.t3expressions;
 
-import com.foundationdb.server.types3.TClass;
-import com.foundationdb.server.types3.TKeyComparable;
-import com.foundationdb.server.types3.texpressions.TValidatedAggregator;
-import com.foundationdb.server.types3.texpressions.TValidatedScalar;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TKeyComparable;
+import com.foundationdb.server.types.texpressions.TValidatedAggregator;
+import com.foundationdb.server.types.texpressions.TValidatedScalar;
 
 public interface T3RegistryService {
     OverloadResolver<TValidatedScalar> getScalarsResolver();

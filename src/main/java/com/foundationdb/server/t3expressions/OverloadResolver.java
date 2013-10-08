@@ -18,16 +18,16 @@ package com.foundationdb.server.t3expressions;
 
 import com.foundationdb.server.error.NoSuchFunctionException;
 import com.foundationdb.server.error.WrongExpressionArityException;
-import com.foundationdb.server.types3.InputSetFlags;
-import com.foundationdb.server.types3.TCast;
-import com.foundationdb.server.types3.TClass;
-import com.foundationdb.server.types3.TInputSet;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.TInstanceAdjuster;
-import com.foundationdb.server.types3.TInstanceBuilder;
-import com.foundationdb.server.types3.TPreptimeValue;
-import com.foundationdb.server.types3.texpressions.TValidatedOverload;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types.InputSetFlags;
+import com.foundationdb.server.types.TCast;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TInputSet;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TInstanceAdjuster;
+import com.foundationdb.server.types.TInstanceBuilder;
+import com.foundationdb.server.types.TPreptimeValue;
+import com.foundationdb.server.types.texpressions.TValidatedOverload;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
 
 import java.util.ArrayList;
 import java.util.Arrays;

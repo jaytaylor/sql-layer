@@ -25,7 +25,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.qp.util.HKeyCache;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types3.TClass;
+import com.foundationdb.server.types.TClass;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.tap.InOutTap;

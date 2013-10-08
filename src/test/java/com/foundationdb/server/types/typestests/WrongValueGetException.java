@@ -16,7 +16,7 @@
  */
 package com.foundationdb.server.types.typestests;
 
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types.TInstance;
 
 public class WrongValueGetException extends RuntimeException {
     public WrongValueGetException(TInstance expectedType, TInstance actualType) {

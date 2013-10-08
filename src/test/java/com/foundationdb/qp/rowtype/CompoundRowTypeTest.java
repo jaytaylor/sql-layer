@@ -28,8 +28,8 @@ import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.rowdata.SchemaFactory;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
 
 public class CompoundRowTypeTest {
     

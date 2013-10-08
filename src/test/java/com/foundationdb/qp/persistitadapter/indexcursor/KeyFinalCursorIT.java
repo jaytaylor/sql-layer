@@ -47,9 +47,9 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.test.it.qp.OperatorITBase;
 import com.foundationdb.server.test.it.qp.TestRow;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
-import com.foundationdb.server.types3.texpressions.TPreparedField;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.texpressions.TPreparedField;
 import com.foundationdb.util.tap.Tap;
 
 public class KeyFinalCursorIT extends OperatorITBase

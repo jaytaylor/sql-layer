@@ -24,9 +24,9 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types3.TPreptimeValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.TPreptimeValue;
+import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.util.AkibanAppender;
 import com.foundationdb.util.ArgumentValidation;
 

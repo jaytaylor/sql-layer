@@ -33,9 +33,8 @@ import com.foundationdb.ais.model.Index.JoinType;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.service.text.FullTextQueryBuilder;
-import com.foundationdb.server.types3.mcompat.mtypes.MApproximateNumber;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.texpressions.Comparison;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 

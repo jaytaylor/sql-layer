@@ -17,8 +17,8 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.texpressions.TValidatedAggregator;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.texpressions.TValidatedAggregator;
 
 import java.util.List;
 import java.util.ArrayList;

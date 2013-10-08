@@ -31,20 +31,20 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.server.t3expressions.OverloadResolver;
 import com.foundationdb.server.t3expressions.OverloadResolver.OverloadResult;
-import com.foundationdb.server.types3.TCast;
-import com.foundationdb.server.types3.TExecutionContext;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.TPreptimeValue;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSources;
-import com.foundationdb.server.types3.texpressions.TCastExpression;
-import com.foundationdb.server.types3.texpressions.TNullExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedField;
-import com.foundationdb.server.types3.texpressions.TPreparedFunction;
-import com.foundationdb.server.types3.texpressions.TPreparedLiteral;
-import com.foundationdb.server.types3.texpressions.TValidatedScalar;
+import com.foundationdb.server.types.TCast;
+import com.foundationdb.server.types.TExecutionContext;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TPreptimeValue;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.pvalue.PValue;
+import com.foundationdb.server.types.pvalue.PValueSources;
+import com.foundationdb.server.types.texpressions.TCastExpression;
+import com.foundationdb.server.types.texpressions.TNullExpression;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedField;
+import com.foundationdb.server.types.texpressions.TPreparedFunction;
+import com.foundationdb.server.types.texpressions.TPreparedLiteral;
+import com.foundationdb.server.types.texpressions.TValidatedScalar;
 
 public class InsertGenerator extends OperatorGenerator{
 

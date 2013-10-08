@@ -25,7 +25,7 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.test.ExpressionGenerators;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 
 import org.junit.Test;
 

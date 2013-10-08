@@ -20,17 +20,17 @@ package com.foundationdb.server.t3expressions;
 import com.foundationdb.junit.NamedParameterizedRunner;
 import com.foundationdb.junit.Parameterization;
 import com.foundationdb.junit.ParameterizationBuilder;
-import com.foundationdb.server.types3.LazyList;
-import com.foundationdb.server.types3.T3TestClass;
-import com.foundationdb.server.types3.TClass;
-import com.foundationdb.server.types3.TExecutionContext;
-import com.foundationdb.server.types3.TScalar;
-import com.foundationdb.server.types3.TOverloadResult;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueTarget;
-import com.foundationdb.server.types3.texpressions.TInputSetBuilder;
-import com.foundationdb.server.types3.texpressions.TScalarBase;
-import com.foundationdb.server.types3.texpressions.TValidatedScalar;
+import com.foundationdb.server.types.LazyList;
+import com.foundationdb.server.types.T3TestClass;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TExecutionContext;
+import com.foundationdb.server.types.TScalar;
+import com.foundationdb.server.types.TOverloadResult;
+import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.texpressions.TInputSetBuilder;
+import com.foundationdb.server.types.texpressions.TScalarBase;
+import com.foundationdb.server.types.texpressions.TValidatedScalar;
 import com.google.common.base.Function;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -110,7 +110,7 @@ public final class OverloadsFolderTest {
 
         // two varargs
 
-        test.overloads( // note: this isn't allowed by other types3 components, but let's check it anyway
+        test.overloads( // note: this isn't allowed by other types components, but let's check it anyway
                 "A...",
                 "A...")
                 .sameAt(0).sameAt(1).sameAt(100);

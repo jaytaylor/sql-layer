@@ -17,10 +17,10 @@
 
 package com.foundationdb.server.t3expressions;
 
-import com.foundationdb.server.types3.InputSetFlags;
-import com.foundationdb.server.types3.TClass;
-import com.foundationdb.server.types3.TInputSet;
-import com.foundationdb.server.types3.texpressions.TValidatedOverload;
+import com.foundationdb.server.types.InputSetFlags;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TInputSet;
+import com.foundationdb.server.types.texpressions.TValidatedOverload;
 import com.foundationdb.util.Strings;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;

@@ -27,7 +27,7 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.error.InvalidOperationException;
-import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types.pvalue.PValue;
 
 import org.junit.Test;
 

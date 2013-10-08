@@ -18,14 +18,14 @@
 package com.foundationdb.server.t3expressions;
 
 import com.foundationdb.server.error.AkibanInternalException;
-import com.foundationdb.server.types3.InputSetFlags;
-import com.foundationdb.server.types3.TClass;
-import com.foundationdb.server.types3.TCommutativeOverloads;
-import com.foundationdb.server.types3.TOverload;
-import com.foundationdb.server.types3.aksql.AkBundle;
-import com.foundationdb.server.types3.common.types.NoAttrTClass;
-import com.foundationdb.server.types3.service.InstanceFinder;
-import com.foundationdb.server.types3.texpressions.TValidatedOverload;
+import com.foundationdb.server.types.InputSetFlags;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TCommutativeOverloads;
+import com.foundationdb.server.types.TOverload;
+import com.foundationdb.server.types.aksql.AkBundle;
+import com.foundationdb.server.types.common.types.NoAttrTClass;
+import com.foundationdb.server.types.service.InstanceFinder;
+import com.foundationdb.server.types.texpressions.TValidatedOverload;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ArrayListMultimap;

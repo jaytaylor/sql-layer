@@ -17,9 +17,9 @@
 
 package com.foundationdb.server.t3expressions;
 
-import com.foundationdb.server.types3.TCast;
-import com.foundationdb.server.types3.TClass;
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types.TCast;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TInstance;
 import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
 

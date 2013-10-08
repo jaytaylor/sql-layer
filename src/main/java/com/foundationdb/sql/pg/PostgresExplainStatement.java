@@ -34,7 +34,7 @@ import com.foundationdb.server.explain.Explainable;
 import com.foundationdb.server.explain.format.DefaultFormatter;
 import com.foundationdb.server.explain.format.JsonFormatter;
 import com.foundationdb.server.AkType;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
 
 import java.util.Collections;
 import java.util.List;

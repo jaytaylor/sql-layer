@@ -32,12 +32,12 @@ import com.foundationdb.server.api.dml.IndexRowPrefixSelector;
 import com.foundationdb.server.geophile.BoxLatLon;
 import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.geophile.SpaceLatLon;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.mcompat.mtypes.MBigDecimal;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.texpressions.TPreparedField;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.pvalue.PValue;
+import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.texpressions.TPreparedField;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;

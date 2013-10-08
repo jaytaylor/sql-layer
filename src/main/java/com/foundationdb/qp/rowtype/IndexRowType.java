@@ -19,8 +19,8 @@ package com.foundationdb.qp.rowtype;
 
 import com.foundationdb.ais.model.*;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 
 public abstract class IndexRowType extends AisRowType
 {

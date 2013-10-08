@@ -24,12 +24,12 @@ import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.PersistitValuePValueSource;
 import com.foundationdb.server.PersistitValuePValueTarget;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.texpressions.TEvaluatableExpression;
-import com.foundationdb.server.types3.texpressions.TNullExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
+import com.foundationdb.server.types.texpressions.TNullExpression;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.persistit.Value;
 
 final class PValueSorterAdapter extends SorterAdapter<PValueSource, TPreparedExpression, TEvaluatableExpression> {

@@ -18,7 +18,7 @@
 package com.foundationdb.ais.model;
 
 import com.foundationdb.ais.model.validation.AISInvariants;
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types.TInstance;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class Parameter

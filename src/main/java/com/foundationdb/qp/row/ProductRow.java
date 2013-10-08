@@ -18,7 +18,7 @@
 package com.foundationdb.qp.row;
 
 import com.foundationdb.qp.rowtype.ProductRowType;
-import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types.pvalue.PValueSources;
 
 public class ProductRow extends CompoundRow
 {

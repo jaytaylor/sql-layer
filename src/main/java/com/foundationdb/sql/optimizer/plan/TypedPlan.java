@@ -17,8 +17,8 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TPreptimeValue;
 
 public interface TypedPlan {
     int nFields();

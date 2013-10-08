@@ -23,7 +23,7 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types3.pvalue.PValueTargets;
+import com.foundationdb.server.types.pvalue.PValueTargets;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.tap.InOutTap;

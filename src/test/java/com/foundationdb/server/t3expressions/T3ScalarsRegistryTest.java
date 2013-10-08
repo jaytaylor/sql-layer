@@ -17,19 +17,19 @@
 
 package com.foundationdb.server.t3expressions;
 
-import com.foundationdb.server.types3.LazyList;
-import com.foundationdb.server.types3.T3TestClass;
-import com.foundationdb.server.types3.TClass;
-import com.foundationdb.server.types3.TExecutionContext;
-import com.foundationdb.server.types3.TInputSet;
-import com.foundationdb.server.types3.TPreptimeValue;
-import com.foundationdb.server.types3.TScalar;
-import com.foundationdb.server.types3.TOverloadResult;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueTarget;
-import com.foundationdb.server.types3.texpressions.TInputSetBuilder;
-import com.foundationdb.server.types3.texpressions.TScalarBase;
-import com.foundationdb.server.types3.texpressions.TValidatedScalar;
+import com.foundationdb.server.types.LazyList;
+import com.foundationdb.server.types.T3TestClass;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TExecutionContext;
+import com.foundationdb.server.types.TInputSet;
+import com.foundationdb.server.types.TPreptimeValue;
+import com.foundationdb.server.types.TScalar;
+import com.foundationdb.server.types.TOverloadResult;
+import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.texpressions.TInputSetBuilder;
+import com.foundationdb.server.types.texpressions.TScalarBase;
+import com.foundationdb.server.types.texpressions.TValidatedScalar;
 import com.google.common.collect.ObjectArrays;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;

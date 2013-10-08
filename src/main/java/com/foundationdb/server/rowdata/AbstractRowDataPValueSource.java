@@ -20,14 +20,14 @@ package com.foundationdb.server.rowdata;
 import java.math.BigDecimal;
 
 import com.foundationdb.server.AkServerUtil;
-import com.foundationdb.server.types3.TClass;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.common.types.TString;
-import com.foundationdb.server.types3.mcompat.mtypes.MBigDecimalWrapper;
-import com.foundationdb.server.types3.mcompat.mtypes.MDatetimes;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.mcompat.mtypes.MBigDecimal;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.common.types.TString;
+import com.foundationdb.server.types.mcompat.mtypes.MBigDecimalWrapper;
+import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
+import com.foundationdb.server.types.pvalue.PValueSource;
 import com.foundationdb.util.AkibanAppender;
 
 

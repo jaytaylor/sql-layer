@@ -34,7 +34,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.error.InvalidChildCollectionException;
 import com.foundationdb.server.error.KeyColumnMissingException;
 import com.foundationdb.server.error.NoSuchIndexException;
-import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.externaldata.ExternalDataService;
 import com.foundationdb.server.service.externaldata.ExternalDataServiceImpl;
 import com.foundationdb.server.service.externaldata.JsonRowWriter;
@@ -44,8 +43,8 @@ import com.foundationdb.server.service.externaldata.JsonRowWriter.WriteCapturePK
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.t3expressions.T3RegistryService;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
-import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.pvalue.PValue;
 import com.foundationdb.util.AkibanAppender;
 import com.fasterxml.jackson.databind.JsonNode;
 
