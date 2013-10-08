@@ -18,8 +18,7 @@
 package com.foundationdb.sql.server;
 
 import com.foundationdb.server.service.transaction.TransactionService;
-import com.foundationdb.server.t3expressions.OverloadResolver;
-import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.server.expressions.T3RegistryService;
 import com.foundationdb.sql.parser.SQLParser;
 
 import com.foundationdb.sql.optimizer.AISBinderContext;

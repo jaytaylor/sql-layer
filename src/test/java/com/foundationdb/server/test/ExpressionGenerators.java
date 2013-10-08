@@ -31,7 +31,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.explain.CompoundExplainer;
 import com.foundationdb.server.explain.ExplainContext;
-import com.foundationdb.server.t3expressions.TCastResolver;
+import com.foundationdb.server.expressions.TCastResolver;
 import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;

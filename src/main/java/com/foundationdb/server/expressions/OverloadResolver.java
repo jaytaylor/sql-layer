@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.foundationdb.server.t3expressions;
+package com.foundationdb.server.expressions;
 
 import com.foundationdb.server.error.NoSuchFunctionException;
 import com.foundationdb.server.error.WrongExpressionArityException;

@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.optimizer;
 
-import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.server.expressions.T3RegistryService;
 import com.foundationdb.sql.optimizer.plan.AST;
 import com.foundationdb.sql.optimizer.plan.BasePlannable;
 import com.foundationdb.sql.optimizer.rule.BaseRule;

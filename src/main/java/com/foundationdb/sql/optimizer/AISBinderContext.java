@@ -20,7 +20,6 @@ package com.foundationdb.sql.optimizer;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.compiler.TypeComputer;
 import com.foundationdb.sql.parser.CreateViewNode;
-import com.foundationdb.sql.parser.FromSubquery;
 import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.parser.SQLParserFeature;
 
@@ -31,7 +30,7 @@ import com.foundationdb.ais.model.View;
 import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.error.ViewHasBadSubqueryException;
 
-import com.foundationdb.server.t3expressions.T3RegistryServiceImpl;
+import com.foundationdb.server.expressions.T3RegistryServiceImpl;
 
 import java.util.*;
 

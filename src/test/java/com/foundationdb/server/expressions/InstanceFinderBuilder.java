@@ -15,15 +15,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.t3expressions;
+package com.foundationdb.server.expressions;
 
-import com.foundationdb.server.types.TClass;
-import com.foundationdb.server.types.texpressions.TValidatedOverload;
+import com.foundationdb.server.types.service.InstanceFinder;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 
 import java.util.Collection;
 
-public interface ScalarsGroup<V extends TValidatedOverload> {
-    Collection<? extends V> getOverloads();
-    TClass commonTypeAt(int pos);
-    boolean hasSameTypeAt(int pos);
+class InstanceFinderBuilder implements InstanceFinder {
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> Collection<? extends T> find(Class<? extends T> targetClass) {
+        Collection<?> resultWild = instances.get(targetClass);
+        return (Collection<? extends T>) resultWild;
+    }
+
+    public <T> void put(Class<T> cls, T... objects) {
+        for (Object obj : objects) {
+            instances.put(cls, cls.cast(obj));
+        }
+    }
+
+    private Multimap<Class<?>,Object> instances = HashMultimap.create();
 }

@@ -23,7 +23,7 @@ import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.security.User;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
-import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.server.expressions.T3RegistryService;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.sql.server.ServerQueryContext;
 import com.foundationdb.sql.server.ServerOperatorCompiler;

@@ -23,14 +23,9 @@ import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import com.foundationdb.ais.model.Routine;
-import com.foundationdb.server.t3expressions.T3RegistryService;
-import com.foundationdb.server.AkType;
-
-import com.foundationdb.server.error.NoSuchFunctionException;
+import com.foundationdb.server.expressions.T3RegistryService;
 
 import com.foundationdb.sql.optimizer.plan.AggregateFunctionExpression;
-
-import static com.foundationdb.sql.optimizer.TypesTranslation.*;
 
 /** Calculate types from expression composers. */
 public class FunctionsTypeComputer extends AISTypeComputer

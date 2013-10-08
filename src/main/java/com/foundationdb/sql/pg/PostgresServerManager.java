@@ -18,7 +18,7 @@
 package com.foundationdb.sql.pg;
 
 import com.foundationdb.server.service.transaction.TransactionService;
-import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.server.expressions.T3RegistryService;
 import com.foundationdb.sql.LayerInfoInterface;
 import com.foundationdb.sql.server.ServerServiceRequirements;
 

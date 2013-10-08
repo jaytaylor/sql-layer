@@ -26,7 +26,7 @@ import com.foundationdb.qp.persistitadapter.PValueRowDataCreator;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.rowdata.RowDef;
-import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.server.expressions.T3RegistryService;
 import com.foundationdb.server.types.ErrorHandlingMode;
 import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TExecutionContext;

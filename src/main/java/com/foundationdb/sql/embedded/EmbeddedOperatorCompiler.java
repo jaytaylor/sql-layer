@@ -42,7 +42,7 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.server.error.SQLParserInternalException;
-import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.server.expressions.T3RegistryService;
 import com.foundationdb.server.types.TInstance;
 
 import org.slf4j.Logger;

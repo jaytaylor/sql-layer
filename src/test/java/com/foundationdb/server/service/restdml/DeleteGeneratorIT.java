@@ -27,7 +27,7 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.format.DefaultFormatter;
 import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.server.expressions.T3RegistryService;
 import com.foundationdb.server.test.it.ITBase;
 
 public class DeleteGeneratorIT extends ITBase {

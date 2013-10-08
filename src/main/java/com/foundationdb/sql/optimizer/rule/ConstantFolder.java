@@ -25,8 +25,8 @@ import com.foundationdb.server.types.texpressions.Comparison;
 
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.server.t3expressions.T3RegistryService;
-import com.foundationdb.server.t3expressions.TCastResolver;
+import com.foundationdb.server.expressions.T3RegistryService;
+import com.foundationdb.server.expressions.TCastResolver;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
