@@ -25,10 +25,9 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -39,8 +38,6 @@ import java.util.Set;
 import static com.foundationdb.qp.operator.API.*;
 import static com.foundationdb.qp.operator.API.JoinType.INNER_JOIN;
 import static com.foundationdb.qp.rowtype.RowTypeChecks.checkRowTypeFields;
-import static com.foundationdb.server.AkType.INT;
-import static com.foundationdb.server.AkType.VARCHAR;
 import static org.junit.Assert.assertTrue;
 
 public class Product_NestedIT extends OperatorITBase

@@ -18,8 +18,8 @@
 package com.foundationdb.sql.optimizer.plan;
 
 import com.foundationdb.server.AkType;
-import com.foundationdb.server.types3.TPreptimeContext;
-import com.foundationdb.server.types3.texpressions.TValidatedAggregator;
+import com.foundationdb.server.types.TPreptimeContext;
+import com.foundationdb.server.types.texpressions.TValidatedAggregator;
 import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.parser.ValueNode;

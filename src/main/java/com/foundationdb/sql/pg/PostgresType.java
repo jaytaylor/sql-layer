@@ -29,8 +29,8 @@ import com.foundationdb.ais.model.Types;
 import com.foundationdb.server.error.UnknownDataTypeException;
 import com.foundationdb.server.error.UnknownTypeSizeException;
 import com.foundationdb.server.AkType;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

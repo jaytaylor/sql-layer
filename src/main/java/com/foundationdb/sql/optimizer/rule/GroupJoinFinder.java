@@ -23,7 +23,7 @@ import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.JoinNode.JoinType;
 import com.foundationdb.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
 
-import com.foundationdb.server.types3.texpressions.Comparison;
+import com.foundationdb.server.types.texpressions.Comparison;
 
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Join;

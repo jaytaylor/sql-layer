@@ -27,11 +27,11 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.types3.TAggregator;
-import com.foundationdb.server.types3.TComparison;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedField;
+import com.foundationdb.server.types.TAggregator;
+import com.foundationdb.server.types.TComparison;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedField;
 
 import java.util.*;
 

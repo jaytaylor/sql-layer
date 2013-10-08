@@ -25,8 +25,7 @@ import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types3.texpressions.Comparison;
-import org.junit.Before;
+import com.foundationdb.server.types.texpressions.Comparison;
 import org.junit.Test;
 
 import java.util.Arrays;

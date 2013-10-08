@@ -19,11 +19,11 @@ package com.foundationdb.qp.row;
 
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.ValuesRowType;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.pvalue.PValue;
+import com.foundationdb.server.types.pvalue.PValueSource;
 
 import org.junit.Test;
 

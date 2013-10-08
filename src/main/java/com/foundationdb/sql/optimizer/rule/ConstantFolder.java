@@ -17,23 +17,23 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.ExpressionsSource.DistinctState;
 import com.foundationdb.sql.optimizer.rule.OverloadAndTInstanceResolver.ResolvingVisitor;
 
-import com.foundationdb.server.types3.texpressions.Comparison;
+import com.foundationdb.server.types.texpressions.Comparison;
 
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.server.t3expressions.T3RegistryService;
-import com.foundationdb.server.t3expressions.TCastResolver;
-import com.foundationdb.server.types3.TClass;
-import com.foundationdb.server.types3.TExecutionContext;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.TPreptimeValue;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.expressions.TCastResolver;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TExecutionContext;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TPreptimeValue;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.pvalue.PValue;
+import com.foundationdb.server.types.pvalue.PValueSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -892,7 +892,7 @@ public class ConstantFolder extends BaseRule
         private ExpressionsSource expressions;
         private List<ComparisonCondition> comparisons;
         private Project project;
-        private final T3RegistryService t3Service;
+        private final TypesRegistryService t3Service;
         private final QueryContext qc;
         
         private InCondition(AnyCondition any,
@@ -1073,7 +1073,7 @@ public class ConstantFolder extends BaseRule
          */
         public static boolean comparePrepValues(ExpressionNode leftNode,
                                          ExpressionNode rightNode,
-                                         T3RegistryService registry,
+                                         TypesRegistryService registry,
                                          QueryContext qc)
         {
             // if either is not constant, preptime values aren't available

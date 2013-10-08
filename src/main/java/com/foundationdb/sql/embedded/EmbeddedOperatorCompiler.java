@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.embedded;
 
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.sql.embedded.JDBCResultSetMetaData.ResultColumn;
 import com.foundationdb.sql.embedded.JDBCParameterMetaData.ParameterType;
@@ -42,8 +43,7 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.server.error.SQLParserInternalException;
-import com.foundationdb.server.t3expressions.T3RegistryService;
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types.TInstance;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -180,7 +180,7 @@ public class EmbeddedOperatorCompiler extends ServerOperatorCompiler
 
 
     @Override
-    protected void initFunctionsRegistry(T3RegistryService functionsRegistry) {
+    protected void initFunctionsRegistry(TypesRegistryService functionsRegistry) {
         super.initFunctionsRegistry(functionsRegistry);
         typeComputer = new NestedResultSetTypeComputer(functionsRegistry);
     }

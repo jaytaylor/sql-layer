@@ -27,8 +27,8 @@ import com.foundationdb.server.explain.CompoundExplainer;
 import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.Label;
 import com.foundationdb.server.explain.Type;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
 
 import java.util.List;
 

@@ -17,8 +17,7 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
-import com.foundationdb.server.types3.TPreptimeContext;
-import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.server.types.TPreptimeContext;
 
 public interface ResolvableExpression<T> extends ExpressionNode {
     String getFunction();

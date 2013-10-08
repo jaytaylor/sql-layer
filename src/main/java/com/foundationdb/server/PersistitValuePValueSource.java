@@ -16,10 +16,10 @@
  */
 package com.foundationdb.server;
 
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.pvalue.PUnderlying;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.pvalue.PUnderlying;
+import com.foundationdb.server.types.pvalue.PValue;
+import com.foundationdb.server.types.pvalue.PValueSource;
 import com.persistit.Value;
 
 import java.util.HashMap;

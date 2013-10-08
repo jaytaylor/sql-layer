@@ -24,7 +24,7 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
 

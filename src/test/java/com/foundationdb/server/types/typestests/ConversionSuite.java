@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.types.typestests;
 
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types.TInstance;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -18,7 +18,7 @@
 package com.foundationdb.qp.row;
 
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.pvalue.PValueSource;
 
 import java.util.Iterator;
 

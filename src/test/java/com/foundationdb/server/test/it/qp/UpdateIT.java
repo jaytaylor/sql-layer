@@ -30,10 +30,10 @@ import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.server.test.ExpressionGenerators;
-import com.foundationdb.server.types3.TPreptimeValue;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedFunction;
-import com.foundationdb.server.types3.texpressions.TValidatedScalar;
+import com.foundationdb.server.types.TPreptimeValue;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedFunction;
+import com.foundationdb.server.types.texpressions.TValidatedScalar;
 import org.junit.Test;
 
 import java.util.Arrays;

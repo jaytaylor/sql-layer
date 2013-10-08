@@ -26,10 +26,10 @@ import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.sql.TestBase;
-import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types.pvalue.PValue;
 
 import com.foundationdb.junit.NamedParameterizedRunner;
 import com.foundationdb.junit.Parameterization;

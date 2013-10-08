@@ -24,8 +24,8 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.AkType;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.texpressions.Comparison;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.texpressions.Comparison;
 
 public abstract class SortKeyAdapter<S, E> {
     public abstract AkType[] createAkTypes(int size);

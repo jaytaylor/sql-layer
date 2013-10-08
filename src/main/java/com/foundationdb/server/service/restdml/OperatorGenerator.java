@@ -36,11 +36,11 @@ import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.util.SchemaCache;
-import com.foundationdb.server.t3expressions.T3RegistryService;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedField;
-import com.foundationdb.server.types3.texpressions.TPreparedParameter;
+import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedField;
+import com.foundationdb.server.types.texpressions.TPreparedParameter;
 import com.foundationdb.sql.optimizer.rule.PlanGenerator;
 
 public abstract class OperatorGenerator {
@@ -48,7 +48,7 @@ public abstract class OperatorGenerator {
     private Schema schema;
     private AkibanInformationSchema ais;
     private QueryContext queryContext;
-    private T3RegistryService registryService;
+    private TypesRegistryService registryService;
     
     private Map<TableName,Operator> plans = new HashMap<>();
     
@@ -60,7 +60,7 @@ public abstract class OperatorGenerator {
         queryContext = new SimpleQueryContext(null);
     }
     
-    public void setT3Registry(T3RegistryService registryService) {
+    public void setT3Registry(TypesRegistryService registryService) {
         this.registryService = registryService;
     }
     
@@ -87,7 +87,7 @@ public abstract class OperatorGenerator {
         return queryContext;
     }
     
-    public T3RegistryService registryService() {
+    public TypesRegistryService registryService() {
         return registryService;
     }
 

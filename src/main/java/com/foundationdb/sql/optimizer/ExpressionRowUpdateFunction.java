@@ -25,8 +25,8 @@ import com.foundationdb.qp.operator.UpdateFunction;
 import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types3.texpressions.TEvaluatableExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
 
 /** Update a row by substituting expressions for some fields. */
 public class ExpressionRowUpdateFunction implements UpdateFunction

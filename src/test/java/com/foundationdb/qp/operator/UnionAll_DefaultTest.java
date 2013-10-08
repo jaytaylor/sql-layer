@@ -20,8 +20,8 @@ package com.foundationdb.qp.operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.DerivedTypesSchema;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
 
 import org.junit.Test;
 

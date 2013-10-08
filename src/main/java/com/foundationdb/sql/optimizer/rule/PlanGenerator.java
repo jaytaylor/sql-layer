@@ -43,9 +43,9 @@ import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.format.DefaultFormatter;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedField;
-import com.foundationdb.server.types3.texpressions.TPreparedParameter;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedField;
+import com.foundationdb.server.types.texpressions.TPreparedParameter;
 
 /**
  * Generate one of a static set of internally used operator plans. 

@@ -24,14 +24,13 @@ import com.foundationdb.ais.model.IndexName;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.types3.texpressions.TEvaluatableExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
 
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause;

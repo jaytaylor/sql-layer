@@ -43,8 +43,8 @@ import com.foundationdb.server.service.externaldata.JsonRowWriter.WriteTableRow;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
-import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.pvalue.PValue;
 import com.foundationdb.util.AkibanAppender;
 
 import com.google.inject.Inject;

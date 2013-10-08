@@ -34,9 +34,9 @@ import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.collation.AkCollatorMySQL;
 import com.foundationdb.server.test.ExpressionGenerators;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
-import com.foundationdb.server.types3.pvalue.PValueSources;
-import com.foundationdb.server.types3.texpressions.Comparison;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.pvalue.PValueSources;
+import com.foundationdb.server.types.texpressions.Comparison;
 import com.persistit.Key;
 import org.junit.Test;
 

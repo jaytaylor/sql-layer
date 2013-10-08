@@ -31,8 +31,8 @@ import com.foundationdb.direct.Direct;
 import com.foundationdb.direct.DirectResultSet;
 import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.pvalue.PValueSource;
 import com.foundationdb.sql.server.ServerJavaValues;
 import com.foundationdb.sql.server.ServerQueryContext;
 

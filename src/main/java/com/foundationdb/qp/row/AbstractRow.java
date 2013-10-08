@@ -20,9 +20,9 @@ package com.foundationdb.qp.row;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.types3.TClass;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.pvalue.PValueSource;
 import com.foundationdb.util.AkibanAppender;
 
 public abstract class AbstractRow implements Row

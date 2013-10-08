@@ -18,7 +18,7 @@
 package com.foundationdb.sql.embedded;
 
 import com.foundationdb.server.service.transaction.TransactionService;
-import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.sql.server.ServerServiceRequirements;
 
 import com.foundationdb.sql.LayerInfoInterface;
@@ -60,7 +60,7 @@ public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
                                    Store store,
                                    ConfigurationService config,
                                    IndexStatisticsService indexStatisticsService,
-                                   T3RegistryService overloadResolutionService,
+                                   TypesRegistryService overloadResolutionService,
                                    RoutineLoader routineLoader,
                                    TransactionService txnService,
                                    SecurityService securityService,

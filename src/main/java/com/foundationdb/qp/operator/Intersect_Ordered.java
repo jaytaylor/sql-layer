@@ -17,7 +17,7 @@
 
 package com.foundationdb.qp.operator;
 
-import com.foundationdb.server.types3.TComparison;
+import com.foundationdb.server.types.TComparison;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.IndexRowType;
@@ -25,7 +25,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.IndexRowPrefixSelector;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types3.pvalue.PValueTargets;
+import com.foundationdb.server.types.pvalue.PValueTargets;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.tap.InOutTap;

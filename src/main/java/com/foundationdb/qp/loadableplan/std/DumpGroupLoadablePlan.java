@@ -31,7 +31,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.NoSuchTableException;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.pvalue.PValueSource;
 import com.foundationdb.util.AkibanAppender;
 
 import java.sql.Types;

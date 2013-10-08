@@ -17,17 +17,17 @@
 
 package com.foundationdb.server.types.typestests;
 
-import com.foundationdb.server.types3.TClass;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.aksql.aktypes.AkBool;
-import com.foundationdb.server.types3.aksql.aktypes.AkInterval;
-import com.foundationdb.server.types3.mcompat.mtypes.MApproximateNumber;
-import com.foundationdb.server.types3.mcompat.mtypes.MBinary;
-import com.foundationdb.server.types3.mcompat.mtypes.MDatetimes;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueTarget;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.aksql.aktypes.AkBool;
+import com.foundationdb.server.types.aksql.aktypes.AkInterval;
+import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
+import com.foundationdb.server.types.mcompat.mtypes.MBinary;
+import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.pvalue.PValueTarget;
 import com.foundationdb.util.ByteSource;
 import com.foundationdb.util.Undef;
 

@@ -19,13 +19,13 @@ package com.foundationdb.sql.server;
 
 import com.foundationdb.server.error.UnsupportedCharsetException;
 import com.foundationdb.server.error.ZeroDateTimeException;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.mcompat.mtypes.MBigDecimal;
-import com.foundationdb.server.types3.mcompat.mtypes.MDatetimes;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
+import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.pvalue.PValue;
+import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.pvalue.PValueSources;
 import com.foundationdb.util.AkibanAppender;
 
 import org.joda.time.DateTime;

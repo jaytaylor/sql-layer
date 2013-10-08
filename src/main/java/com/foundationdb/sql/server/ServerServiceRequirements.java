@@ -29,7 +29,7 @@ import com.foundationdb.server.service.session.SessionService;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
-import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.server.expressions.TypesRegistryService;
 
 public final class ServerServiceRequirements {
 
@@ -40,7 +40,7 @@ public final class ServerServiceRequirements {
                                      Store store,
                                      ConfigurationService config,
                                      IndexStatisticsService indexStatistics,
-                                     T3RegistryService t3RegistryService,
+                                     TypesRegistryService typesRegistryService,
                                      RoutineLoader routineLoader,
                                      TransactionService txnService,
                                      SecurityService securityService,
@@ -52,7 +52,7 @@ public final class ServerServiceRequirements {
         this.store = store;
         this.config = config;
         this.indexStatistics = indexStatistics;
-        this.t3RegistryService = t3RegistryService;
+        this.typesRegistryService = typesRegistryService;
         this.routineLoader = routineLoader;
         this.txnService = txnService;
         this.securityService = securityService;
@@ -79,8 +79,8 @@ public final class ServerServiceRequirements {
         return store;
     }
 
-    public T3RegistryService t3RegistryService() {
-        return t3RegistryService;
+    public TypesRegistryService t3RegistryService() {
+        return typesRegistryService;
     }
 
     public ConfigurationService config() {
@@ -120,7 +120,7 @@ public final class ServerServiceRequirements {
     private final Store store;
     private final ConfigurationService config;
     private final IndexStatisticsService indexStatistics;
-    private final T3RegistryService t3RegistryService;
+    private final TypesRegistryService typesRegistryService;
     private final RoutineLoader routineLoader;
     private final TransactionService txnService;
     private final SecurityService securityService;

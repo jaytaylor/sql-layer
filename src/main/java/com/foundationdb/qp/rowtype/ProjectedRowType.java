@@ -18,9 +18,8 @@
 package com.foundationdb.qp.rowtype;
 
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.AkType;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.util.ArgumentValidation;
 
 import java.util.ArrayList;
