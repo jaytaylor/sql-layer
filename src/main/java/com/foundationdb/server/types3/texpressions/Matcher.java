@@ -15,15 +15,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.service.functions;
+package com.foundationdb.server.types3.texpressions;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+public interface Matcher
+{
+    boolean sameState(String pattern, char escape);
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface Aggregate {
-    String value();
+    /**
+     * 
+     * @param str
+     * @param count
+     * @return
+     *      <p> a negative value if the pattern is not in <code>str</code></p>
+     *      <p> a positive number indicating the index at which the pattern/substring is found</p>
+     * 
+     * Note: Dependent upon the implementation, it's not guaranteed that 
+     * the positive number returned by this function is always the index position.
+     * The positive value could simply be used as an indication that a match has been found
+     */
+    int match(String str, int count);
 }

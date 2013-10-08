@@ -27,7 +27,6 @@ import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.dxl.DXLService;
-import com.foundationdb.server.service.functions.FunctionsRegistry;
 import com.foundationdb.server.service.monitor.MonitorService;
 import com.foundationdb.server.service.routines.RoutineLoader;
 import com.foundationdb.server.service.security.SecurityService;
@@ -59,7 +58,6 @@ public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
                                    MonitorService monitor,
                                    SessionService sessionService,
                                    Store store,
-                                   FunctionsRegistry functionsRegistry,
                                    ConfigurationService config,
                                    IndexStatisticsService indexStatisticsService,
                                    T3RegistryService overloadResolutionService,
@@ -68,7 +66,7 @@ public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
                                    SecurityService securityService,
                                    ServiceManager serviceManager) {
         reqs = new ServerServiceRequirements(layerInfo, dxlService, monitor,
-                sessionService, store, functionsRegistry,
+                sessionService, store,
                 config, indexStatisticsService, overloadResolutionService, 
                 routineLoader, txnService, securityService, serviceManager);
     }

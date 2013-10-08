@@ -19,7 +19,6 @@ package com.foundationdb.server.types3.mcompat.mfuncs;
 
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.InvalidParameterValueException;
-import com.foundationdb.server.expression.std.DateTimeField;
 import com.foundationdb.server.types3.LazyList;
 import com.foundationdb.server.types3.TCustomOverloadResult;
 import com.foundationdb.server.types3.TExecutionContext;
@@ -33,6 +32,7 @@ import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types3.mcompat.mtypes.MString;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.server.types3.pvalue.PValueTarget;
+import com.foundationdb.server.types3.texpressions.DateTimeField;
 import com.foundationdb.server.types3.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types3.texpressions.TScalarBase;
 import java.util.List;

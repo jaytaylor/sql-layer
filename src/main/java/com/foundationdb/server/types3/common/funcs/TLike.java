@@ -20,9 +20,6 @@ package com.foundationdb.server.types3.common.funcs;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.InvalidParameterValueException;
-import com.foundationdb.server.expression.std.ExpressionTypes;
-import com.foundationdb.server.expression.std.Matcher;
-import com.foundationdb.server.expression.std.Matchers;
 import com.foundationdb.server.types3.LazyList;
 import com.foundationdb.server.types3.TClass;
 import com.foundationdb.server.types3.TExecutionContext;
@@ -32,8 +29,11 @@ import com.foundationdb.server.types3.TPreptimeContext;
 import com.foundationdb.server.types3.TPreptimeValue;
 import com.foundationdb.server.types3.aksql.aktypes.AkBool;
 import com.foundationdb.server.types3.common.types.StringAttribute;
+import com.foundationdb.server.types3.common.types.TString;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.server.types3.pvalue.PValueTarget;
+import com.foundationdb.server.types3.texpressions.Matcher;
+import com.foundationdb.server.types3.texpressions.Matchers;
 import com.foundationdb.server.types3.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types3.texpressions.TScalarBase;
 import com.foundationdb.sql.types.CharacterTypeAttributes;
@@ -98,7 +98,7 @@ public class TLike extends TScalarBase
         {
             CharacterTypeAttributes strAttrs = StringAttribute.characterTypeAttributes(context.inputTypeAt(0));
             CharacterTypeAttributes keyAttrs = StringAttribute.characterTypeAttributes(context.inputTypeAt(1));
-            AkCollator collator = ExpressionTypes.mergeAkCollators(strAttrs, keyAttrs);
+            AkCollator collator = TString.mergeAkCollators(strAttrs, keyAttrs);
             if (collator != null) 
             {
                 likeType = collator.isCaseSensitive() ? LikeType.BLIKE : LikeType.ILIKE;

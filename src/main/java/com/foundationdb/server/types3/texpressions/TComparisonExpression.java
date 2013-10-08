@@ -18,11 +18,11 @@
 package com.foundationdb.server.types3.texpressions;
 
 import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.expression.std.Comparison;
 import com.foundationdb.server.types3.TClass;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.pvalue.PUnderlying;
 import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.texpressions.Comparison;
 
 public final class TComparisonExpression extends TComparisonExpressionBase {
 

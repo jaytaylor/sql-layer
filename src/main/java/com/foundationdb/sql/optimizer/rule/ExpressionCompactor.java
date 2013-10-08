@@ -22,7 +22,7 @@ import com.foundationdb.sql.optimizer.plan.BooleanOperationExpression.Operation;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 
-import com.foundationdb.server.expression.std.Comparison;
+import com.foundationdb.server.types3.texpressions.Comparison;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

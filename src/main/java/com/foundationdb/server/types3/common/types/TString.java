@@ -20,8 +20,8 @@ package com.foundationdb.server.types3.common.types;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.error.InvalidArgumentTypeException;
+import com.foundationdb.server.error.SQLParserInternalException;
 import com.foundationdb.server.error.UnsupportedCharsetException;
-import com.foundationdb.server.expression.std.ExpressionTypes;
 import com.foundationdb.server.types3.TBundle;
 import com.foundationdb.server.types3.TCast;
 import com.foundationdb.server.types3.TClass;
@@ -38,6 +38,7 @@ import com.foundationdb.server.types3.pvalue.PUnderlying;
 import com.foundationdb.server.types3.pvalue.PValueCacher;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.server.types3.texpressions.TValidatedOverload;
+import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.types.CharacterTypeAttributes;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
@@ -164,11 +165,27 @@ public abstract class TString extends TClass
         }
     }
 
+    public static AkCollator mergeAkCollators(CharacterTypeAttributes type1Atts, CharacterTypeAttributes type2Atts) {
+        CharacterTypeAttributes att;
+        try {
+            att = CharacterTypeAttributes.mergeCollations(type1Atts, type2Atts);
+        }
+        catch (StandardException ex) {
+            throw new SQLParserInternalException(ex);
+        }
+        if (att != null) {
+            String coll = att.getCollation();
+            if (coll != null)
+                return AkCollatorFactory.getAkCollator(coll);
+        }
+        return null;
+    }
+
     @Override
     protected int doCompare(TInstance instanceA, PValueSource sourceA, TInstance instanceB, PValueSource sourceB) {
         CharacterTypeAttributes aAttrs = StringAttribute.characterTypeAttributes(instanceA);
         CharacterTypeAttributes bAttrs = StringAttribute.characterTypeAttributes(instanceB);
-        AkCollator collator = ExpressionTypes.mergeAkCollators(aAttrs, bAttrs);
+        AkCollator collator = mergeAkCollators(aAttrs, bAttrs);
         if (collator == null)
             // TODO in the future, we may want to use some default collator. For now, just use native comparison
             return sourceA.getString().compareTo(sourceB.getString());
@@ -328,7 +345,7 @@ public abstract class TString extends TClass
         else {
             CharacterTypeAttributes aAttrs = StringAttribute.characterTypeAttributes(left);
             CharacterTypeAttributes bAttrs = StringAttribute.characterTypeAttributes(right);
-            AkCollator collator = ExpressionTypes.mergeAkCollators(aAttrs, bAttrs);
+            AkCollator collator = mergeAkCollators(aAttrs, bAttrs);
             pickCollation = (collator == null) ? -1 : collator.getCollationId();
         }
         int leftLen = left.attribute(StringAttribute.MAX_LENGTH);

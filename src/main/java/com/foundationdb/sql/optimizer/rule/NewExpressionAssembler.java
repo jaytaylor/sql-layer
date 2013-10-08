@@ -25,8 +25,6 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.NoSuchCastException;
-import com.foundationdb.server.expression.std.Comparison;
-import com.foundationdb.server.expression.std.ExpressionTypes;
 import com.foundationdb.server.t3expressions.OverloadResolver;
 import com.foundationdb.server.t3expressions.OverloadResolver.OverloadResult;
 import com.foundationdb.server.t3expressions.T3RegistryService;
@@ -39,8 +37,10 @@ import com.foundationdb.server.types3.TKeyComparable;
 import com.foundationdb.server.types3.TPreptimeValue;
 import com.foundationdb.server.types3.aksql.akfuncs.AkIfElse;
 import com.foundationdb.server.types3.common.types.StringAttribute;
+import com.foundationdb.server.types3.common.types.TString;
 import com.foundationdb.server.types3.pvalue.PUnderlying;
 import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types3.texpressions.Comparison;
 import com.foundationdb.server.types3.texpressions.TCastExpression;
 import com.foundationdb.server.types3.texpressions.TComparisonExpression;
 import com.foundationdb.server.types3.texpressions.TComparisonExpressionBase;
@@ -204,7 +204,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
             return null;
         CharacterTypeAttributes leftAttributes = StringAttribute.characterTypeAttributes(leftInstance);
         CharacterTypeAttributes rightAttributes = StringAttribute.characterTypeAttributes(rightInstance);
-        return ExpressionTypes.mergeAkCollators(leftAttributes, rightAttributes);
+        return TString.mergeAkCollators(leftAttributes, rightAttributes);
     }
 
     @Override

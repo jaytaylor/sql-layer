@@ -23,7 +23,6 @@ import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.Quote;
 import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.ValueSource;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.aksql.aktypes.AkResultSet;
 import com.foundationdb.server.types3.pvalue.PValueSource;

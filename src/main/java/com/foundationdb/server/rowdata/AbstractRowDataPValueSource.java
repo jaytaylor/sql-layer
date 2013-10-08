@@ -204,7 +204,7 @@ abstract class AbstractRowDataPValueSource implements PValueSource {
     private long getCheckedOffsetAndWidth() {
         long offsetAndWidth = getRawOffsetAndWidth();
         if (offsetAndWidth == 0) {
-            throw new ValueSourceIsNullException();
+            throw new RowDataException("value is null");
         }
         return offsetAndWidth;
     }
