@@ -179,7 +179,7 @@ public class OverloadResolverTest {
     private final static TestMulBase MUL_DATE_INT = new TestMulBase(TDATE, TINT, TDATE);
 
 
-    private T3RegistryService registry;
+    private TypesRegistryService registry;
 
     private class Initializer {
         public Initializer overloads(TScalar... scalars) {
@@ -209,7 +209,7 @@ public class OverloadResolverTest {
         }
 
         private void init() {
-            T3RegistryServiceImpl registryImpl = new T3RegistryServiceImpl();
+            TypesRegistryServiceImpl registryImpl = new TypesRegistryServiceImpl();
             registryImpl.start(finder);
             registry = registryImpl;
         }

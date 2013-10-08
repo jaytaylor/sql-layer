@@ -17,23 +17,23 @@
 
 package com.foundationdb.sql.optimizer;
 
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.sql.parser.*;
 
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import com.foundationdb.ais.model.Routine;
-import com.foundationdb.server.expressions.T3RegistryService;
 
 import com.foundationdb.sql.optimizer.plan.AggregateFunctionExpression;
 
 /** Calculate types from expression composers. */
 public class FunctionsTypeComputer extends AISTypeComputer
 {
-    private T3RegistryService functionsRegistry;
+    private TypesRegistryService functionsRegistry;
     private boolean useComposers;
 
-    public FunctionsTypeComputer(T3RegistryService functionsRegistry) {
+    public FunctionsTypeComputer(TypesRegistryService functionsRegistry) {
         this.functionsRegistry = functionsRegistry;
         useComposers = false;
     }
@@ -147,11 +147,11 @@ public class FunctionsTypeComputer extends AISTypeComputer
 
     protected DataTypeDescriptor oneArgMethodCall(MethodCallNode methodCall)
             throws StandardException {
-        T3RegistryService.FunctionKind functionKind = 
+        TypesRegistryService.FunctionKind functionKind =
             functionsRegistry.getFunctionKind(methodCall.getMethodName());
-        if (functionKind == T3RegistryService.FunctionKind.SCALAR)
+        if (functionKind == TypesRegistryService.FunctionKind.SCALAR)
             return null;
-        if (functionKind == T3RegistryService.FunctionKind.AGGREGATE) {
+        if (functionKind == TypesRegistryService.FunctionKind.AGGREGATE) {
             // Mark the method call as really an aggregate function.
             // Could do the substitution now, but that would require throwing
             // a subclass of StandardException up to visit() or something other

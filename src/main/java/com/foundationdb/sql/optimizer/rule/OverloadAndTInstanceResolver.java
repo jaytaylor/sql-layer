@@ -24,7 +24,7 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.expressions.OverloadResolver;
 import com.foundationdb.server.expressions.OverloadResolver.OverloadResult;
-import com.foundationdb.server.expressions.T3RegistryService;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.expressions.TCastResolver;
 import com.foundationdb.server.types.ErrorHandlingMode;
 import com.foundationdb.server.types.LazyList;
@@ -137,7 +137,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
     public static class ResolvingVisitor implements PlanVisitor, ExpressionRewriteVisitor {
 
         private NewFolder folder;
-        private T3RegistryService registry;
+        private TypesRegistryService registry;
         private QueryContext queryContext;
         private ParametersSync parametersSync;
 

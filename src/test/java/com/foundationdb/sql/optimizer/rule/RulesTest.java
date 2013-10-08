@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
-import com.foundationdb.server.expressions.T3RegistryServiceImpl;
+import com.foundationdb.server.expressions.TypesRegistryServiceImpl;
 import com.foundationdb.sql.NamedParamsTestBase;
 import com.foundationdb.sql.TestBase;
 
@@ -147,7 +147,7 @@ public class RulesTest extends OptimizerTestBase
         if (Boolean.parseBoolean(properties.getProperty("allowSubqueryMultipleColumns",
                                                         "false"))) {
             binder.setAllowSubqueryMultipleColumns(true);
-            typeComputer = new NestedResultSetTypeComputer(T3RegistryServiceImpl.createRegistryService());
+            typeComputer = new NestedResultSetTypeComputer(TypesRegistryServiceImpl.createRegistryService());
         }
         if (!Boolean.parseBoolean(properties.getProperty("useComposers", "true"))) {
             ((FunctionsTypeComputer)typeComputer).setUseComposers(false);

@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.ExpressionsSource.DistinctState;
 import com.foundationdb.sql.optimizer.rule.OverloadAndTInstanceResolver.ResolvingVisitor;
@@ -25,7 +26,6 @@ import com.foundationdb.server.types.texpressions.Comparison;
 
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.server.expressions.T3RegistryService;
 import com.foundationdb.server.expressions.TCastResolver;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
@@ -892,7 +892,7 @@ public class ConstantFolder extends BaseRule
         private ExpressionsSource expressions;
         private List<ComparisonCondition> comparisons;
         private Project project;
-        private final T3RegistryService t3Service;
+        private final TypesRegistryService t3Service;
         private final QueryContext qc;
         
         private InCondition(AnyCondition any,
@@ -1073,7 +1073,7 @@ public class ConstantFolder extends BaseRule
          */
         public static boolean comparePrepValues(ExpressionNode leftNode,
                                          ExpressionNode rightNode,
-                                         T3RegistryService registry,
+                                         TypesRegistryService registry,
                                          QueryContext qc)
         {
             // if either is not constant, preptime values aren't available

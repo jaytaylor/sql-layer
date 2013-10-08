@@ -27,7 +27,7 @@ import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.NoSuchCastException;
 import com.foundationdb.server.expressions.OverloadResolver;
 import com.foundationdb.server.expressions.OverloadResolver.OverloadResult;
-import com.foundationdb.server.expressions.T3RegistryService;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.types.TAggregator;
 import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TClass;
@@ -83,7 +83,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
 
     private static final TValidatedScalar ifElseValidated = new TValidatedScalar(AkIfElse.INSTANCE);
 
-    private final T3RegistryService registryService;
+    private final TypesRegistryService registryService;
     private final QueryContext queryContext;
 
     public NewExpressionAssembler(PlanContext planContext) {

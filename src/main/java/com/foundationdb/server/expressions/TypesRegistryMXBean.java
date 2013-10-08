@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.expressions;
 
-public interface T3RegistryMXBean {
+public interface TypesRegistryMXBean {
     String describeTypes();
     String describeCasts();
     String describeScalars();

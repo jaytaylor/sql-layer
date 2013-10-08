@@ -34,6 +34,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.error.InvalidChildCollectionException;
 import com.foundationdb.server.error.KeyColumnMissingException;
 import com.foundationdb.server.error.NoSuchIndexException;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.service.externaldata.ExternalDataService;
 import com.foundationdb.server.service.externaldata.ExternalDataServiceImpl;
 import com.foundationdb.server.service.externaldata.JsonRowWriter;
@@ -42,7 +43,6 @@ import com.foundationdb.server.service.externaldata.TableRowTracker;
 import com.foundationdb.server.service.externaldata.JsonRowWriter.WriteCapturePKRow;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.expressions.T3RegistryService;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.pvalue.PValue;
 import com.foundationdb.util.AkibanAppender;
@@ -54,10 +54,10 @@ public class UpsertProcessor extends DMLProcessor {
     private final ExternalDataService extDataService;
     
     public UpsertProcessor(Store store,
-            T3RegistryService t3RegistryService,
+            TypesRegistryService typesRegistryService,
             InsertProcessor insertProcessor,
             ExternalDataService extDataService) {
-        super(store, t3RegistryService);
+        super(store, typesRegistryService);
         this.insertProcessor = insertProcessor;
         this.extDataService = extDataService;
     }

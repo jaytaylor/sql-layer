@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
-import com.foundationdb.server.expressions.T3RegistryService;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.foundationdb.sql.optimizer.plan.ResultSet.ResultField;
 import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
@@ -33,7 +33,7 @@ public abstract class SchemaRulesContext extends RulesContext
     private Schema schema;
 
     private CostEstimator costEstimator;
-    private T3RegistryService t3Registry;
+    private TypesRegistryService t3Registry;
     private PipelineConfiguration pipelineConfiguration;
 
     protected SchemaRulesContext() {
@@ -43,10 +43,10 @@ public abstract class SchemaRulesContext extends RulesContext
         schema = SchemaCache.globalSchema(ais);
     }
     
-    protected void initFunctionsRegistry(T3RegistryService functionsRegistry) {
+    protected void initFunctionsRegistry(TypesRegistryService functionsRegistry) {
     }
 
-    protected void initT3Registry(T3RegistryService overloadResolver) {
+    protected void initT3Registry(TypesRegistryService overloadResolver) {
         this.t3Registry = overloadResolver;
     }
 
@@ -79,7 +79,7 @@ public abstract class SchemaRulesContext extends RulesContext
         return new PhysicalResultColumn(field.getName());
     }
 
-    public T3RegistryService getT3Registry() {
+    public TypesRegistryService getT3Registry() {
         return t3Registry;
     }
 

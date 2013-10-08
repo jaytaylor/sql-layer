@@ -18,6 +18,7 @@
 package com.foundationdb.sql.optimizer.rule;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.sql.optimizer.*;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.ExpressionsSource.DistinctState;
@@ -46,7 +47,6 @@ import com.foundationdb.qp.operator.API.JoinType;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.expressions.OverloadResolver;
 import com.foundationdb.server.expressions.OverloadResolver.OverloadResult;
-import com.foundationdb.server.expressions.T3RegistryService;
 import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
@@ -495,7 +495,7 @@ public class OperatorAssembler extends BaseRule
 
             @Override
             public TPreparedExpression sequenceGenerator(Sequence sequence, Column column, TPreparedExpression expression) {
-                T3RegistryService registry = rulesContext.getT3Registry();
+                TypesRegistryService registry = rulesContext.getT3Registry();
                 OverloadResolver<TValidatedScalar> resolver = registry.getScalarsResolver();
                 TInstance instance = column.tInstance();
                 
@@ -677,7 +677,7 @@ public class OperatorAssembler extends BaseRule
                 row[pos] = insertsP.get(i);
                 
                 if (!instance.equals(row[pos].resultType())) {
-                    T3RegistryService registry = rulesContext.getT3Registry();
+                    TypesRegistryService registry = rulesContext.getT3Registry();
                     TCast tcast = registry.getCastsResolver().cast(instance.typeClass(), row[pos].resultType().typeClass());
                     row[pos] = 
                             new TCastExpression(row[pos], tcast, instance, planContext.getQueryContext());
@@ -693,7 +693,7 @@ public class OperatorAssembler extends BaseRule
                 else if (row[i] == null) {
                     TInstance tinst = targetRowType.typeInstanceAt(i);
                     if (column.getDefaultFunction() != null) {
-                        T3RegistryService registry = rulesContext.getT3Registry();
+                        TypesRegistryService registry = rulesContext.getT3Registry();
                         OverloadResolver<TValidatedScalar> resolver = registry.getScalarsResolver();
                         TValidatedScalar overload = resolver.get(column.getDefaultFunction(), Collections.<TPreptimeValue>emptyList()).getOverload();
                         TInstance dinst = overload.resultStrategy().fixed(false);
@@ -937,7 +937,7 @@ public class OperatorAssembler extends BaseRule
             int nFieldsToCompare = index.getComparisonFields();
  
             List<TComparison> comparisons = new ArrayList<>(nFieldsToCompare);
-            T3RegistryService reg = rulesContext.getT3Registry();
+            TypesRegistryService reg = rulesContext.getT3Registry();
            
             for (int n = 0; n < nFieldsToCompare; ++n)
             {

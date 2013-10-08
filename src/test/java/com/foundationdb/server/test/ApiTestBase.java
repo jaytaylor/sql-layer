@@ -45,6 +45,7 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.sql.LayerInfoInterface;
 import com.foundationdb.server.AkServerUtil;
 import com.foundationdb.server.api.dml.scan.ScanFlag;
@@ -63,7 +64,6 @@ import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.service.tree.TreeService;
-import com.foundationdb.server.expressions.T3RegistryService;
 import com.foundationdb.server.expressions.TCastResolver;
 import com.foundationdb.server.types.pvalue.PValueSource;
 import com.foundationdb.server.types.pvalue.PValueSources;
@@ -492,8 +492,8 @@ public class ApiTestBase {
         return sm;
     }
 
-    protected final T3RegistryService t3Registry() {
-        return sm.getServiceByClass(T3RegistryService.class);
+    protected final TypesRegistryService t3Registry() {
+        return sm.getServiceByClass(TypesRegistryService.class);
     }
 
     protected final TCastResolver castResolver() {

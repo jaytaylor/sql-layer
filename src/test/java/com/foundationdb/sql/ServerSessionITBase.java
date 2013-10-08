@@ -19,11 +19,11 @@ package com.foundationdb.sql;
 
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.security.User;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
-import com.foundationdb.server.expressions.T3RegistryService;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.sql.server.ServerQueryContext;
 import com.foundationdb.sql.server.ServerOperatorCompiler;
@@ -65,7 +65,7 @@ public class ServerSessionITBase extends ITBase {
                                                 store(),
                                                 configService(),
                                                 serviceManager().getServiceByClass(IndexStatisticsService.class),
-                                                serviceManager().getServiceByClass(T3RegistryService.class),
+                                                serviceManager().getServiceByClass(TypesRegistryService.class),
                                                 routineLoader(),
                                                 txnService(),
                                                 new DummySecurityService(),

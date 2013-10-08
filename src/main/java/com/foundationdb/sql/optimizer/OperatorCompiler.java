@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.optimizer;
 
-import com.foundationdb.server.expressions.T3RegistryService;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.sql.optimizer.plan.AST;
 import com.foundationdb.sql.optimizer.plan.BasePlannable;
 import com.foundationdb.sql.optimizer.rule.BaseRule;
@@ -70,13 +70,13 @@ public class OperatorCompiler extends SchemaRulesContext
     }
 
     @Override
-    protected void initFunctionsRegistry(T3RegistryService functionsRegistry) {
+    protected void initFunctionsRegistry(TypesRegistryService functionsRegistry) {
         super.initFunctionsRegistry(functionsRegistry);
         typeComputer = new FunctionsTypeComputer(functionsRegistry);
     }
 
     @Override
-    protected void initT3Registry(T3RegistryService overloadResolver) {
+    protected void initT3Registry(TypesRegistryService overloadResolver) {
         super.initT3Registry(overloadResolver);
         typeComputer.setUseComposers(false);
         binder.setFunctionDefined(new AISBinder.FunctionDefined() {

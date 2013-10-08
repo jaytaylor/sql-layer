@@ -66,33 +66,33 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-public final class T3RegistryServiceImpl implements T3RegistryService, Service, JmxManageable {
+public final class TypesRegistryServiceImpl implements TypesRegistryService, Service, JmxManageable {
 
     public static TCastResolver createTCastResolver() {
-        T3RegistryServiceImpl registryService = new T3RegistryServiceImpl();
+        TypesRegistryServiceImpl registryService = new TypesRegistryServiceImpl();
         registryService.start();
         return registryService.getCastsResolver();
     }
 
-    private static T3RegistryService INSTANCE = null;
-    public static T3RegistryService createRegistryService() {
+    private static TypesRegistryService INSTANCE = null;
+    public static TypesRegistryService createRegistryService() {
         if (INSTANCE == null) {
-            T3RegistryServiceImpl registryService = new T3RegistryServiceImpl();
+            TypesRegistryServiceImpl registryService = new TypesRegistryServiceImpl();
             registryService.start();
             INSTANCE = registryService;
         }
         return INSTANCE;
     }
-    public T3RegistryServiceImpl() {
+    public TypesRegistryServiceImpl() {
         this(null);
     }
 
     @Inject
-    public T3RegistryServiceImpl(SchemaManager schemaManager) {
+    public TypesRegistryServiceImpl(SchemaManager schemaManager) {
         this.schemaManager = schemaManager;
     }
 
-    // T3RegistryService interface
+    // TypesRegistryService interface
 
     @Override
     public OverloadResolver<TValidatedScalar> getScalarsResolver() {
@@ -166,7 +166,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
 
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
-        return new JmxObjectInfo("T3Registry", new Bean(), T3RegistryMXBean.class);
+        return new JmxObjectInfo("T3Registry", new Bean(), TypesRegistryMXBean.class);
     }
 
     // private methods
@@ -213,7 +213,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     }
 
     // class state
-    private static final Logger logger = LoggerFactory.getLogger(T3RegistryServiceImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(TypesRegistryServiceImpl.class);
 
     // object state
 
@@ -230,7 +230,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
 
     // inner classes
 
-    private class Bean implements T3RegistryMXBean {
+    private class Bean implements TypesRegistryMXBean {
 
         @Override
         public String describeTypes() {

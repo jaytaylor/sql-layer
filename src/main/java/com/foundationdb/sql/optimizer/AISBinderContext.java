@@ -30,7 +30,7 @@ import com.foundationdb.ais.model.View;
 import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.error.ViewHasBadSubqueryException;
 
-import com.foundationdb.server.expressions.T3RegistryServiceImpl;
+import com.foundationdb.server.expressions.TypesRegistryServiceImpl;
 
 import java.util.*;
 
@@ -59,7 +59,7 @@ public class AISBinderContext
         properties.put("database", defaultSchemaName);
         initParser();        
         setBinderAndTypeComputer(new AISBinder(ais, defaultSchemaName),
-                                 new FunctionsTypeComputer(T3RegistryServiceImpl.createRegistryService()));
+                                 new FunctionsTypeComputer(TypesRegistryServiceImpl.createRegistryService()));
     }
 
     public Properties getProperties() {

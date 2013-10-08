@@ -22,7 +22,7 @@ import com.foundationdb.server.types.TKeyComparable;
 import com.foundationdb.server.types.texpressions.TValidatedAggregator;
 import com.foundationdb.server.types.texpressions.TValidatedScalar;
 
-public interface T3RegistryService {
+public interface TypesRegistryService {
     OverloadResolver<TValidatedScalar> getScalarsResolver();
     OverloadResolver<TValidatedAggregator> getAggregatesResolver();
     TCastResolver getCastsResolver();

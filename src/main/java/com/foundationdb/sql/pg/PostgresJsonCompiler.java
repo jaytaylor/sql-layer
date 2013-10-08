@@ -29,7 +29,7 @@ import com.foundationdb.sql.types.TypeId;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.server.expressions.T3RegistryService;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.AkType;
 import com.foundationdb.server.types.TInstance;
 
@@ -47,7 +47,7 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
     }
 
     @Override
-    protected void initFunctionsRegistry(T3RegistryService functionsRegistry) {
+    protected void initFunctionsRegistry(TypesRegistryService functionsRegistry) {
         super.initFunctionsRegistry(functionsRegistry);
         typeComputer = new NestedResultSetTypeComputer(functionsRegistry);
     }

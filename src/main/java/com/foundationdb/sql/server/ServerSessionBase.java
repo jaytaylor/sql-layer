@@ -37,7 +37,7 @@ import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.service.tree.KeyCreator;
-import com.foundationdb.server.expressions.T3RegistryService;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.sql.optimizer.AISBinderContext;
 import com.foundationdb.sql.optimizer.rule.PipelineConfiguration;
 import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
@@ -271,7 +271,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
 
     @Override
-    public T3RegistryService t3RegistryService() {
+    public TypesRegistryService t3RegistryService() {
         return reqs.t3RegistryService();
     }
 

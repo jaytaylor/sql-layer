@@ -36,7 +36,7 @@ import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
-import com.foundationdb.server.expressions.T3RegistryService;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.google.inject.Inject;
 
 import java.util.Collection;
@@ -124,7 +124,7 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
     @Inject
     public ConcurrencyAtomicsDXLService(SchemaManager schemaManager, Store store, SessionService sessionService,
                                         IndexStatisticsService indexStatisticsService, ConfigurationService configService,
-                                        T3RegistryService t3Registry, TransactionService txnService, LockService lockService,
+                                        TypesRegistryService t3Registry, TransactionService txnService, LockService lockService,
                                         ListenerService listenerService) {
         super(schemaManager, store, sessionService, indexStatisticsService, configService, t3Registry, txnService, lockService, listenerService);
     }
@@ -213,7 +213,7 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
 
         private ConcurrencyAtomicsDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store,
                                                IndexStatisticsService indexStatisticsService,
-                                               T3RegistryService t3Registry, LockService lockService,
+                                               TypesRegistryService t3Registry, LockService lockService,
                                                TransactionService txnService, ListenerService listenerService) {
             super(middleman, schemaManager, store, indexStatisticsService, t3Registry, lockService, txnService, listenerService);
         }

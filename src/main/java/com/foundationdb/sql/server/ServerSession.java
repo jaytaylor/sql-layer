@@ -18,7 +18,7 @@
 package com.foundationdb.sql.server;
 
 import com.foundationdb.server.service.transaction.TransactionService;
-import com.foundationdb.server.expressions.T3RegistryService;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.sql.parser.SQLParser;
 
 import com.foundationdb.sql.optimizer.AISBinderContext;
@@ -154,7 +154,7 @@ public interface ServerSession
     public CostEstimator costEstimator(ServerOperatorCompiler compiler, KeyCreator keyCreator);
 
     /** Get the overload resolver */
-    public T3RegistryService t3RegistryService();
+    public TypesRegistryService t3RegistryService();
 
     /** Get the stored procedure cache */
     public RoutineLoader getRoutineLoader();

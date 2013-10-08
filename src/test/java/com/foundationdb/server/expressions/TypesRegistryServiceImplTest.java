@@ -17,12 +17,8 @@
 
 package com.foundationdb.server.expressions;
 
-import com.foundationdb.server.types.T3TestClass;
-import com.foundationdb.server.types.TCast;
-import com.foundationdb.server.types.TCastBase;
-import com.foundationdb.server.types.TCastPath;
-import com.foundationdb.server.types.TClass;
-import com.foundationdb.server.types.TExecutionContext;
+import com.foundationdb.server.types.*;
+import com.foundationdb.server.types.TypesTestClass;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.pvalue.PValueSource;
 import com.foundationdb.server.types.pvalue.PValueTarget;
@@ -40,12 +36,12 @@ import java.util.TreeMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-public final class T3RegistryServiceImplTest {
-    private final TClass CLASS_A = new T3TestClass("A");
-    private final TClass CLASS_B = new T3TestClass("B");
-    private final TClass CLASS_C = new T3TestClass("C");
-    private final TClass CLASS_D = new T3TestClass("D");
-    private final TClass CLASS_E = new T3TestClass("E");
+public final class TypesRegistryServiceImplTest {
+    private final TClass CLASS_A = new TypesTestClass("A");
+    private final TClass CLASS_B = new TypesTestClass("B");
+    private final TClass CLASS_C = new TypesTestClass("C");
+    private final TClass CLASS_D = new TypesTestClass("D");
+    private final TClass CLASS_E = new TypesTestClass("E");
 
     @Test
     public void createSelfCasts() {

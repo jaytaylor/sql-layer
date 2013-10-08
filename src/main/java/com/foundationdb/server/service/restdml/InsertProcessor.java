@@ -20,6 +20,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.service.externaldata.TableRowTracker;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
@@ -38,7 +39,6 @@ import com.foundationdb.server.service.externaldata.JsonRowWriter;
 import com.foundationdb.server.service.externaldata.JsonRowWriter.WriteCapturePKRow;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.expressions.T3RegistryService;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.pvalue.PValue;
@@ -51,8 +51,8 @@ public class InsertProcessor extends DMLProcessor {
 
     public InsertProcessor (
             Store store,
-            T3RegistryService t3RegistryService) {
-        super (store, t3RegistryService);
+            TypesRegistryService typesRegistryService) {
+        super (store, typesRegistryService);
     }
     
     private static final CacheValueGenerator<InsertGenerator> CACHED_INSERT_GENERATOR =

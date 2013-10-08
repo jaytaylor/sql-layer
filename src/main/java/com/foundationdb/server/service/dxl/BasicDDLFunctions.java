@@ -94,7 +94,7 @@ import com.foundationdb.server.service.lock.LockService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.service.tree.TreeLink;
-import com.foundationdb.server.expressions.T3RegistryService;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
@@ -124,7 +124,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     private static final boolean ALTER_AUTO_INDEX_CHANGES = true;
 
     private final IndexStatisticsService indexStatisticsService;
-    private final T3RegistryService t3Registry;
+    private final TypesRegistryService t3Registry;
     private final LockService lockService;
     private final TransactionService txnService;
     private final ListenerService listenerService;
@@ -1366,7 +1366,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     BasicDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store,
-                      IndexStatisticsService indexStatisticsService, T3RegistryService t3Registry,
+                      IndexStatisticsService indexStatisticsService, TypesRegistryService t3Registry,
                       LockService lockService, TransactionService txnService, ListenerService listenerService) {
         super(middleman, schemaManager, store);
         this.indexStatisticsService = indexStatisticsService;

@@ -17,14 +17,8 @@
 
 package com.foundationdb.server.expressions;
 
-import com.foundationdb.server.types.LazyList;
-import com.foundationdb.server.types.T3TestClass;
-import com.foundationdb.server.types.TClass;
-import com.foundationdb.server.types.TExecutionContext;
-import com.foundationdb.server.types.TInputSet;
-import com.foundationdb.server.types.TPreptimeValue;
-import com.foundationdb.server.types.TScalar;
-import com.foundationdb.server.types.TOverloadResult;
+import com.foundationdb.server.types.*;
+import com.foundationdb.server.types.TypesTestClass;
 import com.foundationdb.server.types.pvalue.PValueSource;
 import com.foundationdb.server.types.pvalue.PValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
@@ -46,7 +40,7 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public final class T3ScalarsRegistryTest {
+public final class ScalarsRegistryTest {
 
     @Test
     public void singleOverload() {
@@ -84,7 +78,7 @@ public final class T3ScalarsRegistryTest {
 
     @Test
     public void noOverloads() {
-        T3RegistryServiceImpl registry = new T3RegistryServiceImpl();
+        TypesRegistryServiceImpl registry = new TypesRegistryServiceImpl();
         registry.start(new InstanceFinderBuilder());
         List<TPreptimeValue> args = Collections.emptyList();
         assertEquals("lookup for FOO", null, registry.getScalarsResolver().getRegistry().get("foo"));
@@ -120,7 +114,7 @@ public final class T3ScalarsRegistryTest {
 
         void run() {
             checked = true;
-            T3RegistryServiceImpl registry = new T3RegistryServiceImpl();
+            TypesRegistryServiceImpl registry = new TypesRegistryServiceImpl();
             registry.start(instanceFinder);
 
             Iterable<? extends ScalarsGroup<TValidatedScalar>> scalarsByPriority
@@ -196,5 +190,5 @@ public final class T3ScalarsRegistryTest {
         private List<TInputSet> inputSets; // base class will recreate this each time, which we don't want
     }
 
-    private static final TClass testClass = new T3TestClass("A");
+    private static final TClass testClass = new TypesTestClass("A");
 }

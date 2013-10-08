@@ -18,7 +18,7 @@
 package com.foundationdb.sql.pg;
 
 import com.foundationdb.server.service.transaction.TransactionService;
-import com.foundationdb.server.expressions.T3RegistryService;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.sql.LayerInfoInterface;
 import com.foundationdb.sql.server.ServerServiceRequirements;
 
@@ -52,7 +52,7 @@ public class PostgresServerManager implements PostgresService, Service, JmxManag
                                  Store store,
                                  ConfigurationService config,
                                  IndexStatisticsService indexStatisticsService,
-                                 T3RegistryService overloadResolutionService,
+                                 TypesRegistryService overloadResolutionService,
                                  RoutineLoader routineLoader,
                                  TransactionService txnService,
                                  SecurityService securityService,

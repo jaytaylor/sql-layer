@@ -20,12 +20,8 @@ package com.foundationdb.server.expressions;
 import com.foundationdb.junit.NamedParameterizedRunner;
 import com.foundationdb.junit.Parameterization;
 import com.foundationdb.junit.ParameterizationBuilder;
-import com.foundationdb.server.types.LazyList;
-import com.foundationdb.server.types.T3TestClass;
-import com.foundationdb.server.types.TClass;
-import com.foundationdb.server.types.TExecutionContext;
-import com.foundationdb.server.types.TScalar;
-import com.foundationdb.server.types.TOverloadResult;
+import com.foundationdb.server.types.*;
+import com.foundationdb.server.types.TypesTestClass;
 import com.foundationdb.server.types.pvalue.PValueSource;
 import com.foundationdb.server.types.pvalue.PValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
@@ -273,7 +269,7 @@ public final class OverloadsFolderTest {
                             assert Character.isLetter(argChar) : arg;
                             tClass = tClasses.get(arg);
                             if (tClass == null) {
-                                tClass = new T3TestClass(arg);
+                                tClass = new TypesTestClass(arg);
                                 tClasses.put(arg, tClass);
                             }
                         }
@@ -310,5 +306,5 @@ public final class OverloadsFolderTest {
     }
 
     private static final String FUNC_NAME = "FOO";
-    private static final TClass RET_TYPE = new T3TestClass("R");
+    private static final TClass RET_TYPE = new TypesTestClass("R");
 }

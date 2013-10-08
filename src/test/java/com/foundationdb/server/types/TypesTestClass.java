@@ -20,9 +20,9 @@ package com.foundationdb.server.types;
 import com.foundationdb.server.types.common.types.NoAttrTClass;
 import com.foundationdb.server.types.pvalue.PUnderlying;
 
-public class T3TestClass extends NoAttrTClass {
+public class TypesTestClass extends NoAttrTClass {
 
-    public T3TestClass(String name) {
+    public TypesTestClass(String name) {
         super(bundle, name, TestCategory.ONLY, null, 1, 1, 1, PUnderlying.INT_64, null, 64, null);
     }
 

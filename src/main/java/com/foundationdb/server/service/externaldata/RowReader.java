@@ -25,8 +25,8 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.persistitadapter.PValueRowDataCreator;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.NiceRow;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.rowdata.RowDef;
-import com.foundationdb.server.expressions.T3RegistryService;
 import com.foundationdb.server.types.ErrorHandlingMode;
 import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TExecutionContext;
@@ -140,9 +140,9 @@ public abstract class RowReader
             pvalues[ci] = pvalue;
         }
         this.expressions = new TEvaluatableExpression[evalColumns.length];
-        T3RegistryService registry = null;
+        TypesRegistryService registry = null;
         if (evalColumns.length > 0) {
-            registry = queryContext.getServiceManager().getServiceByClass(T3RegistryService.class);
+            registry = queryContext.getServiceManager().getServiceByClass(TypesRegistryService.class);
         }
         for (int fi = 0; fi < evalColumns.length; fi++) {
             int ci = evalColumns[fi];
