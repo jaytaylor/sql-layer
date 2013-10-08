@@ -25,7 +25,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.PersistitKeyPValueSource;
 import com.foundationdb.server.PersistitKeyPValueTarget;
 import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 import com.foundationdb.server.types3.TClass;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.pvalue.PValueSource;

@@ -18,7 +18,7 @@
 package com.foundationdb.server.types3.pvalue;
 
 import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 import com.foundationdb.server.types3.TClass;
 import com.foundationdb.server.types3.TExecutionContext;
 import com.foundationdb.server.types3.TInstance;

@@ -24,7 +24,7 @@ import com.foundationdb.ais.model.Types;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.junit.NamedParameterizedRunner;
 import com.foundationdb.junit.Parameterization;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 import com.foundationdb.server.types.typestests.ConversionSuite;
 import com.foundationdb.server.types.typestests.ConversionTestBase;
 import com.foundationdb.server.types.typestests.LinkedConversion;

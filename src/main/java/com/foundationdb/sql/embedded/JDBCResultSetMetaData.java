@@ -19,7 +19,7 @@ package com.foundationdb.sql.embedded;
 
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;

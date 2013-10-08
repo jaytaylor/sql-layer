@@ -31,7 +31,7 @@ import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.Explainable;
 import com.foundationdb.server.explain.Label;
 import com.foundationdb.server.explain.PrimitiveExplainer;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.types.DataTypeDescriptor;

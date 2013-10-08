@@ -27,7 +27,7 @@ import com.foundationdb.server.PersistitKeyPValueSource;
 import com.foundationdb.server.PersistitKeyPValueTarget;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.service.tree.KeyCreator;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.TExecutionContext;
 import com.foundationdb.server.types3.TPreptimeValue;

@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 import com.foundationdb.server.types3.TPreptimeContext;
 import com.foundationdb.server.types3.texpressions.TValidatedAggregator;
 import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;

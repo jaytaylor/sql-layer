@@ -20,7 +20,6 @@ package com.foundationdb.server.rowdata;
 import java.math.BigDecimal;
 
 import com.foundationdb.server.AkServerUtil;
-import com.foundationdb.server.types.*;
 import com.foundationdb.server.types3.TClass;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.common.types.TString;

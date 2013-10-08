@@ -29,7 +29,7 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.server.error.NoSuchRoutineException;
 import com.foundationdb.server.error.UnsupportedSQLException;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 import com.foundationdb.server.types3.TClass;
 import com.foundationdb.server.types3.TExecutionContext;
 import com.foundationdb.server.types3.TInstance;

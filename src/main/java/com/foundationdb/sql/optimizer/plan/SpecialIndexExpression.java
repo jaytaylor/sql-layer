@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 
 import java.util.List;
 

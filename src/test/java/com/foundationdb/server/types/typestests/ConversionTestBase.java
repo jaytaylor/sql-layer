@@ -22,7 +22,7 @@ import com.foundationdb.junit.OnlyIf;
 import com.foundationdb.junit.OnlyIfNot;
 import com.foundationdb.junit.Parameterization;
 import com.foundationdb.junit.ParameterizationBuilder;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.server.types3.pvalue.PValueTarget;
 

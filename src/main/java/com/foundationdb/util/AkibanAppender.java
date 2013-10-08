@@ -18,7 +18,7 @@
 package com.foundationdb.util;
 
 import com.foundationdb.qp.operator.Cursor;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 
 import java.io.IOException;
 import java.io.OutputStream;

@@ -22,7 +22,7 @@ import com.foundationdb.ais.model.Type;
 import com.foundationdb.ais.model.Types;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.UnknownDataTypeException;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.aksql.aktypes.AkBool;
 import com.foundationdb.server.types3.aksql.aktypes.AkInterval;

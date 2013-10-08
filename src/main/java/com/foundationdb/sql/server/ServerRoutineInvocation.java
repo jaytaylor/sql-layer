@@ -21,7 +21,7 @@ import com.foundationdb.ais.model.Parameter;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.operator.QueryBindings;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 import com.foundationdb.server.types3.TInstance;
 
 public abstract class ServerRoutineInvocation

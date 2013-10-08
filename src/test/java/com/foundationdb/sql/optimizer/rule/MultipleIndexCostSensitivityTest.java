@@ -20,7 +20,7 @@ package com.foundationdb.sql.optimizer.rule;
 import com.foundationdb.ais.model.*;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.UserTableRowType;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 import com.foundationdb.sql.optimizer.OptimizerTestBase;
 import com.foundationdb.sql.optimizer.plan.*;

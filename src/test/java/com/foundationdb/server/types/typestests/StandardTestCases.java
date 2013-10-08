@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.types.typestests;
 
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 import com.foundationdb.server.types3.TExecutionContext;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.mcompat.mtypes.MDatetimes;

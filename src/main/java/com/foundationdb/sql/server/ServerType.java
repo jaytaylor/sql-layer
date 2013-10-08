@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.server;
 
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 import com.foundationdb.server.types3.TInstance;
 
 /** A type according to the server's regime.

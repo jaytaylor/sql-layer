@@ -23,7 +23,7 @@ import com.foundationdb.qp.operator.API.Ordering;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.texpressions.Comparison;
 
