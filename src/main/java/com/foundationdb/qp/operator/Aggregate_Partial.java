@@ -21,7 +21,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.AggregatedRowType;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.aggregation.AggregatorFactory;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types3.TAggregator;
 import com.foundationdb.server.types3.TInstance;
@@ -184,26 +183,6 @@ final class Aggregate_Partial extends Operator
 
     // AggregationOperator interface
 
-    /**
-     * @deprecated implies no PValues
-     */
-    @Deprecated
-    public Aggregate_Partial(Operator inputOperator,
-                             RowType inputRowType,
-                             int inputsIndex,
-                             List<AggregatorFactory> aggregatorFactories,
-                             List<Object> options) {
-        this.inputOperator = inputOperator;
-        this.inputRowType = inputRowType;
-        this.inputsIndex = inputsIndex;
-        this.outputType = inputRowType.schema().newAggregateType(inputRowType, inputsIndex, null);
-        this.pAggrs = null;
-        this.pAggrTypes = null;
-        this.options = options;
-        validate();
-
-    }
-
     public Aggregate_Partial(Operator inputOperator,
                              RowType inputRowType,
                              int inputsIndex,
@@ -281,7 +260,6 @@ final class Aggregate_Partial extends Operator
     private final RowType inputRowType;
     private final AggregatedRowType outputType;
     private final int inputsIndex;
-    //private final List<AggregatorFactory> aggregatorFactories;
     private final List<? extends TInstance> pAggrTypes;
     private final List<? extends TAggregator> pAggrs;
     private final List<Object> options; // currently only used by GROUP_CONCAT, meaning the optional SEPARATOR string

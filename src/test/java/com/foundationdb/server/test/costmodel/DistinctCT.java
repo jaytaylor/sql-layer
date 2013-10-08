@@ -26,7 +26,6 @@ import com.foundationdb.qp.operator.TimeOperator;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.expression.Expression;
 import com.foundationdb.server.test.ExpressionGenerators;
 import org.junit.Test;
 

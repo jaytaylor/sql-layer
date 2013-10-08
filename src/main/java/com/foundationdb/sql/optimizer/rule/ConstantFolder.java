@@ -21,7 +21,7 @@ import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.ExpressionsSource.DistinctState;
 import com.foundationdb.sql.optimizer.rule.OverloadAndTInstanceResolver.ResolvingVisitor;
 
-import com.foundationdb.server.expression.std.Comparison;
+import com.foundationdb.server.types3.texpressions.Comparison;
 
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.qp.operator.QueryContext;

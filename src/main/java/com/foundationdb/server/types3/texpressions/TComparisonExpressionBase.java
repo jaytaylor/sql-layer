@@ -22,7 +22,6 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.explain.std.TExpressionExplainer;
-import com.foundationdb.server.expression.std.Comparison;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.TPreptimeValue;
 import com.foundationdb.server.types3.aksql.aktypes.AkBool;
@@ -30,6 +29,7 @@ import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types3.pvalue.PValue;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types3.texpressions.Comparison;
 
 public abstract class TComparisonExpressionBase implements TPreparedExpression {
 

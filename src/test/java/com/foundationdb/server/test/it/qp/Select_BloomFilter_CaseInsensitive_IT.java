@@ -33,10 +33,10 @@ import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.collation.AkCollatorMySQL;
-import com.foundationdb.server.expression.std.Comparison;
 import com.foundationdb.server.test.ExpressionGenerators;
 import com.foundationdb.server.types3.mcompat.mtypes.MString;
 import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types3.texpressions.Comparison;
 import com.persistit.Key;
 import org.junit.Test;
 

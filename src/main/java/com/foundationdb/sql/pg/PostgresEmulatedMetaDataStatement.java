@@ -19,7 +19,7 @@ package com.foundationdb.sql.pg;
 
 import com.foundationdb.ais.model.*;
 import com.foundationdb.qp.operator.QueryBindings;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 import com.foundationdb.server.types3.aksql.aktypes.AkBool;
 import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types3.mcompat.mtypes.MString;

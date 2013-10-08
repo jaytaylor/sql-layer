@@ -22,7 +22,7 @@ import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.expression.std.Comparison;
+import com.foundationdb.server.types3.texpressions.Comparison;
 import com.foundationdb.server.types3.texpressions.TPreparedExpression;
 
 import org.junit.Test;

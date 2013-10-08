@@ -39,8 +39,8 @@ import java.util.Set;
 import static com.foundationdb.qp.operator.API.*;
 import static com.foundationdb.qp.operator.API.JoinType.INNER_JOIN;
 import static com.foundationdb.qp.rowtype.RowTypeChecks.checkRowTypeFields;
-import static com.foundationdb.server.types.AkType.INT;
-import static com.foundationdb.server.types.AkType.VARCHAR;
+import static com.foundationdb.server.AkType.INT;
+import static com.foundationdb.server.AkType.VARCHAR;
 import static org.junit.Assert.assertTrue;
 
 public class Product_NestedIT extends OperatorITBase

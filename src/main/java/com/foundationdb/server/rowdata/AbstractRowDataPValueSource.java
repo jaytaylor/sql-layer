@@ -20,7 +20,6 @@ package com.foundationdb.server.rowdata;
 import java.math.BigDecimal;
 
 import com.foundationdb.server.AkServerUtil;
-import com.foundationdb.server.types.*;
 import com.foundationdb.server.types3.TClass;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.common.types.TString;
@@ -204,7 +203,7 @@ abstract class AbstractRowDataPValueSource implements PValueSource {
     private long getCheckedOffsetAndWidth() {
         long offsetAndWidth = getRawOffsetAndWidth();
         if (offsetAndWidth == 0) {
-            throw new ValueSourceIsNullException();
+            throw new RowDataException("value is null");
         }
         return offsetAndWidth;
     }

@@ -15,8 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-package com.foundationdb.server.expression.std;
+package com.foundationdb.server.types3.texpressions;
 
 import java.text.DateFormatSymbols;
 import java.util.HashMap;

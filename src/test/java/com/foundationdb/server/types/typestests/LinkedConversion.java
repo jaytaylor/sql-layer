@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.types.typestests;
 
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.server.types3.pvalue.PValueTarget;
 

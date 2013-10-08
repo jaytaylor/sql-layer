@@ -16,13 +16,13 @@
  */
 package com.foundationdb.server.types3.mcompat.mfuncs;
 
-import com.foundationdb.server.expression.std.Matchers.Index;
 import com.foundationdb.server.types3.*;
 import com.foundationdb.server.types3.common.types.StringAttribute;
 import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types3.mcompat.mtypes.MString;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.server.types3.pvalue.PValueTarget;
+import com.foundationdb.server.types3.texpressions.Matchers.Index;
 import com.foundationdb.server.types3.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types3.texpressions.TScalarBase;
 import java.util.List;

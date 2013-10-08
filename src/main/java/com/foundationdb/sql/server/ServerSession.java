@@ -34,7 +34,6 @@ import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.dxl.DXLService;
 import com.foundationdb.server.service.externaldata.ExternalDataService;
-import com.foundationdb.server.service.functions.FunctionsRegistry;
 import com.foundationdb.server.service.monitor.SessionMonitor;
 import com.foundationdb.server.service.routines.RoutineLoader;
 import com.foundationdb.server.service.security.SecurityService;
@@ -139,9 +138,6 @@ public interface ServerSession
 
     /** Set following transaction to commit as determined by store. */
     public void setTransactionPeriodicallyCommit(boolean periodicallyCommit);
-
-    /** Get the functions registry. */
-    public FunctionsRegistry functionsRegistry();
 
     /** Get the server's idea of the current time. */
     public Date currentTime();

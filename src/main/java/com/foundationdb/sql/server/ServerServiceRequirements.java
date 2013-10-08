@@ -22,7 +22,6 @@ import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.dxl.DXLService;
 import com.foundationdb.server.service.externaldata.ExternalDataService;
-import com.foundationdb.server.service.functions.FunctionsRegistry;
 import com.foundationdb.server.service.monitor.MonitorService;
 import com.foundationdb.server.service.routines.RoutineLoader;
 import com.foundationdb.server.service.security.SecurityService;
@@ -39,7 +38,6 @@ public final class ServerServiceRequirements {
                                      MonitorService monitor,
                                      SessionService sessionService,
                                      Store store,
-                                     FunctionsRegistry functionsRegistry,
                                      ConfigurationService config,
                                      IndexStatisticsService indexStatistics,
                                      T3RegistryService t3RegistryService,
@@ -52,7 +50,6 @@ public final class ServerServiceRequirements {
         this.monitor = monitor;
         this.sessionService = sessionService;
         this.store = store;
-        this.functionsRegistry = functionsRegistry;
         this.config = config;
         this.indexStatistics = indexStatistics;
         this.t3RegistryService = t3RegistryService;
@@ -80,10 +77,6 @@ public final class ServerServiceRequirements {
 
     public Store store() {
         return store;
-    }
-
-    public FunctionsRegistry functionsRegistry() {
-        return functionsRegistry;
     }
 
     public T3RegistryService t3RegistryService() {
@@ -125,7 +118,6 @@ public final class ServerServiceRequirements {
     private final MonitorService monitor;
     private final SessionService sessionService;
     private final Store store;
-    private final FunctionsRegistry functionsRegistry;
     private final ConfigurationService config;
     private final IndexStatisticsService indexStatistics;
     private final T3RegistryService t3RegistryService;

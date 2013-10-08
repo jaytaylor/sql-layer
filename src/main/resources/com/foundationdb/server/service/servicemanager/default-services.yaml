@@ -11,7 +11,6 @@
     com.foundationdb.server.store.Store : com.foundationdb.server.store.PersistitStore
     com.foundationdb.sql.pg.PostgresService : com.foundationdb.sql.pg.PostgresServerManager
     com.foundationdb.server.service.monitor.MonitorService : com.foundationdb.server.service.monitor.MonitorServiceImpl
-    com.foundationdb.server.service.functions.FunctionsRegistry     : com.foundationdb.server.service.functions.FunctionsRegistryImpl
     com.foundationdb.server.store.statistics.IndexStatisticsService : com.foundationdb.server.store.statistics.PersistitIndexStatisticsService
     com.foundationdb.server.service.is.BasicInfoSchemaTablesService : com.foundationdb.server.service.is.BasicInfoSchemaTablesServiceImpl
     com.foundationdb.server.service.is.StorageSchemaTablesService   : com.foundationdb.server.service.is.StorageSchemaTablesServiceImpl

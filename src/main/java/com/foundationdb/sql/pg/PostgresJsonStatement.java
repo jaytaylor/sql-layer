@@ -23,7 +23,7 @@ import static com.foundationdb.sql.pg.PostgresJsonCompiler.JsonResultColumn;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 import com.foundationdb.server.types3.mcompat.mtypes.MString;
 
 import java.util.*;

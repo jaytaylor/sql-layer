@@ -19,7 +19,6 @@ package com.foundationdb.sql;
 
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.error.ErrorCode;
-import com.foundationdb.server.service.functions.FunctionsRegistry;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.security.User;
 import com.foundationdb.server.service.session.Session;
@@ -64,7 +63,6 @@ public class ServerSessionITBase extends ITBase {
                                                 serviceManager().getMonitorService(),
                                                 serviceManager().getSessionService(),
                                                 store(),
-                                                serviceManager().getServiceByClass(FunctionsRegistry.class),
                                                 configService(),
                                                 serviceManager().getServiceByClass(IndexStatisticsService.class),
                                                 serviceManager().getServiceByClass(T3RegistryService.class),

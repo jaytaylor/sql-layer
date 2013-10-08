@@ -30,7 +30,7 @@ import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 import com.foundationdb.server.types3.TInstance;
 import com.persistit.exception.PersistitException;
 

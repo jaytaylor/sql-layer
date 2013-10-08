@@ -27,7 +27,7 @@ import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.t3expressions.T3RegistryService;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 import com.foundationdb.server.types3.ErrorHandlingMode;
 import com.foundationdb.server.types3.TCast;
 import com.foundationdb.server.types3.TExecutionContext;

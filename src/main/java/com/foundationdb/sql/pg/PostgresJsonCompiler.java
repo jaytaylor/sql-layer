@@ -30,7 +30,7 @@ import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.server.t3expressions.T3RegistryService;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 import com.foundationdb.server.types3.TInstance;
 
 import java.util.*;

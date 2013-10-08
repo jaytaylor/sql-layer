@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.types.typestests;
 
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 import com.foundationdb.server.types3.pvalue.PValueSource;
 import com.foundationdb.server.types3.pvalue.PValueTarget;
 import com.foundationdb.util.WrappingByteSource;
@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.foundationdb.server.types.AkType.*;
+import static com.foundationdb.server.AkType.*;
 
 public final class MismatchedConversionsSuite {
 

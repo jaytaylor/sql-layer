@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
-import com.foundationdb.server.expression.std.Comparison;
+import com.foundationdb.server.types3.texpressions.Comparison;
 import com.foundationdb.sql.optimizer.plan.ColumnExpression;
 import com.foundationdb.sql.optimizer.plan.ComparisonCondition;
 import com.foundationdb.sql.optimizer.plan.ConditionExpression;

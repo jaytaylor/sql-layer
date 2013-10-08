@@ -18,8 +18,7 @@
 package com.foundationdb.server.types3.pvalue;
 
 import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types.ValueSource;
+import com.foundationdb.server.AkType;
 import com.foundationdb.server.types3.TClass;
 import com.foundationdb.server.types3.TExecutionContext;
 import com.foundationdb.server.types3.TInstance;
@@ -470,12 +469,6 @@ public final class PValueSources {
 
     private PValueSources() {}
 
-    public static PValueSource fromValueSource(ValueSource source, TInstance tInstance) {
-        PValue result = new PValue(tInstance);
-        plainConverter.convert(null, source, result, tInstance);
-        return result;
-    }
-
     public static void toStringSimple(PValueSource source, StringBuilder out) {
         if (source.isNull()) {
             out.append("NULL");
@@ -536,174 +529,4 @@ public final class PValueSources {
         return sb.toString();
     }
 
-    public static abstract class ValueSourceConverter<T> {
-
-        protected abstract Object handleBigDecimal(T state, BigDecimal bigDecimal);
-        protected abstract Object handleString(T state, String string);
-        protected abstract ValueSource tweakSource(T state, ValueSource source);
-
-        public final void convert(T state, ValueSource in, PValueTarget out, TInstance tInstance) {
-            if (in.isNull())
-                out.putNull();
-
-            long lval = 0;
-            float fval = 0;
-            double dval = 0;
-            Object oval = UNDEF;
-            boolean boolval = false;
-
-            in = tweakSource(state, in);
-
-            switch (in.getConversionType()) {
-            case DATE:
-                lval = in.getDate();
-                break;
-            case DATETIME:
-                lval = in.getDateTime();
-                break;
-            case DECIMAL:
-                oval = handleBigDecimal(state, in.getDecimal());
-                break;
-            case DOUBLE:
-                dval = in.getDouble();
-                break;
-            case FLOAT:
-                fval = in.getFloat();
-                break;
-            case INT:
-                lval = in.getInt();
-                break;
-            case LONG:
-                lval = in.getLong();
-                break;
-            case VARCHAR:
-                oval = handleString(state, in.getString());
-                break;
-            case TEXT:
-                oval = handleString(state, in.getText());
-                break;
-            case TIME:
-                lval = in.getTime();
-                break;
-            case TIMESTAMP:
-                lval = in.getTimestamp();
-                break;
-            case U_BIGINT:
-                lval = in.getUBigInt().longValue();
-                break;
-            case U_DOUBLE:
-                dval = in.getUDouble();
-                break;
-            case U_FLOAT:
-                fval = in.getUFloat();
-                break;
-            case U_INT:
-                lval = in.getUInt();
-                break;
-            case VARBINARY:
-                ByteSource bs = in.getVarBinary();
-                byte[] bval = new byte[bs.byteArrayLength()];
-                System.arraycopy(bs.byteArray(), bs.byteArrayOffset(), bval, 0, bs.byteArrayLength());
-                oval = bval;
-                break;
-            case YEAR:
-                lval = in.getYear();
-                break;
-            case BOOL:
-                boolval = in.getBool();
-                break;
-            case INTERVAL_MILLIS:
-                lval = in.getInterval_Millis();
-                break;
-            case INTERVAL_MONTH:
-                lval = in.getInterval_Month();
-                break;
-            case NULL:
-                oval = null;
-                break;
-            default:
-                throw new AssertionError(in.getConversionType());
-            }
-
-            if (oval == null) {
-                out.putNull();
-            }
-            else if (oval != UNDEF && oval.getClass() != byte[].class) {
-                if (oval instanceof String) {
-                    String sval = (String) oval;
-                    if (PValueTargets.pUnderlying(out) == PUnderlying.STRING) {
-                        out.putString(sval, null);
-                    }
-                    else {
-                        PValue sValue = new PValue(tInstance, sval);
-                        TExecutionContext forErrors = new TExecutionContext(
-                                null,
-                                Collections.singletonList(tInstance),
-                                tInstance,
-                                null, null, null, null
-                        );
-                        tInstance.typeClass().fromObject(forErrors, sValue, out);
-                    }
-                }
-                else {
-                    out.putObject(oval);
-                }
-            }
-            else {
-                switch (PValueTargets.pUnderlying(out)) {
-                case BOOL:
-                    out.putBool(boolval);
-                    break;
-                case INT_8:
-                    out.putInt8((byte)lval);
-                    break;
-                case INT_16:
-                    out.putInt16((short)lval);
-                    break;
-                case UINT_16:
-                    out.putUInt16((char)lval);
-                    break;
-                case INT_32:
-                    out.putInt32((int)lval);
-                    break;
-                case INT_64:
-                    out.putInt64(lval);
-                    break;
-                case FLOAT:
-                    out.putFloat(fval);
-                    break;
-                case DOUBLE:
-                    out.putDouble(dval);
-                    break;
-                case BYTES:
-                    out.putBytes((byte[])oval); // ensured by "oval.getClass() != byte[].class" above
-                    break;
-                case STRING:
-                    out.putString((String)(oval), null);
-                    break;
-                default:
-                    throw new AssertionError(out.tInstance());
-                }
-            }
-        }
-
-        private static Object UNDEF = new Object();
-    }
-
-    private static final ValueSourceConverter<Void> plainConverter = new ValueSourceConverter<Void>() {
-        @Override
-        protected Object handleBigDecimal(Void state, BigDecimal bigDecimal) {
-            return new MBigDecimalWrapper(bigDecimal);
-        }
-
-        @Override
-        protected Object handleString(Void state, String string) {
-            return string;
-        }
-
-        @Override
-        protected ValueSource tweakSource(Void state, ValueSource source) {
-            return source;
-        }
-    };
 }

@@ -18,7 +18,7 @@
 package com.foundationdb.qp.rowtype;
 
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.texpressions.TPreparedExpression;
 import com.foundationdb.util.ArgumentValidation;

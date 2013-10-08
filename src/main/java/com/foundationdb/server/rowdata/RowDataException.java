@@ -15,15 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.service.functions;
+package com.foundationdb.server.rowdata;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+public class RowDataException extends RuntimeException {
+    RowDataException() {
+    }
+    
+    public RowDataException(String message) {
+        super(message);
+    }
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface Aggregate {
-    String value();
+    public RowDataException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

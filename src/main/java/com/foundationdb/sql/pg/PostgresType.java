@@ -28,7 +28,7 @@ import com.foundationdb.ais.model.Type;
 import com.foundationdb.ais.model.Types;
 import com.foundationdb.server.error.UnknownDataTypeException;
 import com.foundationdb.server.error.UnknownTypeSizeException;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 import com.foundationdb.server.types3.TInstance;
 import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
 
