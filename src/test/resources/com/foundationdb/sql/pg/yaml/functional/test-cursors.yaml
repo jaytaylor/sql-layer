@@ -27,6 +27,10 @@
 ---
 - Statement: COMMIT
 ---
+# The commit above turns the fixed back off again. 
+- UseContext: default
+- fixed: true
+---
 - Statement: PREPARE p AS SELECT * FROM t1
 ---
 - Statement: EXECUTE p
@@ -51,6 +55,10 @@
 ---
 - Statement: COMMIT
 ---
+# The commit above turns the fixed back off again. 
+- UseContext: default
+- fixed: true
+---
 - Statement: DEALLOCATE p
 ---
 - Statement: EXECUTE no_such_stmt
@@ -58,4 +66,7 @@
 ---
 - Statement: FETCH no_such_curs
 - error: [4251C]
+---
+- UseContext: default
+- fixed: false
 ...
