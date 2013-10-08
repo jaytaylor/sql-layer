@@ -17,7 +17,7 @@
 
 package com.foundationdb.qp.operator;
 
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
 
 public interface ExpressionGenerator {
     TPreparedExpression getTPreparedExpression();

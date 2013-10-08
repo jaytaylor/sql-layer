@@ -19,7 +19,7 @@ package com.foundationdb.sql.server;
 
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.qp.operator.QueryBindings;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
 
 import java.lang.reflect.Method;
 import java.util.List;

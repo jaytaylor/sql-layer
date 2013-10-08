@@ -22,7 +22,7 @@ import java.util.List;
 import com.foundationdb.ais.model.HKey;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
 
 public class ProjectedUserTableRowType extends ProjectedRowType {
 

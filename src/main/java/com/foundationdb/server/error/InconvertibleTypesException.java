@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.error;
 
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 
 public final class InconvertibleTypesException extends InvalidOperationException {
     public InconvertibleTypesException(AkType sourceType, AkType targetType) {

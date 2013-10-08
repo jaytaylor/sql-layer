@@ -18,7 +18,7 @@
 package com.foundationdb.sql.pg;
 
 import com.foundationdb.server.service.transaction.TransactionService;
-import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.sql.LayerInfoInterface;
 import com.foundationdb.sql.server.ServerServiceRequirements;
 
@@ -27,7 +27,6 @@ import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.dxl.DXLService;
-import com.foundationdb.server.service.functions.FunctionsRegistry;
 import com.foundationdb.server.service.metrics.MetricsService;
 import com.foundationdb.server.service.monitor.MonitorService;
 import com.foundationdb.server.service.jmx.JmxManageable;
@@ -52,17 +51,16 @@ public class PostgresServerManager implements PostgresService, Service, JmxManag
                                  MonitorService monitor,
                                  SessionService sessionService,
                                  Store store,
-                                 FunctionsRegistry functionsRegistry,
                                  ConfigurationService config,
                                  IndexStatisticsService indexStatisticsService,
-                                 T3RegistryService overloadResolutionService,
+                                 TypesRegistryService overloadResolutionService,
                                  RoutineLoader routineLoader,
                                  TransactionService txnService,
                                  SecurityService securityService,
                                  MetricsService metricsService,
                                  ServiceManager serviceManager) {
         reqs = new ServerServiceRequirements(layerInfo, dxlService, monitor,
-                sessionService, store, functionsRegistry,
+                sessionService, store,
                 config, indexStatisticsService, overloadResolutionService, 
                 routineLoader, txnService, securityService, metricsService,
                 serviceManager);

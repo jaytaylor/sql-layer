@@ -17,9 +17,9 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
-import com.foundationdb.server.expression.std.Comparison;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types3.TKeyComparable;
+import com.foundationdb.server.AkType;
+import com.foundationdb.server.types.TKeyComparable;
+import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.parser.ValueNode;
 

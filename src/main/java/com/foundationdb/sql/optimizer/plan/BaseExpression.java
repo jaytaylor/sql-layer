@@ -19,9 +19,9 @@ package com.foundationdb.sql.optimizer.plan;
 
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.collation.AkCollatorFactory;
-import com.foundationdb.server.types3.TPreptimeValue;
+import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.sql.optimizer.TypesTranslation;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 import com.foundationdb.sql.types.CharacterTypeAttributes;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;

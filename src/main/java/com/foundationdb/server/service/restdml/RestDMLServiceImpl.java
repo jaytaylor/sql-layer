@@ -38,7 +38,7 @@ import com.foundationdb.server.service.text.FullTextIndexService;
 import com.foundationdb.server.service.text.FullTextQueryBuilder;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.sql.embedded.EmbeddedJDBCService;
 import com.foundationdb.sql.embedded.JDBCCallableStatement;
 import com.foundationdb.sql.embedded.JDBCConnection;
@@ -103,7 +103,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                               EmbeddedJDBCService jdbcService,
                               FullTextIndexService fullTextService,
                               Store store,
-                              T3RegistryService registryService) {
+                              TypesRegistryService registryService) {
         this.sessionService = sessionService;
         this.dxlService = dxlService;
         this.transactionService = transactionService;

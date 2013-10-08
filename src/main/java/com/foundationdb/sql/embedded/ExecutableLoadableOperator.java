@@ -24,7 +24,7 @@ import com.foundationdb.qp.loadableplan.LoadablePlan;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.SparseArrayQueryBindings;
 import com.foundationdb.server.error.UnsupportedSQLException;
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.parser.CallStatementNode;
 import com.foundationdb.sql.server.ServerCallContextStack;

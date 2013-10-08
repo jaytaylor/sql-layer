@@ -33,8 +33,8 @@ import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import com.foundationdb.server.error.SQLParseException;
 import com.foundationdb.server.error.SQLParserInternalException;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.AkType;
+import com.foundationdb.server.types.TInstance;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

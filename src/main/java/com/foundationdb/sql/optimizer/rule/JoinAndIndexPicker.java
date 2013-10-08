@@ -25,7 +25,7 @@ import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
 import com.foundationdb.sql.optimizer.plan.JoinNode.JoinType;
 
-import com.foundationdb.server.expression.std.Comparison;
+import com.foundationdb.server.types.texpressions.Comparison;
 
 import com.foundationdb.server.error.AkibanInternalException;
 

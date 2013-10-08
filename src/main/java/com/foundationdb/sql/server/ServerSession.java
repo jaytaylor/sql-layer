@@ -18,8 +18,7 @@
 package com.foundationdb.sql.server;
 
 import com.foundationdb.server.service.transaction.TransactionService;
-import com.foundationdb.server.t3expressions.OverloadResolver;
-import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.sql.parser.SQLParser;
 
 import com.foundationdb.sql.optimizer.AISBinderContext;
@@ -34,7 +33,6 @@ import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.dxl.DXLService;
 import com.foundationdb.server.service.externaldata.ExternalDataService;
-import com.foundationdb.server.service.functions.FunctionsRegistry;
 import com.foundationdb.server.service.monitor.SessionMonitor;
 import com.foundationdb.server.service.routines.RoutineLoader;
 import com.foundationdb.server.service.security.SecurityService;
@@ -140,9 +138,6 @@ public interface ServerSession
     /** Set following transaction to commit as determined by store. */
     public void setTransactionPeriodicallyCommit(boolean periodicallyCommit);
 
-    /** Get the functions registry. */
-    public FunctionsRegistry functionsRegistry();
-
     /** Get the server's idea of the current time. */
     public Date currentTime();
 
@@ -159,7 +154,7 @@ public interface ServerSession
     public CostEstimator costEstimator(ServerOperatorCompiler compiler, KeyCreator keyCreator);
 
     /** Get the overload resolver */
-    public T3RegistryService t3RegistryService();
+    public TypesRegistryService t3RegistryService();
 
     /** Get the stored procedure cache */
     public RoutineLoader getRoutineLoader();

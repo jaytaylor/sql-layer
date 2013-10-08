@@ -19,8 +19,8 @@ package com.foundationdb.server.rowdata;
 
 import com.foundationdb.server.AkServerUtil;
 import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.pvalue.PValueTarget;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.pvalue.PValueTarget;
 import com.foundationdb.util.ArgumentValidation;
 
 public final class RowDataPValueTarget implements PValueTarget, RowDataTarget {

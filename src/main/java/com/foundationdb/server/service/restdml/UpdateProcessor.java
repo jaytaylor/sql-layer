@@ -22,7 +22,7 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.server.expressions.TypesRegistryService;
 
 public class UpdateProcessor extends DMLProcessor {
 
@@ -30,10 +30,10 @@ public class UpdateProcessor extends DMLProcessor {
     private final InsertProcessor insertProcessor;
 
     public UpdateProcessor(Store store,
-            T3RegistryService t3RegistryService,
+            TypesRegistryService typesRegistryService,
             DeleteProcessor deleteProcessor,
             InsertProcessor insertProcessor) {
-        super(store, t3RegistryService);
+        super(store, typesRegistryService);
         this.deleteProcessor = deleteProcessor;
         this.insertProcessor = insertProcessor;
     }

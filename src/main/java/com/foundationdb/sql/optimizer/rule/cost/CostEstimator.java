@@ -29,9 +29,9 @@ import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.server.PersistitKeyPValueTarget;
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.store.statistics.IndexStatistics;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.pvalue.PValueSource;
 import com.persistit.Key;
 
 import com.google.common.primitives.UnsignedBytes;

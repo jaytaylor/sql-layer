@@ -18,8 +18,8 @@ package com.foundationdb.qp.row;
 
 import com.foundationdb.qp.rowtype.CompoundRowType;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.pvalue.PValueSources;
 import com.foundationdb.util.ShareHolder;
 
 public class CompoundRow extends AbstractRow {

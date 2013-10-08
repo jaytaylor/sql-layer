@@ -18,12 +18,12 @@
 package com.foundationdb.server;
 
 import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types.TInstance;
 import com.persistit.Key;
 import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.types3.pvalue.PUnderlying;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.pvalue.PUnderlying;
+import com.foundationdb.server.types.pvalue.PValue;
+import com.foundationdb.server.types.pvalue.PValueSource;
 
 import java.util.EnumMap;
 

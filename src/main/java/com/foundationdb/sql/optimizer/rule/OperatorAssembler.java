@@ -18,6 +18,7 @@
 package com.foundationdb.sql.optimizer.rule;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.sql.optimizer.*;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.ExpressionsSource.DistinctState;
@@ -44,28 +45,27 @@ import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.operator.API.InputPreservationOption;
 import com.foundationdb.qp.operator.API.JoinType;
 import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.t3expressions.OverloadResolver;
-import com.foundationdb.server.t3expressions.OverloadResolver.OverloadResult;
-import com.foundationdb.server.t3expressions.T3RegistryService;
-import com.foundationdb.server.types3.TCast;
-import com.foundationdb.server.types3.TExecutionContext;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.TPreptimeValue;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSources;
-import com.foundationdb.server.types3.texpressions.TPreparedLiteral;
-import com.foundationdb.server.types3.texpressions.TValidatedScalar;
-import com.foundationdb.server.types3.texpressions.AnySubqueryTExpression;
-import com.foundationdb.server.types3.texpressions.ExistsSubqueryTExpression;
-import com.foundationdb.server.types3.texpressions.ResultSetSubqueryTExpression;
-import com.foundationdb.server.types3.texpressions.ScalarSubqueryTExpression;
-import com.foundationdb.server.types3.texpressions.TCastExpression;
-import com.foundationdb.server.types3.texpressions.TNullExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedField;
-import com.foundationdb.server.types3.texpressions.TPreparedFunction;
+import com.foundationdb.server.expressions.OverloadResolver;
+import com.foundationdb.server.expressions.OverloadResolver.OverloadResult;
+import com.foundationdb.server.types.TCast;
+import com.foundationdb.server.types.TExecutionContext;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TPreptimeValue;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.pvalue.PValue;
+import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.pvalue.PValueSources;
+import com.foundationdb.server.types.texpressions.TPreparedLiteral;
+import com.foundationdb.server.types.texpressions.TValidatedScalar;
+import com.foundationdb.server.types.texpressions.AnySubqueryTExpression;
+import com.foundationdb.server.types.texpressions.ExistsSubqueryTExpression;
+import com.foundationdb.server.types.texpressions.ResultSetSubqueryTExpression;
+import com.foundationdb.server.types.texpressions.ScalarSubqueryTExpression;
+import com.foundationdb.server.types.texpressions.TCastExpression;
+import com.foundationdb.server.types.texpressions.TNullExpression;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedField;
+import com.foundationdb.server.types.texpressions.TPreparedFunction;
 
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.UnsupportedSQLException;
@@ -89,8 +89,8 @@ import com.foundationdb.server.service.text.FullTextQueryExpression;
 import com.foundationdb.server.explain.*;
 
 import com.foundationdb.server.api.dml.ColumnSelector;
-import com.foundationdb.server.types3.TClass;
-import com.foundationdb.server.types3.TComparison;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TComparison;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
 
@@ -495,7 +495,7 @@ public class OperatorAssembler extends BaseRule
 
             @Override
             public TPreparedExpression sequenceGenerator(Sequence sequence, Column column, TPreparedExpression expression) {
-                T3RegistryService registry = rulesContext.getT3Registry();
+                TypesRegistryService registry = rulesContext.getT3Registry();
                 OverloadResolver<TValidatedScalar> resolver = registry.getScalarsResolver();
                 TInstance instance = column.tInstance();
                 
@@ -677,7 +677,7 @@ public class OperatorAssembler extends BaseRule
                 row[pos] = insertsP.get(i);
                 
                 if (!instance.equals(row[pos].resultType())) {
-                    T3RegistryService registry = rulesContext.getT3Registry();
+                    TypesRegistryService registry = rulesContext.getT3Registry();
                     TCast tcast = registry.getCastsResolver().cast(instance.typeClass(), row[pos].resultType().typeClass());
                     row[pos] = 
                             new TCastExpression(row[pos], tcast, instance, planContext.getQueryContext());
@@ -693,7 +693,7 @@ public class OperatorAssembler extends BaseRule
                 else if (row[i] == null) {
                     TInstance tinst = targetRowType.typeInstanceAt(i);
                     if (column.getDefaultFunction() != null) {
-                        T3RegistryService registry = rulesContext.getT3Registry();
+                        TypesRegistryService registry = rulesContext.getT3Registry();
                         OverloadResolver<TValidatedScalar> resolver = registry.getScalarsResolver();
                         TValidatedScalar overload = resolver.get(column.getDefaultFunction(), Collections.<TPreptimeValue>emptyList()).getOverload();
                         TInstance dinst = overload.resultStrategy().fixed(false);
@@ -937,7 +937,7 @@ public class OperatorAssembler extends BaseRule
             int nFieldsToCompare = index.getComparisonFields();
  
             List<TComparison> comparisons = new ArrayList<>(nFieldsToCompare);
-            T3RegistryService reg = rulesContext.getT3Registry();
+            TypesRegistryService reg = rulesContext.getT3Registry();
            
             for (int n = 0; n < nFieldsToCompare; ++n)
             {

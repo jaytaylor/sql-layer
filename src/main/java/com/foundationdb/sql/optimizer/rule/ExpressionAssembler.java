@@ -42,12 +42,10 @@ import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.explain.CompoundExplainer;
 import com.foundationdb.server.explain.Explainable;
-import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.Label;
 import com.foundationdb.server.explain.PrimitiveExplainer;
 import com.foundationdb.server.explain.Type;
-import com.foundationdb.server.expression.Expression;
-import com.foundationdb.server.expression.std.Comparison;
+import com.foundationdb.server.types.texpressions.Comparison;
 
 import org.slf4j.Logger;
 

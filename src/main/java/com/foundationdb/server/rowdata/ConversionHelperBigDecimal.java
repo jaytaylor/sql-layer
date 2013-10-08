@@ -18,7 +18,6 @@
 package com.foundationdb.server.rowdata;
 
 import com.foundationdb.server.AkServerUtil;
-import com.foundationdb.server.types.ValueSourceException;
 import com.foundationdb.util.AkibanAppender;
 
 import java.math.BigDecimal;
@@ -54,7 +53,7 @@ public final class ConversionHelperBigDecimal {
             final int bytesLen = (int) (locationAndOffset >>> 32);
             AkServerUtil.hex(AkibanAppender.of(errSb), from, location, bytesLen);
             errSb.append(": ").append( e.getMessage() );
-            throw new ValueSourceException(errSb.toString(), e);
+            throw new RowDataException(errSb.toString(), e);
         }
     }
 

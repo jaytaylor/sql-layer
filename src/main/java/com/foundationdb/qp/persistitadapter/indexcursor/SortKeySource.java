@@ -16,7 +16,7 @@
  */
 package com.foundationdb.qp.persistitadapter.indexcursor;
 
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types.TInstance;
 import com.persistit.Key;
 
 public interface SortKeySource<S> {

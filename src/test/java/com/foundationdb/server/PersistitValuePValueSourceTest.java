@@ -17,11 +17,11 @@
 
 package com.foundationdb.server;
 
-import com.foundationdb.server.types3.TClass;
-import com.foundationdb.server.types3.mcompat.mtypes.MBinary;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
-import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.mcompat.mtypes.MBinary;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.pvalue.PValueSources;
 import com.persistit.Persistit;
 import com.persistit.Value;
 import org.junit.Test;

@@ -30,8 +30,8 @@ import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.geophile.SpaceLatLon;
-import com.foundationdb.server.types3.common.BigDecimalWrapper;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.common.BigDecimalWrapper;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 
 import java.math.BigDecimal;
 import java.util.*;

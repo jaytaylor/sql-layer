@@ -18,8 +18,8 @@
 package com.foundationdb.qp.persistitadapter.indexcursor;
 
 import com.foundationdb.qp.expression.BoundExpressions;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.pvalue.PValue;
+import com.foundationdb.server.types.pvalue.PValueSource;
 
 class SpatialIndexBoundExpressions implements BoundExpressions
 {

@@ -21,7 +21,7 @@ import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.rowtype.HKeyRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.util.HKeyCache;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.pvalue.PValueSource;
 
 public class HKeyRow extends AbstractRow
 {

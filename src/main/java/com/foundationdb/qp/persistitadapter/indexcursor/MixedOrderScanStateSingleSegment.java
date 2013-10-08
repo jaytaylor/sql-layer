@@ -17,8 +17,8 @@
 
 package com.foundationdb.qp.persistitadapter.indexcursor;
 
-import com.foundationdb.server.expression.std.Comparison;
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.texpressions.Comparison;
 import com.persistit.Key;
 
 import static com.foundationdb.qp.persistitadapter.indexcursor.IndexCursor.INDEX_TRAVERSE;

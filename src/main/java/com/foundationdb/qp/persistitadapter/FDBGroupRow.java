@@ -26,8 +26,7 @@ import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDataPValueSource;
 import com.foundationdb.server.rowdata.RowDef;
-import com.foundationdb.server.types.ValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.pvalue.PValueSource;
 import com.foundationdb.util.SparseArray;
 import com.persistit.Key;
 

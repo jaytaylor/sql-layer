@@ -27,12 +27,11 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.expression.Expression;
-import com.foundationdb.server.types3.TAggregator;
-import com.foundationdb.server.types3.TComparison;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedField;
+import com.foundationdb.server.types.TAggregator;
+import com.foundationdb.server.types.TComparison;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedField;
 
 import java.util.*;
 
@@ -60,17 +59,6 @@ public class API
         return new Project_Default(inputOperator, rowType, generateNew(projections));
     }
 
-    /*
-    public static List<Expression> generateOld(List<? extends ExpressionGenerator> expressionGenerators) {
-        if ((expressionGenerators == null) || Types3Switch.ON)
-            return null;
-        List<Expression> results = new ArrayList<>(expressionGenerators.size());
-        for (ExpressionGenerator generator : expressionGenerators) {
-            results.add(generator.getExpression());
-        }
-        return results;
-    }
-*/
     public static List<TPreparedExpression> generateNew(List<? extends ExpressionGenerator> expressionGenerators) {
         if (expressionGenerators == null)
             return null;
@@ -435,14 +423,6 @@ public class API
                                               TPreparedExpression predicate)
     {
         return new Select_HKeyOrdered(inputOperator, predicateRowType, predicate);
-    }
-
-    @Deprecated
-    public static Operator select_HKeyOrdered(Operator inputOperator,
-                                                      RowType predicateRowType,
-                                                      Expression predicate)
-    {
-        throw new UnsupportedOperationException("Type2 only function");
     }
 
     public static Operator select_HKeyOrdered(Operator inputOperator,

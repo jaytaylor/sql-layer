@@ -19,8 +19,8 @@ package com.foundationdb.qp.persistitadapter;
 
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.server.PersistitKeyPValueSource;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.pvalue.PValueSource;
 import com.persistit.Key;
 
 public class PersistitHKey implements HKey
