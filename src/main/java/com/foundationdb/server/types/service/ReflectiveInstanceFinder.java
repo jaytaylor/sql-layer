@@ -43,7 +43,7 @@ public class ReflectiveInstanceFinder implements InstanceFinder
     public ReflectiveInstanceFinder()
     throws IllegalArgumentException, IllegalAccessException, InvocationTargetException
     {
-        this(new ConfigurableClassFinder("t3s.txt"));
+        this(new ConfigurableClassFinder("typedirs.txt"));
     }
 
     public ReflectiveInstanceFinder(ClassFinder classFinder)

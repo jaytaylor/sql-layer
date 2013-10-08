@@ -16,7 +16,7 @@
     com.foundationdb.server.service.is.StorageSchemaTablesService   : com.foundationdb.server.service.is.StorageSchemaTablesServiceImpl
     com.foundationdb.sql.ui.SwingConsoleService : com.foundationdb.sql.ui.SwingConsoleServiceImpl
     com.foundationdb.server.service.is.ServerSchemaTablesService    : com.foundationdb.server.service.is.ServerSchemaTablesServiceImpl
-    com.foundationdb.server.t3expressions.T3RegistryService : com.foundationdb.server.t3expressions.T3RegistryServiceImpl
+    com.foundationdb.server.expressions.TypesRegistryService : com.foundationdb.server.expressions.TypesRegistryServiceImpl
     com.foundationdb.server.service.routines.RoutineLoader : com.foundationdb.server.service.routines.RoutineLoaderImpl
     com.foundationdb.server.service.routines.ScriptEngineManagerProvider : com.foundationdb.server.service.routines.ScriptEngineManagerProviderImpl
     com.foundationdb.sql.embedded.EmbeddedJDBCService : com.foundationdb.sql.embedded.EmbeddedJDBCServiceImpl
