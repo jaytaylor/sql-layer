@@ -529,23 +529,4 @@ public final class PValueSources {
         return sb.toString();
     }
 
-    public static abstract class ValueSourceConverter<T> {
-
-        protected abstract Object handleBigDecimal(T state, BigDecimal bigDecimal);
-        protected abstract Object handleString(T state, String string);
-
-        private static Object UNDEF = new Object();
-    }
-
-    private static final ValueSourceConverter<Void> plainConverter = new ValueSourceConverter<Void>() {
-        @Override
-        protected Object handleBigDecimal(Void state, BigDecimal bigDecimal) {
-            return new MBigDecimalWrapper(bigDecimal);
-        }
-
-        @Override
-        protected Object handleString(Void state, String string) {
-            return string;
-        }
-    };
 }

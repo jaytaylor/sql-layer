@@ -62,7 +62,7 @@ public abstract class AkibanAppender {
         return new AkibanAppenderOS(outputStream, printWriter, charset);
     }
 
-    private static class AkibanAppenderPW extends AbstractAkibanAppender
+    private static class AkibanAppenderPW extends AkibanAppender
     {
         private final PrintWriter pr;
 
@@ -131,7 +131,7 @@ public abstract class AkibanAppender {
         }
     }
 
-    private static class AkibanAppenderSB extends AbstractAkibanAppender
+    private static class AkibanAppenderSB extends AkibanAppender
     {
         private final StringBuilder sb;
 
@@ -168,8 +168,5 @@ public abstract class AkibanAppender {
         public String toString() {
             return sb.toString();
         }
-    }
-
-    private static abstract class AbstractAkibanAppender extends AkibanAppender {
     }
 }
