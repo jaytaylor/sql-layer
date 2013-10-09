@@ -23,7 +23,7 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types.TInstance;
 import com.persistit.Key;
 import com.persistit.Value;
 

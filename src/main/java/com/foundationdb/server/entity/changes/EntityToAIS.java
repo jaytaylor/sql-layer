@@ -34,9 +34,9 @@ import com.foundationdb.server.entity.model.FieldProperty;
 import com.foundationdb.server.entity.model.IndexField;
 import com.foundationdb.server.entity.model.EntityIndex;
 import com.foundationdb.server.entity.model.Validation;
-import com.foundationdb.server.types3.TClass;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.texpressions.Serialization;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.texpressions.Serialization;
 import com.google.common.base.Function;
 import com.google.common.collect.BiMap;
 import org.slf4j.Logger;
@@ -324,7 +324,7 @@ public class EntityToAIS implements EntityVisitor {
             }
         }
 
-        for (Map.Entry<? extends com.foundationdb.server.types3.Attribute, ? extends Serialization> t3Attr
+        for (Map.Entry<? extends com.foundationdb.server.types.Attribute, ? extends Serialization> t3Attr
                 : type.tClass.attributeSerializations().entrySet())
         {
             Serialization serialization = t3Attr.getValue();
@@ -369,7 +369,7 @@ public class EntityToAIS implements EntityVisitor {
         return false;
     }
 
-    private static Long maybeLong(Map<String, Object> props, com.foundationdb.server.types3.Attribute attribute) {
+    private static Long maybeLong(Map<String, Object> props, com.foundationdb.server.types.Attribute attribute) {
         Object o = null;
         if (props.containsKey(attribute.name().toUpperCase())) {
             o = props.remove(attribute.name());
@@ -382,7 +382,7 @@ public class EntityToAIS implements EntityVisitor {
             return ((Number)o).longValue();
     }
 
-    private static String maybeString(Map<String, Object> props, com.foundationdb.server.types3.Attribute attribute) {
+    private static String maybeString(Map<String, Object> props, com.foundationdb.server.types.Attribute attribute) {
         Object o = null;
         if (props.containsKey(attribute.name().toUpperCase()))
             o = props.remove(attribute.name());

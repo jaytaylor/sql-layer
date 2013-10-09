@@ -21,7 +21,7 @@ import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.PValuesRow;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.pvalue.PValueSource;
 
 public class TestRow extends AbstractRow
 {

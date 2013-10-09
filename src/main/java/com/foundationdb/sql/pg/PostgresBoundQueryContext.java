@@ -19,7 +19,7 @@ package com.foundationdb.sql.pg;
 
 import com.foundationdb.qp.operator.CursorBase;
 import com.foundationdb.qp.operator.QueryBindings;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 import com.foundationdb.server.service.monitor.CursorMonitor;
 
 public class PostgresBoundQueryContext extends PostgresQueryContext 

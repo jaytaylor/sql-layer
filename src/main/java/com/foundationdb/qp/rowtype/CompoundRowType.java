@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.foundationdb.ais.model.UserTable;
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types.TInstance;
 
 public class CompoundRowType extends DerivedRowType {
 

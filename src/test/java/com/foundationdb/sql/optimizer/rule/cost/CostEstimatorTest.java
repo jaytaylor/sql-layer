@@ -24,9 +24,9 @@ import com.foundationdb.sql.optimizer.rule.RulesTestHelper;
 
 import com.foundationdb.ais.model.*;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.mcompat.mtypes.MDatetimes;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
 
 import org.junit.Before;
 import org.junit.Test;

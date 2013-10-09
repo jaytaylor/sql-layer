@@ -26,7 +26,7 @@ import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 import org.junit.Test;
 
 import java.util.ArrayList;

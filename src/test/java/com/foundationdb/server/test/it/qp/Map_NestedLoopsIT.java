@@ -30,11 +30,11 @@ import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.expression.std.Comparison;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedLiteral;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.pvalue.PValue;
+import com.foundationdb.server.types.texpressions.Comparison;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedLiteral;
 import org.junit.Test;
 
 import java.util.ArrayList;

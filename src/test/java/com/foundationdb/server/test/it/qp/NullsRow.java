@@ -20,8 +20,8 @@ package com.foundationdb.server.test.it.qp;
 import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.pvalue.PValueSources;
 
 public final class NullsRow extends AbstractRow {
     @Override

@@ -20,8 +20,8 @@ package com.foundationdb.qp.persistitadapter;
 import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.rowdata.FieldDef;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.pvalue.PValueSource;
 
 public final class PValueRowDataCreator implements RowDataCreator<PValueSource> {
     @Override

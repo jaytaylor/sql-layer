@@ -17,10 +17,10 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
-import com.foundationdb.server.expression.std.Comparison;
-import com.foundationdb.server.types3.TPreptimeValue;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
-import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types.TPreptimeValue;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.pvalue.PValue;
+import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.JoinNode;
 import com.foundationdb.sql.optimizer.plan.JoinNode.JoinType;

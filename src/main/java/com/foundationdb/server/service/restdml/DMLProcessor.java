@@ -32,22 +32,22 @@ import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.NoSuchColumnException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.error.ProtectedTableDDLException;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.t3expressions.T3RegistryService;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.pvalue.PValue;
+import com.foundationdb.server.types.pvalue.PValueSource;
 
 public abstract class DMLProcessor {
 
     private final Store store;
-    private final T3RegistryService registryService;
+    private final TypesRegistryService registryService;
     
     public DMLProcessor(Store store,
-                        T3RegistryService t3RegistryService) {
+                        TypesRegistryService typesRegistryService) {
         this.store = store;
-        this.registryService = t3RegistryService;
+        this.registryService = typesRegistryService;
     }
 
 

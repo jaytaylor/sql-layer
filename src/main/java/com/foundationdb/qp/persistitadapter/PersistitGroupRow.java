@@ -25,7 +25,7 @@ import com.foundationdb.qp.util.HKeyCache;
 import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
 import com.foundationdb.server.encoding.EncodingException;
 import com.foundationdb.server.rowdata.*;
-import com.foundationdb.server.types3.pvalue.PValueSource;
+import com.foundationdb.server.types.pvalue.PValueSource;
 import com.foundationdb.util.SparseArray;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;

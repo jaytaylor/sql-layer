@@ -20,7 +20,7 @@ package com.foundationdb.sql.optimizer.plan;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.UserTable;
-import com.foundationdb.server.expression.std.Comparison;
+import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.sql.optimizer.plan.ConditionsCount.HowMany;
 import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
 import com.foundationdb.sql.optimizer.rule.OverloadAndTInstanceResolver;

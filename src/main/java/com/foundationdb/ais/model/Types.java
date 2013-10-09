@@ -17,7 +17,7 @@
 
 package com.foundationdb.ais.model;
 
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;

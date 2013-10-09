@@ -50,10 +50,10 @@ import com.foundationdb.server.service.routines.ScriptEngineManagerProvider;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
-import com.foundationdb.server.types3.common.types.TString;
-import com.foundationdb.server.types3.mcompat.mtypes.MBigDecimal;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
+import com.foundationdb.server.types.common.types.TString;
+import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.google.common.collect.Iterators;
 import com.google.inject.Inject;
 

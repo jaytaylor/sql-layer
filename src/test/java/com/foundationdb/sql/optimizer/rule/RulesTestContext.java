@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
-import com.foundationdb.server.t3expressions.T3RegistryServiceImpl;
+import com.foundationdb.server.expressions.TypesRegistryServiceImpl;
 import com.foundationdb.sql.optimizer.OptimizerTestBase;
 import com.foundationdb.sql.optimizer.rule.cost.TestCostEstimator;
 
@@ -42,7 +42,7 @@ public class RulesTestContext extends SchemaRulesContext
         context.initRules(rules);
         RulesTestHelper.ensureRowDefs(ais);
         context.initAIS(ais);
-        T3RegistryServiceImpl t3Registry = new T3RegistryServiceImpl();
+        TypesRegistryServiceImpl t3Registry = new TypesRegistryServiceImpl();
         t3Registry.start();
         context.initFunctionsRegistry(t3Registry);
         context.initT3Registry(t3Registry);

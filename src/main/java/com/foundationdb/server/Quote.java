@@ -17,7 +17,6 @@
 
 package com.foundationdb.server;
 
-import com.foundationdb.server.types.AkType;
 import com.foundationdb.util.AkibanAppender;
 
 import java.nio.ByteBuffer;
@@ -26,7 +25,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Formatter;
 
-import static com.foundationdb.server.types.AkType.*;
+import static com.foundationdb.server.AkType.*;
 
 public enum Quote {
     NONE(null, false),

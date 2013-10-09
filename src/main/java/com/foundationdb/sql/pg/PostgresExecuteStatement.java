@@ -26,9 +26,9 @@ import com.foundationdb.sql.parser.ValueNode;
 
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.server.error.UnsupportedSQLException;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.TPreptimeValue;
-import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TPreptimeValue;
+import com.foundationdb.server.types.pvalue.PValueSources;
 
 import java.util.ArrayList;
 import java.util.List;

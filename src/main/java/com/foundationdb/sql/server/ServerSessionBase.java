@@ -31,14 +31,13 @@ import com.foundationdb.server.error.TransactionReadOnlyException;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.dxl.DXLService;
 import com.foundationdb.server.service.externaldata.ExternalDataService;
-import com.foundationdb.server.service.functions.FunctionsRegistry;
 import com.foundationdb.server.service.monitor.SessionMonitor;
 import com.foundationdb.server.service.routines.RoutineLoader;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.service.tree.KeyCreator;
-import com.foundationdb.server.t3expressions.T3RegistryService;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.sql.optimizer.AISBinderContext;
 import com.foundationdb.sql.optimizer.rule.PipelineConfiguration;
 import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
@@ -272,12 +271,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
 
     @Override
-    public FunctionsRegistry functionsRegistry() {
-        return reqs.functionsRegistry();
-    }
-
-    @Override
-    public T3RegistryService t3RegistryService() {
+    public TypesRegistryService t3RegistryService() {
         return reqs.t3RegistryService();
     }
 

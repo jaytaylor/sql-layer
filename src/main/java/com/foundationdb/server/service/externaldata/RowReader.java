@@ -25,24 +25,23 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.persistitadapter.PValueRowDataCreator;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.NiceRow;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.rowdata.RowDef;
-import com.foundationdb.server.t3expressions.T3RegistryService;
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types3.ErrorHandlingMode;
-import com.foundationdb.server.types3.TCast;
-import com.foundationdb.server.types3.TExecutionContext;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.TPreptimeValue;
-import com.foundationdb.server.types3.mcompat.mtypes.MString;
-import com.foundationdb.server.types3.pvalue.PValue;
-import com.foundationdb.server.types3.pvalue.PValueSource;
-import com.foundationdb.server.types3.pvalue.PValueSources;
-import com.foundationdb.server.types3.texpressions.TCastExpression;
-import com.foundationdb.server.types3.texpressions.TEvaluatableExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedExpression;
-import com.foundationdb.server.types3.texpressions.TPreparedFunction;
-import com.foundationdb.server.types3.texpressions.TPreparedLiteral;
-import com.foundationdb.server.types3.texpressions.TValidatedScalar;
+import com.foundationdb.server.types.ErrorHandlingMode;
+import com.foundationdb.server.types.TCast;
+import com.foundationdb.server.types.TExecutionContext;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TPreptimeValue;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.pvalue.PValue;
+import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.pvalue.PValueSources;
+import com.foundationdb.server.types.texpressions.TCastExpression;
+import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedFunction;
+import com.foundationdb.server.types.texpressions.TPreparedLiteral;
+import com.foundationdb.server.types.texpressions.TValidatedScalar;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -141,9 +140,9 @@ public abstract class RowReader
             pvalues[ci] = pvalue;
         }
         this.expressions = new TEvaluatableExpression[evalColumns.length];
-        T3RegistryService registry = null;
+        TypesRegistryService registry = null;
         if (evalColumns.length > 0) {
-            registry = queryContext.getServiceManager().getServiceByClass(T3RegistryService.class);
+            registry = queryContext.getServiceManager().getServiceByClass(TypesRegistryService.class);
         }
         for (int fi = 0; fi < evalColumns.length; fi++) {
             int ci = evalColumns[fi];

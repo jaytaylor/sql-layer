@@ -37,7 +37,7 @@ import com.foundationdb.ais.model.Schema;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.error.NoSuchTableException;
-import com.foundationdb.server.types.AkType;
+import com.foundationdb.server.AkType;
 import com.sun.jersey.core.impl.provider.entity.Inflector;
 
 public abstract class ClassBuilder {

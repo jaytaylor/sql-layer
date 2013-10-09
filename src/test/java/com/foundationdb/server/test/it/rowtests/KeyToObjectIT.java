@@ -27,7 +27,7 @@ import com.foundationdb.server.error.UnsupportedIndexDataTypeException;
 import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
 import com.foundationdb.server.store.IndexVisitor;
 import com.foundationdb.server.test.it.ITBase;
-import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types.pvalue.PValueSources;
 import com.foundationdb.util.WrappingByteSource;
 import com.persistit.Key;
 import com.persistit.Value;

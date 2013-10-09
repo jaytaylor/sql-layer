@@ -20,7 +20,7 @@ package com.foundationdb.qp.rowtype;
 import com.foundationdb.ais.model.HKey;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types.TInstance;
 
 public class HKeyRowType extends DerivedRowType
 {

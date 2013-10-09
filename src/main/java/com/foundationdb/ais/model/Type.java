@@ -17,8 +17,8 @@
 
 package com.foundationdb.ais.model;
 
-import com.foundationdb.server.types.AkType;
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.AkType;
+import com.foundationdb.server.types.TInstance;
 
 public class Type
 {

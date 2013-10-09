@@ -25,10 +25,10 @@ import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.api.DMLFunctions;
-import com.foundationdb.server.error.NoSuchRoutineException;
 import com.foundationdb.server.error.NoSuchSequenceException;
 import com.foundationdb.server.error.ServiceNotStartedException;
 import com.foundationdb.server.error.ServiceStartupException;
+import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.jmx.JmxManageable;
@@ -40,7 +40,6 @@ import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
-import com.foundationdb.server.t3expressions.T3RegistryService;
 import com.foundationdb.sql.server.ServerCallContextStack;
 import com.foundationdb.sql.server.ServerQueryContext;
 import com.google.inject.Inject;
@@ -68,7 +67,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     private final SessionService sessionService;
     private final IndexStatisticsService indexStatisticsService;
     private final ConfigurationService configService;
-    private final T3RegistryService t3Registry;
+    private final TypesRegistryService t3Registry;
     private final TransactionService txnService;
     private final LockService lockService;
     private final ListenerService listenerService;
@@ -158,7 +157,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     @Inject
     public DXLServiceImpl(SchemaManager schemaManager, Store store, SessionService sessionService,
                           IndexStatisticsService indexStatisticsService, ConfigurationService configService,
-                          T3RegistryService t3Registry, TransactionService txnService, LockService lockService,
+                          TypesRegistryService t3Registry, TransactionService txnService, LockService lockService,
                           ListenerService listenerService) {
         this.schemaManager = schemaManager;
         this.store = store;
@@ -185,7 +184,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
         return indexStatisticsService;
     }
 
-    protected final T3RegistryService t3Registry() {
+    protected final TypesRegistryService t3Registry() {
         return t3Registry;
     }
 

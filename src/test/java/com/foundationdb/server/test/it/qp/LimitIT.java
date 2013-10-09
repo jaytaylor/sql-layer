@@ -22,8 +22,8 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.NegativeLimitException;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types3.pvalue.PValue;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.pvalue.PValue;
 import org.junit.Test;
 
 import static com.foundationdb.qp.operator.API.*;

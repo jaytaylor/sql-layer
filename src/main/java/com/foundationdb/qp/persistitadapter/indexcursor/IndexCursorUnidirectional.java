@@ -29,8 +29,8 @@ import com.foundationdb.qp.persistitadapter.SpatialHelper;
 import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.ColumnSelector;
-import com.foundationdb.server.types3.TInstance;
-import com.foundationdb.server.types3.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.persistit.Key;
 
 import java.util.List;

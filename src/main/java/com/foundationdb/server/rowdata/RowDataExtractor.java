@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.rowdata;
 
-import com.foundationdb.server.types3.pvalue.PValueSources;
+import com.foundationdb.server.types.pvalue.PValueSources;
 
 public final class RowDataExtractor {
 

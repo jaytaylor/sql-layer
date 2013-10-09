@@ -33,8 +33,8 @@ import com.foundationdb.server.entity.model.IndexField;
 import com.foundationdb.server.entity.model.EntityField;
 import com.foundationdb.server.entity.model.EntityIndex;
 import com.foundationdb.server.entity.model.Validation;
-import com.foundationdb.server.types3.TClass;
-import com.foundationdb.server.types3.TInstance;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TInstance;
 import com.google.common.base.Predicate;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.Collections2;
@@ -66,7 +66,7 @@ final class EntityBuilder {
             Map<String, Object> properties = scalar.getProperties();
             Collection<Validation> validations = scalar.getValidations();
             validations.add(new Validation("required", !tInstance.nullability()));
-            for (com.foundationdb.server.types3.Attribute t3Attr : tClass.attributes()) {
+            for (com.foundationdb.server.types.Attribute t3Attr : tClass.attributes()) {
                 String attrName = t3Attr.name().toLowerCase();
                 Object attrValue = tInstance.attributeToObject(t3Attr);
                 if (tClass.attributeIsPhysical(t3Attr))

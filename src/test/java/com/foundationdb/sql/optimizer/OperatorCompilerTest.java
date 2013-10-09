@@ -18,7 +18,7 @@
 package com.foundationdb.sql.optimizer;
 
 
-import com.foundationdb.server.t3expressions.T3RegistryServiceImpl;
+import com.foundationdb.server.expressions.TypesRegistryServiceImpl;
 import com.foundationdb.sql.NamedParamsTestBase;
 import com.foundationdb.sql.TestBase;
 
@@ -113,7 +113,7 @@ public class OperatorCompilerTest extends NamedParamsTestBase
             compiler.initProperties(properties);
             compiler.initAIS(ais, OptimizerTestBase.DEFAULT_SCHEMA);
             compiler.initParser(parser);
-            T3RegistryServiceImpl t3Registry = new T3RegistryServiceImpl();
+            TypesRegistryServiceImpl t3Registry = new TypesRegistryServiceImpl();
             t3Registry.start();
             compiler.initFunctionsRegistry(t3Registry);
             compiler.initT3Registry(t3Registry);
