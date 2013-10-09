@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.types.pvalue;
+package com.foundationdb.server.types;
 
-import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 
-public interface PValueCacher {
-    void cacheToValue(Object cached, TInstance tInstance, PBasicValueTarget target);
-    Object valueToCache(PBasicValueSource value, TInstance tInstance);
-    Object sanitize(Object object);
-    boolean canConvertToValue(Object cached);
+public interface ValueIO {
+    void copyCanonical(ValueSource in, TInstance typeInstance, ValueTarget out);
+    void writeCollating(ValueSource in, TInstance typeInstance, ValueTarget out);
+    void readCollating(ValueSource in, TInstance typeInstance, ValueTarget out);
 }

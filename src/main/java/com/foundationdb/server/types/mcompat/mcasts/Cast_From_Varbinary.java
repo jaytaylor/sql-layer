@@ -21,8 +21,8 @@ import com.foundationdb.server.types.TCastBase;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 
 import java.nio.charset.Charset;
 
@@ -61,7 +61,7 @@ public final class Cast_From_Varbinary {
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
             MBinary.putBytes(context, target, source.getBytes());
         }
     }

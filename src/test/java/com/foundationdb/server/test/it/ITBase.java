@@ -30,7 +30,7 @@ import com.foundationdb.server.test.ApiTestBase;
 import com.foundationdb.server.test.it.qp.TestRow;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.ShareHolder;
 
 import java.util.ArrayList;
@@ -125,8 +125,8 @@ public abstract class ITBase extends ApiTestBase {
             nFields = nFields - space.dimensions() + 1;
         }
         for (int i = 0; i < nFields; i++) {
-            PValueSource expectedField = expected.pvalue(i);
-            PValueSource actualField = actual.pvalue(i);
+            ValueSource expectedField = expected.value(i);
+            ValueSource actualField = actual.value(i);
             TInstance expectedType = expected.rowType().typeInstanceAt(i);
             TInstance actualType = actual.rowType().typeInstanceAt(i);
             assertTrue(expectedType + " != " + actualType, expectedType.equalsExcludingNullable(actualType));

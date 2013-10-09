@@ -21,7 +21,7 @@ import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValueSources;
+import com.foundationdb.server.types.value.ValueSources;
 import com.persistit.Persistit;
 import com.persistit.Value;
 import org.junit.Test;
@@ -33,10 +33,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public final class PersistitValuePValueSourceTest {
+public final class PersistitValueValueSourceTest {
     @Test
     public void testSkippingNulls() {
-        PersistitValuePValueSource source = createSource(new ValueInit() {
+        PersistitValueValueSource source = createSource(new ValueInit() {
             @Override
             public void putValues(Value value) {
                 value.putNull();
@@ -60,7 +60,7 @@ public final class PersistitValuePValueSourceTest {
         // The next day they walk back into the same bar, and he says, "now I Object!"
 
 
-        PersistitValuePValueSource source = createSource(new ValueInit() {
+        PersistitValueValueSource source = createSource(new ValueInit() {
             @Override
             public void putValues(Value value) {
                 String stringRef = "foo";
@@ -100,7 +100,7 @@ public final class PersistitValuePValueSourceTest {
 
     @Test
     public void getBigDecimalTwice() {
-        PersistitValuePValueSource source = createSource(new ValueInit() {
+        PersistitValueValueSource source = createSource(new ValueInit() {
             @Override
             public void putValues(Value value) {
                 value.putBigDecimal(BigDecimal.ONE);
@@ -112,18 +112,18 @@ public final class PersistitValuePValueSourceTest {
         assertEquals("source value", BigDecimal.ONE, source.getObject());
     }
 
-    private void readyAndCheck(PersistitValuePValueSource source, TClass pUnderlying) {
-        source.getReady(pUnderlying == null ? null : pUnderlying.instance(true));
-        if (pUnderlying == null) {
+    private void readyAndCheck(PersistitValueValueSource source, TClass underlying) {
+        source.getReady(underlying == null ? null : underlying.instance(true));
+        if (underlying == null) {
             assertTrue("source should be null", source.isNull());
         }
         else {
             assertFalse("source should not be null", source.isNull());
-            assertEquals("source PUnderlying", pUnderlying, PValueSources.tClass(source));
+            assertEquals("source UnderlyingType", underlying, ValueSources.tClass(source));
         }
     }
 
-    private PersistitValuePValueSource createSource(ValueInit values) {
+    private PersistitValueValueSource createSource(ValueInit values) {
         Value value = new Value((Persistit)null);
         value.setStreamMode(true);
 
@@ -132,7 +132,7 @@ public final class PersistitValuePValueSourceTest {
         value.setStreamMode(false); // need to reset the Value before reading
         value.setStreamMode(true);
 
-        PersistitValuePValueSource source = new PersistitValuePValueSource();
+        PersistitValueValueSource source = new PersistitValueValueSource();
         source.attach(value);
         return source;
     }

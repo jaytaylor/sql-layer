@@ -58,7 +58,7 @@ public class UpdateIT extends OperatorITBase
 
             @Override
             public Row evaluate(Row original, QueryContext context, QueryBindings bindings) {
-                String name = original.pvalue(1).getString();
+                String name = original.value(1).getString();
                 // TODO eventually use Expression for this
                 name = name.toUpperCase();
                 name = name + name;
@@ -112,7 +112,7 @@ public class UpdateIT extends OperatorITBase
 
                 @Override
                 public Row evaluate(Row original, QueryContext context, QueryBindings bindings) { 
-                    long id = original.pvalue(0).getInt64();
+                    long id = original.value(0).getInt64();
                     // Make smaller to avoid Halloween (see next test).
                     return new OverlayingRow(original).overlay(0, id - 100);
                 }

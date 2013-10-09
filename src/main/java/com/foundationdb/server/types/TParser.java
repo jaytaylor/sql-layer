@@ -16,10 +16,10 @@
  */
 package com.foundationdb.server.types;
 
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 
 public interface TParser
 {
-    public void parse (TExecutionContext context, PValueSource in, PValueTarget out);
+    public void parse (TExecutionContext context, ValueSource in, ValueTarget out);
 }

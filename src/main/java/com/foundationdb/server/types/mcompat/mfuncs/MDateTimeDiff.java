@@ -28,8 +28,8 @@ import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 
 import static com.foundationdb.server.types.mcompat.mtypes.MDatetimes.*;
@@ -97,7 +97,7 @@ public class MDateTimeDiff
         new DateTimeDiff(ArgType.VARCHAR, ArgType.VARCHAR, "TIMEDIFF")
         {
             @Override
-            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+            protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
             {
                 long ymd0[], ymd1[];
                 StringType t0[] = new StringType[1];
@@ -261,7 +261,7 @@ public class MDateTimeDiff
         DATE(MDatetimes.DATE)
         {
             @Override
-            long[] getYMDHMS(PValueSource source, StringType[] type, TExecutionContext context)
+            long[] getYMDHMS(ValueSource source, StringType[] type, TExecutionContext context)
             {
                 int date = source.getInt32();
                 long ymd[] = MDatetimes.decodeDate(date);
@@ -278,7 +278,7 @@ public class MDateTimeDiff
         TIME(MDatetimes.TIME)
         {
             @Override
-            long[] getYMDHMS(PValueSource source, StringType[] type, TExecutionContext context)
+            long[] getYMDHMS(ValueSource source, StringType[] type, TExecutionContext context)
             {
                 int time = source.getInt32();
                 long ymd[] = MDatetimes.decodeTime(time);
@@ -295,7 +295,7 @@ public class MDateTimeDiff
         DATETIME(MDatetimes.DATETIME)
         {
             @Override
-            long[] getYMDHMS(PValueSource source, StringType[] type, TExecutionContext context)
+            long[] getYMDHMS(ValueSource source, StringType[] type, TExecutionContext context)
             {
                 long datetime = source.getInt64();
                 long ymd[] = MDatetimes.decodeDatetime(datetime);
@@ -312,7 +312,7 @@ public class MDateTimeDiff
         TIMESTAMP(MDatetimes.TIMESTAMP)
         {
             @Override
-            long[] getYMDHMS(PValueSource source, StringType[] type, TExecutionContext context)
+            long[] getYMDHMS(ValueSource source, StringType[] type, TExecutionContext context)
             {
                 int ts = source.getInt32();
                 long ymd[] = MDatetimes.decodeTimestamp(ts, context.getCurrentTimezone());
@@ -329,7 +329,7 @@ public class MDateTimeDiff
         VARCHAR(MString.VARCHAR)
         {
             @Override
-            long[] getYMDHMS(PValueSource source, StringType[] type, TExecutionContext context)
+            long[] getYMDHMS(ValueSource source, StringType[] type, TExecutionContext context)
             {
                 String st = source.getString();
                 long hms[] = new long[6];
@@ -361,7 +361,7 @@ public class MDateTimeDiff
         TIME_VARCHAR(MString.VARCHAR)
         {
             @Override
-            long[] getYMDHMS(PValueSource source, StringType[] type, TExecutionContext context)
+            long[] getYMDHMS(ValueSource source, StringType[] type, TExecutionContext context)
             {
                 String st = source.getString();
                 long hms[] = new long[6];
@@ -397,7 +397,7 @@ public class MDateTimeDiff
         }
         ;
         
-        abstract long[] getYMDHMS(PValueSource source, StringType[] type, TExecutionContext context);
+        abstract long[] getYMDHMS(ValueSource source, StringType[] type, TExecutionContext context);
         final TClass type;
         private ArgType(TClass type)
         {
@@ -419,7 +419,7 @@ public class MDateTimeDiff
         }
 
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             output.putNull();
         }
@@ -471,7 +471,7 @@ public class MDateTimeDiff
         }
 
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             long ymd0[], ymd1[];
             StringType t0[] = new StringType[1];

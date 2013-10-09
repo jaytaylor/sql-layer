@@ -18,8 +18,8 @@ package com.foundationdb.qp.row;
 
 import com.foundationdb.qp.rowtype.CompoundRowType;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueSources;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.util.ShareHolder;
 
 public class CompoundRow extends AbstractRow {
@@ -35,12 +35,12 @@ public class CompoundRow extends AbstractRow {
     }
 
     @Override
-    public PValueSource pvalue(int i) {
-        PValueSource source;
+    public ValueSource value(int i) {
+        ValueSource source;
         if (i < firstRowFields) {
-            source = firstRowh.isEmpty() ? nullPValue(i) : firstRowh.get().pvalue(i);
+            source = firstRowh.isEmpty() ? nullValue(i) : firstRowh.get().value(i);
         } else {
-            source = secondRowh.isEmpty() ? nullPValue(i) : secondRowh.get().pvalue(i - rowOffset);
+            source = secondRowh.isEmpty() ? nullValue(i) : secondRowh.get().value(i - rowOffset);
         }
         return source;
     }
@@ -84,8 +84,8 @@ public class CompoundRow extends AbstractRow {
         this.rowOffset = type.first().nFields();
     }
 
-    private PValueSource nullPValue(int i) {
-        return PValueSources.getNullSource(rowType.typeInstanceAt(i));
+    private ValueSource nullValue(int i) {
+        return ValueSources.getNullSource(rowType.typeInstanceAt(i));
     }
 
     // Object state

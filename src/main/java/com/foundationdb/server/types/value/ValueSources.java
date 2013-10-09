@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.types.pvalue;
+package com.foundationdb.server.types.value;
 
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.AkType;
@@ -40,16 +40,16 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
 
-public final class PValueSources {
+public final class ValueSources {
 
-    private static final Logger logger = LoggerFactory.getLogger(PValueSources.class);
+    private static final Logger logger = LoggerFactory.getLogger(ValueSources.class);
 
-    public static TClass tClass(PValueSource source) {
+    public static TClass tClass(ValueSource source) {
         return TInstance.tClass(source.tInstance());
     }
 
-    public static PUnderlying pUnderlying(PValueSource source) {
-        return TInstance.pUnderlying(source.tInstance());
+    public static UnderlyingType underlyingType(ValueSource source) {
+        return TInstance.underlyingType(source.tInstance());
     }
 
     /**
@@ -58,8 +58,8 @@ public final class PValueSources {
      * @param source the source to extract a long from
      * @return the source's value as a long
      */
-    public static long getLong(PValueSource source) {
-        switch (pUnderlying(source)) {
+    public static long getLong(ValueSource source) {
+        switch (underlyingType(source)) {
         case INT_8:
             return source.getInt8();
         case INT_16:
@@ -73,77 +73,77 @@ public final class PValueSources {
         }
     }
 
-    public static PValue pValuefromObject (Object object, TInstance tInstance) {
-        PValue pValue = new PValue(tInstance);
+    public static Value valuefromObject(Object object, TInstance tInstance) {
+        Value value = new Value(tInstance);
         if (object == null) {
-            pValue.putNull();
+            value.putNull();
         }
         else if (object instanceof String) {
             // This is the common case, so let's test for it first
-            if (TInstance.pUnderlying(tInstance) == PUnderlying.STRING)
-                pValue.putString((String)object, null);
+            if (TInstance.underlyingType(tInstance) == UnderlyingType.STRING)
+                value.putString((String)object, null);
             else if (tInstance == null) {
                 tInstance = MString.VARCHAR.instance(
                         ((String)object).length(), StringFactory.DEFAULT_CHARSET.ordinal(), StringFactory.NULL_COLLATION_ID, false);
-                pValue = new PValue(tInstance, (String)object);
+                value = new Value(tInstance, (String)object);
             }
         }
         else if (tInstance == null) {
-            pValue = fromObject(object);
+            value = fromObject(object);
         }
         else {
-            switch (TInstance.pUnderlying(tInstance)) {
+            switch (TInstance.underlyingType(tInstance)) {
             case INT_8:
             case INT_16:
             case UINT_16:
             case INT_32:
             case INT_64:
                 if (object instanceof Number)
-                    pvalueFromLong(((Number)object).longValue(), pValue);
+                    valueFromLong(((Number)object).longValue(), value);
                 break;
             case FLOAT:
                 if (object instanceof Number)
-                    pValue.putFloat(((Number)object).floatValue());
+                    value.putFloat(((Number)object).floatValue());
                 break;
             case DOUBLE:
                 if (object instanceof Number)
-                    pValue.putDouble(((Number)object).doubleValue());
+                    value.putDouble(((Number)object).doubleValue());
                 break;
             case BYTES:
                 if (object instanceof byte[])
-                    pValue.putBytes((byte[])object);
+                    value.putBytes((byte[])object);
                 else if (object instanceof ByteSource)
-                    pValue.putBytes(((ByteSource)object).toByteSubarray());
+                    value.putBytes(((ByteSource)object).toByteSubarray());
                 break;
             case STRING:
-                pValue.putString(object.toString(), null);
+                value.putString(object.toString(), null);
                 break;
             case BOOL:
                 if (object instanceof Boolean)
-                    pValue.putBool((Boolean)object);
+                    value.putBool((Boolean)object);
                 break;
             }
         }
-        if (!pValue.hasAnyValue()) {
+        if (!value.hasAnyValue()) {
             if (tInstance == null) {
-                pValue = fromObject(object);
+                value = fromObject(object);
             } else {
-                pValue = convertFromObject(object, tInstance);
+                value = convertFromObject(object, tInstance);
             }
         }
-        return pValue;
+        return value;
     }
     
-    private static PValue convertFromObject (Object object, TInstance tInstance) {
-        PValue in = fromObject(object);
+    private static Value convertFromObject (Object object, TInstance tInstance) {
+        Value in = fromObject(object);
         TInstance inTInstance = in.tInstance();
-        PValue out = null;
+        Value out = null;
         if (!inTInstance.equals(tInstance)) {
             TExecutionContext context =
                     new TExecutionContext(Collections.singletonList(in.tInstance()),
                                 tInstance,
                                 null);
-            out = new PValue (tInstance);
+            out = new Value(tInstance);
             tInstance.typeClass().fromObject(context, in, out);
         } else {
             out = in;
@@ -158,41 +158,41 @@ public final class PValueSources {
      * @return
      */
     public static TPreptimeValue fromObject(Object object, TInstance tInstance) {
-        PValueSource pvalue = pValuefromObject(object, tInstance);
+        ValueSource value = valuefromObject(object, tInstance);
         if (tInstance == null) {
-            if (pvalue.tInstance() == null) {
-                return new TPreptimeValue(pvalue.tInstance());
+            if (value.tInstance() == null) {
+                return new TPreptimeValue(value.tInstance());
             }
-            return new TPreptimeValue(pvalue.tInstance(), pvalue);
+            return new TPreptimeValue(value.tInstance(), value);
         }
-        return new TPreptimeValue (tInstance,pvalue);
+        return new TPreptimeValue (tInstance,value);
     }
    
-    private static PValue fromObject(Object object) {
+    private static Value fromObject(Object object) {
         final TInstance tInstance;
-        PValue value = null;
+        Value value = null;
            
         if (object instanceof String) {
             String s = (String) object;
             tInstance = MString.VARCHAR.instance(
                     s.length(), StringFactory.DEFAULT_CHARSET.ordinal(), StringFactory.NULL_COLLATION_ID, false);
-            value = new PValue(tInstance, s);
+            value = new Value(tInstance, s);
         }
         else if (object instanceof Long) {
             tInstance = MNumeric.BIGINT.instance(false);
-            value = new PValue (tInstance, (Long)object);
+            value = new Value(tInstance, (Long)object);
         }
         else if (object instanceof Integer) {
             tInstance = MNumeric.INT.instance(false);
-            value = new PValue(tInstance, (Integer) object);
+            value = new Value(tInstance, (Integer) object);
         }
         else if (object instanceof Double) {
             tInstance = MApproximateNumber.DOUBLE.instance(false);
-            value = new PValue(tInstance, (Double) object);
+            value = new Value(tInstance, (Double) object);
         }
         else if (object instanceof Float) {
             tInstance = MApproximateNumber.FLOAT.instance(false);
-            value = new PValue(tInstance, (Float)object);
+            value = new Value(tInstance, (Float)object);
         }
         else if (object instanceof BigDecimal) {
             BigDecimal bd = (BigDecimal) object;
@@ -203,7 +203,7 @@ public final class PValueSources {
                 precision = scale;
             }
             tInstance = MNumeric.DECIMAL.instance(precision, scale, false);
-            value = new PValue(tInstance);
+            value = new Value(tInstance);
             value.putObject(new MBigDecimalWrapper(bd));
         }
         else if (object instanceof ByteSource || object instanceof byte[]) {
@@ -219,28 +219,28 @@ public final class PValueSources {
                 bytes = Arrays.copyOfRange(srcArray, offset, end);
             }
             tInstance = MBinary.VARBINARY.instance(bytes.length, false);
-            value = new PValue(tInstance, bytes);
+            value = new Value(tInstance, bytes);
         }
         else if (object instanceof BigInteger) {
             tInstance = MNumeric.BIGINT_UNSIGNED.instance(false);
             BigInteger bi = (BigInteger) object;
-            value = new PValue(tInstance, bi.longValue());
+            value = new Value(tInstance, bi.longValue());
         }
         else if (object instanceof Boolean) {
             tInstance = AkBool.INSTANCE.instance(false);
-            value = new PValue(tInstance, (Boolean)object);
+            value = new Value(tInstance, (Boolean)object);
         }
         else if (object instanceof Character) {
             tInstance = MString.VARCHAR.instance(1, false);
-            value = new PValue(tInstance, object.toString());
+            value = new Value(tInstance, object.toString());
         }
         else if (object instanceof Short) {
             tInstance = MNumeric.SMALLINT.instance(false);
-            value = new PValue(tInstance, (Short)object);
+            value = new Value(tInstance, (Short)object);
         }
         else if (object instanceof Byte) {
             tInstance = MNumeric.TINYINT.instance(false);
-            value = new PValue(tInstance, (Byte)object);
+            value = new Value(tInstance, (Byte)object);
         }
         else {
             throw new UnsupportedOperationException("can't convert " + object + " of type " + object.getClass());
@@ -249,8 +249,8 @@ public final class PValueSources {
         return value;
     }
 
-    public static void pvalueFromLong(long value, PValue result) {
-        PUnderlying underlying = pUnderlying(result);
+    public static void valueFromLong(long value, Value result) {
+        UnderlyingType underlying = underlyingType(result);
         switch (underlying) {
         case INT_8:
             result.putInt8((byte)value);
@@ -288,7 +288,7 @@ public final class PValueSources {
         }
     }
 
-    public static Object toObject(PValueSource valueSource, AkType akType) {
+    public static Object toObject(ValueSource valueSource, AkType akType) {
         if (valueSource.isNull())
             return null;
 
@@ -297,7 +297,7 @@ public final class PValueSources {
             return valueSource.getBoolean();
         case LONG_AKTYPE:
             long v;
-            switch (pUnderlying(valueSource)) {
+            switch (underlyingType(valueSource)) {
             case INT_8:
                 v = valueSource.getInt8();
                 break;
@@ -325,15 +325,15 @@ public final class PValueSources {
             }
             return v;
         case FLOAT_AKTYPE:
-            return pUnderlying(valueSource) == PUnderlying.STRING
+            return underlyingType(valueSource) == UnderlyingType.STRING
                     ? Float.parseFloat(valueSource.getString())
                     : valueSource.getFloat();
         case DOUBLE_AKTYPE:
-            return pUnderlying(valueSource) == PUnderlying.STRING
+            return underlyingType(valueSource) == UnderlyingType.STRING
                     ? Double.parseDouble(valueSource.getString())
                     : valueSource.getDouble();
         case OBJECT_AKTYPE:
-            if (pUnderlying(valueSource) == PUnderlying.STRING)
+            if (underlyingType(valueSource) == UnderlyingType.STRING)
                 return valueSource.getString();
             if (akType == AkType.VARBINARY)
                 return new WrappingByteSource(valueSource.getBytes());
@@ -345,7 +345,7 @@ public final class PValueSources {
         }
     }
 
-    public static Object toObject(PValueSource source) {
+    public static Object toObject(ValueSource source) {
         if (source == null || source.isNull()) {
             return null;
         }
@@ -364,7 +364,7 @@ public final class PValueSources {
             return new WrappingByteSource(source.getBytes());
         }
         
-        PUnderlying underlying = pUnderlying(source);
+        UnderlyingType underlying = underlyingType(source);
         switch (underlying) {
         case BOOL:      return source.getBoolean();
         case INT_8:     return source.getInt8();
@@ -380,7 +380,7 @@ public final class PValueSources {
         }
     }
 
-    public static boolean areEqual(PValueSource one, PValueSource two, TInstance instance) {
+    public static boolean areEqual(ValueSource one, ValueSource two, TInstance instance) {
         TInstance oneTInstance = one.tInstance();
         TInstance twoTInstance = two.tInstance();
         if (oneTInstance == null || twoTInstance == null)
@@ -393,7 +393,7 @@ public final class PValueSources {
             return false;
         if (one.hasCacheValue() && two.hasCacheValue())
             return one.getObject().equals(two.getObject());
-        switch (TInstance.pUnderlying(oneTInstance)) {
+        switch (TInstance.underlyingType(oneTInstance)) {
         case BOOL:
             return one.getBoolean() == two.getBoolean();
         case INT_8:
@@ -419,11 +419,11 @@ public final class PValueSources {
         }
     }
 
-    public static int hash(PValueSource source, AkCollator collator) {
+    public static int hash(ValueSource source, AkCollator collator) {
         if (source.isNull())
             return 0;
         final long hash;
-        switch (pUnderlying(source)) {
+        switch (underlyingType(source)) {
         case BOOL:
             hash = source.getBoolean() ? 1 : 0;
             break;
@@ -461,15 +461,15 @@ public final class PValueSources {
         return ((int) (hash >> 32)) ^ (int) hash;
     }
 
-    public static PValueSource getNullSource(TInstance underlying) {
-        PValue result = new PValue(underlying);
+    public static ValueSource getNullSource(TInstance underlying) {
+        Value result = new Value(underlying);
         result.putNull();
         return result;
     }
 
-    private PValueSources() {}
+    private ValueSources() {}
 
-    public static void toStringSimple(PValueSource source, StringBuilder out) {
+    public static void toStringSimple(ValueSource source, StringBuilder out) {
         if (source.isNull()) {
             out.append("NULL");
             return;
@@ -483,7 +483,7 @@ public final class PValueSources {
             return;
         }
         
-        switch (pUnderlying(source)) {
+        switch (underlyingType(source)) {
         case BOOL:
             out.append(source.getBoolean());
             break;
@@ -517,13 +517,13 @@ public final class PValueSources {
             break;
         default:
             // toStrings are non-critical, so let's not throw an error
-            logger.warn("unknown PValueSource underlying type: {} ({})", source.tInstance(), source);
+            logger.warn("unknown ValueSource underlying type: {} ({})", source.tInstance(), source);
             out.append("<?>");
             break;
         }
     }
 
-    public static String toStringSimple(PValueSource source) {
+    public static String toStringSimple(ValueSource source) {
         StringBuilder sb = new StringBuilder();
         toStringSimple(source, sb);
         return sb.toString();

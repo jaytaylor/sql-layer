@@ -20,7 +20,7 @@ package com.foundationdb.qp.operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types.pvalue.PValueTargets;
+import com.foundationdb.server.types.value.ValueTargets;
 import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.explain.Attributes;
@@ -306,9 +306,9 @@ class IfEmpty_Default extends Operator
                 outerJoinRowColumnEvaluation.with(context);
                 outerJoinRowColumnEvaluation.with(bindings);
                 outerJoinRowColumnEvaluation.evaluate();
-                PValueTargets.copyFrom(
+                ValueTargets.copyFrom(
                         outerJoinRowColumnEvaluation.resultValue(),
-                        valuesHolderRow.pvalueAt(i));
+                        valuesHolderRow.valueAt(i));
             }
             return valuesHolderRow;
         }

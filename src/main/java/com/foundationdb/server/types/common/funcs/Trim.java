@@ -17,8 +17,8 @@
 package com.foundationdb.server.types.common.funcs;
 
 import com.foundationdb.server.types.*;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 
@@ -29,7 +29,7 @@ public abstract class Trim extends TScalarBase {
         TScalar rtrim = new Trim(stringType) {
 
             @Override
-            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+            protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
                 String st = inputs.get(0).getString();
                 String trim = inputs.get(1).getString();
                 
@@ -49,7 +49,7 @@ public abstract class Trim extends TScalarBase {
         TScalar ltrim = new Trim(stringType) {
 
             @Override
-            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+            protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
                 String st = inputs.get(0).getString();
                 String trim = inputs.get(1).getString();
                 
@@ -69,7 +69,7 @@ public abstract class Trim extends TScalarBase {
         TScalar trim = new Trim(stringType) {
 
             @Override
-            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+            protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
                 String st = inputs.get(0).getString();
                 String trim = inputs.get(1).getString();
                 

@@ -25,8 +25,8 @@ import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 import org.joda.time.DateTimeConstants;
@@ -43,7 +43,7 @@ public abstract class MWeek extends TScalarBase
         new MWeek("WEEK")
         {
             @Override
-            protected int getMode(TExecutionContext context, LazyList<? extends PValueSource> inputs)
+            protected int getMode(TExecutionContext context, LazyList<? extends ValueSource> inputs)
             {
                 return 0;
             }
@@ -57,7 +57,7 @@ public abstract class MWeek extends TScalarBase
         new MWeek("WEEKOFYEAR")
         {
             @Override
-            protected int getMode(TExecutionContext context, LazyList<? extends PValueSource> inputs)
+            protected int getMode(TExecutionContext context, LazyList<? extends ValueSource> inputs)
             {
                 return 3;
             }
@@ -71,7 +71,7 @@ public abstract class MWeek extends TScalarBase
         new MWeek("WEEK")
         {
             @Override
-            protected int getMode(TExecutionContext context, LazyList<? extends PValueSource> inputs)
+            protected int getMode(TExecutionContext context, LazyList<? extends ValueSource> inputs)
             {
                 int mode = (int)inputs.get(1).getInt64();
                 if (mode < 0 || mode > 7)
@@ -90,7 +90,7 @@ public abstract class MWeek extends TScalarBase
         }
     };
 
-    protected abstract int getMode(TExecutionContext context, LazyList<? extends PValueSource> inputs);
+    protected abstract int getMode(TExecutionContext context, LazyList<? extends ValueSource> inputs);
     
     private final String name;
     private MWeek(String name)
@@ -99,7 +99,7 @@ public abstract class MWeek extends TScalarBase
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
         int date = inputs.get(0).getInt32();
         long ymd[] = MDatetimes.decodeDate(date);

@@ -24,7 +24,7 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -146,11 +146,11 @@ public class GroupScanIT extends OperatorITBase
         // Get and checking each field should work
         assertEquals(Long.valueOf(11L), getLong(row, 0));
         assertEquals(Long.valueOf(1L), getLong(row, 1));
-        assertEquals("ori", row.pvalue(2).getString());
+        assertEquals("ori", row.value(2).getString());
         // Getting all value sources and then using them should also work
-        PValueSource v0 = row.pvalue(0);
-        PValueSource v1 = row.pvalue(1);
-        PValueSource v2 = row.pvalue(2);
+        ValueSource v0 = row.value(0);
+        ValueSource v1 = row.value(1);
+        ValueSource v2 = row.value(2);
         assertEquals(11L, v0.getInt64());
         assertEquals(1L, v1.getInt64());
         assertEquals("ori", v2.getString());

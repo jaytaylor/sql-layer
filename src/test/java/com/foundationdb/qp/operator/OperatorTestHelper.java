@@ -32,8 +32,8 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueSources;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.util.Strings;
 import com.foundationdb.util.tap.InOutTap;
 import com.persistit.Key;
@@ -80,8 +80,8 @@ public final class OperatorTestHelper {
     }
     
     private static void checkRowInstance(Row expected, Row actual, int i, int rowCount, List<Row> actuals, Collection<? extends Row> expecteds) {   
-        PValueSource actualSource = actual.pvalue(i);
-        PValueSource expectedSource = expected.pvalue(i);
+        ValueSource actualSource = actual.value(i);
+        ValueSource expectedSource = expected.value(i);
         TInstance actualType = actual.rowType().typeInstanceAt(i);
         TInstance expectedType = expected.rowType().typeInstanceAt(i);
         if (actualType == null || expectedType == null) {
@@ -91,7 +91,7 @@ public final class OperatorTestHelper {
         assertTrue(expectedType + " != " + actualType, expectedType.equalsExcludingNullable(actualType));
 
         
-        if(!PValueSources.areEqual(actualSource, expectedSource, expectedType) &&
+        if(!ValueSources.areEqual(actualSource, expectedSource, expectedType) &&
            !(actualSource.isNull() && expectedSource.isNull())) {
             Assert.assertEquals(
                     String.format("row[%d] field[%d]", rowCount, i),

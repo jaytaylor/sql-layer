@@ -19,7 +19,7 @@ package com.foundationdb.server.types.mcompat.mtypes;
 
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.collation.AkCollatorFactory;
-import com.foundationdb.server.types.PValueIO;
+import com.foundationdb.server.types.ValueIO;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
@@ -27,8 +27,8 @@ import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.StringFactory;
 import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.mcompat.MBundle;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.sql.types.TypeId;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
@@ -55,13 +55,13 @@ public class MString extends TString
     public static final MString LONGTEXT = new MString(TypeId.LONGVARCHAR_ID, "longtext", Integer.MAX_VALUE); // TODO not big enough!
 
     @Override
-    protected PValueIO getPValueIO() {
-        return pvalueIO;
+    protected ValueIO getValueIO() {
+        return PVALUE_IO;
     }
 
     @Override
-    public void selfCast(TExecutionContext context, TInstance sourceInstance, PValueSource source,
-                         TInstance targetInstance, PValueTarget target) {
+    public void selfCast(TExecutionContext context, TInstance sourceInstance, ValueSource source,
+                         TInstance targetInstance, ValueTarget target) {
         int maxTargetLen = targetInstance.attribute(StringAttribute.MAX_LENGTH);
         String sourceString = source.getString();
         if (sourceString.length() > maxTargetLen) {
@@ -98,7 +98,7 @@ public class MString extends TString
     }
     
     @Override
-    public void fromObject(TExecutionContext context, PValueSource in, PValueTarget out)
+    public void fromObject(TExecutionContext context, ValueSource in, ValueTarget out)
     {
         if (in.isNull()) {
             out.putNull();
@@ -108,7 +108,7 @@ public class MString extends TString
         int charsetId = context.outputTInstance().attribute(StringAttribute.CHARSET);
         int collatorId = context.outputTInstance().attribute(StringAttribute.COLLATION);
 
-        switch (TInstance.pUnderlying(in.tInstance()))
+        switch (TInstance.underlyingType(in.tInstance()))
         {
             case STRING:
                 String inStr = in.getString();
@@ -152,20 +152,20 @@ public class MString extends TString
         }
     }
 
-    private static final PValueIO pvalueIO = new PValueIO() {
+    private static final ValueIO PVALUE_IO = new ValueIO() {
         @Override
-        public void copyCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
+        public void copyCanonical(ValueSource in, TInstance typeInstance, ValueTarget out) {
             out.putString(in.getString(), null);
         }
 
         @Override
-        public void writeCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
+        public void writeCollating(ValueSource inValue, TInstance inInstance, ValueTarget out) {
             final AkCollator collator = getCollator(inInstance);
             out.putString(AkCollator.getString(inValue, collator), collator);
         }
 
         @Override
-        public void readCollating(PValueSource in, TInstance typeInstance, PValueTarget out) {
+        public void readCollating(ValueSource in, TInstance typeInstance, ValueTarget out) {
             if (in.canGetRawValue())
                 out.putString(in.getString(), null);
             else if (in.hasCacheValue())

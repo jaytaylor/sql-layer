@@ -30,8 +30,8 @@ import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 
@@ -47,7 +47,7 @@ public final class MUnaryMinus extends TScalarBase {
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
         strategy.apply(inputs.get(0), output, context);
     }
 
@@ -77,7 +77,7 @@ public final class MUnaryMinus extends TScalarBase {
     private enum Strategy {
         INT(MNumeric.INT) {
             @Override
-            protected void apply(PValueSource in, PValueTarget out, TExecutionContext context) {
+            protected void apply(ValueSource in, ValueTarget out, TExecutionContext context) {
                 int neg = -in.getInt32();
                 out.putInt32(neg);
             }
@@ -89,7 +89,7 @@ public final class MUnaryMinus extends TScalarBase {
         },
         BIGINT(MNumeric.BIGINT) {
             @Override
-            protected void apply(PValueSource in, PValueTarget out, TExecutionContext context) {
+            protected void apply(ValueSource in, ValueTarget out, TExecutionContext context) {
                 long neg = -in.getInt64();
                 out.putInt64(neg);
             }
@@ -101,7 +101,7 @@ public final class MUnaryMinus extends TScalarBase {
         },
         DOUBLE(MApproximateNumber.DOUBLE) {
             @Override
-            protected void apply(PValueSource in, PValueTarget out, TExecutionContext context) {
+            protected void apply(ValueSource in, ValueTarget out, TExecutionContext context) {
                 double neg = -in.getDouble();
                 out.putDouble(neg);
             }
@@ -113,7 +113,7 @@ public final class MUnaryMinus extends TScalarBase {
         },
         DECIMAL(MNumeric.DECIMAL) {
             @Override
-            protected void apply(PValueSource in, PValueTarget out, TExecutionContext context) {
+            protected void apply(ValueSource in, ValueTarget out, TExecutionContext context) {
                 BigDecimalWrapper wrapped = MBigDecimal.getWrapper(context, DEC_INDEX);
                 wrapped.set(MBigDecimal.getWrapper(in, context.inputTInstanceAt(0)));
                 wrapped.negate();
@@ -126,7 +126,7 @@ public final class MUnaryMinus extends TScalarBase {
             }
         }
         ;
-        protected abstract void apply(PValueSource in, PValueTarget out, TExecutionContext context);
+        protected abstract void apply(ValueSource in, ValueTarget out, TExecutionContext context);
         protected abstract TInstance resultType(TInstance operand);
 
         private Strategy(TClass tClass) {

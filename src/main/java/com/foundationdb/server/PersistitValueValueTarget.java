@@ -18,18 +18,18 @@ package com.foundationdb.server;
 
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.persistit.Value;
 
-public final class PersistitValuePValueTarget implements PValueTarget {
+public final class PersistitValueValueTarget implements ValueTarget {
     
-    // PersistitValuePValueTarget interface
+    // PersistitValueValueTarget interface
     
     public void attach(Value value) {
         this.value = value;
     }
     
-    // PValueTarget interface
+    // ValueTarget interface
     
     @Override
     public boolean supportsCachedObjects() {

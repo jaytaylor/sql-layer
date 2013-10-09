@@ -22,7 +22,7 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.rowtype.ProjectedRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.util.AkibanAppender;
@@ -43,7 +43,7 @@ public class ProjectedRow extends AbstractRow
         buffer.append('(');
         boolean first = true;
         for (int i = 0, pEvalsSize = pEvaluatableExpressions.size(); i < pEvalsSize; i++) {
-            PValueSource evaluation = pvalue(i);
+            ValueSource evaluation = value(i);
             TInstance instance = tInstances.get(i);
             if (first) {
                 first = false;
@@ -65,7 +65,7 @@ public class ProjectedRow extends AbstractRow
     }
 
     @Override
-    public PValueSource pvalue(int index) {
+    public ValueSource value(int index) {
         TEvaluatableExpression evaluatableExpression = pEvaluatableExpressions.get(index);
         if (!evaluated[index]) {
             evaluatableExpression.with(context);
@@ -118,16 +118,16 @@ public class ProjectedRow extends AbstractRow
         this.tInstances = tInstances;
     }
 
-    public Iterator<PValueSource> getPValueSources()
+    public Iterator<ValueSource> getValueSources()
     {
         if (pEvaluatableExpressions == null)
             return null;
         else
         {
             int size = pEvaluatableExpressions.size();
-            List<PValueSource> ret = new ArrayList<>(size);
+            List<ValueSource> ret = new ArrayList<>(size);
             for (int i = 0; i < size; ++i)
-                ret.add(pvalue(i));
+                ret.add(value(i));
             return ret.iterator();
         }
     }

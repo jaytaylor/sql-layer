@@ -75,7 +75,7 @@ public class PostgresCopyCsvOutputter extends PostgresOutputter<Row>
             if (i > 0) outputStream.write(format.getDelimiterByte());
             PostgresType type = columnTypes.get(i);
             boolean binary = context.isColumnBinary(i);
-            QuotingByteArrayOutputStream bytes = (QuotingByteArrayOutputStream)encoder.encodePValue(row.pvalue(i), type, binary);
+            QuotingByteArrayOutputStream bytes = (QuotingByteArrayOutputStream)encoder.encodeValue(row.value(i), type, binary);
             if (bytes != null) {
                 bytes.quote(format);
                 bytes.writeTo(outputStream);

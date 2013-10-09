@@ -25,7 +25,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.Strings;
@@ -443,8 +443,8 @@ final class UnionAll_Default extends Operator {
         }
 
         @Override
-        public PValueSource pvalue(int index) {
-            return delegate.pvalue(index);
+        public ValueSource value(int index) {
+            return delegate.value(index);
         }
 
         /**

@@ -18,32 +18,32 @@
 package com.foundationdb.qp.persistitadapter.indexcursor;
 
 import com.foundationdb.qp.expression.BoundExpressions;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
 
 class SpatialIndexBoundExpressions implements BoundExpressions
 {
     // BoundExpressions interface
 
     @Override
-    public PValueSource pvalue(int position)
+    public ValueSource value(int position)
     {
-        return pValueSources[position];
+        return valueSources[position];
     }
 
     // SpatialIndexBoundExpressions interface
 
-    public void value(int position, PValueSource valueSource)
+    public void value(int position, ValueSource valueSource)
     {
-        pValueSources[position] = valueSource;
+        valueSources[position] = valueSource;
     }
 
     public SpatialIndexBoundExpressions(int nFields)
     {
-        pValueSources = new PValue[nFields];
+        valueSources = new Value[nFields];
     }
 
     // Object state
 
-    private PValueSource[] pValueSources;
+    private ValueSource[] valueSources;
 }

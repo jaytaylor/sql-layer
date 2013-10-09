@@ -17,13 +17,13 @@
 
 package com.foundationdb.server.types;
 
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 
 public interface TAggregator extends TOverload {
-    void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, Object option);
-    void emptyValue(PValueTarget state);
+    void input(TInstance instance, ValueSource source, TInstance stateType, Value state, Object option);
+    void emptyValue(ValueTarget state);
 //    TInstance resultType(TPreptimeValue value);
 //    TClass getTypeClass();
 //    String name();

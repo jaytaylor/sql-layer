@@ -17,11 +17,25 @@
 
 package com.foundationdb.server.types;
 
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 
-public interface PValueIO {
-    void copyCanonical(PValueSource in, TInstance typeInstance, PValueTarget out);
-    void writeCollating(PValueSource in, TInstance typeInstance, PValueTarget out);
-    void readCollating(PValueSource in, TInstance typeInstance, PValueTarget out);
+public abstract class SimpleValueIO implements ValueIO {
+
+    protected abstract void copy(ValueSource in, TInstance typeInstance, ValueTarget out);
+
+    @Override
+    public void copyCanonical(ValueSource in, TInstance typeInstance, ValueTarget out) {
+        copy(in, typeInstance, out);
+    }
+
+    @Override
+    public void writeCollating(ValueSource in, TInstance typeInstance, ValueTarget out) {
+        copy(in, typeInstance, out);
+    }
+
+    @Override
+    public void readCollating(ValueSource in, TInstance typeInstance, ValueTarget out) {
+        copy(in, typeInstance, out);
+    }
 }

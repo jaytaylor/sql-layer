@@ -22,10 +22,10 @@ import java.security.NoSuchAlgorithmException;
 
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.persistit.Key;
 
-public class PersistitKeyPValueTarget implements PValueTarget {
+public class PersistitKeyValueTarget implements ValueTarget {
 
     private final static int DIGEST_SIZE = 16;
 
@@ -47,17 +47,17 @@ public class PersistitKeyPValueTarget implements PValueTarget {
     private int maximumKeySegmentLength = Integer.MAX_VALUE;
     
     
-    public PersistitKeyPValueTarget() {
+    public PersistitKeyValueTarget() {
         // default constructor
     }
     
-    public PersistitKeyPValueTarget(int max) {
+    public PersistitKeyValueTarget(int max) {
         assert max > DIGEST_SIZE;
         maximumKeySegmentLength = max;
     }
     
     
-    // PersistitKeyPValueTarget interface
+    // PersistitKeyValueTarget interface
 
     @Override
     public boolean supportsCachedObjects() {
@@ -68,7 +68,7 @@ public class PersistitKeyPValueTarget implements PValueTarget {
         this.key = key;
     }
     
-    // PValueTarget interface
+    // ValueTarget interface
     
     @Override
     public TInstance tInstance() {

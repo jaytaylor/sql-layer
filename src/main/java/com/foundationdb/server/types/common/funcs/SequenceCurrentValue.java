@@ -18,6 +18,8 @@
 package com.foundationdb.server.types.common.funcs;
 
 import com.foundationdb.server.types.texpressions.TScalarBase;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,8 +31,6 @@ import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 
 public class SequenceCurrentValue extends TScalarBase {
@@ -67,7 +67,7 @@ public class SequenceCurrentValue extends TScalarBase {
 
     @Override
     protected void doEvaluate(TExecutionContext context,
-            LazyList<? extends PValueSource> inputs, PValueTarget output) {
+            LazyList<? extends ValueSource> inputs, ValueTarget output) {
         String schema = inputs.get(0).getString();
         String sequence = inputs.get(1).getString();
         logger.debug("Sequence loading : {}.{}", schema, sequence);

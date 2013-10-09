@@ -18,13 +18,13 @@
 package com.foundationdb.qp.persistitadapter.indexrow;
 
 import com.foundationdb.ais.model.*;
-import com.foundationdb.qp.persistitadapter.indexcursor.PValueSortKeyAdapter;
+import com.foundationdb.qp.persistitadapter.indexcursor.ValueSortKeyAdapter;
 import com.foundationdb.qp.persistitadapter.indexcursor.SortKeyAdapter;
 import com.foundationdb.qp.persistitadapter.indexcursor.SortKeyTarget;
 import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.util.PersistitKey;
-import com.foundationdb.server.PersistitKeyPValueSource;
+import com.foundationdb.server.PersistitKeyValueSource;
 import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.geophile.SpaceLatLon;
 import com.foundationdb.server.rowdata.*;
@@ -36,7 +36,7 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.ArgumentValidation;
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -85,7 +85,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     // RowBase interface
 
     @Override
-    public PValueSource pvalue(int i) {
+    public ValueSource value(int i) {
         return null;
     }
 
@@ -159,7 +159,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         int indexField = 0;
         IndexRowComposition indexRowComp = index.indexRowComposition();
         FieldDef[] fieldDefs = index.indexDef().getRowDef().getFieldDefs();
-        RowDataSource rowDataValueSource = new RowDataPValueSource();
+        RowDataSource rowDataValueSource = new RowDataValueSource();
         while (indexField < indexRowComp.getLength()) {
             // handleSpatialColumn will increment pKeyAppends once for all spatial columns
             if (spatialHandler == null || !spatialHandler.handleSpatialColumn(rowData, indexField)) {
@@ -327,14 +327,14 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     // For testing only. It does an allocation per call, and is not appropriate for product use.
     public long nullSeparator()
     {
-        PersistitKeyPValueSource valueSource = new PersistitKeyPValueSource(MNumeric.BIGINT.instance(true));
+        PersistitKeyValueSource valueSource = new PersistitKeyValueSource(MNumeric.BIGINT.instance(true));
         valueSource.attach(pKey, pKeyFields, MNumeric.BIGINT.instance(true));
         return valueSource.getInt64();
     }
 
     // For use by subclasses
 
-    protected void attach(PersistitKeyPValueSource source, int position, TInstance type)
+    protected void attach(PersistitKeyValueSource source, int position, TInstance type)
     {
         if (position < pKeyFields) {
             source.attach(pKey, position, type);
@@ -508,7 +508,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     private Value value;
     private int pKeyAppends = 0;
     private SpatialHandler spatialHandler;
-    private final SortKeyAdapter SORT_KEY_ADAPTER = PValueSortKeyAdapter.INSTANCE;
+    private final SortKeyAdapter SORT_KEY_ADAPTER = ValueSortKeyAdapter.INSTANCE;
 
     // Inner classes
 
@@ -533,20 +533,20 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
             for (int d = 0; d < dimensions; d++) {
                 rowDataSource.bind(fieldDefs[d], rowData);
 
-                RowDataPValueSource rowDataPValueSource = (RowDataPValueSource)rowDataSource;
+                RowDataValueSource rowDataValueSource = (RowDataValueSource)rowDataSource;
                 TClass tclass = tinstances[d].typeClass();
                 if (tclass == MNumeric.DECIMAL) {
-                    BigDecimalWrapper wrapper = MBigDecimal.getWrapper(rowDataPValueSource, tinstances[d]);
+                    BigDecimalWrapper wrapper = MBigDecimal.getWrapper(rowDataValueSource, tinstances[d]);
                     coords[d] =
                         d == 0
                         ? SpaceLatLon.scaleLat(wrapper.asBigDecimal())
                         : SpaceLatLon.scaleLon(wrapper.asBigDecimal());
                 }
                 else if (tclass == MNumeric.BIGINT) {
-                    coords[d] = rowDataPValueSource.getInt64();
+                    coords[d] = rowDataValueSource.getInt64();
                 }
                 else if (tclass == MNumeric.INT) {
-                    coords[d] = rowDataPValueSource.getInt32();
+                    coords[d] = rowDataValueSource.getInt32();
                 }
                 else {
                     assert false : fieldDefs[d].column();
@@ -575,7 +575,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
             tinstances = new TInstance[dimensions];
             fieldDefs = new FieldDef[dimensions];
             coords = new long[dimensions];
-            rowDataSource = new RowDataPValueSource();
+            rowDataSource = new RowDataValueSource();
             firstSpatialField = index.firstSpatialArgument();
             lastSpatialField = firstSpatialField + dimensions - 1;
             for (int d = 0; d < dimensions; d++) {

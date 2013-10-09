@@ -21,21 +21,21 @@ import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 
-public final class PValueRowDataCreator implements RowDataCreator<PValueSource> {
+public final class ValueRowDataCreator implements RowDataCreator<ValueSource> {
     @Override
-    public PValueSource eval(RowBase row, int f) {
-        return row.pvalue(f);
+    public ValueSource eval(RowBase row, int f) {
+        return row.value(f);
     }
 
     @Override
-    public boolean isNull(PValueSource source) {
+    public boolean isNull(ValueSource source) {
         return source.isNull();
     }
 
     @Override
-    public void put(PValueSource source, NewRow into, FieldDef fieldDef, int f) {
+    public void put(ValueSource source, NewRow into, FieldDef fieldDef, int f) {
 
         // TODO efficiency warning
         // NewRow and its users are pretty flexible about types, so let's just convert everything to a String.
@@ -50,7 +50,7 @@ public final class PValueRowDataCreator implements RowDataCreator<PValueSource> 
             putObj = source.tInstance().typeClass().formatCachedForNiceRow(source);
         }
         else {
-            switch (TInstance.pUnderlying(source.tInstance())) {
+            switch (TInstance.underlyingType(source.tInstance())) {
             case BOOL:
                 putObj = source.getBoolean();
                 break;

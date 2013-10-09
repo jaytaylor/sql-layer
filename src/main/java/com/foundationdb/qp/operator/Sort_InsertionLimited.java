@@ -23,8 +23,8 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.explain.std.SortOperatorExplainer;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueSources;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.ShareHolder;
@@ -210,7 +210,7 @@ class Sort_InsertionLimited extends Operator
                         while ((row = input.next()) != null) {
                             assert row.rowType() == sortType : row;
                             Holder holder;
-                            holder = new Holder(label, row, tEvaluations, null);
+                            holder = new Holder(label, row, tEvaluations);
                             if (preserveDuplicates) {
                                 label++;
                             }
@@ -322,12 +322,6 @@ class Sort_InsertionLimited extends Operator
             return state == State.DESTROYED;
         }
 
-        // private methods
-        
-        private boolean usingPValues() {
-            return tEvaluations != null;
-        }
-
         // Execution interface
 
         Execution(QueryContext context, Cursor input)
@@ -360,7 +354,7 @@ class Sort_InsertionLimited extends Operator
         private ShareHolder<Row> row;
         private Comparable<Holder>[] values;
 
-        public Holder(int index, Row arow, List<TEvaluatableExpression> evaluations, Void usingPValues) {
+        public Holder(int index, Row arow, List<TEvaluatableExpression> evaluations) {
             this.index = index;
 
             row = new ShareHolder<>();
@@ -436,10 +430,10 @@ class Sort_InsertionLimited extends Operator
             return row.toString();
         }
 
-        private Comparable toObject(PValueSource valueSource) {
+        private Comparable toObject(ValueSource valueSource) {
             if (valueSource.isNull())
                 return null;
-            switch (PValueSources.pUnderlying(valueSource)) {
+            switch (ValueSources.underlyingType(valueSource)) {
             case BOOL:
                 return valueSource.getBoolean();
             case INT_8:

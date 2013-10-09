@@ -22,7 +22,7 @@ import com.foundationdb.server.types.aksql.AkCategory;
 import com.foundationdb.server.types.common.TFormatter;
 import com.foundationdb.server.types.aksql.AkBundle;
 import com.foundationdb.server.types.common.types.NoAttrTClass;
-import com.foundationdb.server.types.pvalue.PUnderlying;
+import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.sql.types.TypeId;
 
 /**
@@ -33,5 +33,5 @@ public class AkBool
 {
     public static final NoAttrTClass INSTANCE 
             = new NoAttrTClass(AkBundle.INSTANCE.id(), "boolean", AkCategory.LOGIC, TFormatter.FORMAT.BOOL, 1, 1, 1,
-                               PUnderlying.BOOL, TParsers.BOOLEAN, 5, TypeId.BOOLEAN_ID);
+                               UnderlyingType.BOOL, TParsers.BOOLEAN, 5, TypeId.BOOLEAN_ID);
 }

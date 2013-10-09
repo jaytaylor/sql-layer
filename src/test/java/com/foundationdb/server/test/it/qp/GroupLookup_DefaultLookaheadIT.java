@@ -32,7 +32,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.pvalue.PValue;
+import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.types.texpressions.TPreparedLiteral;
 
@@ -198,7 +198,7 @@ public class GroupLookup_DefaultLookaheadIT extends GroupLookup_DefaultIT
 
     private Row intRow(RowType rowType, int x)
     {
-        List<TPreparedExpression> pExpressions = Arrays.<TPreparedExpression>asList(new TPreparedLiteral(MNumeric.INT.instance(false), new PValue(MNumeric.INT.instance(false), x)));
+        List<TPreparedExpression> pExpressions = Arrays.<TPreparedExpression>asList(new TPreparedLiteral(MNumeric.INT.instance(false), new Value(MNumeric.INT.instance(false), x)));
         return new ExpressionRow(rowType, queryContext, queryBindings, pExpressions);
     }
 

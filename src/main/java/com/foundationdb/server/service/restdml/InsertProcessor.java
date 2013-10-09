@@ -23,6 +23,8 @@ import java.util.Map.Entry;
 import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.service.externaldata.TableRowTracker;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,8 +43,6 @@ import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
 import com.foundationdb.util.AkibanAppender;
 
 public class InsertProcessor extends DMLProcessor {
@@ -78,7 +78,7 @@ public class InsertProcessor extends DMLProcessor {
     
     private void processContainer (JsonNode node, AkibanAppender appender, ProcessContext context) {
         boolean first = true;
-        Map<Column, PValueSource> pkValues = null;
+        Map<Column, ValueSource> pkValues = null;
         
         if (node.isObject()) {
             processTable (node, appender, context);
@@ -157,15 +157,15 @@ public class InsertProcessor extends DMLProcessor {
         // child table join key. 
         if (context.pkValues != null && context.table.getParentJoin() != null) {
             Join join = context.table.getParentJoin();
-            for (Entry<Column, PValueSource> entry : context.pkValues.entrySet()) {
+            for (Entry<Column, ValueSource> entry : context.pkValues.entrySet()) {
                 
                 int pos = join.getMatchingChild(entry.getKey()).getPosition();
-                PValue fkValue = getFKPvalue (entry.getValue());
+                Value fkValue = getFKPvalue (entry.getValue());
                 
-                if (context.queryBindings.getPValue(pos).isNull()) {
-                    context.queryBindings.setPValue(join.getMatchingChild(entry.getKey()).getPosition(), fkValue);
-                } else if (TClass.compare (context.queryBindings.getPValue(pos).tInstance(), 
-                                context.queryBindings.getPValue(pos),
+                if (context.queryBindings.getValue(pos).isNull()) {
+                    context.queryBindings.setValue(join.getMatchingChild(entry.getKey()).getPosition(), fkValue);
+                } else if (TClass.compare (context.queryBindings.getValue(pos).tInstance(),
+                                context.queryBindings.getValue(pos),
                                 fkValue.tInstance(),
                                 fkValue) != 0) {
                     throw new FKValueMismatchException (join.getMatchingChild(entry.getKey()).getName());
@@ -180,10 +180,10 @@ public class InsertProcessor extends DMLProcessor {
         context.anyUpdates = true;
     }
     
-    private PValue getFKPvalue (PValueSource pval) {
+    private Value getFKPvalue (ValueSource pval) {
         AkibanAppender appender = AkibanAppender.of(new StringBuilder());
         pval.tInstance().format(pval, appender);
-        PValue result = new PValue(MString.varcharFor(appender.toString()), appender.toString());
+        Value result = new Value(MString.varcharFor(appender.toString()), appender.toString());
         return result;
     }
 }

@@ -22,7 +22,7 @@ import com.foundationdb.ais.model.Type;
 import com.foundationdb.ais.model.Types;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.AkibanAppender;
 
 import org.apache.lucene.document.DoubleField;
@@ -99,13 +99,13 @@ public class IndexedField
         return (fieldType != FieldType.TEXT);
     }
 
-    public Field getField(PValueSource value) {
+    public Field getField(ValueSource value) {
         if (value.isNull()) 
             return null;
         Field.Store store = Field.Store.NO; // Only store hkey.
         switch (fieldType) {
         case INT:
-            switch (TInstance.pUnderlying(value.tInstance())) {
+            switch (TInstance.underlyingType(value.tInstance())) {
             case INT_8:
                 return new IntField(name, value.getInt8(), store);
             case INT_16:
@@ -123,7 +123,7 @@ public class IndexedField
         case DOUBLE:
             return new DoubleField(name, value.getDouble(), store);
         case STRING:
-            switch (TInstance.pUnderlying(value.tInstance())) {
+            switch (TInstance.underlyingType(value.tInstance())) {
             case STRING:
                 return new StringField(name, value.getString(), store);
             default:

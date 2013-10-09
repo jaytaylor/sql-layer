@@ -115,7 +115,7 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
      */
     private int b_of(long id)
     {
-        return (int)indexRow(id).pvalue(1).getInt32();
+        return (int)indexRow(id).value(1).getInt32();
     }
 
     @Test

@@ -22,7 +22,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.AkibanAppender;
 
 public abstract class AbstractRow implements Row
@@ -46,9 +46,9 @@ public abstract class AbstractRow implements Row
     {
         for (int i = 0; i < fieldCount; i++) {
             TInstance leftType = rowType().typeInstanceAt(leftStartIndex + i);
-            PValueSource leftValue = pvalue(leftStartIndex + i);
+            ValueSource leftValue = value(leftStartIndex + i);
             TInstance rightType = ((Row)row).rowType().typeInstanceAt(rightStartIndex + i);
-            PValueSource rightValue = row.pvalue(rightStartIndex + i);
+            ValueSource rightValue = row.value(rightStartIndex + i);
             int c = TClass.compare(leftType, leftValue, rightType, rightValue);
             if (c != 0) return (c < 0) ? -(i + 1) : (i + 1);
         }
@@ -64,7 +64,7 @@ public abstract class AbstractRow implements Row
     public abstract HKey hKey();
 
     @Override
-    public abstract PValueSource pvalue(int i);
+    public abstract ValueSource value(int i);
     
     @Override
     public HKey ancestorHKey(UserTable table)
@@ -124,11 +124,11 @@ public abstract class AbstractRow implements Row
         AkibanAppender appender = AkibanAppender.of(builder);
         for (int i=0; i < fieldsCount; ++i) {
             if (rowType.typeInstanceAt(i) == null) {
-                assert pvalue(i).isNull();
+                assert value(i).isNull();
                 builder.append("NULL");
             }
             else {
-                rowType.typeInstanceAt(i).format(pvalue(i), appender);
+                rowType.typeInstanceAt(i).format(value(i), appender);
             }
             if(i+1 < fieldsCount) {
                 builder.append(',').append(' ');

@@ -17,9 +17,9 @@
 
 package com.foundationdb.server.test.it.qp;
 
+import com.foundationdb.server.types.value.ValueSource;
 import org.junit.Ignore;
 import com.foundationdb.util.ShareHolder;
-import com.foundationdb.server.types.pvalue.PValueSource;
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.operator.Operator;
 import org.junit.Test;
@@ -129,7 +129,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
      */
     private Integer b_of(long id)
     {
-        PValueSource val = indexRowWithIdMap.get(id).pvalue(1);
+        ValueSource val = indexRowWithIdMap.get(id).value(1);
         return (val.isNull() ? null : val.getInt32());
     }
 

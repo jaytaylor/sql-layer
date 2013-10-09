@@ -28,8 +28,8 @@ import com.foundationdb.server.types.TPreptimeContext;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 
@@ -56,7 +56,7 @@ public class MSpace extends TScalarBase
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
         int count = inputs.get(0).getInt32();
         if (count <= 0)
@@ -85,7 +85,7 @@ public class MSpace extends TScalarBase
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context)
             {
                 TPreptimeValue inputTpv = inputs.get(0);
-                PValueSource length = inputTpv.value();
+                ValueSource length = inputTpv.value();
                 int count;
                 
                 // TODO:

@@ -24,7 +24,6 @@ import java.util.BitSet;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.AkServerUtil;
-import com.foundationdb.server.Quote;
 import com.foundationdb.server.encoding.EncodingException;
 import com.foundationdb.util.AkibanAppender;
 import com.persistit.Key;
@@ -459,7 +458,7 @@ public class RowData {
             return toStringWithoutRowDef("No RowDef provided");
         }
         final AkibanAppender sb = AkibanAppender.of(new StringBuilder());
-        RowDataPValueSource source = new RowDataPValueSource();
+        RowDataValueSource source = new RowDataValueSource();
         try {
             sb.append(rowDef.getTableName());
             for (int i = 0; i < getFieldCount(); i++) {
@@ -486,7 +485,7 @@ public class RowData {
     }
 
     public void toJSONString(final RowDef rowDef, AkibanAppender sb) throws IOException {
-        RowDataPValueSource source = new RowDataPValueSource();
+        RowDataValueSource source = new RowDataValueSource();
         for(int i = 0; i < getFieldCount(); i++) {
             final FieldDef fieldDef = rowDef.getFieldDef(i);
             final long location = fieldDef.getRowDef().fieldLocation(this, fieldDef.getFieldIndex());

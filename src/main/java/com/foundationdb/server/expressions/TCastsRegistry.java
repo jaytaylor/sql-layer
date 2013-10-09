@@ -27,9 +27,9 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.TStrongCasts;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.service.InstanceFinder;
 import com.foundationdb.server.types.texpressions.Constantness;
 import com.foundationdb.util.DagChecker;
@@ -309,7 +309,7 @@ public final class TCastsRegistry {
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void evaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
             if (source.isNull()) {
                 target.putNull();
                 return;
@@ -347,10 +347,10 @@ public final class TCastsRegistry {
         @Override
         public TInstance preferredTarget(TPreptimeValue source) {
             TInstance intermediateTInstance = first.preferredTarget(source);
-            PValueSource firstValue = source.value();
+            ValueSource firstValue = source.value();
             TInstance result;
             if (firstValue != null) {
-                PValue intermediateValue = new PValue(first.targetClass().instance(true));
+                Value intermediateValue = new Value(first.targetClass().instance(true));
                 TExecutionContext context = new TExecutionContext(
                         Collections.singletonList(source.instance()),
                         intermediateTInstance,
@@ -371,14 +371,14 @@ public final class TCastsRegistry {
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void evaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
             if (source.isNull()) {
                 target.putNull();
                 return;
             }
-            PValue tmp = (PValue) context.exectimeObjectAt(TMP_PVALUE);
+            Value tmp = (Value) context.exectimeObjectAt(TMP_PVALUE);
             if (tmp == null) {
-                tmp = new PValue(first.targetClass().instance(true));
+                tmp = new Value(first.targetClass().instance(true));
                 context.putExectimeObject(TMP_PVALUE, tmp);
             }
             // TODO cache

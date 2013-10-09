@@ -35,8 +35,8 @@ import com.foundationdb.server.geophile.SpaceLatLon;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.texpressions.TPreparedField;
 
 import java.math.BigDecimal;
@@ -118,12 +118,12 @@ class IndexCursorSpatial_InBox extends IndexCursor
         for (IndexKeyRange zKeyRange : zKeyRanges(context, keyRange)) {
             IterationHelper rowState = adapter.createIterationHelper(keyRange.indexRowType());
 
-            IndexCursorUnidirectional<PValueSource> zIntervalCursor =
+            IndexCursorUnidirectional<ValueSource> zIntervalCursor =
                 new IndexCursorUnidirectional<>(context,
                                                             rowState,
                                                             zKeyRange,
                                                             zOrdering,
-                                                            PValueSortKeyAdapter.INSTANCE);
+                                                            ValueSortKeyAdapter.INSTANCE);
             multiCursor.addCursor(zIntervalCursor);
         }
     }
@@ -140,10 +140,10 @@ class IndexCursorSpatial_InBox extends IndexCursor
         BigDecimal xLo, xHi, yLo, yHi;
         TInstance xinst = index.getAllColumns().get(latColumn).getColumn().tInstance();
         TInstance yinst = index.getAllColumns().get(lonColumn).getColumn().tInstance();
-        xLo = MBigDecimal.getWrapper(loExpressions.pvalue(latColumn), xinst).asBigDecimal();
-        xHi = MBigDecimal.getWrapper(hiExpressions.pvalue(latColumn), xinst).asBigDecimal();
-        yLo = MBigDecimal.getWrapper(loExpressions.pvalue(lonColumn), yinst).asBigDecimal();
-        yHi = MBigDecimal.getWrapper(hiExpressions.pvalue(lonColumn), yinst).asBigDecimal();
+        xLo = MBigDecimal.getWrapper(loExpressions.value(latColumn), xinst).asBigDecimal();
+        xHi = MBigDecimal.getWrapper(hiExpressions.value(latColumn), xinst).asBigDecimal();
+        yLo = MBigDecimal.getWrapper(loExpressions.value(lonColumn), yinst).asBigDecimal();
+        yHi = MBigDecimal.getWrapper(hiExpressions.value(lonColumn), yinst).asBigDecimal();
         BoxLatLon box = BoxLatLon.newBox(xLo, xHi, yLo, yHi);
         long[] zValues = new long[SpaceLatLon.MAX_DECOMPOSITION_Z_VALUES];
         space.decompose(box, zValues);
@@ -158,17 +158,17 @@ class IndexCursorSpatial_InBox extends IndexCursor
                 IndexBound zHi = new IndexBound(zHiRow, indexColumnSelector);
                 // Take care of any equality restrictions before the spatial fields
                 for (int f = 0; f < latColumn; f++) {
-                    PValueSource eqValueSource = loExpressions.pvalue(f);
+                    ValueSource eqValueSource = loExpressions.value(f);
                     zLoRow.value(f, eqValueSource);
                     zHiRow.value(f, eqValueSource);
                 }
                 // lo and hi bounds
-                PValue loPValue = new PValue(MNumeric.BIGINT.instance(false));
-                PValue hiPValue = new PValue(MNumeric.BIGINT.instance(false));
-                loPValue.putInt64(space.zLo(z));
-                hiPValue.putInt64(space.zHi(z));
-                zLoRow.value(latColumn, loPValue);
-                zHiRow.value(latColumn, hiPValue);
+                Value loValue = new Value(MNumeric.BIGINT.instance(false));
+                Value hiValue = new Value(MNumeric.BIGINT.instance(false));
+                loValue.putInt64(space.zLo(z));
+                hiValue.putInt64(space.zHi(z));
+                zLoRow.value(latColumn, loValue);
+                zHiRow.value(latColumn, hiValue);
                 IndexKeyRange zKeyRange = IndexKeyRange.bounded(physicalRowType, zLo, true, zHi, true);
                 zKeyRanges.add(zKeyRange);
             }

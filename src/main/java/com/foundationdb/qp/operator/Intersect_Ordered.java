@@ -25,7 +25,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.IndexRowPrefixSelector;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types.pvalue.PValueTargets;
+import com.foundationdb.server.types.value.ValueTargets;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.tap.InOutTap;
@@ -531,18 +531,18 @@ class Intersect_Ordered extends Operator
         {
             if (jumpRow == null) {
                 for (int f = 0; f < fieldsToCompare; f++) {
-                    skipRow.pvalueAt(skipRowFixedFields + f).putNull();
+                    skipRow.valueAt(skipRowFixedFields + f).putNull();
                 }
             } else {
                 for (int f = 0; f < fieldsToCompare; f++) {
                     TComparison comparison = null;
                     if (comparisons != null && (comparison = comparisons.get(f)) != null)
-                        comparison.copyComparables(jumpRow.pvalue(jumpRowFixedFields + f),
-                                                   skipRow.pvalueAt(skipRowFixedFields + f));
+                        comparison.copyComparables(jumpRow.value(jumpRowFixedFields + f),
+                                                   skipRow.valueAt(skipRowFixedFields + f));
                     else
-                        PValueTargets.copyFrom(
-                                jumpRow.pvalue(jumpRowFixedFields + f),
-                                skipRow.pvalueAt(skipRowFixedFields + f));
+                        ValueTargets.copyFrom(
+                                jumpRow.value(jumpRowFixedFields + f),
+                                skipRow.valueAt(skipRowFixedFields + f));
                 }
             }
         }
@@ -555,13 +555,13 @@ class Intersect_Ordered extends Operator
                 assert leftRow.isHolding();
                 int f = 0;
                 while (f < leftFixedFields) {
-                    PValueTargets.copyFrom(
-                            leftRow.get().pvalue(f),
-                            leftSkipRow.pvalueAt(f));
+                    ValueTargets.copyFrom(
+                            leftRow.get().value(f),
+                            leftSkipRow.valueAt(f));
                     f++;
                 }
                 while (f < leftRowType.nFields()) {
-                    leftSkipRow.pvalueAt(f++).putNull();
+                    leftSkipRow.valueAt(f++).putNull();
                 }
                 leftSkipRowFixed = true;
             }
@@ -576,13 +576,13 @@ class Intersect_Ordered extends Operator
                 assert rightRow.isHolding();
                 int f = 0;
                 while (f < rightFixedFields) {
-                    PValueTargets.copyFrom(
-                            rightRow.get().pvalue(f),
-                            rightSkipRow.pvalueAt(f));
+                    ValueTargets.copyFrom(
+                            rightRow.get().value(f),
+                            rightSkipRow.valueAt(f));
                     f++;
                 }
                 while (f < rightRowType.nFields()) {
-                    rightSkipRow.pvalueAt(f++).putNull();
+                    rightSkipRow.valueAt(f++).putNull();
                 }
                 rightSkipRowFixed = true;
             }

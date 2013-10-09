@@ -157,7 +157,7 @@ public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
                                public Row evaluate(Row original, QueryContext context, QueryBindings bindings)
                                {
                                    OverlayingRow updatedRow = new OverlayingRow(original);
-                                   long i = original.pvalue(0).getInt64();
+                                   long i = original.value(0).getInt64();
                                    updatedRow.overlay(0, i - 1000000);
                                    return updatedRow;
                                }

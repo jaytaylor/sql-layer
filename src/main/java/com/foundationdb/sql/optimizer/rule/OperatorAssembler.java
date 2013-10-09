@@ -19,6 +19,9 @@ package com.foundationdb.sql.optimizer.rule;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.sql.optimizer.*;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.ExpressionsSource.DistinctState;
@@ -52,9 +55,6 @@ import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueSources;
 import com.foundationdb.server.types.texpressions.TPreparedLiteral;
 import com.foundationdb.server.types.texpressions.TValidatedScalar;
 import com.foundationdb.server.types.texpressions.AnySubqueryTExpression;
@@ -500,8 +500,8 @@ public class OperatorAssembler extends BaseRule
                 TInstance instance = column.tInstance();
                 
                 List<TPreptimeValue> input = new ArrayList<>(2);
-                input.add(PValueSources.fromObject(sequence.getSequenceName().getSchemaName(), MString.varchar()));
-                input.add(PValueSources.fromObject(sequence.getSequenceName().getTableName(), MString.varchar()));
+                input.add(ValueSources.fromObject(sequence.getSequenceName().getSchemaName(), MString.varchar()));
+                input.add(ValueSources.fromObject(sequence.getSequenceName().getTableName(), MString.varchar()));
 
                 TValidatedScalar overload = resolver.get("NEXTVAL", input).getOverload();
 
@@ -706,23 +706,23 @@ public class OperatorAssembler extends BaseRule
                     }
                     else {
                         final String defaultValue = column.getDefaultValue();
-                        final PValue defaultValueSource;
+                        final Value defaultValueSource;
                         if(defaultValue == null) {
-                            defaultValueSource = new PValue(tinst);
+                            defaultValueSource = new Value(tinst);
                             defaultValueSource.putNull();
                         } else {
                             TCast cast = tinst.typeClass().castFromVarchar();
                             if (cast != null) {
-                                defaultValueSource = new PValue(tinst);
+                                defaultValueSource = new Value(tinst);
                                 TInstance valInst = MString.VARCHAR.instance(defaultValue.length(), false);
                                 TExecutionContext executionContext = new TExecutionContext(
                                         Collections.singletonList(valInst),
                                         tinst, planContext.getQueryContext());
                                 cast.evaluate(executionContext,
-                                              new PValue(MString.varcharFor(defaultValue), defaultValue),
+                                              new Value(MString.varcharFor(defaultValue), defaultValue),
                                               defaultValueSource);
                             } else {
-                                defaultValueSource = new PValue (tinst, defaultValue);
+                                defaultValueSource = new Value(tinst, defaultValue);
                             }
                         }
                         row[i] = new TPreparedLiteral(tinst, defaultValueSource);
@@ -2032,8 +2032,8 @@ public class OperatorAssembler extends BaseRule
                 String constant = null;
                 boolean isConstant = false;
                 if (key.isConstant()) {
-                    PValueSource pValueSource = key.getPreptimeValue().value();
-                    constant = (pValueSource == null || pValueSource.isNull()) ? null : pValueSource.getString();
+                    ValueSource valueSource = key.getPreptimeValue().value();
+                    constant = (valueSource == null || valueSource.isNull()) ? null : valueSource.getString();
                     isConstant = true;
                 }
                 else {

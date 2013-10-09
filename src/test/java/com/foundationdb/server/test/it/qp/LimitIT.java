@@ -23,7 +23,7 @@ import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.NegativeLimitException;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.pvalue.PValue;
+import com.foundationdb.server.types.value.Value;
 import org.junit.Test;
 
 import static com.foundationdb.qp.operator.API.*;
@@ -106,7 +106,7 @@ public class LimitIT extends OperatorITBase
         Operator plan = limit_Default(groupScan_Default(coi),
                                               0, false, 0, true);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        queryBindings.setPValue(0, new PValue(MNumeric.INT.instance(false), 2));
+        queryBindings.setValue(0, new Value(MNumeric.INT.instance(false), 2));
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(customerRowType, 2L, "foundation"),
@@ -120,7 +120,7 @@ public class LimitIT extends OperatorITBase
         Operator plan = limit_Default(groupScan_Default(coi),
                                               0, false, 0, true);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        queryBindings.setPValue(0, new PValue(MNumeric.INT.instance(false), -1));
+        queryBindings.setValue(0, new Value(MNumeric.INT.instance(false), -1));
         RowBase[] expected = new RowBase[]{
         };
         compareRows(expected, cursor);
