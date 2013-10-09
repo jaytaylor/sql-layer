@@ -40,7 +40,7 @@ import java.util.concurrent.Callable;
 import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.*;
 import com.foundationdb.ais.util.TableChangeValidator;
-import com.foundationdb.qp.expression.BoundExpressions;
+import com.foundationdb.server.types.value.ValueRecord;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
@@ -1038,11 +1038,11 @@ public class ApiTestBase {
         }
     }
 
-    public static boolean isNull(BoundExpressions row, int pos) {
+    public static boolean isNull(ValueRecord row, int pos) {
         return row.value(pos).isNull();
     }
 
-    public static Long getLong(BoundExpressions row, int field) {
+    public static Long getLong(ValueRecord row, int field) {
         final Long result;
         ValueSource value = row.value(field);
         if (value.isNull()) {

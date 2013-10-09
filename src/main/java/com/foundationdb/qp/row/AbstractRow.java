@@ -27,7 +27,7 @@ import com.foundationdb.util.AkibanAppender;
 
 public abstract class AbstractRow implements Row
 {
-    // BoundExpressions interface
+    // ValueRecord interface
 
     /**
      * Compares two rows and indicates if and where they differ.

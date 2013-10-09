@@ -18,7 +18,7 @@
 package com.foundationdb.qp.persistitadapter.indexcursor;
 
 import com.foundationdb.ais.model.Index;
-import com.foundationdb.qp.expression.BoundExpressions;
+import com.foundationdb.server.types.value.ValueRecord;
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
@@ -134,8 +134,8 @@ class IndexCursorSpatial_InBox extends IndexCursor
         Index index = keyRange.indexRowType().index();
         IndexBound loBound = keyRange.lo();
         IndexBound hiBound = keyRange.hi();
-        BoundExpressions loExpressions = loBound.boundExpressions(context, bindings);
-        BoundExpressions hiExpressions = hiBound.boundExpressions(context, bindings);
+        ValueRecord loExpressions = loBound.boundExpressions(context, bindings);
+        ValueRecord hiExpressions = hiBound.boundExpressions(context, bindings);
         // Only 2d, lat/lon supported for now
         BigDecimal xLo, xHi, yLo, yHi;
         TInstance xinst = index.getAllColumns().get(latColumn).getColumn().tInstance();
@@ -152,8 +152,8 @@ class IndexCursorSpatial_InBox extends IndexCursor
             if (z != -1L) {
                 IndexRowType physicalRowType = keyRange.indexRowType().physicalRowType();
                 int indexRowFields = physicalRowType.nFields();
-                SpatialIndexBoundExpressions zLoRow = new SpatialIndexBoundExpressions(indexRowFields);
-                SpatialIndexBoundExpressions zHiRow = new SpatialIndexBoundExpressions(indexRowFields);
+                SpatialIndexValueRecord zLoRow = new SpatialIndexValueRecord(indexRowFields);
+                SpatialIndexValueRecord zHiRow = new SpatialIndexValueRecord(indexRowFields);
                 IndexBound zLo = new IndexBound(zLoRow, indexColumnSelector);
                 IndexBound zHi = new IndexBound(zHiRow, indexColumnSelector);
                 // Take care of any equality restrictions before the spatial fields

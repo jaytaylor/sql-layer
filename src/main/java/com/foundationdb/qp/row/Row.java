@@ -18,10 +18,10 @@
 package com.foundationdb.qp.row;
 
 import com.foundationdb.ais.model.UserTable;
-import com.foundationdb.qp.expression.BoundExpressions;
+import com.foundationdb.server.types.value.ValueRecord;
 import com.foundationdb.qp.rowtype.RowType;
 
-public interface Row extends BoundExpressions
+public interface Row extends ValueRecord
 {
     RowType rowType();
     HKey hKey();

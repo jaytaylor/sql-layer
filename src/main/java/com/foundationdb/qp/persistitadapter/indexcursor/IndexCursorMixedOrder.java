@@ -20,7 +20,7 @@ package com.foundationdb.qp.persistitadapter.indexcursor;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.qp.expression.BoundExpressions;
+import com.foundationdb.server.types.value.ValueRecord;
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
@@ -195,8 +195,8 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             keyRange == null /* sorting */ ? Integer.MAX_VALUE :
             index().isUnique() ? index().getKeyColumns().size() : index().getAllColumns().size();
         while (f < min(loBoundColumns, maxSegments)) {
-            BoundExpressions lo = keyRange.lo().boundExpressions(context, bindings);
-            BoundExpressions hi = keyRange.hi().boundExpressions(context, bindings);
+            ValueRecord lo = keyRange.lo().boundExpressions(context, bindings);
+            ValueRecord hi = keyRange.hi().boundExpressions(context, bindings);
             S loSource = sortKeyAdapter.get(lo, f);
             S hiSource = sortKeyAdapter.get(hi, f);
             /*
@@ -370,14 +370,14 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             assert endKey != null : index();
             IndexBound lo = keyRange.lo();
             IndexBound hi = keyRange.hi();
-            BoundExpressions loExpressions = lo.boundExpressions(context, bindings);
-            BoundExpressions hiExpressions = hi.boundExpressions(context, bindings);
+            ValueRecord loExpressions = lo.boundExpressions(context, bindings);
+            ValueRecord hiExpressions = hi.boundExpressions(context, bindings);
             int nColumns = keyRange.boundColumns();
             clear(startKey);
             clear(endKey);
             for (int f = 0; f < nColumns; f++) {
-                BoundExpressions startExpressions;
-                BoundExpressions endExpressions;
+                ValueRecord startExpressions;
+                ValueRecord endExpressions;
                 if (ordering().ascending(f)) {
                     startExpressions = loExpressions;
                     endExpressions = hiExpressions;

@@ -17,10 +17,10 @@
 
 package com.foundationdb.qp.operator;
 
-import com.foundationdb.qp.expression.BoundExpressions;
+import com.foundationdb.server.types.value.ValueRecord;
 import com.foundationdb.server.api.dml.ColumnSelector;
 
-public interface RowOrientedCursorBase<T extends BoundExpressions> extends CursorBase<T>
+public interface RowOrientedCursorBase<T extends ValueRecord> extends CursorBase<T>
 {
     /**
      * Advances to the first row, r, such that r.compareTo(row) >= 0. (Call next to get the row.)
