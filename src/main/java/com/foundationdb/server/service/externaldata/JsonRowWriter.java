@@ -22,7 +22,7 @@ import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.AkibanAppender;
 
 import org.slf4j.Logger;
@@ -101,14 +101,14 @@ public class JsonRowWriter
         return true;
     }
 
-    public static void writeValue(String name, PValueSource pvalue, AkibanAppender appender, boolean first) {
+    public static void writeValue(String name, ValueSource value, AkibanAppender appender, boolean first) {
         if(!first) {
             appender.append(',');
         }
         appender.append('"');
         appender.append(name);
         appender.append("\":");
-        pvalue.tInstance().formatAsJson(pvalue, appender);
+        value.tInstance().formatAsJson(value, appender);
     }
 
     /**
@@ -127,13 +127,13 @@ public class JsonRowWriter
         public void write(Row row, AkibanAppender appender) {
             List<Column> columns = row.rowType().userTable().getColumns();
             for (int i = 0; i < columns.size(); i++) {
-                writeValue(columns.get(i).getName(), row.pvalue(i), appender, i == 0);
+                writeValue(columns.get(i).getName(), row.value(i), appender, i == 0);
              }
         }
     }
 
     public static class WriteCapturePKRow implements WriteRow {
-        private Map<Column, PValueSource> pkValues = new HashMap<>();
+        private Map<Column, ValueSource> pkValues = new HashMap<>();
 
         @Override
         public void write(Row row, AkibanAppender appender) {
@@ -143,12 +143,12 @@ public class JsonRowWriter
             List<IndexColumn> columns = row.rowType().userTable().getPrimaryKey().getIndex().getKeyColumns();
             for (int i = 0; i < columns.size(); i++) {
                 Column column = columns.get(i).getColumn();
-                writeValue(column.getName(), row.pvalue(column.getPosition()), appender, i == 0);
-                pkValues.put(column, row.pvalue(column.getPosition()));
+                writeValue(column.getName(), row.value(column.getPosition()), appender, i == 0);
+                pkValues.put(column, row.value(column.getPosition()));
             }
         }
 
-        public Map<Column, PValueSource> getPKValues() {
+        public Map<Column, ValueSource> getPKValues() {
             return pkValues;
         }
     }

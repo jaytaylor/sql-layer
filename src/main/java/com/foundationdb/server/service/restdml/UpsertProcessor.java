@@ -44,7 +44,7 @@ import com.foundationdb.server.service.externaldata.JsonRowWriter.WriteCapturePK
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValue;
+import com.foundationdb.server.types.value.Value;
 import com.foundationdb.util.AkibanAppender;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -141,7 +141,7 @@ public class UpsertProcessor extends DMLProcessor {
         Cursor cursor = null;
         try {
 
-            PValue pvalue = new PValue(MString.varchar());
+            Value value = new Value(MString.varchar());
             int i = 0;
             for (Column column : context.table.getPrimaryKey().getColumns()) {
                 // bug 1169995 - a null value in the PK won't match anything,
@@ -149,8 +149,8 @@ public class UpsertProcessor extends DMLProcessor {
                 if (context.allValues.get(column) == null) {
                     return null;
                 }
-                pvalue.putString(context.allValues.get(column), null);
-                context.queryBindings.setPValue(i, pvalue);
+                value.putString(context.allValues.get(column), null);
+                context.queryBindings.setValue(i, value);
                 i++;
             }
             cursor = API.cursor(plan, context.queryContext, context.queryBindings);
@@ -169,16 +169,16 @@ public class UpsertProcessor extends DMLProcessor {
 
         List<Column> pkList = context.table.getPrimaryKey().getColumns();
         List<Column> upList = new ArrayList<>();
-        PValue pvalue = new PValue(MString.varchar());
+        Value value = new Value(MString.varchar());
         int i = pkList.size();
         for (Column column : context.table.getColumns()) {
             if (!pkList.contains(column) && context.allValues.containsKey(column)) {
                 if (context.allValues.get(column) == null) {
-                    pvalue.putNull();
+                    value.putNull();
                 } else {
-                    pvalue.putString(context.allValues.get(column), null);
+                    value.putString(context.allValues.get(column), null);
                 }
-                context.queryBindings.setPValue(i, pvalue);
+                context.queryBindings.setValue(i, value);
                 upList.add(column);
                 i++;
             }

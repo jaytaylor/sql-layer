@@ -21,9 +21,9 @@ import com.foundationdb.server.types.LazyList;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TOverloadResult;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
-import com.foundationdb.server.types.pvalue.PValueTargets;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
+import com.foundationdb.server.types.value.ValueTargets;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 
@@ -34,8 +34,8 @@ public final class MUnaryPlus extends TScalarBase {
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        PValueTargets.copyFrom(inputs.get(0), output);
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
+        ValueTargets.copyFrom(inputs.get(0), output);
     }
 
     @Override

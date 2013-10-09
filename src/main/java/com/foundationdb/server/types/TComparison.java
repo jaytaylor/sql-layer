@@ -17,10 +17,10 @@
 
 package com.foundationdb.server.types;
 
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 
 public interface TComparison {
-    int compare(TInstance leftInstance, PValueSource left, TInstance rightInstance, PValueSource right);
-    void copyComparables(PValueSource source, PValueTarget target);
+    int compare(TInstance leftInstance, ValueSource left, TInstance rightInstance, ValueSource right);
+    void copyComparables(ValueSource source, ValueTarget target);
 }

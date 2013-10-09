@@ -17,25 +17,20 @@
 
 package com.foundationdb.server.types;
 
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 
-public abstract class SimplePValueIO implements PValueIO {
+public abstract class SymmetricValueIO implements ValueIO {
 
-    protected abstract void copy(PValueSource in, TInstance typeInstance, PValueTarget out);
+    protected abstract void symmetricCollationCopy(ValueSource in, TInstance typeInstance, ValueTarget out);
 
     @Override
-    public void copyCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
-        copy(in, typeInstance, out);
+    public void writeCollating(ValueSource in, TInstance typeInstance, ValueTarget out) {
+        symmetricCollationCopy(in, typeInstance, out);
     }
 
     @Override
-    public void writeCollating(PValueSource in, TInstance typeInstance, PValueTarget out) {
-        copy(in, typeInstance, out);
-    }
-
-    @Override
-    public void readCollating(PValueSource in, TInstance typeInstance, PValueTarget out) {
-        copy(in, typeInstance, out);
+    public void readCollating(ValueSource in, TInstance typeInstance, ValueTarget out) {
+        symmetricCollationCopy(in, typeInstance, out);
     }
 }

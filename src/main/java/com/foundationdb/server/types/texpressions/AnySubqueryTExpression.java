@@ -23,7 +23,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueTarget;
 
 public final class AnySubqueryTExpression extends SubqueryTExpression {
 
@@ -58,7 +58,7 @@ public final class AnySubqueryTExpression extends SubqueryTExpression {
     private static class InnerEvaluatable extends SubqueryTEvaluateble {
 
         @Override
-        protected void doEval(PValueTarget out) {
+        protected void doEval(ValueTarget out) {
             evaluation.with(queryContext());
             evaluation.with(queryBindings());
             Boolean result = Boolean.FALSE;

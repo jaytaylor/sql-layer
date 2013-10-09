@@ -21,8 +21,8 @@ import com.foundationdb.server.error.InvalidDateFormatException;
 import com.foundationdb.server.types.mcompat.mcasts.CastUtils;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimalWrapper;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 
 import java.math.BigDecimal;
 
@@ -31,7 +31,7 @@ public class TParsers
     public static final TParser BOOLEAN = new TParser()
     {
         @Override
-        public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void parse(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             String s = source.getString();
             boolean result = false;
@@ -74,7 +74,7 @@ public class TParsers
     public static final TParser TINYINT = new TParser()
     {
         @Override
-        public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void parse(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt8((byte) CastUtils.parseInRange(source.getString(),
                                                          CastUtils.MAX_TINYINT, 
@@ -87,7 +87,7 @@ public class TParsers
     public static final TParser UNSIGNED_TINYINT = new TParser()
     {
         @Override
-        public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void parse(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt16((short)CastUtils.parseInRange(source.getString(),
                                             CastUtils.MAX_UNSIGNED_TINYINT,
@@ -100,7 +100,7 @@ public class TParsers
     {
 
         @Override
-        public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void parse(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt16((short)CastUtils.parseInRange(source.getString(),
                                              CastUtils.MAX_SMALLINT, 
@@ -112,7 +112,7 @@ public class TParsers
     public static final TParser UNSIGNED_SMALLINT = new TParser()
     {
         @Override
-        public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void parse(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt32((int)CastUtils.parseInRange(source.getString(),
                                           CastUtils.MAX_UNSIGNED_SMALLINT, 
@@ -124,7 +124,7 @@ public class TParsers
     public static final TParser MEDIUMINT = new TParser()
     {
         @Override
-        public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void parse(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt32((int)CastUtils.parseInRange(source.getString(),
                                              CastUtils.MAX_MEDINT, 
@@ -136,7 +136,7 @@ public class TParsers
     public static final TParser UNSIGNED_MEDIUMINT = new TParser()
     {
         @Override
-        public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void parse(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt64(CastUtils.parseInRange(source.getString(),
                                      CastUtils.MAX_UNSIGNED_MEDINT, 
@@ -148,7 +148,7 @@ public class TParsers
     public static final TParser INT = new TParser()
     {
         @Override
-        public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void parse(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt32((int)CastUtils.parseInRange(source.getString(),
                                            CastUtils.MAX_INT, 
@@ -160,7 +160,7 @@ public class TParsers
     public static final TParser UNSIGNED_INT = new TParser()
     {
         @Override
-        public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void parse(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt64(CastUtils.parseInRange(source.getString(),
                                                    CastUtils.MAX_UNSIGNED_INT,
@@ -172,7 +172,7 @@ public class TParsers
     public static final TParser BIGINT = new TParser()
     {
         @Override
-        public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void parse(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt64(CastUtils.parseInRange(source.getString(),
                                                    CastUtils.MAX_BIGINT, 
@@ -183,7 +183,7 @@ public class TParsers
 
     public static final TParser UNSIGNED_BIGINT = new TParser() {
         @Override
-        public void parse(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void parse(TExecutionContext context, ValueSource source, ValueTarget target) {
             target.putInt64(CastUtils.parseUnsignedLong(source.getString(), context));
         }
     };
@@ -191,7 +191,7 @@ public class TParsers
     public static final TParser FLOAT = new TParser()
     {
         @Override
-        public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void parse(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putFloat((float)CastUtils.parseDoubleString(source.getString(), context));
         }
@@ -201,7 +201,7 @@ public class TParsers
     public static final TParser DOUBLE = new TParser()
     {
         @Override
-        public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void parse(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putDouble(CastUtils.parseDoubleString(source.getString(), context));
         }
@@ -210,7 +210,7 @@ public class TParsers
     public static final TParser DECIMAL = new TParser()
     {
         @Override
-        public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void parse(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             CastUtils.doCastDecimal(context,
                                     CastUtils.parseDecimalString(source.getString(),context),
@@ -221,7 +221,7 @@ public class TParsers
     public static final TParser DECIMAL_UNSIGNED = new TParser()
     {
         @Override
-        public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void parse(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             MBigDecimalWrapper wrapped = CastUtils.parseDecimalString(source.getString(), context);
             BigDecimal bd = wrapped.asBigDecimal();
@@ -234,7 +234,7 @@ public class TParsers
     public static final TParser DATE = new TParser()
     {
         @Override
-        public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void parse(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             try
             {
@@ -255,7 +255,7 @@ public class TParsers
     public static final TParser DATETIME = new TParser()
     {
         @Override
-        public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void parse(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             try
             {
@@ -272,7 +272,7 @@ public class TParsers
     public static final TParser TIME = new TParser()
     {
         @Override
-        public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void parse(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             try
             {
@@ -289,7 +289,7 @@ public class TParsers
     public static final TParser TIMESTAMP = new TParser()
     {
         @Override
-        public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void parse(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt32(MDatetimes.parseTimestamp(source.getString(),
                                                       context.getCurrentTimezone(),
@@ -300,7 +300,7 @@ public class TParsers
     public static final TParser YEAR = new TParser()
     {
         @Override
-        public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void parse(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt16(CastUtils.adjustYear(CastUtils.parseInRange(source.getString(),
                                                                         Long.MAX_VALUE,

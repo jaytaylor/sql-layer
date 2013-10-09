@@ -84,7 +84,7 @@ public class PersistitSorter implements Sorter
         this.key = exchange.getKey();
         this.value = exchange.getValue();
         this.rowFields = rowType.nFields();
-        sorterAdapter = new PValueSorterAdapter();
+        sorterAdapter = new ValueSorterAdapter();
         sorterAdapter.init(this.rowType, this.ordering, key, value, this.context, this.bindings, sortOption);
         iterationHelper = new SorterIterationHelper(sorterAdapter.createValueAdapter());
         this.loadTap = loadTap;

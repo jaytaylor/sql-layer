@@ -42,7 +42,7 @@ import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -320,7 +320,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
             for(int colIndex = 0; colIndex < expectedRows[rowIndex].length; ++colIndex) {
                 final String msg = "row " + rowIndex + ", col " + colIndex;
                 final Object expected = expectedRows[rowIndex][colIndex];
-                final PValueSource actual = row.pvalue(colIndex);
+                final ValueSource actual = row.value(colIndex);
                 
                 if(expected == null || actual.isNull()) {
                     Column column = row.rowType().userTable().getColumn(colIndex);

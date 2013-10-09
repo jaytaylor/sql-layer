@@ -22,7 +22,6 @@ import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.*;
 import com.foundationdb.qp.persistitadapter.indexcursor.IterationHelper;
 import com.foundationdb.qp.persistitadapter.indexcursor.MergeJoinSorter;
-import com.foundationdb.qp.persistitadapter.indexcursor.PersistitSorter;
 import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRowPool;
 import com.foundationdb.qp.row.HKey;
@@ -175,7 +174,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
     }
 
     private RowDataCreator<?> rowDataCreator() {
-        return new PValueRowDataCreator();
+        return new ValueRowDataCreator();
     }
 
     public PersistitGroupRow newGroupRow()

@@ -28,8 +28,8 @@ import com.foundationdb.server.types.TPreptimeContext;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 
@@ -44,7 +44,7 @@ public abstract class Substring extends TScalarBase
             new Substring(strType, intType, new int[] {1}) // 2 args: SUBSTR(<STRING>, <OFFSET>)
             {
                 @Override
-                protected int getLength(LazyList<? extends PValueSource> inputs)
+                protected int getLength(LazyList<? extends ValueSource> inputs)
                 {
                     // length is this string's lenght
                     return inputs.get(0).getString().length();
@@ -53,7 +53,7 @@ public abstract class Substring extends TScalarBase
             new Substring(strType, intType, new int[] {1, 2}) // 3 args: SUBSTR(<STRING>, <OFFSET>, <LENGTH>)
             {
                 @Override
-                protected int getLength(LazyList<? extends PValueSource> inputs)
+                protected int getLength(LazyList<? extends ValueSource> inputs)
                 {
                     return inputs.get(2).getInt32();
                 }   
@@ -62,7 +62,7 @@ public abstract class Substring extends TScalarBase
         };
     }
     
-    protected abstract int getLength (LazyList<? extends PValueSource> inputs);
+    protected abstract int getLength (LazyList<? extends ValueSource> inputs);
     
     private final TClass strType;
     private final TClass intType;
@@ -83,7 +83,7 @@ public abstract class Substring extends TScalarBase
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
         output.putString(getSubstr(inputs.get(0).getString(),
                                    inputs.get(1).getInt32(),
@@ -117,7 +117,7 @@ public abstract class Substring extends TScalarBase
                 
                 // check if <LENGTH> is available
                 int length = strLength;
-                PValueSource lenArg;
+                ValueSource lenArg;
                 if (inputs.size() == 3 && (lenArg = inputs.get(2).value()) != null
                                        && !lenArg.isNull())
                     length = lenArg.getInt32();

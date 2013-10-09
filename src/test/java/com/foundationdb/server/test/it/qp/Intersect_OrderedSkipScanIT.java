@@ -34,7 +34,7 @@ import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.pvalue.PValue;
+import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.types.texpressions.TPreparedLiteral;
 
@@ -486,7 +486,7 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
         List<BindableRow> keyRows = new ArrayList<>(keys.length);
         for (int key : keys) {
             List<TPreparedExpression> pExpressions =
-                Arrays.<TPreparedExpression>asList(new TPreparedLiteral(intType, new PValue(intType, key)));
+                Arrays.<TPreparedExpression>asList(new TPreparedLiteral(intType, new Value(intType, key)));
             Row row = new ExpressionRow(xyValueRowType, queryContext, queryBindings, pExpressions);
             keyRows.add(BindableRow.of(row));
         }

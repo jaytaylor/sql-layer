@@ -22,8 +22,8 @@ import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TOverloadResult;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 
@@ -36,7 +36,7 @@ public abstract class IsTrueFalseUnknown extends TScalarBase
             new IsTrueFalseUnknown(boolType, "isTrue")
             {
                 @Override
-                protected void evaluate(PValueSource source, PValueTarget target)
+                protected void evaluate(ValueSource source, ValueTarget target)
                 {
                     target.putBool(source.getBoolean(false));
                 }
@@ -44,7 +44,7 @@ public abstract class IsTrueFalseUnknown extends TScalarBase
             new IsTrueFalseUnknown(boolType, "isFalse")
             {
                 @Override
-                protected void evaluate(PValueSource source, PValueTarget target)
+                protected void evaluate(ValueSource source, ValueTarget target)
                 {
                     target.putBool(!source.getBoolean(true));
                 }
@@ -52,7 +52,7 @@ public abstract class IsTrueFalseUnknown extends TScalarBase
             new IsTrueFalseUnknown(boolType, "isUnknown")
             {
                 @Override
-                protected void evaluate(PValueSource source, PValueTarget target)
+                protected void evaluate(ValueSource source, ValueTarget target)
                 {
                     target.putBool(source.isNull());
                 }
@@ -60,7 +60,7 @@ public abstract class IsTrueFalseUnknown extends TScalarBase
         };
     }
    
-    protected abstract void evaluate(PValueSource source, PValueTarget target);
+    protected abstract void evaluate(ValueSource source, ValueTarget target);
     
     private final TClass boolType;
     private final String name;
@@ -84,13 +84,13 @@ public abstract class IsTrueFalseUnknown extends TScalarBase
     }
 
     @Override
-    public void evaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) 
+    public void evaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
         evaluate(inputs.get(0), output);
     }
     
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
         // DOES NOTHING
     }

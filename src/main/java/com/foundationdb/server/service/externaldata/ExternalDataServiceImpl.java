@@ -44,7 +44,7 @@ import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValue;
+import com.foundationdb.server.types.value.Value;
 import com.foundationdb.util.AkibanAppender;
 
 import com.google.inject.Inject;
@@ -139,12 +139,12 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
             if (keys == null) {
                 begun = json.writeRows(cursor, appender, "\n", rowWriter);
             } else {
-                PValue pvalue = new PValue(MString.VARCHAR.instance(Integer.MAX_VALUE, false));
+                Value value = new Value(MString.VARCHAR.instance(Integer.MAX_VALUE, false));
                 for (List<String> key : keys) {
                     for (int i = 0; i < key.size(); i++) {
                         String akey = key.get(i);
-                        pvalue.putString(akey, null);
-                        queryBindings.setPValue(i, pvalue);
+                        value.putString(akey, null);
+                        queryBindings.setValue(i, value);
                     }
                     if (json.writeRows(cursor, appender, begun ? ",\n" : "\n", rowWriter))
                         begun = true;

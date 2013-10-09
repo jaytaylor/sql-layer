@@ -22,13 +22,13 @@ import com.foundationdb.qp.expression.BoundExpressions;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.PersistitKeyPValueSource;
-import com.foundationdb.server.PersistitKeyPValueTarget;
+import com.foundationdb.server.PersistitKeyValueSource;
+import com.foundationdb.server.PersistitKeyValueTarget;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.AkType;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.server.types.texpressions.TComparisonExpression;
 import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
@@ -36,13 +36,13 @@ import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.types.texpressions.TPreparedLiteral;
 import com.persistit.Key;
 
-public class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPreparedExpression> {
+public class ValueSortKeyAdapter extends SortKeyAdapter<ValueSource, TPreparedExpression> {
     
     private final static int SORT_KEY_MAX_SEGMENT_SIZE = 256;
 
-    private PValueSortKeyAdapter() {}
+    private ValueSortKeyAdapter() {}
     
-    public static final SortKeyAdapter<PValueSource, TPreparedExpression> INSTANCE = new PValueSortKeyAdapter();
+    public static final SortKeyAdapter<ValueSource, TPreparedExpression> INSTANCE = new ValueSortKeyAdapter();
     
     @Override
     public AkType[] createAkTypes(int size) {
@@ -70,8 +70,8 @@ public class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPrepared
                                  int f,
                                  AkCollator[] collators,
                                  TInstance[] tInstances) {
-        PValueSource loValueSource = loExpressions.pvalue(f);
-        PValueSource hiValueSource = hiExpressions.pvalue(f);
+        ValueSource loValueSource = loExpressions.value(f);
+        ValueSource hiValueSource = hiExpressions.value(f);
         if (loValueSource.isNull() && hiValueSource.isNull()) {
             // OK, they're equal
         } else if (loValueSource.isNull() || hiValueSource.isNull()) {
@@ -93,40 +93,40 @@ public class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPrepared
     }
 
     @Override
-    public PValueSource[] createSourceArray(int size) {
-        return new PValueSource[size];
+    public ValueSource[] createSourceArray(int size) {
+        return new ValueSource[size];
     }
 
     @Override
-    public PValueSource get(BoundExpressions boundExpressions, int f) {
-        return boundExpressions.pvalue(f);
+    public ValueSource get(BoundExpressions boundExpressions, int f) {
+        return boundExpressions.value(f);
     }
 
     @Override
-    public SortKeyTarget<PValueSource> createTarget() {
-        return new PValueSortKeyTarget();
+    public SortKeyTarget<ValueSource> createTarget() {
+        return new ValueSortKeyTarget();
     }
 
     @Override
-    public boolean isNull(PValueSource source) {
+    public boolean isNull(ValueSource source) {
         return source.isNull();
     }
 
     @Override
-    public SortKeySource<PValueSource> createSource(TInstance tInstance) {
-        return new PValueSortKeySource(tInstance);
+    public SortKeySource<ValueSource> createSource(TInstance tInstance) {
+        return new ValueSortKeySource(tInstance);
     }
 
     @Override
-    public long compare(TInstance tInstance, PValueSource one, PValueSource two) {
+    public long compare(TInstance tInstance, ValueSource one, ValueSource two) {
         return TClass.compare(tInstance, one, tInstance, two);
     }
 
     @Override
     public TPreparedExpression createComparison(TInstance tInstance,
-                                                PValueSource one,
+                                                ValueSource one,
                                                 Comparison comparison,
-                                                PValueSource two) {
+                                                ValueSource two) {
         TPreparedExpression arg1 = new TPreparedLiteral(tInstance, one);
         TPreparedExpression arg2 = new TPreparedLiteral(tInstance, two);
         return new TComparisonExpression(arg1, comparison, arg2);
@@ -140,8 +140,8 @@ public class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPrepared
     }
 
     @Override
-    public PValueSource eval(Row row, int field) {
-        return row.pvalue(field);
+    public ValueSource eval(Row row, int field) {
+        return row.value(field);
     }
 
     @Override
@@ -150,41 +150,41 @@ public class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPrepared
         tInstances[index] = ordering.tInstance(index);
     }
 
-    private static class PValueSortKeyTarget implements SortKeyTarget<PValueSource> {
+    private static class ValueSortKeyTarget implements SortKeyTarget<ValueSource> {
         @Override
         public void attach(Key key) {
             target.attach(key);
         }
 
         @Override
-        public void append(PValueSource source, int f, TInstance[] tInstances)
+        public void append(ValueSource source, int f, TInstance[] tInstances)
         {
             append(source, tInstances[f]);
         }
 
         @Override
-        public void append(PValueSource source, TInstance tInstance) {
+        public void append(ValueSource source, TInstance tInstance) {
             tInstance.writeCollating(source, target);
         }
 
-        protected final PersistitKeyPValueTarget target = new PersistitKeyPValueTarget(SORT_KEY_MAX_SEGMENT_SIZE);
+        protected final PersistitKeyValueTarget target = new PersistitKeyValueTarget(SORT_KEY_MAX_SEGMENT_SIZE);
     }
     
-    private static class PValueSortKeySource implements SortKeySource<PValueSource> {
+    private static class ValueSortKeySource implements SortKeySource<ValueSource> {
         @Override
         public void attach(Key key, int i, TInstance tInstance) {
             source.attach(key, i, tInstance);
         }
 
         @Override
-        public PValueSource asSource() {
+        public ValueSource asSource() {
             return source;
         }
         
-        public PValueSortKeySource(TInstance tInstance) {
-            source = new PersistitKeyPValueSource(tInstance);
+        public ValueSortKeySource(TInstance tInstance) {
+            source = new PersistitKeyValueSource(tInstance);
         }
         
-        private final PersistitKeyPValueSource source;
+        private final PersistitKeyValueSource source;
     }
 }

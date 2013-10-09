@@ -19,12 +19,12 @@ package com.foundationdb.server.store;
 
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.qp.util.PersistitKey;
-import com.foundationdb.server.PersistitKeyPValueTarget;
+import com.foundationdb.server.PersistitKeyValueTarget;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDataPValueSource;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueSources;
+import com.foundationdb.server.rowdata.RowDataValueSource;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import com.persistit.Key;
 
 public abstract class PersistitKeyAppender {
@@ -60,7 +60,7 @@ public abstract class PersistitKeyAppender {
 
     public abstract void append(Object object, Column column);
 
-    public abstract void append(PValueSource source, Column column);
+    public abstract void append(ValueSource source, Column column);
 
     public abstract void append(FieldDef fieldDef, RowData rowData);
 
@@ -80,16 +80,16 @@ public abstract class PersistitKeyAppender {
     {
         public New(Key key) {
             super(key);
-            fromRowDataSource = new RowDataPValueSource();
-            target = new PersistitKeyPValueTarget();
+            fromRowDataSource = new RowDataValueSource();
+            target = new PersistitKeyValueTarget();
             target.attach(this.key);
         }
 
         public void append(Object object, Column column) {
-            column.tInstance().writeCollating(PValueSources.pValuefromObject(object, column.tInstance()), target);
+            column.tInstance().writeCollating(ValueSources.valuefromObject(object, column.tInstance()), target);
         }
 
-        public void append(PValueSource source, Column column) {
+        public void append(ValueSource source, Column column) {
             column.tInstance().writeCollating(source, target);
         }
 
@@ -99,7 +99,7 @@ public abstract class PersistitKeyAppender {
             column.tInstance().writeCollating(fromRowDataSource, target);
         }
 
-        private final RowDataPValueSource fromRowDataSource;
-        private final PersistitKeyPValueTarget target;
+        private final RowDataValueSource fromRowDataSource;
+        private final PersistitKeyValueTarget target;
     }
 }

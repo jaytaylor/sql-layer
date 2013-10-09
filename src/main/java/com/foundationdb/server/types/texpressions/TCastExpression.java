@@ -26,8 +26,8 @@ import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.SparseArray;
 
 import java.util.Collections;
@@ -39,12 +39,12 @@ public final class TCastExpression implements TPreparedExpression {
     @Override
     public TPreptimeValue evaluateConstant(QueryContext queryContext) {
         TPreptimeValue inputValue = input.evaluateConstant(queryContext);
-        PValue value;
+        Value value;
         if (inputValue == null || inputValue.value() == null) {
             value = null;
         }
         else {
-            value = new PValue(targetInstance);
+            value = new Value(targetInstance);
 
             TExecutionContext context = new TExecutionContext(
                     new SparseArray<>(),
@@ -104,14 +104,14 @@ public final class TCastExpression implements TPreparedExpression {
 
     private static class CastEvaluation implements TEvaluatableExpression {
         @Override
-        public PValueSource resultValue() {
+        public ValueSource resultValue() {
             return value;
         }
 
         @Override
         public void evaluate() {
             inputEval.evaluate();
-            PValueSource inputVal = inputEval.resultValue();
+            ValueSource inputVal = inputEval.resultValue();
             cast.evaluate(executionContext, inputVal, value);
         }
 
@@ -136,7 +136,7 @@ public final class TCastExpression implements TPreparedExpression {
         {
             this.inputEval = inputEval;
             this.cast = cast;
-            this.value = new PValue(targetInstance);
+            this.value = new Value(targetInstance);
             this.executionContext = new TExecutionContext(
                     Collections.singletonList(sourceInstance),
                     targetInstance,
@@ -146,6 +146,6 @@ public final class TCastExpression implements TPreparedExpression {
         private final TExecutionContext executionContext;
         private final TEvaluatableExpression inputEval;
         private final TCast cast;
-        private final PValue value;
+        private final Value value;
     }
 }

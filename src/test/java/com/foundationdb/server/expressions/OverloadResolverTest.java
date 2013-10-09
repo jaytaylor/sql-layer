@@ -30,9 +30,9 @@ import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.TStrongCasts;
 import com.foundationdb.server.types.common.types.NoAttrTClass;
-import com.foundationdb.server.types.pvalue.PUnderlying;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.UnderlyingType;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.Constantness;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
@@ -52,8 +52,8 @@ public class OverloadResolverTest {
     private static class TestClassBase extends NoAttrTClass {
         private static final TBundleID TEST_BUNDLE_ID = new TBundleID("test", new UUID(0,0));
 
-        public TestClassBase(String name, PUnderlying pUnderlying) {
-            super(TEST_BUNDLE_ID, name, null, null, 1, 1, 1, pUnderlying, null, 64, null);
+        public TestClassBase(String name, UnderlyingType underlyingType) {
+            super(TEST_BUNDLE_ID, name, null, null, 1, 1, 1, underlyingType, null, 64, null);
         }
 
         @Override
@@ -75,7 +75,7 @@ public class OverloadResolverTest {
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
             throw new UnsupportedOperationException();
         }
 
@@ -116,7 +116,7 @@ public class OverloadResolverTest {
         }
 
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             throw new UnsupportedOperationException();
         }
 
@@ -151,7 +151,7 @@ public class OverloadResolverTest {
         }
 
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             throw new UnsupportedOperationException();
         }
 
@@ -166,10 +166,10 @@ public class OverloadResolverTest {
         }
     }
 
-    private final static TClass TINT = new TestClassBase("int", PUnderlying.INT_32);
-    private final static TClass TBIGINT = new TestClassBase("bigint", PUnderlying.INT_64);
-    private final static TClass TDATE = new TestClassBase("date",  PUnderlying.DOUBLE);
-    private final static TClass TVARCHAR = new TestClassBase("varchar",  PUnderlying.BYTES);
+    private final static TClass TINT = new TestClassBase("int", UnderlyingType.INT_32);
+    private final static TClass TBIGINT = new TestClassBase("bigint", UnderlyingType.INT_64);
+    private final static TClass TDATE = new TestClassBase("date",  UnderlyingType.DOUBLE);
+    private final static TClass TVARCHAR = new TestClassBase("varchar",  UnderlyingType.BYTES);
 
     private final static TestCastBase C_INT_BIGINT = new TestCastBase(TINT, TBIGINT, true);
     private final static TestCastBase C_BIGINT_INT = new TestCastBase(TBIGINT, TINT, false);

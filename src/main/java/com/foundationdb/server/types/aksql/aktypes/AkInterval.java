@@ -29,9 +29,9 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TParser;
 import com.foundationdb.server.types.aksql.AkBundle;
 import com.foundationdb.server.types.aksql.AkCategory;
-import com.foundationdb.server.types.pvalue.PUnderlying;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.UnderlyingType;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.util.AkibanAppender;
@@ -55,7 +55,7 @@ public class AkInterval extends TClassBase {
     
     private static TClassFormatter monthsFormatter = new TClassFormatter() {
         @Override
-        public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+        public void format(TInstance instance, ValueSource source, AkibanAppender out) {
             long months = source.getInt64();
 
             long years = months / 12;
@@ -66,7 +66,7 @@ public class AkInterval extends TClassBase {
         }
 
         @Override
-        public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+        public void formatAsLiteral(TInstance instance, ValueSource source, AkibanAppender out) {
             long value = source.getInt64();
             Formatter formatter = new Formatter(out.getAppendable());
             out.append("INTERVAL '");
@@ -104,7 +104,7 @@ public class AkInterval extends TClassBase {
         }
 
         @Override
-        public void formatAsJson(TInstance instance, PValueSource source, AkibanAppender out) {
+        public void formatAsJson(TInstance instance, ValueSource source, AkibanAppender out) {
             long months = source.getInt64();
             out.append(Long.toString(months));
         }
@@ -112,7 +112,7 @@ public class AkInterval extends TClassBase {
 
     private static TClassFormatter secondsFormatter = new TClassFormatter() {
         @Override
-        public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+        public void format(TInstance instance, ValueSource source, AkibanAppender out) {
             long micros = secondsIntervalAs(source, TimeUnit.MICROSECONDS);
 
             long days = secondsIntervalAs(micros, TimeUnit.DAYS);
@@ -132,7 +132,7 @@ public class AkInterval extends TClassBase {
         }
 
         @Override
-        public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+        public void formatAsLiteral(TInstance instance, ValueSource source, AkibanAppender out) {
             long value = secondsIntervalAs(source, TimeUnit.MICROSECONDS);
             Formatter formatter = new Formatter(out.getAppendable());
             out.append("INTERVAL '");
@@ -206,7 +206,7 @@ public class AkInterval extends TClassBase {
         }
 
         @Override
-        public void formatAsJson(TInstance instance, PValueSource source, AkibanAppender out) {
+        public void formatAsJson(TInstance instance, ValueSource source, AkibanAppender out) {
             long value = secondsIntervalAs(source, TimeUnit.MICROSECONDS);
             long secs = value / 1000000;
             long micros = value % 1000000;
@@ -227,7 +227,7 @@ public class AkInterval extends TClassBase {
             1,
             1,
             8,
-            PUnderlying.INT_64,
+            UnderlyingType.INT_64,
             MonthsAttrs.FORMAT,
             AkIntervalMonthsFormat.values());
 
@@ -257,7 +257,7 @@ public class AkInterval extends TClassBase {
             1,
             1,
             8,
-            PUnderlying.INT_64,
+            UnderlyingType.INT_64,
             SecondsAttrs.FORMAT,
             AkIntervalSecondsFormat.values()
     );
@@ -268,7 +268,7 @@ public class AkInterval extends TClassBase {
      * @param as the desired unit
      * @return the source's value in the requested unit
      */
-    public static long secondsIntervalAs(PValueSource source, TimeUnit as) {
+    public static long secondsIntervalAs(ValueSource source, TimeUnit as) {
         return secondsIntervalAs(source.getInt64(), as);
     }
 
@@ -397,11 +397,11 @@ public class AkInterval extends TClassBase {
                                                Enum<?> category, Class<A> enumClass,
                                                TClassFormatter formatter,
                                                int internalRepVersion, int sVersion, int sSize,
-                                               PUnderlying pUnderlying,
+                                               UnderlyingType underlyingType,
                                                A formatAttribute,
                                                IntervalFormat[] formatters)
     {
-        super(bundle, name, category, enumClass, formatter, internalRepVersion, sVersion, sSize, pUnderlying,
+        super(bundle, name, category, enumClass, formatter, internalRepVersion, sVersion, sSize, underlyingType,
                 createParser(formatAttribute, formatters), 128); // varchar len is arbitrary; I don't expect to use it
         this.formatters = formatters;
         this.formatAttribute = formatAttribute;
@@ -448,7 +448,7 @@ public class AkInterval extends TClassBase {
     {
         return new TParser() {
             @Override
-            public void parse(TExecutionContext context, PValueSource in, PValueTarget out) {
+            public void parse(TExecutionContext context, ValueSource in, ValueTarget out) {
                 TInstance instance = context.outputTInstance();
                 int literalFormatId = instance.attribute(formatAttribute);
                 F format = formatters[literalFormatId];

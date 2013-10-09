@@ -15,18 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.types.pvalue;
+package com.foundationdb.server.types.value;
 
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.types.DeepCopiable;
 import com.foundationdb.server.types.TInstance;
 
-public final class PValueTargets {
-    private PValueTargets() {}
+public final class ValueTargets {
+    private ValueTargets() {}
 
-    public static void putLong(PValueTarget target, long val)
+    public static void putLong(ValueTarget target, long val)
     {
-        switch (pUnderlying(target))
+        switch (underlyingType(target))
         {
             case INT_8:
                 target.putInt8((byte)val);
@@ -45,11 +45,11 @@ public final class PValueTargets {
         }
     }
     
-    public static PUnderlying pUnderlying(PValueTarget valueTarget){
-        return TInstance.pUnderlying(valueTarget.tInstance());
+    public static UnderlyingType underlyingType(ValueTarget valueTarget){
+        return TInstance.underlyingType(valueTarget.tInstance());
     }
 
-    public static void copyFrom(PValueSource source, PValueTarget target) {
+    public static void copyFrom(ValueSource source, ValueTarget target) {
         if (source.isNull()) {
             target.putNull();
             return;
@@ -72,7 +72,7 @@ public final class PValueTargets {
         else if (!source.canGetRawValue()) {
             throw new IllegalStateException("source has no value: " + source);
         }
-        switch (TInstance.pUnderlying(source.tInstance())) {
+        switch (TInstance.underlyingType(source.tInstance())) {
         case BOOL:
             target.putBool(source.getBoolean());
             break;

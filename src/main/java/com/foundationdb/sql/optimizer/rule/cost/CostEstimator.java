@@ -17,8 +17,10 @@
 
 package com.foundationdb.sql.optimizer.rule.cost;
 
+import com.foundationdb.server.PersistitKeyValueTarget;
 import com.foundationdb.server.store.statistics.Histogram;
 import com.foundationdb.server.store.statistics.HistogramEntry;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.sql.optimizer.rule.SchemaRulesContext;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
@@ -26,12 +28,10 @@ import com.foundationdb.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode
 import com.foundationdb.ais.model.*;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.UserTableRowType;
-import com.foundationdb.server.PersistitKeyPValueTarget;
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.store.statistics.IndexStatistics;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.pvalue.PValueSource;
 import com.persistit.Key;
 
 import com.google.common.primitives.UnsignedBytes;
@@ -50,7 +50,7 @@ public abstract class CostEstimator implements TableRowCounts
     private final Properties properties;
     private final CostModel model;
     private final Key key;
-    private final PersistitKeyPValueTarget keyPTarget;
+    private final PersistitKeyValueTarget keyPTarget;
     private final Comparator<byte[]> bytesComparator;
 
     protected CostEstimator(Schema schema, Properties properties, KeyCreator keyCreator) {
@@ -58,7 +58,7 @@ public abstract class CostEstimator implements TableRowCounts
         this.properties = properties;
         model = CostModel.newCostModel(schema, this);
         key = keyCreator.createKey();
-        keyPTarget = new PersistitKeyPValueTarget();
+        keyPTarget = new PersistitKeyValueTarget();
         bytesComparator = UnsignedBytes.lexicographicalComparator();
     }
 
@@ -499,21 +499,21 @@ public abstract class CostEstimator implements TableRowCounts
     }
 
     protected boolean encodeKeyValue(ExpressionNode node, Index index, int column) {
-        PValueSource pvalue = null;
+        ValueSource value = null;
         if (node instanceof ConstantExpression) {
             if (node.getPreptimeValue() != null) {
                 if (node.getPreptimeValue().instance() == null) { // Literal null
                     keyPTarget.putNull();
                     return true;
                 }
-                pvalue = node.getPreptimeValue().value();
+                value = node.getPreptimeValue().value();
             }
         }
         else if (node instanceof IsNullIndexKey) {
             keyPTarget.putNull();
             return true;
         }
-        if (pvalue == null)
+        if (value == null)
             return false;
         TInstance tInstance;
         determine_type:
@@ -530,7 +530,7 @@ public abstract class CostEstimator implements TableRowCounts
             }
             tInstance = index.getAllColumns().get(column).getColumn().tInstance();
         }
-        tInstance.writeCollating(pvalue, keyPTarget);
+        tInstance.writeCollating(value, keyPTarget);
         return true;
     }
 

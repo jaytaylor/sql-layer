@@ -27,7 +27,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.ColumnSelector;
-import com.foundationdb.server.types.pvalue.PValueTargets;
+import com.foundationdb.server.types.value.ValueTargets;
 import com.foundationdb.util.tap.InOutTap;
 import com.persistit.Key;
 import com.persistit.KeyState;
@@ -96,7 +96,7 @@ public class MemorySorter implements Sorter
         this.ordering = ordering.copy();
         this.key = key;
         this.loadTap = loadTap;
-        this.sorterAdapter = new PValueSorterAdapter();
+        this.sorterAdapter = new ValueSorterAdapter();
         // Note: init may change this.ordering
         sorterAdapter.init(rowType, this.ordering, this.key, null, this.context, this.bindings, sortOption);
         // Explicitly use input ordering to avoid appended field
@@ -138,7 +138,7 @@ public class MemorySorter implements Sorter
                     // Copy instead of hold as ProjectedRow cannot be held
                     ValuesHolderRow rowCopy = new ValuesHolderRow(row.rowType());
                     for(int i = 0 ; i < row.rowType().nFields(); ++i) {
-                        PValueTargets.copyFrom(row.pvalue(i), rowCopy.pvalueAt(i));
+                        ValueTargets.copyFrom(row.value(i), rowCopy.valueAt(i));
                     }
                     navigableMap.put(states, rowCopy);
                     loadTap.out();

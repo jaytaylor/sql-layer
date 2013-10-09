@@ -30,12 +30,13 @@ import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.DateTimeField;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 import java.util.List;
+
 import org.joda.time.DateTimeZone;
 import org.joda.time.MutableDateTime;
 
@@ -55,7 +56,7 @@ public class MFromUnixtimeTwoArgs extends TScalarBase
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
         String ret = null;
         InvalidOperationException error = null;
@@ -96,7 +97,7 @@ public class MFromUnixtimeTwoArgs extends TScalarBase
             {
                 TPreptimeValue formatArg = inputs.get(1);
                 
-                PValueSource format = formatArg.value();
+                ValueSource format = formatArg.value();
                 
                 int length;
                 
@@ -106,7 +107,7 @@ public class MFromUnixtimeTwoArgs extends TScalarBase
                     length = formatArg.instance().attribute(StringAttribute.MAX_LENGTH) * 10;
                 else
                 {
-                    PValueSource unixTime = inputs.get(0).value();
+                    ValueSource unixTime = inputs.get(0).value();
                     
                     // if the unix time value is not literal, get the length
                     // from the format string

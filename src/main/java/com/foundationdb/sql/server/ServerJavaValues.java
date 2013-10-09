@@ -30,9 +30,9 @@ import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueSources;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.util.AkibanAppender;
 import com.foundationdb.util.WrappingByteSource;
 
@@ -74,25 +74,25 @@ public abstract class ServerJavaValues
 
     protected abstract int size();
     protected abstract ServerQueryContext getContext();
-    protected abstract PValueSource getPValue(int index);
+    protected abstract ValueSource getValue(int index);
     protected abstract TInstance getTInstance(int index);
-    protected abstract void setPValue(int index, PValueSource source);
+    protected abstract void setValue(int index, ValueSource source);
     protected abstract ResultSet toResultSet(int index, Object resultSet);
 
     private boolean wasNull;
     private CachedCast[] cachedCasts;
 
-    protected PValueSource pvalue(int index) {
-        PValueSource pvalue = getPValue(index);
-        wasNull = pvalue.isNull();
-        return pvalue;
+    protected ValueSource value(int index) {
+        ValueSource value = getValue(index);
+        wasNull = value.isNull();
+        return value;
     }
 
     protected static class CachedCast {
         TClass targetClass;
         TCast tcast;
         TExecutionContext tcontext;
-        PValue target;
+        Value target;
 
         protected CachedCast(TInstance sourceInstance, TClass targetClass, 
                              ServerQueryContext context) {
@@ -105,15 +105,15 @@ public abstract class ServerJavaValues
             tcontext = new TExecutionContext(Collections.singletonList(sourceInstance),
                                              targetInstance,
                                              context);
-            target = new PValue(targetInstance);
+            target = new Value(targetInstance);
         }
 
         protected boolean matches(TClass required) {
             return required.equals(targetClass);
         }
 
-        protected PValueSource apply(PValueSource pvalue) {
-            tcast.evaluate(tcontext, pvalue, target);
+        protected ValueSource apply(ValueSource value) {
+            tcast.evaluate(tcontext, value, target);
             return target;
         }
     }
@@ -123,10 +123,10 @@ public abstract class ServerJavaValues
      * the assumption the caller will be applying the same
      * <code>getXxx</code> to the same field each time.
      */
-    protected PValueSource cachedCast(int index, PValueSource pvalue, TClass required) {
+    protected ValueSource cachedCast(int index, ValueSource value, TClass required) {
         TInstance sourceInstance = getTInstance(index);
         if (required.equals(sourceInstance.typeClass()))
-            return pvalue;      // Already of the required class.
+            return value;      // Already of the required class.
         if (cachedCasts == null)
             cachedCasts = new CachedCast[size()];
         CachedCast cast = cachedCasts[index];
@@ -134,7 +134,7 @@ public abstract class ServerJavaValues
             cast = new CachedCast(sourceInstance, required, getContext());
             cachedCasts[index] = cast;
         }
-        return cast.apply(pvalue);
+        return cast.apply(value);
     }
 
     protected void setValue(int index, Object value, TInstance sourceType) {
@@ -142,7 +142,7 @@ public abstract class ServerJavaValues
         if (sourceType == null) {
             sourceType = targetType;
         }
-        setPValue(index, PValueSources.pValuefromObject(value, sourceType));
+        setValue(index, ValueSources.valuefromObject(value, sourceType));
     }
 
     /*
@@ -150,8 +150,8 @@ public abstract class ServerJavaValues
         AkType targetType = getAkType(index);
         if (sourceType == null)
             sourceType = targetType;
-        PValueSource source = PValueSources.fromObject(value, sourceType).value();
-        setPValue(index, source);
+        ValueSource source = ValueSources.fromObject(value, sourceType).value();
+        setValue(index, source);
     }
     */
     public boolean wasNull() {
@@ -159,11 +159,11 @@ public abstract class ServerJavaValues
     }
 
     public String getString(int index) {
-        PValueSource pvalue = pvalue(index);
+        ValueSource value = value(index);
         if (wasNull)
             return null;
         else
-            return cachedCast(index, pvalue, MString.VARCHAR).getString();
+            return cachedCast(index, value, MString.VARCHAR).getString();
     }
 
     public String getNString(int index) {
@@ -171,99 +171,99 @@ public abstract class ServerJavaValues
     }
 
     public boolean getBoolean(int index) {
-        PValueSource pvalue = pvalue(index);
+        ValueSource value = value(index);
         if (wasNull)
             return false;
         else
-            return cachedCast(index, pvalue, AkBool.INSTANCE).getBoolean();
+            return cachedCast(index, value, AkBool.INSTANCE).getBoolean();
     }
 
     public byte getByte(int index) {
-        PValueSource pvalue = pvalue(index);
+        ValueSource value = value(index);
         if (wasNull)
             return 0;
         else
-            return cachedCast(index, pvalue, MNumeric.TINYINT).getInt8();
+            return cachedCast(index, value, MNumeric.TINYINT).getInt8();
     }
 
     public short getShort(int index) {
-        PValueSource pvalue = pvalue(index);
+        ValueSource value = value(index);
         if (wasNull)
             return 0;
         else
-            return cachedCast(index, pvalue, MNumeric.SMALLINT).getInt16();
+            return cachedCast(index, value, MNumeric.SMALLINT).getInt16();
     }
 
     public int getInt(int index) {
-        PValueSource pvalue = pvalue(index);
+        ValueSource value = value(index);
         if (wasNull)
             return 0;
         else
-            return cachedCast(index, pvalue, MNumeric.INT).getInt32();
+            return cachedCast(index, value, MNumeric.INT).getInt32();
     }
 
     public long getLong(int index) {
-        PValueSource pvalue = pvalue(index);
+        ValueSource value = value(index);
         if (wasNull)
             return 0;
         else
-            return cachedCast(index, pvalue, MNumeric.BIGINT).getInt64();
+            return cachedCast(index, value, MNumeric.BIGINT).getInt64();
     }
 
     public float getFloat(int index) {
-        PValueSource pvalue = pvalue(index);
+        ValueSource value = value(index);
         if (wasNull)
             return 0.0f;
         else
-            return cachedCast(index, pvalue, MApproximateNumber.FLOAT).getFloat();
+            return cachedCast(index, value, MApproximateNumber.FLOAT).getFloat();
     }
 
     public double getDouble(int index) {
-        PValueSource pvalue = pvalue(index);
+        ValueSource value = value(index);
         if (wasNull)
             return 0.0;
         else
-            return cachedCast(index, pvalue, MApproximateNumber.DOUBLE).getDouble();
+            return cachedCast(index, value, MApproximateNumber.DOUBLE).getDouble();
     }
 
     public BigDecimal getBigDecimal(int index) {
-        PValueSource pvalue = pvalue(index);
+        ValueSource value = value(index);
         if (wasNull)
             return null;
         else
-            return ((BigDecimalWrapper)cachedCast(index, pvalue, MNumeric.DECIMAL).getObject()).asBigDecimal();
+            return ((BigDecimalWrapper)cachedCast(index, value, MNumeric.DECIMAL).getObject()).asBigDecimal();
     }
 
     public byte[] getBytes(int index) {
-        PValueSource pvalue = pvalue(index);
+        ValueSource value = value(index);
         if (wasNull)
             return null;
         else
-            return cachedCast(index, pvalue, MBinary.VARBINARY).getBytes();
+            return cachedCast(index, value, MBinary.VARBINARY).getBytes();
     }
 
     public Date getDate(int index) {
-        PValueSource pvalue = pvalue(index);
+        ValueSource value = value(index);
         if (wasNull)
             return null;
         else
-            return new Date(timestampMillis(index, pvalue));
+            return new Date(timestampMillis(index, value));
     }
 
     public Time getTime(int index) {
-        PValueSource pvalue = pvalue(index);
+        ValueSource value = value(index);
         if (wasNull)
             return null;
         else
-            return new Time(timestampMillis(index, pvalue));
+            return new Time(timestampMillis(index, value));
     }
 
     public Timestamp getTimestamp(int index) {
-        PValueSource pvalue = pvalue(index);
+        ValueSource value = value(index);
         if (wasNull)
             return null;
         else
-            return new Timestamp(timestampMillis(index, pvalue));
+            return new Timestamp(timestampMillis(index, value));
     }
 
     public Date getDate(int index, Calendar cal) {
@@ -278,50 +278,50 @@ public abstract class ServerJavaValues
         return getTimestamp(index);
     }
 
-    protected long timestampMillis(int index, PValueSource pvalue) {
-        return cachedCast(index, pvalue, MDatetimes.TIMESTAMP).getInt32() * 1000L;
+    protected long timestampMillis(int index, ValueSource value) {
+        return cachedCast(index, value, MDatetimes.TIMESTAMP).getInt32() * 1000L;
     }
 
     public Object getObject(int index) {
-        PValueSource pvalue = pvalue(index);
+        ValueSource value = value(index);
         if (wasNull)
             return null;
         else {
             TClass tclass = getTInstance(index).typeClass();
             if (tclass.equals(AkBool.INSTANCE))
-                return pvalue.getBoolean();
+                return value.getBoolean();
             else if (tclass.equals(MNumeric.TINYINT))
-                return pvalue.getInt8();
+                return value.getInt8();
             else if (tclass.equals(MNumeric.SMALLINT))
-                return pvalue.getInt16();
+                return value.getInt16();
             else if (tclass.equals(MNumeric.INT))
-                return pvalue.getInt32();
+                return value.getInt32();
             else if (tclass.equals(MNumeric.BIGINT))
-                return pvalue.getInt64();
+                return value.getInt64();
             else if (tclass.equals(MApproximateNumber.FLOAT))
-                return pvalue.getFloat();
+                return value.getFloat();
             else if (tclass.equals(MApproximateNumber.DOUBLE))
-                return pvalue.getDouble();
+                return value.getDouble();
             else if (tclass.equals(MString.CHAR) ||
                      tclass.equals(MString.VARCHAR) ||
                      tclass.equals(MString.TINYTEXT) ||
                      tclass.equals(MString.MEDIUMTEXT) ||
                      tclass.equals(MString.TEXT) ||
                      tclass.equals(MString.LONGTEXT))
-                return pvalue.getString();
+                return value.getString();
             else if (tclass.equals(MBinary.VARBINARY))
-                return pvalue.getBytes();
+                return value.getBytes();
             else if (tclass.equals(MDatetimes.DATE))
-                return new Date(timestampMillis(index, pvalue));
+                return new Date(timestampMillis(index, value));
             else if (tclass.equals(MDatetimes.TIME))
-                return new Time(timestampMillis(index, pvalue));
+                return new Time(timestampMillis(index, value));
             else if (tclass.equals(MDatetimes.DATETIME) ||
                      tclass.equals(MDatetimes.TIMESTAMP))
-                return new Timestamp(timestampMillis(index, pvalue));
+                return new Timestamp(timestampMillis(index, value));
             else if (tclass.equals(AkResultSet.INSTANCE))
-                return toResultSet(index, pvalue.getObject());
+                return toResultSet(index, value.getObject());
             else
-                return pvalue.getObject();
+                return value.getObject();
         }
     }
 
@@ -720,7 +720,7 @@ public abstract class ServerJavaValues
     }
 
     public void formatAsJson(int index, AkibanAppender appender) {
-        PValueSource pvalue = getPValue(index);
-        pvalue.tInstance().formatAsJson(pvalue, appender);
+        ValueSource value = getValue(index);
+        value.tInstance().formatAsJson(value, appender);
     }
 }

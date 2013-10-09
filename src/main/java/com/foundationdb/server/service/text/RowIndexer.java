@@ -22,7 +22,7 @@ import com.foundationdb.qp.persistitadapter.PersistitHKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.UserTableRowType;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.ShareHolder;
 import com.persistit.Key;
 
@@ -171,7 +171,7 @@ public class RowIndexer implements Closeable
     protected void addFields(Row row, List<IndexedField> fields) throws IOException {
         if (fields == null) return;
         for (IndexedField indexedField : fields) {
-            PValueSource value = row.pvalue(indexedField.getPosition());
+            ValueSource value = row.value(indexedField.getPosition());
             Field field = indexedField.getField(value);
             currentDocument.add(field);
         }

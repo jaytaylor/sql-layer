@@ -25,7 +25,7 @@ import com.foundationdb.qp.util.HKeyCache;
 import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
 import com.foundationdb.server.encoding.EncodingException;
 import com.foundationdb.server.rowdata.*;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.SparseArray;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
@@ -57,10 +57,10 @@ public class PersistitGroupRow extends AbstractRow
     }
 
     @Override
-    public PValueSource pvalue(int i) {
+    public ValueSource value(int i) {
         FieldDef fieldDef = rowDef().getFieldDef(i);
         RowData rowData = rowData();
-        RowDataPValueSource valueSource = pValueSource(i);
+        RowDataValueSource valueSource = valueSource(i);
         valueSource.bind(fieldDef, rowData);
         return valueSource;
     }
@@ -173,17 +173,17 @@ public class PersistitGroupRow extends AbstractRow
         this.hKeyCache = new HKeyCache(adapter);
     }
 
-    private RowDataPValueSource pValueSource(int i) {
-        if (pvalueSources == null) {
-            pvalueSources = new SparseArray<RowDataPValueSource>()
+    private RowDataValueSource valueSource(int i) {
+        if (valueSources == null) {
+            valueSources = new SparseArray<RowDataValueSource>()
             {
                 @Override
-                protected RowDataPValueSource initialValue() {
-                    return new RowDataPValueSource();
+                protected RowDataValueSource initialValue() {
+                    return new RowDataValueSource();
                 }
             };
         }
-        return pvalueSources.get(i);
+        return valueSources.get(i);
     }
 
     // Class state
@@ -194,7 +194,7 @@ public class PersistitGroupRow extends AbstractRow
 
     // Object state
 
-    private SparseArray<RowDataPValueSource> pvalueSources;
+    private SparseArray<RowDataValueSource> valueSources;
     private final PersistitAdapter adapter;
     private RowData rowData;
     private LegacyRowWrapper row;

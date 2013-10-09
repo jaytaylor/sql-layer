@@ -27,10 +27,11 @@ import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.TPreptimeContext;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
+
 import java.util.List;
 
 public abstract class Pad extends TScalarBase
@@ -92,7 +93,7 @@ public abstract class Pad extends TScalarBase
     }
     
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
         String st = inputs.get(0).getString();
         int length = inputs.get(1).getInt32();
@@ -128,7 +129,7 @@ public abstract class Pad extends TScalarBase
             @Override
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context)
             {
-                PValueSource len = inputs.get(1).value();
+                ValueSource len = inputs.get(1).value();
                 
                 // if the argument isn't availabe
                 // return LONGTEXT 

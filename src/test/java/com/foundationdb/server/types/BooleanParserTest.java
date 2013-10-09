@@ -23,8 +23,8 @@ import com.foundationdb.junit.Parameterization;
 import com.foundationdb.junit.ParameterizationBuilder;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -79,8 +79,8 @@ public final class BooleanParserTest {
 
     @Test
     public void checkParse() {
-        PValueSource source = new PValue(MString.varcharFor(string), string);
-        PValue target = new PValue(AkBool.INSTANCE.instance(true));
+        ValueSource source = new Value(MString.varcharFor(string), string);
+        Value target = new Value(AkBool.INSTANCE.instance(true));
         TParsers.BOOLEAN.parse(null, source, target);
         Boolean actual = target.isNull() ? null : target.getBoolean();
         assertEquals(string, Boolean.valueOf(expected), actual);

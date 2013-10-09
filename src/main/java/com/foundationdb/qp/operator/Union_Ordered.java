@@ -23,7 +23,7 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types.pvalue.PValueTargets;
+import com.foundationdb.server.types.value.ValueTargets;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.tap.InOutTap;
@@ -433,13 +433,13 @@ class Union_Ordered extends Operator
         {
             if (suffixRow == null) {
                 for (int f = 0; f < fieldsToCompare; f++) {
-                    skipRow.pvalueAt(skipRowFixedFields + f).putNull();
+                    skipRow.valueAt(skipRowFixedFields + f).putNull();
                 }
             } else {
                 for (int f = 0; f < fieldsToCompare; f++) {
-                    PValueTargets.copyFrom(suffixRow.pvalue(
+                    ValueTargets.copyFrom(suffixRow.value(
                             suffixRowFixedFields + f),
-                            skipRow.pvalueAt(skipRowFixedFields + f));
+                            skipRow.valueAt(skipRowFixedFields + f));
                 }
             }
         }
@@ -452,11 +452,11 @@ class Union_Ordered extends Operator
                 assert leftRow.isHolding();
                 int f = 0;
                 while (f < fixedFields) {
-                    PValueTargets.copyFrom(leftRow.get().pvalue(f), leftSkipRow.pvalueAt(f));
+                    ValueTargets.copyFrom(leftRow.get().value(f), leftSkipRow.valueAt(f));
                     f++;
                 }
                 while (f < rowType.nFields()) {
-                    leftSkipRow.pvalueAt(f++).putNull();
+                    leftSkipRow.valueAt(f++).putNull();
                 }
                 leftSkipRowFixed = true;
             }
@@ -471,11 +471,11 @@ class Union_Ordered extends Operator
                 assert rightRow.isHolding();
                 int f = 0;
                 while (f < fixedFields) {
-                    PValueTargets.copyFrom(rightRow.get().pvalue(f), rightSkipRow.pvalueAt(f));
+                    ValueTargets.copyFrom(rightRow.get().value(f), rightSkipRow.valueAt(f));
                     f++;
                 }
                 while (f < rowType.nFields()) {
-                    rightSkipRow.pvalueAt(f++).putNull();
+                    rightSkipRow.valueAt(f++).putNull();
                 }
                 rightSkipRowFixed = true;
             }

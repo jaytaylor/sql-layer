@@ -111,7 +111,7 @@ public class GIUpdateProfilePT extends PTBase
                 NiceRow oldRow = new NiceRow(customer, customerRowDef);
                 NiceRow newRow  = new NiceRow(customer, customerRowDef);
                 long cid = getLong(row, 0);
-                String name = row.pvalue(1).getString();
+                String name = row.value(1).getString();
                 oldRow.put(0, cid);
                 oldRow.put(1, name);
                 newRow.put(0, cid);

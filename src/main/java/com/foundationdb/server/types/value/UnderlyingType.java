@@ -15,7 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.types.pvalue;
+package com.foundationdb.server.types.value;
 
-public final class NullValueException extends RuntimeException {
+public enum UnderlyingType {
+    BOOL, INT_8, INT_16, UINT_16, INT_32, INT_64, FLOAT, DOUBLE, BYTES, STRING
+    ;
 }

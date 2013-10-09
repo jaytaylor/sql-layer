@@ -27,7 +27,7 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.UserTableRowType;
-import com.foundationdb.server.PersistitKeyPValueSource;
+import com.foundationdb.server.PersistitKeyValueSource;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.collation.AkCollator;
@@ -35,7 +35,7 @@ import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.collation.AkCollatorMySQL;
 import com.foundationdb.server.test.ExpressionGenerators;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValueSources;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.server.types.texpressions.Comparison;
 import com.persistit.Key;
 import org.junit.Test;
@@ -127,26 +127,26 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     {
         AkCollator caseInsensitiveCollator = AkCollatorFactory.getAkCollator("latin1_swedish_ci");
         AkCollator binaryCollator = AkCollatorFactory.getAkCollator(AkCollatorFactory.UCS_BINARY);
-        PersistitKeyPValueSource source = new PersistitKeyPValueSource(MString.VARCHAR.instance(true));
+        PersistitKeyValueSource source = new PersistitKeyValueSource(MString.VARCHAR.instance(true));
         long hash_AB;
         long hash_ab;
         Key key = store().createKey();
         {
             binaryCollator.append(key.clear(), "AB");
             source.attach(key, 0, MString.VARCHAR.instance(true));
-            hash_AB = PValueSources.hash(source, binaryCollator);
+            hash_AB = ValueSources.hash(source, binaryCollator);
             binaryCollator.append(key.clear(), "ab");
             source.attach(key, 0, MString.VARCHAR.instance(true));
-            hash_ab = PValueSources.hash(source, binaryCollator);
+            hash_ab = ValueSources.hash(source, binaryCollator);
             assertTrue(hash_AB != hash_ab);
         }
         {
             caseInsensitiveCollator.append(key.clear(), "AB");
             source.attach(key, 0, MString.VARCHAR.instance(true));
-            hash_AB = PValueSources.hash(source, caseInsensitiveCollator);
+            hash_AB = ValueSources.hash(source, caseInsensitiveCollator);
             caseInsensitiveCollator.append(key.clear(), "ab");
             source.attach(key, 0, MString.VARCHAR.instance(true));
-            hash_ab = PValueSources.hash(source, caseInsensitiveCollator);
+            hash_ab = ValueSources.hash(source, caseInsensitiveCollator);
             assertTrue(hash_AB == hash_ab);
         }
     }

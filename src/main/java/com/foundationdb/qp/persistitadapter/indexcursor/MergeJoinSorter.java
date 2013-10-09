@@ -36,14 +36,14 @@ import com.foundationdb.qp.persistitadapter.Sorter;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.PersistitValuePValueSource;
-import com.foundationdb.server.PersistitValuePValueTarget;
+import com.foundationdb.server.PersistitValueValueSource;
+import com.foundationdb.server.PersistitValueValueTarget;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.error.MergeSortIOException;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TString;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.tap.InOutTap;
 import com.persistit.Key;
 import com.persistit.KeyState;
@@ -125,7 +125,7 @@ public class MergeJoinSorter implements Sorter {
         this.sortOption = sortOption;
         
         this.sortKey = context.getStore().createKey(); 
-        this.sorterAdapter = new PValueSorterAdapter();
+        this.sorterAdapter = new ValueSorterAdapter();
         // Note: init may change this.ordering
         sorterAdapter.init(rowType, this.ordering, this.sortKey, null, this.context, this.bindings, sortOption);
         // Explicitly use input ordering to avoid appended field
@@ -318,7 +318,7 @@ public class MergeJoinSorter implements Sorter {
         private int rowFields;
         private TInstance tFieldTypes[];
         private AkCollator collators[];
-        private PersistitValuePValueTarget valueTarget;
+        private PersistitValueValueTarget valueTarget;
         private RowCursor input;
         boolean done = false;
         
@@ -332,7 +332,7 @@ public class MergeJoinSorter implements Sorter {
                     collators[i] = TString.getCollator(tFieldTypes[i]);
                 }
             }
-            valueTarget = new PersistitValuePValueTarget();
+            valueTarget = new PersistitValueValueTarget();
             this.input = input;
         }
         
@@ -405,9 +405,9 @@ public class MergeJoinSorter implements Sorter {
                 if (tFieldTypes[i].typeClass().hasFixedSerializationSize()) {
                     size += tFieldTypes[i].typeClass().fixedSerializationSize() + 2;
                 } else {
-                    PValueSource src = row.pvalue(i);
+                    ValueSource src = row.value(i);
                     if (!src.isNull()) {
-                        switch (TInstance.pUnderlying(src.tInstance())) {
+                        switch (TInstance.underlyingType(src.tInstance())) {
                         case STRING:
                             size += AkCollator.getString(src, collators[i]).length() * 2 + 3;
                             break;
@@ -436,7 +436,7 @@ public class MergeJoinSorter implements Sorter {
                     convertValue.setStreamMode(true);
                     for (int i = 0; i < rowFields; i++) {
                         //sorterAdapter.evaluateToTarget(row, i);
-                        PValueSource field = row.pvalue(i);
+                        ValueSource field = row.value(i);
                         //putFieldToTarget(field, i, oFieldTypes, tFieldTypes);
                         tFieldTypes[i].writeCanonical(field, valueTarget);
                         //tFieldTypes[i].writeCollating(field, valueTarget);
@@ -554,7 +554,7 @@ public class MergeJoinSorter implements Sorter {
 
         private final PullNextProvider<SortKey> pullSorter;
         private final RowType rowType;
-        private PersistitValuePValueSource valueSource; 
+        private PersistitValueValueSource valueSource;
         private API.SortOption sortOption;
         private Comparator<SortKey> compare;
         private SortKey nextKey;
@@ -564,7 +564,7 @@ public class MergeJoinSorter implements Sorter {
             this.rowType = rowType;
             this.sortOption = sortOption;
             this.compare = compare;
-            valueSource = new PersistitValuePValueSource();
+            valueSource = new PersistitValueValueSource();
         }
         
         @Override
@@ -610,7 +610,7 @@ public class MergeJoinSorter implements Sorter {
             valueSource.attach(key.rowValue);
             for(int i = 0 ; i < rowType.nFields(); ++i) {
                 valueSource.getReady(rowType.typeInstanceAt(i));
-                rowType.typeInstanceAt(i).writeCanonical(valueSource, rowCopy.pvalueAt(i));
+                rowType.typeInstanceAt(i).writeCanonical(valueSource, rowCopy.valueAt(i));
             }
             return rowCopy;
         }

@@ -17,8 +17,8 @@
 
 package com.foundationdb.qp.expression;
 
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 
 public interface BoundExpressions {
-    PValueSource pvalue(int index);
+    ValueSource value(int index);
 }

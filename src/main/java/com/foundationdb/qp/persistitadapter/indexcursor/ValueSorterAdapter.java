@@ -22,17 +22,17 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.PersistitValuePValueSource;
-import com.foundationdb.server.PersistitValuePValueTarget;
+import com.foundationdb.server.PersistitValueValueSource;
+import com.foundationdb.server.PersistitValueValueTarget;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types.texpressions.TNullExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.persistit.Value;
 
-final class PValueSorterAdapter extends SorterAdapter<PValueSource, TPreparedExpression, TEvaluatableExpression> {
+final class ValueSorterAdapter extends SorterAdapter<ValueSource, TPreparedExpression, TEvaluatableExpression> {
     @Override
     protected void appendDummy(API.Ordering ordering) {
         ordering.append(DUMMY_EXPRESSION, ordering.ascending(0));
@@ -63,7 +63,7 @@ final class PValueSorterAdapter extends SorterAdapter<PValueSource, TPreparedExp
     }
 
     @Override
-    protected PValueSource evaluateRow(TEvaluatableExpression evaluation, Row row) {
+    protected ValueSource evaluateRow(TEvaluatableExpression evaluation, Row row) {
         evaluation.with(row);
         evaluation.evaluate();
         return evaluation.resultValue();
@@ -80,12 +80,12 @@ final class PValueSorterAdapter extends SorterAdapter<PValueSource, TPreparedExp
     }
 
     @Override
-    protected void putFieldToTarget(PValueSource value, int i, TInstance[] tFieldTypes) {
+    protected void putFieldToTarget(ValueSource value, int i, TInstance[] tFieldTypes) {
         tFieldTypes[i].writeCanonical(value, valueTarget);
     }
 
-    PValueSorterAdapter() {
-        super(PValueSortKeyAdapter.INSTANCE);
+    ValueSorterAdapter() {
+        super(ValueSortKeyAdapter.INSTANCE);
     }
     
     private class InternalPAdapter implements PersistitValueSourceAdapter {
@@ -98,13 +98,13 @@ final class PValueSorterAdapter extends SorterAdapter<PValueSource, TPreparedExp
         @Override
         public void putToHolders(ValuesHolderRow row, int i, TInstance[] fieldTypes) {
             valueSource.getReady(fieldTypes[i]);
-            fieldTypes[i].writeCanonical(valueSource, row.pvalueAt(i));
+            fieldTypes[i].writeCanonical(valueSource, row.valueAt(i));
         }
 
-        private final PersistitValuePValueSource valueSource = new PersistitValuePValueSource();
+        private final PersistitValueValueSource valueSource = new PersistitValueValueSource();
     }
     
-    private final PersistitValuePValueTarget valueTarget = new PersistitValuePValueTarget();
+    private final PersistitValueValueTarget valueTarget = new PersistitValueValueTarget();
     
     private static final TPreparedExpression DUMMY_EXPRESSION = new TNullExpression(MNumeric.BIGINT.instance(true));
 }

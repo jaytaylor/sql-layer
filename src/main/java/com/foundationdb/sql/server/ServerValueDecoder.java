@@ -25,8 +25,8 @@ import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueSources;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 
 import org.joda.time.DateTimeZone;
 import java.math.BigDecimal;
@@ -43,8 +43,8 @@ public class ServerValueDecoder
 
     /** Decode the given value into a the given bindings at the given position.
      */
-    public void decodePValue(byte[] encoded, ServerType type, boolean binary,
-                             QueryBindings bindings, int index) {
+    public void decodeValue(byte[] encoded, ServerType type, boolean binary,
+                            QueryBindings bindings, int index) {
        
         TInstance decodedType = null;
         TInstance targetType = type != null ? type.getInstance() : null;
@@ -141,8 +141,8 @@ public class ServerValueDecoder
         }
         if (decodedType == null)
             decodedType = targetType;
-        PValueSource source = PValueSources.pValuefromObject(value, targetType);
-        bindings.setPValue(index, source);
+        ValueSource source = ValueSources.valuefromObject(value, targetType);
+        bindings.setValue(index, source);
     }
 
     private static DataInputStream getDataStream(byte[] bytes) {

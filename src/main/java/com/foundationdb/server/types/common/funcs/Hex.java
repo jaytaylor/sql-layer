@@ -20,8 +20,8 @@ import com.foundationdb.server.types.*;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.StringFactory;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 
@@ -40,7 +40,7 @@ public abstract class Hex extends TScalarBase {
                     }
 
                     @Override
-                    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+                    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
                         String st = inputs.get(0).getString();
                         StringBuilder builder = new StringBuilder();
                         int charsetId = context.inputTInstanceAt(0).attribute(StringAttribute.CHARSET);
@@ -62,7 +62,7 @@ public abstract class Hex extends TScalarBase {
                     }
 
                     @Override
-                    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+                    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
                         output.putString(Long.toHexString(inputs.get(0).getInt64()), null);
                     }
                 };

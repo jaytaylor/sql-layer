@@ -20,7 +20,7 @@ package com.foundationdb.server.types.typestests;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
-import com.foundationdb.server.types.pvalue.PUnderlying;
+import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.util.ByteSource;
 import com.foundationdb.util.WrappingByteSource;
 
@@ -157,14 +157,14 @@ final class StandardTestCases {
     }
 
     private static void verifyAllTypesTested(Collection<? extends TestCase<?>> testCases) {
-        Set<PUnderlying> allTypes = EnumSet.allOf(PUnderlying.class);
+        Set<UnderlyingType> allTypes = EnumSet.allOf(UnderlyingType.class);
         // No Types currently use this -> single char? 
-        allTypes.remove(PUnderlying.UINT_16);
+        allTypes.remove(UnderlyingType.UINT_16);
         for (TestCase<?> testCase : testCases) {
-            allTypes.remove(TInstance.pUnderlying(testCase.type()));
+            allTypes.remove(TInstance.underlyingType(testCase.type()));
         }
         if (!allTypes.isEmpty()) {
-            throw new RuntimeException("Untested pUnderlying: " + allTypes);
+            throw new RuntimeException("Untested underlyingType: " + allTypes);
         }
     }
 

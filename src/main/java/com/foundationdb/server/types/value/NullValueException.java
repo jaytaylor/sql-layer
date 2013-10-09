@@ -15,11 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.types.pvalue;
+package com.foundationdb.server.types.value;
 
-public interface PValueTarget extends PBasicValueTarget {
-
-    boolean supportsCachedObjects();
-
-    void putObject(Object object);
+public final class NullValueException extends RuntimeException {
 }

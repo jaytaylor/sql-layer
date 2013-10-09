@@ -22,9 +22,9 @@ import com.foundationdb.server.types.TComparison;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TKeyComparable;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
-import com.foundationdb.server.types.pvalue.PValueTargets;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
+import com.foundationdb.server.types.value.ValueTargets;
 import com.google.common.primitives.Longs;
 
 import java.util.ArrayList;
@@ -33,7 +33,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.foundationdb.server.types.pvalue.PValueSources.getLong;
+import static com.foundationdb.server.types.value.ValueSources.getLong;
 
 public final class MKeyComparables {
 
@@ -43,14 +43,14 @@ public final class MKeyComparables {
         
         final TComparison integerComparison = new TComparison() {
             @Override
-            public int compare(TInstance leftInstance, PValueSource left, TInstance rightInstance, PValueSource right) {
+            public int compare(TInstance leftInstance, ValueSource left, TInstance rightInstance, ValueSource right) {
                 return Longs.compare(getLong(left), getLong(right));
             }
 
             @Override
-            public void copyComparables(PValueSource source, PValueTarget target)
+            public void copyComparables(ValueSource source, ValueTarget target)
             {
-                PValueTargets.putLong(target, getLong(source));   
+                ValueTargets.putLong(target, getLong(source));
             }
         };
 

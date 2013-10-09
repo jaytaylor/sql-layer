@@ -35,7 +35,6 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.persistitadapter.PersistitAdapter;
 import com.foundationdb.qp.persistitadapter.PersistitHKey;
 import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.HKeyRow;
@@ -65,7 +64,6 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.search.Query;
 
 import com.google.inject.Inject;
-import com.persistit.exception.PersistitException;
 import com.persistit.Key;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -548,9 +546,9 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     IndexName nextInQueue(Session session, Cursor cursor, boolean traversing) {
         Row row;
         while((row = cursor.next()) != null) {
-            String schema = row.pvalue(0).getString();
-            String table = row.pvalue(1).getString();
-            String index = row.pvalue(2).getString();
+            String schema = row.value(0).getString();
+            String table = row.value(1).getString();
+            String index = row.value(2).getString();
             IndexName ret = new IndexName(new TableName(schema, table), index);
             // The populating map contains the indexes currently being built
             // if this name is already in the tree, skip this one, and try
@@ -604,11 +602,11 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             cursor = API.cursor(plan, context, context.createBindings());
             cursor.open();
             while((row = cursor.next()) != null) {
-                String schema = row.pvalue(0).getString();
-                String tableName = row.pvalue(1).getString();
-                String iName = row.pvalue(2).getString();
+                String schema = row.value(0).getString();
+                String tableName = row.value(1).getString();
+                String iName = row.value(2).getString();
                 indexName = new IndexName(new TableName(schema, tableName), iName);
-                indexID = row.pvalue(3).getInt32();
+                indexID = row.value(3).getInt32();
 
                 UserTable table = getAIS(session).getUserTable(indexName.getFullTableName());
                 Index index = (table != null) ? table.getFullTextIndex(indexName.getName()) : null;
@@ -648,10 +646,10 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             private void advance() {
                 row = cursor.next();
                 if(row != null &&
-                   indexName.getSchemaName().equals(row.pvalue(0).getString()) &&
-                   indexName.getTableName().equals(row.pvalue(1).getString()) &&
-                   indexName.getName().equals(row.pvalue(2).getString()) &&
-                   indexID == row.pvalue(3).getInt32()) {
+                   indexName.getSchemaName().equals(row.value(0).getString()) &&
+                   indexName.getTableName().equals(row.value(1).getString()) &&
+                   indexName.getName().equals(row.value(2).getString()) &&
+                   indexID == row.value(3).getInt32()) {
                     hasNext = true;
                 } else {
                     hasNext = false;
@@ -676,7 +674,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                     throw new NoSuchElementException();
                 }
                 hasNext = null;
-                byte[] bytes = row.pvalue(4).getBytes();
+                byte[] bytes = row.value(4).getBytes();
                 return bytes;
             }
 
