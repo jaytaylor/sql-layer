@@ -29,7 +29,6 @@ import com.foundationdb.server.types.value.*;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.ArgumentValidation;
-import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -202,7 +201,7 @@ class Distinct_Partial extends Operator
         {
             if (!idle) {
                 input.close();
-                currentRow.release();
+                currentRow = null;
                 idle = true;
             }
         }
@@ -245,19 +244,19 @@ class Distinct_Partial extends Operator
         }
 
         private boolean isDistinctP(Row inputRow) {
-            if ((nvalid == 0) && currentRow.isEmpty()) {
+            if ((nvalid == 0) && currentRow == null) {
                 // Very first row.
-                currentRow.hold(inputRow);
+                currentRow = inputRow;
                 return true;
             }
             for (int i = 0; i < nfields; i++) {
                 if (i == nvalid) {
-                    assert currentRow.isHolding();
-                    ValueTargets.copyFrom(currentRow.get().value(i), currentValues[i]);
+                    assert currentRow != null;
+                    ValueTargets.copyFrom(currentRow.value(i), currentValues[i]);
                     nvalid++;
                     if (nvalid == nfields)
                         // Once we have copies of all fields, don't need row any more.
-                        currentRow.release();
+                        currentRow = null;
                 }
                 ValueSource inputValue = inputRow.value(i);
                 if (!eqP(currentValues[i], inputValue, rowType().typeInstanceAt(i))) {
@@ -265,7 +264,7 @@ class Distinct_Partial extends Operator
                     nvalid = i + 1;
                     if (i < nfields - 1)
                         // Might need later fields.
-                        currentRow.hold(inputRow);
+                        currentRow = inputRow;
                     return true;
                 }
             }
@@ -285,7 +284,7 @@ class Distinct_Partial extends Operator
 
         // Object state
 
-        private final ShareHolder<Row> currentRow = new ShareHolder<>();
+        private Row currentRow;
         private final int nfields;
         // currentValues contains copies of the first nvalid of currentRow's fields,
         // filled as needed.

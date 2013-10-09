@@ -42,7 +42,6 @@ import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.RowCollector;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.util.GrowableByteBuffer;
-import com.foundationdb.util.ShareHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,11 +82,11 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         boolean wasHeld = false;
         boolean wroteToPayload = false;
         AbstractRow row;
-        if (currentRow.isEmpty()) {
+        if (currentRow == null) {
             row = (AbstractRow) cursor.next();
         } else {
             wasHeld = true;
-            row = (AbstractRow) currentRow.get();
+            row = (AbstractRow) currentRow;
             currentRow.release();
         }
         if (row == null) {
@@ -111,7 +110,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
 
             if (doHold) {
                 assert !wroteToPayload;
-                currentRow.hold(row);
+                currentRow = row;
             }
         }
         return wroteToPayload;
@@ -125,7 +124,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         if (row == null) {
             close();
         } else {
-            currentRow.hold(row);
+            currentRow = row;
             rowData = row.rowData();
             rowCount++;
         }
@@ -409,7 +408,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     protected IndexKeyRange indexKeyRange;
     private Cursor cursor;
     private int rowCount = 0;
-    private ShareHolder<Row> currentRow = new ShareHolder<>();
+    private Row currentRow;
     private boolean closed = true; // Not false, so that initial call to hasMore, prior to open, will proceed to call open.
 
 //    // inner class

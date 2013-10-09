@@ -29,7 +29,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
 import com.foundationdb.sql.server.ServerSession;
 import com.foundationdb.sql.server.ServerTransaction;
-import com.foundationdb.util.ShareHolder;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,8 +110,8 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
     }
 
     static class SpoolCursor implements RowCursor {
-        private List<ShareHolder<Row>> rows = new ArrayList<>();
-        private Iterator<ShareHolder<Row>> iterator;
+        private List<Row> rows = new ArrayList<>();
+        private Iterator<Row> iterator;
         private enum State { CLOSED, FILLING, EMPTYING, DESTROYED }
         private State state;
         
@@ -125,9 +124,7 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
             if (row instanceof ProjectedRow)
                 // create a copy of this row, and hold it instead
                 row = new ImmutableRow((ProjectedRow)row);
-            ShareHolder<Row> holder = new ShareHolder<>();
-            holder.hold(row);
-            rows.add(holder);
+            rows.add(row);
         }
 
         @Override
@@ -141,9 +138,7 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
         public Row next() {
             CursorLifecycle.checkIdleOrActive(this);
             if (iterator.hasNext()) {
-                ShareHolder<Row> holder = iterator.next();
-                Row row = holder.get();
-                holder.release();
+                Row row = iterator.next();
                 return row;
             }
             else {

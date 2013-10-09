@@ -31,7 +31,6 @@ import com.foundationdb.server.test.it.qp.TestRow;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.value.ValueSource;
-import com.foundationdb.util.ShareHolder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -81,7 +80,7 @@ public abstract class ITBase extends ApiTestBase {
 
     private void compareRowsInternal(RowBase[] expected, RowCursor cursor, boolean topLevel, AkCollator ... collators)
     {
-        List<ShareHolder<Row>> actualRows = new ArrayList<>(); // So that result is viewable in debugger
+        List<RowBase> actualRows = new ArrayList<>(); // So that result is viewable in debugger
         try {
             if (topLevel)
                 ((Cursor)cursor).openTopLevel();
@@ -103,7 +102,7 @@ public abstract class ITBase extends ApiTestBase {
                         assertEquals(count + ": hkey", expectedTestRow.persistityString(), actualHKeyString);
                     }
                 }
-                actualRows.add(new ShareHolder<>((Row) actualRow));
+                actualRows.add(actualRow);
             }
         } finally {
             if (topLevel)

@@ -29,7 +29,6 @@ import com.foundationdb.server.types.value.*;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.ArgumentValidation;
-import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -365,7 +364,7 @@ final class Aggregate_Partial extends Operator
         public void close() {
             CursorLifecycle.checkIdleOrActive(this);
             if (cursorState != CursorState.CLOSED) {
-                holder.release();
+                holder = null;
                 inputCursor.close();
                 cursorState = CursorState.CLOSED;
             }
@@ -432,7 +431,7 @@ final class Aggregate_Partial extends Operator
         }
 
         private Row createOutput() {
-            ValuesHolderRow outputRow = unsharedOutputRow();
+            ValuesHolderRow outputRow = newOutputRow();
             for(int i = 0; i < inputsIndex; ++i) {
                 Value value = outputRow.valueAt(i);
                 Value key = keyValues.get(i);
@@ -453,7 +452,7 @@ final class Aggregate_Partial extends Operator
 
         private Row createEmptyOutput() {
             assert noGroupBy() : "shouldn't be creating null output row when I have a grouping";
-            ValuesHolderRow outputRow = unsharedOutputRow();
+            ValuesHolderRow outputRow = newOutputRow();
             for (int i = 0; i < outputRow.rowType().nFields(); ++i) {
                 pAggrs.get(i).emptyValue(outputRow.valueAt(i));
             }
@@ -497,9 +496,9 @@ final class Aggregate_Partial extends Operator
 
         private Row nextInput() {
             final Row result;
-            if (holder.isHolding()) {
-                result = holder.get();
-                holder.release();
+            if (holder != null) {
+                result = holder;
+                holder = null;
             }
             else {
                 result = inputCursor.next();
@@ -508,13 +507,13 @@ final class Aggregate_Partial extends Operator
         }
 
         private void saveInput(Row input) {
-            assert holder.isEmpty() : holder;
+            assert holder == null : holder;
             assert cursorState == CursorState.OPENING : cursorState;
-            holder.hold(input);
+            holder = input;
         }
 
-        private ValuesHolderRow unsharedOutputRow() {
-            return new ValuesHolderRow(outputType); // TODO row sharing, etc
+        private ValuesHolderRow newOutputRow() {
+            return new ValuesHolderRow(outputType);
         }
 
         // AggregateCursor interface
@@ -540,7 +539,7 @@ final class Aggregate_Partial extends Operator
         private final Cursor inputCursor;
         private final List<Value> keyValues;
         private final List<Value> pAggrsStates;
-        private final ShareHolder<Row> holder = new ShareHolder<>();
+        private Row holder;
         private CursorState cursorState = CursorState.CLOSED;
         private boolean everSawInput = false;
     }

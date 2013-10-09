@@ -27,7 +27,6 @@ import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.ArgumentValidation;
-import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.Strings;
 import com.foundationdb.util.tap.InOutTap;
 
@@ -261,7 +260,7 @@ final class UnionAll_Default extends Operator {
             }
             inputOperatorsIndex = -1;
             currentInputRowType = null;
-            rowHolder.release();
+            rowHolder = null;
             idle = true;
         }
 
@@ -374,20 +373,20 @@ final class UnionAll_Default extends Operator {
                 return inputRow;
             }
             MasqueradingRow row;
-            if (rowHolder.isEmpty() || rowHolder.isShared()) {
+            if (rowHolder == null || rowHolder.isShared()) {
                 row = new MasqueradingRow(outputRowType, inputRow);
-                rowHolder.hold(row);
+                rowHolder = row;
             }
             else {
-                row = rowHolder.get();
-                rowHolder.release();
+                row = rowHolder;
+                rowHolder = null;
                 row.setRow(inputRow);
             }
-            rowHolder.hold(row);
+            rowHolder = row;
             return row;
         }
 
-        private final ShareHolder<MasqueradingRow> rowHolder = new ShareHolder<>();
+        private MasqueradingRow rowHolder;
         private final QueryBindingsCursor bindingsCursor;
         private int inputOperatorsIndex = -1; // right before the first operator
         private Cursor[] cursors;
@@ -475,7 +474,7 @@ final class UnionAll_Default extends Operator {
         @Override
         public void release() {
             assert shares > 0 : shares;
-            delegate.release();
+            delegate = null;
             --shares;
         }
 

@@ -17,7 +17,6 @@
 
 package com.foundationdb.server.test.it.qp;
 
-import com.foundationdb.util.ShareHolder;
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.operator.Operator;
 import org.junit.Test;
@@ -250,13 +249,10 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
 
         Row row;
         List<Row> actualRows = new ArrayList<>();
-        List<ShareHolder<Row>> rowHolders = new ArrayList<>();
         
         while ((row = cursor.next()) != null)
         {
-            // Prevent sharing of rows since verification accumulates them
             actualRows.add(row);
-            rowHolders.add(new ShareHolder<>(row));
         }
         cursor.closeTopLevel();
 

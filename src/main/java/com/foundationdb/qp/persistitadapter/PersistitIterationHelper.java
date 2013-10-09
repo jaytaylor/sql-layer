@@ -21,7 +21,6 @@ import com.foundationdb.qp.persistitadapter.indexcursor.IterationHelper;
 import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
-import com.foundationdb.util.ShareHolder;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Key.Direction;
@@ -33,8 +32,9 @@ public class PersistitIterationHelper implements IterationHelper
     @Override
     public Row row()
     {
-        unsharedRow().get().copyFrom(exchange);
-        return row.get();
+        PersistitIndexRow row = adapter.takeIndexRow(indexRowType);
+        row.copyFrom(exchange);
+        return row;
     }
 
     @Override
@@ -48,11 +48,7 @@ public class PersistitIterationHelper implements IterationHelper
     @Override
     public void closeIteration()
     {
-        if (row.isHolding()) {
-            if (!row.isShared())
-                adapter.returnIndexRow(row.get());
-            row.release();
-        }
+        // adapter.returnIndexRow(row);
         if (exchange != null) {
             adapter.returnExchange(exchange);
             exchange = null;
@@ -111,23 +107,11 @@ public class PersistitIterationHelper implements IterationHelper
     {
         this.adapter = adapter;
         this.indexRowType = indexRowType.physicalRowType(); // In case we have a spatial index
-        this.row = new ShareHolder<>(adapter.takeIndexRow(this.indexRowType));
-    }
-
-    // For use by this class
-
-    private ShareHolder<PersistitIndexRow> unsharedRow()
-    {
-        if (row.isEmpty() || row.isShared()) {
-            row.hold(adapter.takeIndexRow(indexRowType));
-        }
-        return row;
     }
 
     // Object state
 
     private final PersistitAdapter adapter;
     private final IndexRowType indexRowType;
-    private final ShareHolder<PersistitIndexRow> row;
     private Exchange exchange;
 }

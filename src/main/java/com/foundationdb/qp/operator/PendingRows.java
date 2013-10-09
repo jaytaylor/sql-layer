@@ -18,7 +18,6 @@
 package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.util.ShareHolder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,9 +60,6 @@ class PendingRows
     {
         this.capacity = capacity;
         queue = new ArrayList<>(capacity+1);
-        for (int i = 0; i <= capacity; i++) {
-            queue.add(new ShareHolder<Row>());
-        }
         this.start = 0;
         this.end = 0;
     }
@@ -72,12 +68,12 @@ class PendingRows
 
     private Row row(int i)
     {
-        return queue.get(i).get();
+        return queue.get(i);
     }
 
     private void row(int i, Row row)
     {
-        queue.get(i).hold(row);
+        queue.set(i, row);
     }
 
     private boolean empty()
@@ -101,7 +97,7 @@ class PendingRows
     // Object state
 
     private final int capacity;
-    private final List<ShareHolder<Row>> queue;
+    private final List<Row> queue;
     private int start;
     private int end;
 }

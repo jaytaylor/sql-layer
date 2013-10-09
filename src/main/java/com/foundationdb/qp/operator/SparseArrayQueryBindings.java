@@ -23,7 +23,6 @@ import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTargets;
 import com.foundationdb.util.BloomFilter;
-import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.SparseArray;
 
 public class SparseArrayQueryBindings implements QueryBindings
@@ -97,7 +96,7 @@ public class SparseArrayQueryBindings implements QueryBindings
     @Override
     public Row getRow(int index) {
         if (bindings.isDefined(index)) {
-            return ((ShareHolder<Row>)bindings.get(index)).get();
+            return (Row)bindings.get(index);
         }
         else if (parent != null) {
             return parent.getRow(index);
@@ -110,15 +109,7 @@ public class SparseArrayQueryBindings implements QueryBindings
     @Override
     public void setRow(int index, Row row)
     {
-        ShareHolder<Row> holder = null;
-        if (bindings.isDefined(index)) {
-            holder = (ShareHolder<Row>)bindings.get(index);
-        }
-        if (holder == null) {
-            holder = new ShareHolder<Row>();
-            bindings.set(index, holder);
-        }
-        holder.hold(row);
+        bindings.set(index, row);
     }
 
     @Override
