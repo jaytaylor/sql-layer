@@ -31,7 +31,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
 
 import static com.foundationdb.qp.operator.API.FlattenOption.KEEP_CHILD;
@@ -319,7 +321,7 @@ class Flatten_HKeyOrdered extends Operator
                     CursorLifecycle.checkIdleOrActive(this);
                 }
                 checkQueryCancelation();
-                Row outputRow = pending.take();
+                Row outputRow = pending.poll();
                 Row inputRow;
                 while (outputRow == null && (((inputRow = input.next()) != null) || (parent != null))) {
                     if (readyForLeftJoinRow(inputRow)) {
@@ -359,7 +361,7 @@ class Flatten_HKeyOrdered extends Operator
                             addToPending(inputRow);
                         }
                     }
-                    outputRow = pending.take();
+                    outputRow = pending.poll();
                 }
                 idle = outputRow == null;
                 if (LOG_EXECUTION) {
@@ -496,7 +498,7 @@ class Flatten_HKeyOrdered extends Operator
         // Object state
 
         private Row parent;
-        private final PendingRows pending = new PendingRows(MAX_PENDING);
+        private final Queue<Row> pending = new ArrayDeque<>(MAX_PENDING);
         private final HKey leftJoinHKey;
         private boolean childlessParent;
         private boolean idle = true;

@@ -286,9 +286,9 @@ class AncestorLookup_Nested extends Operator
                     CursorLifecycle.checkIdleOrActive(this);
                 }
                 checkQueryCancelation();
-                Row row = pending.take();
+                Row row = pending.poll();
                 if (LOG_EXECUTION) {
-                    LOG.debug("AncestorLookup: {}", row == null ? null : row);
+                    LOG.debug("AncestorLookup: {}", row);
                 }
                 if (row == null) {
                     close();
@@ -342,7 +342,7 @@ class AncestorLookup_Nested extends Operator
         Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
             super(context, bindingsCursor);
-            this.pending = new PendingRows(ancestors.size() + 1);
+            this.pending = new ArrayDeque<>(ancestors.size() + 1);
             this.ancestorCursor = adapter().newGroupCursor(group);
         }
 
@@ -377,7 +377,7 @@ class AncestorLookup_Nested extends Operator
         // Object state
 
         private final GroupCursor ancestorCursor;
-        private final PendingRows pending;
+        private final Queue<Row> pending;
         private boolean closed = true;
     }
 

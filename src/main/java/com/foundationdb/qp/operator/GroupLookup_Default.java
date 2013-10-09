@@ -376,7 +376,7 @@ class GroupLookup_Default extends Operator
                 while (pending.isEmpty() && (lookupState != LookupState.EXHAUSTED)) {
                     advance();
                 }
-                Row row = pending.take();
+                Row row = pending.poll();
                 if (LOG_EXECUTION) {
                     LOG.debug("GroupLookup: yield {}", row);
                 }
@@ -414,7 +414,7 @@ class GroupLookup_Default extends Operator
         {
             super(context, input);
             // Why + 1: Because the input row (whose ancestors get discovered) also goes into pending.
-            this.pending = new PendingRows(ancestors.size() + 1);
+            this.pending = new ArrayDeque<>(ancestors.size() + 1);
             this.lookupCursor = adapter().newGroupCursor(group);
             if (branchOutputRowTypes != null) {
                 this.lookupRowHKey = adapter().newHKey(inputRowType.hKey());
@@ -529,7 +529,7 @@ class GroupLookup_Default extends Operator
         private Row inputRow;
         private final GroupCursor lookupCursor;
         private Row lookupRow;
-        private final PendingRows pending;
+        private final Queue<Row> pending;
         private final HKey lookupRowHKey;
         private LookupState lookupState;
     }
