@@ -83,20 +83,6 @@ public class ProjectedRow extends AbstractRow
         return null;
     }
 
-    // AbstractRow interface
-
-
-    @Override
-    protected void beforeAcquire() {
-        row.acquire();
-    }
-
-    @Override
-    public void afterRelease()
-    {
-        row.release();
-    }
-
     // ProjectedRow interface
 
     public ProjectedRow(ProjectedRowType rowType,

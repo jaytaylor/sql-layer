@@ -21,7 +21,6 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.collation.AkCollator;
@@ -47,17 +46,17 @@ public abstract class ITBase extends ApiTestBase {
         super(suffix);
     }
 
-    protected void compareRows(RowBase[] expected, RowCursor cursor)
+    protected void compareRows(Row[] expected, RowCursor cursor)
     {
         compareRows(expected, cursor, (cursor instanceof Cursor), null);
     }
 
-    protected void compareRows(RowBase[] expected, RowCursor cursor, AkCollator ... collators)
+    protected void compareRows(Row[] expected, RowCursor cursor, AkCollator ... collators)
     {
         compareRows(expected, cursor, (cursor instanceof Cursor), collators);
     }
 
-    protected void compareRows(RowBase[] expected, RowCursor cursor, boolean topLevel, AkCollator ... collators) {
+    protected void compareRows(Row[] expected, RowCursor cursor, boolean topLevel, AkCollator ... collators) {
         boolean began = false;
         if(!txnService().isTransactionActive(session())) {
             txnService().beginTransaction(session());
@@ -78,15 +77,15 @@ public abstract class ITBase extends ApiTestBase {
         }
     }
 
-    private void compareRowsInternal(RowBase[] expected, RowCursor cursor, boolean topLevel, AkCollator ... collators)
+    private void compareRowsInternal(Row[] expected, RowCursor cursor, boolean topLevel, AkCollator ... collators)
     {
-        List<RowBase> actualRows = new ArrayList<>(); // So that result is viewable in debugger
+        List<Row> actualRows = new ArrayList<>(); // So that result is viewable in debugger
         try {
             if (topLevel)
                 ((Cursor)cursor).openTopLevel();
             else
                 cursor.open();
-            RowBase actualRow;
+            Row actualRow;
             while ((actualRow = cursor.next()) != null) {
                 int count = actualRows.size();
                 assertTrue(String.format("failed test %d < %d (more rows than expected)", count, expected.length), count < expected.length);
@@ -113,7 +112,7 @@ public abstract class ITBase extends ApiTestBase {
         assertEquals(expected.length, actualRows.size());
     }
 
-    private boolean equal(RowBase expected, RowBase actual, AkCollator[] collators)
+    private boolean equal(Row expected, Row actual, AkCollator[] collators)
     {
         boolean equal = expected.rowType().nFields() == actual.rowType().nFields();
         if (!equal)

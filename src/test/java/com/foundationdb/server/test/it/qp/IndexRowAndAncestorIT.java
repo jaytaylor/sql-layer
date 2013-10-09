@@ -22,7 +22,7 @@ import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.IndexScanSelector;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
@@ -450,7 +450,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
                 hIndexRowType,
                 Arrays.asList(cRowType, oRowType, iRowType, hRowType),
                 API.InputPreservationOption.DISCARD_INPUT);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(cRowType, 4L, 49999L),
             row(oRowType, 4L, 409999L),
             row(iRowType, 4L, 4009999L),
@@ -479,7 +479,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
                 ihLeftIndexRowType,
                 Arrays.asList(cRowType, oRowType, iRowType, hRowType),
                 API.InputPreservationOption.DISCARD_INPUT);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(cRowType, 3L, 39999L),
             row(oRowType, 3L, 309999L),
             row(iRowType, 3L, 3009999L),
@@ -510,7 +510,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
                 ihRightIndexRowType,
                 Arrays.asList(cRowType, oRowType, iRowType, hRowType),
                 API.InputPreservationOption.DISCARD_INPUT);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             // 7 is first because its index key is (null, 70009999)
             row(hRowType, 7L, 70009999L),
             row(cRowType, 4L, 49999L),
@@ -540,7 +540,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
                 ohLeftIndexRowType,
                 Arrays.asList(cRowType, oRowType, iRowType, hRowType),
                 API.InputPreservationOption.DISCARD_INPUT);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(cRowType, 2L, 29999L),
             row(oRowType, 2L, 209999L),
             row(cRowType, 3L, 39999L),
@@ -571,7 +571,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
                 ohRightIndexRowType,
                 Arrays.asList(cRowType, oRowType, iRowType, hRowType),
                 API.InputPreservationOption.DISCARD_INPUT);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             // 7, 6 first due to nulls in the index key
             row(hRowType, 7L, 70009999L),
             row(iRowType, 6L, 6009999L),
@@ -601,7 +601,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
                 chLeftIndexRowType,
                 Arrays.asList(cRowType, oRowType, iRowType, hRowType),
                 API.InputPreservationOption.DISCARD_INPUT);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(cRowType, 1L, 19999L),
             row(cRowType, 2L, 29999L),
             row(oRowType, 2L, 209999L),
@@ -630,7 +630,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
                 chRightIndexRowType,
                 Arrays.asList(cRowType, oRowType, iRowType, hRowType),
                 API.InputPreservationOption.DISCARD_INPUT);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             // 7, 6, 5 first due to nulls in the index key
             row(hRowType, 7L, 70009999L),
             row(iRowType, 6L, 6009999L),

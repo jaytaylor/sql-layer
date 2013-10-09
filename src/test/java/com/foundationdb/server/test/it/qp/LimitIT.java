@@ -19,7 +19,7 @@ package com.foundationdb.server.test.it.qp;
 
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.NegativeLimitException;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
@@ -53,7 +53,7 @@ public class LimitIT extends OperatorITBase
         Operator plan = limit_Default(groupScan_Default(coi),
                                               3);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 1L, "northbridge"),
             row(customerRowType, 2L, "foundation"),
             row(customerRowType, 4L, "highland"),
@@ -67,7 +67,7 @@ public class LimitIT extends OperatorITBase
         Operator plan = limit_Default(groupScan_Default(coi),
                                               2, false, Integer.MAX_VALUE, false);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 4L, "highland"),
             row(customerRowType, 5L, "matrix"),
             row(customerRowType, 6L, "sigma"),
@@ -82,7 +82,7 @@ public class LimitIT extends OperatorITBase
         Operator plan = limit_Default(groupScan_Default(coi),
                                               2, false, 2, false);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 4L, "highland"),
             row(customerRowType, 5L, "matrix"),
         };
@@ -95,7 +95,7 @@ public class LimitIT extends OperatorITBase
         Operator plan = limit_Default(groupScan_Default(coi),
                                               10, false, 1, false);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
         };
         compareRows(expected, cursor);
     }
@@ -107,7 +107,7 @@ public class LimitIT extends OperatorITBase
                                               0, false, 0, true);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         queryBindings.setValue(0, new Value(MNumeric.INT.instance(false), 2));
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 1L, "northbridge"),
             row(customerRowType, 2L, "foundation"),
         };
@@ -121,7 +121,7 @@ public class LimitIT extends OperatorITBase
                                               0, false, 0, true);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         queryBindings.setValue(0, new Value(MNumeric.INT.instance(false), -1));
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
         };
         compareRows(expected, cursor);
     }
@@ -133,9 +133,9 @@ public class LimitIT extends OperatorITBase
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
-            public RowBase[] firstExpectedRows()
+            public Row[] firstExpectedRows()
             {
-                return new RowBase[] {
+                return new Row[] {
                     row(customerRowType, 1L, "northbridge"),
                     row(customerRowType, 2L, "foundation"),
                     row(customerRowType, 4L, "highland"),

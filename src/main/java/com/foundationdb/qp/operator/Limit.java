@@ -17,9 +17,9 @@
 
 package com.foundationdb.qp.operator;
 
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 
 public interface Limit
 {
-    boolean limitReached(RowBase row);
+    boolean limitReached(Row row);
 }

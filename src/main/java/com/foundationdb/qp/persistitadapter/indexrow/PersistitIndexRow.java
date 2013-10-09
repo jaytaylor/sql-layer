@@ -51,7 +51,7 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
         return buffer.toString();
     }
     
-    // RowBase interface
+    // Row interface
 
     // TODO: This is not a correct implementation of hKey, because it returns an empty hKey to be filled in
     // TODO: by the caller. Normally, hKey returns the HKey of the row.

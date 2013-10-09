@@ -26,7 +26,6 @@ import com.foundationdb.qp.operator.IndexScanSelector;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
@@ -81,7 +80,7 @@ public class GroupLookup_DefaultLookaheadIT extends GroupLookup_DefaultIT
                 Collections.singleton(customerRowType),
                 InputPreservationOption.DISCARD_INPUT,
                 lookaheadQuantum());
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 1L, "northbridge"),
             row(customerRowType, 1L, "northbridge"),
             row(customerRowType, 2L, "foundation"),
@@ -119,7 +118,7 @@ public class GroupLookup_DefaultLookaheadIT extends GroupLookup_DefaultIT
                     InputPreservationOption.DISCARD_INPUT,
                     lookaheadQuantum()),
                 1, pipelineMap(), 1);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(orderRowType, 31L, 3L, "peter"),
             row(customerRowType, 2L, "foundation"),
             row(orderRowType, 21L, 2L, "tom"),
@@ -167,7 +166,7 @@ public class GroupLookup_DefaultLookaheadIT extends GroupLookup_DefaultIT
                         lookaheadQuantum()),
                     1, pipelineMap(), 2),
                 0, pipelineMap(), 1);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(orderRowType, 31L, 3L, "peter"),
             row(customerRowType, 2L, "foundation"),
             row(orderRowType, 21L, 2L, "tom"),

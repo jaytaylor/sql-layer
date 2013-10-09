@@ -36,7 +36,7 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -103,7 +103,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         return schema.indexRowType(index);
     }
 
-    private void scanAndCheckIndex(IndexRowType type, RowBase... expectedRows) {
+    private void scanAndCheckIndex(IndexRowType type, Row... expectedRows) {
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         StoreAdapter adapter = newStoreAdapter(schema);
         QueryContext queryContext = new SimpleQueryContext(adapter);
@@ -174,7 +174,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         StoreAdapter adapter = newStoreAdapter(schema);
         int pk = 1;
         compareRows(
-                new RowBase[]{
+                new Row[]{
                         testRow(cType, 1, "a"),
                         testRow(oType, 10, 1, 11, pk++),
                         testRow(oType, 11, 1, 12, pk++),
@@ -184,7 +184,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
                 adapter.newGroupCursor(cType.userTable().getGroup())
         );
         compareRows(
-                new RowBase[]{
+                new Row[]{
                         testRow(iType, 100, 10, 110),
                         testRow(iType, 101, 10, 111),
                         testRow(iType, 111, 11, 122),
@@ -422,7 +422,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         QueryContext queryContext = new SimpleQueryContext(adapter);
         QueryBindings queryBindings = queryContext.createBindings();
         compareRows(
-                new RowBase[] {
+                new Row[] {
                         testRow(indexRowType, "a", 110, 1, 10, 100),
                         testRow(indexRowType, "a", 111, 1, 10, 101),
                         testRow(indexRowType, "a", 122, 1, 11, 111),
@@ -711,7 +711,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         StoreAdapter adapter = newStoreAdapter(schema);
         compareRows(
-                new RowBase[] {
+                new Row[] {
                         // null c
                             // no o20
                                 testRow(iType, 200, 20, "d"),
@@ -755,7 +755,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         StoreAdapter adapter = newStoreAdapter(schema);
         compareRows(
-                new RowBase[] {
+                new Row[] {
                         testRow(cType, 1L, "asdf"),
                         testRow(cType, 5, "qwer"),
                         testRow(cType, 10, "zxcv")
@@ -763,7 +763,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
                 adapter.newGroupCursor(cType.userTable().getGroup())
         );
         compareRows(
-                new RowBase[] {
+                new Row[] {
                         testRow(oType, 10, 1, "a"),
                         testRow(oType, 11, 1, "b"),
                         testRow(oType, 60, 6, "c"),
@@ -804,7 +804,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         StoreAdapter adapter = newStoreAdapter(schema);
         compareRows(
-                new RowBase[] {
+                new Row[] {
                         // ?
                             // null
                                 testRow(iType, 200, 20, "d"),
@@ -855,7 +855,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         StoreAdapter adapter = newStoreAdapter(schema);
         compareRows(
-                new RowBase[] {
+                new Row[] {
                         testRow(cType, 1, "asdf"),
                         testRow(cType, 5, "qwer"),
                         testRow(cType, 10, "zxcv")
@@ -864,7 +864,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         );
 
         compareRows(
-                new RowBase[] {
+                new Row[] {
                         testRow(oType, 10, 1, "a"),
                             testRow(iType, 100, 10, "d"),
                             testRow(iType, 101, 10, "e"),
@@ -1222,7 +1222,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         RowType oType = schema.userTableRowType(getUserTable(SCHEMA, O_TABLE));
         StoreAdapter adapter = newStoreAdapter(schema);
         compareRows(
-                new RowBase[] {
+                new Row[] {
                         testRow(cType, 1L, "a"),
                             testRow(oType, "aa", 1L, 1L),
                         testRow(cType, 2L, "b"),

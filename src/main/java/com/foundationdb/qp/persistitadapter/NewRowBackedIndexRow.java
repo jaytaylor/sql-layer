@@ -21,14 +21,13 @@ import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
 
-public class NewRowBackedIndexRow implements RowBase
+public class NewRowBackedIndexRow implements Row
 {
     // Object interface
 
@@ -46,7 +45,7 @@ public class NewRowBackedIndexRow implements RowBase
         this.index = index;
     }
 
-    // RowBase interface
+    // Row interface
 
     @Override
     public RowType rowType() {
@@ -64,7 +63,7 @@ public class NewRowBackedIndexRow implements RowBase
     }
 
     @Override
-    public boolean ancestorOf(RowBase that) {
+    public boolean ancestorOf(Row that) {
         throw new UnsupportedOperationException();
     }
 
@@ -87,7 +86,7 @@ public class NewRowBackedIndexRow implements RowBase
     }
 
     @Override
-    public int compareTo(RowBase row, int leftStartIndex, int rightStartIndex, int fieldCount)
+    public int compareTo(Row row, int leftStartIndex, int rightStartIndex, int fieldCount)
     {
         throw new UnsupportedOperationException();
     }

@@ -87,7 +87,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         } else {
             wasHeld = true;
             row = (AbstractRow) currentRow;
-            currentRow.release();
+            currentRow = null;
         }
         if (row == null) {
             close();
@@ -141,7 +141,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     public void close()
     {
         if (!closed) {
-            currentRow.release();
+            currentRow = null;
             if (cursor != null) {
                 cursor.destroy();
                 cursor = null;

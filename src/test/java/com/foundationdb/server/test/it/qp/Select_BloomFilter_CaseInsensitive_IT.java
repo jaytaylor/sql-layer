@@ -22,7 +22,7 @@ import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.expression.RowBasedUnboundExpressions;
 import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -157,7 +157,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     public void test0()
     {
         Operator plan = plan(0);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings), null, ciCollator, ciCollator);
     }
@@ -166,7 +166,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     public void test1()
     {
         Operator plan = plan(1);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings), null, ciCollator, ciCollator);
     }
@@ -175,7 +175,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     public void test2()
     {
         Operator plan = plan(2);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings), null, ciCollator, ciCollator);
     }
@@ -184,7 +184,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     public void test3()
     {
         Operator plan = plan(3);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings), null, ciCollator, ciCollator);
     }
@@ -193,7 +193,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     public void test4()
     {
         Operator plan = plan(4);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(outputRowType, 4L, "xy", "a"),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings), null, ciCollator, ciCollator);
@@ -203,7 +203,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     public void test5()
     {
         Operator plan = plan(5);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings), null, ciCollator, ciCollator);
     }
@@ -212,7 +212,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     public void test6()
     {
         Operator plan = plan(6);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(outputRowType, 6L, "xy", "ab"),
             row(outputRowType, 6L, "xy", "ac"),
         };
@@ -223,7 +223,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     public void test7()
     {
         Operator plan = plan(7);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings), null, ciCollator, ciCollator);
     }
@@ -232,7 +232,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     public void test8()
     {
         Operator plan = plan(8);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings), null, ciCollator, ciCollator);
     }
@@ -244,9 +244,9 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
-            public RowBase[] firstExpectedRows()
+            public Row[] firstExpectedRows()
             {
-                return new RowBase[] {
+                return new Row[] {
                     row(outputRowType, 6L, "xy", "ab"),
                     row(outputRowType, 6L, "xy", "ac"),
                 };

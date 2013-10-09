@@ -32,7 +32,7 @@ package com.foundationdb.server.test.it.qp;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -147,7 +147,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
                 KEEP_PARENT);
         RowType pcRowType = plan.rowType();
         checkRowFields(pcRowType);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(ancestorRowType, 1L, "a1"),
             row(parentRowType, 11L, 1L, "p1"),
             row(beforeChildRowType, 111L, 11L, "b1"),
@@ -172,7 +172,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
                 KEEP_PARENT);
         RowType pcRowType = plan.rowType();
         checkRowFields(pcRowType);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(ancestorRowType, 2L, "a2"),
             row(parentRowType, 22L, 2L, "p2"),
             row(pcRowType, 22L, 2L, "p2", null, null, null),
@@ -196,7 +196,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
                 KEEP_PARENT);
         RowType pcRowType = plan.rowType();
         checkRowFields(pcRowType);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(ancestorRowType, 3L, "a3"),
             row(parentRowType, 33L, 3L, "p3"),
             row(beforeChildRowType, 333L, 33L, "b3"),
@@ -220,7 +220,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
                 KEEP_PARENT);
         RowType pcRowType = plan.rowType();
         checkRowFields(pcRowType);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(ancestorRowType, 4L, "a4"),
             row(parentRowType, 41L, 4L, "p41"),
             row(pcRowType, 41L, 4L, "p41", null, null, null),
@@ -254,7 +254,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
         checkRowFields(pbRowType);
         RowType pcRowType = plan.rowType();
         checkRowFields(pcRowType);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(ancestorRowType, 1L, "a1"),
             row(parentRowType, 11L, 1L, "p1"),
             row(pbRowType, 11L, 1L, "p1", 111L, 11L, "b1"),
@@ -288,7 +288,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
         checkRowFields(pbRowType);
         RowType pcRowType = plan.rowType();
         checkRowFields(pcRowType);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(ancestorRowType, 2L, "a2"),
             row(parentRowType, 22L, 2L, "p2"),
             row(pbRowType, 22L, 2L, "p2", null, null, null),
@@ -322,7 +322,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
         checkRowFields(pbRowType);
         RowType pcRowType = plan.rowType();
         checkRowFields(pcRowType);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(ancestorRowType, 3L, "a3"),
             row(parentRowType, 33L, 3L, "p3"),
             row(pbRowType, 33L, 3L, "p3", 333L, 33L, "b3"),
@@ -355,7 +355,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
         checkRowFields(pbRowType);
         RowType pcRowType = plan.rowType();
         checkRowFields(pcRowType);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(ancestorRowType, 4L, "a4"),
             row(parentRowType, 41L, 4L, "p41"),
             row(pbRowType, 41L, 4L, "p41", null, null, null),
@@ -391,7 +391,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
         checkRowFields(paRowType);
         RowType pcRowType = plan.rowType();
         checkRowFields(pcRowType);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(ancestorRowType, 1L, "a1"),
             row(parentRowType, 11L, 1L, "p1"),
             row(beforeChildRowType, 111L, 11L, "b1"),
@@ -425,7 +425,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
         checkRowFields(paRowType);
         RowType pcRowType = plan.rowType();
         checkRowFields(pcRowType);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(ancestorRowType, 2L, "a2"),
             row(parentRowType, 22L, 2L, "p2"),
             row(pcRowType, 22L, 2L, "p2", null, null, null),
@@ -458,7 +458,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
         checkRowFields(paRowType);
         RowType pcRowType = plan.rowType();
         checkRowFields(pcRowType);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(ancestorRowType, 3L, "a3"),
             row(parentRowType, 33L, 3L, "p3"),
             row(beforeChildRowType, 333L, 33L, "b3"),
@@ -492,7 +492,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
         checkRowFields(paRowType);
         RowType pcRowType = plan.rowType();
         checkRowFields(pcRowType);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(ancestorRowType, 4L, "a4"),
             row(parentRowType, 41L, 4L, "p41"),
             row(pcRowType, 41L, 4L, "p41", null, null, null),
@@ -526,7 +526,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
                 KEEP_PARENT);
         RowType pcRowType = plan.rowType();
         checkRowFields(pcRowType);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(parentRowType, 42L, 4L, "p42"),
             row(pcRowType, 42L, 4L, "p42", null, null, null),
             row(parentRowType, 41L, 4L, "p41"),

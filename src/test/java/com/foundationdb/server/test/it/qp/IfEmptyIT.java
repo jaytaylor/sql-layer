@@ -23,7 +23,7 @@ import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
@@ -94,7 +94,7 @@ public class IfEmptyIT extends OperatorITBase
                     API.InputPreservationOption.DISCARD_INPUT),
                 orderRowType, Arrays.asList(literal(999), literal(999), literal("herman")),
                 API.InputPreservationOption.KEEP_INPUT);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(orderRowType, 200L, 2L, "david"),
             row(orderRowType, 201L, 2L, "david"),
         };
@@ -114,7 +114,7 @@ public class IfEmptyIT extends OperatorITBase
                     API.InputPreservationOption.DISCARD_INPUT),
                 orderRowType, Arrays.asList(literal(999), literal(999), literal("herman")),
                 API.InputPreservationOption.DISCARD_INPUT);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
@@ -132,7 +132,7 @@ public class IfEmptyIT extends OperatorITBase
                 API.InputPreservationOption.DISCARD_INPUT),
                 orderRowType, Arrays.asList(literal(999), literal(999), literal("herman")),
                 API.InputPreservationOption.KEEP_INPUT);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(orderRowType, 999L, 999L, "herman"),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
@@ -151,7 +151,7 @@ public class IfEmptyIT extends OperatorITBase
                 API.InputPreservationOption.DISCARD_INPUT),
                 orderRowType, Arrays.asList(literal(999), literal(999), literal("herman")),
                 API.InputPreservationOption.DISCARD_INPUT);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(orderRowType, 999L, 999L, "herman"),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
@@ -174,9 +174,9 @@ public class IfEmptyIT extends OperatorITBase
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
-            public RowBase[] firstExpectedRows()
+            public Row[] firstExpectedRows()
             {
-                return new RowBase[] {
+                return new Row[] {
                     row(orderRowType, 200L, 2L, "david"),
                     row(orderRowType, 201L, 2L, "david"),
                 };
@@ -202,9 +202,9 @@ public class IfEmptyIT extends OperatorITBase
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
-            public RowBase[] firstExpectedRows()
+            public Row[] firstExpectedRows()
             {
-                return new RowBase[] {
+                return new Row[] {
                 };
             }
         };
@@ -228,9 +228,9 @@ public class IfEmptyIT extends OperatorITBase
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
-            public RowBase[] firstExpectedRows()
+            public Row[] firstExpectedRows()
             {
-                return new RowBase[] {
+                return new Row[] {
                     row(orderRowType, 999L, 999L, "herman"),
                 };
             }
@@ -255,9 +255,9 @@ public class IfEmptyIT extends OperatorITBase
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
-            public RowBase[] firstExpectedRows()
+            public Row[] firstExpectedRows()
             {
-                return new RowBase[] {
+                return new Row[] {
                     row(orderRowType, 999L, 999L, "herman"),
                 };
             }

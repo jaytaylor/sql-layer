@@ -25,7 +25,6 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.ColumnSelector;
@@ -130,7 +129,7 @@ public final class ExpressionGenerators {
         };
     }
 
-    public static IndexBound indexBound(RowBase row, ColumnSelector columnSelector)
+    public static IndexBound indexBound(Row row, ColumnSelector columnSelector)
     {
         return new IndexBound(row, columnSelector);
     }

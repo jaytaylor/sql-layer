@@ -20,7 +20,6 @@ package com.foundationdb.qp.operator;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.explain.*;
@@ -260,7 +259,6 @@ final class UnionAll_Default extends Operator {
             }
             inputOperatorsIndex = -1;
             currentInputRowType = null;
-            rowHolder = null;
             idle = true;
         }
 
@@ -372,21 +370,10 @@ final class UnionAll_Default extends Operator {
             if (currentInputRowType == outputRowType) {
                 return inputRow;
             }
-            MasqueradingRow row;
-            if (rowHolder == null || rowHolder.isShared()) {
-                row = new MasqueradingRow(outputRowType, inputRow);
-                rowHolder = row;
-            }
-            else {
-                row = rowHolder;
-                rowHolder = null;
-                row.setRow(inputRow);
-            }
-            rowHolder = row;
+            MasqueradingRow row = new MasqueradingRow(outputRowType, inputRow);
             return row;
         }
 
-        private MasqueradingRow rowHolder;
         private final QueryBindingsCursor bindingsCursor;
         private int inputOperatorsIndex = -1; // right before the first operator
         private Cursor[] cursors;
@@ -405,7 +392,7 @@ final class UnionAll_Default extends Operator {
     private static class MasqueradingRow implements Row {
 
         @Override
-        public int compareTo(RowBase row, int leftStartIndex, int rightStartIndex, int fieldCount)
+        public int compareTo(Row row, int leftStartIndex, int rightStartIndex, int fieldCount)
         {
             return delegate.compareTo(row, leftStartIndex, rightStartIndex, fieldCount);
         }
@@ -427,7 +414,7 @@ final class UnionAll_Default extends Operator {
         }
 
         @Override
-        public boolean ancestorOf(RowBase that) {
+        public boolean ancestorOf(Row that) {
             return delegate.ancestorOf(that);
         }
 
@@ -446,56 +433,17 @@ final class UnionAll_Default extends Operator {
             return delegate.value(index);
         }
 
-        /**
-         * @see #isShared()
-         */
-        @Override
-        public void acquire() {
-            ++shares;
-            delegate.acquire();
-        }
-
-        /**
-         * Returns this MasqueradingRow, or its delegate, are shared. It's not enough to only delegate this method
-         * (and the acquire/release methods that go along with it), because if the delegate row is never shared (as
-         * happens with an immutable row, for instance), we still want to mark this MasqueradingRow as shared.
-         * Without that, the Execution will reuse this wrapper -- by giving it a new delegate -- which will break
-         * the sharing contract.
-         * @return whether this row is shared
-         */
-        @Override
-        public boolean isShared() {
-            return (shares > 1) || delegate.isShared();
-        }
-
-        /**
-         * @see #isShared()
-         */
-        @Override
-        public void release() {
-            assert shares > 0 : shares;
-            delegate = null;
-            --shares;
-        }
-
         @Override
         public String toString() {
             return delegate.toString() + " of type " + rowType;
         }
 
-        void setRow(Row row) {
-            assert shares == 0;
-            this.delegate = row;
-        }
-
         private MasqueradingRow(RowType rowType, Row wrapped) {
             this.rowType = rowType;
             this.delegate = wrapped;
-            shares = 0;
         }
 
-        private Row delegate;
+        private final Row delegate;
         private final RowType rowType;
-        private int shares;
     }
 }

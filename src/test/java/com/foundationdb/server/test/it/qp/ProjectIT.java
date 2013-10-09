@@ -20,7 +20,7 @@ package com.foundationdb.server.test.it.qp;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Before;
@@ -92,7 +92,7 @@ public class ProjectIT extends OperatorITBase
                                                 Arrays.asList(field(customerRowType, 0)));
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowType projectedRowType = plan.rowType();
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(projectedRowType, 1L),
             row(orderRowType, 11L, 1L, "ori"),
             row(itemRowType, 111L, 11L),
@@ -123,7 +123,7 @@ public class ProjectIT extends OperatorITBase
                                                 Arrays.asList(field(customerRowType, 1), field(customerRowType, 0)));
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowType projectedRowType = plan.rowType();
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(projectedRowType, "northbridge", 1L),
             row(orderRowType, 11L, 1L, "ori"),
             row(itemRowType, 111L, 11L),
@@ -169,7 +169,7 @@ public class ProjectIT extends OperatorITBase
                                 field(coiType, 5))); // iid
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowType projectedRowType = plan.rowType();
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(projectedRowType, "northbridge", "ori", 111L),
             row(projectedRowType, "northbridge", "ori", 112L),
             row(projectedRowType, "northbridge", "david", 121L),
@@ -210,9 +210,9 @@ public class ProjectIT extends OperatorITBase
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
-            public RowBase[] firstExpectedRows()
+            public Row[] firstExpectedRows()
             {
-                return new RowBase[] {
+                return new Row[] {
                     row(projectedRowType, "northbridge", "ori", 111L),
                     row(projectedRowType, "northbridge", "ori", 112L),
                     row(projectedRowType, "northbridge", "david", 121L),

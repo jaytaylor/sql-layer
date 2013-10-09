@@ -26,7 +26,7 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 
 public class PersistitTableIndexRow extends PersistitIndexRow
 {
-    // RowBase interface
+    // Row interface
 
     @Override
     public HKey ancestorHKey(UserTable table)

@@ -58,26 +58,19 @@ public final class OperatorTestHelper {
             assertEquals("size (expecteds=" + expecteds+", actuals=" + actuals + ')', expecteds.size(), actuals.size());
         }
         int rowCount = 0;
-        try {
-            Iterator<? extends Row> expectedsIter = expecteds.iterator();
-            for (Row actual : actuals) {
-                Row expected = expectedsIter.next();
-                int actualWidth = actual.rowType().nFields();
-                assertEquals("row width", expected.rowType().nFields(), actualWidth);
-                for (int i = 0; i < actualWidth; ++i) {
-                    checkRowInstance(expected, actual, i, rowCount, actuals, expecteds);
-                }
-                if (additionalCheck != null)
-                    additionalCheck.check(actual);
-                ++rowCount;
+        Iterator<? extends Row> expectedsIter = expecteds.iterator();
+        for (Row actual : actuals) {
+            Row expected = expectedsIter.next();
+            int actualWidth = actual.rowType().nFields();
+            assertEquals("row width", expected.rowType().nFields(), actualWidth);
+            for (int i = 0; i < actualWidth; ++i) {
+                checkRowInstance(expected, actual, i, rowCount, actuals, expecteds);
             }
+            if (additionalCheck != null)
+                additionalCheck.check(actual);
+            ++rowCount;
         }
-        finally {
-            for (Row actual : actuals) {
-                actual.release();
-            }
-        }
-    }
+   }
     
     private static void checkRowInstance(Row expected, Row actual, int i, int rowCount, List<Row> actuals, Collection<? extends Row> expecteds) {   
         ValueSource actualSource = actual.value(i);
@@ -124,7 +117,6 @@ public final class OperatorTestHelper {
         Cursor cursor = open(plan);
         try {
             for(Row row = cursor.next(); row != null; row = cursor.next()) {
-                row.acquire();
                 rows.add(row);
             }
             return rows;

@@ -22,7 +22,6 @@ import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.types.value.ValueSource;
 import org.junit.Test;
@@ -51,20 +50,20 @@ public class GroupScanIT extends OperatorITBase
         use(db);
         Operator groupScan = groupScan_Default(coi);
         Cursor cursor = cursor(groupScan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "xyz"),
-                                           row(orderRowType, 11L, 1L, "ori"),
-                                           row(itemRowType, 111L, 11L),
-                                           row(itemRowType, 112L, 11L),
-                                           row(orderRowType, 12L, 1L, "david"),
-                                           row(itemRowType, 121L, 12L),
-                                           row(itemRowType, 122L, 12L),
-                                           row(customerRowType, 2L, "abc"),
-                                           row(orderRowType, 21L, 2L, "tom"),
-                                           row(itemRowType, 211L, 21L),
-                                           row(itemRowType, 212L, 21L),
-                                           row(orderRowType, 22L, 2L, "jack"),
-                                           row(itemRowType, 221L, 22L),
-                                           row(itemRowType, 222L, 22L)
+        Row[] expected = new Row[]{row(customerRowType, 1L, "xyz"),
+                                   row(orderRowType, 11L, 1L, "ori"),
+                                   row(itemRowType, 111L, 11L),
+                                   row(itemRowType, 112L, 11L),
+                                   row(orderRowType, 12L, 1L, "david"),
+                                   row(itemRowType, 121L, 12L),
+                                   row(itemRowType, 122L, 12L),
+                                   row(customerRowType, 2L, "abc"),
+                                   row(orderRowType, 21L, 2L, "tom"),
+                                   row(itemRowType, 211L, 21L),
+                                   row(itemRowType, 212L, 21L),
+                                   row(orderRowType, 22L, 2L, "jack"),
+                                   row(itemRowType, 221L, 22L),
+                                   row(itemRowType, 222L, 22L)
         };
         compareRows(expected, cursor);
     }
@@ -94,7 +93,7 @@ public class GroupScanIT extends OperatorITBase
                                                                  Arrays.asList(customerRowType),
                                                                  InputPreservationOption.DISCARD_INPUT);
         Cursor cursor = cursor(ancestorLookup, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{row(customerRowType, 2L, "abc")};
+        Row[] expected = new Row[]{row(customerRowType, 2L, "abc")};
         compareRows(expected, cursor);
     }
 
@@ -117,9 +116,9 @@ public class GroupScanIT extends OperatorITBase
         Operator groupScan = indexScan_Default(orderSalesmanIndexRowType, false, indexKeyRange);
         Operator lookup = branchLookup_Default(groupScan, coi, orderSalesmanIndexRowType, orderRowType, InputPreservationOption.DISCARD_INPUT  );
         Cursor cursor = cursor(lookup, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{row(orderRowType, 21L, 2L, "tom"),
-                                           row(itemRowType, 211L, 21L),
-                                           row(itemRowType, 212L, 21L)
+        Row[] expected = new Row[]{row(orderRowType, 21L, 2L, "tom"),
+                                   row(itemRowType, 211L, 21L),
+                                   row(itemRowType, 212L, 21L)
         };
         compareRows(expected, cursor);
     }
@@ -167,9 +166,9 @@ public class GroupScanIT extends OperatorITBase
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
-            public RowBase[] firstExpectedRows()
+            public Row[] firstExpectedRows()
             {
-                return new RowBase[] {
+                return new Row[] {
                     row(customerRowType, 1L, "xyz"),
                     row(customerRowType, 2L, "abc"),
                 };
@@ -196,5 +195,5 @@ public class GroupScanIT extends OperatorITBase
         return new IndexBound(row(customerRowType, cid, null), new SetColumnSelector(0));
     }
 
-    private static final RowBase[] EMPTY_EXPECTED = new RowBase[]{};
+    private static final Row[] EMPTY_EXPECTED = new Row[]{};
 }

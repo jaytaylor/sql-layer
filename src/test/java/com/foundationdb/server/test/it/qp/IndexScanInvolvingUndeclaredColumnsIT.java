@@ -21,7 +21,7 @@ import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -91,7 +91,7 @@ public class IndexScanInvolvingUndeclaredColumnsIT extends OperatorITBase
                 idxRowType,
                 range,
                 ordering);
-        compareRows(new RowBase[0], cursor(plan, queryContext, queryBindings));
+        compareRows(new Row[0], cursor(plan, queryContext, queryBindings));
     }
 
     // For use by this class
