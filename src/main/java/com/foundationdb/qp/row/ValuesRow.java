@@ -20,19 +20,19 @@ package com.foundationdb.qp.row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueSources;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 
 import java.util.Arrays;
 
-public final class PValuesRow extends AbstractRow {
+public final class ValuesRow extends AbstractRow {
     @Override
     public RowType rowType() {
         return rowType;
     }
 
     @Override
-    public PValueSource pvalue(int i) {
+    public ValueSource value(int i) {
         return values[i];
     }
 
@@ -41,7 +41,7 @@ public final class PValuesRow extends AbstractRow {
         return null;
     }
 
-    public PValuesRow(RowType rowType, PValueSource... values) {
+    public ValuesRow(RowType rowType, ValueSource... values) {
         this.rowType = rowType;
         this.values = values;
         if (rowType.nFields() != values.length) {
@@ -58,9 +58,9 @@ public final class PValuesRow extends AbstractRow {
         }
     }
 
-    public PValuesRow (RowType rowType, Object... objects) {
+    public ValuesRow(RowType rowType, Object... objects) {
         this.rowType = rowType;
-        values = new PValueSource[rowType.nFields()];
+        values = new ValueSource[rowType.nFields()];
         
         if (rowType.nFields() != objects.length) {
             throw new IllegalArgumentException(
@@ -68,10 +68,10 @@ public final class PValuesRow extends AbstractRow {
                             + objects.length + " values given: " + Arrays.asList(objects));
         }
         for (int i = 0; i < values.length; ++i) {
-            values[i] = PValueSources.pValuefromObject(objects[i], rowType.typeInstanceAt(i));
+            values[i] = ValueSources.valuefromObject(objects[i], rowType.typeInstanceAt(i));
         }
     }
     
     private final RowType rowType;
-    private final PValueSource[] values;
+    private final ValueSource[] values;
 }

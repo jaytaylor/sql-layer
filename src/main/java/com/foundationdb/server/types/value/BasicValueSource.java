@@ -15,7 +15,34 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.types.pvalue;
+package com.foundationdb.server.types.value;
 
-public final class NullValueException extends RuntimeException {
+import com.foundationdb.server.types.TInstance;
+
+public interface BasicValueSource {
+    TInstance tInstance();
+
+    boolean isNull();
+
+    boolean getBoolean();
+
+    boolean getBoolean(boolean defaultValue);
+
+    byte getInt8();
+
+    short getInt16();
+
+    char getUInt16();
+
+    int getInt32();
+
+    long getInt64();
+
+    float getFloat();
+
+    double getDouble();
+
+    byte[] getBytes();
+
+    String getString();
 }

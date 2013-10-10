@@ -21,8 +21,8 @@ import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.TString;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueSources;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.util.Equality;
 
 public final class TPreptimeValue {
@@ -40,12 +40,12 @@ public final class TPreptimeValue {
         return tInstance;
     }
 
-    public void value(PValueSource value) {
+    public void value(ValueSource value) {
         assert mutable : "not mutable";
         this.value = value;
     }
 
-    public PValueSource value() {
+    public ValueSource value() {
         return value;
     }
 
@@ -57,7 +57,7 @@ public final class TPreptimeValue {
         this(tInstance, null);
     }
 
-    public TPreptimeValue(TInstance tInstance, PValueSource value) {
+    public TPreptimeValue(TInstance tInstance, ValueSource value) {
         this.tInstance = tInstance;
         this.value = value;
         this.mutable = false;
@@ -86,7 +86,7 @@ public final class TPreptimeValue {
             return false;
         if (value == null)
             return that.value == null;
-        return that.value != null && PValueSources.areEqual(value, that.value, tInstance);
+        return that.value != null && ValueSources.areEqual(value, that.value, tInstance);
     }
 
     @Override
@@ -100,11 +100,11 @@ public final class TPreptimeValue {
         else {
             collator = null;
         }
-        result = 31 * result + (value != null ? PValueSources.hash(value, collator) : 0);
+        result = 31 * result + (value != null ? ValueSources.hash(value, collator) : 0);
         return result;
     }
 
     private TInstance tInstance;
-    private PValueSource value;
+    private ValueSource value;
     private boolean mutable; // TODO ugh! should we next this, or create a hierarchy of TPV, MutableTPV?
 }

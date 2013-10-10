@@ -27,7 +27,6 @@ import com.foundationdb.qp.util.HKeyCache;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.util.ArgumentValidation;
-import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -207,7 +206,7 @@ class HKeyUnion_Ordered extends Operator
                 previousHKey = null;
                 nextLeftRow();
                 nextRightRow();
-                closed = leftRow.isEmpty() && rightRow.isEmpty();
+                closed = leftRow == null && rightRow == null;
             } finally {
                 TAP_OPEN.out();
             }
@@ -225,16 +224,16 @@ class HKeyUnion_Ordered extends Operator
                 }
                 Row nextRow = null;
                 while (!closed && nextRow == null) {
-                    assert !(leftRow.isEmpty() && rightRow.isEmpty());
+                    assert !(leftRow == null && rightRow == null);
                     long c = compareRows();
                     if (c < 0) {
-                        nextRow = leftRow.get();
+                        nextRow = leftRow;
                         nextLeftRow();
                     } else if (c > 0) {
-                        nextRow = rightRow.get();
+                        nextRow = rightRow;
                         nextRightRow();
                     } else {
-                        nextRow = leftRow.get();
+                        nextRow = leftRow;
                         if (advanceLeftOnMatch) {
                             nextLeftRow();
                         }
@@ -242,7 +241,7 @@ class HKeyUnion_Ordered extends Operator
                             nextRightRow();
                         }
                     }
-                    if (leftRow.isEmpty() && rightRow.isEmpty()) {
+                    if (leftRow == null && rightRow == null) {
                         close();
                     }
                     if (nextRow == null) {
@@ -272,8 +271,8 @@ class HKeyUnion_Ordered extends Operator
         {
             CursorLifecycle.checkIdleOrActive(this);
             if (!closed) {
-                leftRow.release();
-                rightRow.release();
+                leftRow = null;
+                rightRow = null;
                 leftInput.close();
                 rightInput.close();
                 closed = true;
@@ -358,7 +357,7 @@ class HKeyUnion_Ordered extends Operator
             do {
                 row = leftInput.next();
             } while (row != null && previousHKey != null && previousHKey.prefixOf(row.hKey()));
-            leftRow.hold(row);
+            leftRow = row;
         }
         
         private void nextRightRow()
@@ -367,20 +366,20 @@ class HKeyUnion_Ordered extends Operator
             do {
                 row = rightInput.next();
             } while (row != null && previousHKey != null && previousHKey.prefixOf(row.hKey()));
-            rightRow.hold(row);
+            rightRow = row;
         }
         
         private long compareRows()
         {
             long c;
             assert !closed;
-            assert !(leftRow.isEmpty() && rightRow.isEmpty());
-            if (leftRow.isEmpty()) {
+            assert !(leftRow == null && rightRow == null);
+            if (leftRow == null) {
                 c = 1;
-            } else if (rightRow.isEmpty()) {
+            } else if (rightRow == null) {
                 c = -1;
             } else {
-                c = fieldRankingExpressions.compare(leftRow.get(), rightRow.get());
+                c = fieldRankingExpressions.compare(leftRow, rightRow);
             }
             return c;
         }
@@ -394,15 +393,12 @@ class HKeyUnion_Ordered extends Operator
         }
 
         // Object state
-        
-        // Rows from each input stream are bound to the QueryContext. However, QueryContext doesn't use
-        // ShareHolders, so they are needed here.
 
         private final QueryBindingsCursor bindingsCursor;
         private final Cursor leftInput;
         private final Cursor rightInput;
-        private final ShareHolder<Row> leftRow = new ShareHolder<>();
-        private final ShareHolder<Row> rightRow = new ShareHolder<>();
+        private Row leftRow;
+        private Row rightRow;
         private final StoreAdapter adapter;
         private HKey previousHKey;
         private boolean closed = true;
@@ -416,8 +412,8 @@ class HKeyUnion_Ordered extends Operator
         @Override
         public int compare(Row left, Row right, int leftIndex, int rightIndex) {
             return TClass.compare(
-                    left.rowType().typeInstanceAt(leftIndex), left.pvalue(leftIndex),
-                    right.rowType().typeInstanceAt(rightIndex), right.pvalue(rightIndex));
+                    left.rowType().typeInstanceAt(leftIndex), left.value(leftIndex),
+                    right.rowType().typeInstanceAt(rightIndex), right.value(rightIndex));
         }
     };
 

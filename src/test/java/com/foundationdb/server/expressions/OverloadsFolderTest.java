@@ -22,8 +22,8 @@ import com.foundationdb.junit.Parameterization;
 import com.foundationdb.junit.ParameterizationBuilder;
 import com.foundationdb.server.types.*;
 import com.foundationdb.server.types.TypesTestClass;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 import com.foundationdb.server.types.texpressions.TValidatedScalar;
@@ -281,8 +281,8 @@ public final class OverloadsFolderTest {
                 }
 
                 @Override
-                protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
-                                          PValueTarget output) {
+                protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs,
+                                          ValueTarget output) {
                     throw new UnsupportedOperationException();
                 }
 

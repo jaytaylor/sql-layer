@@ -22,7 +22,7 @@ import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -103,11 +103,11 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
     public void test0xAND()
     {
         Operator plan = intersectCyDz(0, OUTPUT_LEFT);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectCyDz(0, OUTPUT_RIGHT);
-        expected = new RowBase[]{
+        expected = new Row[]{
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
@@ -116,11 +116,11 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
     public void test1xAND()
     {
         Operator plan = intersectCyDz(1, OUTPUT_LEFT);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectCyDz(1, OUTPUT_RIGHT);
-        expected = new RowBase[]{
+        expected = new Row[]{
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
@@ -129,11 +129,11 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
     public void test2xAND()
     {
         Operator plan = intersectCyDz(2, OUTPUT_LEFT);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectCyDz(2, OUTPUT_RIGHT);
-        expected = new RowBase[]{
+        expected = new Row[]{
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
@@ -142,14 +142,14 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
     public void test3xAND()
     {
         Operator plan = intersectCyDz(3, OUTPUT_LEFT);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(cRowType, 3L, 30L, 3800L),
             row(cRowType, 3L, 30L, 3801L),
             row(cRowType, 3L, 30L, 3802L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectCyDz(3, OUTPUT_RIGHT);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(dRowType, 3L, 30L, 3900L),
             row(dRowType, 3L, 30L, 3901L),
         };

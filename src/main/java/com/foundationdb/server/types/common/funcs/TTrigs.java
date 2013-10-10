@@ -22,8 +22,8 @@ import com.foundationdb.server.types.LazyList;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TOverloadResult;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 
@@ -58,7 +58,7 @@ public class TTrigs extends TScalarBase
         SIN()
         {
             @Override
-            double evaluate(LazyList<? extends PValueSource> inputs)
+            double evaluate(LazyList<? extends ValueSource> inputs)
             {
                 return Math.sin(inputs.get(0).getDouble());
             }
@@ -66,7 +66,7 @@ public class TTrigs extends TScalarBase
         COS()
         {
             @Override
-            double evaluate(LazyList<? extends PValueSource> inputs)
+            double evaluate(LazyList<? extends ValueSource> inputs)
             {
                 return Math.cos(inputs.get(0).getDouble());
             }
@@ -74,7 +74,7 @@ public class TTrigs extends TScalarBase
         TAN()
         {
             @Override
-            double evaluate(LazyList<? extends PValueSource> inputs)
+            double evaluate(LazyList<? extends ValueSource> inputs)
             {
                 double var = inputs.get(0).getDouble();
                 if (Double.compare(Math.cos(var), 0) == 0)
@@ -85,7 +85,7 @@ public class TTrigs extends TScalarBase
         COT()
         {
             @Override
-            double evaluate(LazyList<? extends PValueSource> inputs)
+            double evaluate(LazyList<? extends ValueSource> inputs)
             {
                 double var = inputs.get(0).getDouble();
                 double sin = Math.sin(var);
@@ -97,7 +97,7 @@ public class TTrigs extends TScalarBase
         ASIN()
         {
             @Override
-            double evaluate(LazyList<? extends PValueSource> inputs)
+            double evaluate(LazyList<? extends ValueSource> inputs)
             {
                 return Math.asin(inputs.get(0).getDouble());
             }
@@ -105,7 +105,7 @@ public class TTrigs extends TScalarBase
         ACOS()
         {
             @Override
-            double evaluate(LazyList<? extends PValueSource> inputs)
+            double evaluate(LazyList<? extends ValueSource> inputs)
             {
                 return Math.acos(inputs.get(0).getDouble());
             }
@@ -113,7 +113,7 @@ public class TTrigs extends TScalarBase
         ACOT()
         {
             @Override
-            double evaluate(LazyList<? extends PValueSource> inputs)
+            double evaluate(LazyList<? extends ValueSource> inputs)
             {
                 double var = inputs.get(0).getDouble();
                 if (Double.compare(var, 0) == 0)
@@ -124,7 +124,7 @@ public class TTrigs extends TScalarBase
         ATAN(ONE_ARG)
         {
             @Override
-            double evaluate(LazyList<? extends PValueSource> inputs)
+            double evaluate(LazyList<? extends ValueSource> inputs)
             {
                 return Math.atan(inputs.get(0).getDouble());
             }
@@ -132,7 +132,7 @@ public class TTrigs extends TScalarBase
         ATAN2(TWO_ARGS)
         {
             @Override
-            double evaluate(LazyList<? extends PValueSource> inputs)
+            double evaluate(LazyList<? extends ValueSource> inputs)
             {
                 return Math.atan2(inputs.get(0).getDouble(),inputs.get(1).getDouble());
             }
@@ -140,7 +140,7 @@ public class TTrigs extends TScalarBase
         COSH()
         {
             @Override
-            double evaluate(LazyList<? extends PValueSource> inputs)
+            double evaluate(LazyList<? extends ValueSource> inputs)
             {
                 return Math.cosh(inputs.get(0).getDouble());
             }
@@ -148,7 +148,7 @@ public class TTrigs extends TScalarBase
         SINH()  
         {
             @Override
-            double evaluate(LazyList<? extends PValueSource> inputs)
+            double evaluate(LazyList<? extends ValueSource> inputs)
             {
                 return Math.sinh(inputs.get(0).getDouble());
             }
@@ -156,7 +156,7 @@ public class TTrigs extends TScalarBase
         TANH()
         {
             @Override
-            double evaluate(LazyList<? extends PValueSource> inputs)
+            double evaluate(LazyList<? extends ValueSource> inputs)
             {
                 return Math.tanh(inputs.get(0).getDouble());
             }
@@ -164,7 +164,7 @@ public class TTrigs extends TScalarBase
         COTH()
         {
             @Override
-            double evaluate(LazyList<? extends PValueSource> inputs)
+            double evaluate(LazyList<? extends ValueSource> inputs)
             {
                 double var = inputs.get(0).getDouble();
                 if (Double.compare(var, 0) == 0)
@@ -173,7 +173,7 @@ public class TTrigs extends TScalarBase
             }
         };
         
-        abstract double evaluate(LazyList<? extends PValueSource> inputs);
+        abstract double evaluate(LazyList<? extends ValueSource> inputs);
         private TrigType(int c[])
         {
             covering = c;
@@ -202,7 +202,7 @@ public class TTrigs extends TScalarBase
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
         output.putDouble(trigType.evaluate(inputs));
     }

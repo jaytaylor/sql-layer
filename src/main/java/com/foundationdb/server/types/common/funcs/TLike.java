@@ -30,8 +30,8 @@ import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.TString;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.Matcher;
 import com.foundationdb.server.types.texpressions.Matchers;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
@@ -114,14 +114,14 @@ public class TLike extends TScalarBase
         if (result != null) return result; // Whole thing is constant.
 
         TPreptimeValue patternPrep = inputs.get(1);
-        PValueSource patternValue = patternPrep.value();
+        ValueSource patternValue = patternPrep.value();
         if (patternValue == null) return result; // Pattern not constant
         String pattern = patternValue.getString();
 
         char esca = '\\';
         if (inputs.size() >= 3) {
             TPreptimeValue escapePrep = inputs.get(2);
-            PValueSource escapeValue = escapePrep.value();
+            ValueSource escapeValue = escapePrep.value();
             if (escapeValue == null) return result; // Escape not constant
             String escapeString = escapeValue.getString();
             if (escapeString.length() != 1) return result;
@@ -140,7 +140,7 @@ public class TLike extends TScalarBase
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
         LikeType likeType = (LikeType)context.preptimeObjectAt(TYPE_INDEX);
         if (likeType == null)

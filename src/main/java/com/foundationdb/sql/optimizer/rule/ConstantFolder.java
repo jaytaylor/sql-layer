@@ -18,6 +18,8 @@
 package com.foundationdb.sql.optimizer.rule;
 
 import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.ExpressionsSource.DistinctState;
 import com.foundationdb.sql.optimizer.rule.OverloadAndTInstanceResolver.ResolvingVisitor;
@@ -32,8 +34,6 @@ import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,9 +49,7 @@ import java.util.*;
 public class ConstantFolder extends BaseRule 
 {
     private static final Logger logger = LoggerFactory.getLogger(ConstantFolder.class);
-    
-    //private final boolean usePValues;
-    
+
     public ConstantFolder() {
     }
 
@@ -856,7 +854,7 @@ public class ConstantFolder extends BaseRule
 
         @Override
         protected Boolean getBooleanObject(ConstantExpression expression) {
-            PValueSource value = expression.getPreptimeValue().value();
+            ValueSource value = expression.getPreptimeValue().value();
             return value == null || value.isNull()
                     ? null
                     : value.getBoolean();
@@ -865,7 +863,7 @@ public class ConstantFolder extends BaseRule
         @Override
         protected Constantness isConstant(ExpressionNode expr) {
             TPreptimeValue tpv = expr.getPreptimeValue();
-            PValueSource value = tpv.value();
+            ValueSource value = tpv.value();
             if (tpv.instance() == null) {
                 assert value == null || value.isNull() : value;
                 return Constantness.NULL;
@@ -1063,12 +1061,12 @@ public class ConstantFolder extends BaseRule
          * 
          * For types3 ONLY!
          * 
-         * Compare PValueSources of two constant expression node
+         * Compare ValueSources of two constant expression node
          * @param leftNode
          * @param rightNode
          * @param registry
          * @param qc
-         * @return  true if the two ExpressionNodes' PValueSource are equal.
+         * @return  true if the two ExpressionNodes' ValueSource are equal.
          *          false otherwise
          */
         public static boolean comparePrepValues(ExpressionNode leftNode,
@@ -1080,8 +1078,8 @@ public class ConstantFolder extends BaseRule
             if (!leftNode.isConstant() || !rightNode.isConstant())
                 return false;
             
-            PValueSource leftSource = leftNode.getPreptimeValue().value();
-            PValueSource rightSource = rightNode.getPreptimeValue().value();
+            ValueSource leftSource = leftNode.getPreptimeValue().value();
+            ValueSource rightSource = rightNode.getPreptimeValue().value();
 
             TInstance lTIns = leftSource.tInstance();
             TInstance rTIns = rightSource.tInstance();
@@ -1094,8 +1092,8 @@ public class ConstantFolder extends BaseRule
                 if (common == null)
                     common = MString.VARCHAR.instance(nullable);
                 
-                PValue leftCasted = new PValue(common);
-                PValue rightCasted = new PValue(common);
+                Value leftCasted = new Value(common);
+                Value rightCasted = new Value(common);
 
                 TExecutionContext execContext = new TExecutionContext(Arrays.asList(lTIns, rTIns), common, qc);
                 casts.cast(lTIns, common).evaluate(execContext, leftSource, leftCasted);

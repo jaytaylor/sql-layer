@@ -23,8 +23,8 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.error.SubqueryTooManyRowsException;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.pvalue.PValueTarget;
-import com.foundationdb.server.types.pvalue.PValueTargets;
+import com.foundationdb.server.types.value.ValueTarget;
+import com.foundationdb.server.types.value.ValueTargets;
 
 public class ScalarSubqueryTExpression extends SubqueryTExpression
 {
@@ -42,7 +42,7 @@ public class ScalarSubqueryTExpression extends SubqueryTExpression
         }
 
         @Override
-        protected void doEval(PValueTarget out)
+        protected void doEval(ValueTarget out)
         {
             Row row = next();
             if (row == null)
@@ -57,7 +57,7 @@ public class ScalarSubqueryTExpression extends SubqueryTExpression
 
                 // evaluate the result
                 eval.evaluate();
-                PValueTargets.copyFrom(eval.resultValue(), out);
+                ValueTargets.copyFrom(eval.resultValue(), out);
                 
                 if (next() != null)
                     throw new SubqueryTooManyRowsException();

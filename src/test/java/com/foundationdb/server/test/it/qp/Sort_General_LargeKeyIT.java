@@ -22,7 +22,7 @@ import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.scan.NewRow;
@@ -105,8 +105,8 @@ public class Sort_General_LargeKeyIT extends OperatorITBase {
         }
     }
 
-    private RowBase[] expected(final boolean... asc) {
-        RowBase[] sorted = new RowBase[db.length];
+    private Row[] expected(final boolean... asc) {
+        Row[] sorted = new Row[db.length];
         Comparator<NewRow> comparator = new Comparator<NewRow>() {
             @Override
             public int compare(NewRow x, NewRow y) {

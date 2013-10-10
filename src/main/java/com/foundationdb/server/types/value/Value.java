@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.types.pvalue;
+package com.foundationdb.server.types.value;
 
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.types.TInstance;
 
-public final class PValue implements PValueSource, PValueTarget {
-    // PValue interface
+public final class Value implements ValueSource, ValueTarget {
+    // Value interface
     
     public void underlying(TInstance underlying) {
         this.tInstance = underlying;
@@ -32,7 +32,7 @@ public final class PValue implements PValueSource, PValueTarget {
         this.state = State.UNSET;
     }
     
-    // PValueTarget interface
+    // ValueTarget interface
 
     @Override
     public boolean supportsCachedObjects() {
@@ -46,53 +46,53 @@ public final class PValue implements PValueSource, PValueTarget {
 
     @Override
     public void putBool(boolean value) {
-        setIVal(PUnderlying.BOOL, value ? BOOL_TRUE : BOOL_FALSE);
+        setIVal(UnderlyingType.BOOL, value ? BOOL_TRUE : BOOL_FALSE);
     }
 
     @Override
     public final void putInt8(byte value) {
-        setIVal(PUnderlying.INT_8, value);
+        setIVal(UnderlyingType.INT_8, value);
     }
 
     @Override
     public final void putInt16(short value) {
-        setIVal(PUnderlying.INT_16, value);
+        setIVal(UnderlyingType.INT_16, value);
     }
 
     @Override
     public final void putUInt16(char value) {
-        setIVal(PUnderlying.UINT_16, value);
+        setIVal(UnderlyingType.UINT_16, value);
     }
 
     @Override
     public final void putInt32(int value) {
-        setIVal(PUnderlying.INT_32, value);
+        setIVal(UnderlyingType.INT_32, value);
     }
 
     @Override
     public final void putInt64(long value) {
-        setIVal(PUnderlying.INT_64, value);
+        setIVal(UnderlyingType.INT_64, value);
     }
 
     @Override
     public final void putFloat(float value) {
-        setIVal(PUnderlying.FLOAT, Float.floatToIntBits(value));
+        setIVal(UnderlyingType.FLOAT, Float.floatToIntBits(value));
     }
 
     @Override
     public final void putDouble(double value) {
-        setIVal(PUnderlying.DOUBLE, Double.doubleToLongBits(value));
+        setIVal(UnderlyingType.DOUBLE, Double.doubleToLongBits(value));
     }
 
     @Override
     public final void putBytes(byte[] value) {
-        checkUnderlying(PUnderlying.BYTES);
+        checkUnderlying(UnderlyingType.BYTES);
         setRawValues(State.VAL_ONLY, -1, value, null);
     }
 
     @Override
     public void putString(String value, AkCollator collator) {
-        checkUnderlying(PUnderlying.STRING);
+        checkUnderlying(UnderlyingType.STRING);
         setRawValues(State.VAL_ONLY, -1, value, null);
     }
 
@@ -104,7 +104,7 @@ public final class PValue implements PValueSource, PValueTarget {
             setRawValues(State.CACHE_ONLY, -1, null, object);
     }
 
-    // PValueSource interface
+    // ValueSource interface
 
     @Override
     public final boolean isNull() {
@@ -115,7 +115,7 @@ public final class PValue implements PValueSource, PValueTarget {
 
     @Override
     public boolean getBoolean() {
-        return getIVal(PUnderlying.BOOL) == BOOL_TRUE;
+        return getIVal(UnderlyingType.BOOL) == BOOL_TRUE;
     }
 
     @Override
@@ -125,51 +125,51 @@ public final class PValue implements PValueSource, PValueTarget {
 
     @Override
     public final byte getInt8() {
-        return (byte) getIVal(PUnderlying.INT_8);
+        return (byte) getIVal(UnderlyingType.INT_8);
     }
 
     @Override
     public final short getInt16() {
-        return (short) getIVal(PUnderlying.INT_16);
+        return (short) getIVal(UnderlyingType.INT_16);
     }
 
     @Override
     public final char getUInt16() {
-        return (char) getIVal(PUnderlying.UINT_16);
+        return (char) getIVal(UnderlyingType.UINT_16);
     }
 
     @Override
     public final int getInt32() {
-        return (int) getIVal(PUnderlying.INT_32);
+        return (int) getIVal(UnderlyingType.INT_32);
     }
 
     @Override
     public final long getInt64() {
-        return getIVal(PUnderlying.INT_64);
+        return getIVal(UnderlyingType.INT_64);
     }
 
     @Override
     public final float getFloat() {
-        int i = (int) getIVal(PUnderlying.FLOAT);
+        int i = (int) getIVal(UnderlyingType.FLOAT);
         return Float.intBitsToFloat(i);
     }
 
     @Override
     public final double getDouble() {
-        long l = getIVal(PUnderlying.DOUBLE);
+        long l = getIVal(UnderlyingType.DOUBLE);
         return Double.longBitsToDouble(l);
     }
 
     @Override
     public final byte[] getBytes() {
-        checkUnderlying(PUnderlying.BYTES);
+        checkUnderlying(UnderlyingType.BYTES);
         checkRawState();
         return (byte[]) rawObject;
     }
 
     @Override
     public String getString() {
-        checkUnderlying(PUnderlying.STRING);
+        checkUnderlying(UnderlyingType.STRING);
         checkRawState();
         return (String) rawObject;
     }
@@ -220,11 +220,11 @@ public final class PValue implements PValueSource, PValueTarget {
     public boolean canGetRawValue() {
         if (hasRawValue())
             return true;
-        PValueCacher cacher = tInstance.typeClass().cacher();
+        ValueCacher cacher = tInstance.typeClass().cacher();
         return cacher != null && cacher.canConvertToValue(oCache);
     }
 
-    // PValueSource + PValueTarget
+    // ValueSource + ValueTarget
 
     @Override
     public TInstance tInstance() {
@@ -235,7 +235,7 @@ public final class PValue implements PValueSource, PValueTarget {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("PValue(").append(tInstance).append(" = ");
+        StringBuilder sb = new StringBuilder("Value(").append(tInstance).append(" = ");
         switch (state) {
         case UNSET:
             sb.append("<empty>");
@@ -246,7 +246,7 @@ public final class PValue implements PValueSource, PValueTarget {
         case VAL_AND_CACHE:
             sb.append("cached <").append(oCache).append(">: ");
         case VAL_ONLY:
-            switch (TInstance.pUnderlying(tInstance)) {
+            switch (TInstance.underlyingType(tInstance)) {
             case INT_8:
             case INT_16:
             case INT_32:
@@ -287,21 +287,21 @@ public final class PValue implements PValueSource, PValueTarget {
         return sb.toString();
     }
 
-    private long getIVal(PUnderlying expectedType) {
+    private long getIVal(UnderlyingType expectedType) {
         checkUnderlying(expectedType);
         checkRawState();
         return iVal;
     }
 
-    private void checkUnderlying(PUnderlying expected) {
-        PUnderlying pUnderlying = TInstance.pUnderlying(tInstance);
-        if (pUnderlying != expected) {
-            String underlyingToString = (pUnderlying == null) ? "unspecified" : pUnderlying.name();
+    private void checkUnderlying(UnderlyingType expected) {
+        UnderlyingType underlyingType = TInstance.underlyingType(tInstance);
+        if (underlyingType != expected) {
+            String underlyingToString = (underlyingType == null) ? "unspecified" : underlyingType.name();
             throw new IllegalStateException("required underlying " + expected + " but was " + underlyingToString);
         }
     }
 
-    private void setIVal(PUnderlying expectedType, long value) {
+    private void setIVal(UnderlyingType expectedType, long value) {
         checkUnderlying(expectedType);
         setRawValues(State.VAL_ONLY, value, null, null);
     }
@@ -313,57 +313,57 @@ public final class PValue implements PValueSource, PValueTarget {
         this.oCache = oCache;
     }
 
-    public PValue() {
+    public Value() {
         this(null);
     }
 
-    public PValue(TInstance tInstance) {
+    public Value(TInstance tInstance) {
         underlying(tInstance);
     }
 
-    public PValue(TInstance tInstance, byte[] val) {
+    public Value(TInstance tInstance, byte[] val) {
         this(tInstance);
         putBytes(val);
     }
 
-    public PValue(TInstance tInstance, long val) {
+    public Value(TInstance tInstance, long val) {
         this(tInstance);
         putInt64(val);
     }
 
-    public PValue(TInstance tInstance, float val)
+    public Value(TInstance tInstance, float val)
     {
         this(tInstance);
         putFloat(val);
     }
 
-    public PValue(TInstance tInstance, double val)
+    public Value(TInstance tInstance, double val)
     {
         this(tInstance);
         putDouble(val);
     }
 
-    public PValue(TInstance tInstance, int val) {
+    public Value(TInstance tInstance, int val) {
         this(tInstance);
         putInt32(val);
     }
 
-    public PValue(TInstance tInstance, short val) {
+    public Value(TInstance tInstance, short val) {
         this(tInstance);
         putInt16(val);
     }
 
-    public PValue(TInstance tInstance, byte val) {
+    public Value(TInstance tInstance, byte val) {
         this(tInstance);
         putInt8(val);
     }
 
-    public PValue(TInstance tInstance, String val) {
+    public Value(TInstance tInstance, String val) {
         this(tInstance);
         putString(val, null);
     }
 
-    public PValue(TInstance tInstance, boolean val) {
+    public Value(TInstance tInstance, boolean val) {
         this(tInstance);
         putBool(val);
     }

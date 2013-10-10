@@ -143,7 +143,7 @@ public final class GroupIndexScanIT extends ITBase {
                 Object[] rowArray = new Object[fields];
                 for (int i=0; i < rowArray.length; ++i) {
                     Object fromRow;
-                    fromRow = getObject(row.pvalue(i));
+                    fromRow = getObject(row.value(i));
                     rowArray[i] = fromRow;
                 }
                 actualResults.add(Arrays.asList(rowArray));

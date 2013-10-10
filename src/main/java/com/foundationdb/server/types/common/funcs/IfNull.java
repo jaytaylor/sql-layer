@@ -27,9 +27,9 @@ import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
-import com.foundationdb.server.types.pvalue.PValueTargets;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
+import com.foundationdb.server.types.value.ValueTargets;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 import com.google.common.base.Predicate;
@@ -96,10 +96,10 @@ public final class IfNull extends TScalarBase {
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        PValueSource arg0 = inputs.get(0);
-        PValueSource out = arg0.isNull() ? inputs.get(1) : arg0;
-        PValueTargets.copyFrom(out, output);
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
+        ValueSource arg0 = inputs.get(0);
+        ValueSource out = arg0.isNull() ? inputs.get(1) : arg0;
+        ValueTargets.copyFrom(out, output);
     }
 
     @Override
@@ -125,7 +125,7 @@ public final class IfNull extends TScalarBase {
     @Override
     protected boolean nullContaminates(int inputIndex) {
         // Neither arg contaminates by itself. If both are null, then the result is null, but it's just as easy
-        // to figure this out in doEvaluate as anywhere else (since PValueTargets.copyFrom does the actual checking).
+        // to figure this out in doEvaluate as anywhere else (since ValueTargets.copyFrom does the actual checking).
         return false;
     }
 

@@ -23,9 +23,9 @@ import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.TPreptimeContext;
 import com.foundationdb.server.types.TPreptimeValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
-import com.foundationdb.server.types.pvalue.PValueTargets;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
+import com.foundationdb.server.types.value.ValueTargets;
 import com.foundationdb.server.types.texpressions.Constantness;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
@@ -42,10 +42,10 @@ public class Coalesce extends TScalarBase {
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
         for (int i = 0; i < inputs.size(); ++i) {
             if (!inputs.get(i).isNull()) {
-                PValueTargets.copyFrom(inputs.get(i), output);
+                ValueTargets.copyFrom(inputs.get(i), output);
                 return;
             }
         }
@@ -69,7 +69,7 @@ public class Coalesce extends TScalarBase {
 
     @Override
     protected Constantness constness(TPreptimeContext context, int inputIndex, LazyList<? extends TPreptimeValue> values) {
-        PValueSource preptimeValue = constSource(values, inputIndex);
+        ValueSource preptimeValue = constSource(values, inputIndex);
         if (preptimeValue == null)
             return Constantness.NOT_CONST;
         return preptimeValue.isNull() ? Constantness.UNKNOWN : Constantness.CONST;

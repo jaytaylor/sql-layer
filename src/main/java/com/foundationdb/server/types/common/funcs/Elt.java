@@ -23,9 +23,9 @@ import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.TPreptimeContext;
 import com.foundationdb.server.types.TPreptimeValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
-import com.foundationdb.server.types.pvalue.PValueTargets;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
+import com.foundationdb.server.types.value.ValueTargets;
 import com.foundationdb.server.types.texpressions.Constantness;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
@@ -51,14 +51,14 @@ public class Elt extends TScalarBase
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
         int index = inputs.get(0).getInt32();
         int nvarargs = inputs.size();
         if (index < 1 || index >= nvarargs)
             output.putNull();
         else
-            PValueTargets.copyFrom(inputs.get(index), output);
+            ValueTargets.copyFrom(inputs.get(index), output);
     }
      
     @Override
@@ -70,7 +70,7 @@ public class Elt extends TScalarBase
     @Override
     protected Constantness constness(TPreptimeContext context, int inputIndex, LazyList<? extends TPreptimeValue> values) {
         assert inputIndex == 0 : inputIndex + " for " + values; // 0 should be enough to fully answer the question
-        PValueSource indexVal = constSource(values, 0);
+        ValueSource indexVal = constSource(values, 0);
         if (indexVal == null)
             return Constantness.NOT_CONST;
         if (indexVal.isNull())
@@ -78,7 +78,7 @@ public class Elt extends TScalarBase
         int answerIndex = indexVal.getInt32();
         if (answerIndex < 1 || answerIndex >= values.size())
             return Constantness.CONST; // answer is null
-        PValueSource answer = constSource(values, answerIndex);
+        ValueSource answer = constSource(values, answerIndex);
         return answer == null ? Constantness.NOT_CONST : Constantness.CONST;
     }
 

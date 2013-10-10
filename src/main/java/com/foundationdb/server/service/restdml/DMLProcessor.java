@@ -36,8 +36,8 @@ import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
 
 public abstract class DMLProcessor {
 
@@ -60,16 +60,16 @@ public abstract class DMLProcessor {
         return column;
     }
 
-    protected void setValue (QueryBindings queryBindings, Column column, String value) {
-        PValue pvalue = null;
-        if (value == null) {
-            pvalue = new PValue(MString.varchar());
-            pvalue.putNull();
+    protected void setValue (QueryBindings queryBindings, Column column, String svalue) {
+        Value value = null;
+        if (svalue == null) {
+            value = new Value(MString.varchar());
+            value.putNull();
         } else {
-            pvalue = new PValue(MString.varcharFor(value), value);
+            value = new Value(MString.varcharFor(svalue), svalue);
         }
-        queryBindings.setPValue(column.getPosition(), pvalue);
-        
+        queryBindings.setValue(column.getPosition(), value);
+
     }
 
     protected OperatorGenerator getGenerator(CacheValueGenerator<? extends OperatorGenerator> generator, ProcessContext context) {
@@ -84,7 +84,7 @@ public abstract class DMLProcessor {
         public QueryContext queryContext;
         public QueryBindings queryBindings;
         public Session session;
-        public Map<Column, PValueSource> pkValues;
+        public Map<Column, ValueSource> pkValues;
         public Map<Column, String> allValues;
         public boolean anyUpdates;
         private final AkibanInformationSchema ais;
@@ -127,9 +127,9 @@ public abstract class DMLProcessor {
         }
         protected void setColumnsNull (QueryBindings queryBindings, UserTable table) {
             for (Column column : table.getColumns()) {
-                PValue pvalue = new PValue (column.tInstance());
-                pvalue.putNull();
-                queryBindings.setPValue(column.getPosition(), pvalue);
+                Value value = new Value(column.tInstance());
+                value.putNull();
+                queryBindings.setValue(column.getPosition(), value);
             }
         }
     }

@@ -20,10 +20,10 @@ package com.foundationdb.server.rowdata;
 import com.foundationdb.server.AkServerUtil;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.util.ArgumentValidation;
 
-public final class RowDataPValueTarget implements PValueTarget, RowDataTarget {
+public final class RowDataValueTarget implements ValueTarget, RowDataTarget {
 
     @Override
     public void bind(FieldDef fieldDef, byte[] backingBytes, int offset) {
@@ -50,7 +50,7 @@ public final class RowDataPValueTarget implements PValueTarget, RowDataTarget {
         recordEncoded(ConversionHelper.encodeString(value, bytes, offset, fieldDef));
     }
 
-    public RowDataPValueTarget() {
+    public RowDataValueTarget() {
         clear();
     }
 

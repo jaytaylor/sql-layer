@@ -25,7 +25,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.PersistitAdapterException;
-import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
 import com.persistit.Exchange;
@@ -79,18 +78,19 @@ class PersistitGroupCursor implements GroupCursor
         try {
             CursorLifecycle.checkIdleOrActive(this);
             boolean next = !idle;
+            PersistitGroupRow row = null;
             if (next) {
                 groupScan.advance();
                 next = !idle;
                 if (next) {
-                    PersistitGroupRow row = unsharedRow().get();
+                    row = adapter.newGroupRow();
                     row.copyFromExchange(exchange);
                 }
             }
             if (LOG.isDebugEnabled()) {
-                LOG.debug("PersistitGroupCursor: {}", next ? row : null);
+                LOG.debug("PersistitGroupCursor: {}", row);
             }
-            return next ? row.get() : null;
+            return row;
         } catch (PersistitException e) {
             adapter.handlePersistitException(e);
             throw new AssertionError();
@@ -148,19 +148,8 @@ class PersistitGroupCursor implements GroupCursor
     {
         this.adapter = adapter;
         this.group = group;
-        this.row = new ShareHolder<>(adapter.newGroupRow());
         this.controllingHKey = adapter.newKey();
         this.idle = true;
-    }
-
-    // For use by this class
-
-    private ShareHolder<PersistitGroupRow> unsharedRow()
-    {
-        if (row.isEmpty() || row.get().isShared()) {
-            row.hold(adapter.newGroupRow());
-        }
-        return row;
     }
 
     // Class state
@@ -184,7 +173,6 @@ class PersistitGroupCursor implements GroupCursor
 
     private final PersistitAdapter adapter;
     private final Group group;
-    private final ShareHolder<PersistitGroupRow> row;
     private Exchange exchange;
     private Key controllingHKey;
     private PersistitHKey hKey;

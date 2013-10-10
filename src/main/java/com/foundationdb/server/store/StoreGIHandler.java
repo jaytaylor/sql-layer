@@ -29,8 +29,8 @@ import com.foundationdb.server.geophile.SpaceLatLon;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
@@ -58,7 +58,7 @@ class StoreGIHandler<SDType> {
     private final StoreAdapter adapter;
     private final UserTable sourceTable;
     private final PersistitIndexRowBuffer indexRow;
-    private final PValue zSource_t3 = new PValue(MNumeric.BIGINT.instance(true));
+    private final Value zSource_t3 = new Value(MNumeric.BIGINT.instance(true));
 
     private StoreGIHandler(AbstractStore<SDType> store, StoreAdapter adapter, UserTable sourceTable) {
         this.store = store;
@@ -132,7 +132,7 @@ class StoreGIHandler<SDType> {
 
     private void copyFieldToIndexRow(GroupIndex groupIndex, Row row, int flattenedIndex) {
         Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
-        indexRow.append(row.pvalue(flattenedIndex), column.tInstance());
+        indexRow.append(row.value(flattenedIndex), column.tInstance());
     }
 
     private void copyZValueToIndexRow(GroupIndex groupIndex, Row row, IndexRowComposition irc) {
@@ -142,11 +142,11 @@ class StoreGIHandler<SDType> {
         boolean zNull = false;
         for(int d = 0; d < Space.LAT_LON_DIMENSIONS; d++) {
             if(!zNull) {
-                PValueSource columnPValue = row.pvalue(irc.getFieldPosition(firstSpatialColumn + d));
-                if (columnPValue.isNull()) {
+                ValueSource columnValue = row.value(irc.getFieldPosition(firstSpatialColumn + d));
+                if (columnValue.isNull()) {
                     zNull = true;
                 } else {
-                    coords[d] = ((BigDecimalWrapper)columnPValue.getObject()).asBigDecimal();
+                    coords[d] = ((BigDecimalWrapper)columnValue.getObject()).asBigDecimal();
                 }
             }
         }

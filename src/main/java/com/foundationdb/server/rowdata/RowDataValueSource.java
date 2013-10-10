@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.rowdata;
 
-public final class RowDataPValueSource extends AbstractRowDataPValueSource implements RowDataSource {
+public final class RowDataValueSource extends AbstractRowDataValueSource implements RowDataSource {
 
     // RowDataSource interface
 

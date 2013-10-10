@@ -15,27 +15,35 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.types;
+package com.foundationdb.qp.persistitadapter.indexcursor;
 
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueRecord;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
 
-public abstract class SimplePValueIO implements PValueIO {
-
-    protected abstract void copy(PValueSource in, TInstance typeInstance, PValueTarget out);
-
-    @Override
-    public void copyCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
-        copy(in, typeInstance, out);
-    }
+class SpatialIndexValueRecord implements ValueRecord
+{
+    // ValueRecord interface
 
     @Override
-    public void writeCollating(PValueSource in, TInstance typeInstance, PValueTarget out) {
-        copy(in, typeInstance, out);
+    public ValueSource value(int position)
+    {
+        return valueSources[position];
     }
 
-    @Override
-    public void readCollating(PValueSource in, TInstance typeInstance, PValueTarget out) {
-        copy(in, typeInstance, out);
+    // SpatialIndexValueRecord interface
+
+    public void value(int position, ValueSource valueSource)
+    {
+        valueSources[position] = valueSource;
     }
+
+    public SpatialIndexValueRecord(int nFields)
+    {
+        valueSources = new Value[nFields];
+    }
+
+    // Object state
+
+    private ValueSource[] valueSources;
 }

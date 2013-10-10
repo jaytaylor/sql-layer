@@ -17,14 +17,11 @@
 
 package com.foundationdb.server.types;
 
-import com.foundationdb.server.types.pvalue.PUnderlying;
-import com.foundationdb.server.types.pvalue.PValueCacher;
-import com.foundationdb.server.types.pvalue.PValueTargets;
+import com.foundationdb.server.types.value.*;
+import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.server.types.texpressions.Serialization;
 import com.foundationdb.server.types.texpressions.SerializeAs;
 import com.foundationdb.sql.types.DataTypeDescriptor;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
 import com.foundationdb.util.AkibanAppender;
 import com.foundationdb.util.ArgumentValidation;
 import com.google.common.primitives.Booleans;
@@ -45,7 +42,7 @@ public abstract class TClass {
 
     protected abstract DataTypeDescriptor dataTypeDescriptor(TInstance instance);
 
-    public abstract void fromObject (TExecutionContext contextForErrors, PValueSource in, PValueTarget out);
+    public abstract void fromObject (TExecutionContext contextForErrors, ValueSource in, ValueTarget out);
 
     public abstract TCast castToVarchar();
     public abstract TCast castFromVarchar();
@@ -53,8 +50,8 @@ public abstract class TClass {
     public abstract TClass widestComparable();
 
     public void selfCast(TExecutionContext context,
-                         TInstance sourceInstance, PValueSource source, TInstance targetInstance, PValueTarget target) {
-        PValueTargets.copyFrom(source, target);
+                         TInstance sourceInstance, ValueSource source, TInstance targetInstance, ValueTarget target) {
+        ValueTargets.copyFrom(source, target);
     }
 
     public boolean normalizeInstancesBeforeComparison() {
@@ -78,7 +75,7 @@ public abstract class TClass {
         return (this == other);
     }
 
-    public static int compare(TInstance instanceA, PValueSource sourceA, TInstance instanceB, PValueSource sourceB) {
+    public static int compare(TInstance instanceA, ValueSource sourceA, TInstance instanceB, ValueSource sourceB) {
         if (comparisonNeedsCasting(instanceA, instanceB))
             throw new IllegalArgumentException("can't compare " + instanceA + " and " + instanceB);
 
@@ -93,13 +90,13 @@ public abstract class TClass {
      * Compares two values, assuming neither is null. The call site (<tt>TClass.compare</tt>) will handle the case
      * that either or both sources is null.
      * @param instanceA the first operand's instance
-     * @param sourceA the first operand's value, which will not represent a null PValueSource
+     * @param sourceA the first operand's value, which will not represent a null ValueSource
      * @param instanceB the second operand's instance
-     * @param sourceB the second operand's value, which will not represent a null PValueSource
+     * @param sourceB the second operand's value, which will not represent a null ValueSource
      * @return -1 if sourceA is less than sourceB; 0 if they're equal; 1 if sourceA is greater than sourceB
-     * @see TClass#compare(TInstance, PValueSource, TInstance, PValueSource)
+     * @see TClass#compare(TInstance, com.foundationdb.server.types.value.ValueSource, TInstance, com.foundationdb.server.types.value.ValueSource)
      */
-    protected int doCompare(TInstance instanceA, PValueSource sourceA, TInstance instanceB, PValueSource sourceB) {
+    protected int doCompare(TInstance instanceA, ValueSource sourceA, TInstance instanceB, ValueSource sourceB) {
         if (sourceA.hasCacheValue() && sourceB.hasCacheValue()) {
             Object objectA = sourceA.getObject();
             if (objectA instanceof Comparable<?>) {
@@ -109,7 +106,7 @@ public abstract class TClass {
                 return comparableA.compareTo(sourceB.getObject());
             }
         }
-        switch (TInstance.pUnderlying(sourceA.tInstance())) {
+        switch (TInstance.underlyingType(sourceA.tInstance())) {
         case BOOL:
             return Booleans.compare(sourceA.getBoolean(), sourceB.getBoolean());
         case INT_8:
@@ -135,11 +132,11 @@ public abstract class TClass {
         }
     }
 
-    final void writeCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
+    final void writeCanonical(ValueSource in, TInstance typeInstance, ValueTarget out) {
         if (in.isNull())
             out.putNull();
         else
-            getPValueIO().copyCanonical(in, typeInstance, out);
+            getValueIO().copyCanonical(in, typeInstance, out);
     }
 
     protected Object attributeToObject(int attributeIndex, int value) {
@@ -156,8 +153,8 @@ public abstract class TClass {
         output.append(value);
     }
 
-    protected PValueIO getPValueIO() {
-        return defaultPValueIO;
+    protected ValueIO getValueIO() {
+        return DEFAULT_VALUE_IO;
     }
 
     public abstract TInstance instance(boolean nullable);
@@ -182,18 +179,18 @@ public abstract class TClass {
         return createInstance(4, arg0, arg1, arg2, arg3, nullable);
     }
 
-    final void writeCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
+    final void writeCollating(ValueSource inValue, TInstance inInstance, ValueTarget out) {
         if (inValue.isNull())
             out.putNull();
         else
-            getPValueIO().writeCollating(inValue, inInstance, out);
+            getValueIO().writeCollating(inValue, inInstance, out);
     }
 
-    final void readCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
+    final void readCollating(ValueSource inValue, TInstance inInstance, ValueTarget out) {
         if (inValue.isNull())
             out.putNull();
         else
-            getPValueIO().readCollating(inValue, inInstance, out);
+            getValueIO().readCollating(inValue, inInstance, out);
     }
 
     public TInstance pickInstance(TInstance left, TInstance right) {
@@ -203,8 +200,8 @@ public abstract class TClass {
         return doPickInstance(left, right, left.nullability() || right.nullability());
     }
 
-    public PUnderlying underlyingType() {
-        return pUnderlying;
+    public UnderlyingType underlyingType() {
+        return underlyingType;
     }
 
     int nAttributes() {
@@ -260,28 +257,28 @@ public abstract class TClass {
         return name.toString();
     }
 
-    void format(TInstance instance, PValueSource source, AkibanAppender out) {
+    void format(TInstance instance, ValueSource source, AkibanAppender out) {
         if (source.isNull())
             out.append("NULL");
         else
             formatter.format(instance, source, out);
     }
 
-    void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+    void formatAsLiteral(TInstance instance, ValueSource source, AkibanAppender out) {
         if (source.isNull())
             out.append("NULL");
         else
             formatter.formatAsLiteral(instance, source, out);
     }
 
-    void formatAsJson(TInstance instance, PValueSource source, AkibanAppender out) {
+    void formatAsJson(TInstance instance, ValueSource source, AkibanAppender out) {
         if (source.isNull())
             out.append("null");
         else
             formatter.formatAsJson(instance, source, out);
     }
 
-    public Object formatCachedForNiceRow(PValueSource source) {
+    public Object formatCachedForNiceRow(ValueSource source) {
         return source.getObject();
     }
 
@@ -299,7 +296,7 @@ public abstract class TClass {
         return TInstance.create(this, enumClass, nAttrs, attr0, attr1, attr2, attr3, nullable);
     }
 
-    public PValueCacher cacher() {
+    public ValueCacher cacher() {
         return null;
     }
 
@@ -309,7 +306,7 @@ public abstract class TClass {
             Class<A> enumClass,
             TClassFormatter formatter,
             int internalRepVersion, int serializationVersion, int serializationSize,
-            PUnderlying pUnderlying)
+            UnderlyingType underlyingType)
      {
 
          ArgumentValidation.notNull("name", name);
@@ -318,7 +315,7 @@ public abstract class TClass {
          this.internalRepVersion = internalRepVersion;
          this.serializationVersion = serializationVersion;
          this.serializationSize = serializationSize < 0 ? -1 : serializationSize; // normalize all negative numbers
-         this.pUnderlying = pUnderlying;
+         this.underlyingType = underlyingType;
          this.attributeSerializations = serializationsFor(enumClass);
 
          this.enumClass = enumClass;
@@ -361,13 +358,13 @@ public abstract class TClass {
             Class<A> enumClass,
             TClassFormatter formatter,
             int internalRepVersion, int serializationVersion, int serializationSize,
-            PUnderlying pUnderlying)
+            UnderlyingType underlyingType)
      {
         this(new TName(bundle, name, category),
                 enumClass,
                 formatter,
                 internalRepVersion, serializationVersion, serializationSize,
-                pUnderlying);
+                underlyingType);
 
      }
     private final TName name;
@@ -378,16 +375,16 @@ public abstract class TClass {
     private final int serializationVersion;
     private final int serializationSize;
 
-    private final PUnderlying pUnderlying;
+    private final UnderlyingType underlyingType;
 
     private static final Pattern VALID_ATTRIBUTE_PATTERN = Pattern.compile("[a-zA-Z]\\w*");
 
     private static final int EMPTY = -1;
 
-    private static final PValueIO defaultPValueIO = new SimplePValueIO() {
+    private static final ValueIO DEFAULT_VALUE_IO = new SimpleValueIO() {
         @Override
-        protected void copy(PValueSource in, TInstance typeInstance, PValueTarget out) {
-            PValueTargets.copyFrom(in, out);
+        protected void copy(ValueSource in, TInstance typeInstance, ValueTarget out) {
+            ValueTargets.copyFrom(in, out);
         }
     };
 }

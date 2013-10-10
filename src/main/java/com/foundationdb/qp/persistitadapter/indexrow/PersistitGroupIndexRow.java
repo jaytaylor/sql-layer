@@ -28,7 +28,7 @@ import com.persistit.Value;
 
 public class PersistitGroupIndexRow extends PersistitIndexRow
 {
-    // RowBase interface
+    // Row interface
 
     @Override
     public HKey ancestorHKey(UserTable table)

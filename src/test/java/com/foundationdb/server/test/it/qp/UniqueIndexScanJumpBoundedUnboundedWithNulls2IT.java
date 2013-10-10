@@ -17,9 +17,8 @@
 
 package com.foundationdb.server.test.it.qp;
 
+import com.foundationdb.server.types.value.ValueSource;
 import org.junit.Ignore;
-import com.foundationdb.util.ShareHolder;
-import com.foundationdb.server.types.pvalue.PValueSource;
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.operator.Operator;
 import org.junit.Test;
@@ -129,7 +128,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
      */
     private Integer b_of(long id)
     {
-        PValueSource val = indexRowWithIdMap.get(id).pvalue(1);
+        ValueSource val = indexRowWithIdMap.get(id).value(1);
         return (val.isNull() ? null : val.getInt32());
     }
 
@@ -1630,13 +1629,10 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         Row row;
         List<Row> actualRows = new ArrayList<>();
-        List<ShareHolder<Row>> rowHolders = new ArrayList<>();
         
         while ((row = cursor.next()) != null)
         {
-            // Prevent sharing of rows since verification accumulates them
             actualRows.add(row);
-            rowHolders.add(new ShareHolder<>(row));
         }
         cursor.closeTopLevel();
 

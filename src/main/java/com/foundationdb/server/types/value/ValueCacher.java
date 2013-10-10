@@ -15,34 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.types.pvalue;
+package com.foundationdb.server.types.value;
 
 import com.foundationdb.server.types.TInstance;
 
-public interface PBasicValueSource {
-    TInstance tInstance();
-
-    boolean isNull();
-
-    boolean getBoolean();
-
-    boolean getBoolean(boolean defaultValue);
-
-    byte getInt8();
-
-    short getInt16();
-
-    char getUInt16();
-
-    int getInt32();
-
-    long getInt64();
-
-    float getFloat();
-
-    double getDouble();
-
-    byte[] getBytes();
-
-    String getString();
+public interface ValueCacher {
+    void cacheToValue(Object cached, TInstance tInstance, BasicValueTarget target);
+    Object valueToCache(BasicValueSource value, TInstance tInstance);
+    Object sanitize(Object object);
+    boolean canConvertToValue(Object cached);
 }

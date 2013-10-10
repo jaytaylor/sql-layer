@@ -17,14 +17,14 @@
 
 package com.foundationdb.qp.rowtype;
 
+import com.foundationdb.qp.row.ValuesRow;
+import com.foundationdb.server.types.value.Value;
 import org.junit.Test;
 
 import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.UserTable;
-import com.foundationdb.qp.row.PValuesRow;
 import com.foundationdb.server.rowdata.SchemaFactory;
-import com.foundationdb.server.types.pvalue.PValue;
 import com.foundationdb.server.error.NotNullViolationException;
 
 public class UserTableRowCheckerTest {
@@ -33,13 +33,13 @@ public class UserTableRowCheckerTest {
     public void idCheckNull () {
         Schema schema = caoiSchema();
         UserTable customer = schema.ais().getUserTable("schema", "customer");
-        PValue col1 = new PValue(customer.getColumn(0).tInstance());
+        Value col1 = new Value(customer.getColumn(0).tInstance());
         col1.putNull();
         
-        PValue col2 = new PValue(customer.getColumn(1).tInstance());
+        Value col2 = new Value(customer.getColumn(1).tInstance());
         col2.putString("Test Value", null);
         
-        PValuesRow row = new PValuesRow (schema.userTableRowType(customer), col1, col2);
+        ValuesRow row = new ValuesRow(schema.userTableRowType(customer), col1, col2);
         
         UserTableRowChecker checker = new UserTableRowChecker (customer);
         checker.checkConstraints(row);
@@ -49,13 +49,13 @@ public class UserTableRowCheckerTest {
     public void nameCheckNull () {
         Schema schema = caoiSchema();
         UserTable customer = schema.ais().getUserTable("schema", "customer");
-        PValue col1 = new PValue(customer.getColumn(0).tInstance());
+        Value col1 = new Value(customer.getColumn(0).tInstance());
         col1.putInt32(1);
         
-        PValue col2 = new PValue(customer.getColumn(1).tInstance());
+        Value col2 = new Value(customer.getColumn(1).tInstance());
         col2.putNull();
         
-        PValuesRow row = new PValuesRow (schema.userTableRowType(customer), col1, col2);
+        ValuesRow row = new ValuesRow(schema.userTableRowType(customer), col1, col2);
         
         UserTableRowChecker checker = new UserTableRowChecker (customer);
         checker.checkConstraints(row);

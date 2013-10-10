@@ -23,7 +23,6 @@ import com.foundationdb.server.explain.*;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.explain.std.NestedLoopsExplainer;
 import com.foundationdb.util.ArgumentValidation;
-import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.tap.InOutTap;
 
 import org.slf4j.Logger;
@@ -424,7 +423,7 @@ class Map_NestedLoops extends Operator
                         if (row == null) {
                             close();
                         } else {
-                            outerRow.hold(row);
+                            outerRow = row;
                             if (LOG_EXECUTION) {
                                 LOG.debug("Map_NestedLoops: restart inner loop using current branch row");
                             }
@@ -519,10 +518,10 @@ class Map_NestedLoops extends Operator
         private Row nextOutputRow()
         {
             Row outputRow = null;
-            if (outerRow.isHolding()) {
+            if (outerRow != null) {
                 Row innerRow = innerInput.next();
                 if (innerRow == null) {
-                    outerRow.release();
+                    outerRow = null;
                 } else {
                     outputRow = innerRow;
                 }
@@ -532,7 +531,7 @@ class Map_NestedLoops extends Operator
 
         private void closeOuter()
         {
-            outerRow.release();
+            outerRow = null;
             outerInput.close();
         }
 
@@ -548,7 +547,7 @@ class Map_NestedLoops extends Operator
 
         private final Cursor outerInput;
         private final Cursor innerInput;
-        private final ShareHolder<Row> outerRow = new ShareHolder<>();
+        private Row outerRow;
         private boolean closed = true;
         private QueryBindings outerBindings;
         private final SingletonQueryBindingsCursor innerBindingsCursor;

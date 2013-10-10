@@ -24,8 +24,8 @@ import com.foundationdb.server.types.common.funcs.Abs;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 
 public class MAbs {
 
@@ -34,42 +34,42 @@ public class MAbs {
     public static final TScalar TINYINT = new Abs(MNumeric.TINYINT) {
 
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             output.putInt8((byte) Math.abs(inputs.get(0).getInt8()));
         }
     };
     public static final TScalar SMALLINT = new Abs(MNumeric.SMALLINT) {
 
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             output.putInt16((short) Math.abs(inputs.get(0).getInt16()));
         }
     };
     public static final TScalar MEDIUMINT = new Abs(MNumeric.MEDIUMINT) {
 
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             output.putInt32((int) Math.abs(inputs.get(0).getInt32()));
         }
     };
     public static final TScalar BIGINT = new Abs(MNumeric.BIGINT) {
 
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             output.putInt64((long) Math.abs(inputs.get(0).getInt64()));
         }
     };
     public static final TScalar INT = new Abs(MNumeric.INT) {
 
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             output.putInt32((int) Math.abs(inputs.get(0).getInt32()));
         }
     };
     public static final TScalar DECIMAL = new Abs(MNumeric.DECIMAL) {
 
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             BigDecimalWrapper wrapper =
                 MBigDecimal.getWrapper(context, DEC_INDEX)
                 .set(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0)));
@@ -79,7 +79,7 @@ public class MAbs {
     public static final TScalar DOUBLE = new Abs(MApproximateNumber.DOUBLE) {
 
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             output.putDouble(Math.abs(inputs.get(0).getDouble()));
         }
     };

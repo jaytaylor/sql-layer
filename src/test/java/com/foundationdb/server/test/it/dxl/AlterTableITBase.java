@@ -27,7 +27,7 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.service.tree.TreeService;
@@ -174,7 +174,7 @@ public class AlterTableITBase extends ITBase {
                  tableName, tableCopy, Arrays.asList(TableChange.createModify(oldColName, newColName)), NO_CHANGES);
     }
 
-    protected RowBase testRow(RowType type, Object... fields) {
+    protected Row testRow(RowType type, Object... fields) {
         return new TestRow(type, fields);
     }
 

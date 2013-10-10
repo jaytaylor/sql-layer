@@ -26,10 +26,9 @@ import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
-import com.foundationdb.server.types.pvalue.PValueTargets;
+import com.foundationdb.server.types.value.*;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
 
 public class MSum extends TFixedTypeAggregator {
 
@@ -38,7 +37,7 @@ public class MSum extends TFixedTypeAggregator {
     private enum SumType {
         BIGINT(MNumeric.BIGINT) {
             @Override
-            void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
+            void input(TInstance instance, ValueSource source, TInstance stateType, Value state) {
                 long oldState = source.getInt64();
                 long input = state.getInt64();
                 long sum = oldState + input;
@@ -53,7 +52,7 @@ public class MSum extends TFixedTypeAggregator {
         }, 
         DOUBLE(MApproximateNumber.DOUBLE) {
             @Override
-            void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
+            void input(TInstance instance, ValueSource source, TInstance stateType, Value state) {
                 double oldState = source.getDouble();
                 double input = state.getDouble();
                 double sum = oldState + input;
@@ -66,14 +65,14 @@ public class MSum extends TFixedTypeAggregator {
         },
         DECIMAL(MNumeric.DECIMAL) {
             @Override
-            void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
+            void input(TInstance instance, ValueSource source, TInstance stateType, Value state) {
                 BigDecimalWrapper oldState = MBigDecimal.getWrapper(source, instance);
                 BigDecimalWrapper input = MBigDecimal.getWrapper(state, instance);
                 state.putObject(oldState.add(input));
             }
         }
         ;
-        abstract void input(TInstance instance, PValueSource source, TInstance stateType, PValue state);
+        abstract void input(TInstance instance, ValueSource source, TInstance stateType, Value state);
         private final TClass typeClass;
         
         private SumType(TClass typeClass) {
@@ -93,17 +92,17 @@ public class MSum extends TFixedTypeAggregator {
     }
     
     @Override
-    public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, Object o) {
+    public void input(TInstance instance, ValueSource source, TInstance stateType, Value state, Object o) {
             if (source.isNull())
                 return;
         if (!state.hasAnyValue())
-            PValueTargets.copyFrom(source, state);
+            ValueTargets.copyFrom(source, state);
         else
             sumType.input(instance, source, stateType, state);
     }
 
     @Override
-    public void emptyValue(PValueTarget state) {
+    public void emptyValue(ValueTarget state) {
         state.putNull();
     }
 }

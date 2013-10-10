@@ -18,8 +18,8 @@
 package com.foundationdb.server.types.common.funcs;
 
 import com.foundationdb.server.types.*;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 
@@ -37,7 +37,7 @@ public class TPow extends TScalarBase {
     }
         
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
         double a0 = inputs.get(0).getDouble();
         double a1 = inputs.get(1).getDouble();
         output.putDouble(Math.pow(a0, a1));

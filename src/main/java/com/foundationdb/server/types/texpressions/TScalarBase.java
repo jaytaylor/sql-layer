@@ -28,10 +28,9 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TPreptimeContext;
 import com.foundationdb.server.types.TPreptimeValue;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueSources;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.*;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
 import com.google.common.base.Predicate;
 
 import java.util.ArrayList;
@@ -57,7 +56,7 @@ public abstract class TScalarBase implements TScalar {
     }
 
     @Override
-    public void evaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+    public void evaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
         for (int i = 0; i < inputs.size(); ++i) {
             if (nullContaminates(i) && inputs.get(i).isNull()) {
                 output.putNull();
@@ -118,11 +117,11 @@ public abstract class TScalarBase implements TScalar {
         }
         for (int i = 0; i < inputs.size(); ++i) {
             if (nullContaminates(i)) {
-                PValueSource constSource = constSource(inputs, i);
+                ValueSource constSource = constSource(inputs, i);
                 if ((constSource != null) && constSource.isNull()) {
                     // Const null source on contaminating operand. Result is null.
                     return new TPreptimeValue(context.getOutputType(), 
-                                              PValueSources.getNullSource(context.getOutputType()));
+                                              ValueSources.getNullSource(context.getOutputType()));
                 }
             }
         }
@@ -142,11 +141,11 @@ public abstract class TScalarBase implements TScalar {
         finishPreptimePhase(context);
 
         TExecutionContext execContext = context.createExecutionContext();
-        LazyList<PValueSource> inputValues = new LazyListBase<PValueSource>() {
+        LazyList<ValueSource> inputValues = new LazyListBase<ValueSource>() {
             @Override
-            public PValueSource get(int i) {
+            public ValueSource get(int i) {
                 TPreptimeValue ptValue = inputs.get(i);
-                PValueSource source = ptValue.value();
+                ValueSource source = ptValue.value();
                 assert allowNonConstsInEvaluation() || source != null
                         : "non-constant value where constant value expected";
                 return source;
@@ -157,7 +156,7 @@ public abstract class TScalarBase implements TScalar {
                 return inputs.size();
             }
         };
-        PValue outputValue = new PValue(execContext.outputTInstance());
+        Value outputValue = new Value(execContext.outputTInstance());
         evaluate(execContext, inputValues, outputValue);
         return new TPreptimeValue(execContext.outputTInstance(), outputValue);
     }
@@ -167,7 +166,7 @@ public abstract class TScalarBase implements TScalar {
         return new int[1];
     }
 
-    protected static PValueSource constSource(LazyList<? extends TPreptimeValue> inputs, int index) {
+    protected static ValueSource constSource(LazyList<? extends TPreptimeValue> inputs, int index) {
         TPreptimeValue tpv = inputs.get(index);
         return tpv == null ? null : tpv.value();
     }
@@ -179,8 +178,8 @@ public abstract class TScalarBase implements TScalar {
     protected abstract void buildInputSets(TInputSetBuilder builder);
 
     protected abstract void doEvaluate(TExecutionContext context,
-                                       LazyList<? extends PValueSource> inputs,
-                                       PValueTarget output);
+                                       LazyList<? extends ValueSource> inputs,
+                                       ValueTarget output);
 
     protected boolean constnessMatters(int inputIndex) {
         return true;
@@ -189,8 +188,8 @@ public abstract class TScalarBase implements TScalar {
     /**
      * <p>Determines this expression's constness given information about its input's prepare-time value. If the
      * prepare-time value is known (ie, is a constant), preptimeValue will contain that value. Otherwise, preptimeValue
-     * will be <tt>null</tt>. Note that the reference itself will be null, <em>not</em> a reference to a PValueSource
-     * whose {@link PValueSource#isNull()} returns <tt>true</tt>. A non-null PValueSource which <tt>isNull</tt> means 
+     * will be <tt>null</tt>. Note that the reference itself will be null, <em>not</em> a reference to a ValueSource
+     * whose {@link com.foundationdb.server.types.value.ValueSource#isNull()} returns <tt>true</tt>. A non-null ValueSource which <tt>isNull</tt> means
      * a prepare-time constant value of <tt>NULL</tt>.</p>
      * 
      * <p>The default is to return {@linkplain Constantness#NOT_CONST} as soon as a non-const value is seen, and

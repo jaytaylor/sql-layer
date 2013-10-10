@@ -1,4 +1,4 @@
-# Test bug 1079876 on PValueSource comparisons and copying
+# Test bug 1079876 on ValueSource comparisons and copying
 
 # original test/schema
 ---

@@ -22,12 +22,12 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.AkibanAppender;
 
 public abstract class AbstractRow implements Row
 {
-    // BoundExpressions interface
+    // ValueRecord interface
 
     /**
      * Compares two rows and indicates if and where they differ.
@@ -42,20 +42,20 @@ public abstract class AbstractRow implements Row
      * this row had the smaller value.
      */
     @Override
-    public int compareTo(RowBase row, int leftStartIndex, int rightStartIndex, int fieldCount)
+    public int compareTo(Row row, int leftStartIndex, int rightStartIndex, int fieldCount)
     {
         for (int i = 0; i < fieldCount; i++) {
             TInstance leftType = rowType().typeInstanceAt(leftStartIndex + i);
-            PValueSource leftValue = pvalue(leftStartIndex + i);
+            ValueSource leftValue = value(leftStartIndex + i);
             TInstance rightType = ((Row)row).rowType().typeInstanceAt(rightStartIndex + i);
-            PValueSource rightValue = row.pvalue(rightStartIndex + i);
+            ValueSource rightValue = row.value(rightStartIndex + i);
             int c = TClass.compare(leftType, leftValue, rightType, rightValue);
             if (c != 0) return (c < 0) ? -(i + 1) : (i + 1);
         }
         return 0;
     }
 
-    // RowBase interface
+    // Row interface
 
     @Override
     public abstract RowType rowType();
@@ -64,7 +64,7 @@ public abstract class AbstractRow implements Row
     public abstract HKey hKey();
 
     @Override
-    public abstract PValueSource pvalue(int i);
+    public abstract ValueSource value(int i);
     
     @Override
     public HKey ancestorHKey(UserTable table)
@@ -73,7 +73,7 @@ public abstract class AbstractRow implements Row
     }
 
     @Override
-    public final boolean ancestorOf(RowBase that)
+    public final boolean ancestorOf(Row that)
     {
         return this.hKey().prefixOf(that.hKey());
     }
@@ -90,31 +90,6 @@ public abstract class AbstractRow implements Row
         return rowType() == subRowType ? this : null;
     }
 
-    // Shareable interface
-
-    @Override
-    public void acquire()
-    {
-        assert references >= 0 : this;
-        beforeAcquire();
-        references++;
-    }
-
-    @Override
-    public boolean isShared()
-    {
-        assert references >= 0 : this;
-        return references > 1;
-    }
-
-    @Override
-    public void release()
-    {
-        assert references > 0 : this;
-        --references;
-        afterRelease();
-    }
-
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
@@ -124,11 +99,11 @@ public abstract class AbstractRow implements Row
         AkibanAppender appender = AkibanAppender.of(builder);
         for (int i=0; i < fieldsCount; ++i) {
             if (rowType.typeInstanceAt(i) == null) {
-                assert pvalue(i).isNull();
+                assert value(i).isNull();
                 builder.append("NULL");
             }
             else {
-                rowType.typeInstanceAt(i).format(pvalue(i), appender);
+                rowType.typeInstanceAt(i).format(value(i), appender);
             }
             if(i+1 < fieldsCount) {
                 builder.append(',').append(' ');
@@ -142,11 +117,5 @@ public abstract class AbstractRow implements Row
         throw new UnsupportedOperationException();
     }
 
-    // for use by subclasses
-    protected void afterRelease() {}
-    protected void beforeAcquire() {}
-
     // Object state
-
-    private int references = 0;
 }

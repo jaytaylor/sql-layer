@@ -22,12 +22,10 @@ import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.*;
 import com.foundationdb.qp.persistitadapter.indexcursor.IterationHelper;
 import com.foundationdb.qp.persistitadapter.indexcursor.MergeJoinSorter;
-import com.foundationdb.qp.persistitadapter.indexcursor.PersistitSorter;
 import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRowPool;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -155,7 +153,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
     }
 
     @Override
-    public <S> RowData rowData(RowDef rowDef, RowBase row, RowDataCreator<S> creator) {
+    public <S> RowData rowData(RowDef rowDef, Row row, RowDataCreator<S> creator) {
         if(row instanceof PersistitGroupRow) {
             return ((PersistitGroupRow)row).rowData();
         }
@@ -175,7 +173,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
     }
 
     private RowDataCreator<?> rowDataCreator() {
-        return new PValueRowDataCreator();
+        return new ValueRowDataCreator();
     }
 
     public PersistitGroupRow newGroupRow()
@@ -192,7 +190,6 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
     @Override
     public void returnIndexRow(PersistitIndexRow indexRow)
     {
-        assert !indexRow.isShared();
         indexRowPool.returnIndexRow(this, indexRow.rowType(), indexRow);
     }
 

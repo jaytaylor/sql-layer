@@ -27,8 +27,8 @@ import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes.StringType;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 import com.foundationdb.sql.parser.TernaryOperatorNode;
@@ -63,7 +63,7 @@ public class MTimestampDiff extends TScalarBase
         DATE(MDatetimes.DATE)
         {
             @Override
-            long[] getYMD(PValueSource source, TExecutionContext context)
+            long[] getYMD(ValueSource source, TExecutionContext context)
             {
                 int date = source.getInt32();
                 long ymd[] = MDatetimes.decodeDate(date);
@@ -81,7 +81,7 @@ public class MTimestampDiff extends TScalarBase
         DATETIME(MDatetimes.DATETIME)
         {
             @Override
-            long[] getYMD(PValueSource source, TExecutionContext context)
+            long[] getYMD(ValueSource source, TExecutionContext context)
             {
                 long datetime = source.getInt64();
                 long ymd[] = MDatetimes.decodeDate(datetime);
@@ -99,7 +99,7 @@ public class MTimestampDiff extends TScalarBase
         TIMESTAMP(MDatetimes.TIMESTAMP)
         {
             @Override
-            long [] getYMD(PValueSource source, TExecutionContext context)
+            long [] getYMD(ValueSource source, TExecutionContext context)
             {
                 return MDatetimes.decodeTimestamp(source.getInt32(), "UTC"/*context.getCurrentTimezone()*/);
             }
@@ -107,7 +107,7 @@ public class MTimestampDiff extends TScalarBase
             // override this because TIMESTAMP type doesn't need to go thru the decoding process
             // just return whatever is passed in
             @Override
-            Long getUnix(PValueSource source, TExecutionContext context)
+            Long getUnix(ValueSource source, TExecutionContext context)
             {
                 return source.getInt32() * 1000L; // unix
             }
@@ -115,7 +115,7 @@ public class MTimestampDiff extends TScalarBase
         VARCHAR(MString.VARCHAR)
         {
             @Override
-            long [] getYMD(PValueSource source, TExecutionContext context)
+            long [] getYMD(ValueSource source, TExecutionContext context)
             {
                 long ymd[] = new long[6];
                 InvalidDateFormatException error;
@@ -141,9 +141,9 @@ public class MTimestampDiff extends TScalarBase
         }
         ;
         
-        abstract long[] getYMD(PValueSource source, TExecutionContext context);
+        abstract long[] getYMD(ValueSource source, TExecutionContext context);
         
-        Long getUnix(PValueSource source, TExecutionContext context)
+        Long getUnix(ValueSource source, TExecutionContext context)
         {
             long ymd[] = getYMD(source, context);
 
@@ -176,12 +176,12 @@ public class MTimestampDiff extends TScalarBase
     }
     
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
         int unit = inputs.get(0).getInt32();
         
-        PValueSource date1 = inputs.get(1);
-        PValueSource date2 = inputs.get(2);
+        ValueSource date1 = inputs.get(1);
+        ValueSource date2 = inputs.get(2);
         
         switch(unit)
         {
@@ -239,7 +239,7 @@ public class MTimestampDiff extends TScalarBase
             MILLIS_DIV[n] = MILLIS_DIV[n + 1] * mul[n];
     }
     
-    private static void doMonthSubtraction (long d1[], long d2[], long divisor, PValueTarget out)
+    private static void doMonthSubtraction (long d1[], long d2[], long divisor, ValueTarget out)
     {
         if (d1 == null || d2 == null)
         {

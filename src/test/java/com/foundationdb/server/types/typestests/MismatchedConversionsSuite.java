@@ -18,8 +18,8 @@
 package com.foundationdb.server.types.typestests;
 
 import com.foundationdb.server.AkType;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.util.WrappingByteSource;
 
 import java.math.BigDecimal;
@@ -154,12 +154,12 @@ public final class MismatchedConversionsSuite {
 
     static class DelegateLinkedConversion implements LinkedConversion<Switcher> {
         @Override
-        public PValueSource linkedSource() {
+        public ValueSource linkedSource() {
             return delegate.linkedSource();
         }
 
         @Override
-        public PValueTarget linkedTarget() {
+        public ValueTarget linkedTarget() {
             return delegate.linkedTarget();
         }
 

@@ -19,18 +19,18 @@ package com.foundationdb.server.types.texpressions;
 
 import com.foundationdb.server.types.TAggregator;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 
 public final class TValidatedAggregator extends TValidatedOverload implements TAggregator {
     @Override
-    public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, Object option) {
+    public void input(TInstance instance, ValueSource source, TInstance stateType, Value state, Object option) {
         aggregator.input(instance, source, stateType, state, option);
     }
 
     @Override
-    public void emptyValue(PValueTarget state) {
+    public void emptyValue(ValueTarget state) {
         aggregator.emptyValue(state);
     }
 

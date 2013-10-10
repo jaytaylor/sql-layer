@@ -26,7 +26,7 @@ import com.persistit.Key;
 
 public abstract class IndexRow extends AbstractRow
 {
-    // RowBase interface
+    // Row interface
 
     public RowType rowType()
     {

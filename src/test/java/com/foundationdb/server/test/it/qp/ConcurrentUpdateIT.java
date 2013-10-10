@@ -32,8 +32,6 @@ import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.util.SequencerConstants;
 import com.foundationdb.server.util.ThreadSequencer;
-import com.persistit.exception.PersistitException;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -115,7 +113,7 @@ public class ConcurrentUpdateIT extends OperatorITBase
             @Override
             public Row evaluate(Row original, QueryContext context, QueryBindings bindings)
             {
-                long ax = original.pvalue(1).getInt64();
+                long ax = original.value(1).getInt64();
                 return new OverlayingRow(original).overlay(1, -ax);
             }
         };
@@ -131,7 +129,7 @@ public class ConcurrentUpdateIT extends OperatorITBase
             @Override
             public Row evaluate(Row original, QueryContext context, QueryBindings bindings)
             {
-                long bx = original.pvalue(1).getInt64();
+                long bx = original.value(1).getInt64();
                 return new OverlayingRow(original).overlay(1, -bx);
             }
         };

@@ -40,8 +40,8 @@ import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.Constantness;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
@@ -96,7 +96,7 @@ public abstract class MArithmetic extends TArithmetic {
     // Add functions
     public static final TScalar ADD_TINYINT = new MArithmetic("plus", "+", true, MNumeric.TINYINT, MNumeric.MEDIUMINT, 5) {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             int a0 = inputs.get(0).getInt8();
             int a1 = inputs.get(1).getInt8();
             output.putInt32(a0 + a1);
@@ -105,7 +105,7 @@ public abstract class MArithmetic extends TArithmetic {
 
     public static final TScalar ADD_SMALLINT = new MArithmetic("plus", "+", true, MNumeric.SMALLINT, MNumeric.MEDIUMINT, 7) {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             int a0 = inputs.get(0).getInt16();
             int a1 = inputs.get(1).getInt16();
             output.putInt32(a0 + a1);
@@ -114,7 +114,7 @@ public abstract class MArithmetic extends TArithmetic {
 
     public static final TScalar ADD_MEDIUMINT = new MArithmetic("plus", "+", true, MNumeric.MEDIUMINT, MNumeric.INT, 9) {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             int a0 = inputs.get(0).getInt32();
             int a1 = inputs.get(1).getInt32();
             output.putInt32(a0 + a1);
@@ -123,7 +123,7 @@ public abstract class MArithmetic extends TArithmetic {
 
     public static final TScalar ADD_INT = new MArithmetic("plus", "+", true, MNumeric.INT, MNumeric.BIGINT, 12) {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             long a0 = inputs.get(0).getInt32();
             long a1 = inputs.get(1).getInt32();
             output.putInt64(a0 + a1);
@@ -132,7 +132,7 @@ public abstract class MArithmetic extends TArithmetic {
 
     public static final TScalar ADD_BIGINT = new MArithmetic("plus", "+", true, MNumeric.BIGINT, MNumeric.BIGINT, 21) {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             long a0 = inputs.get(0).getInt64();
             long a1 = inputs.get(1).getInt64();
             output.putInt64(a0 + a1);
@@ -141,7 +141,7 @@ public abstract class MArithmetic extends TArithmetic {
 
     public static final TScalar ADD_DECIMAL = new DecimalArithmetic("plus", "+", true) {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             output.putObject(MBigDecimal.getWrapper(context, DEC_INDEX)
                         .set(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0)))
                         .add(MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1))));
@@ -156,7 +156,7 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TScalar ADD_DOUBLE = new MArithmetic("plus", "+", true, MApproximateNumber.DOUBLE, MApproximateNumber.DOUBLE)
     {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             output.putDouble(inputs.get(0).getDouble() + inputs.get(1).getDouble());
         }
@@ -165,7 +165,7 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TScalar ADD_DOUBLE_P2 = new MArithmetic("plus", "+", true, MApproximateNumber.DOUBLE, MApproximateNumber.DOUBLE)
     {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             output.putDouble(inputs.get(0).getDouble() + inputs.get(1).getDouble());
         }
@@ -180,7 +180,7 @@ public abstract class MArithmetic extends TArithmetic {
     // Subtract functions
     public static final TScalar SUBTRACT_TINYINT = new MArithmetic("minus", "-", false, MNumeric.TINYINT, MNumeric.INT, 5) {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             int a0 = inputs.get(0).getInt8();
             int a1 = inputs.get(1).getInt8();
             output.putInt32(a0 - a1);
@@ -189,7 +189,7 @@ public abstract class MArithmetic extends TArithmetic {
 
     public static final TScalar SUBTRACT_SMALLINT = new MArithmetic("minus", "-", false, MNumeric.SMALLINT, MNumeric.MEDIUMINT, 7) {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             int a0 = inputs.get(0).getInt16();
             int a1 = inputs.get(1).getInt16();
             output.putInt32(a0 - a1);
@@ -198,7 +198,7 @@ public abstract class MArithmetic extends TArithmetic {
 
     public static final TScalar SUBTRACT_MEDIUMINT = new MArithmetic("minus", "-", false, MNumeric.MEDIUMINT, MNumeric.INT, 9) {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             int a0 = inputs.get(0).getInt32();
             int a1 = inputs.get(1).getInt32();
             output.putInt32(a0 - a1);
@@ -207,7 +207,7 @@ public abstract class MArithmetic extends TArithmetic {
 
     public static final TScalar SUBTRACT_INT = new MArithmetic("minus", "-", false, MNumeric.INT, MNumeric.BIGINT, 12) {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             long a0 = inputs.get(0).getInt32();
             long a1 = inputs.get(1).getInt32();
             output.putInt64(a0 - a1);
@@ -216,7 +216,7 @@ public abstract class MArithmetic extends TArithmetic {
 
     public static final TScalar SUBTRACT_BIGINT = new MArithmetic("minus", "-", false, MNumeric.BIGINT, MNumeric.BIGINT, 21) {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             long a0 = inputs.get(0).getInt64();
             long a1 = inputs.get(1).getInt64();
             output.putInt64(a0 - a1);
@@ -225,7 +225,7 @@ public abstract class MArithmetic extends TArithmetic {
 
     public static final TScalar SUBTRACT_DECIMAL = new DecimalArithmetic("minus", "-", false) {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             output.putObject(MBigDecimal.getWrapper(context, DEC_INDEX)
                         .set(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0)))
                         .subtract(MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1))));
@@ -240,7 +240,7 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TScalar SUBSTRACT_DOUBLE = new MArithmetic("minus", "-", true, MApproximateNumber.DOUBLE, MApproximateNumber.DOUBLE)
     {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             output.putDouble(inputs.get(0).getDouble() - inputs.get(1).getDouble());
         }
@@ -249,7 +249,7 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TScalar SUBSTRACT_DOUBLE_P2 = new MArithmetic("minus", "-", true, MApproximateNumber.DOUBLE, MApproximateNumber.DOUBLE)
     {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             output.putDouble(inputs.get(0).getDouble() - inputs.get(1).getDouble());
         }
@@ -265,7 +265,7 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TScalar DIVIDE_TINYINT = new MArithmetic("divide", "/", false, MNumeric.TINYINT, MApproximateNumber.DOUBLE)
     {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             int divisor = inputs.get(1).getInt8();
             if (divisor == 0)
@@ -278,7 +278,7 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TScalar DIVIDE_SMALLINT = new MArithmetic("divide", "/", false, MNumeric.SMALLINT, MApproximateNumber.DOUBLE)
     {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             int divisor = inputs.get(1).getInt16();
             if (divisor == 0)
@@ -291,7 +291,7 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TScalar DIVIDE_INT = new MArithmetic("divide", "/", false, MNumeric.INT, MApproximateNumber.DOUBLE)
     {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             int divisor = inputs.get(1).getInt32();
             if (divisor == 0L)
@@ -304,7 +304,7 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TScalar DIVIDE_BIGINT = new MArithmetic("divide", "/", false, MNumeric.BIGINT, MApproximateNumber.DOUBLE)
     {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             long divisor = inputs.get(1).getInt64();
             if (divisor == 0L)
@@ -317,7 +317,7 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TScalar DIVIDE_DOUBLE = new MArithmetic("divide", "/", false, MApproximateNumber.DOUBLE, MApproximateNumber.DOUBLE)
     {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             double divisor = inputs.get(1).getDouble();
             if (Double.compare(divisor, 0) == 0)
@@ -330,7 +330,7 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TScalar DIVIDE_DOUBLE_P2 = new MArithmetic("divide", "/", false, MApproximateNumber.DOUBLE, MApproximateNumber.DOUBLE)
     {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             double divisor = inputs.get(1).getDouble();
             if (Double.compare(divisor, 0) == 0)
@@ -348,7 +348,7 @@ public abstract class MArithmetic extends TArithmetic {
     
     public static final TScalar DIVIDE_DECIMAL = new DecimalArithmetic("divide", "/", false) {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             BigDecimalWrapper divisor = MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1));
 
@@ -385,7 +385,7 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TScalar DIV_TINYINT = new MArithmetic("div", "div", false, MNumeric.TINYINT, MNumeric.INT, 4)
     {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             int divisor = inputs.get(1).getInt8();
             if (divisor == 0)
@@ -399,7 +399,7 @@ public abstract class MArithmetic extends TArithmetic {
     {
 
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             int divisor = inputs.get(1).getInt16();
             if (divisor == 0)
@@ -412,7 +412,7 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TScalar DIV_MEDIUMINT = new MArithmetic("div", "div", false, MNumeric.MEDIUMINT, MNumeric.INT, 9)
     {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             int divisor = inputs.get(1).getInt32();
             if (divisor == 0)
@@ -425,7 +425,7 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TScalar DIV_INT =new MArithmetic("div", "div", false, MNumeric.INT, MNumeric.INT, 11)
     {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             int divisor = inputs.get(1).getInt32();
             if (divisor == 0)
@@ -438,7 +438,7 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TScalar DIV_BIGINT = new MArithmetic("div", "div", false, MNumeric.BIGINT, MNumeric.BIGINT, 20)
     {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             long divisor = inputs.get(1).getInt64();
             if (divisor == 0L)
@@ -451,7 +451,7 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TScalar DIV_DOUBLE = new MArithmetic("div", "div", false, MApproximateNumber.DOUBLE, MNumeric.BIGINT, 22)
     {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             double divisor = inputs.get(1).getDouble();
             if (Double.compare(divisor, 0) == 0)
@@ -464,7 +464,7 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TScalar DIV_DOUBLE_P2 = new MArithmetic("div", "div", false, MApproximateNumber.DOUBLE, MNumeric.BIGINT, 22)
     {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             double divisor = inputs.get(1).getDouble();
             if (Double.compare(divisor, 0) == 0)
@@ -483,8 +483,8 @@ public abstract class MArithmetic extends TArithmetic {
     //(String overloadName, String infix, boolean associative, TClass inputType, TInstance resultType)
     public static final TScalar DIV_DECIMAL = new MArithmetic("div", "div", false, MNumeric.DECIMAL, null) {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
-                                  PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs,
+                                  ValueTarget output) {
             BigDecimalWrapper wrapper = MBigDecimal.getWrapper(context, DEC_INDEX);
             BigDecimalWrapper numerator = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0));
             BigDecimalWrapper divisor = MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1));
@@ -518,7 +518,7 @@ public abstract class MArithmetic extends TArithmetic {
     // Multiply functions
     public static final TScalar MULTIPLY_TINYINT = new MArithmetic("times", "*", true, MNumeric.TINYINT, MNumeric.INT, 7) {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             int a0 = inputs.get(0).getInt8();
             int a1 = inputs.get(1).getInt8();
             output.putInt32(a0 * a1);
@@ -527,7 +527,7 @@ public abstract class MArithmetic extends TArithmetic {
 
     public static final TScalar MULTIPLY_SMALLINT = new MArithmetic("times", "*", true, MNumeric.SMALLINT, MNumeric.INT, 11) {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             int a0 = inputs.get(0).getInt16();
             int a1 = inputs.get(1).getInt16();
             output.putInt32(a0 * a1);
@@ -536,7 +536,7 @@ public abstract class MArithmetic extends TArithmetic {
 
     public static final TScalar MULTIPLY_MEDIUMINT = new MArithmetic("times", "*", true, MNumeric.MEDIUMINT, MNumeric.BIGINT, 15) {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             long a0 = inputs.get(0).getInt32();
             long a1 = inputs.get(1).getInt32();
             output.putInt64(a0 * a1);
@@ -545,7 +545,7 @@ public abstract class MArithmetic extends TArithmetic {
 
     public static final TScalar MULTIPLY_INT = new MArithmetic("times", "*", true, MNumeric.INT, MNumeric.BIGINT, 21) {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             long a0 = inputs.get(0).getInt32();
             long a1 = inputs.get(1).getInt32();
             output.putInt64(a0 * a1);
@@ -554,7 +554,7 @@ public abstract class MArithmetic extends TArithmetic {
 
     public static final TScalar MULTIPLY_BIGINT = new MArithmetic("times", "*", true, MNumeric.BIGINT, MNumeric.BIGINT, 39) {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             long a0 = inputs.get(0).getInt64();
             long a1 = inputs.get(1).getInt64();
             output.putInt64(a0 * a1);
@@ -563,8 +563,8 @@ public abstract class MArithmetic extends TArithmetic {
 
     public static final TScalar MULTIPLY_DOUBLE = new MArithmetic("times", "*", true, MApproximateNumber.DOUBLE, MApproximateNumber.DOUBLE) {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
-                                  PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs,
+                                  ValueTarget output) {
             double result = inputs.get(0).getDouble() * inputs.get(1).getDouble();
             if (!Doubles.isFinite(result))
                 output.putNull();
@@ -590,7 +590,7 @@ public abstract class MArithmetic extends TArithmetic {
         }
 
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             BigDecimalWrapper wrapper = MBigDecimal.getWrapper(context, DEC_INDEX);
             BigDecimalWrapper arg0 = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0));
@@ -604,7 +604,7 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TScalar MOD_TINYTINT = new MArithmetic("mod", "mod", false, MNumeric.TINYINT, MNumeric.INT, 4)
     {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             int right = inputs.get(1).getInt8();
             if (right == 0)
@@ -617,7 +617,7 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TScalar MOD_SMALLINT = new MArithmetic("mod", "mod", false, MNumeric.SMALLINT, MNumeric.INT, 6)
     {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             int right = inputs.get(1).getInt16();
             if (right == 0)
@@ -630,7 +630,7 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TScalar MOD_MEDIUMINT = new MArithmetic("mod", "mod", false, MNumeric.MEDIUMINT, MNumeric.INT, 9)
     {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             int right = inputs.get(1).getInt32();
             if (right == 0)
@@ -643,7 +643,7 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TScalar MOD_INT = new MArithmetic("mod", "mod", false, MNumeric.INT, MNumeric.INT, 11)
     {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             int right = inputs.get(1).getInt32();
             if (right == 0)
@@ -656,7 +656,7 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TScalar MOD_BIGINT = new MArithmetic("mod", "mod", false, MNumeric.BIGINT, MNumeric.BIGINT, 20)
     {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             long right = inputs.get(1).getInt64();
             if (right == 0L)
@@ -669,7 +669,7 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TScalar MOD_DOUBLE = new MArithmetic("mod", "mod", false, MApproximateNumber.DOUBLE, MApproximateNumber.DOUBLE)
     {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             double right = inputs.get(1).getDouble();
             if (Double.compare(right, 0) == 0)
@@ -682,7 +682,7 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TScalar MOD_DOUBLE_P2 = new MArithmetic("mod", "mod", false, MApproximateNumber.DOUBLE, MApproximateNumber.DOUBLE)
     {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             double right = inputs.get(1).getDouble();
             if (Double.compare(right, 0) == 0)
@@ -708,7 +708,7 @@ public abstract class MArithmetic extends TArithmetic {
         }
 
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {            
              BigDecimalWrapper divisor = MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1));
 
@@ -791,8 +791,8 @@ public abstract class MArithmetic extends TArithmetic {
         }
         
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
-                                  PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs,
+                                  ValueTarget output) {
             if (warningErr != null)
                 context.warnClient(warningErr);
             output.putNull();
@@ -911,8 +911,8 @@ public abstract class MArithmetic extends TArithmetic {
         }
         
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
-                                  PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs,
+                                  ValueTarget output)
         {
             throw error;
         }
@@ -922,7 +922,7 @@ public abstract class MArithmetic extends TArithmetic {
         DIV("div") // integer division
         {
             @Override
-            long doMath(LazyList<? extends PValueSource> inputs, int pos0, int pos1)
+            long doMath(LazyList<? extends ValueSource> inputs, int pos0, int pos1)
             {
                 assert pos0 == 0 && pos1 == 1 : "ONLY <INTERVAL> / <NUMERIC> is supported";
 
@@ -932,7 +932,7 @@ public abstract class MArithmetic extends TArithmetic {
         MULT("times")
         {
             @Override
-            long doMath(LazyList<? extends PValueSource> inputs, int pos0, int pos1)
+            long doMath(LazyList<? extends ValueSource> inputs, int pos0, int pos1)
             {
                 return Math.round(inputs.get(pos0).getInt64()
                                     * inputs.get(pos1).getDouble());
@@ -941,7 +941,7 @@ public abstract class MArithmetic extends TArithmetic {
         DIVIDE("divide")
         {
             @Override
-            long doMath(LazyList<? extends PValueSource> inputs, int pos0, int pos1)
+            long doMath(LazyList<? extends ValueSource> inputs, int pos0, int pos1)
             {
                 assert pos0 == 0 && pos1 == 1 : "ONLY <INTERVAL> / <NUMERIC> is supported";
 
@@ -952,7 +952,7 @@ public abstract class MArithmetic extends TArithmetic {
         ADD("plus")
         {
             @Override
-            long doMath(LazyList<? extends PValueSource> inputs, int pos0, int pos1)
+            long doMath(LazyList<? extends ValueSource> inputs, int pos0, int pos1)
             {
                 return inputs.get(0).getInt64() + inputs.get(1).getInt64();
             }
@@ -960,7 +960,7 @@ public abstract class MArithmetic extends TArithmetic {
         MINUS("minus")
         {
             @Override
-            long doMath(LazyList<? extends PValueSource> inputs, int pos0, int pos1)
+            long doMath(LazyList<? extends ValueSource> inputs, int pos0, int pos1)
             {
                 return inputs.get(0).getInt64() - inputs.get(1).getInt64();
             }
@@ -973,7 +973,7 @@ public abstract class MArithmetic extends TArithmetic {
         }
         
         final String name;
-        abstract long doMath(LazyList<? extends PValueSource> inputs, int pos0, int pos1);
+        abstract long doMath(LazyList<? extends ValueSource> inputs, int pos0, int pos1);
     }
 
     static class IntervalArith extends TScalarBase
@@ -1002,7 +1002,7 @@ public abstract class MArithmetic extends TArithmetic {
         }
 
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             output.putInt64(op.doMath(inputs, pos0, pos1));
         }

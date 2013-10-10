@@ -17,12 +17,12 @@
 
 package com.foundationdb.qp.persistitadapter;
 
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.rowdata.FieldDef;
 
 public interface RowDataCreator<S> {
-    S eval(RowBase row, int f);
+    S eval(Row row, int f);
     boolean isNull(S source);
     void put(S source, NewRow into, FieldDef fieldDef, int f);
 }

@@ -25,7 +25,7 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.persistitadapter.PersistitAdapter;
 import com.foundationdb.qp.persistitadapter.PersistitGroupRow;
 import com.foundationdb.qp.persistitadapter.PersistitRowLimit;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -110,12 +110,12 @@ public class QPProfilePTBase extends PTBase
         };
     }
 
-    protected RowBase row(RowType rowType, Object... fields)
+    protected Row row(RowType rowType, Object... fields)
     {
         return new TestRow(rowType, fields);
     }
 
-    protected RowBase row(int tableId, Object... values /* alternating field position and value */)
+    protected Row row(int tableId, Object... values /* alternating field position and value */)
     {
         NewRow niceRow = createNewRow(tableId);
         int i = 0;
@@ -133,8 +133,8 @@ public class QPProfilePTBase extends PTBase
         try {
             cursor.openTopLevel();
             count = 0;
-            List<RowBase> actualRows = new ArrayList<>(); // So that result is viewable in debugger
-            RowBase actualRow;
+            List<Row> actualRows = new ArrayList<>(); // So that result is viewable in debugger
+            Row actualRow;
             while ((actualRow = cursor.next()) != null) {
                 assertEquals(expected[count], actualRow.hKey().toString());
                 count++;

@@ -17,7 +17,7 @@
 
 package com.foundationdb.qp.operator;
 
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 
 public final class NoLimit implements Limit {
 
@@ -32,7 +32,7 @@ public final class NoLimit implements Limit {
     }
 
     @Override
-    public boolean limitReached(RowBase row) {
+    public boolean limitReached(Row row) {
         return false;
     }
 

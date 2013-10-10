@@ -26,8 +26,8 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TParser;
 import com.foundationdb.server.types.aksql.AkBundle;
 import com.foundationdb.server.types.aksql.AkCategory;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.util.AkibanAppender;
@@ -55,24 +55,24 @@ public class AkResultSet extends TClassBase {
 
     private static final TClassFormatter NO_FORMATTER = new TClassFormatter() {
             @Override
-            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void format(TInstance instance, ValueSource source, AkibanAppender out) {
                 throw new UnsupportedOperationException();
             }
 
             @Override
-            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void formatAsLiteral(TInstance instance, ValueSource source, AkibanAppender out) {
                 throw new UnsupportedOperationException();
             }
 
             @Override
-            public void formatAsJson(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void formatAsJson(TInstance instance, ValueSource source, AkibanAppender out) {
                 throw new UnsupportedOperationException();
             }
         };
 
     private static final TParser NO_PARSER = new TParser() {
             @Override
-            public void parse(TExecutionContext context, PValueSource in, PValueTarget out) {
+            public void parse(TExecutionContext context, ValueSource in, ValueTarget out) {
                 throw new UnsupportedOperationException();
             }
         };
@@ -91,7 +91,7 @@ public class AkResultSet extends TClassBase {
               1,
               1,
               0,
-              null, // PUnderlying.XXX
+              null, // UnderlyingType.XXX
               NO_PARSER,
               -1);
     }

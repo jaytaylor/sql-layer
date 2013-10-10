@@ -23,9 +23,9 @@ import com.foundationdb.server.explain.*;
 import com.foundationdb.server.explain.std.TExpressionExplainer;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
-import com.foundationdb.server.types.pvalue.PValueTargets;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
+import com.foundationdb.server.types.value.ValueTargets;
 
 public final class TPreparedField implements TPreparedExpression {
     
@@ -69,9 +69,9 @@ public final class TPreparedField implements TPreparedExpression {
     
     private static class Evaluation extends ContextualEvaluation<Row> {
         @Override
-        protected void evaluate(Row context, PValueTarget target) {
-            PValueSource rowSource = context.pvalue(fieldIndex);
-            PValueTargets.copyFrom(rowSource, target);
+        protected void evaluate(Row context, ValueTarget target) {
+            ValueSource rowSource = context.value(fieldIndex);
+            ValueTargets.copyFrom(rowSource, target);
         }
 
         @Override

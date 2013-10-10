@@ -23,8 +23,8 @@ import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 
 public final class Cast_From_Text {
 
@@ -71,7 +71,7 @@ public final class Cast_From_Text {
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
             String in = source.getString();
             int maxLen = (fixedLength >= 0)
                     ? fixedLength

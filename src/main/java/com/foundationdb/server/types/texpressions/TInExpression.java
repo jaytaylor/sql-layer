@@ -25,8 +25,8 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TKeyComparable;
 import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -75,8 +75,8 @@ public final class TInExpression {
     }
     
     static abstract class InScalarBase extends TScalarBase {
-        protected abstract int doCompare(TInstance lhsInstance, PValueSource lhsSource,
-                                         TInstance rhsInstance, PValueSource rhsSource);
+        protected abstract int doCompare(TInstance lhsInstance, ValueSource lhsSource,
+                                         TInstance rhsInstance, ValueSource rhsSource);
 
         @Override
         protected void buildInputSets(TInputSetBuilder builder) {
@@ -84,12 +84,12 @@ public final class TInExpression {
         }
 
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
             TInstance lhsInstance = context.inputTInstanceAt(0);
-            PValueSource lhsSource = inputs.get(0);
+            ValueSource lhsSource = inputs.get(0);
             for (int i=1, nInputs = inputs.size(); i < nInputs; ++i) {
                 TInstance rhsInstance = context.inputTInstanceAt(i);
-                PValueSource rhsSource = inputs.get(i);
+                ValueSource rhsSource = inputs.get(i);
                 if (0 == doCompare(lhsInstance, lhsSource, rhsInstance, rhsSource)) {
                     output.putBool(true);
                     return;
@@ -116,8 +116,8 @@ public final class TInExpression {
 
     private static final TValidatedScalar noKey = new TValidatedScalar(new InScalarBase() {
         @Override
-        protected int doCompare(TInstance lhsInstance, PValueSource lhsSource,
-                                TInstance rhsInstance, PValueSource rhsSource) {
+        protected int doCompare(TInstance lhsInstance, ValueSource lhsSource,
+                                TInstance rhsInstance, ValueSource rhsSource) {
             return TClass.compare(lhsInstance, lhsSource, rhsInstance, rhsSource);
         }
     });
@@ -130,8 +130,8 @@ public final class TInExpression {
         }
         
         @Override
-        protected int doCompare(TInstance lhsInstance, PValueSource lhsSource,
-                                TInstance rhsInstance, PValueSource rhsSource) {
+        protected int doCompare(TInstance lhsInstance, ValueSource lhsSource,
+                                TInstance rhsInstance, ValueSource rhsSource) {
             return comparison.compare(lhsInstance, lhsSource, rhsInstance, rhsSource);
         }
     }
@@ -142,8 +142,8 @@ public final class TInExpression {
         }
         
         @Override
-        protected int doCompare(TInstance lhsInstance, PValueSource lhsSource,
-                                TInstance rhsInstance, PValueSource rhsSource) {
+        protected int doCompare(TInstance lhsInstance, ValueSource lhsSource,
+                                TInstance rhsInstance, ValueSource rhsSource) {
             return comparison.compare(rhsInstance, rhsSource, lhsInstance, lhsSource);
         }
     }

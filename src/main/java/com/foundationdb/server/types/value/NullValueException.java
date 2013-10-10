@@ -15,10 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.util;
+package com.foundationdb.server.types.value;
 
-public interface Shareable {
-    void acquire();
-    boolean isShared();
-    void release();
+public final class NullValueException extends RuntimeException {
 }

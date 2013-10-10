@@ -19,7 +19,7 @@ package com.foundationdb.server.test.it.qp;
 
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.AisRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -83,7 +83,7 @@ public class FilterIT extends OperatorITBase
     {
         Operator plan = filter_Default(groupScan_Default(coi), removeDescendentTypes(customerRowType));
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 1L, "northbridge"),
             row(customerRowType, 2L, "foundation")
         };
@@ -95,7 +95,7 @@ public class FilterIT extends OperatorITBase
     {
         Operator plan = filter_Default(groupScan_Default(coi), removeDescendentTypes(orderRowType));
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 1L, "northbridge"),
             row(orderRowType, 11L, 1L, "ori"),
             row(orderRowType, 12L, 1L, "david"),
@@ -115,7 +115,7 @@ public class FilterIT extends OperatorITBase
     {
         Operator plan = filter_Default(groupScan_Default(coi), removeDescendentTypes(itemRowType));
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 1L, "northbridge"),
             row(orderRowType, 11L, 1L, "ori"),
             row(itemRowType, 111L, 11L),
@@ -143,7 +143,7 @@ public class FilterIT extends OperatorITBase
     {
         Operator plan = filter_Default(groupScan_Default(coi), removeDescendentTypes(addressRowType));
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 1L, "northbridge"),
             row(orderRowType, 11L, 1L, "ori"),
             row(itemRowType, 111L, 11L),
@@ -173,7 +173,7 @@ public class FilterIT extends OperatorITBase
     {
         Operator plan = filter_Default(groupScan_Default(coi), typeAndDescendents(customerRowType));
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 1L, "northbridge"),
             row(orderRowType, 11L, 1L, "ori"),
             row(itemRowType, 111L, 11L),
@@ -201,7 +201,7 @@ public class FilterIT extends OperatorITBase
     {
         Operator plan = filter_Default(groupScan_Default(coi), typeAndDescendents(itemRowType));
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(itemRowType, 111L, 11L),
             row(itemRowType, 112L, 11L),
             row(itemRowType, 121L, 12L),
@@ -222,7 +222,7 @@ public class FilterIT extends OperatorITBase
         keepTypes.addAll(typeAndDescendents(orderRowType));
         Operator plan = filter_Default(groupScan_Default(coi), keepTypes);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(orderRowType, 11L, 1L, "ori"),
             row(itemRowType, 111L, 11L),
             row(itemRowType, 112L, 11L),

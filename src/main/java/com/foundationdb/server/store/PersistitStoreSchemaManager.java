@@ -21,7 +21,6 @@ import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Columnar;
 import com.foundationdb.ais.model.DefaultNameGenerator;
-import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.SQLJJar;
@@ -39,7 +38,7 @@ import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.memoryadapter.MemoryGroupCursor;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
-import com.foundationdb.qp.row.PValuesRow;
+import com.foundationdb.qp.row.ValuesRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.PersistitAccumulatorTableStatusCache;
@@ -978,7 +977,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
                     return null;
                 }
                 AISAndTimestamp latest = latestAISCache;
-                return new PValuesRow(rowType,
+                return new ValuesRow(rowType,
                                      aisCacheMissCount.get(),
                                      delayedTreeCount.get(),
                                      (latest == CACHE_SENTINEL) ? null : latest.sAIS.ais.getGeneration(),

@@ -25,8 +25,8 @@ import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 
 import java.math.BigDecimal;
 
@@ -43,14 +43,14 @@ public final class Cast_From_Decimal {
 
     public static final TCast TO_DECIMAL_UNSIGNED = new TCastBase(MNumeric.DECIMAL, MNumeric.DECIMAL_UNSIGNED) {
         @Override
-        protected void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        protected void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
             MBigDecimal.adjustAttrsAsNeeded(context, source, context.outputTInstance(), target);
         }
     };
 
     public static final TCast TO_FLOAT = new TCastBase(MNumeric.DECIMAL, MApproximateNumber.FLOAT) {
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
             BigDecimalWrapper decimal = MBigDecimal.getWrapper(source, context.inputTInstanceAt(0));
             float asFloat = decimal.asBigDecimal().floatValue();
             target.putFloat(asFloat);
@@ -59,7 +59,7 @@ public final class Cast_From_Decimal {
 
     public static final TCast UNSIGNED_TO_FLOAT = new TCastBase(MNumeric.DECIMAL_UNSIGNED, MApproximateNumber.FLOAT) {
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
             BigDecimalWrapper decimal = MBigDecimal.getWrapper(source, context.inputTInstanceAt(0));
             float asFloat = decimal.asBigDecimal().floatValue();
             target.putFloat(asFloat);
@@ -68,7 +68,7 @@ public final class Cast_From_Decimal {
 
     public static final TCast TO_DOUBLE = new TCastBase(MNumeric.DECIMAL, MApproximateNumber.DOUBLE) {
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
             BigDecimalWrapper decimal = MBigDecimal.getWrapper(source, context.inputTInstanceAt(0));
             double asDouble = decimal.asBigDecimal().doubleValue();
             target.putDouble(asDouble);
@@ -77,7 +77,7 @@ public final class Cast_From_Decimal {
 
     public static final TCast TO_BIGINT = new TCastBase(MNumeric.DECIMAL, MNumeric.BIGINT) {
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
             BigDecimalWrapper wrapped = MBigDecimal.getWrapper(source, context.inputTInstanceAt(0));
             BigDecimal bd = wrapped.asBigDecimal();
             int signum = bd.signum();

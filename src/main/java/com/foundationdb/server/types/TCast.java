@@ -17,8 +17,8 @@
 
 package com.foundationdb.server.types;
 
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.Constantness;
 
 public interface TCast {
@@ -27,5 +27,5 @@ public interface TCast {
     public TClass targetClass();
     public TInstance preferredTarget(TPreptimeValue source);
 
-    public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target);
+    public void evaluate(TExecutionContext context, ValueSource source, ValueTarget target);
 }

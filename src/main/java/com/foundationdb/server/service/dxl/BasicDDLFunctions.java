@@ -99,9 +99,9 @@ import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueSources;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.server.types.texpressions.TCastExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.types.texpressions.TPreparedField;
@@ -390,21 +390,21 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             Integer oldPosition = helper.findOldPosition(origTable, newCol);
             TInstance newInst = newCol.tInstance();
             if(oldPosition == null) {
-                final String defaultValue = newCol.getDefaultValue();
-                final PValueSource defaultValueSource;
-                if(defaultValue == null) {
-                    defaultValueSource = PValueSources.getNullSource(newInst);
+                final String defaultString = newCol.getDefaultValue();
+                final ValueSource defaultValueSource;
+                if(defaultString == null) {
+                    defaultValueSource = ValueSources.getNullSource(newInst);
                 } else {
-                    PValue defaultPValue = new PValue(newInst);
-                    TInstance defInstance = MString.VARCHAR.instance(defaultValue.length(), defaultValue == null);
+                    Value defaultValue = new Value(newInst);
+                    TInstance defInstance = MString.VARCHAR.instance(defaultString.length(), defaultString == null);
                     TExecutionContext executionContext = new TExecutionContext(
                             Collections.singletonList(defInstance),
                             newInst,
                             queryContext
                     );
-                    PValue defaultSource = new PValue(MString.varcharFor(defaultValue), defaultValue);
-                    newInst.typeClass().fromObject(executionContext, defaultSource, defaultPValue);
-                    defaultValueSource = defaultPValue;
+                    Value defaultSource = new Value(MString.varcharFor(defaultString), defaultString);
+                    newInst.typeClass().fromObject(executionContext, defaultSource, defaultValue);
+                    defaultValueSource = defaultValue;
                 }
                 pProjections.add(new TPreparedLiteral(newInst, defaultValueSource));
             } else {

@@ -19,28 +19,28 @@ package com.foundationdb.server;
 
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.value.UnderlyingType;
+import com.foundationdb.server.types.value.ValueSource;
 import com.persistit.Key;
 import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.types.pvalue.PUnderlying;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.Value;
 
 import java.util.EnumMap;
 
 import static java.lang.Math.min;
 
-public class PersistitKeyPValueSource implements PValueSource {
+public class PersistitKeyValueSource implements ValueSource {
 
     // object state
     private Key key;
     private int depth;
     private TInstance tInstance;
-    private PValue output;
+    private Value output;
     private boolean needsDecoding = true;
     
-    public PersistitKeyPValueSource(TInstance tInstance) {
+    public PersistitKeyValueSource(TInstance tInstance) {
         this.tInstance = tInstance;
-        this.output = new PValue(tInstance);
+        this.output = new Value(tInstance);
     }
     
     public void attach(Key key, IndexColumn indexColumn) {
@@ -156,7 +156,7 @@ public class PersistitKeyPValueSource implements PValueSource {
         return decode().getObject();
     }
     
-    public int compare(PersistitKeyPValueSource that)
+    public int compare(PersistitKeyValueSource that)
     {
         that.key.indexTo(that.depth);
         int thatPosition = that.key.getIndex();
@@ -179,7 +179,7 @@ public class PersistitKeyPValueSource implements PValueSource {
     }
 
     // for use by this class
-    private PValueSource decode() {
+    private ValueSource decode() {
         if (needsDecoding) {
             key.indexTo(depth);
             if (key.isNull()) {
@@ -187,10 +187,10 @@ public class PersistitKeyPValueSource implements PValueSource {
             }
             else
             {
-                PUnderlying pUnderlying = TInstance.pUnderlying(tInstance());
-                Class<?> expected = pUnderlyingExpectedClasses.get(pUnderlying);
+                UnderlyingType underlyingType = TInstance.underlyingType(tInstance());
+                Class<?> expected = underlyingExpectedClasses.get(underlyingType);
                 if (key.decodeType() == expected) {
-                    switch (pUnderlying) {
+                    switch (underlyingType) {
                         case BOOL:      output.putBool(key.decodeBoolean());        break;
                         case INT_8:     output.putInt8((byte)key.decodeLong());     break;
                         case INT_16:    output.putInt16((short)key.decodeLong());   break;
@@ -201,13 +201,13 @@ public class PersistitKeyPValueSource implements PValueSource {
                         case DOUBLE:    output.putDouble(key.decodeDouble());       break;
                         case BYTES:     output.putBytes(key.decodeByteArray());     break;
                         case STRING:    output.putString(key.decodeString(), null); break;
-                        default: throw new UnsupportedOperationException(tInstance + " with " + pUnderlying);
+                        default: throw new UnsupportedOperationException(tInstance + " with " + underlyingType);
                     }
                 }
                 else {
                     output.putObject(key.decode());
                 }
-                // the following asumes that the TClass' readCollating expects the same PUnderlying for in and out
+                // the following asumes that the TClass' readCollating expects the same UnderlyingType for in and out
                 tInstance.readCollating(output, output);
             }
             needsDecoding = false;
@@ -240,13 +240,13 @@ public class PersistitKeyPValueSource implements PValueSource {
         needsDecoding = true;
     }
 
-    private static final EnumMap<PUnderlying, Class<?>> pUnderlyingExpectedClasses = createPUnderlyingExpectedClasses();
+    private static final EnumMap<UnderlyingType, Class<?>> underlyingExpectedClasses = createPUnderlyingExpectedClasses();
 
-    private static EnumMap<PUnderlying, Class<?>> createPUnderlyingExpectedClasses() {
-        EnumMap<PUnderlying, Class<?>> result = new EnumMap<>(PUnderlying.class);
-        for (PUnderlying pUnderlying : PUnderlying.values()) {
+    private static EnumMap<UnderlyingType, Class<?>> createPUnderlyingExpectedClasses() {
+        EnumMap<UnderlyingType, Class<?>> result = new EnumMap<>(UnderlyingType.class);
+        for (UnderlyingType underlyingType : UnderlyingType.values()) {
             final Class<?> expected;
-            switch (pUnderlying) {
+            switch (underlyingType) {
             case BOOL:
                 expected = Boolean.class;
                 break;
@@ -270,9 +270,9 @@ public class PersistitKeyPValueSource implements PValueSource {
                 expected = String.class;
                 break;
             default:
-                throw new AssertionError("unrecognized PUnderlying: " + pUnderlying);
+                throw new AssertionError("unrecognized UnderlyingType: " + underlyingType);
             }
-            result.put(pUnderlying, expected);
+            result.put(underlyingType, expected);
         }
         return result;
     }

@@ -28,9 +28,9 @@ import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
-import com.foundationdb.server.types.pvalue.PValueTargets;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
+import com.foundationdb.server.types.value.ValueTargets;
 import com.foundationdb.server.types.texpressions.Constantness;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
@@ -99,10 +99,10 @@ public final class MIfElse extends TScalarBase {
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
         int whichSource = inputs.get(0).getBoolean() ? 1 : 2;
-        PValueSource source = inputs.get(whichSource);
-        PValueTargets.copyFrom(source, output);
+        ValueSource source = inputs.get(whichSource);
+        ValueTargets.copyFrom(source, output);
     }
 
     @Override
@@ -128,7 +128,7 @@ public final class MIfElse extends TScalarBase {
     @Override
     protected Constantness constness(TPreptimeContext context, int inputIndex, LazyList<? extends TPreptimeValue> values) {
         assert inputIndex == 0 : inputIndex; // should be fully resolved after the first call
-        PValueSource condition = values.get(0).value();
+        ValueSource condition = values.get(0).value();
         if (condition == null)
             return Constantness.NOT_CONST;
         int result = condition.getBoolean() ? 1 : 2;

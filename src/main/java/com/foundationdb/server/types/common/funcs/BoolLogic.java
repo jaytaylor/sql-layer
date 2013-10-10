@@ -29,8 +29,8 @@ import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.TPreptimeContext;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.Constantness;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
@@ -57,8 +57,8 @@ public class BoolLogic extends TScalarBase
         }
 
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
-                                  PValueTarget output) {
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs,
+                                  ValueTarget output) {
             output.putBool(!inputs.get(0).getBoolean());
         }
 
@@ -124,7 +124,7 @@ public class BoolLogic extends TScalarBase
         // The expression is const iff either argument is a const whose value is equal to op.contaminant.
         // The first argument can never make the expression non-const (though it can make it const), and the second
         // argument can never leave the constness unknown.
-        PValueSource preptimeValue = constSource(values, inputIndex);
+        ValueSource preptimeValue = constSource(values, inputIndex);
         if ((preptimeValue != null) && Objects.equal(op.contaminant, getBoolean(preptimeValue)))
         {
             context.set(OUT_VAL, op.contaminant);
@@ -139,7 +139,7 @@ public class BoolLogic extends TScalarBase
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
         Object outVal = context.preptimeObjectAt(OUT_VAL);
         if (outVal != null)
@@ -171,11 +171,11 @@ public class BoolLogic extends TScalarBase
             output.putBool(result);
     }
 
-    private Boolean getBoolean(LazyList<? extends PValueSource> inputs, int i) {
+    private Boolean getBoolean(LazyList<? extends ValueSource> inputs, int i) {
         return getBoolean(inputs.get(i));
     }
 
-    private Boolean getBoolean(PValueSource firstInput) {
+    private Boolean getBoolean(ValueSource firstInput) {
         return firstInput.isNull() ? null : firstInput.getBoolean();
     }
 

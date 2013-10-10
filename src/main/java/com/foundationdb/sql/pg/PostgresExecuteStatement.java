@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.pg;
 
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.parser.ConstantNode;
 import com.foundationdb.sql.parser.ExecuteStatementNode;
@@ -28,7 +29,6 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
-import com.foundationdb.server.types.pvalue.PValueSources;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,15 +37,15 @@ import java.io.IOException;
 public class PostgresExecuteStatement extends PostgresBaseCursorStatement
 {
     private String name;
-    private List<TPreptimeValue> paramPValues; 
+    private List<TPreptimeValue> paramValues; 
 
     public String getName() {
         return name;
     }
 
     public void setParameters(QueryBindings bindings) {
-        for (int i = 0; i < paramPValues.size(); i++) {
-            bindings.setPValue(i, paramPValues.get(i).value());
+        for (int i = 0; i < paramValues.size(); i++) {
+            bindings.setValue(i, paramValues.get(i).value());
         }
     }
 
@@ -55,7 +55,7 @@ public class PostgresExecuteStatement extends PostgresBaseCursorStatement
                                               List<ParameterNode> params, int[] paramTypes) {
         ExecuteStatementNode execute = (ExecuteStatementNode)stmt;
         this.name = execute.getName();
-        paramPValues = new ArrayList<>();
+        paramValues = new ArrayList<>();
         for (ValueNode param : execute.getParameterList()) {
             TInstance tInstance = null;
             if (param.getType() != null)
@@ -65,7 +65,7 @@ public class PostgresExecuteStatement extends PostgresBaseCursorStatement
             }
             ConstantNode constant = (ConstantNode)param;
             Object value = constant.getValue();
-            paramPValues.add(PValueSources.fromObject(value, tInstance));
+            paramValues.add(ValueSources.fromObject(value, tInstance));
         }
         return this;
     }

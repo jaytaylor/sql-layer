@@ -41,7 +41,7 @@ public class UserTableRowChecker implements ConstraintChecker
     }
 
     private boolean isNull(Row row, int f) {
-        return row.pvalue(f).isNull();
+        return row.value(f).isNull();
     }
 
     public UserTableRowChecker(RowType rowType)
