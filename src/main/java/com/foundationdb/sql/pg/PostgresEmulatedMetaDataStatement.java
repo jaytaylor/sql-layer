@@ -626,7 +626,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     private int npgsqlTypeQuery(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows) throws IOException {
         int nrows = 0;
         List<String> types = new ArrayList<>();
-        for (String type : groups.get(1).split(",")) {
+        for (String type : groups.get(1).split(",\\s*")) {
             if ((type.charAt(0) == '\'') && (type.charAt(type.length()-1) == '\''))
                 type = type.substring(1, type.length()-1);
             types.add(type);
