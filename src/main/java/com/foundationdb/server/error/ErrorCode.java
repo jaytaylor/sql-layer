@@ -378,7 +378,6 @@ public enum ErrorCode {
     DROP_SEQUENCE_NOT_ALLOWED ("50", "029", Importance.DEBUG, DropSequenceNotAllowedException.class),
     JOIN_TO_SELF            ("50", "030", Importance.DEBUG, JoinToSelfException.class),
 
-
     // Class 51 - Internal problems created by user configuration
     STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),
     METAMODEL_MISMATCH      ("51", "002", Importance.ERROR, MetaModelVersionMismatchException.class),
