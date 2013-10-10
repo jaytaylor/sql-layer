@@ -44,7 +44,8 @@ public class NoArgFuncs
         @Override
         public void evaluate(TExecutionContext context, PValueTarget target)
         {
-            target.putString(Main.SHORT_VERSION_STRING, null);
+            String version = "FoundationDB " + Main.SHORT_VERSION_STRING;
+            target.putString(version, null);
         }
 
         @Override
@@ -54,7 +55,7 @@ public class NoArgFuncs
 
         @Override
         protected int[] resultAttrs() {
-            return new int[] { Main.SHORT_VERSION_STRING.length() };
+            return new int[] { Main.SHORT_VERSION_STRING.length() + 13 };
         }
     };
 
