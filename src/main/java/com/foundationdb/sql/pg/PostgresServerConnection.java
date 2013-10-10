@@ -34,7 +34,6 @@ import com.foundationdb.sql.parser.StatementNode;
 
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.error.*;
 import com.foundationdb.server.service.monitor.CursorMonitor;
@@ -1325,7 +1324,7 @@ public class PostgresServerConnection extends ServerSessionBase
         else if ("server_encoding".equals(key))
             return messenger.getEncoding();
         else if ("server_version".equals(key))
-            return "8.4.7";     // Not sure what the min it'll accept is.
+            return "8.5.1"; // Fake Postgress version which matches all we support, still flags FDB server
         else if ("session_authorization".equals(key))
             return properties.getProperty("user");
         else if ("DateStyle".equals(key))
