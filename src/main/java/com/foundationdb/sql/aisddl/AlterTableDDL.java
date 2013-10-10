@@ -243,7 +243,7 @@ public class AlterTableDDL {
                 }
                 TableName parent = TableDDL.getReferencedName(defaultSchema, fk);
                 if((aisCopy.getUserTable(parent) == null) && (origAIS.getUserTable(parent) != null)) {
-                    TableDDL.addParentTable(builder, origAIS, fk, defaultSchema);
+                    TableDDL.addParentTable(builder, origAIS, fk, defaultSchema, newName.getTableName());
                 }
                 tableCopy.setGroup(null);
                 TableDDL.addJoin(builder, fk, defaultSchema, newName.getSchemaName(), newName.getTableName());
