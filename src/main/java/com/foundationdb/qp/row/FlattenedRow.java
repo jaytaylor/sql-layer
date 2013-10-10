@@ -41,10 +41,10 @@ public class FlattenedRow extends CompoundRow
     @Override
     public boolean containsRealRowOf(UserTable userTable)
     {
-        return     (first().isHolding() && first().get().rowType().hasUserTable() && first().get().rowType().userTable() == userTable)
-                   || (second().isHolding() && second().get().rowType().hasUserTable() && second().get().rowType().userTable() == userTable)
-                   || (first().isHolding() && first().get().containsRealRowOf(userTable))
-                   || (second().isHolding() && second().get().containsRealRowOf(userTable))
+        return     (first() != null && first().rowType().hasUserTable() && first().rowType().userTable() == userTable)
+                   || (second() != null && second().rowType().hasUserTable() && second().rowType().userTable() == userTable)
+                   || (first() != null && first().containsRealRowOf(userTable))
+                   || (second() != null && second().containsRealRowOf(userTable))
             ;
     }
 

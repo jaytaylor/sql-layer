@@ -25,9 +25,9 @@ import com.foundationdb.server.types.common.types.NumericAttribute;
 import com.foundationdb.server.types.common.NumericFormatter;
 import com.foundationdb.server.types.common.types.SimpleDtdTClass;
 import com.foundationdb.server.types.mcompat.MBundle;
-import com.foundationdb.server.types.pvalue.PUnderlying;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.UnderlyingType;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.sql.types.TypeId;
 import com.google.common.primitives.UnsignedLongs;
 
@@ -36,14 +36,14 @@ import java.math.BigInteger;
 
 public class MNumeric extends SimpleDtdTClass {
 
-    protected MNumeric(String name, TClassFormatter formatter, int serializationSize, PUnderlying pUnderlying,
+    protected MNumeric(String name, TClassFormatter formatter, int serializationSize, UnderlyingType underlyingType,
                        int defaultWidth, TParser parser)
     {
         super(MBundle.INSTANCE.id(), name, AkCategory.INTEGER,
                 formatter,
                 NumericAttribute.class,
-                1, 1, serializationSize, 
-                pUnderlying, parser, defaultWidth, inferTypeid(name));
+                1, 1, serializationSize,
+                underlyingType, parser, defaultWidth, inferTypeid(name));
         this.defaultWidth = defaultWidth;
         this.isUnsigned = name.endsWith(" unsigned");
     }
@@ -96,7 +96,7 @@ public class MNumeric extends SimpleDtdTClass {
     }
 
     @Override
-    protected boolean tryFromObject(TExecutionContext context, PValueSource in, PValueTarget out) {
+    protected boolean tryFromObject(TExecutionContext context, ValueSource in, ValueTarget out) {
         if (in.tInstance().typeClass() == AkBool.INSTANCE) {
             byte asInt = (byte)(in.getBoolean() ? 1 : 0);
             switch (out.tInstance().typeClass().underlyingType()) {
@@ -132,31 +132,31 @@ public class MNumeric extends SimpleDtdTClass {
     // numeric types
     // TODO verify default widths
     public static final MNumeric TINYINT
-            = new MNumeric("tinyint", NumericFormatter.FORMAT.INT_8, 1, PUnderlying.INT_8, 5, TParsers.TINYINT);
+            = new MNumeric("tinyint", NumericFormatter.FORMAT.INT_8, 1, UnderlyingType.INT_8, 5, TParsers.TINYINT);
 
     public static final MNumeric TINYINT_UNSIGNED
-            = new MNumeric("tinyint unsigned", NumericFormatter.FORMAT.INT_16, 4, PUnderlying.INT_16, 4, TParsers.UNSIGNED_TINYINT);
+            = new MNumeric("tinyint unsigned", NumericFormatter.FORMAT.INT_16, 4, UnderlyingType.INT_16, 4, TParsers.UNSIGNED_TINYINT);
 
     public static final MNumeric SMALLINT
-            = new MNumeric("smallint", NumericFormatter.FORMAT.INT_16, 2, PUnderlying.INT_16, 7, TParsers.SMALLINT);
+            = new MNumeric("smallint", NumericFormatter.FORMAT.INT_16, 2, UnderlyingType.INT_16, 7, TParsers.SMALLINT);
 
     public static final MNumeric SMALLINT_UNSIGNED
-            = new MNumeric("smallint unsigned", NumericFormatter.FORMAT.INT_32, 4, PUnderlying.INT_32, 6, TParsers.UNSIGNED_SMALLINT);
+            = new MNumeric("smallint unsigned", NumericFormatter.FORMAT.INT_32, 4, UnderlyingType.INT_32, 6, TParsers.UNSIGNED_SMALLINT);
 
     public static final MNumeric MEDIUMINT
-            = new MNumeric("mediumint", NumericFormatter.FORMAT.INT_32, 3, PUnderlying.INT_32, 9, TParsers.MEDIUMINT);
+            = new MNumeric("mediumint", NumericFormatter.FORMAT.INT_32, 3, UnderlyingType.INT_32, 9, TParsers.MEDIUMINT);
 
     public static final MNumeric MEDIUMINT_UNSIGNED
-            = new MNumeric("mediumint unsigned", NumericFormatter.FORMAT.INT_64, 8, PUnderlying.INT_64, 8, TParsers.UNSIGNED_MEDIUMINT);
+            = new MNumeric("mediumint unsigned", NumericFormatter.FORMAT.INT_64, 8, UnderlyingType.INT_64, 8, TParsers.UNSIGNED_MEDIUMINT);
 
     public static final MNumeric INT
-            = new MNumeric("integer", NumericFormatter.FORMAT.INT_32, 4, PUnderlying.INT_32, 11, TParsers.INT);
+            = new MNumeric("integer", NumericFormatter.FORMAT.INT_32, 4, UnderlyingType.INT_32, 11, TParsers.INT);
 
     public static final MNumeric INT_UNSIGNED
-            = new MNumeric("integer unsigned", NumericFormatter.FORMAT.INT_64, 8, PUnderlying.INT_64, 10, TParsers.UNSIGNED_INT);
+            = new MNumeric("integer unsigned", NumericFormatter.FORMAT.INT_64, 8, UnderlyingType.INT_64, 10, TParsers.UNSIGNED_INT);
 
     public static final MNumeric BIGINT
-            = new MNumeric("bigint", NumericFormatter.FORMAT.INT_64, 8, PUnderlying.INT_64, 21, TParsers.BIGINT)
+            = new MNumeric("bigint", NumericFormatter.FORMAT.INT_64, 8, UnderlyingType.INT_64, 21, TParsers.BIGINT)
             {
                 public TClass widestComparable()
                 {
@@ -165,7 +165,7 @@ public class MNumeric extends SimpleDtdTClass {
             };
 
     public static final MNumeric BIGINT_UNSIGNED
-            = new MNumeric("bigint unsigned", NumericFormatter.FORMAT.UINT_64, 8, PUnderlying.INT_64, 20, TParsers.UNSIGNED_BIGINT)
+            = new MNumeric("bigint unsigned", NumericFormatter.FORMAT.UINT_64, 8, UnderlyingType.INT_64, 20, TParsers.UNSIGNED_BIGINT)
     {
         public TClass widestComparable()
         {
@@ -173,7 +173,7 @@ public class MNumeric extends SimpleDtdTClass {
         }
         
         @Override
-        protected PValueIO getPValueIO() {
+        protected ValueIO getValueIO() {
             return bigintUnsignedIO;
         }
     };
@@ -186,7 +186,7 @@ public class MNumeric extends SimpleDtdTClass {
         }
     };
     
-    public static long getAsLong(TClass tClass, PValueSource source) {
+    public static long getAsLong(TClass tClass, ValueSource source) {
         assert tClass instanceof MNumeric : "not an MNumeric: " + tClass;
         long result;
         switch (tClass.underlyingType()) {
@@ -215,7 +215,7 @@ public class MNumeric extends SimpleDtdTClass {
         return result;
     }
 
-    public static void putAsLong(TClass tClass, PValueTarget target, long value) {
+    public static void putAsLong(TClass tClass, ValueTarget target, long value) {
         assert tClass instanceof MNumeric : "not an MNumeric: " + tClass;
         // TODO better bounds checking? Or do we just trust the caller?
         if ( ((MNumeric)tClass).isUnsigned && value < 0) {
@@ -245,21 +245,21 @@ public class MNumeric extends SimpleDtdTClass {
 
     public static final TClass DECIMAL = new MBigDecimal("decimal", 11);
 
-    private static final PValueIO bigintUnsignedIO = new PValueIO() {
+    private static final ValueIO bigintUnsignedIO = new ValueIO() {
         @Override
-        public void copyCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
+        public void copyCanonical(ValueSource in, TInstance typeInstance, ValueTarget out) {
             out.putInt64(in.getInt64());
         }
 
         @Override
-        public void writeCollating(PValueSource in, TInstance typeInstance, PValueTarget out) {
+        public void writeCollating(ValueSource in, TInstance typeInstance, ValueTarget out) {
             String asString = UnsignedLongs.toString(in.getInt64());
             BigInteger asBigint = new BigInteger(asString);
             out.putObject(asBigint);
         }
 
         @Override
-        public void readCollating(PValueSource in, TInstance typeInstance, PValueTarget out) {
+        public void readCollating(ValueSource in, TInstance typeInstance, ValueTarget out) {
             BigInteger asBigint = (BigInteger) in.getObject();
             long asLong = UnsignedLongs.parseUnsignedLong(asBigint.toString());
             out.putInt64(asLong);

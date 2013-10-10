@@ -25,8 +25,8 @@ import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.Constantness;
 
 import static com.foundationdb.server.types.mcompat.mtypes.MNumeric.*;
@@ -55,7 +55,7 @@ public abstract class Cast_From_Date extends TCastBase
     public static final TCast TO_TINYINT = new Cast_From_Date(TINYINT)
     {
         @Override
-        protected void putOut(int val, PValueTarget out, TExecutionContext context)
+        protected void putOut(int val, ValueTarget out, TExecutionContext context)
         {
             out.putInt8((byte) CastUtils.getInRange(Byte.MAX_VALUE, Byte.MIN_VALUE, val, context));
         }
@@ -64,7 +64,7 @@ public abstract class Cast_From_Date extends TCastBase
     public static final TCast TO_UNSIGNED_TINYINT = new Cast_From_Date(TINYINT_UNSIGNED)
     {
         @Override
-        protected void putOut(int val, PValueTarget out, TExecutionContext context)
+        protected void putOut(int val, ValueTarget out, TExecutionContext context)
         {
             out.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, 0, val, context));
         }   
@@ -73,7 +73,7 @@ public abstract class Cast_From_Date extends TCastBase
     public static final TCast TO_SMALLINT = new Cast_From_Date(SMALLINT)
     {
         @Override
-        protected void putOut(int val, PValueTarget out, TExecutionContext context)
+        protected void putOut(int val, ValueTarget out, TExecutionContext context)
         {
             out.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, Short.MIN_VALUE, val, context));
         }
@@ -82,7 +82,7 @@ public abstract class Cast_From_Date extends TCastBase
     public static final TCast TO_UNSIGNED_SMALINT = new Cast_From_Date(SMALLINT_UNSIGNED)
     {
         @Override
-        protected void putOut(int val, PValueTarget out, TExecutionContext context)
+        protected void putOut(int val, ValueTarget out, TExecutionContext context)
         {
             out.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, 0, val, context));
         }
@@ -91,7 +91,7 @@ public abstract class Cast_From_Date extends TCastBase
     public static final TCast TO_MEDIUMINT = new Cast_From_Date(MEDIUMINT)
     {
         @Override
-        protected void putOut(int val, PValueTarget out, TExecutionContext context)
+        protected void putOut(int val, ValueTarget out, TExecutionContext context)
         {
             out.putInt32(val);
         }
@@ -100,7 +100,7 @@ public abstract class Cast_From_Date extends TCastBase
     public static final TCast TO_UNSIGNED_MEDIUMINT = new Cast_From_Date(MEDIUMINT_UNSIGNED)
     {
         @Override
-        protected void putOut(int val, PValueTarget out, TExecutionContext context)
+        protected void putOut(int val, ValueTarget out, TExecutionContext context)
         {
             out.putInt64(CastUtils.getInRange(Long.MAX_VALUE, 0, val, context));
         }
@@ -109,7 +109,7 @@ public abstract class Cast_From_Date extends TCastBase
     public static final TCast TO_INT = new Cast_From_Date(INT)
     {
         @Override
-        protected void putOut(int val, PValueTarget out, TExecutionContext context)
+        protected void putOut(int val, ValueTarget out, TExecutionContext context)
         {
             out.putInt32(val);
         }
@@ -118,7 +118,7 @@ public abstract class Cast_From_Date extends TCastBase
     public static final TCast TO_UNSIGNED_INT = new Cast_From_Date(INT_UNSIGNED)
     {
         @Override
-        protected void putOut(int val, PValueTarget out, TExecutionContext context)
+        protected void putOut(int val, ValueTarget out, TExecutionContext context)
         {
             out.putInt64(CastUtils.getInRange(Long.MAX_VALUE, 0, val, context));
         }
@@ -127,7 +127,7 @@ public abstract class Cast_From_Date extends TCastBase
     public static final TCast TO_BIGINT = new Cast_From_Date(BIGINT)
     {
         @Override
-        protected void putOut(int val, PValueTarget out, TExecutionContext context)
+        protected void putOut(int val, ValueTarget out, TExecutionContext context)
         {
             out.putInt64(val);
         }
@@ -136,7 +136,7 @@ public abstract class Cast_From_Date extends TCastBase
     public static final TCast TO_UNSIGNED_BIGINT = new Cast_From_Date(BIGINT_UNSIGNED)
     {
         @Override
-        protected void putOut(int val, PValueTarget out, TExecutionContext context)
+        protected void putOut(int val, ValueTarget out, TExecutionContext context)
         {
             out.putInt64(val);
         }
@@ -145,7 +145,7 @@ public abstract class Cast_From_Date extends TCastBase
     public static final TCast TO_DOUBLE = new Cast_From_Date(MApproximateNumber.DOUBLE)
     {
         @Override
-        protected void putOut(int val, PValueTarget out, TExecutionContext context)
+        protected void putOut(int val, ValueTarget out, TExecutionContext context)
         {
             out.putDouble(val);
         }
@@ -154,7 +154,7 @@ public abstract class Cast_From_Date extends TCastBase
     public static final TCast TO_DECIMAL = new Cast_From_Date(MNumeric.DECIMAL)
     {
         @Override
-        protected void putOut(int val, PValueTarget out, TExecutionContext context)
+        protected void putOut(int val, ValueTarget out, TExecutionContext context)
         {
             out.putObject(new MBigDecimalWrapper(val));
         }
@@ -164,7 +164,7 @@ public abstract class Cast_From_Date extends TCastBase
     {
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             long[] ymd = MDatetimes.decodeDate(source.getInt32());
             long[] ymdHMS = new long[6];
@@ -178,7 +178,7 @@ public abstract class Cast_From_Date extends TCastBase
     {
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             // DATE doesn't have any TIME
             target.putInt32(0);
@@ -189,7 +189,7 @@ public abstract class Cast_From_Date extends TCastBase
     {
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt32(MDatetimes.encodeTimestamp(MDatetimes.decodeDate(source.getInt32()),
                                                        context.getCurrentTimezone(),
@@ -197,7 +197,7 @@ public abstract class Cast_From_Date extends TCastBase
         }
     };
     
-    protected abstract void putOut(int val, PValueTarget out, TExecutionContext context);
+    protected abstract void putOut(int val, ValueTarget out, TExecutionContext context);
     
     private Cast_From_Date(TClass targetType)
     {
@@ -205,7 +205,7 @@ public abstract class Cast_From_Date extends TCastBase
     }
     
     @Override
-    protected void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+    protected void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
     {
         putOut(packYMD(MDatetimes.decodeDate(source.getInt32())),
                target,

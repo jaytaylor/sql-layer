@@ -30,7 +30,7 @@ import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.Label;
 import com.foundationdb.server.explain.PrimitiveExplainer;
 import com.foundationdb.server.explain.Type;
-import com.foundationdb.server.types.pvalue.PValue;
+import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.texpressions.TPreparedField;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
@@ -130,7 +130,7 @@ public class Buffer_Default extends Operator
             Row inputRow = input.next();
             if(inputRow != null) {
                 ValuesHolderRow counterRow = new ValuesHolderRow(bufferRowType.first());
-                counterRow.pvalueAt(0).putInt64(counter++);
+                counterRow.valueAt(0).putInt64(counter++);
                 inputRow = new CompoundRow(bufferRowType, counterRow, inputRow);
             }
             return inputRow;
@@ -179,7 +179,7 @@ public class Buffer_Default extends Operator
                     if(next instanceof ValuesHolderRow) {
                         ValuesHolderRow valuesRow = (ValuesHolderRow)next;
                         RowType realRowType = bufferRowType.second();
-                        List<PValue> values = valuesRow.pvalues();
+                        List<Value> values = valuesRow.values();
                         next = new ValuesHolderRow(realRowType, values.subList(1, realRowType.nFields() + 1));
                     } else if(next instanceof CompoundRow) {
                         next = ((CompoundRow)next).subRow(bufferRowType.second());

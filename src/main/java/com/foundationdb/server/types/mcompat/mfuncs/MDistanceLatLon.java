@@ -26,8 +26,8 @@ import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 
@@ -51,7 +51,7 @@ public class MDistanceLatLon extends TScalarBase
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
         double y1 = doubleInRange(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0)), MIN_LAT, MAX_LAT);
         double x1 = doubleInRange(MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1)), MIN_LON, MAX_LON);

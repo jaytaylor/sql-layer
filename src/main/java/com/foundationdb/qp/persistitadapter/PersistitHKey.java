@@ -18,9 +18,9 @@
 package com.foundationdb.qp.persistitadapter;
 
 import com.foundationdb.qp.row.HKey;
-import com.foundationdb.server.PersistitKeyPValueSource;
+import com.foundationdb.server.PersistitKeyValueSource;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import com.persistit.Key;
 
 public class PersistitHKey implements HKey
@@ -115,7 +115,7 @@ public class PersistitHKey implements HKey
     }
 
     @Override
-    public PValueSource pEval(int i) {
+    public ValueSource pEval(int i) {
         return pSource(i);
     }
 
@@ -147,18 +147,18 @@ public class PersistitHKey implements HKey
     
     // For use by this class
     
-    private PersistitKeyPValueSource pSource(int i) 
+    private PersistitKeyValueSource pSource(int i)
     {
         if (pSources == null) {
             assert underlyingTypes == null;
-            pSources = new PersistitKeyPValueSource[hKeyMetadata.nColumns()];
+            pSources = new PersistitKeyValueSource[hKeyMetadata.nColumns()];
             underlyingTypes = new TInstance[hKeyMetadata.nColumns()];
             for (int c = 0; c < hKeyMetadata.nColumns(); c++) {
                 underlyingTypes[c] = hKeyMetadata.column(c).tInstance();
             }
         }
         if (pSources[i] == null) {
-            pSources[i] = new PersistitKeyPValueSource(underlyingTypes[i]);
+            pSources[i] = new PersistitKeyValueSource(underlyingTypes[i]);
             pSources[i].attach(hKey, keyDepth[i], underlyingTypes[i]);
         } else {
             // TODO: Add state tracking whether hkey has been changed (e.g. by useSegments). Avoid attach calls
@@ -176,6 +176,6 @@ public class PersistitHKey implements HKey
     private int originalHKeySize;
     // Identifies the persistit key depth for the ith hkey segment, 1 <= i <= #hkey segments.
     private final int[] keyDepth;
-    private PersistitKeyPValueSource[] pSources;
+    private PersistitKeyValueSource[] pSources;
     private TInstance[] underlyingTypes;
 }

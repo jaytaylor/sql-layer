@@ -15,11 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.types.pvalue;
+package com.foundationdb.server.types.value;
 
-public interface PValueTarget extends PBasicValueTarget {
+import com.foundationdb.server.types.value.ValueSource;
 
-    boolean supportsCachedObjects();
-
-    void putObject(Object object);
+public interface ValueRecord {
+    ValueSource value(int index);
 }

@@ -19,7 +19,7 @@ package com.foundationdb.sql.optimizer.rule;
 
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValue;
+import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.JoinNode;
@@ -1612,12 +1612,12 @@ public class ASTStatementLoader extends BaseRule
                 // Extract the (potential) schema name as the first parameter
                 params.add(new ConstantExpression(
                         new TPreptimeValue(MString.VARCHAR.instance(schema.length(), false),
-                                           new PValue(MString.varcharFor(schema), schema))));
+                                           new Value(MString.varcharFor(schema), schema))));
                 // Extract the schema name as the second parameter
                 String sequence = seqNode.getSequenceName().getTableName();
                 params.add(new ConstantExpression(
                         new TPreptimeValue(MString.VARCHAR.instance(sequence.length(), false),
-                                           new PValue(MString.varcharFor(sequence), sequence))));
+                                           new Value(MString.varcharFor(sequence), sequence))));
                 
                 return new FunctionExpression ("nextval", params,
                                                 valueNode.getType(), valueNode);
@@ -1632,12 +1632,12 @@ public class ASTStatementLoader extends BaseRule
                 // Extract the (potential) schema name as the first parameter
                 params.add(new ConstantExpression(
                         new TPreptimeValue(MString.VARCHAR.instance(schema.length(), false),
-                                           new PValue(MString.varcharFor(schema), schema))));
+                                           new Value(MString.varcharFor(schema), schema))));
                 // Extract the schema name as the second parameter
                 String sequence = seqNode.getSequenceName().getTableName();
                 params.add(new ConstantExpression(
                         new TPreptimeValue(MString.VARCHAR.instance(sequence.length(), false),
-                                           new PValue(MString.varcharFor(sequence), sequence))));
+                                           new Value(MString.varcharFor(sequence), sequence))));
                 
                 return new FunctionExpression ("currval", params,
                                                 valueNode.getType(), valueNode);

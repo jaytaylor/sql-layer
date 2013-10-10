@@ -24,9 +24,9 @@ import com.foundationdb.qp.persistitadapter.PersistitHKey;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.util.HKeyCache;
-import com.foundationdb.server.PersistitKeyPValueSource;
+import com.foundationdb.server.PersistitKeyValueSource;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.AkibanAppender;
 import com.persistit.Key;
 import com.persistit.Value;
@@ -44,14 +44,14 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
             if (i > 0) {
                 buffer.append(", ");
             }
-            tInstances[i].format(pvalue(i), buffer);
+            tInstances[i].format(value(i), buffer);
         }
         buffer.append(")->");
         buffer.append(hKey().toString());
         return buffer.toString();
     }
     
-    // RowBase interface
+    // Row interface
 
     // TODO: This is not a correct implementation of hKey, because it returns an empty hKey to be filled in
     // TODO: by the caller. Normally, hKey returns the HKey of the row.
@@ -68,10 +68,10 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     }
 
     @Override
-    public final PValueSource pvalue(int i)
+    public final ValueSource value(int i)
     {
         TInstance tInstance = tInstances[i];
-        PersistitKeyPValueSource keySource = keyPSource(i, tInstance);
+        PersistitKeyValueSource keySource = keyPSource(i, tInstance);
         attach(keySource, i, tInstance);
         return keySource;
     }
@@ -114,12 +114,12 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
 
     // For use by this class
 
-    private PersistitKeyPValueSource keyPSource(int i, TInstance tInstance)
+    private PersistitKeyValueSource keyPSource(int i, TInstance tInstance)
     {
         if (keyPSources == null)
-            keyPSources = new PersistitKeyPValueSource[nIndexFields];
+            keyPSources = new PersistitKeyValueSource[nIndexFields];
         if (keyPSources[i] == null) {
-            keyPSources[i] = new PersistitKeyPValueSource(tInstance);
+            keyPSources[i] = new PersistitKeyValueSource(tInstance);
         }
         return keyPSources[i];
     }
@@ -131,5 +131,5 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     private final Key keyState;
     private final IndexRowType indexRowType;
     private final TInstance[] tInstances;
-    private PersistitKeyPValueSource[] keyPSources;
+    private PersistitKeyValueSource[] keyPSources;
 }

@@ -19,7 +19,7 @@ package com.foundationdb.qp.row;
 
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 
 public class DelegateRow implements Row {
     private final Row delegate;
@@ -52,7 +52,7 @@ public class DelegateRow implements Row {
     }
 
     @Override
-    public boolean ancestorOf(RowBase that) {
+    public boolean ancestorOf(Row that) {
         return delegate.ancestorOf(that);
     }
 
@@ -67,27 +67,12 @@ public class DelegateRow implements Row {
     }
 
     @Override
-    public int compareTo(RowBase row, int leftStartIndex, int rightStartIndex, int fieldCount) {
+    public int compareTo(Row row, int leftStartIndex, int rightStartIndex, int fieldCount) {
         return delegate.compareTo(row, leftStartIndex, rightStartIndex, fieldCount);
     }
 
     @Override
-    public PValueSource pvalue(int index) {
-        return delegate.pvalue(index);
-    }
-
-    @Override
-    public void acquire() {
-        delegate.acquire();
-    }
-
-    @Override
-    public boolean isShared() {
-        return delegate.isShared();
-    }
-
-    @Override
-    public void release() {
-        delegate.release();
+    public ValueSource value(int index) {
+        return delegate.value(index);
     }
 }

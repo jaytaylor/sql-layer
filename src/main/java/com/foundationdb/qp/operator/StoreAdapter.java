@@ -29,7 +29,6 @@ import com.foundationdb.qp.persistitadapter.Sorter;
 import com.foundationdb.qp.persistitadapter.indexcursor.IterationHelper;
 import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -113,7 +112,7 @@ public abstract class StoreAdapter implements KeyCreator
         return row;
     }
 
-    public <S> RowData rowData(RowDef rowDef, RowBase row, RowDataCreator<S> creator) {
+    public <S> RowData rowData(RowDef rowDef, Row row, RowDataCreator<S> creator) {
         // Generic conversion, subclasses should override to check for known group rows
         NewRow niceRow = newRow(rowDef);
         for(int i = 0; i < row.rowType().nFields(); ++i) {

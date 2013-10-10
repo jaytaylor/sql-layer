@@ -23,7 +23,6 @@ import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -806,9 +805,9 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
         return id % 5;
     }
 
-    private RowBase[] rows(RowType rowType, long[][] x)
+    private Row[] rows(RowType rowType, long[][] x)
     {
-        RowBase[] rows = new RowBase[x.length];
+        Row[] rows = new Row[x.length];
         for (int i = 0; i < x.length; i++) {
             long[] a = x[i];
             Object[] oa = new Object[a.length];

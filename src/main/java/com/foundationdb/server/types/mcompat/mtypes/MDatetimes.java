@@ -29,8 +29,8 @@ import com.foundationdb.server.types.aksql.AkCategory;
 import com.foundationdb.server.types.common.types.NoAttrTClass;
 import com.foundationdb.server.types.mcompat.MBundle;
 import com.foundationdb.server.types.mcompat.mcasts.CastUtils;
-import com.foundationdb.server.types.pvalue.PUnderlying;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.UnderlyingType;
+import com.foundationdb.server.types.value.ValueSource;
 import java.text.DateFormatSymbols;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -50,7 +50,7 @@ public class MDatetimes
     private static final TBundleID MBundleID = MBundle.INSTANCE.id();
     
     public static final NoAttrTClass DATE = new NoAttrTClass(MBundleID,
-            "date", AkCategory.DATE_TIME, FORMAT.DATE, 1, 1, 4, PUnderlying.INT_32, TParsers.DATE, 10, TypeId.DATE_ID)
+            "date", AkCategory.DATE_TIME, FORMAT.DATE, 1, 1, 4, UnderlyingType.INT_32, TParsers.DATE, 10, TypeId.DATE_ID)
     {
         public TClass widestComparable()
         {
@@ -58,13 +58,13 @@ public class MDatetimes
         }
     };
     public static final NoAttrTClass DATETIME = new NoAttrTClass(MBundleID,
-            "datetime", AkCategory.DATE_TIME, FORMAT.DATETIME,  1, 1, 8, PUnderlying.INT_64, TParsers.DATETIME, 19, TypeId.DATETIME_ID);
+            "datetime", AkCategory.DATE_TIME, FORMAT.DATETIME,  1, 1, 8, UnderlyingType.INT_64, TParsers.DATETIME, 19, TypeId.DATETIME_ID);
     public static final NoAttrTClass TIME = new NoAttrTClass(MBundleID,
-            "time", AkCategory.DATE_TIME, FORMAT.TIME, 1, 1, 4, PUnderlying.INT_32, TParsers.TIME, 8, TypeId.TIME_ID);
+            "time", AkCategory.DATE_TIME, FORMAT.TIME, 1, 1, 4, UnderlyingType.INT_32, TParsers.TIME, 8, TypeId.TIME_ID);
     public static final NoAttrTClass YEAR = new NoAttrTClass(MBundleID,
-            "year", AkCategory.DATE_TIME, FORMAT.YEAR, 1, 1, 1, PUnderlying.INT_16, TParsers.YEAR, 4, TypeId.YEAR_ID);
+            "year", AkCategory.DATE_TIME, FORMAT.YEAR, 1, 1, 1, UnderlyingType.INT_16, TParsers.YEAR, 4, TypeId.YEAR_ID);
     public static final NoAttrTClass TIMESTAMP = new NoAttrTClass(MBundleID,
-            "timestamp", AkCategory.DATE_TIME, FORMAT.TIMESTAMP, 1, 1, 4, PUnderlying.INT_32, TParsers.TIMESTAMP, 19, TypeId.TIMESTAMP_ID);
+            "timestamp", AkCategory.DATE_TIME, FORMAT.TIMESTAMP, 1, 1, 4, UnderlyingType.INT_32, TParsers.TIMESTAMP, 19, TypeId.TIMESTAMP_ID);
 
     public static final List<String> SUPPORTED_LOCALES = new LinkedList<>();
     
@@ -78,12 +78,12 @@ public class MDatetimes
     public static enum FORMAT implements TClassFormatter {
         DATE {
             @Override
-            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void format(TInstance instance, ValueSource source, AkibanAppender out) {
                 out.append(dateToString(source.getInt32()));
             }
 
             @Override
-            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void formatAsLiteral(TInstance instance, ValueSource source, AkibanAppender out) {
                 out.append("DATE '");
                 out.append(dateToString(source.getInt32()));
                 out.append("'");
@@ -91,12 +91,12 @@ public class MDatetimes
         }, 
         DATETIME {
             @Override
-            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void format(TInstance instance, ValueSource source, AkibanAppender out) {
                 out.append(datetimeToString(source.getInt64()));
             }
 
             @Override
-            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void formatAsLiteral(TInstance instance, ValueSource source, AkibanAppender out) {
                 out.append("TIMESTAMP '");
                 out.append(datetimeToString(source.getInt64()));
                 out.append("'");
@@ -104,12 +104,12 @@ public class MDatetimes
         }, 
         TIME {
             @Override
-            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void format(TInstance instance, ValueSource source, AkibanAppender out) {
                 out.append(timeToString(source.getInt32()));
             }
 
             @Override
-            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void formatAsLiteral(TInstance instance, ValueSource source, AkibanAppender out) {
                 out.append("TIME '");
                 out.append(timeToString(source.getInt32()));
                 out.append("'");
@@ -117,7 +117,7 @@ public class MDatetimes
         }, 
         YEAR {         
             @Override
-            public void format(TInstance instance, PValueSource source, AkibanAppender out)
+            public void format(TInstance instance, ValueSource source, AkibanAppender out)
             {
                 short raw = source.getInt16();
                 if (raw == 0)
@@ -127,18 +127,18 @@ public class MDatetimes
             }
 
             @Override
-            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void formatAsLiteral(TInstance instance, ValueSource source, AkibanAppender out) {
                 format(instance, source, out);
             }
         }, 
         TIMESTAMP {
             @Override
-            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void format(TInstance instance, ValueSource source, AkibanAppender out) {
                 out.append(timestampToString(source.getInt32(), null));
             }
 
             @Override
-            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void formatAsLiteral(TInstance instance, ValueSource source, AkibanAppender out) {
                 out.append("TIMESTAMP '");
                 out.append(timestampToString(source.getInt32(), null));
                 out.append("'");
@@ -146,7 +146,7 @@ public class MDatetimes
         };
 
         @Override
-        public void formatAsJson(TInstance instance, PValueSource source, AkibanAppender out) {
+        public void formatAsJson(TInstance instance, ValueSource source, AkibanAppender out) {
             out.append('"');
             format(instance, source, out);
             out.append('"');

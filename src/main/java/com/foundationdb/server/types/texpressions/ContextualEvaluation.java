@@ -21,9 +21,9 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 
 abstract class ContextualEvaluation<T> implements TEvaluatableExpression {
 
@@ -40,7 +40,7 @@ abstract class ContextualEvaluation<T> implements TEvaluatableExpression {
     }
 
     @Override
-    public PValueSource resultValue() {
+    public ValueSource resultValue() {
         if (readyValue == null)
             throw new IllegalStateException("haven't evaluated since having seen a new context");
         return readyValue;
@@ -53,7 +53,7 @@ abstract class ContextualEvaluation<T> implements TEvaluatableExpression {
         if (readyValue == null) {
             if (unreadyValue == null) {
                 // first evaluation of this expression
-                readyValue = new PValue(underlyingType);
+                readyValue = new Value(underlyingType);
             }
             else {
                 // readyValue is null, unreadyValue is not null. Means we've seen a QueryContext but have
@@ -75,7 +75,7 @@ abstract class ContextualEvaluation<T> implements TEvaluatableExpression {
         this.context = context;
     }
     
-    protected abstract void evaluate(T context, PValueTarget target);
+    protected abstract void evaluate(T context, ValueTarget target);
 
     protected ContextualEvaluation(TInstance underlyingType) {
         this.underlyingType = underlyingType;
@@ -84,8 +84,8 @@ abstract class ContextualEvaluation<T> implements TEvaluatableExpression {
     // At most one of these will be non-null. If no QueryContext has been seen yet, they'll both be null.
     // Otherwise, unreadyValue means we've seen but not evaluated a QueryContext, and readyValue means we've
     // seen a QueryContext and evaluated it.
-    private PValue unreadyValue;
-    private PValue readyValue;
+    private Value unreadyValue;
+    private Value readyValue;
     private T context;
     private TInstance underlyingType;
 }

@@ -39,7 +39,7 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.persistitadapter.OperatorBasedRowCollector;
-import com.foundationdb.qp.persistitadapter.PValueRowDataCreator;
+import com.foundationdb.qp.persistitadapter.ValueRowDataCreator;
 import com.foundationdb.qp.persistitadapter.PersistitHKey;
 import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.row.AbstractRow;
@@ -62,7 +62,7 @@ import com.foundationdb.server.error.TableChangedByDDLException;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.IndexDef;
 import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDataPValueSource;
+import com.foundationdb.server.rowdata.RowDataValueSource;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.listener.RowListener;
@@ -1109,18 +1109,18 @@ public abstract class AbstractStore<SDType> implements Store {
         Cursor cursor = API.cursor(plan, queryContext, queryBindings);
 
         List<Column> lookupCols = uTable.getPrimaryKeyIncludingInternal().getColumns();
-        RowDataPValueSource pSource = new RowDataPValueSource();
+        RowDataValueSource pSource = new RowDataValueSource();
         for(int i = 0; i < lookupCols.size(); ++i) {
             Column col = lookupCols.get(i);
             pSource.bind(col.getFieldDef(), rowData);
-            queryBindings.setPValue(i, pSource);
+            queryBindings.setValue(i, pSource);
         }
         try {
             Row row;
             cursor.openTopLevel();
             while((row = cursor.next()) != null) {
                 UserTable table = row.rowType().userTable();
-                RowData data = adapter.rowData(table.rowDef(), row, new PValueRowDataCreator());
+                RowData data = adapter.rowData(table.rowDef(), row, new ValueRowDataCreator());
                 maintainGroupIndexes(session,
                                      ais,
                                      adapter,

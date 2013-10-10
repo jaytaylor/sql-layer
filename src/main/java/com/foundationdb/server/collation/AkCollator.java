@@ -16,13 +16,13 @@
  */
 package com.foundationdb.server.collation;
 
-import com.foundationdb.server.PersistitKeyPValueSource;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.PersistitKeyValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import com.persistit.Key;
 
 public abstract class AkCollator {
 
-    public static String getString(PValueSource valueSource, AkCollator collator) {
+    public static String getString(ValueSource valueSource, AkCollator collator) {
         if (valueSource.isNull())
             return null;
         else if (valueSource.canGetRawValue())
@@ -79,17 +79,17 @@ public abstract class AkCollator {
     abstract public String decode(Key key);
 
     /**
-     * Compare two string values: Comparable<PValueSource>
+     * Compare two string values: Comparable<ValueSource>
      */
-    final public int compare(PValueSource value1, PValueSource value2) {
-        boolean persistit1 = value1 instanceof PersistitKeyPValueSource;
-        boolean persistit2 = value2 instanceof PersistitKeyPValueSource;
+    final public int compare(ValueSource value1, ValueSource value2) {
+        boolean persistit1 = value1 instanceof PersistitKeyValueSource;
+        boolean persistit2 = value2 instanceof PersistitKeyValueSource;
         if (persistit1 && persistit2) {
-            return ((PersistitKeyPValueSource) value1).compare((PersistitKeyPValueSource) value2);
+            return ((PersistitKeyValueSource) value1).compare((PersistitKeyValueSource) value2);
         } else if (persistit1) {
-            return ((PersistitKeyPValueSource) value1).compare(this, getString(value2, this));
+            return ((PersistitKeyValueSource) value1).compare(this, getString(value2, this));
         } else if (persistit2) {
-            return -((PersistitKeyPValueSource) value2).compare(this, getString(value1, this));
+            return -((PersistitKeyValueSource) value2).compare(this, getString(value1, this));
         } else {
             return compare(getString(value1, this), getString(value2, this));
         }

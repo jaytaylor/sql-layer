@@ -1005,13 +1005,13 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         {
             TestRow target = indexRow(idOrdering[start]);
             OverlayingRow nudgedTarget = new OverlayingRow(target);
-            //TODO: Not use pvalue.getInt32()
-            nudgedTarget.overlay(3, (long)(target.pvalue(3).getInt32() + nudge));
+            //TODO: Not use value.getInt32()
+            nudgedTarget.overlay(3, (long)(target.value(3).getInt32() + nudge));
             cursor.jump(nudgedTarget, INDEX_ROW_SELECTOR);
             Row row;
             List<Long> actualIds = new ArrayList<>();
             while ((row = cursor.next()) != null) {
-                actualIds.add((long)row.pvalue(3).getInt32());
+                actualIds.add((long)row.value(3).getInt32());
             }
 
             assertEquals(expecteds.get(start), actualIds);

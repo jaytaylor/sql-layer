@@ -20,11 +20,11 @@ package com.foundationdb.server.types.texpressions;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 
 public interface TEvaluatableExpression {
 
-    PValueSource resultValue();
+    ValueSource resultValue();
 
     void evaluate();
 

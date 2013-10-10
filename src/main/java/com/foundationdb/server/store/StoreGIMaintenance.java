@@ -37,7 +37,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDataPValueSource;
+import com.foundationdb.server.rowdata.RowDataValueSource;
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
@@ -70,12 +70,12 @@ class StoreGIMaintenance {
             bindings.setHKey(StoreGIMaintenance.HKEY_BINDING_POSITION, hKey);
 
             // Copy the values into the array bindings
-            RowDataPValueSource pSource = new RowDataPValueSource();
+            RowDataValueSource pSource = new RowDataValueSource();
             for (int i=0; i < lookupCols.size(); ++i) {
                 int bindingsIndex = i+1;
                 Column col = lookupCols.get(i);
                 pSource.bind(col.getFieldDef(), forRow);
-                bindings.setPValue(bindingsIndex, pSource);
+                bindings.setValue(bindingsIndex, pSource);
             }
             cursor = API.cursor(planOperator, context, bindings);
             RUN_TAP.in();

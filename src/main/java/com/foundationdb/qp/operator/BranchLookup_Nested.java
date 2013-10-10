@@ -29,7 +29,6 @@ import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.explain.std.LookUpOperatorExplainer;
 import com.foundationdb.util.ArgumentValidation;
-import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -365,7 +364,7 @@ public class BranchLookup_Nested extends Operator
                 computeLookupRowHKey(rowFromBindings);
                 cursor.rebind(hKey, true);
                 cursor.open();
-                inputRow.hold(rowFromBindings);
+                inputRow = rowFromBindings;
                 idle = false;
             } finally {
                 TAP_OPEN.out();
@@ -384,18 +383,18 @@ public class BranchLookup_Nested extends Operator
                 }
                 checkQueryCancelation();
                 Row row;
-                if (keepInput && inputPrecedesBranch && inputRow.isHolding()) {
-                    row = inputRow.get();
-                    inputRow.release();
+                if (keepInput && inputPrecedesBranch && inputRow != null) {
+                    row = inputRow;
+                    inputRow = null;
                 } else {
                     do {
                         row = cursor.next();
                     } while ((row != null) && !outputRowTypes.contains(row.rowType()));
                     if (row == null) {
                         if (keepInput && !inputPrecedesBranch) {
-                            assert inputRow.isHolding();
-                            row = inputRow.get();
-                            inputRow.release();
+                            assert inputRow != null;
+                            row = inputRow;
+                            inputRow = null;
                         }
                         close();
                     }
@@ -469,7 +468,7 @@ public class BranchLookup_Nested extends Operator
 
         private final GroupCursor cursor;
         private final HKey hKey;
-        private ShareHolder<Row> inputRow = new ShareHolder<>();
+        private Row inputRow;
         private boolean idle = true;
     }
 
@@ -487,24 +486,24 @@ public class BranchLookup_Nested extends Operator
             computeLookupRowHKey(rowFromBindings);
             cursor.rebind(hKey, true);
             cursor.open();
-            inputRow.hold(rowFromBindings);
+            inputRow = rowFromBindings;
         }
 
         @Override
         public Row next() {
             Row row = null;
-            if (keepInput && inputPrecedesBranch && inputRow.isHolding()) {
-                row = inputRow.get();
-                inputRow.release();
+            if (keepInput && inputPrecedesBranch && inputRow != null) {
+                row = inputRow;
+                inputRow = null;
             } else {
                 do {
                     row = cursor.next();
                 } while ((row != null) && !outputRowTypes.contains(row.rowType()));
                 if (row == null) {
                     if (keepInput && !inputPrecedesBranch) {
-                        assert inputRow.isHolding();
-                        row = inputRow.get();
-                        inputRow.release();
+                        assert inputRow != null;
+                        row = inputRow;
+                        inputRow = null;
                     }
                     close();
                 }
@@ -519,7 +518,7 @@ public class BranchLookup_Nested extends Operator
 
         @Override
         public void close() {
-            inputRow.release();
+            inputRow = null;
             cursor.close();
         }
 
@@ -570,7 +569,7 @@ public class BranchLookup_Nested extends Operator
 
         private final GroupCursor cursor;
         private final HKey hKey;
-        private ShareHolder<Row> inputRow = new ShareHolder<>();
+        private Row inputRow;
         private QueryBindings bindings;
     }
 
@@ -617,7 +616,7 @@ public class BranchLookup_Nested extends Operator
         protected BranchCursor openACursor(QueryBindings bindings, boolean lookahead) {
             BranchCursor cursor = super.openACursor(bindings, lookahead);
             if (LOG_EXECUTION) {
-                LOG.debug("BranchLookup_Nested: open{} using {}", lookahead ? " lookahead" : "", cursor.inputRow.get());
+                LOG.debug("BranchLookup_Nested: open{} using {}", lookahead ? " lookahead" : "", cursor.inputRow);
             }
             return cursor;
         }

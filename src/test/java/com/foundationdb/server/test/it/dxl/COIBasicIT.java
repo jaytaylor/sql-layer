@@ -29,7 +29,7 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.util.SchemaCache;
@@ -255,18 +255,18 @@ public final class COIBasicIT extends ITBase {
 
         // Unrelated o row, to demonstrate i ordering/adoption
         writeRow(tids.o, o1Cols);
-        compareRows( new RowBase[] { o1Row }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        compareRows( new Row[] { o1Row }, adapter.newGroupCursor(cType.userTable().getGroup()) );
 
         // i is first due to null cid component
         writeRow(tids.i, iCols);
-        compareRows( new RowBase[] { iRow, o1Row }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        compareRows( new Row[] { iRow, o1Row }, adapter.newGroupCursor(cType.userTable().getGroup()) );
 
         // i should get adopted by the new o, filling in it's cid component
         writeRow(tids.o, oCols);
-        compareRows( new RowBase[] { o1Row, oRow, iRow, }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        compareRows( new Row[] { o1Row, oRow, iRow, }, adapter.newGroupCursor(cType.userTable().getGroup()) );
 
         writeRow(tids.c, cCols);
-        compareRows( new RowBase[] { o1Row, cRow, oRow, iRow }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        compareRows( new Row[] { o1Row, cRow, oRow, iRow }, adapter.newGroupCursor(cType.userTable().getGroup()) );
     }
 
     @Test
@@ -291,20 +291,20 @@ public final class COIBasicIT extends ITBase {
         writeRow(tids.c, cCols);
         writeRow(tids.o, oCols);
         writeRow(tids.i, iCols);
-        compareRows( new RowBase[] { o1Row, cRow, oRow, iRow }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        compareRows( new Row[] { o1Row, cRow, oRow, iRow }, adapter.newGroupCursor(cType.userTable().getGroup()) );
 
         deleteRow(tids.c, cCols);
-        compareRows( new RowBase[] { o1Row, oRow, iRow }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        compareRows( new Row[] { o1Row, oRow, iRow }, adapter.newGroupCursor(cType.userTable().getGroup()) );
 
         // Delete o => i.cid becomes null
         deleteRow(tids.o, oCols);
-        compareRows( new RowBase[] { iRow, o1Row }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        compareRows( new Row[] { iRow, o1Row }, adapter.newGroupCursor(cType.userTable().getGroup()) );
 
         deleteRow(tids.i, iCols);
-        compareRows( new RowBase[] { o1Row }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        compareRows( new Row[] { o1Row }, adapter.newGroupCursor(cType.userTable().getGroup()) );
 
         deleteRow(tids.o, o1Cols);
-        compareRows( new RowBase[] { }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        compareRows( new Row[] { }, adapter.newGroupCursor(cType.userTable().getGroup()) );
     }
 
     @Test
@@ -331,14 +331,14 @@ public final class COIBasicIT extends ITBase {
         writeRow(tids.c, cCols);
         writeRow(tids.o, oOrig);
         writeRow(tids.i, iCols);
-        compareRows( new RowBase[] { iRow, oOrigRow, o1Row, cRow }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        compareRows( new Row[] { iRow, oOrigRow, o1Row, cRow }, adapter.newGroupCursor(cType.userTable().getGroup()) );
 
         // updated o moves after o1 and adopts i
         update(tids.o, oOrig).to(oUpdate);
-        compareRows( new RowBase[] { o1Row, cRow, oUpdateRow, iRow }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        compareRows( new Row[] { o1Row, cRow, oUpdateRow, iRow }, adapter.newGroupCursor(cType.userTable().getGroup()) );
     }
 
-    protected void compareRows(RowBase[] expected, Cursor cursor) {
+    protected void compareRows(Row[] expected, Cursor cursor) {
         txnService().beginTransaction(session());
         try {
             super.compareRows(expected, cursor);

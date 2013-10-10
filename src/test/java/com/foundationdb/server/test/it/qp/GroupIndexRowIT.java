@@ -24,7 +24,7 @@ import com.foundationdb.ais.model.IndexRowComposition;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
@@ -109,7 +109,7 @@ public class GroupIndexRowIT extends OperatorITBase
                 groupIndexRowType,
                 Arrays.asList(userRowType, memberInfoRowType),
                 API.InputPreservationOption.DISCARD_INPUT);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(userRowType, 1L),
             row(memberInfoRowType, 1L, 20120424L),
         };

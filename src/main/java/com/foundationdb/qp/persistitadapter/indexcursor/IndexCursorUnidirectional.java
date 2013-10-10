@@ -20,7 +20,7 @@ package com.foundationdb.qp.persistitadapter.indexcursor;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.qp.expression.BoundExpressions;
+import com.foundationdb.server.types.value.ValueRecord;
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
@@ -171,8 +171,8 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                 startKey.append(startBoundary);
             } else {
                 // Check constraints on start and end
-                BoundExpressions loExpressions = lo.boundExpressions(context, bindings);
-                BoundExpressions hiExpressions = hi.boundExpressions(context, bindings);
+                ValueRecord loExpressions = lo.boundExpressions(context, bindings);
+                ValueRecord hiExpressions = hi.boundExpressions(context, bindings);
                 for (int f = 0; f < endBoundColumns - 1; f++) {
                     keyAdapter.checkConstraints(loExpressions, hiExpressions, f, null, tInstances);
                 }
@@ -200,8 +200,8 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                       lo and hi to be null, so write null, not Key.AFTER to endKey.
                 */
                 // Construct start and end keys
-                BoundExpressions startExpressions = start.boundExpressions(context, bindings);
-                BoundExpressions endExpressions = end.boundExpressions(context, bindings);
+                ValueRecord startExpressions = start.boundExpressions(context, bindings);
+                ValueRecord endExpressions = end.boundExpressions(context, bindings);
                 // startBoundColumns == endBoundColumns because jump() hasn't been called.
                 // If it had we'd be in reevaluateBoundaries, not here.
                 assert startBoundColumns == endBoundColumns;
@@ -294,7 +294,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             startKey.append(startBoundary);
         } else {
             // Construct start key
-            BoundExpressions startExpressions = start.boundExpressions(context, bindings);
+            ValueRecord startExpressions = start.boundExpressions(context, bindings);
             S[] startValues = keyAdapter.createSourceArray(startBoundColumns);
             for (int f = 0; f < startBoundColumns; f++) {
                 startValues[f] = keyAdapter.get(startExpressions, f);

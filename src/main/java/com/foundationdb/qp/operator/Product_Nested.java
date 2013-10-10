@@ -24,7 +24,6 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.util.ArgumentValidation;
-import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -198,7 +197,7 @@ class Product_Nested extends Operator
             super.open();
             Row row = bindings.getRow(bindingPosition);
             assert (row.rowType() == outerType) : row;
-            boundRow.hold(row);
+            boundRow = row;
         }
 
         @Override
@@ -214,7 +213,7 @@ class Product_Nested extends Operator
                 checkQueryCancelation();
                 Row row = input.next();
                 if ((row != null) && (row.rowType() == inputType)) {
-                    row = new ProductRow(productType, boundRow.get(), row);
+                    row = new ProductRow(productType, boundRow, row);
                 }
                 if (LOG_EXECUTION) {
                     LOG.debug("Product_Nested: yield {}", row);
@@ -231,7 +230,7 @@ class Product_Nested extends Operator
         public void close()
         {
             super.close();
-            boundRow.release();
+            boundRow = null;
         }
 
         // Execution interface
@@ -243,6 +242,6 @@ class Product_Nested extends Operator
 
         // Object state
 
-        private ShareHolder<Row> boundRow = new ShareHolder<>();
+        private Row boundRow;
     }
 }

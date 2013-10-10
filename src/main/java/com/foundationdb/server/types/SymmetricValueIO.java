@@ -15,17 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.types.pvalue;
+package com.foundationdb.server.types;
 
-public interface PValueSource extends PBasicValueSource {
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 
-    boolean hasAnyValue();
-    
-    boolean hasRawValue();
-    
-    boolean hasCacheValue();
+public abstract class SymmetricValueIO implements ValueIO {
 
-    boolean canGetRawValue();
+    protected abstract void symmetricCollationCopy(ValueSource in, TInstance typeInstance, ValueTarget out);
 
-    Object getObject();
+    @Override
+    public void writeCollating(ValueSource in, TInstance typeInstance, ValueTarget out) {
+        symmetricCollationCopy(in, typeInstance, out);
+    }
+
+    @Override
+    public void readCollating(ValueSource in, TInstance typeInstance, ValueTarget out) {
+        symmetricCollationCopy(in, typeInstance, out);
+    }
 }

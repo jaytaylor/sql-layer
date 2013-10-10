@@ -22,7 +22,6 @@ import com.foundationdb.qp.exec.UpdateResult;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.RowBase;
 
 import org.junit.Test;
 
@@ -58,7 +57,7 @@ public class DeleteIT extends OperatorITBase {
         use(db);
         doDelete();
         compareRows(
-                array(RowBase.class,
+                array(Row.class,
                       row(customerNameIndexRowType, "xyz", 1L)
                       ),
                 cursor(
@@ -75,7 +74,7 @@ public class DeleteIT extends OperatorITBase {
         use(db);
         doDelete();
         compareRows(
-                array(RowBase.class,
+                array(Row.class,
                       row(customerNameItemOidIndexRowType, "xyz", 11L, 1L, 11L, 111L),
                       row(customerNameItemOidIndexRowType, "xyz", 11L, 1L, 11L, 112L),
                       row(customerNameItemOidIndexRowType, "xyz", 12L, 1L, 12L, 121L),

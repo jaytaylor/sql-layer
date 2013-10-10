@@ -26,16 +26,16 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.aksql.aktypes.AkResultSet;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
 
 public class ResultSetSubqueryTExpression extends SubqueryTExpression
 {
     private static final class InnerEvaluation implements TEvaluatableExpression
     {
         @Override
-        public PValueSource resultValue() {
-            return pvalue;
+        public ValueSource resultValue() {
+            return value;
         }
 
         @Override
@@ -43,7 +43,7 @@ public class ResultSetSubqueryTExpression extends SubqueryTExpression
             bindings.setRow(bindingPosition, outerRow);
             Cursor cursor = API.cursor(subquery, context, bindings);
             cursor.openTopLevel();
-            pvalue.putObject(cursor);
+            value.putObject(cursor);
         }
 
         @Override
@@ -70,13 +70,13 @@ public class ResultSetSubqueryTExpression extends SubqueryTExpression
             this.subquery = subquery;
             this.outerRowType = outerRowType;
             this.bindingPosition = bindingPosition;
-            this.pvalue = new PValue();
+            this.value = new Value();
         }
 
         private final Operator subquery;
         private final RowType outerRowType;
         private final int bindingPosition;
-        private final PValue pvalue;
+        private final Value value;
         private QueryContext context;
         private QueryBindings bindings;
         private Row outerRow;

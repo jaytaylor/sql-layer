@@ -24,16 +24,16 @@ import com.foundationdb.qp.util.HKeyCache;
 import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDataPValueSource;
+import com.foundationdb.server.rowdata.RowDataValueSource;
 import com.foundationdb.server.rowdata.RowDef;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.SparseArray;
 import com.persistit.Key;
 
 public class FDBGroupRow extends AbstractRow {
     private final FDBAdapter adapter;
     private final HKeyCache<PersistitHKey> hKeyCache;
-    private SparseArray<RowDataPValueSource> pvalueSources;
+    private SparseArray<RowDataValueSource> valueSources;
     private RowData rowData;
     private LegacyRowWrapper row;
     private PersistitHKey currentHKey;
@@ -64,10 +64,10 @@ public class FDBGroupRow extends AbstractRow {
     }
 
     @Override
-    public PValueSource pvalue(int i) {
+    public ValueSource value(int i) {
         FieldDef fieldDef = rowDef().getFieldDef(i);
         RowData rowData = rowData();
-        RowDataPValueSource valueSource = pValueSource(i);
+        RowDataValueSource valueSource = ValueSource(i);
         valueSource.bind(fieldDef, rowData);
         return valueSource;
     }
@@ -110,16 +110,16 @@ public class FDBGroupRow extends AbstractRow {
         return rowData;
     }
 
-    private RowDataPValueSource pValueSource(int i) {
-        if (pvalueSources == null) {
-            pvalueSources = new SparseArray<RowDataPValueSource>()
+    private RowDataValueSource ValueSource(int i) {
+        if (valueSources == null) {
+            valueSources = new SparseArray<RowDataValueSource>()
             {
                 @Override
-                protected RowDataPValueSource initialValue() {
-                    return new RowDataPValueSource();
+                protected RowDataValueSource initialValue() {
+                    return new RowDataValueSource();
                 }
             };
         }
-        return pvalueSources.get(i);
+        return valueSources.get(i);
     }
 }

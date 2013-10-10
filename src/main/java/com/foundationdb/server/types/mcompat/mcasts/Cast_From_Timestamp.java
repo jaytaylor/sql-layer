@@ -23,8 +23,8 @@ import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.Constantness;
 
 import static com.foundationdb.server.types.mcompat.mcasts.MNumericCastBase.*;
@@ -59,7 +59,7 @@ public class Cast_From_Timestamp
     {
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt32(MDatetimes.encodeDate(MDatetimes.decodeTimestamp(source.getInt32(), context.getCurrentTimezone())));
         }
@@ -69,7 +69,7 @@ public class Cast_From_Timestamp
     {
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt32(MDatetimes.encodeTime(MDatetimes.decodeTimestamp(source.getInt32(), context.getCurrentTimezone())));
         }
@@ -79,7 +79,7 @@ public class Cast_From_Timestamp
     {
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt64(MDatetimes.encodeDatetime(MDatetimes.decodeTimestamp(source.getInt32(),context.getCurrentTimezone())));
         }

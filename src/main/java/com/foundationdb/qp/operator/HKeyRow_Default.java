@@ -26,7 +26,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.HKeyRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.util.HKeyCache;
-import com.foundationdb.server.PersistitKeyPValueTarget;
+import com.foundationdb.server.PersistitKeyValueTarget;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
@@ -224,6 +224,6 @@ class HKeyRow_Default extends Operator
         // Object state
         private boolean idle = true;
         private List<TEvaluatableExpression> evalExprs = null;
-        private final PersistitKeyPValueTarget target = new PersistitKeyPValueTarget();
+        private final PersistitKeyValueTarget target = new PersistitKeyValueTarget();
     }
 }

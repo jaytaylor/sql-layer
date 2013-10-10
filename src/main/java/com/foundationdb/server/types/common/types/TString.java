@@ -32,11 +32,8 @@ import com.foundationdb.server.types.TInstanceAdjuster;
 import com.foundationdb.server.types.TInstanceBuilder;
 import com.foundationdb.server.types.TInstanceNormalizer;
 import com.foundationdb.server.types.aksql.AkCategory;
-import com.foundationdb.server.types.pvalue.PBasicValueSource;
-import com.foundationdb.server.types.pvalue.PBasicValueTarget;
-import com.foundationdb.server.types.pvalue.PUnderlying;
-import com.foundationdb.server.types.pvalue.PValueCacher;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.*;
+import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.server.types.texpressions.TValidatedOverload;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.types.CharacterTypeAttributes;
@@ -54,7 +51,7 @@ import java.nio.charset.Charset;
 import java.util.Formatter;
 
 /**
- * Base types for VARCHAR types. Its base type is PUnderlying.STRING. Its cached object can either be a String
+ * Base types for VARCHAR types. Its base type is UnderlyingType.STRING. Its cached object can either be a String
  * (representing a collated string with a lossy collation) or a ByteSource wrapping the string's bytes.
  */
 public abstract class TString extends TClass
@@ -74,7 +71,7 @@ public abstract class TString extends TClass
                 1,
                 1,
                 serialisationSize,
-                PUnderlying.STRING);
+                UnderlyingType.STRING);
         this.fixedLength = fixedLength;
         this.typeId = typeId;
     }
@@ -82,7 +79,7 @@ public abstract class TString extends TClass
     private static enum FORMAT implements TClassFormatter {
         STRING {
             @Override
-            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void format(TInstance instance, ValueSource source, AkibanAppender out) {
                 if (source.hasCacheValue() && out.canAppendBytes()) {
                     Object cached = source.getObject();
                     if (cached instanceof ByteSource) {
@@ -102,12 +99,12 @@ public abstract class TString extends TClass
             }
 
             @Override
-            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void formatAsLiteral(TInstance instance, ValueSource source, AkibanAppender out) {
                 formatQuoted(source, out, '\'', '\'', false);
             }
 
             @Override
-            public void formatAsJson(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void formatAsJson(TInstance instance, ValueSource source, AkibanAppender out) {
                 formatQuoted(source, out, '"', '\\', true);
             }
 
@@ -119,7 +116,7 @@ public abstract class TString extends TClass
             private static final String SIMPLY_ESCAPED = "\r\n\t";
             private static final String SIMPLY_ESCAPES = "rnt";
 
-            protected void formatQuoted(PValueSource source, AkibanAppender out,
+            protected void formatQuoted(ValueSource source, AkibanAppender out,
                                         char quote, char escape, boolean escapeControlChars) {
                 String value = source.getString();
                 out.append(quote);
@@ -155,12 +152,12 @@ public abstract class TString extends TClass
     }
 
     @Override
-    public Object formatCachedForNiceRow(PValueSource source) {
+    public Object formatCachedForNiceRow(ValueSource source) {
         Object obj = source.getObject(); 
         if (obj instanceof ByteSource) {
             return StringCacher.getString((ByteSource)source.getObject(), source.tInstance());
         } else {
-            assert obj instanceof String : "PValue source object not ByteSource nor String: " + source;
+            assert obj instanceof String : "Value source object not ByteSource nor String: " + source;
             return obj;
         }
     }
@@ -182,7 +179,7 @@ public abstract class TString extends TClass
     }
 
     @Override
-    protected int doCompare(TInstance instanceA, PValueSource sourceA, TInstance instanceB, PValueSource sourceB) {
+    protected int doCompare(TInstance instanceA, ValueSource sourceA, TInstance instanceB, ValueSource sourceB) {
         CharacterTypeAttributes aAttrs = StringAttribute.characterTypeAttributes(instanceA);
         CharacterTypeAttributes bAttrs = StringAttribute.characterTypeAttributes(instanceB);
         AkCollator collator = mergeAkCollators(aAttrs, bAttrs);
@@ -271,7 +268,7 @@ public abstract class TString extends TClass
     }
 
     @Override
-    public PValueCacher cacher() {
+    public ValueCacher cacher() {
         return cacher;
     }
 
@@ -363,17 +360,17 @@ public abstract class TString extends TClass
     private final TypeId typeId;
     private static final Logger logger = LoggerFactory.getLogger(TString.class);
 
-    private static final PValueCacher cacher = new StringCacher();
+    private static final ValueCacher cacher = new StringCacher();
 
-    private static class StringCacher implements PValueCacher {
+    private static class StringCacher implements ValueCacher {
         @Override
-        public void cacheToValue(Object cached, TInstance tInstance, PBasicValueTarget target) {
+        public void cacheToValue(Object cached, TInstance tInstance, BasicValueTarget target) {
             String asString = getString((ByteSource) cached, tInstance);
             target.putString(asString, null);
         }
 
         @Override
-        public Object valueToCache(PBasicValueSource value, TInstance tInstance) {
+        public Object valueToCache(BasicValueSource value, TInstance tInstance) {
             String charsetName = StringAttribute.charsetName(tInstance);
             try {
                 return new WrappingByteSource(value.getString().getBytes(charsetName));

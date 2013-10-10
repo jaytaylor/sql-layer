@@ -21,8 +21,9 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.CompoundExplainer;
+import com.foundationdb.server.types.value.ValueRecord;
 
 public interface UnboundExpressions {
-    BoundExpressions get(QueryContext context, QueryBindings bindings);
+    ValueRecord get(QueryContext context, QueryBindings bindings);
     CompoundExplainer getExplainer(ExplainContext context);
 }

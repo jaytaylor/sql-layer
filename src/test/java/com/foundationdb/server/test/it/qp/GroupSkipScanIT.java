@@ -21,7 +21,7 @@ import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -108,7 +108,7 @@ public class GroupSkipScanIT extends OperatorITBase
     public void jumpToEqual()
     {
         Operator plan = jumpToEqual(false);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(c2NIndexRowType, 120L, 1L, 121L),
             row(c2NIndexRowType, 120L, 9L, 921L),
         };

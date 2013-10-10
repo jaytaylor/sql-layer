@@ -15,10 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.qp.expression;
+package com.foundationdb.server.types.value;
 
-import com.foundationdb.server.types.pvalue.PValueSource;
+public interface ValueSource extends BasicValueSource {
 
-public interface BoundExpressions {
-    PValueSource pvalue(int index);
+    boolean hasAnyValue();
+    
+    boolean hasRawValue();
+    
+    boolean hasCacheValue();
+
+    boolean canGetRawValue();
+
+    Object getObject();
 }

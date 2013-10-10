@@ -25,7 +25,6 @@ import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.util.ArgumentValidation;
-import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -198,16 +197,16 @@ class Select_HKeyOrdered extends Operator
                         if (pEvaluation.resultValue().getBoolean(false)) {
                             // New row of predicateRowType
                             if (groupScanInput) {
-                                selectedRow.hold(inputRow);
+                                selectedRow = inputRow;
                             }
                             row = inputRow;
                         }
                     } else if (predicateRowType.ancestorOf(inputRow.rowType())) {
                         // Row's type is a descendent of predicateRowType.
-                        if (selectedRow.isHolding() && selectedRow.get().ancestorOf(inputRow)) {
+                        if (selectedRow != null && selectedRow.ancestorOf(inputRow)) {
                             row = inputRow;
                         } else {
-                            selectedRow.release();
+                            selectedRow = null;
                         }
                     } else {
                         row = inputRow;
@@ -232,7 +231,7 @@ class Select_HKeyOrdered extends Operator
         {
             CursorLifecycle.checkIdleOrActive(this);
             if (!isIdle()) {
-                selectedRow.release();
+                selectedRow = null;
                 input.close();
                 idle = true;
             }
@@ -269,7 +268,7 @@ class Select_HKeyOrdered extends Operator
 
         // Object state
 
-        private final ShareHolder<Row> selectedRow = new ShareHolder<>(); // The last input row with type = predicateRowType.
+        private Row selectedRow; // The last input row with type = predicateRowType.
         private final TEvaluatableExpression pEvaluation;
         private boolean idle = true;
     }

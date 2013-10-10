@@ -46,8 +46,8 @@ public class CompoundRowTest {
         RowType customerType = schema.userTableRowType(customer);
         RowType orderType = schema.userTableRowType(order);
         
-        PValuesRow customerRow = new PValuesRow (customerType, new Integer(1), new String ("fred"));
-        PValuesRow orderRow = new PValuesRow (orderType, new Integer (1000), new Integer(1), new Integer(45));
+        ValuesRow customerRow = new ValuesRow(customerType, new Integer(1), new String ("fred"));
+        ValuesRow orderRow = new ValuesRow(orderType, new Integer (1000), new Integer(1), new Integer(45));
 
         FlattenedRowType flattenType = schema.newFlattenType(customerType, orderType);
         
@@ -59,8 +59,8 @@ public class CompoundRowTest {
         //assertFalse(flattenRow.containsRealRowOf(state));
         
         //assertEquals(ApiTestBase.getLong(flattenRow, 0), Long.valueOf(1));
-        assertEquals(flattenRow.pvalue(0).getInt32(), 1);
-        assertEquals(flattenRow.pvalue(1).getString(), "fred");
+        assertEquals(flattenRow.value(0).getInt32(), 1);
+        assertEquals(flattenRow.value(1).getString(), "fred");
         assertEquals(ApiTestBase.getLong(flattenRow, 2), Long.valueOf(1000));
         assertEquals(ApiTestBase.getLong(flattenRow, 3), Long.valueOf(1));
         assertEquals(ApiTestBase.getLong(flattenRow, 4), Long.valueOf(45));
@@ -76,8 +76,8 @@ public class CompoundRowTest {
         RowType customerType = schema.userTableRowType(customer);
         RowType orderType = schema.userTableRowType(order);
         
-        PValuesRow customerRow = new PValuesRow (customerType, new Integer(1), new String("Fred"));
-        PValuesRow ordersRow = new PValuesRow (orderType, new Integer(1000), new Integer(1), new Integer(45));
+        ValuesRow customerRow = new ValuesRow(customerType, new Integer(1), new String("Fred"));
+        ValuesRow ordersRow = new ValuesRow(orderType, new Integer(1000), new Integer(1), new Integer(45));
         
         ProductRowType productType = schema.newProductType(customerType, (UserTableRowType)customerType, orderType);
         
@@ -86,7 +86,7 @@ public class CompoundRowTest {
         assertNotNull (productRow);
        
         assertEquals(ApiTestBase.getLong(productRow, 0), Long.valueOf(1));
-        assertEquals(productRow.pvalue(1).getString(), "Fred");
+        assertEquals(productRow.value(1).getString(), "Fred");
         assertEquals(ApiTestBase.getLong(productRow, 2), Long.valueOf(45));
         
     }

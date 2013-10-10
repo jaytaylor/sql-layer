@@ -18,7 +18,7 @@
 package com.foundationdb.server.types.common.types;
 
 import com.foundationdb.server.types.*;
-import com.foundationdb.server.types.pvalue.PUnderlying;
+import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.sql.types.TypeId;
 
 public class NoAttrTClass extends SimpleDtdTClass {
@@ -66,10 +66,10 @@ public class NoAttrTClass extends SimpleDtdTClass {
     }
     
     public NoAttrTClass(TBundleID bundle, String name, Enum<?> category, TClassFormatter formatter, int internalRepVersion,
-                           int serializationVersion, int serializationSize, PUnderlying pUnderlying, TParser parser,
+                           int serializationVersion, int serializationSize, UnderlyingType underlyingType, TParser parser,
                            int defaultVarcharLen, TypeId typeId) {
         super(bundle, name, category, formatter, Attribute.NONE.class, internalRepVersion, serializationVersion, serializationSize,
-                pUnderlying, parser, defaultVarcharLen, typeId);
+                underlyingType, parser, defaultVarcharLen, typeId);
     }
 
     private volatile TInstance nullableTInstance;

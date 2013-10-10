@@ -19,7 +19,6 @@ package com.foundationdb.qp.persistitadapter;
 
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.PersistitStore;
-import com.foundationdb.util.Shareable;
 import com.persistit.Exchange;
 import com.persistit.Persistit;
 import com.persistit.Volume;
@@ -106,7 +105,7 @@ public class TempVolume
     private static final Session.Key<TempVolumeState> TEMP_VOLUME_STATE = Session.Key.named("TEMP_VOLUME_STATE");
     private static volatile boolean injectIOException = false;
 
-    private static class TempVolumeState implements Shareable
+    private static class TempVolumeState
     {
         public TempVolumeState(Volume volume)
         {
@@ -119,19 +118,16 @@ public class TempVolume
             return volume;
         }
 
-        @Override
         public void acquire()
         {
             ++refCount;
         }
 
-        @Override
         public boolean isShared()
         {
             return refCount > 0;
         }
 
-        @Override
         public void release()
         {
             --refCount;

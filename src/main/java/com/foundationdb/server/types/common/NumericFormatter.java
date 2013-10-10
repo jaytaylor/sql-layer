@@ -22,7 +22,7 @@ import com.foundationdb.server.types.TClassFormatter;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.StringFactory;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal.Attrs;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.AkibanAppender;
 import com.google.common.primitives.UnsignedLongs;
 import org.apache.commons.codec.binary.Base64;
@@ -36,59 +36,59 @@ public class NumericFormatter {
     public static enum FORMAT implements TClassFormatter {
         FLOAT {
             @Override
-            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void format(TInstance instance, ValueSource source, AkibanAppender out) {
                 out.append(Float.toString(source.getFloat()));
             }
 
             @Override
-            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void formatAsLiteral(TInstance instance, ValueSource source, AkibanAppender out) {
                 new Formatter(out.getAppendable()).format("%e", source.getFloat());
             }
         },
         DOUBLE {
             @Override
-            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void format(TInstance instance, ValueSource source, AkibanAppender out) {
                 out.append(Double.toString(source.getDouble()));
             }
 
             @Override
-            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void formatAsLiteral(TInstance instance, ValueSource source, AkibanAppender out) {
                 new Formatter(out.getAppendable()).format("%e", source.getDouble());
             }
         },
         INT_8 {
             @Override
-            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void format(TInstance instance, ValueSource source, AkibanAppender out) {
                 out.append(Byte.toString(source.getInt8()));
             }
         },
         INT_16 {
             @Override
-            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void format(TInstance instance, ValueSource source, AkibanAppender out) {
                 out.append(Short.toString(source.getInt16()));
             }
         },
         INT_32 {
             @Override
-            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void format(TInstance instance, ValueSource source, AkibanAppender out) {
                 out.append(Integer.toString(source.getInt32()));
             }
         },
         INT_64 {
             @Override
-            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void format(TInstance instance, ValueSource source, AkibanAppender out) {
                 out.append(Long.toString(source.getInt64()));
             }
         },
         UINT_64 {
             @Override
-            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void format(TInstance instance, ValueSource source, AkibanAppender out) {
                 out.append(UnsignedLongs.toString(source.getInt64()));
             }
         },
         BYTES {
             @Override
-            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void format(TInstance instance, ValueSource source, AkibanAppender out) {
                 String charsetName = StringFactory.DEFAULT_CHARSET.name();
                 Charset charset = Charset.forName(charsetName);
                 String str = new String(source.getBytes(), charset);
@@ -96,7 +96,7 @@ public class NumericFormatter {
             }
 
             @Override
-            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void formatAsLiteral(TInstance instance, ValueSource source, AkibanAppender out) {
                 byte[] value = source.getBytes();
                 out.append("X'");
                 for (int i = 0; i < value.length; i++) {
@@ -115,7 +115,7 @@ public class NumericFormatter {
             }
 
             @Override
-            public void formatAsJson(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void formatAsJson(TInstance instance, ValueSource source, AkibanAppender out) {
                 // There is no strong precedent for how to encode
                 // arbitrary bytes in JSON.
                 out.append('"');
@@ -125,7 +125,7 @@ public class NumericFormatter {
         },
         BIGDECIMAL{
             @Override
-            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void format(TInstance instance, ValueSource source, AkibanAppender out) {
                 if (source.hasCacheValue()) {
                     BigDecimal num = ((BigDecimalWrapper) source.getObject()).asBigDecimal();
                     out.append(num.toString());
@@ -138,7 +138,7 @@ public class NumericFormatter {
             }
 
             @Override
-            public void formatAsJson(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void formatAsJson(TInstance instance, ValueSource source, AkibanAppender out) {
                 // The JSON spec just has one kind of number, so we could output with
                 // quotes and reserve scientific notation for floats. But almost every
                 // library interprets decimal point as floating point,
@@ -150,12 +150,12 @@ public class NumericFormatter {
         };
 
         @Override
-        public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+        public void formatAsLiteral(TInstance instance, ValueSource source, AkibanAppender out) {
             format(instance, source, out);
         }
         
         @Override
-        public void formatAsJson(TInstance instance, PValueSource source, AkibanAppender out) {
+        public void formatAsJson(TInstance instance, ValueSource source, AkibanAppender out) {
             format(instance, source, out);
         }
     }

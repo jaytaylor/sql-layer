@@ -25,15 +25,15 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 
 abstract class SubqueryTEvaluateble implements TEvaluatableExpression {
 
     @Override
-    public PValueSource resultValue() {
-        return pvalue;
+    public ValueSource resultValue() {
+        return value;
     }
 
     @Override
@@ -44,7 +44,7 @@ abstract class SubqueryTEvaluateble implements TEvaluatableExpression {
         }
         cursor.openTopLevel();
         try {
-            doEval(pvalue);
+            doEval(value);
         }
         finally {
             cursor.closeTopLevel();
@@ -72,7 +72,7 @@ abstract class SubqueryTEvaluateble implements TEvaluatableExpression {
         cursor = null;
     }
 
-    protected abstract void doEval(PValueTarget out);
+    protected abstract void doEval(ValueTarget out);
 
     protected QueryContext queryContext() {
         return context;
@@ -99,14 +99,14 @@ abstract class SubqueryTEvaluateble implements TEvaluatableExpression {
         this.outerRowType = outerRowType;
         this.innerRowType = innerRowType;
         this.bindingPosition = bindingPosition;
-        this.pvalue = new PValue(underlying);
+        this.value = new Value(underlying);
     }
 
     private final Operator subquery;
     private final RowType outerRowType;
     private final RowType innerRowType;
     private final int bindingPosition;
-    private final PValue pvalue;
+    private final Value value;
     private Cursor cursor;
     private QueryContext context;
     private QueryBindings bindings;

@@ -22,12 +22,11 @@ import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal.Attrs;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimalWrapper;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.google.common.primitives.UnsignedLongs;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -87,7 +86,7 @@ public final class CastUtils
   
     public static void doCastDecimal(TExecutionContext context,
                             BigDecimalWrapper num,
-                            PValueTarget out)
+                            ValueTarget out)
     {
         int pre = num.getPrecision();
         int scale = num.getScale();

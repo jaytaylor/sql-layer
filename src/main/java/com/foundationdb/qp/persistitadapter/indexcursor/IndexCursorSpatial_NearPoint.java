@@ -18,7 +18,7 @@
 package com.foundationdb.qp.persistitadapter.indexcursor;
 
 import com.foundationdb.ais.model.Index;
-import com.foundationdb.qp.expression.BoundExpressions;
+import com.foundationdb.server.types.value.ValueRecord;
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
@@ -32,8 +32,8 @@ import com.foundationdb.server.geophile.SpaceLatLon;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 
 import java.math.BigDecimal;
@@ -137,19 +137,19 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         // The index column selector needs to select all the columns before the z column, and the z column itself.
         IndexRowPrefixSelector indexColumnSelector = new IndexRowPrefixSelector(latColumn + 1);
         IndexBound loBound = keyRange.lo();
-        BoundExpressions loExpressions = loBound.boundExpressions(context, bindings);
+        ValueRecord loExpressions = loBound.boundExpressions(context, bindings);
         // Compute z-value at beginning of forward and backward scans
         TInstance latInstance = index.getAllColumns().get(latColumn).getColumn().tInstance();
         TInstance lonInstance = index.getAllColumns().get(lonColumn).getColumn().tInstance();
-        BigDecimal lat = MBigDecimal.getWrapper(loExpressions.pvalue(latColumn), latInstance).asBigDecimal();
-        BigDecimal lon = MBigDecimal.getWrapper(loExpressions.pvalue(lonColumn), lonInstance).asBigDecimal();
+        BigDecimal lat = MBigDecimal.getWrapper(loExpressions.value(latColumn), latInstance).asBigDecimal();
+        BigDecimal lon = MBigDecimal.getWrapper(loExpressions.value(lonColumn), lonInstance).asBigDecimal();
         zStart = space.shuffle(lat, lon);
         // Cursors going forward from starting z value (inclusive), and backward from the same z value (exclusive)
         int indexRowFields = physicalIndexRowType.nFields();
-        SpatialIndexBoundExpressions zForwardRow = new SpatialIndexBoundExpressions(indexRowFields);
-        SpatialIndexBoundExpressions zBackwardRow = new SpatialIndexBoundExpressions(indexRowFields);
-        SpatialIndexBoundExpressions zMaxRow = new SpatialIndexBoundExpressions(indexRowFields);
-        SpatialIndexBoundExpressions zMinRow = new SpatialIndexBoundExpressions(indexRowFields);
+        SpatialIndexValueRecord zForwardRow = new SpatialIndexValueRecord(indexRowFields);
+        SpatialIndexValueRecord zBackwardRow = new SpatialIndexValueRecord(indexRowFields);
+        SpatialIndexValueRecord zMaxRow = new SpatialIndexValueRecord(indexRowFields);
+        SpatialIndexValueRecord zMinRow = new SpatialIndexValueRecord(indexRowFields);
         IndexBound zForward = new IndexBound(zForwardRow, indexColumnSelector);
         IndexBound zBackward = new IndexBound(zBackwardRow, indexColumnSelector);
         IndexBound zMax = new IndexBound(zMaxRow, indexColumnSelector);
@@ -157,23 +157,23 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         // Take care of any equality restrictions before the spatial fields
         zPosition = latColumn;
         for (int f = 0; f < zPosition; f++) {
-            PValueSource eqValueSource = loExpressions.pvalue(f);
+            ValueSource eqValueSource = loExpressions.value(f);
             zForwardRow.value(f, eqValueSource);
             zBackwardRow.value(f, eqValueSource);
             zMaxRow.value(f, eqValueSource);
             zMinRow.value(f, eqValueSource);
         }
         // Z-value part of bounds
-        PValue startPValue = new PValue(MNumeric.BIGINT.instance(false));
-        PValue maxPValue = new PValue(MNumeric.BIGINT.instance(false));
-        PValue minPValue = new PValue(MNumeric.BIGINT.instance(false));
-        startPValue.putInt64(zStart);
-        maxPValue.putInt64(Long.MAX_VALUE);
-        minPValue.putInt64(Long.MIN_VALUE);
-        zForwardRow.value(zPosition, startPValue);
-        zBackwardRow.value(zPosition, startPValue);
-        zMaxRow.value(zPosition, maxPValue);
-        zMinRow.value(zPosition, minPValue);
+        Value startValue = new Value(MNumeric.BIGINT.instance(false));
+        Value maxValue = new Value(MNumeric.BIGINT.instance(false));
+        Value minValue = new Value(MNumeric.BIGINT.instance(false));
+        startValue.putInt64(zStart);
+        maxValue.putInt64(Long.MAX_VALUE);
+        minValue.putInt64(Long.MIN_VALUE);
+        zForwardRow.value(zPosition, startValue);
+        zBackwardRow.value(zPosition, startValue);
+        zMaxRow.value(zPosition, maxValue);
+        zMinRow.value(zPosition, minValue);
         IndexKeyRange geKeyRange = IndexKeyRange.bounded(physicalIndexRowType, zForward, true, zMax, false);
         IndexKeyRange ltKeyRange = IndexKeyRange.bounded(physicalIndexRowType, zMin, false, zBackward, false);
         IterationHelper geRowState = adapter.createIterationHelper(keyRange.indexRowType());
@@ -189,12 +189,12 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
                                                                geRowState,
                                                                geKeyRange,
                                                                upOrdering,
-                                                               PValueSortKeyAdapter.INSTANCE);
+                                                               ValueSortKeyAdapter.INSTANCE);
         ltCursor = new IndexCursorUnidirectional<>(context, 
                                                                ltRowState,
                                                                ltKeyRange,
                                                                downOrdering,
-                                                               PValueSortKeyAdapter.INSTANCE);
+                                                               ValueSortKeyAdapter.INSTANCE);
     }
 
     // For use by this class
@@ -205,7 +205,7 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         if (row == null) {
             distance = Long.MAX_VALUE;
         } else {
-            long z = row.pvalue(zPosition).getInt64();
+            long z = row.value(zPosition).getInt64();
             distance = abs(z - zStart);
         }
         return distance;

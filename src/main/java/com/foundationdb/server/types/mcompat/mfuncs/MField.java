@@ -26,8 +26,8 @@ import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 
@@ -66,13 +66,13 @@ public final class MField extends TScalarBase {
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        PValueSource needle = inputs.get(0);
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
+        ValueSource needle = inputs.get(0);
         int result = 0;
         if (!needle.isNull()) {
             TInstance needleInstance = context.inputTInstanceAt(0);
             for (int i = 1, size = inputs.size(); i < size; ++i) {
-                PValueSource arg = inputs.get(i);
+                ValueSource arg = inputs.get(i);
                 if (!arg.isNull()) {
                     TInstance argInstance = context.inputTInstanceAt(i);
                     int cmp = TClass.compare(needleInstance, needle, argInstance, arg);

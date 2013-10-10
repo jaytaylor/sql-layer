@@ -27,8 +27,8 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TPreptimeContext;
 import com.foundationdb.server.types.TPreptimeValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 
 import java.util.List;
 
@@ -47,7 +47,7 @@ public final class TValidatedScalar extends TValidatedOverload implements TScala
     }
 
     @Override
-    public void evaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+    public void evaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
         scalar.evaluate(context, inputs, output);
     }
 

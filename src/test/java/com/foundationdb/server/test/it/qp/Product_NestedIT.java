@@ -19,7 +19,7 @@ package com.foundationdb.server.test.it.qp;
 
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.AisRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -169,7 +169,7 @@ public class Product_NestedIT extends OperatorITBase
         
         Operator plan = map_NestedLoops(flattenCO, product, 0, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(coaRowType, 2L, "foundation", 200L, 2L, "david", 2000L, 2L, "222 2000 st"),
             row(coaRowType, 2L, "foundation", 201L, 2L, "david", 2000L, 2L, "222 2000 st"),
             row(coaRowType, 3L, "matrix", 300L, 3L, "tom", 3000L, 3L, "333 3000 st"),
@@ -217,7 +217,7 @@ public class Product_NestedIT extends OperatorITBase
         
         Operator plan = map_NestedLoops(flattenCO, product, 0, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(coaRowType, 2L, "foundation", 200L, 2L, "david", 2000L, 2L, "222 2000 st"),
             row(coaRowType, 2L, "foundation", 201L, 2L, "david", 2000L, 2L, "222 2000 st"),
             row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1000L, 1L, "111 1000 st"),
@@ -264,7 +264,7 @@ public class Product_NestedIT extends OperatorITBase
                 0);
         RowType productRowType = product.rowType();
         Operator plan = map_NestedLoops(flattenCAOuter, product, 0, pipelineMap(), 1);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(productRowType, 1L, "northbridge", 1000L, 1L, "111 1000 st", 1000L, 1L, "111 1000 st"),
             row(productRowType, 1L, "northbridge", 1000L, 1L, "111 1000 st", 1001L, 1L, "111 1001 st"),
             row(productRowType, 1L, "northbridge", 1001L, 1L, "111 1001 st", 1000L, 1L, "111 1000 st"),
@@ -317,9 +317,9 @@ public class Product_NestedIT extends OperatorITBase
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
-            public RowBase[] firstExpectedRows()
+            public Row[] firstExpectedRows()
             {
-                return new RowBase[] {
+                return new Row[] {
                     row(coaRowType, 2L, "foundation", 200L, 2L, "david", 2000L, 2L, "222 2000 st"),
                     row(coaRowType, 2L, "foundation", 201L, 2L, "david", 2000L, 2L, "222 2000 st"),
                     row(coaRowType, 3L, "matrix", 300L, 3L, "tom", 3000L, 3L, "333 3000 st"),

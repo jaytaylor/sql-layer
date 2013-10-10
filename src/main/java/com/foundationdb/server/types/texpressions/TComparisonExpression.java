@@ -20,20 +20,20 @@ package com.foundationdb.server.types.texpressions;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.pvalue.PUnderlying;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.UnderlyingType;
+import com.foundationdb.server.types.value.ValueSource;
 
 public final class TComparisonExpression extends TComparisonExpressionBase {
 
     @Override
-    protected int compare(TInstance leftInstance, PValueSource leftSource,
-                          TInstance rightInstance, PValueSource rightSource)
+    protected int compare(TInstance leftInstance, ValueSource leftSource,
+                          TInstance rightInstance, ValueSource rightSource)
     {
         TClass tClass = leftInstance.typeClass();
         assert rightInstance.typeClass().compatibleForCompare(tClass)
                 : "type class mismatch: " + leftInstance + " != " + rightInstance;
         if (collator != null) {
-            assert tClass.underlyingType() == PUnderlying.STRING : tClass + ": " + tClass.underlyingType();
+            assert tClass.underlyingType() == UnderlyingType.STRING : tClass + ": " + tClass.underlyingType();
             String leftString = leftSource.getString();
             String rightString = rightSource.getString();
             return collator.compare(leftString, rightString);
@@ -54,7 +54,7 @@ public final class TComparisonExpression extends TComparisonExpressionBase {
         TClass twoClass = right.resultType().typeClass();
         if (!oneClass.compatibleForCompare(twoClass))
             throw new IllegalArgumentException("can't compare expressions of different types: " + left + " != " + right);
-        if (collator != null && oneClass.underlyingType() != PUnderlying.STRING) {
+        if (collator != null && oneClass.underlyingType() != UnderlyingType.STRING) {
             throw new IllegalArgumentException("collator provided, but " + oneClass + " is not a string type");
         }
         this.collator = collator;

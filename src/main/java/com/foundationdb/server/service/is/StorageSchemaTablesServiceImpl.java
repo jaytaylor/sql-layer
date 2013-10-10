@@ -29,6 +29,7 @@ import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import javax.management.ReflectionException;
 
+import com.foundationdb.qp.row.ValuesRow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +41,6 @@ import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.PValuesRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.tree.TreeService;
@@ -215,7 +215,7 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                return new PValuesRow (rowType,
+                return new ValuesRow(rowType,
                         getJMXAttribute (mbeanName, "AlertLevel"),
                         getJMXAttribute (mbeanName, "WarnLogTimeInterval"),
                         getJMXAttribute (mbeanName, "ErrorLogTimeInterval"),
@@ -264,7 +264,7 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter >= bufferPools.length) {
                     return null;
                 }
-                return new PValuesRow (rowType, 
+                return new ValuesRow(rowType,
                         bufferPools[bufferPoolCounter].getBufferSize(),
                         bufferPools[bufferPoolCounter].getBufferCount(),
                         bufferPools[bufferPoolCounter].getValidPageCount(),
@@ -310,7 +310,7 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                return new PValuesRow (rowType,
+                return new ValuesRow(rowType,
                             getJMXAttribute(mbeanName, "CheckpointInterval"),
                             ++rowCounter /* Hidden PK */);
             }
@@ -342,7 +342,7 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                return new PValuesRow (rowType,
+                return new ValuesRow(rowType,
                         getJMXAttribute(mbeanName, "AcceptedCount"),
                         getJMXAttribute(mbeanName, "RefusedCount"),
                         getJMXAttribute(mbeanName, "PerformedCount"),
@@ -380,7 +380,7 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                return new PValuesRow (rowType,
+                return new ValuesRow(rowType,
                         getJMXAttribute(mbeanName, "IoRate"),
                         getJMXAttribute(mbeanName, "QuiescentIOthreshold"),
                         getJMXAttribute(mbeanName, "LogFile"),
@@ -419,7 +419,7 @@ public class StorageSchemaTablesServiceImpl
                     return null;
                 }
                 parameter.set(0, IOMeterMXBean.OPERATIONS[(int)rowCounter+1]);
-                return new PValuesRow (rowType,
+                return new ValuesRow(rowType,
                         IOMeterMXBean.OPERATION_NAMES[(int)rowCounter+1],
                         getJMXInvoke (mbeanName, "totalBytes", parameter.toArray()),
                         getJMXInvoke (mbeanName, "totalOperations", parameter.toArray()),
@@ -462,7 +462,7 @@ public class StorageSchemaTablesServiceImpl
                 }
                 String[] params = new String[0]; 
                                
-                PValuesRow row = new PValuesRow (rowType,
+                ValuesRow row = new ValuesRow(rowType,
                         journal.getBlockSize(),
                         journal.getBaseAddress(),
                         journal.getCurrentJournalAddress(),
@@ -523,9 +523,9 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                PValuesRow row;
+                ValuesRow row;
                 try {
-                    row = new PValuesRow (rowType,
+                    row = new ValuesRow(rowType,
                             boolResult(db_manage.isInitialized()),
                             boolResult(db_manage.isUpdateSuspended()),
                             boolResult(db_manage.isShutdownSuspended()),
@@ -570,7 +570,7 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                PValuesRow row =  new PValuesRow(rowType,
+                ValuesRow row =  new ValuesRow(rowType,
                         getJMXAttribute(mbeanName, "ActiveTransactionFloor"),
                         getJMXAttribute(mbeanName, "ActiveTransactionCeiling"),
                         getJMXAttribute(mbeanName, "ActiveTransactionCount"),
@@ -629,7 +629,7 @@ public class StorageSchemaTablesServiceImpl
 
             @Override
             public Row next() {
-                PValuesRow row;
+                ValuesRow row;
                 if (volumes == null) {
                     return null;
                 }
@@ -640,7 +640,7 @@ public class StorageSchemaTablesServiceImpl
                     return null;
                 }
 
-                row = new PValuesRow (rowType,
+                row = new ValuesRow(rowType,
                         volumes[volumeIndex].getName(),
                         trees[treeIndex].getName(),
                         trees[treeIndex].getStatus(),
@@ -712,7 +712,7 @@ public class StorageSchemaTablesServiceImpl
                     return null;
                 }
                 
-                PValuesRow row = new PValuesRow (rowType,
+                ValuesRow row = new ValuesRow(rowType,
                         volumes[volumeRowCounter].getName(),
                         volumes[volumeRowCounter].getPath(),
                         boolResult(volumes[volumeRowCounter].isTransient()),

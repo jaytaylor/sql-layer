@@ -17,7 +17,7 @@
 
 package com.foundationdb.qp.persistitadapter.indexcursor;
 
-import com.foundationdb.qp.expression.BoundExpressions;
+import com.foundationdb.server.types.value.ValueRecord;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.QueryContext;
@@ -52,7 +52,7 @@ class IndexCursorUnidirectionalLexicographic<S> extends IndexCursorUnidirectiona
     @Override
     protected void evaluateBoundaries(QueryContext context, SortKeyAdapter<S, ?> keyAdapter)
     {
-        BoundExpressions startExpressions = null;
+        ValueRecord startExpressions = null;
         if (startBoundColumns == 0 || start == null) {
             startKey.append(startBoundary);
         } else {
@@ -65,7 +65,7 @@ class IndexCursorUnidirectionalLexicographic<S> extends IndexCursorUnidirectiona
                 }
             }
         }
-        BoundExpressions endExpressions;
+        ValueRecord endExpressions;
         if (endBoundColumns == 0 || end == null) {
             endKey = null;
         } else {
@@ -74,7 +74,7 @@ class IndexCursorUnidirectionalLexicographic<S> extends IndexCursorUnidirectiona
             for (int f = 0; f < endBoundColumns; f++) {
                 if (end.columnSelector().includesColumn(f)) {
                     S source = keyAdapter.get(endExpressions, f);
-                    if (keyAdapter.isNull(source) && startExpressions != null && !startExpressions.pvalue(f).isNull()) {
+                    if (keyAdapter.isNull(source) && startExpressions != null && !startExpressions.value(f).isNull()) {
                         endKey.append(Key.AFTER);
                     } else {
                         endKey.append(source, tInstance(f));

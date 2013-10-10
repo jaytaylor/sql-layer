@@ -129,7 +129,7 @@ public abstract class IndexCursor implements BindingsAwareCursor
                                      IterationHelper iterationHelper,
                                      boolean openAllSubCursors)
     {
-        SortKeyAdapter<?, ?> adapter =PValueSortKeyAdapter.INSTANCE;
+        SortKeyAdapter<?, ?> adapter = ValueSortKeyAdapter.INSTANCE;
 
         return
             keyRange != null && keyRange.spatial()

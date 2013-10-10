@@ -22,8 +22,8 @@ import com.foundationdb.server.types.TCastBase;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.aksql.aktypes.AkInterval;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 
 import java.util.EnumMap;
 import java.util.Map;
@@ -33,7 +33,7 @@ public final class Cast_From_AkIntervalSeconds {
     
     public static TCast TO_DOUBLE = new TCastBase(AkInterval.SECONDS, MApproximateNumber.DOUBLE) {
         @Override
-        protected void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        protected void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
             long raw = source.getInt64();
             double result = 0;
 

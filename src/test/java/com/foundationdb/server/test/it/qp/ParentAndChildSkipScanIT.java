@@ -22,7 +22,7 @@ import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -88,7 +88,7 @@ public class ParentAndChildSkipScanIT extends OperatorITBase
     @Test
     public void test8x()
     {
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(childRowType, 2L, 80L, 8000L)
         };
         compareRows(expected, cursor(intersectPxUnionCy(1, 2, 3, JoinType.INNER_JOIN, true, false), queryContext, queryBindings));

@@ -21,9 +21,9 @@ import com.foundationdb.server.types.TAggregator;
 import com.foundationdb.server.types.TFixedTypeAggregator;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 
 public class MGroupConcat extends TFixedTypeAggregator
 {
@@ -34,7 +34,7 @@ public class MGroupConcat extends TFixedTypeAggregator
     }
 
     @Override
-    public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, Object del)
+    public void input(TInstance instance, ValueSource source, TInstance stateType, Value state, Object del)
     {
         // skip all NULL rows
         if (source.isNull())
@@ -49,7 +49,7 @@ public class MGroupConcat extends TFixedTypeAggregator
     }
 
     @Override
-    public void emptyValue(PValueTarget state)
+    public void emptyValue(ValueTarget state)
     {
         state.putNull();
     }

@@ -45,13 +45,15 @@ import com.foundationdb.async.Function;
 import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.*;
 import com.foundationdb.ais.util.TableChangeValidator;
-import com.foundationdb.qp.expression.BoundExpressions;
+import com.foundationdb.server.types.value.ValueRecord;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.service.tree.TreeServiceImpl;
 import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.sql.LayerInfoInterface;
 import com.foundationdb.server.AkServerUtil;
 import com.foundationdb.server.api.dml.scan.ScanFlag;
@@ -71,8 +73,6 @@ import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.service.tree.TreeService;
 import com.foundationdb.server.expressions.TCastResolver;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueSources;
 import com.foundationdb.server.util.GroupIndexCreator;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.aisddl.AlterTableDDL;
@@ -1033,66 +1033,66 @@ public class ApiTestBase {
         return castAs.cast(obj);
     }
 
-    public static Object getObject(PValueSource pvalue) {
-        if (pvalue.isNull())
+    public static Object getObject(ValueSource value) {
+        if (value.isNull())
             return null;
-        if (pvalue.hasCacheValue())
-            return pvalue.getObject();
-        switch (PValueSources.pUnderlying(pvalue)) {
+        if (value.hasCacheValue())
+            return value.getObject();
+        switch (ValueSources.underlyingType(value)) {
         case BOOL:
-            return pvalue.getBoolean();
+            return value.getBoolean();
         case INT_8:
-            return pvalue.getInt8();
+            return value.getInt8();
         case INT_16:
-            return pvalue.getInt16();
+            return value.getInt16();
         case UINT_16:
-            return pvalue.getUInt16();
+            return value.getUInt16();
         case INT_32:
-            return pvalue.getInt32();
+            return value.getInt32();
         case INT_64:
-            return pvalue.getInt64();
+            return value.getInt64();
         case FLOAT:
-            return pvalue.getFloat();
+            return value.getFloat();
         case DOUBLE:
-            return pvalue.getDouble();
+            return value.getDouble();
         case BYTES:
-            return pvalue.getBytes();
+            return value.getBytes();
         case STRING:
-            return pvalue.getString();
+            return value.getString();
         default:
-            throw new AssertionError(pvalue);
+            throw new AssertionError(value);
         }
     }
 
-    public static boolean isNull(BoundExpressions row, int pos) {
-        return row.pvalue(pos).isNull();
+    public static boolean isNull(ValueRecord row, int pos) {
+        return row.value(pos).isNull();
     }
 
-    public static Long getLong(BoundExpressions row, int field) {
+    public static Long getLong(ValueRecord row, int field) {
         final Long result;
-        PValueSource pvalue = row.pvalue(field);
-        if (pvalue.isNull()) {
+        ValueSource value = row.value(field);
+        if (value.isNull()) {
             result = null;
         }
         else {
-            switch (PValueSources.pUnderlying(pvalue)) {
+            switch (ValueSources.underlyingType(value)) {
             case INT_8:
-                result = (long) pvalue.getInt8();
+                result = (long) value.getInt8();
                 break;
             case INT_16:
-                result = (long) pvalue.getInt16();
+                result = (long) value.getInt16();
                 break;
             case UINT_16:
-                result = (long) pvalue.getUInt16();
+                result = (long) value.getUInt16();
                 break;
             case INT_32:
-                result = (long) pvalue.getInt32();
+                result = (long) value.getInt32();
                 break;
             case INT_64:
-                result = pvalue.getInt64();
+                result = value.getInt64();
                 break;
             default:
-                throw new AssertionError(pvalue);
+                throw new AssertionError(value);
             }
         }
         return result;

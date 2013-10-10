@@ -23,9 +23,9 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueSources;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.util.AkibanAppender;
 
 import org.joda.time.DateTime;
@@ -61,10 +61,10 @@ public class ServerValueEncoder
 
     public static final String ROUND_ZERO_DATETIME = "0001-01-01 00:00:00";
     public static final String ROUND_ZERO_DATE = "0001-01-01";
-    public static final PValueSource ROUND_ZERO_DATETIME_SOURCE
-            = new PValue(MDatetimes.DATETIME.instance(false), MDatetimes.parseDatetime(ROUND_ZERO_DATETIME));
-    public static final PValueSource ROUND_ZERO_DATE_SOURCE
-            = new PValue(MDatetimes.DATE.instance(false), MDatetimes.parseDate(ROUND_ZERO_DATE, null));
+    public static final ValueSource ROUND_ZERO_DATETIME_SOURCE
+            = new Value(MDatetimes.DATETIME.instance(false), MDatetimes.parseDatetime(ROUND_ZERO_DATETIME));
+    public static final ValueSource ROUND_ZERO_DATE_SOURCE
+            = new Value(MDatetimes.DATE.instance(false), MDatetimes.parseDate(ROUND_ZERO_DATE, null));
     
     private String encoding;
     private ZeroDateTimeBehavior zeroDateTimeBehavior;
@@ -125,7 +125,7 @@ public class ServerValueEncoder
      * to
      * <code>writeByteStream</code>.
      */
-    public ByteArrayOutputStream encodePValue(PValueSource value, ServerType type, 
+    public ByteArrayOutputStream encodeValue(ValueSource value, ServerType type,
                                              boolean binary) throws IOException {
         if (value.isNull())
             return null;
@@ -147,7 +147,7 @@ public class ServerValueEncoder
             }
         }
         reset();
-        appendPValue(value, type, binary);
+        appendValue(value, type, binary);
         return getByteStream();
     }
 
@@ -167,7 +167,7 @@ public class ServerValueEncoder
     }
     
     /** Append the given value to the buffer. */
-    public void appendPValue(PValueSource value, ServerType type, boolean binary) 
+    public void appendValue(ValueSource value, ServerType type, boolean binary)
             throws IOException {
         if (!binary) {
             // Handle unusual text encoding of binary types.
@@ -245,8 +245,8 @@ public class ServerValueEncoder
             value = javaDateValue(value, tInstance);
         }
         // TODO this is inefficient, but I want to get it working. I created a task to fix it in pivotal.
-        PValueSource source = PValueSources.pValuefromObject(value, tInstance);
-        appendPValue(source, type, binary);
+        ValueSource source = ValueSources.valuefromObject(value, tInstance);
+        appendValue(source, type, binary);
     }
     
     private TInstance javaDateTInstance(Object value) {
