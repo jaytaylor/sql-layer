@@ -99,8 +99,8 @@ public class FDBAdapter extends StoreAdapter {
     @Override
     public void updateRow(Row oldRow, Row newRow) {
         RowDef rowDef = newRow.rowType().userTable().rowDef();
-        RowData oldRowData = rowData(rowDef, oldRow, new PValueRowDataCreator());
-        RowData newRowData = rowData(rowDef, newRow, new PValueRowDataCreator());
+        RowData oldRowData = rowData(rowDef, oldRow, new ValueRowDataCreator());
+        RowData newRowData = rowData(rowDef, newRow, new ValueRowDataCreator());
         oldRowData.setExplicitRowDef(rowDef);
         newRowData.setExplicitRowDef(rowDef);
         try {
@@ -114,7 +114,7 @@ public class FDBAdapter extends StoreAdapter {
     @Override
     public void writeRow(Row newRow, Index[] indexes) {
         RowDef rowDef = newRow.rowType().userTable().rowDef();
-        RowData newRowData = rowData(rowDef, newRow, new PValueRowDataCreator());
+        RowData newRowData = rowData(rowDef, newRow, new ValueRowDataCreator());
         try {
             store.writeRow(getSession(), newRowData, indexes);
         } catch(InvalidOperationException e) {
@@ -126,7 +126,7 @@ public class FDBAdapter extends StoreAdapter {
     @Override
     public void deleteRow(Row oldRow, boolean cascadeDelete) {
         RowDef rowDef = oldRow.rowType().userTable().rowDef();
-        RowData oldRowData = rowData(rowDef, oldRow, new PValueRowDataCreator());
+        RowData oldRowData = rowData(rowDef, oldRow, new ValueRowDataCreator());
         try {
             store.deleteRow(getSession(), oldRowData, true, cascadeDelete);
         } catch(InvalidOperationException e) {
@@ -165,7 +165,6 @@ public class FDBAdapter extends StoreAdapter {
     @Override
     public void returnIndexRow(PersistitIndexRow indexRow)
     {
-        assert !indexRow.isShared();
         indexRowPool.returnIndexRow(this, indexRow.rowType(), indexRow);
     }
 

@@ -21,7 +21,6 @@ import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.server.store.FDBStore;
-import com.foundationdb.util.ShareHolder;
 import com.foundationdb.KeyValue;
 import com.foundationdb.tuple.Tuple;
 import com.persistit.Key;
@@ -42,7 +41,6 @@ public class FDBIterationHelper implements IterationHelper
 {
     private final FDBAdapter adapter;
     private final IndexRowType rowType;
-    private final ShareHolder<PersistitIndexRow> row;
     private final Key key;
     private final Value value;
     // Initialized upon traversal
@@ -57,7 +55,6 @@ public class FDBIterationHelper implements IterationHelper
     public FDBIterationHelper(FDBAdapter adapter, IndexRowType rowType) {
         this.adapter = adapter;
         this.rowType = rowType.physicalRowType();
-        this.row = new ShareHolder<>(adapter.takeIndexRow(this.rowType));
         this.key = adapter.createKey();
         this.value = new Value((Persistit)null);
     }
@@ -70,7 +67,7 @@ public class FDBIterationHelper implements IterationHelper
     @Override
     public Row row() {
         assert (lastKV != null) : "Called for chopped key (or before iterating)"; // See advanceLogical() for former
-        PersistitIndexRow row = unsharedRow().get();
+        PersistitIndexRow row = adapter.takeIndexRow(rowType);
         // updateKey() called from advance
         updateValue();
         row.copyFrom(key, value);
@@ -84,12 +81,7 @@ public class FDBIterationHelper implements IterationHelper
 
     @Override
     public void closeIteration() {
-        if(row.isHolding()) {
-            if(!row.isShared()) {
-                adapter.returnIndexRow(row.get());
-            }
-            row.release();
-        }
+        //adapter.returnIndexRow(row);
     }
 
     @Override
@@ -133,13 +125,6 @@ public class FDBIterationHelper implements IterationHelper
     //
     // Internal
     //
-
-    private ShareHolder<PersistitIndexRow> unsharedRow() {
-        if(row.isEmpty() || row.isShared()) {
-            row.hold(adapter.takeIndexRow(rowType));
-        }
-        return row;
-    }
 
     private boolean advance(boolean deep) {
         return deep ? advanceDeep() : advanceLogical();
