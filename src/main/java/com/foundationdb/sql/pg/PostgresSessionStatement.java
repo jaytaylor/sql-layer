@@ -28,6 +28,7 @@ import com.foundationdb.sql.parser.ParameterNode;
 import com.foundationdb.sql.parser.SetConfigurationNode;
 import com.foundationdb.sql.parser.SetSchemaNode;
 import com.foundationdb.sql.parser.SetTransactionAccessNode;
+import com.foundationdb.sql.parser.ShowConfigurationNode;
 import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.sql.parser.StatementType;
 
@@ -39,7 +40,7 @@ import java.util.List;
 public class PostgresSessionStatement implements PostgresStatement
 {
     enum Operation {
-        USE, CONFIGURATION,
+        USE, SET_CONFIGURATION, SHOW_CONFIGURATION,
         BEGIN_TRANSACTION, COMMIT_TRANSACTION, ROLLBACK_TRANSACTION,
         TRANSACTION_ISOLATION, TRANSACTION_ACCESS;
         
@@ -74,11 +75,14 @@ public class PostgresSessionStatement implements PostgresStatement
         return null;
     }
 
+    static final PostgresType SHOW_PG_TYPE = 
+        PostgresEmulatedMetaDataStatement.DEFVAL_PG_TYPE;
+
     @Override
     public void sendDescription(PostgresQueryContext context,
                                 boolean always, boolean params)
             throws IOException {
-        if (always) {
+        if (always || (operation == Operation.SHOW_CONFIGURATION)) {
             PostgresServerSession server = context.getServer();
             PostgresMessenger messenger = server.getMessenger();
             if (params) {
@@ -86,7 +90,22 @@ public class PostgresSessionStatement implements PostgresStatement
                 messenger.writeShort(0);
                 messenger.sendMessage();
             }
-            messenger.beginMessage(PostgresMessages.NO_DATA_TYPE.code());
+            switch (operation) {
+            case SHOW_CONFIGURATION:
+                messenger.beginMessage(PostgresMessages.ROW_DESCRIPTION_TYPE.code());
+                messenger.writeShort(1); // single column
+                messenger.writeString(((ShowConfigurationNode)statement).getVariable()); // attname
+                messenger.writeInt(0); // attrelid
+                messenger.writeShort(0);  // attnum
+                messenger.writeInt(SHOW_PG_TYPE.getOid()); // atttypid
+                messenger.writeShort(SHOW_PG_TYPE.getLength()); // attlen
+                messenger.writeInt(SHOW_PG_TYPE.getModifier()); // atttypmod
+                messenger.writeShort(0);
+                break;
+            default:
+                messenger.beginMessage(PostgresMessages.NO_DATA_TYPE.code());
+                break;
+            }
             messenger.sendMessage();
         }
     }
@@ -101,7 +120,8 @@ public class PostgresSessionStatement implements PostgresStatement
         switch (operation) {
             case USE:
             case ROLLBACK_TRANSACTION:
-            case CONFIGURATION:
+            case SET_CONFIGURATION:
+            case SHOW_CONFIGURATION:
                 return TransactionAbortedMode.ALLOWED;
             default:
                 return TransactionAbortedMode.NOT_ALLOWED;
@@ -116,14 +136,14 @@ public class PostgresSessionStatement implements PostgresStatement
     @Override
     public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
-        doOperation(server);
+        doOperation(context, server);
         {        
             PostgresMessenger messenger = server.getMessenger();
             messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
             messenger.writeString(statement.statementToString());
             messenger.sendMessage();
         }
-        return 0;
+        return (operation == Operation.SHOW_CONFIGURATION) ? 1 : 0;
     }
 
     @Override
@@ -158,7 +178,7 @@ public class PostgresSessionStatement implements PostgresStatement
         return null;
     }
 
-    protected void doOperation(PostgresServerSession server) {
+    protected void doOperation(PostgresQueryContext context, PostgresServerSession server) throws IOException {
         switch (operation) {
         case USE:
             {
@@ -194,10 +214,16 @@ public class PostgresSessionStatement implements PostgresStatement
                     server.setTransactionDefaultReadOnly(readOnly);
             }
             break;
-        case CONFIGURATION:
+        case SET_CONFIGURATION:
             {
                 SetConfigurationNode node = (SetConfigurationNode)statement;
                 setVariable (server, node.getVariable(), node.getValue());
+            }
+            break;
+        case SHOW_CONFIGURATION:
+            {
+                ShowConfigurationNode node = (ShowConfigurationNode)statement;
+                showVariable (context, server, node.getVariable());
             }
             break;
         default:
@@ -209,5 +235,17 @@ public class PostgresSessionStatement implements PostgresStatement
         if (!Arrays.asList(ALLOWED_CONFIGURATION).contains(variable))
             throw new UnsupportedConfigurationException (variable);
         server.setProperty(variable, value);
+    }
+    
+    protected void showVariable(PostgresQueryContext context, PostgresServerSession server, String variable) throws IOException {
+        String value = server.getSessionSetting(variable);
+        if (value == null)
+            throw new UnsupportedConfigurationException (variable);
+        PostgresMessenger messenger = server.getMessenger();
+        messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+        messenger.writeShort(1); // single column
+        PostgresEmulatedMetaDataStatement.writeColumn(context, server, messenger,  
+                                                      0, value, SHOW_PG_TYPE);
+        messenger.sendMessage();
     }
 }

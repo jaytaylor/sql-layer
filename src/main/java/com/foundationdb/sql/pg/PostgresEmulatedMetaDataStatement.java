@@ -584,7 +584,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return null;
     }
 
-    protected void writeColumn(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger,
+    protected static void writeColumn(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger,
                                int col, Object value, PostgresType type) throws IOException {
         ServerValueEncoder encoder = server.getValueEncoder();        
         boolean binary = context.isColumnBinary(col);
