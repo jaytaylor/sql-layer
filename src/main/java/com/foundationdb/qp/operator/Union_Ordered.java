@@ -19,7 +19,6 @@ package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
-import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.explain.*;
@@ -30,10 +29,7 @@ import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
 
 import static java.lang.Math.abs;
 import static java.lang.Math.min;
@@ -81,7 +77,7 @@ import static java.lang.Math.min;
 
  */
 
-class Union_Ordered extends Operator
+class Union_Ordered extends UnionBase
 {
     // Object interface
 
@@ -100,29 +96,8 @@ class Union_Ordered extends Operator
         return new Execution(context, bindingsCursor);
     }
 
-    @Override
-    public void findDerivedTypes(Set<RowType> derivedTypes)
-    {
-        right.findDerivedTypes(derivedTypes);
-        left.findDerivedTypes(derivedTypes);
-    }
 
-    @Override
-    public List<Operator> getInputOperators()
-    {
-        List<Operator> result = new ArrayList<>(2);
-        result.add(left);
-        result.add(right);
-        return result;
-    }
-
-    @Override
-    public String describePlan()
-    {
-        return String.format("%s\n%s", describePlan(left), describePlan(right));
-    }
-
-    // Union_Ordered interface
+     // Union_Ordered interface
 
     public Union_Ordered(Operator left,
                          Operator right,
@@ -133,10 +108,7 @@ class Union_Ordered extends Operator
                          boolean[] ascending,
                          boolean outputEqual)
     {
-        ArgumentValidation.notNull("left", left);
-        ArgumentValidation.notNull("right", right);
-        ArgumentValidation.notNull("leftRowType", leftRowType);
-        ArgumentValidation.notNull("rightRowType", rightRowType);
+        super (left, leftRowType, right, rightRowType);
         ArgumentValidation.isGTE("leftOrderingFields", leftOrderingFields, 0);
         ArgumentValidation.isLTE("leftOrderingFields", leftOrderingFields, leftRowType.nFields());
         ArgumentValidation.isGTE("rightOrderingFields", rightOrderingFields, 0);
@@ -147,11 +119,8 @@ class Union_Ordered extends Operator
         // indexes.
         //ArgumentValidation.isEQ("leftRowType", leftRowType, "rightRowType", rightRowType);
         ArgumentValidation.isEQ("leftOrderingFields", leftOrderingFields, "rightOrderingFields", rightOrderingFields);
-        this.left = left;
-        this.right = right;
-        this.rowType = leftRowType;
         // Setup for row comparisons
-        this.fixedFields = rowType.nFields() - leftOrderingFields;
+        this.fixedFields = rowType().nFields() - leftOrderingFields;
         this.fieldsToCompare = leftOrderingFields;
         this.ascending = Arrays.copyOf(ascending, ascending.length);
         this.outputEqual = outputEqual;
@@ -168,9 +137,6 @@ class Union_Ordered extends Operator
 
     // Object state
 
-    private final Operator left;
-    private final Operator right;
-    private RowType rowType;
     private final int fixedFields;
     private final int fieldsToCompare;
     private final boolean[] ascending;
@@ -182,8 +148,8 @@ class Union_Ordered extends Operator
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         atts.put(Label.NUM_SKIP, PrimitiveExplainer.getInstance(fixedFields));
         atts.put(Label.NUM_COMPARE, PrimitiveExplainer.getInstance(fieldsToCompare));
-        atts.put(Label.INPUT_OPERATOR, left.getExplainer(context));
-        atts.put(Label.INPUT_OPERATOR, right.getExplainer(context));
+        atts.put(Label.INPUT_OPERATOR, left().getExplainer(context));
+        atts.put(Label.INPUT_OPERATOR, right().getExplainer(context));
         if (outputEqual)
             atts.put(Label.UNION_OPTION, PrimitiveExplainer.getInstance("ALL"));
         return new CompoundExplainer(Type.ORDERED, atts);
@@ -345,8 +311,8 @@ class Union_Ordered extends Operator
             super(context);
             MultipleQueryBindingsCursor multiple = new MultipleQueryBindingsCursor(bindingsCursor);
             this.bindingsCursor = multiple;
-            this.leftInput = left.cursor(context, multiple.newCursor());
-            this.rightInput = right.cursor(context, multiple.newCursor());
+            this.leftInput = left().cursor(context, multiple.newCursor());
+            this.rightInput = right().cursor(context, multiple.newCursor());
         }
         
         // For use by this class
@@ -448,14 +414,14 @@ class Union_Ordered extends Operator
         {
             if (!leftSkipRowFixed) {
                 if (leftSkipRow == null)
-                    leftSkipRow = new ValuesHolderRow(rowType);
+                    leftSkipRow = new ValuesHolderRow(rowType());
                 assert leftRow.isHolding();
                 int f = 0;
                 while (f < fixedFields) {
                     PValueTargets.copyFrom(leftRow.get().pvalue(f), leftSkipRow.pvalueAt(f));
                     f++;
                 }
-                while (f < rowType.nFields()) {
+                while (f < rowType().nFields()) {
                     leftSkipRow.pvalueAt(f++).putNull();
                 }
                 leftSkipRowFixed = true;
@@ -467,14 +433,14 @@ class Union_Ordered extends Operator
         {
             if (!rightSkipRowFixed) {
                 if (rightSkipRow == null)
-                    rightSkipRow = new ValuesHolderRow(rowType);
+                    rightSkipRow = new ValuesHolderRow(rowType());
                 assert rightRow.isHolding();
                 int f = 0;
                 while (f < fixedFields) {
                     PValueTargets.copyFrom(rightRow.get().pvalue(f), rightSkipRow.pvalueAt(f));
                     f++;
                 }
-                while (f < rowType.nFields()) {
+                while (f < rowType().nFields()) {
                     rightSkipRow.pvalueAt(f++).putNull();
                 }
                 rightSkipRowFixed = true;
