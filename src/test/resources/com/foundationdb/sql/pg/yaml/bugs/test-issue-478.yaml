@@ -1,0 +1,15 @@
+#
+# CONCAT with MEDIUMINT fails
+#
+---
+- CreateTable: t(a MEDIUMINT UNSIGNED NOT NULL DEFAULT 0)
+---
+- Statement: SELECT CONCAT(a, 'x') FROM t
+- row_count: 0
+---
+- Statement: INSERT INTO t VALUES (1)
+---
+- Statement: SELECT CONCAT(a, 'x') FROM t
+- output: [ ["1x"] ]
+...
+
