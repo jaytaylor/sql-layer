@@ -88,6 +88,8 @@ select-17: Various index uses to show EXPLAIN variation
 
 select-18: Really long IN shouldn't turn into UNIONs
 
+union-1: simple union
+
 update-1: change column to literal
 
 update-2: change column to expression (column itself)

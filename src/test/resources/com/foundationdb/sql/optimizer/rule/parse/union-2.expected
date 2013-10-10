@@ -1,0 +1,10 @@
+SelectQuery@2b7356d2
+  Union@21490b47(ALL)
+    ResultSet@42837363[name]
+      Project@440c8ab2[parent.name]
+        Select@1365cf05[]
+          TableSource@fa5b36(parent)
+    ResultSet@347a36ba[name]
+      Project@439f0840[customers.name]
+        Select@7dd6c46e[]
+          TableSource@1efa524d(customers)
