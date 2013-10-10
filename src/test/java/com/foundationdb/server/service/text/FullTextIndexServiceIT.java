@@ -23,7 +23,7 @@ import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
 import static com.foundationdb.qp.operator.API.cursor;
 
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
@@ -259,7 +259,7 @@ public class FullTextIndexServiceIT extends FullTextIndexServiceITBase
 
         waitPopulate();
         RowType rowType = rowType("c");
-        RowBase[] expected1 = new RowBase[]
+        Row[] expected1 = new Row[]
         {
             row(rowType, 1L),
             row(rowType, 3L)
@@ -276,7 +276,7 @@ public class FullTextIndexServiceIT extends FullTextIndexServiceITBase
         writeRow(c, 7, "Flintstone Lestrade");
 
         waitUpdate();
-        RowBase expected2[] = new RowBase[]
+        Row expected2[] = new Row[]
         {
             row(rowType, 1L),
             row(rowType, 3L),
@@ -304,7 +304,7 @@ public class FullTextIndexServiceIT extends FullTextIndexServiceITBase
 
         // now the rows should be seen.
         // (Because disabling the worker does not stop the changes fron being recorded)
-        RowBase expected3[] = new RowBase[]
+        Row expected3[] = new Row[]
         {
             row(rowType, 1L),
             row(rowType, 3L),
@@ -324,7 +324,7 @@ public class FullTextIndexServiceIT extends FullTextIndexServiceITBase
                                                   "name", "i.sku", "a.state");
         waitPopulate();
         RowType rowType = rowType("c");
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(rowType, 1L),
             row(rowType, 3L)
         };
@@ -340,7 +340,7 @@ public class FullTextIndexServiceIT extends FullTextIndexServiceITBase
                                                   "c.name", "i.sku");
         waitPopulate();
         RowType rowType = rowType("o");
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(rowType, 1L, 101L)
         };
         FullTextQueryBuilder builder = new FullTextQueryBuilder(index, ais(), queryContext);
@@ -355,12 +355,12 @@ public class FullTextIndexServiceIT extends FullTextIndexServiceITBase
         final int limit = 15;
         RowType rowType = rowType("c");
         String nameQuery = "flintstone";
-        RowBase[] nameExpected = new RowBase[] { row(rowType, 1L), row(rowType, 3L) };
+        Row[] nameExpected = new Row[] { row(rowType, 1L), row(rowType, 3L) };
         String stateQuery = "state:MA";
-        RowBase[] stateExpected = new RowBase[] { row(rowType, 1L), row(rowType, 3L) };
+        Row[] stateExpected = new Row[] { row(rowType, 1L), row(rowType, 3L) };
         String skuQuery = "sku:1234";
-        RowBase[] skuExpected = new RowBase[] { row(rowType, 1L) };
-        RowBase[] emptyExpected = {};
+        Row[] skuExpected = new Row[] { row(rowType, 1L) };
+        Row[] emptyExpected = {};
         
         FullTextQueryBuilder builder = new FullTextQueryBuilder(index, ais(), queryContext);
         ftScanAndCompare(builder, nameQuery, limit, nameExpected);
@@ -401,7 +401,7 @@ public class FullTextIndexServiceIT extends FullTextIndexServiceITBase
         return new TestRow(rowType, fields);
     }
 
-    private void ftScanAndCompare(FullTextQueryBuilder builder, String query, int limit, RowBase[] expected) {
+    private void ftScanAndCompare(FullTextQueryBuilder builder, String query, int limit, Row[] expected) {
         try(CloseableTransaction txn = txnService().beginCloseableTransaction(session())) {
             Operator plan = builder.scanOperator(query, limit);
             compareRows(expected, cursor(plan, queryContext, queryBindings));

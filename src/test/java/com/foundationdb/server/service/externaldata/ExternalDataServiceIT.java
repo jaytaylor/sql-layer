@@ -28,7 +28,7 @@ import com.foundationdb.server.test.it.qp.TestRow;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.util.SchemaCache;
@@ -239,7 +239,7 @@ public class ExternalDataServiceIT extends ITBase
                                                -1, 1, queryContext);
         assertEquals(4, nrows);
         RowType rowType = schema.userTableRowType(table);
-        compareRows(new RowBase[] {
+        compareRows(new Row[] {
                         testRow(rowType, 1L, "Fred", SCHEMA),
                         testRow(rowType, 2L, "Wilma", SCHEMA),
                         testRow(rowType, 3L, "Barney", SCHEMA),
@@ -248,7 +248,7 @@ public class ExternalDataServiceIT extends ITBase
                     adapter.newGroupCursor(table.getGroup()));
     }
 
-    protected RowBase testRow(RowType type, Object... fields) {
+    protected Row testRow(RowType type, Object... fields) {
         return new TestRow(type, fields);
     }
 

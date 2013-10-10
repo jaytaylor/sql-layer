@@ -21,7 +21,7 @@ import com.foundationdb.ais.model.*;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -88,7 +88,7 @@ public class CostModelBase extends ApiTestBase
         };
     }
 
-    protected RowBase row(RowType rowType, Object... fields)
+    protected Row row(RowType rowType, Object... fields)
     {
         return new TestRow(rowType, fields);
     }

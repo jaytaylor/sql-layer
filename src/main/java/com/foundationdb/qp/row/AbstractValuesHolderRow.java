@@ -48,23 +48,6 @@ class AbstractValuesHolderRow extends AbstractRow {
         return value;
     }
 
-    @Override
-    public void acquire() {
-        if (isMutable)
-            super.acquire();
-    }
-
-    @Override
-    public void release() {
-        if (isMutable)
-            super.release();
-    }
-
-    @Override
-    public boolean isShared() {
-        return isMutable && super.isShared();
-    }
-
     // for use by subclasses
 
     AbstractValuesHolderRow(RowType rowType, boolean isMutable) {

@@ -27,7 +27,6 @@ import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
 import com.foundationdb.util.ArgumentValidation;
-import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.WrappingByteSource;
 import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
@@ -351,14 +350,12 @@ class Sort_InsertionLimited extends Operator
     // not need to overload equals().
     private class Holder implements Comparable<Holder> {
         private int index;
-        private ShareHolder<Row> row;
+        private Row row;
         private Comparable<Holder>[] values;
 
         public Holder(int index, Row arow, List<TEvaluatableExpression> evaluations) {
             this.index = index;
-
-            row = new ShareHolder<>();
-            row.hold(arow);
+            this.row = arow;
 
             values = new Comparable[ordering.sortColumns()];
             for (int i = 0; i < values.length; i++) {
@@ -370,18 +367,16 @@ class Sort_InsertionLimited extends Operator
         }
 
         public Row empty() {
-            Row result = row.get();
-            row.release();
+            Row result = row;
+            row = null;
             return result;
         }
 
         // Make sure the Row we save doesn't depend on bindings that may change.
         public void freeze() {
-            Row arow = row.get();
-            if (arow instanceof ProjectedRow)
+            if (row instanceof ProjectedRow)
             {
-                Row copied = new ImmutableRow((ProjectedRow)arow);
-                row.hold(copied);
+                row = new ImmutableRow((ProjectedRow)row);
             }
         }
 

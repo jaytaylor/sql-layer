@@ -27,7 +27,7 @@ import com.foundationdb.util.AkibanAppender;
 
 public abstract class AbstractRow implements Row
 {
-    // BoundExpressions interface
+    // ValueRecord interface
 
     /**
      * Compares two rows and indicates if and where they differ.
@@ -42,7 +42,7 @@ public abstract class AbstractRow implements Row
      * this row had the smaller value.
      */
     @Override
-    public int compareTo(RowBase row, int leftStartIndex, int rightStartIndex, int fieldCount)
+    public int compareTo(Row row, int leftStartIndex, int rightStartIndex, int fieldCount)
     {
         for (int i = 0; i < fieldCount; i++) {
             TInstance leftType = rowType().typeInstanceAt(leftStartIndex + i);
@@ -55,7 +55,7 @@ public abstract class AbstractRow implements Row
         return 0;
     }
 
-    // RowBase interface
+    // Row interface
 
     @Override
     public abstract RowType rowType();
@@ -73,7 +73,7 @@ public abstract class AbstractRow implements Row
     }
 
     @Override
-    public final boolean ancestorOf(RowBase that)
+    public final boolean ancestorOf(Row that)
     {
         return this.hKey().prefixOf(that.hKey());
     }
@@ -88,31 +88,6 @@ public abstract class AbstractRow implements Row
     public Row subRow(RowType subRowType)
     {
         return rowType() == subRowType ? this : null;
-    }
-
-    // Shareable interface
-
-    @Override
-    public void acquire()
-    {
-        assert references >= 0 : this;
-        beforeAcquire();
-        references++;
-    }
-
-    @Override
-    public boolean isShared()
-    {
-        assert references >= 0 : this;
-        return references > 1;
-    }
-
-    @Override
-    public void release()
-    {
-        assert references > 0 : this;
-        --references;
-        afterRelease();
     }
 
     @Override
@@ -142,11 +117,5 @@ public abstract class AbstractRow implements Row
         throw new UnsupportedOperationException();
     }
 
-    // for use by subclasses
-    protected void afterRelease() {}
-    protected void beforeAcquire() {}
-
     // Object state
-
-    private int references = 0;
 }

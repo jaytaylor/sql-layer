@@ -28,7 +28,6 @@ import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.explain.std.LookUpOperatorExplainer;
 import com.foundationdb.util.ArgumentValidation;
-import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -330,23 +329,23 @@ public class BranchLookup_Default extends Operator
                 }
                 checkQueryCancelation();
                 Row nextRow = null;
-                while (nextRow == null && inputRow.isHolding()) {
+                while (nextRow == null && inputRow != null) {
                     switch (lookupState) {
                         case BEFORE:
                             if (keepInput && inputPrecedesBranch) {
-                                nextRow = inputRow.get();
+                                nextRow = inputRow;
                             }
                             lookupState = LookupState.SCANNING;
                             break;
                         case SCANNING:
                             advanceLookup();
-                            if (lookupRow.isHolding()) {
-                                nextRow = lookupRow.get();
+                            if (lookupRow != null) {
+                                nextRow = lookupRow;
                             }
                             break;
                         case AFTER:
                             if (keepInput && !inputPrecedesBranch) {
-                                nextRow = inputRow.get();
+                                nextRow = inputRow;
                             }
                             advanceInput();
                             break;
@@ -372,9 +371,9 @@ public class BranchLookup_Default extends Operator
             CursorLifecycle.checkIdleOrActive(this);
             if (!idle) {
                 input.close();
-                inputRow.release();
+                inputRow = null;
                 lookupCursor.close();
-                lookupRow.release();
+                lookupRow = null;
                 idle = true;
             }
         }
@@ -422,33 +421,33 @@ public class BranchLookup_Default extends Operator
             if ((currentLookupRow = lookupCursor.next()) != null) {
                 if (limit.limitReached(currentLookupRow)) {
                     lookupState = LookupState.AFTER;
-                    lookupRow.release();
+                    lookupRow = null;
                     close();
                 } else {
-                    lookupRow.hold(currentLookupRow);
+                    lookupRow = currentLookupRow;
                 }
             } else {
                 lookupState = LookupState.AFTER;
-                lookupRow.release();
+                lookupRow = null;
             }
         }
 
         private void advanceInput()
         {
             lookupState = LookupState.BEFORE;
-            lookupRow.release();
+            lookupRow = null;
             lookupCursor.close();
             Row currentInputRow = input.next();
             if (currentInputRow != null) {
                 if (currentInputRow.rowType() == inputRowType) {
-                    lookupRow.release();
+                    lookupRow = null;
                     computeLookupRowHKey(currentInputRow);
                     lookupCursor.rebind(lookupRowHKey, true);
                     lookupCursor.open();
                 }
-                inputRow.hold(currentInputRow);
+                inputRow = currentInputRow;
             } else {
-                inputRow.release();
+                inputRow = null;
             }
         }
 
@@ -463,9 +462,9 @@ public class BranchLookup_Default extends Operator
 
         // Object state
 
-        private final ShareHolder<Row> inputRow = new ShareHolder<>();
+        private Row inputRow;
         private final GroupCursor lookupCursor;
-        private final ShareHolder<Row> lookupRow = new ShareHolder<>();
+        private Row lookupRow;
         private final HKey lookupRowHKey;
         private LookupState lookupState;
         private boolean idle = true;

@@ -18,7 +18,7 @@
 package com.foundationdb.qp.persistitadapter.indexcursor;
 
 import com.foundationdb.ais.model.Index;
-import com.foundationdb.qp.expression.BoundExpressions;
+import com.foundationdb.server.types.value.ValueRecord;
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
@@ -137,7 +137,7 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         // The index column selector needs to select all the columns before the z column, and the z column itself.
         IndexRowPrefixSelector indexColumnSelector = new IndexRowPrefixSelector(latColumn + 1);
         IndexBound loBound = keyRange.lo();
-        BoundExpressions loExpressions = loBound.boundExpressions(context, bindings);
+        ValueRecord loExpressions = loBound.boundExpressions(context, bindings);
         // Compute z-value at beginning of forward and backward scans
         TInstance latInstance = index.getAllColumns().get(latColumn).getColumn().tInstance();
         TInstance lonInstance = index.getAllColumns().get(lonColumn).getColumn().tInstance();
@@ -146,10 +146,10 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         zStart = space.shuffle(lat, lon);
         // Cursors going forward from starting z value (inclusive), and backward from the same z value (exclusive)
         int indexRowFields = physicalIndexRowType.nFields();
-        SpatialIndexBoundExpressions zForwardRow = new SpatialIndexBoundExpressions(indexRowFields);
-        SpatialIndexBoundExpressions zBackwardRow = new SpatialIndexBoundExpressions(indexRowFields);
-        SpatialIndexBoundExpressions zMaxRow = new SpatialIndexBoundExpressions(indexRowFields);
-        SpatialIndexBoundExpressions zMinRow = new SpatialIndexBoundExpressions(indexRowFields);
+        SpatialIndexValueRecord zForwardRow = new SpatialIndexValueRecord(indexRowFields);
+        SpatialIndexValueRecord zBackwardRow = new SpatialIndexValueRecord(indexRowFields);
+        SpatialIndexValueRecord zMaxRow = new SpatialIndexValueRecord(indexRowFields);
+        SpatialIndexValueRecord zMinRow = new SpatialIndexValueRecord(indexRowFields);
         IndexBound zForward = new IndexBound(zForwardRow, indexColumnSelector);
         IndexBound zBackward = new IndexBound(zBackwardRow, indexColumnSelector);
         IndexBound zMax = new IndexBound(zMaxRow, indexColumnSelector);

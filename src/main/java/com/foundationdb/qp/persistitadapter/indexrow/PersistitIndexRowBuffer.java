@@ -21,7 +21,7 @@ import com.foundationdb.ais.model.*;
 import com.foundationdb.qp.persistitadapter.indexcursor.ValueSortKeyAdapter;
 import com.foundationdb.qp.persistitadapter.indexcursor.SortKeyAdapter;
 import com.foundationdb.qp.persistitadapter.indexcursor.SortKeyTarget;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.util.PersistitKey;
 import com.foundationdb.server.PersistitKeyValueSource;
@@ -82,7 +82,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         return compareTo(that, null);
     }
 
-    // RowBase interface
+    // Row interface
 
     @Override
     public ValueSource value(int i) {
@@ -90,7 +90,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     }
 
     @Override
-    public final int compareTo(RowBase row, int thisStartIndex, int thatStartIndex, int fieldCount)
+    public final int compareTo(Row row, int thisStartIndex, int thatStartIndex, int fieldCount)
     {
         // The dependence on field positions and fieldCount is a problem for spatial indexes
         if (index.isSpatial()) {

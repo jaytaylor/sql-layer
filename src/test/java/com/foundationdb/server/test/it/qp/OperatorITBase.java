@@ -27,7 +27,6 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.*;
 import com.foundationdb.qp.rowtype.Schema;
@@ -331,7 +330,7 @@ public class OperatorITBase extends ITBase
         return new TestRow(rowType, fields, hKeyString);
     }
 
-    protected RowBase row(IndexRowType indexRowType, Object... objs) {
+    protected Row row(IndexRowType indexRowType, Object... objs) {
 /*
         try {
 */
@@ -376,10 +375,10 @@ public class OperatorITBase extends ITBase
     // Useful when scanning is expected to throw an exception
     protected void scan(Cursor cursor)
     {
-        List<RowBase> actualRows = new ArrayList<>(); // So that result is viewable in debugger
+        List<Row> actualRows = new ArrayList<>(); // So that result is viewable in debugger
         try {
             cursor.openTopLevel();
-            RowBase actualRow;
+            Row actualRow;
             while ((actualRow = cursor.next()) != null) {
                 actualRows.add(actualRow);
             }
@@ -442,8 +441,8 @@ public class OperatorITBase extends ITBase
             else
                 cursor.open();
             count = 0;
-            List<RowBase> actualRows = new ArrayList<>(); // So that result is viewable in debugger
-            RowBase actualRow;
+            List<Row> actualRows = new ArrayList<>(); // So that result is viewable in debugger
+            Row actualRow;
             while ((actualRow = cursor.next()) != null) {
                 assertEquals(expected[count], actualRow.hKey().toString());
                 count++;
@@ -522,7 +521,7 @@ public class OperatorITBase extends ITBase
         public void firstSetup()
         {}
 
-        public RowBase[] firstExpectedRows()
+        public Row[] firstExpectedRows()
         {
             fail();
             return null;
@@ -537,7 +536,7 @@ public class OperatorITBase extends ITBase
         public void secondSetup()
         {}
 
-        public RowBase[] secondExpectedRows()
+        public Row[] secondExpectedRows()
         {
             return firstExpectedRows();
         }

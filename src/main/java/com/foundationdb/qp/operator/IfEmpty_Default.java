@@ -30,7 +30,6 @@ import com.foundationdb.server.explain.Label;
 import com.foundationdb.server.explain.PrimitiveExplainer;
 import com.foundationdb.server.explain.Type;
 import com.foundationdb.util.ArgumentValidation;
-import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -299,7 +298,7 @@ class IfEmpty_Default extends Operator
 
         private Row emptySubstitute()
         {
-            ValuesHolderRow valuesHolderRow = unsharedEmptySubstitute().get();
+            ValuesHolderRow valuesHolderRow = new ValuesHolderRow(rowType);
             int nFields = rowType.nFields();
             for (int i = 0; i < nFields; i++) {
                 TEvaluatableExpression outerJoinRowColumnEvaluation = pEvaluations.get(i);
@@ -313,19 +312,9 @@ class IfEmpty_Default extends Operator
             return valuesHolderRow;
         }
 
-        private ShareHolder<ValuesHolderRow> unsharedEmptySubstitute()
-        {
-            if (emptySubstitute.isEmpty() || emptySubstitute.isShared()) {
-                ValuesHolderRow valuesHolderRow = new ValuesHolderRow(rowType);
-                emptySubstitute.hold(valuesHolderRow);
-            }
-            return emptySubstitute;
-        }
-
         // Object state
 
         private final List<TEvaluatableExpression> pEvaluations;
-        private final ShareHolder<ValuesHolderRow> emptySubstitute = new ShareHolder<>();
         private boolean closed = true;
         private InputState inputState;
     }

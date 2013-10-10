@@ -25,7 +25,7 @@ import com.foundationdb.server.types.value.ValueSource;
 
 public class TestRow extends AbstractRow
 {
-    // RowBase interface
+    // Row interface
 
     @Override
     public RowType rowType()

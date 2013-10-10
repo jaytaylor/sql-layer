@@ -20,7 +20,6 @@ import com.foundationdb.qp.rowtype.CompoundRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
-import com.foundationdb.util.ShareHolder;
 
 public class CompoundRow extends AbstractRow {
 
@@ -38,9 +37,9 @@ public class CompoundRow extends AbstractRow {
     public ValueSource value(int i) {
         ValueSource source;
         if (i < firstRowFields) {
-            source = firstRowh.isEmpty() ? nullValue(i) : firstRowh.get().value(i);
+            source = firstRow == null ? nullValue(i) : firstRow.value(i);
         } else {
-            source = secondRowh.isEmpty() ? nullValue(i) : secondRowh.get().value(i - rowOffset);
+            source = secondRow == null ? nullValue(i) : secondRow.value(i - rowOffset);
         }
         return source;
     }
@@ -50,25 +49,25 @@ public class CompoundRow extends AbstractRow {
     {
         Row subRow;
         if (subRowType == rowType.first()) {
-            subRow = firstRowh.get();
+            subRow = firstRow;
         } else if (subRowType == rowType.second()) {
-            subRow = secondRowh.get();
+            subRow = secondRow;
         } else {
             // If the subRowType doesn't match leftType or rightType, then it might be buried deeper.
-            subRow = firstRowh.get().subRow(subRowType);
+            subRow = firstRow.subRow(subRowType);
             if (subRow == null) {
-                subRow = secondRowh.get().subRow(subRowType);
+                subRow = secondRow.subRow(subRowType);
             }
         }
         return subRow;
     }
 
-    protected ShareHolder<Row> first() {
-        return firstRowh;
+    protected Row first() {
+        return firstRow;
     }
     
-    protected ShareHolder<Row> second() {
-        return secondRowh;
+    protected Row second() {
+        return secondRow;
     }
     
     protected int firstRowFields() {
@@ -78,8 +77,8 @@ public class CompoundRow extends AbstractRow {
     public CompoundRow (CompoundRowType type, Row firstRow, Row secondRow)
     {
         this.rowType = type;
-        this.firstRowh.hold(firstRow);
-        this.secondRowh.hold(secondRow);
+        this.firstRow = firstRow;
+        this.secondRow = secondRow;
         this.firstRowFields = type.first().nFields();
         this.rowOffset = type.first().nFields();
     }
@@ -91,10 +90,9 @@ public class CompoundRow extends AbstractRow {
     // Object state
 
     private final CompoundRowType rowType;
-    private final ShareHolder<Row> firstRowh = new ShareHolder<>();
-    private final ShareHolder<Row> secondRowh = new ShareHolder<>();
+    private final Row firstRow;
+    private final Row secondRow;
     private final int firstRowFields;
     protected int rowOffset; 
-
 
 }

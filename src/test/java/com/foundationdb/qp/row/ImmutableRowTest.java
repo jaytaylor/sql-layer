@@ -86,19 +86,6 @@ public final class ImmutableRowTest {
         row.valueAt(0);
     }
 
-    @Test
-    public void aquire() {
-        Row row = new ImmutableRow(
-                rowType(MString.varchar()),
-                Collections.singleton(new Value(MString.varchar(), "1L")).iterator()
-        );
-        row.acquire();
-        row.acquire();
-        row.acquire();
-        assertEquals("isShared", false, row.isShared());
-    }
-
-    
     private RowType rowType(TInstance... types) {
         return new ValuesRowType (null, 1, types);
     }

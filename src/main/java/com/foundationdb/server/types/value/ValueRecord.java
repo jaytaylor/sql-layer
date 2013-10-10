@@ -15,35 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.qp.persistitadapter.indexcursor;
+package com.foundationdb.server.types.value;
 
-import com.foundationdb.qp.expression.BoundExpressions;
-import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 
-class SpatialIndexBoundExpressions implements BoundExpressions
-{
-    // BoundExpressions interface
-
-    @Override
-    public ValueSource value(int position)
-    {
-        return valueSources[position];
-    }
-
-    // SpatialIndexBoundExpressions interface
-
-    public void value(int position, ValueSource valueSource)
-    {
-        valueSources[position] = valueSource;
-    }
-
-    public SpatialIndexBoundExpressions(int nFields)
-    {
-        valueSources = new Value[nFields];
-    }
-
-    // Object state
-
-    private ValueSource[] valueSources;
+public interface ValueRecord {
+    ValueSource value(int index);
 }

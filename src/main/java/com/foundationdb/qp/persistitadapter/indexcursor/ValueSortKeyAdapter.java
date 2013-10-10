@@ -18,7 +18,7 @@
 package com.foundationdb.qp.persistitadapter.indexcursor;
 
 import com.foundationdb.ais.model.Column;
-import com.foundationdb.qp.expression.BoundExpressions;
+import com.foundationdb.server.types.value.ValueRecord;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.row.Row;
@@ -65,8 +65,8 @@ public class ValueSortKeyAdapter extends SortKeyAdapter<ValueSource, TPreparedEx
     }
 
     @Override
-    public void checkConstraints(BoundExpressions loExpressions,
-                                 BoundExpressions hiExpressions,
+    public void checkConstraints(ValueRecord loExpressions,
+                                 ValueRecord hiExpressions,
                                  int f,
                                  AkCollator[] collators,
                                  TInstance[] tInstances) {
@@ -98,8 +98,8 @@ public class ValueSortKeyAdapter extends SortKeyAdapter<ValueSource, TPreparedEx
     }
 
     @Override
-    public ValueSource get(BoundExpressions boundExpressions, int f) {
-        return boundExpressions.value(f);
+    public ValueSource get(ValueRecord valueRecord, int f) {
+        return valueRecord.value(f);
     }
 
     @Override

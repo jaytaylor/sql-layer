@@ -27,7 +27,6 @@ import com.foundationdb.server.api.dml.IndexRowPrefixSelector;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types.value.ValueTargets;
 import com.foundationdb.util.ArgumentValidation;
-import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -265,7 +264,7 @@ class Intersect_Ordered extends Operator
                 rightInput.open();
                 nextLeftRow();
                 nextRightRow();
-                closed = leftRow.isEmpty() && rightRow.isEmpty();
+                closed = leftRow == null && rightRow == null;
                 leftSkipRowFixed = rightSkipRowFixed = false; // Fixed fields are per iteration.
             } finally {
                 TAP_OPEN.out();
@@ -284,16 +283,16 @@ class Intersect_Ordered extends Operator
                 }
                 Row next = null;
                 while (!closed && next == null) {
-                    assert !(leftRow.isEmpty() && rightRow.isEmpty());
+                    assert !(leftRow == null && rightRow == null);
                     long c = compareRows();
                     if (c < 0) {
                         if (keepUnmatchedLeft) {
                             assert outputLeft;
-                            next = leftRow.get();
+                            next = leftRow;
                             nextLeftRow();
                         } else {
                             if (skipScan) {
-                                nextLeftRowSkip(rightRow.get(), rightFixedFields, leftSkipRowColumnSelector, false);
+                                nextLeftRowSkip(rightRow, rightFixedFields, leftSkipRowColumnSelector, false);
                             } else {
                                 nextLeftRow();
                             }
@@ -301,11 +300,11 @@ class Intersect_Ordered extends Operator
                     } else if (c > 0) {
                         if (keepUnmatchedRight) {
                             assert !outputLeft;
-                            next = rightRow.get();
+                            next = rightRow;
                             nextRightRow();
                         } else {
                             if (skipScan) {
-                                nextRightRowSkip(leftRow.get(), leftFixedFields, rightSkipRowColumnSelector, false);
+                                nextRightRowSkip(leftRow, leftFixedFields, rightSkipRowColumnSelector, false);
                             } else {
                                 nextRightRow();
                             }
@@ -313,15 +312,15 @@ class Intersect_Ordered extends Operator
                     } else {
                         // left and right rows match
                         if (outputLeft) {
-                            next = leftRow.get();
+                            next = leftRow;
                             nextLeftRow();
                         } else {
-                            next = rightRow.get();
+                            next = rightRow;
                             nextRightRow();
                         }
                     }
-                    boolean leftEmpty = leftRow.isEmpty();
-                    boolean rightEmpty = rightRow.isEmpty();
+                    boolean leftEmpty = leftRow == null;
+                    boolean rightEmpty = rightRow == null;
                     if (leftEmpty && rightEmpty ||
                         leftEmpty && !keepUnmatchedRight ||
                         rightEmpty && !keepUnmatchedLeft) {
@@ -354,7 +353,7 @@ class Intersect_Ordered extends Operator
             }
             nextLeftRowSkip(jumpRow, suffixRowFixedFields, jumpRowColumnSelector, true);
             nextRightRowSkip(jumpRow, suffixRowFixedFields, jumpRowColumnSelector, true);
-            if (leftRow.isEmpty() || rightRow.isEmpty()) {
+            if (leftRow == null || rightRow == null) {
                 close();
             }
         }
@@ -364,8 +363,8 @@ class Intersect_Ordered extends Operator
         {
             CursorLifecycle.checkIdleOrActive(this);
             if (!closed) {
-                leftRow.release();
-                rightRow.release();
+                leftRow = null;
+                rightRow = null;
                 leftInput.close();
                 rightInput.close();
                 closed = true;
@@ -446,7 +445,7 @@ class Intersect_Ordered extends Operator
         private void nextLeftRow()
         {
             Row row = leftInput.next();
-            leftRow.hold(row);
+            leftRow = row;
             if (LOG_EXECUTION) {
                 LOG.debug("Intersect_Ordered: left {}", row);
             }
@@ -455,7 +454,7 @@ class Intersect_Ordered extends Operator
         private void nextRightRow()
         {
             Row row = rightInput.next();
-            rightRow.hold(row);
+            rightRow = row;
             if (LOG_EXECUTION) {
                 LOG.debug("Intersect_Ordered: right {}", row);
             }
@@ -465,13 +464,13 @@ class Intersect_Ordered extends Operator
         {
             int c;
             assert !closed;
-            assert !(leftRow.isEmpty() && rightRow.isEmpty());
-            if (leftRow.isEmpty()) {
+            assert !(leftRow == null && rightRow == null);
+            if (leftRow == null) {
                 c = 1;
-            } else if (rightRow.isEmpty()) {
+            } else if (rightRow == null) {
                 c = -1;
             } else {
-                c = leftRow.get().compareTo(rightRow.get(), leftFixedFields, rightFixedFields, fieldsToCompare);
+                c = leftRow.compareTo(rightRow, leftFixedFields, rightFixedFields, fieldsToCompare);
                 c = adjustComparison(c);
 
             }
@@ -492,9 +491,9 @@ class Intersect_Ordered extends Operator
 
         private void nextLeftRowSkip(Row jumpRow, int jumpRowFixedFields, ColumnSelector jumpRowColumnSelector, boolean check)
         {
-            if (leftRow.isHolding()) {
+            if (leftRow != null) {
                 if (check) {
-                    int c = leftRow.get().compareTo(jumpRow, leftFixedFields, jumpRowFixedFields, fieldsToCompare);
+                    int c = leftRow.compareTo(jumpRow, leftFixedFields, jumpRowFixedFields, fieldsToCompare);
                     c = adjustComparison(c);
                     if (c >= 0) return;
                 }
@@ -503,15 +502,15 @@ class Intersect_Ordered extends Operator
                                    jumpRow,
                                    jumpRowFixedFields);
                 leftInput.jump(leftSkipRow, jumpRowColumnSelector);
-                leftRow.hold(leftInput.next());
+                leftRow = leftInput.next();
             }
         }
 
         private void nextRightRowSkip(Row jumpRow, int jumpRowFixedFields, ColumnSelector jumpRowColumnSelector, boolean check)
         {
-            if (rightRow.isHolding()) {
+            if (rightRow != null) {
                 if (check) {
-                    int c = rightRow.get().compareTo(jumpRow, rightFixedFields, jumpRowFixedFields, fieldsToCompare);
+                    int c = rightRow.compareTo(jumpRow, rightFixedFields, jumpRowFixedFields, fieldsToCompare);
                     c = adjustComparison(c);
                     if (c >= 0) return;
                 }
@@ -520,7 +519,7 @@ class Intersect_Ordered extends Operator
                                    jumpRow,
                                    jumpRowFixedFields);
                 rightInput.jump(rightSkipRow, jumpRowColumnSelector);
-                rightRow.hold(rightInput.next());
+                rightRow = rightInput.next();
             }
         }
 
@@ -552,11 +551,11 @@ class Intersect_Ordered extends Operator
             if (!leftSkipRowFixed) {
                 if (leftSkipRow == null)
                     leftSkipRow = new ValuesHolderRow(leftRowType);
-                assert leftRow.isHolding();
+                assert leftRow != null;
                 int f = 0;
                 while (f < leftFixedFields) {
                     ValueTargets.copyFrom(
-                            leftRow.get().value(f),
+                            leftRow.value(f),
                             leftSkipRow.valueAt(f));
                     f++;
                 }
@@ -573,11 +572,11 @@ class Intersect_Ordered extends Operator
             if (!rightSkipRowFixed) {
                 if (rightSkipRow == null)
                     rightSkipRow = new ValuesHolderRow(rightRowType);
-                assert rightRow.isHolding();
+                assert rightRow != null;
                 int f = 0;
                 while (f < rightFixedFields) {
                     ValueTargets.copyFrom(
-                            rightRow.get().value(f),
+                            rightRow.value(f),
                             rightSkipRow.valueAt(f));
                     f++;
                 }
@@ -591,15 +590,12 @@ class Intersect_Ordered extends Operator
 
         // Object state
 
-        // Rows from each input stream are bound to the QueryContext. However, QueryContext doesn't use
-        // ShareHolders, so they are needed here.
-
         private boolean closed = true;
         private final QueryBindingsCursor bindingsCursor;
         private final Cursor leftInput;
         private final Cursor rightInput;
-        private final ShareHolder<Row> leftRow = new ShareHolder<>();
-        private final ShareHolder<Row> rightRow = new ShareHolder<>();
+        private Row leftRow;
+        private Row rightRow;
         private ValuesHolderRow leftSkipRow;
         private ValuesHolderRow rightSkipRow;
         private boolean leftSkipRowFixed;

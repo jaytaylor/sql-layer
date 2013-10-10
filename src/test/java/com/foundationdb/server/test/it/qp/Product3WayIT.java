@@ -20,7 +20,7 @@ package com.foundationdb.server.test.it.qp;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.*;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
@@ -161,7 +161,7 @@ public class Product3WayIT extends OperatorITBase
                             map_NestedLoops(RA, RAB, 0, pipelineMap(), 1),
                             RABC, 1, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 15L, 1L, "b15", 17L, 1L, "c17"),
             row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 15L, 1L, "b15", 18L, 1L, "c18"),
             row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 16L, 1L, "b16", 17L, 1L, "c17"),
@@ -232,7 +232,7 @@ public class Product3WayIT extends OperatorITBase
                             map_NestedLoops(RA, RAC, 0, pipelineMap(), 1),
                             RACB, 1, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(racbRowType, 1L, "r1", 13L, 1L, "a13", 17L, 1L, "c17", 15L, 1L, "b15"),
             row(racbRowType, 1L, "r1", 13L, 1L, "a13", 17L, 1L, "c17", 16L, 1L, "b16"),
             row(racbRowType, 1L, "r1", 13L, 1L, "a13", 18L, 1L, "c18", 15L, 1L, "b15"),
@@ -315,7 +315,7 @@ public class Product3WayIT extends OperatorITBase
                                 RAB, 1, pipelineMap(), 1),
                             RABC, 2, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 15L, 1L, "b15", 17L, 1L, "c17"),
             row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 15L, 1L, "b15", 18L, 1L, "c18"),
             row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 16L, 1L, "b16", 17L, 1L, "c17"),

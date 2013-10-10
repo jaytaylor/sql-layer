@@ -19,7 +19,7 @@ package com.foundationdb.qp.persistitadapter;
 
 import com.foundationdb.qp.operator.Limit;
 import com.foundationdb.qp.row.AbstractRow;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.scan.ScanLimit;
 import com.foundationdb.server.rowdata.RowData;
 
@@ -37,7 +37,7 @@ public class PersistitRowLimit implements Limit
     // Limit interface
 
     @Override
-    public boolean limitReached(RowBase row)
+    public boolean limitReached(Row row)
     {
         RowData rowData;
         if(row instanceof AbstractRow)

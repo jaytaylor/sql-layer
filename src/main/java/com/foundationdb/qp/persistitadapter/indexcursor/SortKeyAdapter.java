@@ -18,7 +18,7 @@
 package com.foundationdb.qp.persistitadapter.indexcursor;
 
 import com.foundationdb.ais.model.Column;
-import com.foundationdb.qp.expression.BoundExpressions;
+import com.foundationdb.server.types.value.ValueRecord;
 import com.foundationdb.qp.operator.API.Ordering;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.row.Row;
@@ -33,15 +33,15 @@ public abstract class SortKeyAdapter<S, E> {
     public abstract TInstance[] createTInstances(int size);
     public abstract void setColumnMetadata(Column column, int f, TInstance[] tInstances);
 
-    public abstract void checkConstraints(BoundExpressions loExpressions,
-                                          BoundExpressions hiExpressions,
+    public abstract void checkConstraints(ValueRecord loExpressions,
+                                          ValueRecord hiExpressions,
                                           int f,
                                           AkCollator[] collators,
                                           TInstance[] tInstances);
 
     public abstract S[] createSourceArray(int size);
 
-    public abstract S get(BoundExpressions boundExpressions, int f);
+    public abstract S get(ValueRecord valueRecord, int f);
     public abstract SortKeyTarget<S> createTarget();
 
     public abstract SortKeySource<S> createSource(TInstance tInstance);
@@ -53,7 +53,7 @@ public abstract class SortKeyAdapter<S, E> {
         return evaluateComparison(expr, queryContext);
     }
 
-    public void checkConstraints(BoundExpressions loExpressions, BoundExpressions hiExpressions, TInstance[] instances,
+    public void checkConstraints(ValueRecord loExpressions, ValueRecord hiExpressions, TInstance[] instances,
                                  int f)
     {
         S loValueSource = get(loExpressions, f);
