@@ -69,6 +69,9 @@ public final class Guicer {
     }
 
     public <T> T get(Class<T> serviceClass, ServiceLifecycleActions<?> withActions) {
+        if(!serviceClass.isInterface()) {
+            throw new IllegalArgumentException("Interface required");
+        }
         final T instance = _injector.getInstance(serviceClass);
         return startService(serviceClass, instance, withActions);
     }

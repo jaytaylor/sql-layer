@@ -123,6 +123,20 @@ public final class GuicerTest {
         );
     }
 
+    @Test(expected=IllegalArgumentException.class)
+    public void getRequiresInterface() throws ClassNotFoundException {
+        Guicer guicer = messageGuicer(
+            bind(DummyInterfaces.Alpha.class, DummySimpleServices.SimpleAlpha.class, true),
+            bind(DummyInterfaces.Beta.class, DummySimpleServices.SimpleBeta.class, false),
+            bind(DummyInterfaces.Gamma.class, DummySimpleServices.SimpleGamma.class, false)
+        );
+        startRequiredServices(guicer);
+        Object a = guicer.get(DummyInterfaces.Alpha.class, MESSAGING_ACTIONS);
+        Object b = guicer.get(DummyInterfaces.Alpha.class, MESSAGING_ACTIONS);
+        assertEquals("two different gets", a, b);
+        guicer.get(DummySimpleServices.SimpleAlpha.class, MESSAGING_ACTIONS);
+    }
+
     private void startRequiredServices(Guicer guicer) {
         for (Class<?> clazz : guicer.directlyRequiredClasses()) {
             guicer.get(clazz, MESSAGING_ACTIONS);
