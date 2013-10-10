@@ -126,8 +126,8 @@ class Union_Ordered extends Operator
 
     public Union_Ordered(Operator left,
                          Operator right,
-                         IndexRowType leftRowType,
-                         IndexRowType rightRowType,
+                         RowType leftRowType,
+                         RowType rightRowType,
                          int leftOrderingFields,
                          int rightOrderingFields,
                          boolean[] ascending,
@@ -145,7 +145,7 @@ class Union_Ordered extends Operator
         ArgumentValidation.isLTE("ascending.length()", ascending.length, min(leftOrderingFields, rightOrderingFields));
         // The following assumptions will be relaxed when this operator is generalized to support inputs from different
         // indexes.
-        ArgumentValidation.isEQ("leftRowType", leftRowType, "rightRowType", rightRowType);
+        //ArgumentValidation.isEQ("leftRowType", leftRowType, "rightRowType", rightRowType);
         ArgumentValidation.isEQ("leftOrderingFields", leftOrderingFields, "rightOrderingFields", rightOrderingFields);
         this.left = left;
         this.right = right;
@@ -170,7 +170,7 @@ class Union_Ordered extends Operator
 
     private final Operator left;
     private final Operator right;
-    private IndexRowType rowType;
+    private RowType rowType;
     private final int fixedFields;
     private final int fieldsToCompare;
     private final boolean[] ascending;
