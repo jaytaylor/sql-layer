@@ -45,6 +45,7 @@ import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.operator.API.InputPreservationOption;
 import com.foundationdb.qp.operator.API.JoinType;
 import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.expressions.OverloadResolver;
 import com.foundationdb.server.expressions.OverloadResolver.OverloadResult;
 import com.foundationdb.server.types.TCast;
@@ -1379,7 +1380,13 @@ public class OperatorAssembler extends BaseRule
         
         protected RowStream assembleUnion(Union union) {
             PlanNode left = union.getLeft();
+            if (left instanceof ResultSet)
+                left = ((ResultSet)left).getInput();
+            
+            
             PlanNode right = union.getRight();
+            if (right instanceof ResultSet)
+                right = ((ResultSet)right).getInput();
             
             RowStream leftStream = assembleStream (left);
             RowStream rightStream = assembleStream (right);
@@ -1425,7 +1432,11 @@ public class OperatorAssembler extends BaseRule
             API.Ordering ordering = partialAssembler.createOrdering();
             for (int i = 0; i < rowType.nFields(); i++) {
                 TPreparedExpression tExpr = newPartialAssembler.field(rowType, i);
-                ordering.append(tExpr, true, rowType.fieldColumn(i).getCollator());
+                
+                if(rowType.fieldHasColumn(i))
+                    ordering.append(tExpr, true, rowType.fieldColumn(i).getCollator());
+                else
+                    ordering.append(tExpr, true, AkCollatorFactory.UCS_BINARY_COLLATOR );
             }
             return ordering;
         }
