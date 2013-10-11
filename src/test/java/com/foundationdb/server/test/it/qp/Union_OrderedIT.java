@@ -133,21 +133,22 @@ public class Union_OrderedIT extends OperatorITBase
             fail();
         } catch (IllegalArgumentException e) {
         }
-        // Test different input types
-        try {
-            union_Ordered(groupScan_Default(coi),
-                          groupScan_Default(coi),
-                          tXIndexRowType,
-                          tPidIndexRowType,
-                          1,
-                          1,
-                          ascending(true),
-                          false);
-            fail();
-        } catch (IllegalArgumentException e) {
-        }
     }
 
+    @Test (expected = IllegalArgumentException.class)
+    public void testDifferentInputTypes() 
+    {
+        // Test different input types
+        union_Ordered(groupScan_Default(coi),
+                      groupScan_Default(coi),
+                      tXIndexRowType,
+                      tPidIndexRowType,
+                      1,
+                      1,
+                      ascending(true),
+                      false);
+    }
+    
     @Test
     public void testOrderingColumns()
     {
