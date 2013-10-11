@@ -32,6 +32,10 @@ public class UnionAllIT extends OperatorITBase {
                 "schema", "u",
                 "id int not null primary key",
                 "x int");
+        v = createTable (
+             "schema", "v",
+             "id int not null primary key",
+             "name varchar(32)");
     }
 
     @Override
@@ -40,8 +44,10 @@ public class UnionAllIT extends OperatorITBase {
         schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         uRowType = schema.userTableRowType(userTable(u));
+        vRowType = schema.userTableRowType(userTable(v));
         tGroupTable = group(t);
         uGroupTable = group(u);
+        vGroupTable = group(v);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
@@ -61,9 +67,9 @@ public class UnionAllIT extends OperatorITBase {
         };
         use(db);
     }
-    private int t, u;
-    private UserTableRowType tRowType, uRowType;
-    private Group tGroupTable, uGroupTable;
+    private int t, u, v;
+    private UserTableRowType tRowType, uRowType, vRowType;
+    private Group tGroupTable, uGroupTable, vGroupTable;
     
     @Test
     public void testBothNonEmpty()
@@ -132,6 +138,30 @@ public class UnionAllIT extends OperatorITBase {
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
     
+    @Test(expected = IllegalArgumentException.class)
+    public void testAllRowTypeMismatch () {
+        unionAll_Default (
+                groupScan_Default(tGroupTable),
+                tRowType,
+                groupScan_Default(vGroupTable),
+                vRowType,
+                true);
+    }
+    
+    @Test (expected = IllegalArgumentException.class)
+    public void testDifferentInputTypes() 
+    {
+        // Test different input types
+        union_Ordered(groupScan_Default(tGroupTable),
+                      groupScan_Default(vGroupTable),
+                      tRowType,
+                      vRowType,
+                      2,
+                      2,
+                      ascending(true,true),
+                      false);
+    }
+
     private boolean[] ascending(boolean... ascending)
     {
         return ascending;
