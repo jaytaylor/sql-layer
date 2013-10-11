@@ -393,9 +393,11 @@ public class AISMerge {
             if(newColumn == null) {
                 throw new NoSuchColumnException(column.getName());
             }
+            // API call problem, not something user can generate
             if(!column.getType().equals(newColumn.getType())) {
-                throw new JoinColumnTypesMismatchException(index.getIndexName().getFullTableName(), column.getName(),
-                                                           newRefTable.getName(), newColumn.getName());
+                throw new IllegalArgumentException(
+                    "Column type mismatch for " + column.getName() + ": " + column.getType() + " vs " + newColumn.getType()
+                );
             }
             // Calls (Group)Index.addColumn(), which checks all are in same branch
             IndexColumn.create(newIndex, newColumn, indexCol, indexCol.getPosition());
