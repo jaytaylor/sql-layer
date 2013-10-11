@@ -324,6 +324,7 @@ public class PostgresServerConnection extends ServerSessionBase
             }
             server.removeConnection(sessionId);
             reqs.monitor().deregisterSessionMonitor(sessionMonitor, session);
+            logger.debug("Disconnect");
         }
     }
 
