@@ -1163,8 +1163,7 @@ public class AISBinder implements Visitor
         pushBindingContext(null);
         try {
             node.getLeftResultSet().accept(this);
-            // TODO: This isn't really correct, but it's where the names come from.
-            node.getResultColumns().accept(this);
+            node.setResultColumns(node.copyResultColumnsFromLeft());
         }
         catch (StandardException ex) {
             throw new SQLParserInternalException(ex);

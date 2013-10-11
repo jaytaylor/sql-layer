@@ -98,6 +98,8 @@ union-4: cast different types for union
 
 union-5: cast different types for union all
 
+union-6: select * union
+
 update-1: change column to literal
 
 update-2: change column to expression (column itself)
