@@ -41,7 +41,6 @@ import com.foundationdb.server.error.DuplicateIndexException;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.IndexLacksColumnsException;
 import com.foundationdb.server.error.InvalidOperationException;
-import com.foundationdb.server.error.JoinColumnTypesMismatchException;
 import com.foundationdb.server.error.NoSuchColumnException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.error.ProtectedIndexException;
@@ -158,7 +157,7 @@ public final class CreateIndexesIT extends ITBase
         ddl().createIndexes(session(), Arrays.asList(index));
     }
   
-    @Test(expected=JoinColumnTypesMismatchException.class) 
+    @Test(expected=IllegalArgumentException.class)
     public void mismatchedColumnType() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int not null primary key");
         AkibanInformationSchema ais = createAISWithTable(tId);
