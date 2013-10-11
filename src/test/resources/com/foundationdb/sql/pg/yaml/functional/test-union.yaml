@@ -1,0 +1,24 @@
+---
+- CreateTable: customers ( cid int NOT NULL, 
+    PRIMARY KEY(cid),
+    name varchar(32) NOT NULL)
+---
+- Statement: CREATE INDEX name ON customers(name);
+---
+- CreateTable: handling (hid int NOT NULL, 
+    PRIMARY KEY(hid),
+    iid int NOT NULL)
+---
+- CreateTable: categories (cat int NOT NULL, sku varchar(32) NOT NULL)
+---
+- Statement: CREATE UNIQUE INDEX cat_sku ON categories(cat,sku)
+---
+- Statement: INSERT INTO customers (cid, name) VALUES (1, 'Smith'), (2, 'Jones'), (3, 'Smithson')
+---
+- Statement: INSERT INTO handling (hid, iid) VALUES (1, 100), (2, 200), (3, 300)
+---
+- Statement: INSERT INTO categories (cat, sku) values (1, 'Square'), (2, 'Circle'), (3, 'Hexagon')
+---
+- Statement: SELECT cid, name from customers UNION SELECT cat, sku FROM categories
+- output: [[1, 'Square'],[1, 'Smith'], [2, 'Circle'], [2, 'Jones'],[3, 'Hexagon'],[3, 'Smithson']]
+...
