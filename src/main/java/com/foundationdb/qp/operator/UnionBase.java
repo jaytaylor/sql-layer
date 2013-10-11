@@ -117,6 +117,9 @@ public abstract class UnionBase extends Operator {
                 types[i] = tInst2;
             else if (tInst2 == null)
                 types[i] = tInst1;
+            else if (tInst1.equalsExcludingNullable(tInst2)) {
+                types[i] = tInst1.nullability() ? tInst1 : tInst2;
+            }
             else
                 throw notSameShape(rowType1, rowType2);
         }
