@@ -17,6 +17,7 @@
 
 package com.foundationdb.qp.operator;
 
+import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
@@ -215,7 +216,12 @@ class Union_Ordered extends UnionBase
                 if (LOG_EXECUTION) {
                     LOG.debug("Union_Ordered: yield {}", next);
                 }
-                return next;
+                
+                if (useOverlayRow()) {
+                    return new OverlayingRow (next, rowType());
+                } else {
+                    return next;
+                }
             } finally {
                 if (TAP_NEXT_ENABLED) {
                     TAP_NEXT.out();

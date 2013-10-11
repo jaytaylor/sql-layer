@@ -38,12 +38,15 @@ public abstract class UnionBase extends Operator {
         ArgumentValidation.notNull("rightRowType", rightType);
         ArgumentValidation.isEQ("leftRowType.fields", leftType.nFields(), "rightRowType.fields", rightType.nFields());
         this.outputRowType = rowType(leftType, rightType);
+        overlayRow = !(outputRowType == leftType);
+        
         this.inputs = Arrays.asList(left, right);
         this.inputTypes = Arrays.asList(leftType, rightType);
         ArgumentValidation.isEQ("inputs.size", inputs.size(), "inputTypes.size", inputTypes.size());
     }
     
     private RowType outputRowType;
+    private boolean overlayRow = false;
     private final List<? extends Operator> inputs;
     private final List<? extends RowType> inputTypes;
 
@@ -68,6 +71,10 @@ public abstract class UnionBase extends Operator {
         }
     }
 
+    public boolean useOverlayRow() {
+        return overlayRow;
+    }
+    
     @Override
     public String describePlan() {
         StringBuilder sb = new StringBuilder();

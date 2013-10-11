@@ -1392,7 +1392,7 @@ public class OperatorAssembler extends BaseRule
             RowStream rightStream = assembleStream (right);
             
             if (union.isAll()) {
-                rightStream.operator = 
+                leftStream.operator = 
                     API.unionAll_Default(leftStream.operator, leftStream.rowType, 
                             rightStream.operator, rightStream.rowType, 
                             rulesContext.getPipelineConfiguration().isUnionAllOpenBoth());
@@ -1405,9 +1405,9 @@ public class OperatorAssembler extends BaseRule
                 leftStream.rowType = leftStream.operator.rowType();
 
                 
-                rightStream.operator = API.sort_General(rightStream.operator, rightStream.rowType,
+                leftStream.operator = API.sort_General(rightStream.operator, rightStream.rowType,
                         assembleUnionOrdering(rightStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
-                rightStream.rowType = rightStream.operator.rowType();
+                leftStream.rowType = rightStream.operator.rowType();
                 
                 assert leftStream.rowType.nFields() == rightStream.rowType.nFields();
                 
@@ -1418,13 +1418,13 @@ public class OperatorAssembler extends BaseRule
                 RowType rightRowType = rightStream.rowType;
                 int leftOrderingFields = leftRowType.nFields();
                 int rightOrderingFields = rightRowType.nFields();
-                rightStream.operator = 
+                leftStream.operator = 
                    API.union_Ordered(leftStream.operator, rightStream.operator, leftRowType, rightRowType,
                            leftOrderingFields, rightOrderingFields, ascending, false);
             }
-            rightStream.rowType = rightStream.operator.rowType();
+            leftStream.rowType = leftStream.operator.rowType();
             
-            return rightStream;
+            return leftStream;
             
         }
         

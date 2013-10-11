@@ -294,7 +294,10 @@ public class ASTStatementLoader extends BaseRule
                 boolean all = union.isAll();
                 PlanNode left = toQueryForSelect(union.getLeftResultSet());
                 PlanNode right = toQueryForSelect(union.getRightResultSet());
-                return new Union(left, right, all);
+                PlanNode newUnion = new Union(left, right, all);
+                List<ResultField> results = resultColumns (union.getResultColumns());
+                PlanNode query = new ResultSet(newUnion, results);
+                return query;
             }
             else
                 throw new UnsupportedSQLException("Unsupported query", resultSet);
