@@ -42,14 +42,12 @@ import com.foundationdb.server.service.tree.TreeLink;
 import com.foundationdb.server.service.tree.TreeService;
 import com.google.inject.Inject;
 import com.persistit.*;
-import com.persistit.Management.DisplayFilter;
 import com.persistit.encoding.CoderManager;
 import com.persistit.exception.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.rmi.RemoteException;
 import java.util.*;
 
 import static com.persistit.Key.EQ;
