@@ -63,12 +63,17 @@ public class PostgresServerITBase extends ITBase
         return uniqueStartupConfigProperties(PostgresServerITBase.class);
     }
 
+    /** Should include %d format specifier for port number */
+    protected String getConnectionURL() {
+        return CONNECTION_URL;
+    }
+
     protected Connection openConnection() throws Exception {
         int port = getPostgresService().getPort();
         if (port <= 0) {
             throw new Exception("fdbsql.postgres.port is not set.");
         }
-        String url = String.format(CONNECTION_URL, port);
+        String url = String.format(getConnectionURL(), port);
         Class.forName(DRIVER_NAME);
         return DriverManager.getConnection(url, USER_NAME, USER_PASSWORD);
     }
