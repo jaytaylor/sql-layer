@@ -54,7 +54,8 @@ public class PostgresSessionStatement implements PostgresStatement
       "client_encoding", "DateStyle", "geqo", "ksqo", "application_name",
       "queryTimeoutSec", "zeroDateTimeBehavior", "maxNotificationLevel", "OutputFormat",
       "parserInfixBit", "parserInfixLogical", "parserDoubleQuoted",
-      "newtypes", "transactionPeriodicallyCommit"
+      "newtypes", "transactionPeriodicallyCommit",
+      "extra_float_digits", "ssl_renegotiation_limit"
     };
 
     private Operation operation;
@@ -232,12 +233,16 @@ public class PostgresSessionStatement implements PostgresStatement
     }
     
     protected void setVariable(PostgresServerSession server, String variable, String value) {
-        if (!Arrays.asList(ALLOWED_CONFIGURATION).contains(variable))
+        String cased = allowedConfiguration(variable);
+        if (cased == null)
             throw new UnsupportedConfigurationException (variable);
-        server.setProperty(variable, value);
+        server.setProperty(cased, value);
     }
     
     protected void showVariable(PostgresQueryContext context, PostgresServerSession server, String variable) throws IOException {
+        String cased = allowedConfiguration(variable);
+        if (cased != null)
+            variable = cased;
         String value = server.getSessionSetting(variable);
         if (value == null)
             throw new UnsupportedConfigurationException (variable);
@@ -247,5 +252,15 @@ public class PostgresSessionStatement implements PostgresStatement
         PostgresEmulatedMetaDataStatement.writeColumn(context, server, messenger,  
                                                       0, value, SHOW_PG_TYPE);
         messenger.sendMessage();
+    }
+
+    /** Check for known variables <em>and</em> standardize their case. */
+    public static String allowedConfiguration(String key) {
+        for (String allowed : ALLOWED_CONFIGURATION) {
+            if (allowed.equalsIgnoreCase(key)) {
+                return allowed;
+            }
+        }
+        return null;
     }
 }
