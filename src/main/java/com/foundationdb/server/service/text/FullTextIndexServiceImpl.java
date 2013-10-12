@@ -122,8 +122,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     private void dropIndex(Session session, FullTextIndex index) {
         logger.trace("Delete {}", index.getIndexName());
         synchronized(BACKGROUND_UPDATE_LOCK) {
-            FullTextIndexInfo info = getIndexIfExists(session, index.getIndexName(), index.getIndexedTable().getAIS());
-            assert info != null : index;
+            FullTextIndexInfo info = getIndex(session, index.getIndexName(), index.getIndexedTable().getAIS());
             try {
                 info.close();
             } catch(IOException e) {
