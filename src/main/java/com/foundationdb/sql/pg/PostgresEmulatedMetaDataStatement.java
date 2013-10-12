@@ -62,7 +62,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         // PSQL \d, \dt, \dv
         PSQL_LIST_TABLES("SELECT n.nspname as \"Schema\",\\s*" +
                          "c.relname as \"Name\",\\s*" +
-                         "CASE c.relkind WHEN 'r' THEN 'table' WHEN 'v' THEN 'view' WHEN 'i' THEN 'index' WHEN 'S' THEN 'sequence' WHEN 's' THEN 'special' (?:WHEN 'f' THEN 'foreign table' )?END as \"Type\",\\s+" +
+                         "CASE c.relkind WHEN 'r' THEN 'table' WHEN 'v' THEN 'view'(?: WHEN 'm' THEN 'materialized view')? WHEN 'i' THEN 'index' WHEN 'S' THEN 'sequence' WHEN 's' THEN 'special' (?:WHEN 'f' THEN 'foreign table' )?END as \"Type\",\\s+" +
                          "(?:pg_catalog.pg_get_userbyid\\(c.relowner\\)|u.usename|r.rolname) as \"Owner\"\\s+" +
                          "FROM pg_catalog.pg_class c\\s+" +
                          "(?:LEFT JOIN pg_catalog.pg_user u ON u.usesysid = c.relowner\\s+)?" +
@@ -105,9 +105,10 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                                "FROM pg_catalog.pg_attrdef d\\s+" +
                                "WHERE d.adrelid = a.attrelid AND d.adnum = a.attnum AND a.atthasdef\\),\\s*" +
                                "a.attnotnull, a.attnum,?\\s*" +
-                               "(NULL AS attcollation\\s+)?" + // 1
+                               "(NULL AS attcollation,?\\s+)?" + // 1
+                               "(NULL AS indexdef,\\s+NULL AS attfdwoptions\\s+)?" + // 2
                                "FROM pg_catalog.pg_attribute a\\s+" +
-                               "WHERE a.attrelid = '(-?\\d+)' AND a.attnum > 0 AND NOT a.attisdropped\\s+" + // 2
+                               "WHERE a.attrelid = '(-?\\d+)' AND a.attnum > 0 AND NOT a.attisdropped\\s+" + // 3
                                "ORDER BY a.attnum;?", true),
         PSQL_DESCRIBE_TABLES_4A("SELECT c.oid::pg_catalog.regclass FROM pg_catalog.pg_class c, pg_catalog.pg_inherits i WHERE c.oid=i.inhparent AND i.inhrelid = '(-?\\d+)' ORDER BY inhseqno;?", true),
         PSQL_DESCRIBE_TABLES_4B("SELECT c.oid::pg_catalog.regclass FROM pg_catalog.pg_class c, pg_catalog.pg_inherits i WHERE c.oid=i.inhrelid AND i.inhparent = '(-?\\d+)' ORDER BY c.oid::pg_catalog.regclass::pg_catalog.text;?", true),
@@ -291,9 +292,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             types = new PostgresType[] { BOOL_PG_TYPE, CHAR1_PG_TYPE, INT2_PG_TYPE, INT2_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, OID_PG_TYPE };
             break;
         case PSQL_DESCRIBE_TABLES_3:
-            ncols = (groups.get(1) != null) ? 6 : 5;
-            names = new String[] { "attname", "format_type", "?column?", "attnotnull", "attnum", "attcollation" };
-            types = new PostgresType[] { IDENT_PG_TYPE, TYPNAME_PG_TYPE, DEFVAL_PG_TYPE, BOOL_PG_TYPE, INT2_PG_TYPE, IDENT_PG_TYPE };
+            ncols = (groups.get(2) != null) ? 8 : (groups.get(1) != null) ? 6 : 5;
+            names = new String[] { "attname", "format_type", "?column?", "attnotnull", "attnum", "attcollation", "indexdef", "attfdwoptions" };
+            types = new PostgresType[] { IDENT_PG_TYPE, TYPNAME_PG_TYPE, DEFVAL_PG_TYPE, BOOL_PG_TYPE, INT2_PG_TYPE, IDENT_PG_TYPE, CHAR0_PG_TYPE, CHAR0_PG_TYPE };
             break;
         case PSQL_DESCRIBE_TABLES_4A:
         case PSQL_DESCRIBE_TABLES_4B:
@@ -927,12 +928,13 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
 
     private int psqlDescribeTables3Query(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows) throws IOException {
         int nrows = 0;
-        Columnar table = getTableById(server, groups.get(2));
+        Columnar table = getTableById(server, groups.get(3));
         if (table == null) return 0;
         boolean hasCollation = (groups.get(1) != null);
+        boolean hasIndexdef = (groups.get(2) != null);
         for (Column column : table.getColumns()) {
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
-            messenger.writeShort(hasCollation ? 6 : 5); // 5-6 columns for this query
+            messenger.writeShort(hasIndexdef ? 8 : hasCollation ? 6 : 5); // 5-8 columns for this query
             writeColumn(context, server, messenger,  // attname
                         0, column.getName(), IDENT_PG_TYPE);
             writeColumn(context, server, messenger, // format_type
@@ -962,6 +964,12 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 writeColumn(context, server, messenger, // attcollation
                             5, (charAndColl == null) ? null : charAndColl.collation(), 
                             IDENT_PG_TYPE);
+            }
+            if (hasIndexdef) {
+                writeColumn(context, server, messenger, // indexdef
+                            6, null, CHAR0_PG_TYPE);
+                writeColumn(context, server, messenger, // attfdwoptions
+                            7, null, CHAR0_PG_TYPE);
             }
             messenger.sendMessage();
             nrows++;
