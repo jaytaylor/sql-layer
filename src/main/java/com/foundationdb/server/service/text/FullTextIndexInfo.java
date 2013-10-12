@@ -291,4 +291,8 @@ public class FullTextIndexInfo
             }
         }
     }
+
+    public void close() throws IOException {
+        shared.close();
+    }
 }

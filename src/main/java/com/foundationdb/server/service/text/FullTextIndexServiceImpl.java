@@ -119,14 +119,20 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     // FullTextIndexService
     //
 
-    private void dropIndex(Session session, FullTextIndex idx) {
-        logger.trace("Delete {}", idx.getIndexName());
+    private void dropIndex(Session session, FullTextIndex index) {
+        logger.trace("Delete {}", index.getIndexName());
         synchronized(BACKGROUND_UPDATE_LOCK) {
-            // delete documents
-            FullTextIndexInfo idxInfo = getIndex(session, idx.getIndexName(), idx.getIndexedTable().getAIS());
-            idxInfo.deletePath();
-            synchronized (indexes) {
-                indexes.remove(idx.getIndexName());
+            FullTextIndexInfo info = getIndexIfExists(session, index.getIndexName(), index.getIndexedTable().getAIS());
+            assert info != null : index;
+            try {
+                info.close();
+            } catch(IOException e) {
+                logger.error("Error closing index {} on drop", index.getIndexName(), e);
+            }
+            // Delete documents
+            info.deletePath();
+            synchronized(indexes) {
+                indexes.remove(index.getIndexName());
             }
         }
     }
@@ -247,6 +253,9 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                     indexInfo.rollbackIndexer();
                 } catch(IOException e) {
                     logger.error("Error rolling back index population for {}", indexName, e);
+                }
+                synchronized(indexes) {
+                    indexes.remove(indexName);
                 }
             }
         }
