@@ -209,8 +209,6 @@ public class FullTextIndexInfo
         return ret;
     }
     /**
-     * 
-     * @param row
      * @return the operator plan to get to every row related to this index row
      */
     public Operator getOperator()
@@ -276,4 +274,21 @@ public class FullTextIndexInfo
         path.delete();
     }
 
+    public void commitIndexer() throws IOException {
+        shared.getIndexer().getWriter().commit();
+    }
+
+    public void rollbackIndexer() throws IOException {
+        synchronized (shared) {
+            Indexer indexer = shared.getIndexer();
+            if(indexer != null) {
+                try {
+                    indexer.getWriter().rollback();
+                } finally {
+                    // Rollback causes the writer to be closed. Always get rid of it.
+                    shared.setIndexer(null);
+                }
+            }
+        }
+    }
 }

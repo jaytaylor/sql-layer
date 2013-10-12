@@ -63,6 +63,19 @@ public abstract class FullTextIndexInfosImpl implements FullTextIndexInfos
     protected abstract AkibanInformationSchema getAIS(Session session);
     protected abstract File getIndexPath();
 
+    protected FullTextIndexInfo getIndexIfExists(Session session, IndexName name, AkibanInformationSchema ais) {
+        if (ais == null)
+            ais = getAIS(session);
+        FullTextIndexInfo info = null;
+        synchronized (indexes) {
+            FullTextIndexShared shared = indexes.get(name);
+            if (shared != null) {
+                info = shared.forAIS(ais);
+            }
+        }
+        return info;
+    }
+
     protected FullTextIndexInfo getIndex(Session session, IndexName name, AkibanInformationSchema ais) {
         if (ais == null)
             ais = getAIS(session);
@@ -82,5 +95,4 @@ public abstract class FullTextIndexInfosImpl implements FullTextIndexInfos
         }
         return info;
     }
-
 }
