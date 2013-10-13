@@ -27,6 +27,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
+import com.fasterxml.sort.IterableSorterException;
 import com.fasterxml.sort.IteratingSorter;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.API.Ordering;
@@ -347,7 +348,7 @@ public class MergeJoinSorter implements Sorter {
         }
 
         @Override
-        public SortKey readNext() throws IOException {
+        public SortKey readNext() {
             SortKey sortKey = null;
             if(done) {
                 return sortKey;
@@ -585,8 +586,8 @@ public class MergeJoinSorter implements Sorter {
                     }
                     row = createRow(key);
                 }
-            } catch(IOException e) {
-                throw new MergeSortIOException(e);
+            } catch(IterableSorterException e) {
+                throw new MergeSortIOException(e.getMessage());
             }
             return row;
         }
@@ -596,7 +597,7 @@ public class MergeJoinSorter implements Sorter {
          * puts them in order in the sort output. Skip the duplicates by reading
          * until the end of the stream or until a different key appears 
          */
-        private SortKey skipDuplicates (SortKey startKey) throws IOException {
+        private SortKey skipDuplicates (SortKey startKey) {
             while (true) {
                 SortKey newKey = sortIterator.hasNext() ? sortIterator.next() : null;
                 if (newKey == null || compare.compare(startKey, newKey) != 0) {
