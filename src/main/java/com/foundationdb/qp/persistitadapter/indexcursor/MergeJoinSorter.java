@@ -24,8 +24,10 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 
+import com.fasterxml.sort.IteratingSorter;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.API.Ordering;
 import com.foundationdb.qp.operator.CursorLifecycle;
@@ -103,7 +105,8 @@ public class MergeJoinSorter implements Sorter {
 
     private final SorterAdapter<?, ?, ?> sorterAdapter;
     private final List<Integer> orderChanges;
-    private PullBasedSorter<SortKey> pullSorter;
+    private IteratingSorter<SortKey> iteratingSorter;
+    private Iterator<SortKey> sortIterator;
     private Key sortKey;
     private Comparator<SortKey> compare;
     private API.SortOption sortOption;
@@ -155,26 +158,23 @@ public class MergeJoinSorter implements Sorter {
 
     @Override
     public void close() {
-        if(pullSorter != null) {
-            try {
-                pullSorter.pullFinish();
-            } catch(IOException e) {
-                LOG.warn("Problem closing sort", e);
-            }
-            pullSorter = null;
+        if(iteratingSorter != null) {
+            iteratingSorter.close();
+            iteratingSorter = null;
+            sortIterator = null;
         }
     }
     
     private void loadTree() throws IOException {
-        pullSorter = new PullBasedSorter<>(getSortConfig(new MergeTempFileProvider(context)),
-                                           new KeyReaderFactory(),
-                                           new KeyWriterFactory(),
-                                           compare);
-        pullSorter.pullSortBegin(new KeyReadCursor(input));
+        iteratingSorter = new IteratingSorter<>(getSortConfig(new MergeTempFileProvider(context)),
+                                                new KeyReaderFactory(),
+                                                new KeyWriterFactory(),
+                                                compare);
+        sortIterator = iteratingSorter.sort(new KeyReadCursor(input));
     }
     
     private RowCursor cursor() {
-        return new KeyFinalCursor(pullSorter, rowType, sortOption, compare);
+        return new KeyFinalCursor(sortIterator, rowType, sortOption, compare);
     }
 
     public KeyReadCursor readCursor() { 
@@ -552,15 +552,15 @@ public class MergeJoinSorter implements Sorter {
         private boolean isIdle = true;
         private boolean isDestroyed = false;
 
-        private final PullNextProvider<SortKey> pullSorter;
+        private final Iterator<SortKey> sortIterator;
         private final RowType rowType;
         private PersistitValueValueSource valueSource;
         private API.SortOption sortOption;
         private Comparator<SortKey> compare;
         private SortKey nextKey;
         
-        public KeyFinalCursor(PullNextProvider<SortKey> pullSorter, RowType rowType, API.SortOption sortOption, Comparator<SortKey> compare) {
-            this.pullSorter = pullSorter;
+        public KeyFinalCursor(Iterator<SortKey> sortIterator, RowType rowType, API.SortOption sortOption, Comparator<SortKey> compare) {
+            this.sortIterator = sortIterator;
             this.rowType = rowType;
             this.sortOption = sortOption;
             this.compare = compare;
@@ -578,7 +578,7 @@ public class MergeJoinSorter implements Sorter {
             CursorLifecycle.checkIdleOrActive(this);
             Row row = null;
             try {
-                SortKey key = (nextKey != null) ? nextKey : pullSorter.pullNext();
+                SortKey key = (nextKey != null) ? nextKey : (sortIterator.hasNext() ? sortIterator.next() : null);
                 if(key != null) {
                     if(sortOption == API.SortOption.SUPPRESS_DUPLICATES) {
                         nextKey = skipDuplicates(key);
@@ -598,7 +598,7 @@ public class MergeJoinSorter implements Sorter {
          */
         private SortKey skipDuplicates (SortKey startKey) throws IOException {
             while (true) {
-                SortKey newKey = pullSorter.pullNext();
+                SortKey newKey = sortIterator.hasNext() ? sortIterator.next() : null;
                 if (newKey == null || compare.compare(startKey, newKey) != 0) {
                     return newKey;
                 }
