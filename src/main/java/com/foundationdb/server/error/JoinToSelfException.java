@@ -14,18 +14,17 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package com.foundationdb.server.error;
 
-import java.io.IOException;
+import com.foundationdb.ais.model.TableName;
 
-public class MergeSortIOException extends InvalidOperationException {
-
-    public MergeSortIOException(IOException ex) {
-        this(ex.getMessage());
+public class JoinToSelfException extends InvalidOperationException {
+    public JoinToSelfException(TableName name) {
+        this(name.getSchemaName(), name.getTableName());
     }
 
-    public MergeSortIOException(String msg) {
-        super(ErrorCode.MERGE_SORT_IO, msg);
+    public JoinToSelfException(String schemaName, String tableName) {
+        super(ErrorCode.JOIN_TO_SELF, schemaName, tableName);
     }
-
 }

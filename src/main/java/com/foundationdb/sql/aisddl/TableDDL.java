@@ -187,7 +187,7 @@ public class TableDDL
             if (tableElement instanceof FKConstraintDefinitionNode) {
                 FKConstraintDefinitionNode fkdn = (FKConstraintDefinitionNode)tableElement;
                 if (fkdn.isGrouping()) {
-                    addParentTable(builder, ddlFunctions.getAIS(session), fkdn, schemaName);
+                    addParentTable(builder, ddlFunctions.getAIS(session), fkdn, schemaName, tableName);
                     addJoin (builder, fkdn, schemaName, schemaName, tableName);
                 } else {
                     throw new UnsupportedFKIndexException();
@@ -373,6 +373,10 @@ public class TableDDL
         if (childTable == null) {
             throw new NoSuchTableException(schemaName, tableName);
         }
+        // Check that we aren't joining to ourselves
+        if (parentTable == childTable) {
+            throw new JoinToSelfException(schemaName, tableName);
+        }
         // Check that fk list and pk list are the same size
         String[] fkColumns = columnNamesFromListOrPK(fkdn.getColumnList(), null); // No defaults for child table
         String[] pkColumns = columnNamesFromListOrPK(fkdn.getRefResultColumnList(), parentTable.getPrimaryKey());
@@ -417,12 +421,17 @@ public class TableDDL
      * Add a minimal parent table (PK) with group to the builder based upon the AIS.
      */
     public static void addParentTable(final AISBuilder builder, final AkibanInformationSchema ais,
-                                      final FKConstraintDefinitionNode fkdn, final String schemaName) {
+                                      final FKConstraintDefinitionNode fkdn, final String schemaName, String tableName) {
 
         TableName parentName = getReferencedName(schemaName, fkdn);
+        // Check that we aren't joining to ourselves
+        if (parentName.equals(schemaName, tableName)) {
+            throw new JoinToSelfException(schemaName, tableName);
+        }
+        // Check parent table exists
         UserTable parentTable = ais.getUserTable(parentName);
         if (parentTable == null) {
-            throw new NoSuchTableException (parentName);
+            throw new JoinToUnknownTableException(new TableName(schemaName, tableName), parentName);
         }
 
         builder.userTable(parentName.getSchemaName(), parentName.getTableName());

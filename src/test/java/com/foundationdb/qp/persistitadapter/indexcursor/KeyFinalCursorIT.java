@@ -22,14 +22,15 @@ import static com.foundationdb.qp.operator.API.valuesScan_Default;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
+import com.fasterxml.sort.IterableSorterException;
 import com.foundationdb.qp.persistitadapter.indexcursor.MergeJoinSorter.KeyReader;
 import org.junit.Before;
 import org.junit.Test;
@@ -168,7 +169,7 @@ public class KeyFinalCursorIT extends OperatorITBase
         }
         
         is = new ByteArrayInputStream (os.toByteArray());
-        return new KeyFinalCursor(new StreamNextProvider(is), rowType, API.SortOption.PRESERVE_DUPLICATES, null);
+        return new KeyFinalCursor(new StreamIterator(is), rowType, API.SortOption.PRESERVE_DUPLICATES, null);
 
     }
     
@@ -194,21 +195,40 @@ public class KeyFinalCursorIT extends OperatorITBase
      }
 
 
-    private static class StreamNextProvider implements PullNextProvider<SortKey> {
+    private static class StreamIterator implements Iterator<SortKey> {
         private final KeyReader reader;
+        private SortKey next;
 
-        public StreamNextProvider(InputStream stream) throws FileNotFoundException {
+        public StreamIterator(InputStream stream) throws IOException {
             this.reader = new KeyReader(stream);
+            this.next = reader.readNext();
         }
 
         @Override
-        public SortKey pullNext() throws IOException {
-            return reader.readNext();
+        public boolean hasNext() {
+            return next != null;
         }
 
         @Override
-        public void pullFinish() throws IOException {
-            reader.close();
+        public SortKey next() {
+            if(next == null) {
+                throw new IllegalStateException("No next");
+            }
+            SortKey t = next;
+            try {
+                next = reader.readNext();
+                if(next == null) {
+                    reader.close();
+                }
+            } catch(IOException e) {
+                throw new IterableSorterException(e);
+            }
+            return t;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
         }
     }
 }

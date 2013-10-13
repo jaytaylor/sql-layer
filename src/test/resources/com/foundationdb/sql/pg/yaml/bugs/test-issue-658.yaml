@@ -1,0 +1,23 @@
+#
+# IS NULL incorrect when encountering both NULL and non-NULL rows
+#
+---
+- CreateTable: t (c1 double, c2 int)
+---
+- Statement: insert into t values (1, 1), (null, 2)
+---
+- Statement: select c1 is null from t
+- output: [ [false], [true] ]
+---
+- Statement: insert into t values (3, 3)
+---
+- Statement: select c1 is null from t
+- output: [ [false], [true], [false] ]
+---
+- Statement: select c1 is null from t where c2 = 2
+- output: [ [true] ]
+---
+- Statement: select c1 from t where c2 = 2
+- output: [ [NULL] ]
+...
+

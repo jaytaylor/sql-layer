@@ -240,7 +240,8 @@ public class IndexDDL
             Column tableCol = builder.akibanInformationSchema().getTable(tableName).getColumn(col.getColumnName());
             if (tableCol == null) {
                 throw new NoSuchColumnException (col.getColumnName());
-            }          
+            }
+            checkColAscending(col);
             builder.indexColumn(tableName.getSchemaName(),
                                 tableName.getTableName(),
                                 indexName,
@@ -321,7 +322,9 @@ public class IndexDDL
             if (tableCol == null) {
                 throw new NoSuchColumnException (col.getColumnName());
             }
-            
+
+            checkColAscending(col);
+
             builder.groupIndexColumn(groupName, indexName, schemaName, columnTable.getTableName(), columnName, i);
             i++;
         }
@@ -361,6 +364,8 @@ public class IndexDDL
             if (tableCol == null) {
                 throw new NoSuchColumnException (col.getColumnName());
             }
+
+            checkColAscending(col);
             
             builder.fullTextIndexColumn(tableName, indexName, schemaName, columnTable.getTableName(), columnName, i);
             i++;
@@ -370,5 +375,11 @@ public class IndexDDL
 
     private static void clone(AISBuilder builder, AkibanInformationSchema ais) {
         AISCloner.clone(builder.akibanInformationSchema(), ais, ProtobufWriter.ALL_SELECTOR);
+    }
+
+    private static void checkColAscending(IndexColumn indexColumn) {
+        if(!indexColumn.isAscending()) {
+            throw new UnsupportedSQLException("DESC index column " + indexColumn.getColumnName());
+        }
     }
 }
