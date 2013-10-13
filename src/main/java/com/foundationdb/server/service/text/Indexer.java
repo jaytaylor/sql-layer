@@ -34,15 +34,11 @@ public class Indexer implements Closeable
     private final IndexWriter writer;
     
     public Indexer(FullTextIndexShared index, Analyzer analyzer) throws IOException {
-        this.index = index;
-         
-        
         IndexWriterConfig iwc = new IndexWriterConfig(Version.LUCENE_40, analyzer);
         iwc.setMaxBufferedDeleteTerms(1); // The deletion needs to be reflected immediately (on disk)
-        
+        this.index = index;
         this.writer = new IndexWriter(index.open(),  iwc);
-        IndexReader r;
-        
+
     }
 
     public FullTextIndexShared getIndex() {
@@ -57,5 +53,4 @@ public class Indexer implements Closeable
     public void close() throws IOException {
         writer.close();
     }
-
 }
