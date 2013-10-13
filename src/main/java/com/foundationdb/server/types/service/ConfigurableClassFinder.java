@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -50,7 +51,7 @@ public final class ConfigurableClassFinder implements ClassFinder {
         }
     }
 
-    private void scanDirectory(Set<Class<?>> results, String baseUrl) throws IOException, ClassNotFoundException {
+    private void scanDirectory(Set<Class<?>> results, String baseUrl) throws IOException, ClassNotFoundException, URISyntaxException {
         URL asUrl = ConfigurableClassFinder.class.getClassLoader().getResource(baseUrl);
         if (asUrl == null)
             throw new AkibanInternalException("base url not found: " + baseUrl);
@@ -107,12 +108,12 @@ public final class ConfigurableClassFinder implements ClassFinder {
 
         FILE {
             @Override
-            public List<String> getFiles(String base) throws IOException {
+            public List<String> getFiles(String base) throws IOException, URISyntaxException {
                 Enumeration<URL> dirContents = dirListing(base);
                 List<String> results = new ArrayList<>(256); // should be plenty, but it's not too big
                 while (dirContents.hasMoreElements()) {
                     URL childUrl = dirContents.nextElement();
-                    buildResults(new File(childUrl.getPath()), results, base);
+                    buildResults(new File(childUrl.toURI()), results, base);
                 }
                 return results;
             }
@@ -146,6 +147,6 @@ public final class ConfigurableClassFinder implements ClassFinder {
             return ConfigurableClassFinder.class.getClassLoader().getResources(path);
         }
 
-        public abstract List<String> getFiles(String base) throws IOException;
+        public abstract List<String> getFiles(String base) throws IOException, URISyntaxException;
     }
 }

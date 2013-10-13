@@ -18,8 +18,6 @@
 package com.foundationdb.server.service.text;
 
 import com.foundationdb.ais.model.FullTextIndex;
-import com.foundationdb.ais.model.IndexName;
-import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
 import static com.foundationdb.qp.operator.API.cursor;
 
@@ -27,15 +25,11 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
-import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.service.session.SessionServiceImpl;
 import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
 import com.foundationdb.server.test.it.qp.TestRow;
 
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 public class FullTextIndexServiceIT extends FullTextIndexServiceITBase
 {
@@ -86,156 +80,9 @@ public class FullTextIndexServiceIT extends FullTextIndexServiceITBase
         queryBindings = queryContext.createBindings();
     }
 
-
-    @Test
-    public void testPopulateScheduling() throws InterruptedException
-    {
-        // disable the populate worker (so it doesn't read all the entries
-        // out before we get a chance to look at the tree.
-        fullTextImpl.disablePopulateWorker();
-        
-        // create 3 indices
-        final FullTextIndex expecteds[] = new FullTextIndex[]
-        {
-            createFullTextIndex(
-                                SCHEMA, "c", "idx1_c",
-                                "name"),
-        
-            createFullTextIndex(
-                                SCHEMA, "c", "idx2_c",
-                                "i.sku"),
-            createFullTextIndex(
-                                SCHEMA, "c", "idx3_c",
-                                "name", "i.sku")
-        };
-
-        
-        // read the entries out
-        traverse(fullTextImpl,
-                 new Visitor()
-                 {
-                    int n = 0;
-                    public void visit(IndexName idx)
-                    {
-                        assertEquals("entry[" + n + "]", expecteds[n++].getIndexName(), idx);
-                    }
-
-                    public void endOfTree()
-                    {
-                        assertEquals(expecteds.length, n);
-                    }
-                 });
-        
-
-        // let the worker do its job.
-        // (After it is done, the tree had better be empty)
-        fullTextImpl.enablePopulateWorker();
-        waitPopulate();
-
-        traverse(fullTextImpl,
-                 new Visitor()
-                 {
-                     int n = 0;
-                    
-                     @Override
-                     public void visit(IndexName idx)
-                     {
-                         ++n;
-                     }
-
-                     @Override
-                     public void endOfTree()
-                     {
-                         assertEquals (0, n);
-                     } 
-                 });
-    }
-
-
-    @Test
-    public void testDeleteIndex() throws InterruptedException
-    {
-        // <1> disable worker
-        fullTextImpl.disablePopulateWorker();
-
-        // <2> create 3 new indices
-         // create 3 indices
-        final FullTextIndex expecteds[] = new FullTextIndex[]
-        {
-            createFullTextIndex(
-                                SCHEMA, "c", "idx4_c",
-                                "a.state"),
-        
-            createFullTextIndex(
-                                SCHEMA, "c", "idx5_c",
-                                "i.sku", "a.state"),
-            createFullTextIndex(
-                                SCHEMA, "c", "idx6_c",
-                                "name", "i.sku")
-        };
-
-        // <3> delete 2 of them
-        Session session = new SessionServiceImpl().createSession();
-        deleteFullTextIndex(expecteds[0].getIndexName());
-        deleteFullTextIndex(expecteds[1].getIndexName());
-
-        // <4> check that the tree only has one entry now (ie. expected[2])
-        traverse(fullTextImpl,
-                 new Visitor()
-                 {
-                     int n = 0;
-                    
-                     @Override
-                     public void visit(IndexName idx)
-                     {
-                         assertEquals("entry[" + n++ + "]", expecteds[2].getIndexName(),
-                                                            idx);
-                     }
-
-                     @Override
-                     public void endOfTree()
-                     {
-                         assertEquals (1, n);
-                     } 
-                 });
-        
-        // wake the worker up to do its job
-        fullTextImpl.enablePopulateWorker();
-        waitPopulate();
-
-        session.close();
-    }
-
-    private static interface Visitor
-    {
-        void visit(IndexName idx);
-        void endOfTree();
-    }
-
-    private void traverse(FullTextIndexServiceImpl serv, Visitor visitor)
-    {
-        Cursor cursor = null;
-        try(Session session = createNewSession();
-            CloseableTransaction txn = txnService().beginCloseableTransaction(session)) {
-            cursor = serv.populateTableCursor(session);
-            cursor.open();
-            IndexName toPopulate;
-            while((toPopulate = serv.nextInQueue(session, cursor, true)) != null) {
-                visitor.visit(toPopulate);
-            }
-            visitor.endOfTree();
-            txn.commit();
-        } finally {
-            if(cursor != null) {
-                cursor.close();
-            }
-        }
-    }
-
     @Test
     public void testUpdate() throws InterruptedException
     {
-        
         /*
             Test plans:
             1 - do a search, confirm that the rows come back as expected
@@ -257,7 +104,6 @@ public class FullTextIndexServiceIT extends FullTextIndexServiceITBase
                                                   SCHEMA, "c", "idx_c", 
                                                   "name", "i.sku", "a.state");
 
-        waitPopulate();
         RowType rowType = rowType("c");
         Row[] expected1 = new Row[]
         {
@@ -322,7 +168,6 @@ public class FullTextIndexServiceIT extends FullTextIndexServiceITBase
         FullTextIndex index = createFullTextIndex(
                                                   SCHEMA, "c", "idx_c", 
                                                   "name", "i.sku", "a.state");
-        waitPopulate();
         RowType rowType = rowType("c");
         Row[] expected = new Row[] {
             row(rowType, 1L),
@@ -338,7 +183,6 @@ public class FullTextIndexServiceIT extends FullTextIndexServiceITBase
         FullTextIndex index = createFullTextIndex(
                                                   SCHEMA, "o", "idx_o",
                                                   "c.name", "i.sku");
-        waitPopulate();
         RowType rowType = rowType("o");
         Row[] expected = new Row[] {
             row(rowType, 1L, 101L)
@@ -350,8 +194,7 @@ public class FullTextIndexServiceIT extends FullTextIndexServiceITBase
     @Test
     public void testTruncate() throws InterruptedException {
         FullTextIndex index = createFullTextIndex(SCHEMA, "c", "idx_c", "name", "i.sku", "a.state");
-        waitPopulate();
-        
+
         final int limit = 15;
         RowType rowType = rowType("c");
         String nameQuery = "flintstone";

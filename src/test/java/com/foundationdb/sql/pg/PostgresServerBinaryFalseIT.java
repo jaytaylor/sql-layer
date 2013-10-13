@@ -14,18 +14,21 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.foundationdb.server.error;
 
-import java.io.IOException;
+package com.foundationdb.sql.pg;
 
-public class MergeSortIOException extends InvalidOperationException {
+import com.foundationdb.junit.NamedParameterizedRunner;
+import org.junit.runner.RunWith;
 
-    public MergeSortIOException(IOException ex) {
-        this(ex.getMessage());
+@RunWith(NamedParameterizedRunner.class)
+public class PostgresServerBinaryFalseIT extends PostgresServerBinaryITBase
+{
+    public PostgresServerBinaryFalseIT(String caseName, String sql, String expected, String error, String[] params) {
+        super(caseName, sql, expected, error, params);
     }
 
-    public MergeSortIOException(String msg) {
-        super(ErrorCode.MERGE_SORT_IO, msg);
+    @Override
+    protected boolean isBinaryTransfer() {
+        return false;
     }
-
 }

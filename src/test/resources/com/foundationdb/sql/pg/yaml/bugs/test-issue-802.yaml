@@ -1,0 +1,17 @@
+#
+# Creating index with DESC column causes query failure
+#
+---
+- CreateTable: tab2(pk INTEGER NOT NULL PRIMARY KEY, col0 INTEGER)
+---
+- Statement: CREATE INDEX idx_tab2_0 ON tab2 (col0 DESC)
+- error: ["0A500"]
+---
+- Statement: CREATE INDEX idx_tab2_0 ON tab2 (col0)
+---
+- Statement: INSERT INTO tab2 VALUES(0,544)
+---
+- Statement: SELECT pk FROM tab2 WHERE col0 = 809
+- row_count: 0
+...
+

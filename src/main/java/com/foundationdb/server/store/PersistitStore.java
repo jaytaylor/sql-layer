@@ -42,14 +42,12 @@ import com.foundationdb.server.service.tree.TreeLink;
 import com.foundationdb.server.service.tree.TreeService;
 import com.google.inject.Inject;
 import com.persistit.*;
-import com.persistit.Management.DisplayFilter;
 import com.persistit.encoding.CoderManager;
 import com.persistit.exception.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.rmi.RemoteException;
 import java.util.*;
 
 import static com.persistit.Key.EQ;
@@ -65,7 +63,6 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     private final ConfigurationService config;
     private final TreeService treeService;
     private final SchemaManager schemaManager;
-    private DisplayFilter originalDisplayFilter;
     private RowDataValueCoder valueCoder;
 
 
@@ -84,16 +81,9 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
 
     @Override
     public synchronized void start() {
-        try {
-            CoderManager cm = getDb().getCoderManager();
-            Management m = getDb().getManagement();
-            cm.registerValueCoder(RowData.class, valueCoder = new RowDataValueCoder());
-            cm.registerKeyCoder(CString.class, new CStringKeyCoder());
-            originalDisplayFilter = m.getDisplayFilter();
-            m.setDisplayFilter(new RowDataDisplayFilter(originalDisplayFilter));
-        } catch (RemoteException e) {
-            throw new DisplayFilterSetException (e.getMessage());
-        }
+        CoderManager cm = getDb().getCoderManager();
+        cm.registerValueCoder(RowData.class, valueCoder = new RowDataValueCoder());
+        cm.registerKeyCoder(CString.class, new CStringKeyCoder());
         if (config != null) {
             writeLockEnabled = Boolean.parseBoolean(config.getProperty(WRITE_LOCK_ENABLED_CONFIG));
         }
@@ -101,13 +91,8 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
 
     @Override
     public synchronized void stop() {
-        try {
-            getDb().getCoderManager().unregisterValueCoder(RowData.class);
-            getDb().getCoderManager().unregisterKeyCoder(CString.class);
-            getDb().getManagement().setDisplayFilter(originalDisplayFilter);
-        } catch (RemoteException e) {
-            throw new DisplayFilterSetException (e.getMessage());
-        }
+        getDb().getCoderManager().unregisterValueCoder(RowData.class);
+        getDb().getCoderManager().unregisterKeyCoder(CString.class);
     }
 
     @Override

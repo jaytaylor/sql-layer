@@ -15,12 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.qp.persistitadapter.indexcursor;
+package com.foundationdb.sql.pg;
 
-import java.io.IOException;
+import com.foundationdb.junit.NamedParameterizedRunner;
+import org.junit.runner.RunWith;
 
-public interface PullNextProvider<T>
+@RunWith(NamedParameterizedRunner.class)
+public class PostgresServerBinaryTrueIT extends PostgresServerBinaryITBase
 {
-    T pullNext() throws IOException;
-    void pullFinish() throws IOException;
+    public PostgresServerBinaryTrueIT(String caseName, String sql, String expected, String error, String[] params) {
+        super(caseName, sql, expected, error, params);
+    }
+
+    @Override
+    protected boolean isBinaryTransfer() {
+        return true;
+    }
 }
