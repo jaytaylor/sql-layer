@@ -28,6 +28,7 @@ import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
 
+import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import java.math.BigDecimal;
 import java.io.*;
@@ -111,12 +112,24 @@ public class ServerValueDecoder
                     value = (encoded[0] != 0);
                     break;
                 case TIMESTAMP_FLOAT64_SECS_2000_NOTZ:
-                    value = seconds2000NoTZ((long)getDataStream(encoded).readDouble());
+                    value = seconds2000NoTZ((int)getDataStream(encoded).readDouble());
                     decodedType = MDatetimes.TIMESTAMP.instance(true);
                     break;
                 case TIMESTAMP_INT64_MICROS_2000_NOTZ:
-                    value = seconds2000NoTZ(getDataStream(encoded).readLong() / 1000000L);
+                    value = seconds2000NoTZ((int)(getDataStream(encoded).readLong() / 1000000L));
                     decodedType = MDatetimes.TIMESTAMP.instance(true);
+                    break;
+                case DAYS_2000:
+                    value = days2000(getDataStream(encoded).readInt());
+                    decodedType = MDatetimes.DATE.instance(true);
+                    break;
+                case TIME_FLOAT64_SECS_NOTZ:
+                    value = timeSecsNoTZ((int)getDataStream(encoded).readDouble());
+                    decodedType = MDatetimes.TIME.instance(true);
+                    break;
+                case TIME_INT64_MICROS_NOTZ:
+                    value = timeSecsNoTZ((int)(getDataStream(encoded).readLong() / 1000000L));
+                    decodedType = MDatetimes.TIME.instance(true);
                     break;
                 case DECIMAL_PG_NUMERIC_VAR:
                     {
@@ -149,11 +162,26 @@ public class ServerValueDecoder
         return new DataInputStream(new ByteArrayInputStream(bytes));
     }
 
-    private static long seconds2000NoTZ(long secs) {
-        long unixtime = secs + 946702800L; // 2000-01-01 00:00:00-UTC.
+    private static int seconds2000NoTZ(int secs) {
+        int unixtime = secs + 946702800; // 2000-01-01 00:00:00-UTC.
         DateTimeZone dtz = DateTimeZone.getDefault();
-        unixtime -= (dtz.getOffset(unixtime * 1000) - dtz.getStandardOffset(unixtime * 1000)) / 1000;
+        unixtime -= (dtz.getOffset(unixtime * 1000L) - dtz.getStandardOffset(unixtime * 1000L)) / 1000;
         return unixtime;
+    }
+
+    private static int days2000(int days) {
+        int unixtime = seconds2000NoTZ(days * 86400);
+        DateTime dt = new DateTime(unixtime * 1000L);
+        return (dt.getYear() * 512 + 
+                dt.getMonthOfYear() * 32 + 
+                dt.getDayOfMonth());
+    }
+
+    private static int timeSecsNoTZ(int secs) {
+        int h = secs / 3600;
+        int m = (secs / 60) % 60;
+        int s = secs % 60;
+        return (h * 10000 + m * 100 + s);
     }
 
     private static final short NUMERIC_POS = 0x0000;
