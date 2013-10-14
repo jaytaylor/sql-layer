@@ -433,7 +433,7 @@ public abstract class AbstractStore<SDType> implements Store {
                                  ais,
                                  adapter,
                                  rowData, null,
-                                 StoreGIHandler.forTable(this, adapter, uTable),
+                                 StoreGIHandler.forTable(this, session, uTable),
                                  StoreGIHandler.Action.STORE);
         } finally {
             WRITE_ROW_GI_TAP.out();
@@ -455,7 +455,7 @@ public abstract class AbstractStore<SDType> implements Store {
                                      adapter,
                                      rowData,
                                      null,
-                                     StoreGIHandler.forTable(this, adapter, uTable),
+                                     StoreGIHandler.forTable(this, session, uTable),
                                      StoreGIHandler.Action.DELETE);
             }
         } finally {
@@ -486,7 +486,7 @@ public abstract class AbstractStore<SDType> implements Store {
                                      adapter,
                                      oldRow,
                                      changedColumnPositions,
-                                     StoreGIHandler.forTable(this, adapter, userTable),
+                                     StoreGIHandler.forTable(this, session, userTable),
                                      StoreGIHandler.Action.DELETE);
 
                 updateRow(session, oldRow, mergedRow, null /*already merged*/, true);
@@ -496,7 +496,7 @@ public abstract class AbstractStore<SDType> implements Store {
                                      adapter,
                                      mergedRow,
                                      changedColumnPositions,
-                                     StoreGIHandler.forTable(this, adapter, userTable),
+                                     StoreGIHandler.forTable(this, session, userTable),
                                      StoreGIHandler.Action.STORE);
             } finally {
                 UPDATE_ROW_GI_TAP.out();
@@ -681,7 +681,7 @@ public abstract class AbstractStore<SDType> implements Store {
                         context, bindings,
                         groupIndex,
                         StoreGIMaintenancePlans.groupIndexCreationPlan(adapter.schema(), groupIndex),
-                        StoreGIHandler.forBuilding(this, adapter),
+                        StoreGIHandler.forBuilding(this, session),
                         StoreGIHandler.Action.STORE
                 );
             }
@@ -1123,7 +1123,7 @@ public abstract class AbstractStore<SDType> implements Store {
                                      adapter,
                                      data,
                                      null,
-                                     StoreGIHandler.forTable(this, adapter, uTable),
+                                     StoreGIHandler.forTable(this, session, uTable),
                                      StoreGIHandler.Action.CASCADE);
             }
             cursor.closeTopLevel();
