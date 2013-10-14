@@ -52,6 +52,13 @@ public abstract class PostgresServerBinaryITBase extends PostgresServerSelectIT
 
     @Override
     protected String getConnectionURL() {
-        return super.getConnectionURL() + "?binaryTransfer=" + isBinaryTransfer();
+        // loglevel=2 is also useful for seeing what's really happening.
+        return super.getConnectionURL() + "?prepareThreshold=1&binaryTransfer=" + isBinaryTransfer();
     }
+
+    @Override
+    protected boolean executeTwice() {
+        return true;
+    }
+
 }
