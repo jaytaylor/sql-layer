@@ -168,7 +168,8 @@ REM Each value that might have a space needs a separate ++JvmOptions.
 SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmOptions="%JVM_OPTS: =#%" ++JvmOptions=-Xrs ++JvmOptions="-Dfdbsql.config_dir=%FDBSQL_CONF%" ^
                  ++JvmOptions="-Dlog4j.configuration=file:%FDBSQL_LOGCONF%" ++JvmOptions="-Dfdbsql.home=%FDBSQL_HOME_DIR%"
 IF DEFINED SERVICE_USER SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --ServiceUser=%SERVICE_USER% --ServicePassword=%SERVICE_PASSWORD%
-IF DEFINED MAX_HEAP_SIZE SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmMs=%MAX_HEAP_SIZE% --JvmMx=%MAX_HEAP_SIZE%
+REM Important: JvmMs and JvmMx are in MB and do not accept unit suffix
+IF DEFINED MAX_HEAP_MB SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmMs=%MAX_HEAP_MB% --JvmMx=%MAX_HEAP_MB%
 
 IF "%VERB%"=="install" (
   "%PRUNSRV%" //IS//%SERVICE_NAME% %PRUNSRV_ARGS%
@@ -201,7 +202,7 @@ SET JVM_OPTS=%JVM_OPTS% -Dfdbsql.config_dir="%FDBSQL_CONF%"
 SET JVM_OPTS=%JVM_OPTS% -Dlog4j.configuration="file:%FDBSQL_LOGCONF%"
 SET JVM_OPTS=%JVM_OPTS% -ea
 SET JVM_OPTS=%JVM_OPTS% -Dfdbsql.home="%FDBSQL_HOME_DIR%"
-IF DEFINED MAX_HEAP_SIZE SET JVM_OPTS=%JVM_OPTS% -Xms%MAX_HEAP_SIZE% -Xmx%MAX_HEAP_SIZE%
+IF DEFINED MAX_HEAP_MB SET JVM_OPTS=%JVM_OPTS% -Xms%MAX_HEAP_MB%M -Xmx%MAX_HEAP_MB%M
 IF "%VERB%"=="window" GOTO WINDOW_CMD
 java %JVM_OPTS% -cp "%CLASSPATH%" com.foundationdb.sql.Main
 GOTO EOF
