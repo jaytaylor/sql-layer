@@ -1078,7 +1078,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             txnService.rollbackTransactionIfOpen(session);
 
             // If indexes left in list, transaction was not committed and trees aren't transactional. Try to clean up.
-            if((newIndexes != null) && !newIndexes.isEmpty()) {
+            if((newIndexes != null) && !newIndexes.isEmpty() && schemaManager().treeRemovalIsDelayed()) {
                 Collection<TreeLink> links = new ArrayList<>(newIndexes.size());
                 for(Index index : newIndexes) {
                     links.add(index.indexDef());
