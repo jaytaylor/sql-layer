@@ -24,6 +24,7 @@ import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.HKeyColumn;
 import com.foundationdb.ais.model.HKeySegment;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.IndexToHKey;
 import com.foundationdb.ais.model.NopVisitor;
 import com.foundationdb.ais.model.Table;
@@ -62,6 +63,7 @@ import com.foundationdb.server.error.TableChangedByDDLException;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.IndexDef;
 import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.rowdata.RowDataExtractor;
 import com.foundationdb.server.rowdata.RowDataValueSource;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.listener.ListenerService;
@@ -299,6 +301,26 @@ public abstract class AbstractStore<SDType> implements Store {
         }
         return tablesRequiringHKeyMaintenance;
     }
+
+    /** Build a user-friendly representation of the Index row for the given RowData. */
+    protected String formatIndexRowString(Session session, RowData rowData, Index index) {
+        RowDataExtractor extractor = new RowDataExtractor(rowData, rowDefFromExplicitOrId(session, rowData));
+        StringBuilder sb = new StringBuilder();
+        sb.append('(');
+        boolean first = true;
+        for(IndexColumn iCol : index.getKeyColumns()) {
+            Object o = extractor.get(iCol.getColumn().getFieldDef());
+            if(first) {
+                first = false;
+            } else {
+                sb.append(',');
+            }
+            sb.append(o);
+        }
+        sb.append(')');
+        return sb.toString();
+    }
+
 
     private BitSet hKeyDependentTableOrdinals(Session session, int rowDefId)
     {

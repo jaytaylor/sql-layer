@@ -208,7 +208,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         Exchange iEx = getExchange(session, index);
         try {
             constructIndexRow(session, iEx, rowData, index, hKey, indexRow, true);
-            checkUniqueness(index, rowData, iEx);
+            checkUniqueness(session, rowData, index, iEx);
             iEx.store();
         } catch(PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
@@ -217,7 +217,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         }
     }
 
-    private void checkUniqueness(Index index, RowData rowData, Exchange iEx) throws PersistitException
+    private void checkUniqueness(Session session, RowData rowData, Index index, Exchange iEx) throws PersistitException
     {
         if (index.isUnique() && !hasNullIndexSegments(rowData, index)) {
             Key key = iEx.getKey();
@@ -228,7 +228,9 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
             }
             key.setDepth(segmentCount);
             if (keyExistsInIndex(index, iEx)) {
-                throw new DuplicateKeyException(index.getIndexName().getName(), key);
+                LOG.debug("Duplicate key for index {}, raw: {}", index.getIndexName(), key);
+                String msg = formatIndexRowString(session, rowData, index);
+                throw new DuplicateKeyException(index.getIndexName(), msg);
             }
         }
     }
