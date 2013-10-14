@@ -425,10 +425,7 @@ public abstract class AbstractStore<SDType> implements Store {
     public void writeRow(Session session, RowData rowData, Index[] indexes) {
         AkibanInformationSchema ais = schemaManager.getAis(session);
         StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais));
-
-        // TODO: Persistit needs adapter created, have it create itself?
         writeRow(session, rowData, indexes, null, true);
-
         WRITE_ROW_GI_TAP.in();
         try {
             UserTable uTable = ais.getUserTable(rowData.getRowDefId());
