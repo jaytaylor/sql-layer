@@ -424,14 +424,12 @@ public abstract class AbstractStore<SDType> implements Store {
     @Override
     public void writeRow(Session session, RowData rowData, Index[] indexes) {
         AkibanInformationSchema ais = schemaManager.getAis(session);
-        StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais));
         writeRow(session, rowData, indexes, null, true);
         WRITE_ROW_GI_TAP.in();
         try {
             UserTable uTable = ais.getUserTable(rowData.getRowDefId());
             maintainGroupIndexes(session,
                                  ais,
-                                 adapter,
                                  rowData, null,
                                  StoreGIHandler.forTable(this, session, uTable),
                                  StoreGIHandler.Action.STORE);
@@ -445,14 +443,12 @@ public abstract class AbstractStore<SDType> implements Store {
         DELETE_ROW_GI_TAP.in();
         try {
             AkibanInformationSchema ais = schemaManager.getAis(session);
-            StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais));
             UserTable uTable = ais.getUserTable(rowData.getRowDefId());
             if(cascadeDelete) {
-                cascadeDeleteMaintainGroupIndex(session, ais, adapter, rowData);
+                cascadeDeleteMaintainGroupIndex(session, ais, rowData);
             } else { // one row, one update to group indexes
                 maintainGroupIndexes(session,
                                      ais,
-                                     adapter,
                                      rowData,
                                      null,
                                      StoreGIHandler.forTable(this, session, uTable),
@@ -469,10 +465,6 @@ public abstract class AbstractStore<SDType> implements Store {
     public void updateRow(Session session, RowData oldRow, RowData newRow, ColumnSelector selector) {
         AkibanInformationSchema ais = schemaManager.getAis(session);
         UserTable userTable = ais.getUserTable(oldRow.getRowDefId());
-
-        // TODO: PersistitStore requires adapter, have it create it?
-        StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais));
-
         if(canSkipGIMaintenance(userTable)) {
             updateRow(session, oldRow, newRow, selector, true);
         } else {
@@ -483,7 +475,6 @@ public abstract class AbstractStore<SDType> implements Store {
 
                 maintainGroupIndexes(session,
                                      ais,
-                                     adapter,
                                      oldRow,
                                      changedColumnPositions,
                                      StoreGIHandler.forTable(this, session, userTable),
@@ -493,7 +484,6 @@ public abstract class AbstractStore<SDType> implements Store {
 
                 maintainGroupIndexes(session,
                                      ais,
-                                     adapter,
                                      mergedRow,
                                      changedColumnPositions,
                                      StoreGIHandler.forTable(this, session, userTable),
@@ -1051,7 +1041,6 @@ public abstract class AbstractStore<SDType> implements Store {
 
     private void maintainGroupIndexes(Session session,
                                       AkibanInformationSchema ais,
-                                      StoreAdapter adapter,
                                       RowData rowData,
                                       BitSet columnDifferences,
                                       StoreGIHandler handler,
@@ -1075,6 +1064,7 @@ public abstract class AbstractStore<SDType> implements Store {
             Collection<GroupIndex> branchIndexes = userTable.getGroupIndexes();
             for(GroupIndex groupIndex : branchIndexes) {
                 if(columnDifferences == null || groupIndex.columnsOverlap(userTable, columnDifferences)) {
+                    StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais));
                     StoreGIMaintenance plan = StoreGIMaintenancePlans
                             .forAis(ais)
                             .forRowType(groupIndex, adapter.schema().userTableRowType(userTable));
@@ -1095,12 +1085,11 @@ public abstract class AbstractStore<SDType> implements Store {
      */
     private void cascadeDeleteMaintainGroupIndex(Session session,
                                                  AkibanInformationSchema ais,
-                                                 StoreAdapter adapter,
                                                  RowData rowData)
     {
         UserTable uTable = ais.getUserTable(rowData.getRowDefId());
         Operator plan = PlanGenerator.generateBranchPlan(ais, uTable);
-
+        StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais));
         QueryContext queryContext = new SimpleQueryContext(adapter);
         QueryBindings queryBindings = queryContext.createBindings();
         Cursor cursor = API.cursor(plan, queryContext, queryBindings);
@@ -1120,7 +1109,6 @@ public abstract class AbstractStore<SDType> implements Store {
                 RowData data = adapter.rowData(table.rowDef(), row, new ValueRowDataCreator());
                 maintainGroupIndexes(session,
                                      ais,
-                                     adapter,
                                      data,
                                      null,
                                      StoreGIHandler.forTable(this, session, uTable),
