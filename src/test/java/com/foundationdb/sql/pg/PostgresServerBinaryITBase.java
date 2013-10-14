@@ -41,7 +41,8 @@ public abstract class PostgresServerBinaryITBase extends PostgresServerSelectIT
         Collection<Object[]> allCases = TestBase.sqlAndExpectedAndParams(RESOURCE_DIR);
         List<Object[]> typeCases = new ArrayList<>();
         for(Object[] a : allCases) {
-            if(((String)a[0]).startsWith("types_a")) {
+            String caseName = (String)a[0];
+            if(caseName.equals("types") || caseName.startsWith("types_a")) {
                 typeCases.add(a);
             }
         }
