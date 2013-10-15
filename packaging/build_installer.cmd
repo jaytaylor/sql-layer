@@ -19,12 +19,9 @@
 
 SETLOCAL
 
-FOR /F "usebackq" %%v IN (`git rev-parse --short HEAD`) DO SET GIT_HASH=%%v
-FOR /F "usebackq" %%v IN (`git rev-list --merges HEAD --count`) DO SET GIT_COUNT=%%v
-
 SET LICENSE=LICENSE.txt
 SET VERSION=1.9.1
-SET VERSIONFULL=1.9.1.%GIT_COUNT%-%GIT_HASH%
+SET VERSIONFULL=1.9.1
 SET INSTALLER=fdb-sql-layer-%VERSION%
 SET EXE_DIR=%~dp0\exe
 
@@ -34,7 +31,7 @@ IF NOT DEFINED CERT_PASSWORD SET CERT_PASSWORD=test
 ECHO "Building FoundationDB SQL Layer"
 
 CD %EXE_DIR%\..\..
-call mvn clean package -U -DGIT_COUNT=%GIT_COUNT% -DGIT_HASH=%GIT_HASH% -DskipTests=true
+call mvn clean package -U -DskipTests=true
 IF ERRORLEVEL 1 GOTO EOF
 
 IF NOT DEFINED TOOLS_LOC SET TOOLS_LOC="git@github.com:FoundationDB/sql-layer-client-tools.git"

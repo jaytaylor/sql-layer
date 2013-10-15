@@ -22,9 +22,6 @@ PACKAGING_DIR=$(cd $(dirname "${0}") ; echo "${PWD}")
 TOP_DIR=$(cd "${PACKAGING_DIR}/.." ; echo "${PWD}")
 STAGE_DIR="${TOP_DIR}/target/packaging"
 
-GIT_HASH=`git rev-parse --short HEAD`
-GIT_COUNT=`git rev-list --merges HEAD |wc -l |tr -d ' '` # --count is newer
-
 # $1 - output bin dir
 # $2 - output jar dir
 build_sql_layer() {
@@ -39,7 +36,7 @@ build_sql_layer() {
     echo "Building FoundationDB SQL Layer ${LAYER_VERSION}"
     pushd .
     cd "${TOP_DIR}"
-    mvn clean package -q -B -U -DGIT_COUNT=${GIT_COUNT} -DGIT_HASH=${GIT_HASH} -DskipTests=true
+    mvn clean package -q -B -U -DskipTests=true
     mkdir -p "${1}" "${2}"/{server,plugins}
     cp "${TOP_DIR}/bin/fdbsqllayer" "${1}/"
     cp target/fdb-sql-layer-${LAYER_MVN_VERSION}.jar "${2}/"
@@ -89,14 +86,6 @@ filter_config_files() {
 }
 
 case "$1" in
-    "--git-hash")
-        echo "${GIT_HASH}"
-    ;;
-    
-    "--git-count")
-        echo "${GIT_COUNT}"
-    ;;
-
     "deb")
         build_sql_layer "${STAGE_DIR}/usr/sbin"  "${STAGE_DIR}/usr/share/foundationdb/sql"
         build_client_tools "${STAGE_DIR}/usr/bin" "${STAGE_DIR}/usr/share/foundationdb/sql"
@@ -133,8 +122,6 @@ case "$1" in
         cd "${STAGE_DIR}"
         SPEC_FILE="fdb-sql-layer.spec"
         sed -e "s/_EPOCH/${epoch}/g" \
-            -e "s/_GIT_COUNT/${GIT_COUNT}/g" \
-            -e "s/_GIT_HASH/${GIT_HASH}/g" \
             "${PACKAGING_DIR}/rpm/${SPEC_FILE}.in" > "${SPEC_FILE}"
 
         mkdir -p "${STAGE_ROOT}"/{SOURCES,SRPMS,RPMS/noarch}
