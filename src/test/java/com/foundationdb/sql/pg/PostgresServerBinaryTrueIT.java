@@ -18,13 +18,27 @@
 package com.foundationdb.sql.pg;
 
 import com.foundationdb.junit.NamedParameterizedRunner;
+import com.foundationdb.sql.TestBase;
 import org.junit.runner.RunWith;
+import static org.junit.Assert.fail;
+
+import java.io.File;
+import java.io.IOException;
 
 @RunWith(NamedParameterizedRunner.class)
 public class PostgresServerBinaryTrueIT extends PostgresServerBinaryITBase
 {
     public PostgresServerBinaryTrueIT(String caseName, String sql, String expected, String error, String[] params) {
         super(caseName, sql, expected, error, params);
+        if ("types".equals(caseName)) {
+            try {
+                // Because of how java.sql.Timestamp is formatted.
+                this.expected = TestBase.fileContents(new File(RESOURCE_DIR, "types.bexpected"));
+            }
+            catch (IOException ex) {
+                fail(ex.getMessage());
+            }
+        }
     }
 
     @Override
