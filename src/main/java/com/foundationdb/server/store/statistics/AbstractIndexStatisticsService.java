@@ -272,7 +272,6 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
     @Override
     public void updateIndexStatistics(Session session, 
                                       Collection<? extends Index> indexes) {
-        ensureAdapter(session);
         final Map<Index,IndexStatistics> updates = new HashMap<>(indexes.size());
         if (indexes.size() > 0) {
             updates.putAll(updateIndexStatistics(session, indexes, false));
@@ -338,7 +337,6 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
     @Override
     public void deleteIndexStatistics(Session session, 
                                       Collection<? extends Index> indexes) {
-        ensureAdapter(session);
         for(Index index : indexes) {
             storeStats.removeStatistics(session, index);
             cache.remove(index);
@@ -348,7 +346,6 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
     @Override
     public void loadIndexStatistics(Session session, 
                                     String schema, File file) throws IOException {
-        ensureAdapter(session);
         AkibanInformationSchema ais = schemaManager.getAis(session);
         Map<Index,IndexStatistics> stats = new IndexStatisticsYamlLoader(ais, schema, store).load(file);
         for (Map.Entry<Index,IndexStatistics> entry : stats.entrySet()) {
@@ -454,15 +451,6 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
         return new JmxObjectInfo("IndexStatistics", 
                                  new JmxBean(), 
                                  IndexStatisticsMXBean.class);
-    }
-
-    private void ensureAdapter(Session session)
-    {
-        StoreAdapter adapter = session.get(StoreAdapter.STORE_ADAPTER_KEY);
-        if(adapter == null) {
-            adapter = store.createAdapter(session, SchemaCache.globalSchema(schemaManager.getAis(session)));
-            session.put(StoreAdapter.STORE_ADAPTER_KEY, adapter);
-        }
     }
 
     class JmxBean implements IndexStatisticsMXBean {

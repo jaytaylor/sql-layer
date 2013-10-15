@@ -216,10 +216,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         final FullTextIndexInfo indexInfo = getIndex(session, indexName, null);
         boolean success = false;
         try {
-            StoreAdapter adapter = session.get(StoreAdapter.STORE_ADAPTER_KEY);
-            if(adapter == null) {
-                adapter = store.createAdapter(session, indexInfo.getSchema());
-            }
+            StoreAdapter adapter = store.createAdapter(session, indexInfo.getSchema());
             QueryContext queryContext = new SimpleQueryContext(adapter);
             Cursor cursor = null;
             Indexer indexer = indexInfo.getIndexer();
@@ -261,9 +258,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     }
 
     private void updateIndex(Session session, FullTextIndexInfo indexInfo, Iterable<byte[]> rows) throws IOException {
-        StoreAdapter adapter = session.get(StoreAdapter.STORE_ADAPTER_KEY);
-        if (adapter == null)
-            adapter = store.createAdapter(session, indexInfo.getSchema());
+        StoreAdapter adapter = store.createAdapter(session, indexInfo.getSchema());
         QueryContext queryContext = new SimpleQueryContext(adapter);
         QueryBindings queryBindings = queryContext.createBindings();
 
