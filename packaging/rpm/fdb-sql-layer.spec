@@ -1,13 +1,25 @@
+# Required --define's
+%{!?_fdb_sql_version: %{error: required _fdb_sql_version}}
+%{!?_fdb_sql_release: %{error: required _fdb_sql_release}}
+%{!?_fdb_sql_layer_jar: %{error: required _fdb_sql_layer_jar}}
+%{!?_fdb_sql_client_jar: %{error: required _fdb_sql_client_jar}}
+%{!?_fdb_sql_epoch: %{error: required _fdb_sql_epoch}}
+
+
 Name:       fdb-sql-layer
-Version:    1.9.1
-Release:    _GIT_COUNT%{?dist}
-Epoch:      _EPOCH
+Version:    %{_fdb_sql_version}
+Release:    %{_fdb_sql_release}%{?dist}
 Group:      Applications/Databases
 License:    AGPLv3
 URL:        https://foundationdb.com/layers/sql
 Packager:   FoundationDB <distribution@foundationdb.com>
 Summary:    FoundationDB SQL Layer
 Vendor:     FoundationDB
+
+# 0 = Release so no Epoch
+%if %{_fdb_sql_epoch} > 0
+Epoch:      %{_fdb_sql_epoch}
+%endif
 
 Requires:       jre >= 1.7.0, foundationdb-clients >= 1.0.1
 Requires(post): chkconfig >= 0.9, /sbin/service
@@ -55,8 +67,8 @@ mkdir -p "${RPM_BUILD_ROOT}/usr/share/doc/fdb-sql-layer"
 cp -r etc/ "${RPM_BUILD_ROOT}/"
 cp -r usr/ "${RPM_BUILD_ROOT}/"
 
-ln -s /usr/share/foundationdb/sql/fdb-sql-layer-1.9.1-SNAPSHOT.jar "${RPM_BUILD_ROOT}/usr/share/foundationdb/sql/fdb-sql-layer.jar"
-ln -s /usr/share/foundationdb/sql/fdb-sql-layer-client-tools-1.3.7-SNAPSHOT.jar "${RPM_BUILD_ROOT}/usr/share/foundationdb/sql/fdb-sql-layer-client-tools.jar"
+ln -s /usr/share/foundationdb/sql/%{_fdb_sql_layer_jar} "${RPM_BUILD_ROOT}/usr/share/foundationdb/sql/fdb-sql-layer.jar"
+ln -s /usr/share/foundationdb/sql/%{_fdb_sql_client_jar} "${RPM_BUILD_ROOT}/usr/share/foundationdb/sql/fdb-sql-layer-client-tools.jar"
 
 %clean
 rm -rf "${RPM_BUILD_ROOT}"

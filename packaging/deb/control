@@ -9,6 +9,7 @@ Vcs-Browser: https://github.com/FoundationDB/sql-layer
 Standards-Version: 3.9.1
 
 Package: fdb-sql-layer
+Version: ${_fdbsql_version}-${_fdbsql_release}
 Architecture: all
 Depends: openjdk-7-jdk | openjdk-7-jre-headless | oracle-java7-installer, foundationdb-clients (>= 1.0.1), adduser, ${misc:Depends}
 Recommends: postgresql-client, libpg-java, foundationdb-server
