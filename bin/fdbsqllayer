@@ -85,7 +85,7 @@ infer_jar_file()
 infer_dep_dir()
 {
     local loc_dev="${FDBSQL_HOME}/target/dependency"
-    local loc_home="${FDBSQL_HOME}/sql/server"
+    local loc_home="${FDBSQL_HOME}/server"
     local value=""
 
     # Only infer if passed no argument
