@@ -29,6 +29,7 @@ import com.foundationdb.ais.model.CharsetAndCollation;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Parameter;
 import com.foundationdb.ais.model.Type;
+import com.foundationdb.ais.model.Types;
 
 /**
  * A column binding: stored in the UserData of a ColumnReference and
@@ -103,8 +104,14 @@ public class ColumnBinding
             throws StandardException {
         String typeName = aisType.name().toUpperCase();
         TypeId typeId = TypeId.getBuiltInTypeId(typeName);
-        if (typeId == null)
-            typeId = TypeId.getSQLTypeForJavaType(typeName);
+        if (typeId == null) {
+            if (aisType == Types.VARBINARY) {
+                typeName = TypeId.VARBIT_NAME; // Completely different syntax.
+                typeId = TypeId.getBuiltInTypeId(typeName);
+            }
+            if (typeId == null)
+                typeId = TypeId.getSQLTypeForJavaType(typeName);
+        }
         switch (aisType.nTypeParameters()) {
         case 0:
             return new DataTypeDescriptor(typeId, nullable);
