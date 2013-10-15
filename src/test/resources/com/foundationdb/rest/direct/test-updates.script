@@ -26,7 +26,7 @@ EQUALS  SomeParameterValue,John Smith,Willy Jones,Jane Smith,Jonathan Smyth,Mary
 # Cause a duplicate key error
 #
 PUT     /direct/call/test.cadd/5 {"name":"Mary Johnson"}
-CONTAINS Non-unique key
+CONTAINS Duplicate key
 HEADERS responseCode:409
 
 

@@ -20,7 +20,6 @@ package com.foundationdb.server.store;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
-import com.foundationdb.ais.model.PrimaryKey;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.UserTable;
@@ -502,7 +501,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         TransactionState txn = txnService.getTransaction(session);
         Key indexKey = createKey();
         constructIndexRow(session, indexKey, rowData, index, hKey, indexRow, true);
-        checkUniqueness(txn, index, rowData, indexKey);
+        checkUniqueness(session, txn, index, rowData, indexKey);
 
         byte[] packedKey = packedTuple(index, indexRow.getPKey());
         byte[] packedValue = Arrays.copyOf(indexRow.getValue().getEncodedBytes(), indexRow.getValue().getEncodedSize());
@@ -828,7 +827,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         indexRow.close(session, this, forInsert);
     }
 
-    private void checkUniqueness(TransactionState txn, Index index, RowData rowData, Key key) {
+    private void checkUniqueness(Session session, TransactionState txn, Index index, RowData rowData, Key key) {
         if(index.isUnique() && !hasNullIndexSegments(rowData, index)) {
             int segmentCount = index.indexDef().getIndexKeySegmentCount();
             // An index that isUniqueAndMayContainNulls has the extra null-separating field.
@@ -836,11 +835,11 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
                 segmentCount++;
             }
             key.setDepth(segmentCount);
-            checkKeyDoesNotExistInIndex(txn, index, key);
+            checkKeyDoesNotExistInIndex(session, txn, rowData, index, key);
         }
     }
 
-    private void checkKeyDoesNotExistInIndex(TransactionState txn, Index index, Key key) {
+    private void checkKeyDoesNotExistInIndex(Session session, TransactionState txn, RowData rowData, Index index, Key key) {
         assert index.isUnique() : index;
         byte[] bkey = packedTuple(index, key);
         Future<byte[]> future = txn.getTransaction().get(bkey);
@@ -850,7 +849,8 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
             long endNanos = System.nanoTime();
             txn.uniquenessTime += (endNanos - startNanos);
             if (future.get() != null) {
-                throw new DuplicateKeyException(index.getIndexName().getName(), key);
+                String msg = formatIndexRowString(session, rowData, index);
+                throw new DuplicateKeyException(index.getIndexName(), msg);
             }
         }
         else {

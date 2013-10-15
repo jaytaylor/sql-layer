@@ -262,7 +262,6 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
         super(schema, session, config);
         this.store = store;
         this.treeService = treeService;
-        session.put(STORE_ADAPTER_KEY, this);
     }
 
     // For use within hierarchy

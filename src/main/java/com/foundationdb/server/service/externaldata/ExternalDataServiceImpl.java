@@ -100,10 +100,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     private StoreAdapter getAdapter(Session session, UserTable table, Schema schema) {
         if (table.hasMemoryTableFactory())
             return new MemoryAdapter(schema, session, configService);
-        StoreAdapter adapter = session.get(StoreAdapter.STORE_ADAPTER_KEY);
-        if (adapter == null)
-            adapter = store.createAdapter(session, schema);
-        return adapter;
+        return store.createAdapter(session, schema);
     }
 
     private void dumpAsJson(Session session,

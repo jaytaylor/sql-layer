@@ -61,6 +61,8 @@ import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.session.Session.Key;
 import com.foundationdb.server.service.session.SessionService;
 import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.service.transaction.TransactionService.Callback;
+import com.foundationdb.server.service.transaction.TransactionService.CallbackType;
 import com.foundationdb.server.util.ReadWriteMap;
 import com.foundationdb.util.ArgumentValidation;
 import com.persistit.exception.PersistitException;
@@ -727,8 +729,9 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         if(tableAndVersions == null) {
             tableAndVersions = new HashMap<>();
             session.put(TABLE_VERSIONS, tableAndVersions);
-            txnService.addCallback(session, TransactionService.CallbackType.COMMIT, bumpTableVersionCommit);
-            txnService.addCallback(session, TransactionService.CallbackType.END, cleanTableVersion);
+            txnService.addCallback(session, TransactionService.CallbackType.PRE_COMMIT, CLAIM_TABLE_VERSION_MAP);
+            txnService.addCallback(session, TransactionService.CallbackType.COMMIT, BUMP_TABLE_VERSIONS);
+            txnService.addCallback(session, TransactionService.CallbackType.END, CLEAR_TABLE_VERSIONS);
         }
 
         // Set the new table version  for tables in the NewAIS
@@ -748,18 +751,32 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     protected final static Session.MapKey<Integer,Integer> TABLE_VERSIONS = Session.MapKey.mapNamed("TABLE_VERSIONS");
 
+    protected final TransactionService.Callback CLAIM_TABLE_VERSION_MAP = new Callback() {
+        @Override
+        public void run(Session session, long timestamp) {
+            tableVersionMap.claimExclusive();
+            txnService.addCallback(session, CallbackType.END, RELEASE_TABLE_VERSION_MAP);
+        }
+    };
+
+    protected final TransactionService.Callback RELEASE_TABLE_VERSION_MAP = new Callback() {
+        @Override
+        public void run(Session session, long timestamp) {
+            tableVersionMap.releaseExclusive();
+        }
+    };
+
     // If the Alter table fails, make sure to clean up the TABLE_VERSION change list on end
     // If the Alter succeeds, the bumpTableVersionCommit process will clean up, and this does nothing. 
-    protected final TransactionService.Callback cleanTableVersion = new TransactionService.Callback() {
+    protected final TransactionService.Callback CLEAR_TABLE_VERSIONS = new TransactionService.Callback() {
         
         @Override
         public void run(Session session, long timestamp) {
             session.remove(TABLE_VERSIONS);
         }
     };
-    
-    
-    protected final TransactionService.Callback bumpTableVersionCommit = new TransactionService.Callback() {
+
+    protected final TransactionService.Callback BUMP_TABLE_VERSIONS = new TransactionService.Callback() {
         @Override
         public void run(Session session, long timestamp) {
             Map<Integer,Integer> tableAndVersions = session.remove(TABLE_VERSIONS);
