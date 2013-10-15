@@ -34,7 +34,6 @@ eval set -- "${ARGS}"
 while true; do
     case "${1}" in
         -e)
-        echo "here"
             EPOCH="${2}"
             shift 2
         ;;
@@ -53,6 +52,13 @@ while true; do
     esac
 done
 
+if [ "$2" != "" ]; then
+    echo "Unexpected extra arguments" >&2
+    usage
+    exit 1
+fi
+
+
 set -e
 
 PACKAGING_DIR=$(cd $(dirname "${0}") ; echo "${PWD}")
@@ -61,9 +67,8 @@ STAGE_DIR="${TOP_DIR}/target/packaging"
 
 
 mvn_package() {
-    mvn clean package -q -B -U -DskipTests=true >/dev/null
+    mvn clean package -q -B -U -DskipTests=true -Dfdbsql.release=${RELEASE} >/dev/null
 }
-
 
 # $1 - output bin dir
 # $2 - output jar dir
@@ -164,6 +169,8 @@ case "${1}" in
         # Releases shouldn't have epochs
         if [ ${RELEASE} -gt 0 ]; then
             EPOCH="0"
+        else
+            echo "Epoch: ${EPOCH}"
         fi
 
         STAGE_ROOT="${STAGE_DIR}/rpmbuild"
@@ -184,7 +191,7 @@ case "${1}" in
             --define "_fdb_sql_version ${LAYER_VERSION}" \
             --define "_fdb_sql_release ${RELEASE}" \
             --define "_fdb_sql_layer_jar ${LAYER_JAR_NAME}" \
-            --define "_fdb_sql_client_jar ${CLIENT_JAR_NAME}"
+            --define "_fdb_sql_client_jar ${CLIENT_JAR_NAME}" \
             --define "_fdb_sql_epoch ${EPOCH}"
 
         mv "${STAGE_ROOT}"/RPMS/noarch/* "${TOP_DIR}/target/"
