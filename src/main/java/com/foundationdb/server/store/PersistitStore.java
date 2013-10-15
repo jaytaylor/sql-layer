@@ -26,6 +26,7 @@ import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.*;
 import com.foundationdb.server.AccumulatorAdapter.AccumInfo;
 import com.foundationdb.server.collation.CString;
@@ -208,7 +209,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         Exchange iEx = getExchange(session, index);
         try {
             constructIndexRow(session, iEx, rowData, index, hKey, indexRow, true);
-            checkUniqueness(index, rowData, iEx);
+            checkUniqueness(session, rowData, index, iEx);
             iEx.store();
         } catch(PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
@@ -217,7 +218,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         }
     }
 
-    private void checkUniqueness(Index index, RowData rowData, Exchange iEx) throws PersistitException
+    private void checkUniqueness(Session session, RowData rowData, Index index, Exchange iEx) throws PersistitException
     {
         if (index.isUnique() && !hasNullIndexSegments(rowData, index)) {
             Key key = iEx.getKey();
@@ -228,7 +229,9 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
             }
             key.setDepth(segmentCount);
             if (keyExistsInIndex(index, iEx)) {
-                throw new DuplicateKeyException(index.getIndexName().getName(), key);
+                LOG.debug("Duplicate key for index {}, raw: {}", index.getIndexName(), key);
+                String msg = formatIndexRowString(session, rowData, index);
+                throw new DuplicateKeyException(index.getIndexName(), msg);
             }
         }
     }
@@ -480,9 +483,9 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         return visitor;
     }
 
-    private static PersistitAdapter adapter(Session session)
+    private PersistitAdapter adapter(Session session)
     {
-        return (PersistitAdapter) session.get(StoreAdapter.STORE_ADAPTER_KEY);
+        return createAdapter(session, SchemaCache.globalSchema(schemaManager.getAis(session)));
     }
 
     private void lockKeys(PersistitAdapter adapter, RowDef rowDef, RowData rowData, Exchange exchange)

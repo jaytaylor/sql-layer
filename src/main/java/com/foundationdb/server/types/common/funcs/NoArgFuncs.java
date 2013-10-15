@@ -18,6 +18,7 @@
 package com.foundationdb.server.types.common.funcs;
 
 import com.foundationdb.server.types.value.ValueTarget;
+import com.foundationdb.sql.LayerVersionInfo;
 import com.foundationdb.sql.Main;
 import com.foundationdb.server.types.LazyList;
 import com.foundationdb.server.types.TClass;
@@ -39,12 +40,26 @@ public class NoArgFuncs
     static final int USER_NAME_LENGTH = 77;
     static final int SCHEMA_NAME_LENGTH = 128;
 
+    protected static String buildVersion(LayerVersionInfo vinfo) {
+        StringBuilder version = new StringBuilder("FoundationDB ");
+        version.append(vinfo.versionShort);
+        version.append(" ");
+        int idx = vinfo.versionShort.length();
+        if (vinfo.versionLong.length() > idx) {
+            if (vinfo.versionLong.charAt(idx) == '-') idx++;
+            version.append(vinfo.versionLong, idx, vinfo.versionLong.length());
+        }
+        return version.toString();
+    }
+
     public static final TScalar SHORT_SERVER_VERSION = new NoArgExpression("version", true)
     {
+        private final String VERSION_STR = buildVersion(Main.VERSION_INFO);
+
         @Override
         public void evaluate(TExecutionContext context, ValueTarget target)
         {
-            target.putString(Main.SHORT_VERSION_STRING, null);
+            target.putString(VERSION_STR, null);
         }
 
         @Override
@@ -54,27 +69,7 @@ public class NoArgFuncs
 
         @Override
         protected int[] resultAttrs() {
-            return new int[] { Main.SHORT_VERSION_STRING.length() };
-        }
-    };
-
-    public static final TScalar SERVER_FULL_VERSION = new NoArgExpression("version_full", true)
-    {
-
-        @Override
-        public void evaluate(TExecutionContext context, ValueTarget target)
-        {
-            target.putString(Main.VERSION_STRING, null);
-        }
-
-        @Override
-        protected TClass resultTClass() {
-            return MString.VARCHAR;
-        }
-
-        @Override
-        protected int[] resultAttrs() {
-            return new int[] { Main.VERSION_STRING.length() };
+            return new int[] { VERSION_STR.length() };
         }
     };
     

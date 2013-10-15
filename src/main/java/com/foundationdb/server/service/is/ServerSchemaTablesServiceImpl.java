@@ -192,7 +192,7 @@ public class ServerSchemaTablesServiceImpl
                 }
                 ValuesRow row = new ValuesRow(rowType,
                         serverInterface.getServerName(),
-                        serverInterface.getServerVersion(),
+                        serverInterface.getVersionInfo().versionLong,
                         hostName,
                         store.getName(),
                         ++rowCounter);

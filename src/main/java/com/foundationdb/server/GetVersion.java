@@ -19,11 +19,28 @@ package com.foundationdb.server;
 
 import com.foundationdb.sql.Main;
 
-public class GetVersion{
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 
-    public static void main (String[] a) throws Exception
-    {
-        System.out.println(Main.VERSION_STRING);
+public class GetVersion
+{
+    public static void main(String[] args) throws Exception {
+        if(args.length > 0 && "-v".equals(args[0])) {
+            dumpVerbose();
+        } else {
+            dumpMinimal();
+        }
+    }
+
+    private static void dumpVerbose() throws IllegalAccessException {
+        for(Field field : Main.VERSION_INFO.getClass().getDeclaredFields()) {
+            if((field.getModifiers() & Modifier.PUBLIC) > 0) {
+                System.out.println(field.getName() + "=" + field.get(Main.VERSION_INFO));
+            }
+        }
+    }
+
+    private static void dumpMinimal() {
+        System.out.println(Main.VERSION_INFO.versionLong);
     }
 }
-

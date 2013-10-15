@@ -154,7 +154,6 @@ public abstract class StoreAdapter implements KeyCreator
 
     // Class state
 
-    public static final Session.Key<StoreAdapter> STORE_ADAPTER_KEY = Session.Key.named("STORE_ADAPTER");
     private static final AtomicLong idCounter = new AtomicLong(0);
 
     // Object state

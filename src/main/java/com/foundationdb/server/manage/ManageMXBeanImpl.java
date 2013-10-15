@@ -78,7 +78,7 @@ public class ManageMXBeanImpl implements ManageMXBean {
 
     @Override
     public String getVersionString() {
-        return Main.VERSION_STRING;
+        return Main.VERSION_INFO.versionLong;
     }
 
     private Store getStore() {

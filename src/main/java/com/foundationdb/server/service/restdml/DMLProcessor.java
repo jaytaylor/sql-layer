@@ -110,10 +110,7 @@ public abstract class DMLProcessor {
             // no writing to the memory tables. 
             if (table.hasMemoryTableFactory())
                 throw new ProtectedTableDDLException (table.getName());
-            StoreAdapter adapter = session.get(StoreAdapter.STORE_ADAPTER_KEY);
-            if (adapter == null)
-                adapter = store.createAdapter(session, schema);
-            return adapter;
+            return store.createAdapter(session, schema);
         }
 
         private UserTable getTable () {

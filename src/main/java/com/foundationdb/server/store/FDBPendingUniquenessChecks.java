@@ -23,17 +23,14 @@ import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.service.metrics.LongMetric;
 
 import com.foundationdb.async.Future;
-import com.foundationdb.tuple.Tuple;
 import com.persistit.Key;
 import com.persistit.Persistit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 public class FDBPendingUniquenessChecks
@@ -85,7 +82,7 @@ public class FDBPendingUniquenessChecks
                     Index index = pentry.getKey();
                     Key key = new Key((Persistit)null);
                     FDBStore.unpackTuple(key, fentry.getKey());
-                    throw new DuplicateKeyException(index.getIndexName().toString(), key);
+                    throw new DuplicateKeyException(index.getIndexName(), formatIndexRowString(index, key));
                 }
                 iter.remove();
                 count++;
@@ -105,5 +102,21 @@ public class FDBPendingUniquenessChecks
         if (count > 0) {
             metric.increment(- count);
         }
+    }
+
+    private static String formatIndexRowString(Index index, Key key) {
+        StringBuilder sb = new StringBuilder();
+        int maxDecode = index.getKeyColumns().size();
+        sb.append('(');
+        key.indexTo(0);
+        for(int i = 0; i < maxDecode && i < key.getDepth(); ++i) {
+            if(i > 0) {
+                sb.append(',');
+            }
+            Object o = key.decode();
+            sb.append(o);
+        }
+        sb.append(')');
+        return sb.toString();
     }
 }
