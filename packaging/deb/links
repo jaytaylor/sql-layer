@@ -1,2 +1,0 @@
-/usr/share/foundationdb/sql/${_fdb_sql_layer_jar} /usr/share/foundationdb/sql/fdb-sql-layer.jar
-/usr/share/foundationdb/sql/${_fdb_sql_client_jar} /usr/share/foundationdb/sql/fdb-sql-layer-client-tools.jar

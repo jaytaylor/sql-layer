@@ -1,4 +1,4 @@
-fdb-sql-layer (1.9.1) precise; urgency=low
+fdb-sql-layer (VERSION-RELEASE) precise; urgency=low
 
   * Development Release.
 

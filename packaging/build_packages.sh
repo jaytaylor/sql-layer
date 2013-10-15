@@ -153,13 +153,13 @@ case "${1}" in
         mkdir -p "${STAGE_DIR}/usr/share/doc/fdb-sql-layer/"
         cp "${PACKAGING_DIR}/deb/copyright" "${STAGE_DIR}/usr/share/doc/fdb-sql-layer/"
 
-        cd "${STAGE_DIR}"
+        cd "${STAGE_DIR}/debian"
+        sed -e "s/VERSION/${LAYER_VERSION}/g" -e "s/RELEASE/${RELEASE}/g" changelog.in > changelog
+        sed -e "s/LAYER_JAR_NAME/${LAYER_JAR_NAME}/g" -e "s/CLIENT_JAR_NAME/${CLIENT_JAR_NAME}/g" links.in > links
+        cd ..
+
         # No sign source, no sign changes, binary only
-        debuild -us -uc -b \
-            -V"_fdb_sql_version=${LAYER_VERSION}" \
-            -V"_fdb_sql_release=${RELEASE}" \
-            -V"_fdb_sql_layer_jar=${LAYER_JAR_NAME}" \
-            -V"_fdb_sql_client_jar=${CLIENT_JAR_NAME}"
+        debuild -us -uc -b
     ;;
 
     "rpm")
@@ -169,8 +169,6 @@ case "${1}" in
         # Releases shouldn't have epochs
         if [ ${RELEASE} -gt 0 ]; then
             EPOCH="0"
-        else
-            echo "Epoch: ${EPOCH}"
         fi
 
         STAGE_ROOT="${STAGE_DIR}/rpmbuild"
@@ -184,6 +182,10 @@ case "${1}" in
         
         mkdir -p "${BUILD_DIR}/usr/share/doc/fdb-sql-layer/"
         cp "${TOP_DIR}/LICENSE.txt" ${BUILD_DIR}/usr/share/doc/fdb-sql-layer/LICENSE
+
+        if [ "${EPOCH}" != "0" ]; then
+            echo "Epoch: ${EPOCH}"
+        fi
 
         mkdir -p "${STAGE_ROOT}"/{SOURCES,SRPMS,RPMS/noarch}
         rpmbuild --target=noarch -bb "${PACKAGING_DIR}/rpm/fdb-sql-layer.spec" \
