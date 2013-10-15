@@ -322,9 +322,9 @@ public class ServerValueEncoder
      * zone as though all days were the same length.
      */
     private static int seconds2000NoTZ(int unixtime) {
-        int delta = 946702800; // 2000-01-01 00:00:00-UTC.
+        int delta = 946684800; // 2000-01-01 00:00:00-UTC.
         DateTimeZone dtz = DateTimeZone.getDefault();
-        delta -= (dtz.getOffset(unixtime * 1000L) - dtz.getStandardOffset(unixtime * 1000L)) / 1000;
+        unixtime += dtz.getOffset(unixtime * 1000L) / 1000;
         return unixtime - delta;
     }
 

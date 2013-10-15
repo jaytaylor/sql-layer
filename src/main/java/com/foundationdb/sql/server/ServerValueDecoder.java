@@ -169,9 +169,9 @@ public class ServerValueDecoder
     }
 
     private static int seconds2000NoTZ(int secs) {
-        int unixtime = secs + 946702800; // 2000-01-01 00:00:00-UTC.
+        int unixtime = secs + 946684800; // 2000-01-01 00:00:00-UTC.
         DateTimeZone dtz = DateTimeZone.getDefault();
-        unixtime -= (dtz.getOffset(unixtime * 1000L) - dtz.getStandardOffset(unixtime * 1000L)) / 1000;
+        unixtime -= dtz.getOffset(unixtime * 1000L) / 1000;
         return unixtime;
     }
 
