@@ -76,7 +76,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         }
         state = State.ACTIVE;
         LayerInfoInterface layerInfo = getLayerInfo();
-        logger.info("{} {} ready.", layerInfo.getServerName(), layerInfo.getServerVersion());
+        logger.info("{} {} ready.", layerInfo.getServerName(), layerInfo.getVersionInfo().versionLong);
     }
 
     @Override

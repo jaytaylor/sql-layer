@@ -41,10 +41,12 @@ public class NoArgFuncs
 
     public static final TScalar SHORT_SERVER_VERSION = new NoArgExpression("version", true)
     {
+        private final String VERSION_STR = Main.VERSION_INFO.versionShort;
+
         @Override
         public void evaluate(TExecutionContext context, ValueTarget target)
         {
-            target.putString(Main.SHORT_VERSION_STRING, null);
+            target.putString(VERSION_STR, null);
         }
 
         @Override
@@ -54,17 +56,18 @@ public class NoArgFuncs
 
         @Override
         protected int[] resultAttrs() {
-            return new int[] { Main.SHORT_VERSION_STRING.length() };
+            return new int[] { VERSION_STR.length() };
         }
     };
 
     public static final TScalar SERVER_FULL_VERSION = new NoArgExpression("version_full", true)
     {
+        private final String VERSION_STR = Main.VERSION_INFO.versionLong;
 
         @Override
         public void evaluate(TExecutionContext context, ValueTarget target)
         {
-            target.putString(Main.VERSION_STRING, null);
+            target.putString(VERSION_STR, null);
         }
 
         @Override
@@ -74,7 +77,7 @@ public class NoArgFuncs
 
         @Override
         protected int[] resultAttrs() {
-            return new int[] { Main.VERSION_STRING.length() };
+            return new int[] { VERSION_STR.length() };
         }
     };
     
