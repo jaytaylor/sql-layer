@@ -523,7 +523,7 @@ public class PostgresServerConnection extends ServerSessionBase
     // This is enough to make the JDBC driver happy.
     protected static final String[] INITIAL_STATUS_SETTINGS = {
         "client_encoding", "server_encoding", "server_version", "session_authorization",
-        "DateStyle"
+        "DateStyle", "integer_datetimes"
     };
 
     protected void authenticationOkay() throws IOException {
