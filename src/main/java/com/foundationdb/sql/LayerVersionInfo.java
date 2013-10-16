@@ -33,11 +33,12 @@ public class LayerVersionInfo
         this.versionShort = this.version.replace("-SNAPSHOT", "");
 
         String[] nums = versionShort.split("\\.");
-        int major = -1, minor = -1, patch = -1;
+        int major = -1, minor = -1, patch = -1, release = -1;
         try {
             major = Integer.parseInt(nums[0]);
             minor = Integer.parseInt(nums[1]);
             patch = Integer.parseInt(nums[2]);
+            release = Integer.parseInt(getOrWarn(props, "release"));
         }
         catch (Exception e) {
             LOG.warn("Couldn't parse version number: " + versionShort);
@@ -45,6 +46,7 @@ public class LayerVersionInfo
         this.versionMajor = major;
         this.versionMinor = minor;
         this.versionPatch = patch;
+        this.versionRelease = release;
         this.versionIsSnapshot = !this.version.equals(this.versionShort);
 
         this.buildTime = getOrWarn(props, "build_time");
@@ -78,6 +80,7 @@ public class LayerVersionInfo
     public final int versionMajor;
     public final int versionMinor;
     public final int versionPatch;
+    public final int versionRelease;
     public final boolean versionIsSnapshot;
 
     public final String buildTime;

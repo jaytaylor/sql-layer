@@ -19,22 +19,31 @@
 
 SETLOCAL
 
-FOR /F "usebackq" %%v IN (`git rev-parse --short HEAD`) DO SET GIT_HASH=%%v
-FOR /F "usebackq" %%v IN (`git rev-list --merges HEAD --count`) DO SET GIT_COUNT=%%v
+IF "%1"=="" (
+  SET RELEASE=0
+) ELSE IF "%1"=="-r" (
+  SET RELEASE=1
+) ELSE (
+  ECHO Unexpected argument: %1
+  EXIT /B 1
+)
 
-SET LICENSE=LICENSE.txt
-SET VERSION=1.9.1
-SET VERSIONFULL=1.9.1.%GIT_COUNT%-%GIT_HASH%
-SET INSTALLER=fdb-sql-layer-%VERSION%
 SET EXE_DIR=%~dp0\exe
+SET TOP_DIR=%EXE_DIR%\..\..
+CD %TOP_DIR%
+
+FOR /F "usebackq" %%v IN (`powershell -Command "& {[xml]$p=Get-Content pom.xml ; $p.project.version}"`) DO SET LAYER_MVN_VERSION=%%v
+FOR /F "usebackq" %%v IN (`git rev-parse --short HEAD`) DO SET GIT_HASH=%%v
+SET LAYER_VERSION=%LAYER_MVN_VERSION:-SNAPSHOT=%
+SET VERSION_TEXT=%LAYER_MVN_VERSION%.%RELEASE%-%GIT_HASH%
+SET INSTALLER=fdb-sql-layer-%LAYER_VERSION%-%RELEASE%
 
 IF NOT DEFINED CERT_FILE SET CERT_FILE=%EXE_DIR%\testcert\testcert.pfx
 IF NOT DEFINED CERT_PASSWORD SET CERT_PASSWORD=test
 
-ECHO "Building FoundationDB SQL Layer"
+ECHO "Building FoundationDB SQL Layer %LAYER_VERSION% Release %RELEASE%"
 
-CD %EXE_DIR%\..\..
-call mvn clean package -U -DGIT_COUNT=%GIT_COUNT% -DGIT_HASH=%GIT_HASH% -DskipTests=true
+call mvn clean package -U -DskipTests=true
 IF ERRORLEVEL 1 GOTO EOF
 
 IF NOT DEFINED TOOLS_LOC SET TOOLS_LOC="git@github.com:FoundationDB/sql-layer-client-tools.git"
@@ -59,7 +68,7 @@ MD target\isstage\lib\server
 MD target\isstage\lib\client
 MD target\isstage\procrun
 
-COPY %LICENSE% target\isstage\LICENSE-SQL_LAYER.txt
+COPY %TOP_DIR%\LICENSE.txt target\isstage\LICENSE-SQL_LAYER.txt
 XCOPY /E %EXE_DIR% target\isstage
 COPY bin\*.cmd target\isstage\bin
 COPY target\client-tools\bin\*.cmd target\isstage\bin
@@ -93,7 +102,7 @@ IF ERRORLEVEL 1 GOTO EOF
 CD ..\..
 
 iscc /S"standard=signtool sign /f $q%CERT_FILE%$q  /p $q%CERT_PASSWORD%$q /t http://tsa.starfieldtech.com/ $f" ^
-     /O.. /F"%INSTALLER%" /dVERSION=%VERSION% /dVERSIONFULL=%VERSIONFULL% fdb-sql-layer.iss
+     /O.. /F"%INSTALLER%" /dVERSION=%LAYER_VERSION% /dVERSIONTEXT=%VERSION_TEXT% /dRELEASE=%RELEASE% fdb-sql-layer.iss
 IF ERRORLEVEL 1 GOTO EOF
 
 CD ..\..
