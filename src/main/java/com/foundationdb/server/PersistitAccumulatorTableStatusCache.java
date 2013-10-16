@@ -17,11 +17,11 @@
 
 package com.foundationdb.server;
 
+import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.qp.persistitadapter.PersistitAdapter;
 import com.foundationdb.server.error.PersistitAdapterException;
-import com.foundationdb.server.rowdata.IndexDef;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.TreeService;
@@ -90,11 +90,10 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     }
 
     private Tree getTreeForRowDef(RowDef rowDef) {
-        IndexDef indexDef = rowDef.getPKIndex().indexDef();
-        assert indexDef != null : rowDef;
+        Index index = rowDef.getPKIndex();
         try {
-            treeService.populateTreeCache(indexDef);
-            return indexDef.getTreeCache().getTree();
+            treeService.populateTreeCache(index);
+            return index.getTreeCache().getTree();
         }
         catch (PersistitException e) {
             throw new PersistitAdapterException(e);
