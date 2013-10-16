@@ -128,6 +128,9 @@ public abstract class AbstractStore<SDType> implements Store {
     /** Release (or cache) any data created through {@link #createStoreData(Session, TreeLink)}. */
     abstract void releaseStoreData(Session session, SDType storeData);
 
+    /** Get the <code>TreeLink</code> that this store data works with. */
+    abstract TreeLink getTreeLink(SDType storeData);
+
     /** Get the associated key */
     abstract Key getKey(Session session, SDType storeData);
 

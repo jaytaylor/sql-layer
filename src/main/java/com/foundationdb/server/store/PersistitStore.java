@@ -149,6 +149,11 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
+    TreeLink getTreeLink(Exchange exchange) {
+        return (TreeLink)exchange.getAppCache();
+    }
+
+    @Override
     public PersistitIndexRowBuffer readIndexRow(Session session,
                                                 Index parentPKIndex,
                                                 Exchange exchange,
