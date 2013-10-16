@@ -874,14 +874,6 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
         key.setEncodedSize(keyBytes.length);
     }
 
-    private static byte[] packedTuple(Index index) {
-        return packedTuple(index);
-    }
-
-    private static byte[] packedTuple(Index index, Key key) {
-        return packedTuple(index, key);
-    }
-
     private static byte[] packedTuple(TreeLink treeLink) {
         return packTreeName(treeLink.getTreeName());
     }
