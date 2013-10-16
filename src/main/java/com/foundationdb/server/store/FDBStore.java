@@ -369,6 +369,11 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     }
 
     @Override
+    TreeLink getTreeLink(FDBStoreData storeData) {
+        return storeData.link;
+    }
+
+    @Override
     protected Key getKey(Session session, FDBStoreData storeData) {
         return storeData.key;
     }
