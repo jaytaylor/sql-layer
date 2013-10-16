@@ -29,9 +29,7 @@
     </scm>
 
     <properties>
-        <!-- Defaults hash and merge count. Jenkins sets these to real values when building packages. -->
-        <GIT_HASH></GIT_HASH>
-        <GIT_COUNT></GIT_COUNT>
+        <fdbsql.release>0</fdbsql.release>
         <fdbsql.test.extraJvmArgs></fdbsql.test.extraJvmArgs>
         <fdbsql.test.JmxJvmArgs>-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=8082 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false</fdbsql.test.JmxJvmArgs>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

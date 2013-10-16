@@ -17,9 +17,8 @@
 
 @ECHO OFF
 
-SETLOCAL
+SETLOCAL EnableDelayedExpansion
 
-SET SERVER_JAR=fdb-sql-layer-1.9.1-SNAPSHOT.jar
 SET SERVICE_NAME=fdbsqllayer
 SET SERVICE_DNAME=FoundationDB SQL Layer 
 SET SERVICE_DESC=FoundationDB SQL Layer
@@ -30,7 +29,7 @@ REM Installation Configuration
 
 FOR %%P IN ("%~dp0..") DO SET FDBSQL_HOME=%%~fP
 
-SET JAR_FILE=%FDBSQL_HOME%\sql\lib\%SERVER_JAR%
+CALL:findJarFile "%FDBSQL_HOME%\sql\lib"
 SET DEP_DIR=%FDBSQL_HOME%\sql\lib\server
 SET FDBSQL_HOME_DIR=%FDBSQL_HOME%\sql
 @REM Replaced during install
@@ -58,7 +57,7 @@ REM Build Configuration
 
 FOR %%P IN ("%~dp0..") DO SET BUILD_HOME=%%~fP
 
-SET JAR_FILE=%BUILD_HOME%\target\%SERVER_JAR%
+CALL:findJarFile "%BUILD_HOME%\target"
 SET DEP_DIR=%BUILD_HOME%\target\dependency
 SET FDBSQL_CONF=%BUILD_HOME%\conf
 SET FDBSQL_LOGDIR=\tmp\fdbsqllayer
@@ -220,6 +219,20 @@ GOTO EOF
 ECHO There was an error. Please check %FDBSQL_LOGDIR% for more information.
 PAUSE
 GOTO EOF
+
+:findJarFile
+SET JAR_FILE=
+FOR %%P IN ("%~1\fdb-sql-layer*.jar") DO (
+    SET T=%%P
+    REM Ignore files that change with -test, -source and -client removed
+    IF "!T:test=!"=="%%P" IF "!T:source=!"=="%%P" IF "!T:client=!"=="%%P" (
+        SET JAR_FILE=%%P
+    )
+)
+IF "%JAR_FILE%"=="" (
+    ECHO No jar file in %~1
+)
+GOTO:EOF
 
 :EOF
 ENDLOCAL

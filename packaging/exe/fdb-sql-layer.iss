@@ -1,9 +1,13 @@
 #ifndef VERSION
-#define VERSION '0.0.0'
+#error VERSION required
 #endif
 
-#ifndef VERSIONFULL
-#define VERSIONFULL '0.0.0-UNKNOWN'
+#ifndef VERSIONTEXT
+#error VERSIONTEXT required
+#endif
+
+#ifndef RELEASE
+#error RELEASE required
 #endif
 
 #define APPNAME 'FoundationDB SQL Layer'
@@ -15,13 +19,13 @@
 [Setup]
 OutputBaseFilename = fdb-sql-layer
 AppName = {#APPNAME}
+AppVersion = {#VERSION}
 AppVerName = {#APPNAME} {#VERSION}
 AppPublisher = FoundationDB, LCC
 AppPublisherURL = https://foundationdb.com/
-AppVersion = {#VERSION}
 AppCopyright = Copyright (c) 2009-2013 FoundationDB, LLC
-VersionInfoVersion = {#VERSION}
-VersionInfoProductTextVersion = {#VERSIONFULL}
+VersionInfoVersion = {#VERSION}.{#RELEASE}
+VersionInfoProductTextVersion = {#VERSIONTEXT}
 DefaultDirName = {code:DefaultInstallPath}
 DefaultGroupName = foundationdb
 Compression = lzma
