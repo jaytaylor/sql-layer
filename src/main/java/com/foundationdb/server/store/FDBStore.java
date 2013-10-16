@@ -608,7 +608,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     public void truncateIndexes(Session session, Collection<? extends Index> indexes) {
         TransactionState txn = txnService.getTransaction(session);
         for(Index index : indexes) {
-            truncateTree(session, index.indexDef());
+            truncateTree(session, index);
             if(index.isGroupIndex()) {
                 txn.setBytes(packedTupleGICount((GroupIndex)index), FDBTableStatusCache.packForAtomicOp(0));
             }
@@ -875,11 +875,11 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     }
 
     private static byte[] packedTuple(Index index) {
-        return packedTuple(index.indexDef());
+        return packedTuple(index);
     }
 
     private static byte[] packedTuple(Index index, Key key) {
-        return packedTuple(index.indexDef(), key);
+        return packedTuple(index, key);
     }
 
     private static byte[] packedTuple(TreeLink treeLink) {
@@ -901,7 +901,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     }
 
     private byte[] packedTupleGICount(GroupIndex index) {
-        return ByteArrayUtil.join(packedIndexCountPrefix, packTreeName(index.indexDef().getTreeName()));
+        return ByteArrayUtil.join(packedIndexCountPrefix, packTreeName(index.getTreeName()));
     }
 
     private long getGICountInternal(ReadTransaction txn, GroupIndex index) {

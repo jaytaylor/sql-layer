@@ -174,7 +174,7 @@ public class FDBTableStatusCache implements TableStatusCache {
                 this.rowCountKey = null;
             } else {
                 assert rowDef.getRowDefId() == tableID;
-                byte[] treeNamePacked = FDBStore.packTreeName(rowDef.getPKIndex().indexDef().getTreeName());
+                byte[] treeNamePacked = FDBStore.packTreeName(rowDef.getPKIndex().getTreeName());
                 this.autoIncKey = ByteArrayUtil.join(packedTableStatusPrefix, treeNamePacked, AUTO_INC_PACKED);
                 this.uniqueKey = ByteArrayUtil.join(packedTableStatusPrefix, treeNamePacked, UNIQUE_PACKED);
                 this.rowCountKey = ByteArrayUtil.join(packedTableStatusPrefix, treeNamePacked, ROW_COUNT_PACKED);
