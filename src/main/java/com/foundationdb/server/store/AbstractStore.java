@@ -212,7 +212,7 @@ public abstract class AbstractStore<SDType> implements Store {
                         RowDef parentRowDef = rowDef.getParentRowDef();
                         TableIndex parentPkIndex = parentRowDef.getPKIndex();
                         indexToHKey = parentPkIndex.indexToHKey();
-                        parentStoreData = createStoreData(session, parentPkIndex.indexDef());
+                        parentStoreData = createStoreData(session, parentPkIndex);
                         parentPKIndexRow = readIndexRow(session, parentPkIndex, parentStoreData, rowDef, rowData);
                         i2hPosition = hKeyColumn.positionInHKey();
                     }
@@ -703,10 +703,7 @@ public abstract class AbstractStore<SDType> implements Store {
     @Override
     public void deleteIndexes(final Session session, final Collection<? extends Index> indexes) {
         for(Index index : indexes) {
-            final IndexDef indexDef = index.indexDef();
-            if(indexDef != null) {
-                removeTree(session, indexDef);
-            }
+            removeTree(session, index);
         }
     }
 
@@ -714,11 +711,11 @@ public abstract class AbstractStore<SDType> implements Store {
     public void removeTrees(Session session, UserTable table) {
         // Table indexes
         for(Index index : table.getIndexesIncludingInternal()) {
-            removeTree(session, index.indexDef());
+            removeTree(session, index);
         }
         // Group indexes
         for(Index index : table.getGroupIndexes()) {
-            removeTree(session, index.indexDef());
+            removeTree(session, index);
         }
         // Sequence
         if(table.getIdentityColumn() != null) {
