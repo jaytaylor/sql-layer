@@ -224,8 +224,8 @@ GOTO EOF
 SET JAR_FILE=
 FOR %%P IN ("%~1\fdb-sql-layer*.jar") DO (
     SET T=%%P
-    REM Ignore files that change with -test, -source and -client removed
-    IF "!T:test=!"=="%%P" IF "!T:source=!"=="%%P" IF "!T:client=!"=="%%P" (
+    REM Ignore files that change with -tests, -sources and -client removed
+    IF "!T:tests=!"=="%%P" IF "!T:sources=!"=="%%P" IF "!T:client=!"=="%%P" (
         SET JAR_FILE=%%P
     )
 )
