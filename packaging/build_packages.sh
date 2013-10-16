@@ -239,7 +239,7 @@ case "${1}" in
 
         cd "${STAGE_LOCAL}/foundationdb/sql/"
         ln -s /usr/local/foundationdb/sql/${LAYER_JAR_NAME} fdb-sql-layer.jar
-        ln -s /usr/local/foundationdb/sql/${CLIENT_jAR_NAME} fdb-sql-layer-client-tools.jar
+        ln -s /usr/local/foundationdb/sql/${CLIENT_JAR_NAME} fdb-sql-layer-client-tools.jar
 
         cd "${TOP_DIR}/target"
         pkgbuild --root "${STAGE_ROOT}" --identifier com.foundationdb.layer.sql --version ${LAYER_VERSION}.${RELEASE} --scripts "${PACKAGING_DIR}/pkg/scripts" "${STAGE_DIR}/SQL_Layer.pkg"
