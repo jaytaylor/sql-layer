@@ -83,7 +83,7 @@ class StoreGIHandler<SDType> {
         }
 
         int firstSpatialColumn = groupIndex.isSpatial() ? groupIndex.firstSpatialArgument() : -1;
-        SDType storeData = store.createStoreData(session, groupIndex.indexDef());
+        SDType storeData = store.createStoreData(session, groupIndex);
         try {
             store.resetForWrite(storeData, groupIndex, indexRow);
             IndexRowComposition irc = groupIndex.indexRowComposition();

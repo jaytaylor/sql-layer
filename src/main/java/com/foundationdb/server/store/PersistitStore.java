@@ -119,7 +119,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     public Exchange getExchange(final Session session, final Index index) {
-        return createStoreData(session, index.indexDef());
+        return createStoreData(session, index);
     }
 
     public void releaseExchange(final Session session, final Exchange exchange) {
@@ -180,10 +180,10 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     @Override
     public void truncateIndexes(Session session, Collection<? extends Index> indexes) {
         for(Index index : indexes) {
-            truncateTree(session, index.indexDef());
+            truncateTree(session, index);
             if(index.isGroupIndex()) {
                 try {
-                    Tree tree = index.indexDef().getTreeCache().getTree();
+                    Tree tree = index.getTreeCache().getTree();
                     new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, tree).set(0);
                 } catch(PersistitException | RollbackException e) {
                     throw PersistitAdapter.wrapPersistitException(session, e);
@@ -554,7 +554,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
 
     @Override
     public long nullIndexSeparatorValue(Session session, Index index) {
-        Tree tree = index.indexDef().getTreeCache().getTree();
+        Tree tree = index.getTreeCache().getTree();
         AccumulatorAdapter accumulator = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.UNIQUE_ID, tree);
         return accumulator.seqAllocate();
     }
