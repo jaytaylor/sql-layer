@@ -359,7 +359,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     //
 
     @Override
-    protected FDBStoreData createStoreData(Session session, TreeLink treeLink) {
+    public FDBStoreData createStoreData(Session session, TreeLink treeLink) {
         return new FDBStoreData(treeLink, createKey());
     }
 
@@ -739,16 +739,18 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     public void traverse(Session session, Group group, TreeRecordVisitor visitor) {
         TransactionState txn = txnService.getTransaction(session);
         visitor.initialize(session, this);
-        Key key = createKey();
+        FDBStoreData storeData = createStoreData(session, group);
         for(KeyValue kv : txn.getTransaction().getRange(Range.startsWith(packedTuple(group)))) {
-            // Key
-            unpackTuple(key, kv.getKey());
-            // Value
             RowData rowData = new RowData();
-            expandRowData(rowData, kv, true);
-            // Visit
-            visitor.visit(key, rowData);
+            expandGroupData(storeData, rowData, kv);
+            visitor.visit(storeData.key, rowData);
         }
+    }
+
+    public void expandGroupData(FDBStoreData storeData, RowData rowData, KeyValue kv) {
+        unpackTuple(storeData.key, kv.getKey());
+        storeData.value = kv.getValue();
+        expandRowData(storeData, rowData);
     }
 
     @Override
