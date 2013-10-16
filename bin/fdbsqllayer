@@ -65,7 +65,7 @@ infer_jar_file()
     if [ -z "$1" ]; then
         # Try dev first so you can develop *and* have a system package installed
         if [ -d "$loc_dev" ]; then
-            value=$(ls "$loc_dev"/fdb-sql-layer*.jar |grep -v -E 'source|test')
+            value=$(ls "$loc_dev"/fdb-sql-layer*.jar |grep -v -E '\-sources|\-tests')
             if [ -z "$value" ]; then
                 echo "Developer directory detected but no jar found" >&2
                 exit 1
