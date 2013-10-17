@@ -16,7 +16,7 @@
  */
 package com.foundationdb.server.store;
 
-import com.foundationdb.qp.persistitadapter.FDBAdapter;
+import com.foundationdb.qp.storeadapter.FDBAdapter;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.metrics.LongMetric;
 import com.foundationdb.server.service.metrics.MetricsService;

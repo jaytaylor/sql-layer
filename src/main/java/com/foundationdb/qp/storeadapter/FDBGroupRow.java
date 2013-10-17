@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.foundationdb.qp.persistitadapter;
+package com.foundationdb.qp.storeadapter;
 
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.row.AbstractRow;

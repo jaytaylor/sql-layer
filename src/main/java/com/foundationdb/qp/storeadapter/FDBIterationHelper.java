@@ -14,10 +14,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.foundationdb.qp.persistitadapter;
+package com.foundationdb.qp.storeadapter;
 
-import com.foundationdb.qp.persistitadapter.indexcursor.IterationHelper;
-import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRow;
+import com.foundationdb.qp.storeadapter.indexcursor.IterationHelper;
+import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.server.store.FDBStore;

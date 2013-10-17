@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.qp.persistitadapter;
+package com.foundationdb.qp.storeadapter;
 
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
@@ -27,10 +27,10 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.persistitadapter.indexcursor.IterationHelper;
-import com.foundationdb.qp.persistitadapter.indexcursor.MergeJoinSorter;
-import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRow;
-import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRowPool;
+import com.foundationdb.qp.storeadapter.indexcursor.IterationHelper;
+import com.foundationdb.qp.storeadapter.indexcursor.MergeJoinSorter;
+import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRow;
+import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowPool;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
@@ -99,8 +99,8 @@ public class FDBAdapter extends StoreAdapter {
     @Override
     public void updateRow(Row oldRow, Row newRow) {
         RowDef rowDef = newRow.rowType().userTable().rowDef();
-        RowData oldRowData = rowData(rowDef, oldRow, new ValueRowDataCreator());
-        RowData newRowData = rowData(rowDef, newRow, new ValueRowDataCreator());
+        RowData oldRowData = rowData(rowDef, oldRow, new RowDataCreator());
+        RowData newRowData = rowData(rowDef, newRow, new RowDataCreator());
         oldRowData.setExplicitRowDef(rowDef);
         newRowData.setExplicitRowDef(rowDef);
         try {
@@ -114,7 +114,7 @@ public class FDBAdapter extends StoreAdapter {
     @Override
     public void writeRow(Row newRow, Index[] indexes) {
         RowDef rowDef = newRow.rowType().userTable().rowDef();
-        RowData newRowData = rowData(rowDef, newRow, new ValueRowDataCreator());
+        RowData newRowData = rowData(rowDef, newRow, new RowDataCreator());
         try {
             store.writeRow(getSession(), newRowData, indexes);
         } catch(InvalidOperationException e) {
@@ -126,7 +126,7 @@ public class FDBAdapter extends StoreAdapter {
     @Override
     public void deleteRow(Row oldRow, boolean cascadeDelete) {
         RowDef rowDef = oldRow.rowType().userTable().rowDef();
-        RowData oldRowData = rowData(rowDef, oldRow, new ValueRowDataCreator());
+        RowData oldRowData = rowData(rowDef, oldRow, new RowDataCreator());
         try {
             store.deleteRow(getSession(), oldRowData, true, cascadeDelete);
         } catch(InvalidOperationException e) {
