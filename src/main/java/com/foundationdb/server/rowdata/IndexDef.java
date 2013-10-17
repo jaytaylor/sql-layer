@@ -19,18 +19,12 @@ package com.foundationdb.server.rowdata;
 
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.server.service.tree.TreeCache;
-import com.foundationdb.server.service.tree.TreeLink;
 
-import java.util.concurrent.atomic.AtomicReference;
-
-public class IndexDef implements TreeLink {
+public class IndexDef {
     private final Index index;
     // Identifies fields within the row that form the key part of the index entry.
     private final int[] fields;
     private final RowDef rowDef;
-    private AtomicReference<TreeCache> treeCache = new AtomicReference<>();
-
 
     public IndexDef(RowDef rowDef, Index index)
     {
@@ -67,7 +61,7 @@ public class IndexDef implements TreeLink {
 
     @Override
     public String toString() {
-        return index.toString() + "[" + getTreeName() + "]";
+        return index.toString();
     }
 
     @Override
@@ -80,25 +74,4 @@ public class IndexDef implements TreeLink {
         throw new UnsupportedOperationException("IndexDef deprecated, use Index");
     }
 
-    // TreeLink interface
-
-    @Override
-    public String getSchemaName() {
-        return index.getIndexName().getSchemaName();
-    }
-
-    @Override
-    public String getTreeName() {
-        return index.getTreeName();
-    }
-
-    @Override
-    public void setTreeCache(TreeCache cache) {
-       treeCache.set(cache);
-    }
-
-    @Override
-    public TreeCache getTreeCache() {
-        return treeCache.get();
-    }
 }

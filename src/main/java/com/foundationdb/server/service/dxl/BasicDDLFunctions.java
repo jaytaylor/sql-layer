@@ -688,8 +688,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     UserTable table = curAIS.getUserTable(name.getFullTableName());
                     if(table != null) {
                         Index index = table.getIndexIncludingInternal(name.getName());
-                        if((index != null) && (index.indexDef() != null)) {
-                            links.add(index.indexDef());
+                        if(index != null) {
+                            links.add(index);
                         }
                     }
                 }
@@ -1081,7 +1081,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             if((newIndexes != null) && !newIndexes.isEmpty() && schemaManager().treeRemovalIsDelayed()) {
                 Collection<TreeLink> links = new ArrayList<>(newIndexes.size());
                 for(Index index : newIndexes) {
-                    links.add(index.indexDef());
+                    links.add(index);
                 }
                 store().removeTrees(session, links);
             }

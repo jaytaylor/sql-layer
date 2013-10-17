@@ -401,7 +401,7 @@ public class RowDef {
 
     public String getPkTreeName() {
         final Index pkIndex = getPKIndex();
-        return pkIndex != null ? pkIndex.indexDef().getTreeName() : null;
+        return pkIndex != null ? pkIndex.getTreeName() : null;
     }
 
     public int getRowDefId() {
