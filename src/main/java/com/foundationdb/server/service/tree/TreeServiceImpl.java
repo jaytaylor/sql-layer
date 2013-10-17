@@ -289,7 +289,9 @@ public class TreeServiceImpl
         try {
             final TreeCache cache = populateTreeCache(link);
             final Tree tree = cache.getTree();
-            return getExchange(session, tree);
+            final Exchange exchange = getExchange(session, tree);
+            exchange.setAppCache(link);
+            return exchange;
         } catch (PersistitException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         }
@@ -314,6 +316,7 @@ public class TreeServiceImpl
     public void releaseExchange(final Session session, final Exchange exchange) {
         exchange.getKey().clear();
         exchange.getValue().clear();
+        exchange.setAppCache(null);
         if (exchange.getTree().isValid()) {
             final List<Exchange> list = exchangeList(session, exchange.getTree());
             list.add(exchange);

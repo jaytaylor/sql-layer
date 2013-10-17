@@ -25,6 +25,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.store.FDBStore;
+import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.KeyValue;
 import com.foundationdb.async.AsyncIterator;
 import com.persistit.Key;
@@ -34,6 +35,7 @@ import java.util.Iterator;
 public class FDBGroupCursor implements GroupCursor {
     private final FDBAdapter adapter;
     private final Group group;
+    private final FDBStoreData storeData;
     private PersistitHKey hKey;
     private boolean hKeyDeep;
     private GroupScan groupScan;
@@ -44,6 +46,8 @@ public class FDBGroupCursor implements GroupCursor {
     public FDBGroupCursor(FDBAdapter adapter, Group group) {
         this.adapter = adapter;
         this.group = group;
+        this.storeData = adapter.getUnderlyingStore()
+            .createStoreData(adapter.getSession(), group);
         this.idle = true;
         this.destroyed = false;
     }
@@ -85,15 +89,10 @@ public class FDBGroupCursor implements GroupCursor {
             next = !idle;
             if (next) {
                 KeyValue kv = groupScan.getCurrent();
-                // Key
-                Key key = adapter.createKey();
-                FDBStore.unpackTuple(key, kv.getKey());
-                // Value
                 RowData rowData = new RowData();
-                FDBStore.expandRowData(rowData, kv, true);
-                // Row
+                adapter.getUnderlyingStore().expandGroupData(storeData, rowData, kv);
                 row = new FDBGroupRow(adapter);
-                row.set(key, rowData);
+                row.set(storeData.key, rowData);
             }
         }
         return row;

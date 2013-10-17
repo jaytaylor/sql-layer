@@ -23,11 +23,11 @@ import com.persistit.Value;
 
 import java.util.Iterator;
 
-class FDBStoreData {
+public class FDBStoreData {
     final TreeLink link;
-    final Key key;
+    public final Key key;
+    public byte[] value;
     Value persistitValue;
-    byte[] value;
     Iterator<KeyValue> it;
 
     public FDBStoreData(TreeLink link, Key key) {
