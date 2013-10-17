@@ -22,7 +22,7 @@ import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.qp.storeadapter.ValueRowDataCreator;
+import com.foundationdb.qp.storeadapter.RowDataCreator;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.expressions.TypesRegistryService;
@@ -63,7 +63,7 @@ public abstract class RowReader
     private final int tableId;
     private final Value vstring;
     private final Value[] values; // indexed by column index
-    private final ValueRowDataCreator valueCreator;
+    private final RowDataCreator rowCreator;
     private final TExecutionContext[] executionContexts; // indexed by column index
     private final TEvaluatableExpression[] expressions; // indexed by field index
     private NewRow row;
@@ -180,7 +180,7 @@ public abstract class RowReader
             eval.with(queryContext);
             expressions[fi] = eval;
         }
-        this.valueCreator = new ValueRowDataCreator();
+        this.rowCreator = new RowDataCreator();
         this.inputStream = inputStream;
         this.encoding = encoding;
         this.nullBytes = nullBytes;
@@ -240,7 +240,7 @@ public abstract class RowReader
         Value value = values[columnIndex];
         value.tInstance().typeClass()
             .fromObject(executionContexts[columnIndex], vstring, value);
-        valueCreator.put(value, row, rowDef.getFieldDef(columnIndex), columnIndex);
+        rowCreator.put(value, row, columnIndex);
         fieldIndex++;
         fieldLength = 0;
     }
@@ -292,14 +292,14 @@ public abstract class RowReader
         for (int i = 0; i < constColumns.length; i++) {
             int columnIndex = constColumns[i];
             ValueSource value = values[columnIndex];
-            valueCreator.put(value, row, rowDef.getFieldDef(columnIndex), columnIndex);
+            rowCreator.put(value, row, columnIndex);
         }
         for (int i = 0; i < evalColumns.length; i++) {
             int columnIndex = evalColumns[i];
             TEvaluatableExpression expr = expressions[i];
             expr.evaluate();
             ValueSource value = expr.resultValue();
-            valueCreator.put(value, row, rowDef.getFieldDef(columnIndex), columnIndex);
+            rowCreator.put(value, row, columnIndex);
         }
         return row;
     }
