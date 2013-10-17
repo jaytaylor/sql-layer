@@ -29,7 +29,7 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.persistitadapter.PersistitHKey;
+import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.row.FlattenedRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.FlattenedRowType;

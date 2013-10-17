@@ -21,7 +21,6 @@ import com.foundationdb.ais.model.Group;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.persistitadapter.PersistitAdapter;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.error.InvalidOperationException;

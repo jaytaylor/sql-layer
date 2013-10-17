@@ -79,7 +79,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.foundationdb.qp.persistitadapter.PersistitAdapter.wrapPersistitException;
+import static com.foundationdb.qp.storeadapter.PersistitAdapter.wrapPersistitException;
 import static com.foundationdb.server.service.transaction.TransactionService.Callback;
 import static com.foundationdb.server.service.transaction.TransactionService.CallbackType;
 import static com.foundationdb.server.service.tree.TreeService.SCHEMA_TREE_NAME;

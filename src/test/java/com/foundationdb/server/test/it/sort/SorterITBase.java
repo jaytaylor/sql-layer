@@ -25,7 +25,7 @@ import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.operator.RowsBuilder;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.operator.TestOperator;
-import com.foundationdb.qp.persistitadapter.Sorter;
+import com.foundationdb.qp.storeadapter.Sorter;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
