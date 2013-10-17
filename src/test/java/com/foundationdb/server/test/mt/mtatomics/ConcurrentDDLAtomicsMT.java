@@ -882,7 +882,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                 "CREATE INDEX (PARENT)>",
                 "CREATE INDEX (CHILD)>",
                 "CREATE INDEX (PARENT)<",
-                "CREATE INDEX (CHILD): RollbackException"
+                "CREATE INDEX (CHILD): PersistitRollbackException"
         );
         final AkibanInformationSchema ais = ais();
         assertNotNull("Parent index should exist", ais.getUserTable(TABLE_PARENT).getIndex(parentIndex.getIndexName().getName()));
