@@ -22,7 +22,7 @@ import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.qp.persistitadapter.ValueRowDataCreator;
+import com.foundationdb.qp.storeadapter.ValueRowDataCreator;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.expressions.TypesRegistryService;

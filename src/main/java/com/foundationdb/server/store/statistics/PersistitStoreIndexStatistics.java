@@ -19,7 +19,7 @@ package com.foundationdb.server.store.statistics;
 
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.qp.persistitadapter.PersistitAdapter;
+import com.foundationdb.qp.storeadapter.PersistitAdapter;
 import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
 import com.foundationdb.server.rowdata.IndexDef;
 import com.foundationdb.server.rowdata.RowData;

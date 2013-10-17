@@ -21,7 +21,7 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.IndexRowComposition;
 import com.foundationdb.ais.model.UserTable;
-import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
+import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.geophile.SpaceLatLon;

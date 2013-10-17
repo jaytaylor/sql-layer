@@ -20,7 +20,7 @@ package com.foundationdb.server;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
-import com.foundationdb.qp.persistitadapter.PersistitAdapter;
+import com.foundationdb.qp.storeadapter.PersistitAdapter;
 import com.foundationdb.server.error.PersistitAdapterException;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;

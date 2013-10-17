@@ -21,7 +21,7 @@ import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.persistitadapter.TempVolume;
+import com.foundationdb.qp.storeadapter.TempVolume;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.scan.NewRow;

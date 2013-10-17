@@ -18,7 +18,7 @@
 package com.foundationdb.server.service.text;
 
 import com.foundationdb.qp.operator.Cursor;
-import com.foundationdb.qp.persistitadapter.PersistitHKey;
+import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.UserTableRowType;
