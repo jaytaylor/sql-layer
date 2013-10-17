@@ -112,12 +112,11 @@ public abstract class StoreAdapter implements KeyCreator
         return row;
     }
 
-    public <S> RowData rowData(RowDef rowDef, Row row, RowDataCreator<S> creator) {
+    public RowData rowData(RowDef rowDef, Row row, RowDataCreator creator) {
         // Generic conversion, subclasses should override to check for known group rows
         NewRow niceRow = newRow(rowDef);
         for(int i = 0; i < row.rowType().nFields(); ++i) {
-            S source = creator.eval(row, i);
-            creator.put(source, niceRow, rowDef.getFieldDef(i), i);
+            creator.put(row.value(i), niceRow, i);
         }
         return niceRow.toRowData();
     }

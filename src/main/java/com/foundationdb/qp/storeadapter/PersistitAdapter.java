@@ -153,7 +153,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
     }
 
     @Override
-    public <S> RowData rowData(RowDef rowDef, Row row, RowDataCreator<S> creator) {
+    public RowData rowData(RowDef rowDef, Row row, RowDataCreator creator) {
         if(row instanceof PersistitGroupRow) {
             return ((PersistitGroupRow)row).rowData();
         }
@@ -172,8 +172,8 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
         return schema.ais().getUserTable(tableId).rowDef();
     }
 
-    private RowDataCreator<?> rowDataCreator() {
-        return new ValueRowDataCreator();
+    private RowDataCreator rowDataCreator() {
+        return new RowDataCreator();
     }
 
     public PersistitGroupRow newGroupRow()
