@@ -39,10 +39,10 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.persistitadapter.OperatorBasedRowCollector;
-import com.foundationdb.qp.persistitadapter.ValueRowDataCreator;
-import com.foundationdb.qp.persistitadapter.PersistitHKey;
-import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
+import com.foundationdb.qp.storeadapter.OperatorBasedRowCollector;
+import com.foundationdb.qp.storeadapter.RowDataCreator;
+import com.foundationdb.qp.storeadapter.PersistitHKey;
+import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.util.SchemaCache;
@@ -1125,7 +1125,7 @@ public abstract class AbstractStore<SDType> implements Store {
             cursor.openTopLevel();
             while((row = cursor.next()) != null) {
                 UserTable table = row.rowType().userTable();
-                RowData data = adapter.rowData(table.rowDef(), row, new ValueRowDataCreator());
+                RowData data = adapter.rowData(table.rowDef(), row, new RowDataCreator());
                 maintainGroupIndexes(session,
                                      ais,
                                      data,

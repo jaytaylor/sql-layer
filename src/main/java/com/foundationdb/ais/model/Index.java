@@ -18,7 +18,7 @@
 package com.foundationdb.ais.model;
 
 import com.foundationdb.ais.model.validation.AISInvariants;
-import com.foundationdb.qp.persistitadapter.SpatialHelper;
+import com.foundationdb.qp.storeadapter.SpatialHelper;
 import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.geophile.SpaceLatLon;
 import com.foundationdb.server.rowdata.IndexDef;

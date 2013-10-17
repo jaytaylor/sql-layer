@@ -24,10 +24,10 @@ import com.foundationdb.ais.model.PrimaryKey;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.expression.IndexKeyRange;
-import com.foundationdb.qp.persistitadapter.RowDataCreator;
-import com.foundationdb.qp.persistitadapter.Sorter;
-import com.foundationdb.qp.persistitadapter.indexcursor.IterationHelper;
-import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRow;
+import com.foundationdb.qp.storeadapter.RowDataCreator;
+import com.foundationdb.qp.storeadapter.Sorter;
+import com.foundationdb.qp.storeadapter.indexcursor.IterationHelper;
+import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
@@ -112,12 +112,11 @@ public abstract class StoreAdapter implements KeyCreator
         return row;
     }
 
-    public <S> RowData rowData(RowDef rowDef, Row row, RowDataCreator<S> creator) {
+    public RowData rowData(RowDef rowDef, Row row, RowDataCreator creator) {
         // Generic conversion, subclasses should override to check for known group rows
         NewRow niceRow = newRow(rowDef);
         for(int i = 0; i < row.rowType().nFields(); ++i) {
-            S source = creator.eval(row, i);
-            creator.put(source, niceRow, rowDef.getFieldDef(i), i);
+            creator.put(row.value(i), niceRow, i);
         }
         return niceRow.toRowData();
     }

@@ -35,7 +35,7 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.persistitadapter.PersistitHKey;
+import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.HKeyRow;
 import com.foundationdb.qp.row.Row;
