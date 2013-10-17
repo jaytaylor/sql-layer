@@ -23,6 +23,7 @@ import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexName;
+import com.foundationdb.ais.model.IndexRowComposition;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.UserTable;
@@ -32,7 +33,6 @@ import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.TableStatistics;
 import com.foundationdb.server.TableStatus;
-import com.foundationdb.server.rowdata.IndexDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.Service;
@@ -542,12 +542,13 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
         if (stats == null) {
             return null;
         }
-        Histogram fromHistogram = stats.getHistogram(0, index.getKeyColumns().size());
+        int nkeys = index.getKeyColumns().size();
+        Histogram fromHistogram = stats.getHistogram(0, nkeys);
         if (fromHistogram == null) {
             return null;
         }
-        IndexDef indexDef = index.indexDef();
-        RowDef indexRowDef = indexDef.getRowDef();
+        IndexRowComposition indexRowComposition = index.indexRowComposition();
+        RowDef indexRowDef = index.leafMostTable().rowDef();
         TableStatistics.Histogram toHistogram = new TableStatistics.Histogram(index.getIndexId());
         RowData indexRowData = new RowData(new byte[4096]);
         Object[] indexValues = new Object[indexRowDef.getFieldCount()];
@@ -560,7 +561,8 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
             key.indexTo(0);
             int depth = key.getDepth();
             // Copy key fields to index row.
-            for (int field : indexDef.getFields()) {
+            for (int i = 0; i < nkeys; i++) {
+                int field = indexRowComposition.getFieldPosition(i);
                 if (--depth >= 0) {
                     indexValues[field] = key.decode();
                 } else {

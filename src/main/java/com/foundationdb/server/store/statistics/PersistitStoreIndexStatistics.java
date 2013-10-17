@@ -21,7 +21,6 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.qp.storeadapter.PersistitAdapter;
 import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
-import com.foundationdb.server.rowdata.IndexDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
@@ -119,14 +118,14 @@ public class PersistitStoreIndexStatistics extends AbstractStoreIndexStatistics<
     //
 
     private IndexStatistics loadIndexStatisticsInternal(Session session, Index index) throws PersistitException {
-        IndexDef indexDef = index.indexDef();
+        RowDef indexRowDef = index.leafMostTable().rowDef();
         RowDef indexStatisticsRowDef = getIndexStatsRowDef(session);
         RowDef indexStatisticsEntryRowDef = getIndexStatsEntryRowDef(session);
 
         Exchange exchange = getStore().getExchange(session, indexStatisticsRowDef);
         exchange.clear()
             .append(indexStatisticsRowDef.userTable().getOrdinal())
-            .append((long)indexDef.getRowDef().getRowDefId())
+            .append((long)indexRowDef.getRowDefId())
             .append((long)index.getIndexId());
         if (!exchange.fetch().getValue().isDefined()) {
             return null;
@@ -164,10 +163,7 @@ public class PersistitStoreIndexStatistics extends AbstractStoreIndexStatistics<
         RowData rowData = new RowData(new byte[INITIAL_ROW_SIZE]);
         RowDef indexStatisticsRowDef = getIndexStatsRowDef(session);
         RowDef indexStatisticsEntryRowDef = getIndexStatsEntryRowDef(session);
-        if(index.indexDef() == null) {
-            return;
-        }
-        int tableId = index.indexDef().getRowDef().getRowDefId();
+        int tableId = index.leafMostTable().rowDef().getRowDefId();
         int indexId = index.getIndexId();
         // Delete index_statistics_entry rows.
         exchange.append(Key.BEFORE);
