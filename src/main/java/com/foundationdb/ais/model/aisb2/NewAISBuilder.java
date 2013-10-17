@@ -32,7 +32,7 @@ public interface NewAISBuilder extends NewAISProvider {
      * @param table the table's name
      * @return the new table's builder
      */
-    NewUserTableBuilder userTable(String table);
+    NewTableBuilder table(String table);
 
     /**
      * Starts creating a new table using the given schema
@@ -40,16 +40,16 @@ public interface NewAISBuilder extends NewAISProvider {
      * @param table the new table's table name
      * @return the new table's builder
      */
-    NewUserTableBuilder userTable(String schema, String table);
+    NewTableBuilder table(String schema, String table);
 
-    NewUserTableBuilder userTable(TableName tableName);
+    NewTableBuilder table(TableName tableName);
     
     /**
-     * Returns the NewUserTableBuilder for the table being built 
+     * Returns the NewTableBuilder for the table being built
      * @return
      */
-    NewUserTableBuilder getUserTable();
-    NewUserTableBuilder getUserTable(TableName table);
+    NewTableBuilder getTable();
+    NewTableBuilder getTable(TableName table);
    
     /**
      * create a new sequence

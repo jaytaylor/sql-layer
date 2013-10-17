@@ -111,7 +111,7 @@ public class GroupLookup_DefaultLookaheadIT extends GroupLookup_DefaultIT
                                         intRow(cidValueRowType, 10)),
                     cidValueRowType),
                 groupLookup_Default(
-                    indexScan_Default(orderCidIndexRowType, cidRange, ordering(orderCidIndexRowType), IndexScanSelector.leftJoinAfter(orderCidIndexRowType.index(), orderRowType.userTable()), lookaheadQuantum()),
+                    indexScan_Default(orderCidIndexRowType, cidRange, ordering(orderCidIndexRowType), IndexScanSelector.leftJoinAfter(orderCidIndexRowType.index(), orderRowType.table()), lookaheadQuantum()),
                     coi,
                     orderCidIndexRowType,
                     Arrays.asList(customerRowType, orderRowType),
@@ -158,7 +158,7 @@ public class GroupLookup_DefaultLookaheadIT extends GroupLookup_DefaultIT
                                             intRow(cidValueRowType, 10)),
                         cidValueRowType),
                     groupLookup_Default(
-                        indexScan_Default(orderCidIndexRowType, cidRange, ordering(orderCidIndexRowType), IndexScanSelector.leftJoinAfter(orderCidIndexRowType.index(), orderRowType.userTable()), lookaheadQuantum()),
+                        indexScan_Default(orderCidIndexRowType, cidRange, ordering(orderCidIndexRowType), IndexScanSelector.leftJoinAfter(orderCidIndexRowType.index(), orderRowType.table()), lookaheadQuantum()),
                         coi,
                         orderCidIndexRowType,
                         Arrays.asList(customerRowType, orderRowType),

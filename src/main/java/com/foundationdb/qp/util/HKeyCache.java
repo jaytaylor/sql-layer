@@ -20,14 +20,14 @@ package com.foundationdb.qp.util;
 // Caches HKeys. The caching isn't to cache the values -- operators take care of that. The purpose of this
 // class is to maximize reuse of HKey objects.
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.util.SparseArray;
 
 public class HKeyCache<HKEY extends HKey>
 {
-    public HKEY hKey(UserTable table)
+    public HKEY hKey(Table table)
     {
         HKEY hKey;
         int ordinal = table.getOrdinal();

@@ -59,8 +59,8 @@ public class ParentAndChildSkipScanIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        parentRowType = schema.userTableRowType(userTable(parent));
-        childRowType = schema.userTableRowType(userTable(child));
+        parentRowType = schema.tableRowType(table(parent));
+        childRowType = schema.tableRowType(table(child));
         parentPidIndexRowType = indexType(parent, "pid");
         parentXIndexRowType = indexType(parent, "x");
         childYIndexRowType = indexType(child, "y");

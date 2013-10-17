@@ -100,7 +100,7 @@ public class FullTextIndexServiceBug1172013IT extends FullTextIndexServiceITBase
 
         t.join();
 
-        if(getUserTable(SCHEMA, "o").getFullTextIndex("idx3_o") != null) {
+        if(getTable(SCHEMA, "o").getFullTextIndex("idx3_o") != null) {
             new DropIndex().run();
         }
     }
@@ -131,7 +131,7 @@ public class FullTextIndexServiceBug1172013IT extends FullTextIndexServiceITBase
 
         t.join();
 
-        if(getUserTable(SCHEMA, "o").getFullTextIndex("idx3_o") != null) {
+        if(getTable(SCHEMA, "o").getFullTextIndex("idx3_o") != null) {
             new DropIndex().run();
         }
     }

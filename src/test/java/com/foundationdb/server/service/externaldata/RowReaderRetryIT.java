@@ -16,7 +16,7 @@
  */
 package com.foundationdb.server.service.externaldata;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.service.session.Session;
@@ -43,7 +43,7 @@ public class RowReaderRetryIT extends ITBase
     protected ExternalDataService external;
     protected CsvFormat format;
     protected int tableId;
-    protected UserTable table;
+    protected Table table;
 
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
@@ -57,7 +57,7 @@ public class RowReaderRetryIT extends ITBase
         format = new CsvFormat("UTF-8");
             
         tableId = createTable("test", "t", "id INT PRIMARY KEY NOT NULL");
-        table = ais().getUserTable(tableId);
+        table = ais().getTable(tableId);
     }
 
     @Test

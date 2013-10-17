@@ -125,7 +125,7 @@ public class JsonRowWriter
     public static class WriteTableRow implements WriteRow {
         @Override
         public void write(Row row, AkibanAppender appender) {
-            List<Column> columns = row.rowType().userTable().getColumns();
+            List<Column> columns = row.rowType().table().getColumns();
             for (int i = 0; i < columns.size(); i++) {
                 writeValue(columns.get(i).getName(), row.value(i), appender, i == 0);
              }
@@ -138,9 +138,9 @@ public class JsonRowWriter
         @Override
         public void write(Row row, AkibanAppender appender) {
             // tables with hidden PK (noPK tables) return no values
-            if (row.rowType().userTable().getPrimaryKey() == null) return;
+            if (row.rowType().table().getPrimaryKey() == null) return;
             
-            List<IndexColumn> columns = row.rowType().userTable().getPrimaryKey().getIndex().getKeyColumns();
+            List<IndexColumn> columns = row.rowType().table().getPrimaryKey().getIndex().getKeyColumns();
             for (int i = 0; i < columns.size(); i++) {
                 Column column = columns.get(i).getColumn();
                 writeValue(column.getName(), row.value(column.getPosition()), appender, i == 0);

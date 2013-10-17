@@ -26,8 +26,8 @@ import org.slf4j.LoggerFactory;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.UpdateFunction;
@@ -47,7 +47,7 @@ import com.foundationdb.server.types.texpressions.TPreparedParameter;
 
 public class UpdateGenerator extends OperatorGenerator {
 
-    private UserTable table;
+    private Table table;
     private static final Logger logger = LoggerFactory.getLogger(UpdateGenerator.class);
 
     public UpdateGenerator(AkibanInformationSchema ais) {
@@ -57,17 +57,17 @@ public class UpdateGenerator extends OperatorGenerator {
     
     @Override
     protected Operator create(TableName tableName) {
-        table = ais().getUserTable(tableName);
+        table = ais().getTable(tableName);
 
         return create (tableName, table.getColumns());
     }
     
     protected Operator create (TableName tableName, List<Column> upColumns) {
-        table = ais().getUserTable(tableName);
+        table = ais().getTable(tableName);
 
         RowStream stream = new RowStream ();
         stream.operator = indexAncestorLookup(tableName); 
-        stream.rowType = schema().userTableRowType(table);
+        stream.rowType = schema().tableRowType(table);
 
         TInstance varchar = MString.varchar();
         TPreparedExpression[] updates = new TPreparedExpression[table.getColumns().size()];
@@ -105,7 +105,7 @@ public class UpdateGenerator extends OperatorGenerator {
     }
 
     
-    protected ExplainContext explainUpdateStatement(Operator plan, UserTable table, List<TPreparedExpression> updatesP) {
+    protected ExplainContext explainUpdateStatement(Operator plan, Table table, List<TPreparedExpression> updatesP) {
         
         ExplainContext explainContext = new ExplainContext();        
         Attributes atts = new Attributes();

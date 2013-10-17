@@ -31,17 +31,17 @@ public final class HKeySegmentTest {
     @Test
     public void nonCascading() {
         AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA)
-                .userTable("c")
+                .table("c")
                     .colLong("cid")
                     .colString("name", 64)
                     .pk("cid")
-                .userTable("o")
+                .table("o")
                     .colLong("oid")
                     .colLong("c_id")
                     .colString("date", 32)
                     .pk("oid")
                     .joinTo("c").on("c_id", "cid")
-                .userTable("i")
+                .table("i")
                     .colLong("iid")
                     .colLong("o_id")
                     .colLong("sku")
@@ -80,17 +80,17 @@ public final class HKeySegmentTest {
     @Test
     public void cascading() {
         AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA)
-                .userTable("c")
+                .table("c")
                     .colLong("cid")
                     .colString("name", 64)
                     .pk("cid")
-                .userTable("o")
+                .table("o")
                     .colLong("c_id")
                     .colLong("oid")
                     .colString("date", 32)
                     .pk("c_id", "oid")
                     .joinTo("c").on("c_id", "cid")
-                .userTable("i")
+                .table("i")
                     .colLong("c__id")
                     .colLong("o_id")
                     .colLong("iid")
@@ -130,19 +130,19 @@ public final class HKeySegmentTest {
     @Test
     public void multiColumnPkNoCascade() {
         AkibanInformationSchema ais = AISBBasedBuilder.create(SCHEMA)
-                .userTable("c")
+                .table("c")
                     .colLong("cid1")
                     .colLong("cid2")
                     .colString("name", 64)
                     .pk("cid1", "cid2")
-                .userTable("o")
+                .table("o")
                     .colLong("oid")
                     .colLong("c_id1")
                     .colLong("c_id2")
                     .colString("date", 32)
                     .pk("oid")
                     .joinTo("c").on("c_id1", "cid1").and("c_id2", "cid2")
-                .userTable("i")
+                .table("i")
                     .colLong("iid")
                     .colLong("o_id")
                     .colLong("sku")
@@ -195,7 +195,7 @@ public final class HKeySegmentTest {
                                  SegmentCheckParameters segmentParameters,
                                  ColumnName... equivalentColumns)
     {
-        List<HKeySegment> segments = ais.getUserTable(SCHEMA, tableName).hKey().segments();
+        List<HKeySegment> segments = ais.getTable(SCHEMA, tableName).hKey().segments();
         assertEquals("segments size for " + segments, segmentParameters.expectedSegments, segments.size());
         List<HKeyColumn> hKeyColumns = segments.get(segmentParameters.checkSegment).columns();
         assertEquals("hKeyColumns size", segmentParameters.expectedColumns, hKeyColumns.size());

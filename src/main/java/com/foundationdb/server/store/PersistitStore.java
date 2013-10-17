@@ -498,7 +498,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         // Temporary fix for #1118871 and #1078331 
         // disable the  lock used to prevent write skew for some cases of data loading
         if (!writeLockEnabled) return;
-        UserTable table = rowDef.userTable();
+        Table table = rowDef.table();
         // Make fieldDefs big enough to accommodate PK field defs and FK field defs
         FieldDef[] fieldDefs = new FieldDef[table.getColumnsIncludingInternal().size()];
         Key lockKey = adapter.newKey();
@@ -521,7 +521,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     private void lockKey(RowData rowData,
-                         UserTable lockTable,
+                         Table lockTable,
                          FieldDef[] fieldDefs,
                          int nFields,
                          PersistitKeyAppender lockKeyAppender,

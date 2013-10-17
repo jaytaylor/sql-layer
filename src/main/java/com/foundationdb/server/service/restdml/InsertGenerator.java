@@ -24,11 +24,11 @@ import java.util.List;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.expressions.OverloadResolver;
 import com.foundationdb.server.expressions.OverloadResolver.OverloadResult;
 import com.foundationdb.server.types.TCast;
@@ -48,7 +48,7 @@ import com.foundationdb.server.types.texpressions.TValidatedScalar;
 
 public class InsertGenerator extends OperatorGenerator{
 
-    private UserTable table;
+    private Table table;
     
     public InsertGenerator (AkibanInformationSchema ais) {
         super(ais);
@@ -57,7 +57,7 @@ public class InsertGenerator extends OperatorGenerator{
     @Override
     protected Operator create(TableName tableName) {
         
-        table = ais().getUserTable(tableName);
+        table = ais().getTable(tableName);
 
         RowStream stream = assembleValueScan (table);
         stream = assembleProjectTable (stream, table);
@@ -66,10 +66,10 @@ public class InsertGenerator extends OperatorGenerator{
         return stream.operator; 
     }
     
-    protected RowStream assembleProjectTable (RowStream input, UserTable table) {
+    protected RowStream assembleProjectTable (RowStream input, Table table) {
         
         int nfields = input.rowType.nFields();
-        UserTableRowType targetRowType = schema().userTableRowType(table);
+        TableRowType targetRowType = schema().tableRowType(table);
         List<TPreparedExpression> insertsP = new ArrayList<>(targetRowType.nFields());
         
         for (int i = 0; i < nfields; ++i) {

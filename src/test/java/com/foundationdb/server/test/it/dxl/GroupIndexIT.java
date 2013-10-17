@@ -56,7 +56,7 @@ public class GroupIndexIT extends ITBase {
         aId = createTable("test", "a", "id int not null primary key, cid int, addr varchar(32), grouping foreign key(cid) references c(id)");
         oId = createTable("test", "o", "id int not null primary key, cid int, odate int, grouping foreign key(cid) references c(id)");
         iId = createTable("test", "i", "id int not null primary key, oid int, sku int, grouping foreign key(oid) references o(id)");
-        groupName = getUserTable(cId).getGroup().getName();
+        groupName = getTable(cId).getGroup().getName();
     }
 
     @After
@@ -77,11 +77,11 @@ public class GroupIndexIT extends ITBase {
         assertEquals("name is first", "name", index.getKeyColumns().get(0).getColumn().getName());
         assertEquals("odate is second", "odate", index.getKeyColumns().get(1).getColumn().getName());
 
-        checkGroupIndexes(getUserTable("test", "c"), index);
-        checkGroupIndexes(getUserTable("test", "o"), index);
+        checkGroupIndexes(getTable("test", "c"), index);
+        checkGroupIndexes(getTable("test", "o"), index);
         // and just to double check...
-        assertEquals("c group", group, getUserTable("test", "c").getGroup());
-        assertEquals("o group", group, getUserTable("test", "o").getGroup());
+        assertEquals("c group", group, getTable("test", "c").getGroup());
+        assertEquals("o group", group, getTable("test", "o").getGroup());
 
     }
 
@@ -92,10 +92,10 @@ public class GroupIndexIT extends ITBase {
         ddl().dropGroupIndexes(session(), groupName, Collections.singleton("name_date"));
         assertNull("name_date does not exist", ddl().getAIS(session()).getGroup(groupName).getIndex("name_date"));
 
-        checkGroupIndexes(getUserTable("test", "c"));
-        checkGroupIndexes(getUserTable("test", "o"));
+        checkGroupIndexes(getTable("test", "c"));
+        checkGroupIndexes(getTable("test", "o"));
         // and just to double check...
-        assertEquals("c group vs o group", getUserTable("test", "o").getGroup(), getUserTable("test", "c").getGroup());
+        assertEquals("c group vs o group", getTable("test", "o").getGroup(), getTable("test", "c").getGroup());
     }
 
     @Test
@@ -104,8 +104,8 @@ public class GroupIndexIT extends ITBase {
         assertNotNull("name_date_sku exists", ddl().getAIS(session()).getGroup(groupName).getIndex("name_date_sku"));
         ddl().dropTable(session(), tableName(iId));
         assertNull("name_date_sku does not exist", ddl().getAIS(session()).getGroup(groupName).getIndex("name_date_sku"));
-        checkGroupIndexes(getUserTable("test", "c"));
-        checkGroupIndexes(getUserTable("test", "o"));
+        checkGroupIndexes(getTable("test", "c"));
+        checkGroupIndexes(getTable("test", "o"));
     }
 
     @Test
@@ -113,7 +113,7 @@ public class GroupIndexIT extends ITBase {
         createGroupIndex(groupName, "sku", "i.sku");
         assertNotNull("sku exists", ddl().getAIS(session()).getGroup(groupName).getIndex("sku"));
         ddl().dropTable(session(), tableName(iId));
-        assertNull("i doesn't exist", ddl().getAIS(session()).getUserTable("test", "i"));
+        assertNull("i doesn't exist", ddl().getAIS(session()).getTable("test", "i"));
         assertNull("sku does not exist", ddl().getAIS(session()).getGroup(groupName).getIndex("sku"));
     }
 
@@ -125,7 +125,7 @@ public class GroupIndexIT extends ITBase {
         createGroupIndex(groupName, "name", "c.name");
         assertNotNull("name exists", ddl().getAIS(session()).getGroup(groupName).getIndex("name"));
         ddl().dropTable(session(), tableName(cId));
-        assertNull("c doesn't exist", ddl().getAIS(session()).getUserTable("test", "c"));
+        assertNull("c doesn't exist", ddl().getAIS(session()).getTable("test", "c"));
         assertNull("group does not exist", ddl().getAIS(session()).getGroup(groupName));
     }
 

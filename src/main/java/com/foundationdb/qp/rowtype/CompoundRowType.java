@@ -20,7 +20,7 @@ package com.foundationdb.qp.rowtype;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.types.TInstance;
 
 public class CompoundRowType extends DerivedRowType {
@@ -55,7 +55,7 @@ public class CompoundRowType extends DerivedRowType {
         this.second = second; 
         this.nFields = first.nFields() + second.nFields();
 
-        List<UserTable> tables = new ArrayList<>();
+        List<Table> tables = new ArrayList<>();
         if(first.typeComposition() != null) {
             tables.addAll(first.typeComposition().tables());
         }

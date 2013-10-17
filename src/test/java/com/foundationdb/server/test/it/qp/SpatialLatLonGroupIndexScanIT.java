@@ -28,7 +28,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.geophile.Space;
@@ -79,10 +79,10 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        parentRowType = schema.userTableRowType(userTable(parent));
-        childRowType = schema.userTableRowType(userTable(child));
-        parentOrdinal = parentRowType.userTable().getOrdinal();
-        childOrdinal = childRowType.userTable().getOrdinal();
+        parentRowType = schema.tableRowType(table(parent));
+        childRowType = schema.tableRowType(table(child));
+        parentOrdinal = parentRowType.table().getOrdinal();
+        childOrdinal = childRowType.table().getOrdinal();
         cSpatialIndexRowType = groupIndexType(groupName, "parent.pbefore", "child.clat", "child.clon", "child.cafter");
         pSpatialIndexRowType = groupIndexType(groupName, "parent.pbefore", "parent.plat", "parent.plon", "child.cafter");
         space = SpaceLatLon.create();
@@ -584,8 +584,8 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
     private int parent;
     private int child;
     private TableName groupName;
-    private UserTableRowType parentRowType;
-    private UserTableRowType childRowType;
+    private TableRowType parentRowType;
+    private TableRowType childRowType;
     private int parentOrdinal;
     private int childOrdinal;
     private IndexRowType cSpatialIndexRowType;

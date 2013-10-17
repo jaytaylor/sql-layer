@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.sql.types.DataTypeDescriptor;
@@ -52,7 +52,7 @@ public class PhysicalSelect extends BasePlannable
                           List<PhysicalResultColumn> resultColumns,
                           DataTypeDescriptor[] parameterTypes,
                           CostEstimate costEstimate,
-                          Set<UserTable> affectedTables) {
+                          Set<Table> affectedTables) {
         super(resultOperator, parameterTypes, rowType, resultColumns, costEstimate, affectedTables);
     }
 

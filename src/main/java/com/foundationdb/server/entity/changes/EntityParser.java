@@ -23,16 +23,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.foundationdb.ais.model.aisb2.NewTableBuilder;
 import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.foundationdb.ais.model.NopVisitor;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
-import com.foundationdb.ais.model.aisb2.NewUserTableBuilder;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.service.session.Session;
 
@@ -59,23 +59,23 @@ public final class EntityParser {
     public void setStringWidth(int width) {
         stringWidth = width;
     }
-    public UserTable parse (TableName tableName, JsonNode node) throws IOException {
+    public Table parse (TableName tableName, JsonNode node) throws IOException {
         NewAISBuilder builder = AISBBasedBuilder.create(tableName.getSchemaName());
         processContainer (node, builder, tableName);
-        return builder.ais().getUserTable(tableName);
+        return builder.ais().getTable(tableName);
     }
 
-    public UserTable create (final DDLFunctions ddlFunctions, final Session session, UserTable newRoot) throws IOException {
+    public Table create (final DDLFunctions ddlFunctions, final Session session, Table newRoot) throws IOException {
         newRoot.traverseTableAndDescendants(new NopVisitor() {
             @Override
-            public void visitUserTable(UserTable table) {
+            public void visitTable(Table table) {
                 ddlFunctions.createTable(session, table);
             }
         });
-        return ddlFunctions.getUserTable(session, newRoot.getName());
+        return ddlFunctions.getTable(session, newRoot.getName());
     }
 
-    public UserTable parseAndCreate (final DDLFunctions ddlFunctions, final Session session,
+    public Table parseAndCreate (final DDLFunctions ddlFunctions, final Session session,
                                      TableName tableName, JsonNode node) throws IOException {
         return create(ddlFunctions, session, parse(tableName, node));
     }
@@ -92,7 +92,7 @@ public final class EntityParser {
                     first = false;
                 }
                 else if (first && !arrayElement.isContainerNode()) {
-                    NewUserTableBuilder table = builder.userTable(tableName.getSchemaName(), tableName.getTableName());
+                    NewTableBuilder table = builder.table(tableName.getSchemaName(), tableName.getTableName());
                     addColumnToTable (arrayElement, "value", table);
                     first = false;
                 }
@@ -100,7 +100,7 @@ public final class EntityParser {
             }
             // If no elements in the array, add a placeholder column
             if (first) {
-                NewUserTableBuilder table = builder.userTable(tableName.getSchemaName(), tableName.getTableName());
+                NewTableBuilder table = builder.table(tableName.getSchemaName(), tableName.getTableName());
                 table.colString("placeholder", stringWidth, true);
             }
         }
@@ -112,7 +112,7 @@ public final class EntityParser {
         LOG.trace("Creating Table {}", tableName);
         // Pass one, insert fields from the table
         boolean columnsAdded = false;
-        NewUserTableBuilder table = builder.userTable(tableName.getSchemaName(), tableName.getTableName());
+        NewTableBuilder table = builder.table(tableName.getSchemaName(), tableName.getTableName());
 
         if(alwaysWithPK) {
             addPK(table);
@@ -146,17 +146,17 @@ public final class EntityParser {
                 first = false;
                 TableName childTable = TableName.parse(tableName.getSchemaName(), field.getKey());
                 processContainer (field.getValue(), builder, childTable);
-                NewUserTableBuilder child = builder.getUserTable(childTable);
+                NewTableBuilder child = builder.getTable(childTable);
                 String parentRefName = parentRefColName(tableName.getTableName());
                 child.colLong(parentRefName);
                 LOG.trace("Column added {}", parentRefName);
                 child.joinTo(tableName).on(parentRefName, PK_COL_NAME);
-                builder.getUserTable(tableName);
+                builder.getTable(tableName);
             }
         }
     }
     private static final Pattern DATE_PATTERN = Pattern.compile("^((\\d+)-(\\d+)-(\\d+)).*");    
-    private void addColumnToTable (JsonNode node, String name, NewUserTableBuilder table) {
+    private void addColumnToTable (JsonNode node, String name, NewTableBuilder table) {
         if (node.isTextual()) {
             boolean dateColumn = false;
             // Do a simple "could be a date" check first, if so, do an exact verify.
@@ -186,7 +186,7 @@ public final class EntityParser {
         }
     }
 
-    private void addPK(NewUserTableBuilder builder) {
+    private void addPK(NewTableBuilder builder) {
         builder.autoIncLong(PK_COL_NAME, 1);
         builder.pk(PK_COL_NAME);
     }

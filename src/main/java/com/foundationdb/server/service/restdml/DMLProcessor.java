@@ -22,8 +22,8 @@ import java.util.Map;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.CacheValueGenerator;
 import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
@@ -52,7 +52,7 @@ public abstract class DMLProcessor {
 
 
     
-    protected Column getColumn (UserTable table, String field) {
+    protected Column getColumn (Table table, String field) {
         Column column = table.getColumn(field);
         if (column == null) {
             throw new NoSuchColumnException(field);
@@ -80,7 +80,7 @@ public abstract class DMLProcessor {
     
     public class ProcessContext {
         public TableName tableName;
-        public UserTable table;
+        public Table table;
         public QueryContext queryContext;
         public QueryBindings queryBindings;
         public Session session;
@@ -113,8 +113,8 @@ public abstract class DMLProcessor {
             return store.createAdapter(session, schema);
         }
 
-        private UserTable getTable () {
-            UserTable table = ais.getUserTable(tableName);
+        private Table getTable () {
+            Table table = ais.getTable(tableName);
             if (table == null) {
                 throw new NoSuchTableException(tableName.getSchemaName(), tableName.getTableName());
             } else if (table.isProtectedTable()) {
@@ -122,7 +122,7 @@ public abstract class DMLProcessor {
             }
             return table;
         }
-        protected void setColumnsNull (QueryBindings queryBindings, UserTable table) {
+        protected void setColumnsNull (QueryBindings queryBindings, Table table) {
             for (Column column : table.getColumns()) {
                 Value value = new Value(column.tInstance());
                 value.putNull();

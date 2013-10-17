@@ -43,15 +43,15 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
     {
         super(store, session);
         // rootmostQueryTable
-        queryRootTable = rowDef.userTable();
-        queryRootType = schema.userTableRowType(queryRootTable);
-        requiredUserTables.add(queryRootTable);
+        queryRootTable = rowDef.table();
+        queryRootType = schema.tableRowType(queryRootTable);
+        requiredTables.add(queryRootTable);
         // predicateIndex and predicateType
         predicateIndex = null;
         if (indexId > 0) {
-            for (TableIndex userTableIndex : queryRootTable.getIndexesIncludingInternal()) {
-                if (userTableIndex.getIndexId() == indexId) {
-                    predicateIndex = userTableIndex;
+            for (TableIndex tableIndex : queryRootTable.getIndexesIncludingInternal()) {
+                if (tableIndex.getIndexId() == indexId) {
+                    predicateIndex = tableIndex;
                 }
             }
             assert predicateIndex != null : String.format("rowDef: %s, indexId: %s", rowDef, indexId);

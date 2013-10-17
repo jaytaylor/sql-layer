@@ -21,8 +21,8 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.store.IndexRecordVisitor;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
 import com.foundationdb.server.test.it.ITBase;
@@ -1982,7 +1982,7 @@ public final class NewGiUpdateIT extends ITBase {
     }
 
     private Group group() {
-        return getUserTable(c).getGroup();
+        return getTable(c).getGroup();
     }
 
     private Integer c;
@@ -2048,14 +2048,14 @@ public final class NewGiUpdateIT extends ITBase {
             assertTrue(scratchString, scratchString.endsWith(" => "));
             assertNotNull(giToCheck);
 
-            Set<UserTable> containingTables = new HashSet<>();
+            Set<Table> containingTables = new HashSet<>();
             AkibanInformationSchema ais = ddl().getAIS(session());
-            containingTables.add(ais.getUserTable(firstTableId));
+            containingTables.add(ais.getTable(firstTableId));
             for (int tableId : tableIds) {
-                containingTables.add(ais.getUserTable(tableId));
+                containingTables.add(ais.getTable(tableId));
             }
             long result = 0;
-            for(UserTable table = giToCheck.leafMostTable();
+            for(Table table = giToCheck.leafMostTable();
                 table != giToCheck.rootMostTable().parentTable();
                 table = table.parentTable())
             {

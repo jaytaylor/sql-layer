@@ -24,7 +24,7 @@ import com.foundationdb.qp.operator.IndexScanSelector;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
 
@@ -82,10 +82,10 @@ public class IndexRowAndAncestorIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new com.foundationdb.qp.rowtype.Schema(ais());
-        cRowType = schema.userTableRowType(userTable(c));
-        oRowType = schema.userTableRowType(userTable(o));
-        iRowType = schema.userTableRowType(userTable(i));
-        hRowType = schema.userTableRowType(userTable(h));
+        cRowType = schema.tableRowType(table(c));
+        oRowType = schema.tableRowType(table(o));
+        iRowType = schema.tableRowType(table(i));
+        hRowType = schema.tableRowType(table(h));
         hIndexRowType = indexType(h, "hx");
         ihLeftIndexRowType = groupIndexType(Index.JoinType.LEFT, "i.ix", "h.hx", "h.id");
         ihRightIndexRowType = groupIndexType(Index.JoinType.RIGHT, "i.ix", "h.hx", "h.id");
@@ -139,19 +139,19 @@ public class IndexRowAndAncestorIT extends OperatorITBase
     {
         HKey hKey;
         // h HKey: [C, H.id, O, I, H]
-        hKey = hRowType.userTable().hKey();
+        hKey = hRowType.table().hKey();
         assertEquals(1, hKey.nColumns());
         assertEquals("s.h.id", hKey.column(0).getDescription());
         // i HKey: [C, I.id, O, I]
-        hKey = iRowType.userTable().hKey();
+        hKey = iRowType.table().hKey();
         assertEquals(1, hKey.nColumns());
         assertEquals("s.i.id", hKey.column(0).getDescription());
         // o HKey: [C, O.id, O]
-        hKey = oRowType.userTable().hKey();
+        hKey = oRowType.table().hKey();
         assertEquals(1, hKey.nColumns());
         assertEquals("s.o.id", hKey.column(0).getDescription());
         // c HKey: [C, C.id]
-        hKey = cRowType.userTable().hKey();
+        hKey = cRowType.table().hKey();
         assertEquals(1, hKey.nColumns());
         assertEquals("s.c.id", hKey.column(0).getDescription());
     }
@@ -474,7 +474,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
                     ihLeftIndexRowType,
                     IndexKeyRange.unbounded(ihLeftIndexRowType),
                     new API.Ordering(),
-                    IndexScanSelector.leftJoinAfter(ihLeftIndexRowType.index(), iRowType.userTable())),
+                    IndexScanSelector.leftJoinAfter(ihLeftIndexRowType.index(), iRowType.table())),
                 group,
                 ihLeftIndexRowType,
                 Arrays.asList(cRowType, oRowType, iRowType, hRowType),
@@ -505,7 +505,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
                     ihRightIndexRowType,
                     IndexKeyRange.unbounded(ihRightIndexRowType),
                     new API.Ordering(),
-                    IndexScanSelector.rightJoinUntil(ihRightIndexRowType.index(), hRowType.userTable())),
+                    IndexScanSelector.rightJoinUntil(ihRightIndexRowType.index(), hRowType.table())),
                 group,
                 ihRightIndexRowType,
                 Arrays.asList(cRowType, oRowType, iRowType, hRowType),
@@ -535,7 +535,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
                     ohLeftIndexRowType,
                     IndexKeyRange.unbounded(ohLeftIndexRowType),
                     new API.Ordering(),
-                    IndexScanSelector.leftJoinAfter(ohLeftIndexRowType.index(), oRowType.userTable())),
+                    IndexScanSelector.leftJoinAfter(ohLeftIndexRowType.index(), oRowType.table())),
                 group,
                 ohLeftIndexRowType,
                 Arrays.asList(cRowType, oRowType, iRowType, hRowType),
@@ -566,7 +566,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
                     ohRightIndexRowType,
                     IndexKeyRange.unbounded(ohRightIndexRowType),
                     new API.Ordering(),
-                    IndexScanSelector.rightJoinUntil(ohRightIndexRowType.index(), hRowType.userTable())),
+                    IndexScanSelector.rightJoinUntil(ohRightIndexRowType.index(), hRowType.table())),
                 group,
                 ohRightIndexRowType,
                 Arrays.asList(cRowType, oRowType, iRowType, hRowType),
@@ -596,7 +596,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
                     chLeftIndexRowType,
                     IndexKeyRange.unbounded(chLeftIndexRowType),
                     new API.Ordering(),
-                    IndexScanSelector.leftJoinAfter(chLeftIndexRowType.index(), cRowType.userTable())),
+                    IndexScanSelector.leftJoinAfter(chLeftIndexRowType.index(), cRowType.table())),
                 group,
                 chLeftIndexRowType,
                 Arrays.asList(cRowType, oRowType, iRowType, hRowType),
@@ -625,7 +625,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
                     chRightIndexRowType,
                     IndexKeyRange.unbounded(chRightIndexRowType),
                     new API.Ordering(),
-                    IndexScanSelector.rightJoinUntil(chRightIndexRowType.index(), hRowType.userTable())),
+                    IndexScanSelector.rightJoinUntil(chRightIndexRowType.index(), hRowType.table())),
                 group,
                 chRightIndexRowType,
                 Arrays.asList(cRowType, oRowType, iRowType, hRowType),
@@ -657,10 +657,10 @@ public class IndexRowAndAncestorIT extends OperatorITBase
     private GroupIndex idxOHRight;
     private GroupIndex idxCHLeft;
     private GroupIndex idxCHRight;
-    private UserTableRowType cRowType;
-    private UserTableRowType oRowType;
-    private UserTableRowType iRowType;
-    private UserTableRowType hRowType;
+    private TableRowType cRowType;
+    private TableRowType oRowType;
+    private TableRowType iRowType;
+    private TableRowType hRowType;
     private IndexRowType hIndexRowType;
     private IndexRowType ihLeftIndexRowType;
     private IndexRowType ihRightIndexRowType;

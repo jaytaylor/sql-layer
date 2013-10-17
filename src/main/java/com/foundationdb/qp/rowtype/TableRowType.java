@@ -19,8 +19,8 @@ package com.foundationdb.qp.rowtype;
 
 import com.foundationdb.ais.model.HKey;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.util.FilteringIterator;
@@ -28,7 +28,7 @@ import com.foundationdb.util.FilteringIterator;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-public class UserTableRowType extends AisRowType
+public class TableRowType extends AisRowType
 {
     // Object interface
 
@@ -73,15 +73,15 @@ public class UserTableRowType extends AisRowType
         return explainer;
     }
 
-    // UserTableRowType interface
+    // TableRowType interface
     @Override
-    public UserTable userTable()
+    public Table table()
     {
         return table;
     }
 
     @Override
-    public boolean hasUserTable() {
+    public boolean hasTable() {
         return table != null;
     }
 
@@ -114,17 +114,17 @@ public class UserTableRowType extends AisRowType
         };
     }
 
-    public UserTableRowType(Schema schema, UserTable table)
+    public TableRowType(Schema schema, Table table)
     {
         super(schema, table.getTableId());
         this.table = table;
         typeComposition(new SingleBranchTypeComposition(this, table));
-        constraintChecker = new UserTableRowChecker(this);
+        constraintChecker = new TableRowChecker(this);
     }
 
     // Object state
 
-    private final UserTable table;
+    private final Table table;
     // Type of indexRowTypes is ArrayList, not List, to make it clear that null values are permitted.
     private final ArrayList<IndexRowType> indexRowTypes = new ArrayList<>();
     private final ConstraintChecker constraintChecker;

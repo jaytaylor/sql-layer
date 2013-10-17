@@ -27,7 +27,6 @@ import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.JoinColumn;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.Type;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.Visitor;
 import com.foundationdb.server.error.AISNullReferenceException;
 import com.foundationdb.server.error.BadAISInternalSettingException;
@@ -56,15 +55,12 @@ class ReferencesCorrect implements AISValidation {
         }
 
         @Override
-        public void visitUserTable(UserTable userTable) {
-            visitingTable = userTable;
-            if (userTable == null) {
+        public void visitTable(Table table) {
+            visitingTable = table;
+            if (table == null) {
                 output.reportFailure(new AISValidationFailure(
                         new AISNullReferenceException ("ais", "", "user table")));
-            } else if (userTable.isGroupTable()) {
-                output.reportFailure(new AISValidationFailure(
-                        new BadAISInternalSettingException("User table", userTable.getName().toString(), "isGroupTable")));
-            }
+            }        
         }
 
         @Override

@@ -18,7 +18,7 @@ package com.foundationdb.qp.storeadapter.indexrow;
 
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.IndexToHKey;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.row.HKey;
@@ -31,7 +31,7 @@ public class PersistitGroupIndexRow extends PersistitIndexRow
     // Row interface
 
     @Override
-    public HKey ancestorHKey(UserTable table)
+    public HKey ancestorHKey(Table table)
     {
         PersistitHKey ancestorHKey = hKeyCache.hKey(table);
         constructHKeyFromIndexKey(ancestorHKey.key(), index.indexToHKey(table.getDepth()));

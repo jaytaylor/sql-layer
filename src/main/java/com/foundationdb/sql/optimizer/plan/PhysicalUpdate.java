@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 
@@ -43,7 +43,7 @@ public class PhysicalUpdate extends BasePlannable
                           boolean returning, 
                           boolean putInCache,
                           CostEstimate costEstimate,
-                          Set<UserTable> affectedTables) {
+                          Set<Table> affectedTables) {
         super (resultsOperator, paramterTypes, rowType, resultColumns, costEstimate, affectedTables);
         this.returning = returning;
         this.putInCache = putInCache;

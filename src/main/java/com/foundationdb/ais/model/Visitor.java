@@ -21,7 +21,7 @@ public interface Visitor
 {
     void visitType(Type type);
     void visitGroup(Group group);
-    void visitUserTable(UserTable userTable);
+    void visitTable(Table table);
     void visitColumn(Column column);
     void visitJoin(Join join) ;
     void visitJoinColumn(JoinColumn joinColumn);

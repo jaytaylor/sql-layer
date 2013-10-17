@@ -31,9 +31,9 @@ import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.Schema;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.SQLJJar;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
@@ -200,25 +200,25 @@ public class BasicInfoSchemaTablesServiceImpl
         @Override
         public long rowCount() {
             AkibanInformationSchema ais = getDirtyAIS();
-            return ais.getUserTables().size() + ais.getViews().size() ;
+            return ais.getTables().size() + ais.getViews().size() ;
         }
 
         private class Scan extends BaseScan {
             final Session session;
-            final Iterator<UserTable> tableIt;
+            final Iterator<Table> tableIt;
             Iterator<View> viewIt = null;
 
             public Scan(Session session, RowType rowType) {
                 super(rowType);
                 this.session = session;
-                this.tableIt = getAIS(session).getUserTables().values().iterator();
+                this.tableIt = getAIS(session).getTables().values().iterator();
             }
 
             @Override
             public Row next() {
                 if(viewIt == null) {
                     while(tableIt.hasNext()) {
-                        UserTable table = tableIt.next();
+                        Table table = tableIt.next();
                         final String tableType = table.hasMemoryTableFactory() ? "DICTIONARY VIEW" : "TABLE";
                         final Integer ordinal = table.hasMemoryTableFactory() ? null : table.getOrdinal();
                         if(isAccessible(session, table.getName())) {
@@ -274,7 +274,7 @@ public class BasicInfoSchemaTablesServiceImpl
         public long rowCount() {
             AkibanInformationSchema ais = getDirtyAIS();
             long count = 0;
-            for(UserTable table : ais.getUserTables().values()) {
+            for(Table table : ais.getTables().values()) {
                 count += table.getColumns().size();
             }
             for(View view : ais.getViews().values()) {
@@ -285,14 +285,14 @@ public class BasicInfoSchemaTablesServiceImpl
         
         private class Scan extends BaseScan {
             final Session session;
-            final Iterator<UserTable> tableIt;
+            final Iterator<Table> tableIt;
             Iterator<View> viewIt = null;
             Iterator<Column> columnIt;
 
             public Scan(Session session, RowType rowType) {
                 super(rowType);
                 this.session = session;
-                this.tableIt = getAIS(session).getUserTables().values().iterator();
+                this.tableIt = getAIS(session).getTables().values().iterator();
             }
 
             @Override
@@ -301,7 +301,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 while(columnIt == null || !columnIt.hasNext()) {
                     if(viewIt == null) {
                         while(tableIt.hasNext()) {
-                            UserTable table = tableIt.next();
+                            Table table = tableIt.next();
                             if(isAccessible(session, table.getName())) {
                                 columnIt = table.getColumns().iterator();
                                 continue getCols;
@@ -401,7 +401,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
         private TableConstraintsIteration newIteration(Session session,
                                                        AkibanInformationSchema ais) {
-            return new TableConstraintsIteration(session, ais.getUserTables().values().iterator());
+            return new TableConstraintsIteration(session, ais.getTables().values().iterator());
         }
 
         @Override
@@ -471,11 +471,11 @@ public class BasicInfoSchemaTablesServiceImpl
     }
 
     private static class RootPathTable {
-        final UserTable root;
+        final Table root;
         final String path;
-        final UserTable table;
+        final Table table;
 
-        public RootPathTable(UserTable root, String path, UserTable table) {
+        public RootPathTable(Table root, String path, Table table) {
             this.root = root;
             this.path = path;
             this.table = table;
@@ -487,15 +487,15 @@ public class BasicInfoSchemaTablesServiceImpl
         }
     }
 
-    private static class TableIDComparator implements Comparator<UserTable> {
+    private static class TableIDComparator implements Comparator<Table> {
         @Override
-        public int compare(UserTable o1, UserTable o2) {
+        public int compare(Table o1, Table o2) {
             return o1.getTableId().compareTo(o2.getTableId());
         }
     }
     private static final TableIDComparator TABLE_ID_COMPARATOR = new TableIDComparator();
 
-    private static void addBranchToList(List<RootPathTable> list, StringBuilder builder, UserTable root, UserTable branch) {
+    private static void addBranchToList(List<RootPathTable> list, StringBuilder builder, Table root, Table branch) {
         if(builder.length() != 0) {
             builder.append('/');
         }
@@ -505,13 +505,13 @@ public class BasicInfoSchemaTablesServiceImpl
         list.add(new RootPathTable(root, builder.toString(), branch));
 
         // For tables at the same depth, comparing table IDs is currently synonymous with ordinals
-        List<UserTable> children = new ArrayList<>();
+        List<Table> children = new ArrayList<>();
         for(Join join : branch.getChildJoins()) {
             children.add(join.getChild());
         }
         Collections.sort(children, TABLE_ID_COMPARATOR);
 
-        for(UserTable child : children) {
+        for(Table child : children) {
             int saveLen = builder.length();
             addBranchToList(list, builder, root, child);
             builder.setLength(saveLen);
@@ -530,7 +530,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
         @Override
         public long rowCount() {
-            return getDirtyAIS().getUserTables().size();
+            return getDirtyAIS().getTables().size();
         }
 
         private class Scan extends BaseScan {
@@ -544,14 +544,14 @@ public class BasicInfoSchemaTablesServiceImpl
                 // Desired output: groups together, ordered by branch (ordinal), then ordered by depth
                 // Highest level sorting will be by schema.root, which seems as good as any
                 rootPathTables = new ArrayList<>();
-                Collection<UserTable> allTables = new ArrayList<>();
-                for(UserTable table : ais.getUserTables().values()) {
+                Collection<Table> allTables = new ArrayList<>();
+                for(Table table : ais.getTables().values()) {
                     if(isAccessible(session, table.getName())) {
                         allTables.add(table);
                     }
                 }
                 StringBuilder builder = new StringBuilder();
-                for(UserTable table : allTables) {
+                for(Table table : allTables) {
                     if(table.isRoot()) {
                         addBranchToList(rootPathTables, builder, table, table);
                         builder.setLength(0);
@@ -568,7 +568,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 }
                 
                 RootPathTable rpt = it.next();
-                UserTable table = rpt.table;
+                Table table = rpt.table;
                 String constraintName = null;
                 String uniqueSchema = null;
                 String uniqueTable = null;
@@ -605,7 +605,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
         private TableConstraintsIteration newIteration(Session session,
                                                        AkibanInformationSchema ais) {
-            return new TableConstraintsIteration(session, ais.getUserTables().values().iterator());
+            return new TableConstraintsIteration(session, ais.getTables().values().iterator());
         }
 
         @Override
@@ -652,7 +652,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 if(joinColIt != null && joinColIt.hasNext()) {
                     JoinColumn joinColumn = joinColIt.next();
                     colName = joinColumn.getChild().getName();
-                    posInUnique = findPosInIndex(joinColumn.getParent(), joinColumn.getParent().getUserTable().getPrimaryKey().getIndex()).longValue();
+                    posInUnique = findPosInIndex(joinColumn.getParent(), joinColumn.getParent().getTable().getPrimaryKey().getIndex()).longValue();
                 } else if(indexColIt != null && indexColIt.hasNext()) {
                     IndexColumn indexColumn = indexColIt.next();
                     colName = indexColumn.getColumn().getName();
@@ -697,7 +697,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
         private IndexIteration newIteration(Session session,
                                             AkibanInformationSchema ais) {
-            return new IndexIteration(session, ais.getUserTables().values().iterator());
+            return new IndexIteration(session, ais.getTables().values().iterator());
         }
 
         @Override
@@ -762,7 +762,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
         private IndexIteration newIteration(Session session,
                                             AkibanInformationSchema ais) {
-            return new IndexIteration(session, ais.getUserTables().values().iterator());
+            return new IndexIteration(session, ais.getTables().values().iterator());
         }
 
         @Override
@@ -1033,14 +1033,14 @@ public class BasicInfoSchemaTablesServiceImpl
     
     private class TableConstraintsIteration {
         private final Session session;
-        private final Iterator<UserTable> tableIt;
+        private final Iterator<Table> tableIt;
         private Iterator<? extends Index> indexIt;
-        private UserTable curTable;
+        private Table curTable;
         private Index curIndex;
         private String name;
         private String type;
 
-        public TableConstraintsIteration(Session session, Iterator<UserTable> tableIt) {
+        public TableConstraintsIteration(Session session, Iterator<Table> tableIt) {
             this.session = session;
             this.tableIt = tableIt;
         }
@@ -1085,7 +1085,7 @@ public class BasicInfoSchemaTablesServiceImpl
             return type;
         }
 
-        public UserTable getTable() {
+        public Table getTable() {
             return curTable;
         }
 
@@ -1100,14 +1100,14 @@ public class BasicInfoSchemaTablesServiceImpl
 
     private class IndexIteration {
         private final Session session;
-        private final Iterator<UserTable> tableIt;
+        private final Iterator<Table> tableIt;
         Iterator<TableIndex> tableIndexIt;
         Iterator<GroupIndex> groupIndexIt;
         Iterator<FullTextIndex> textIndexIt;
-        UserTable curTable;
+        Table curTable;
 
         public IndexIteration(Session session,
-                              Iterator<UserTable> tableIt) {
+                              Iterator<Table> tableIt) {
             this.session = session;
             this.tableIt = tableIt;
         }
@@ -1138,7 +1138,7 @@ public class BasicInfoSchemaTablesServiceImpl
             return tableIndexIt.next();
         }
 
-        public UserTable getTable() {
+        public Table getTable() {
             return curTable;
         }
     }
@@ -1466,13 +1466,13 @@ public class BasicInfoSchemaTablesServiceImpl
         final int GROUPING_CONSTRAINT_MAX = PATH_MAX;
 
         NewAISBuilder builder = AISBBasedBuilder.create();
-        builder.userTable(SCHEMATA)
+        builder.table(SCHEMATA)
                 .colString("schema_name", IDENT_MAX, false)
                 .colString("schema_owner", IDENT_MAX, true)
                 .colString("default_character_set_name", IDENT_MAX, true)
                 .colString("default_collation_name", IDENT_MAX, true);
         //primary key (schema_name)
-        builder.userTable(TABLES)
+        builder.table(TABLES)
                 .colString("table_schema", IDENT_MAX, false)
                 .colString("table_name", IDENT_MAX, false)
                 .colString("table_type", IDENT_MAX, false)
@@ -1487,7 +1487,7 @@ public class BasicInfoSchemaTablesServiceImpl
         //foreign_key (schema_name) references SCHEMATA (schema_name)
         //foreign key (character_set_schema, character_set_name) references CHARACTER_SETS
         //foreign key (collations_schema, collation_name) references COLLATIONS
-        builder.userTable(COLUMNS)
+        builder.table(COLUMNS)
                 .colString("schema_name", IDENT_MAX, false)
                 .colString("table_name", IDENT_MAX, false)
                 .colString("column_name", IDENT_MAX, false)
@@ -1516,14 +1516,14 @@ public class BasicInfoSchemaTablesServiceImpl
         //foreign key (type) references TYPES (type_name)
         //foreign key (character_set_schema, character_set_name) references CHARACTER_SETS
         //foreign key (collation_schema, collation_name) references COLLATIONS
-        builder.userTable(TABLE_CONSTRAINTS)
+        builder.table(TABLE_CONSTRAINTS)
                 .colString("schema_name", IDENT_MAX, false)
                 .colString("table_name", IDENT_MAX, false)
                 .colString("constraint_name", GROUPING_CONSTRAINT_MAX, false)
                 .colString("constraint_type", DESCRIPTOR_MAX, false);
         //primary key (schema_name, table_name, constraint_name)
         //foreign key (schema_name, table_name) references TABLES
-        builder.userTable(REFERENTIAL_CONSTRAINTS)
+        builder.table(REFERENTIAL_CONSTRAINTS)
             .colString("constraint_schema_name", IDENT_MAX, false)
             .colString("constraint_table_name", IDENT_MAX, false)
             .colString("constraint_name", IDENT_MAX, false)
@@ -1534,7 +1534,7 @@ public class BasicInfoSchemaTablesServiceImpl
             .colString("delete_rule", DESCRIPTOR_MAX, false);
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
-        builder.userTable(GROUPING_CONSTRAINTS) 
+        builder.table(GROUPING_CONSTRAINTS) 
                 .colString("root_schema_name", IDENT_MAX, false)
                 .colString("root_table_name", IDENT_MAX, false)
                 .colString("constraint_schema_name", IDENT_MAX, false)
@@ -1547,7 +1547,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("unique_constraint_name", GROUPING_CONSTRAINT_MAX, true);
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
-        builder.userTable(KEY_COLUMN_USAGE)
+        builder.table(KEY_COLUMN_USAGE)
             .colString("schema_name", IDENT_MAX, false)
             .colString("table_name", IDENT_MAX, false)
             .colString("constraint_name", GROUPING_CONSTRAINT_MAX, false)
@@ -1556,7 +1556,7 @@ public class BasicInfoSchemaTablesServiceImpl
             .colBigInt("position_in_unique_constraint", true);
         //primary key  (schema_name, table_name, constraint_name, column_name),
         //foreign key (schema_name, table_name, constraint_name) references TABLE_CONSTRAINTS
-        builder.userTable(INDEXES)
+        builder.table(INDEXES)
                 .colString("schema_name", IDENT_MAX, false)
                 .colString("table_name", IDENT_MAX, false)
                 .colString("index_name", IDENT_MAX, false)
@@ -1571,7 +1571,7 @@ public class BasicInfoSchemaTablesServiceImpl
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
         //foreign key (schema_name, table_name) references TABLES (schema_name, table_name)
-        builder.userTable(INDEX_COLUMNS)
+        builder.table(INDEX_COLUMNS)
                 .colString("schema_name", IDENT_MAX, false)
                 .colString("index_name", IDENT_MAX, false)
                 .colString("index_table_name", IDENT_MAX, false)
@@ -1586,7 +1586,7 @@ public class BasicInfoSchemaTablesServiceImpl
         //    references INDEXES (schema_name, table_name, index_name)
         //foreign key (schema_name, column_table_name, column_name)
         //    references COLUMNS (schema_name, table_name, column_name)
-        builder.userTable(SEQUENCES)
+        builder.table(SEQUENCES)
                 .colString("sequence_schema", IDENT_MAX, false)
                 .colString("sequence_name", IDENT_MAX, false)
                 .colString("tree_name", IDENT_MAX, false)
@@ -1596,7 +1596,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colBigInt("maximum_value", false)
                 .colString("cycle_option", YES_NO_MAX, false);
                 
-        builder.userTable(VIEWS)
+        builder.table(VIEWS)
                 .colString("schema_name", IDENT_MAX, false)
                 .colString("table_name", IDENT_MAX, false)
                 .colText("view_definition", false)
@@ -1604,7 +1604,7 @@ public class BasicInfoSchemaTablesServiceImpl
         //primary key(schema_name, table_name)
         //foreign key(schema_name, table_name) references TABLES (schema_name, table_name)
 
-        builder.userTable(VIEW_TABLE_USAGE)
+        builder.table(VIEW_TABLE_USAGE)
                 .colString("view_schema", IDENT_MAX, false)
                 .colString("view_name", IDENT_MAX, false)
                 .colString("table_schema", IDENT_MAX, false)
@@ -1612,7 +1612,7 @@ public class BasicInfoSchemaTablesServiceImpl
         //foreign key(view_schema, view_name) references VIEWS (schema_name, table_name)
         //foreign key(table_schema, table_name) references TABLES (schema_name, table_name)
 
-        builder.userTable(VIEW_COLUMN_USAGE)
+        builder.table(VIEW_COLUMN_USAGE)
                 .colString("view_schema", IDENT_MAX, false)
                 .colString("view_name", IDENT_MAX, false)
                 .colString("table_schema", IDENT_MAX, false)
@@ -1621,7 +1621,7 @@ public class BasicInfoSchemaTablesServiceImpl
         //foreign key(view_schema, view_name) references VIEWS (schema_name, table_name)
         //foreign key(table_schema, table_name) references TABLES (schema_name, table_name)
 
-        builder.userTable(ROUTINES)
+        builder.table(ROUTINES)
                 .colString("routine_schema", IDENT_MAX, false)
                 .colString("routine_name", IDENT_MAX, false)
                 .colString("routine_type", IDENT_MAX, false)
@@ -1635,7 +1635,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colBigInt("max_dynamic_result_sets", false);
         //primary key(routine_schema, routine_name)
 
-        builder.userTable(PARAMETERS)
+        builder.table(PARAMETERS)
                 .colString("routine_schema", IDENT_MAX, false)
                 .colString("routine_name", IDENT_MAX, false)
                 .colString("parameter_name", IDENT_MAX, true)
@@ -1650,13 +1650,13 @@ public class BasicInfoSchemaTablesServiceImpl
         //foreign key(routine_schema, routine_name) references ROUTINES (routine_schema, routine_name)
         //foreign key (type) references TYPES (type_name)
 
-        builder.userTable(JARS)
+        builder.table(JARS)
                 .colString("jar_schema", IDENT_MAX, false)
                 .colString("jar_name", IDENT_MAX, false)
                 .colString("java_path", PATH_MAX, true);
         //primary key(jar_schema, jar_name)
 
-        builder.userTable(ROUTINE_JAR_USAGE)
+        builder.table(ROUTINE_JAR_USAGE)
                 .colString("routine_schema", IDENT_MAX, false)
                 .colString("routine_name", IDENT_MAX, false)
                 .colString("jar_schema", IDENT_MAX, false)
@@ -1664,7 +1664,7 @@ public class BasicInfoSchemaTablesServiceImpl
         //foreign key(routine_schema, routine_name) references ROUTINES (routine_schema, routine_name)
         //foreign key(jar_schema, jar_name) references JARS (jar_schema, jar_name)
 
-        builder.userTable(SCRIPT_ENGINES)
+        builder.table(SCRIPT_ENGINES)
                 .colLong("engine_id", false)
                 .colString("engine_name", IDENT_MAX, false)
                 .colString("engine_version", IDENT_MAX, false)
@@ -1672,7 +1672,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("language_version", IDENT_MAX, false);
         //primary key(engine_id)
 
-        builder.userTable(SCRIPT_ENGINE_NAMES)
+        builder.table(SCRIPT_ENGINE_NAMES)
                 .colString("name", IDENT_MAX, false)
                 .colString("engine_id", IDENT_MAX, false);
         //foreign key (engine_id) references SCRIPT_ENGINES (engine_id)

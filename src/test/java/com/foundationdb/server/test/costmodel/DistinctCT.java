@@ -67,7 +67,7 @@ public class DistinctCT extends CostModelBase
             "c5 int");
         group = group(t);
         schema = new Schema(ais());
-        tRowType = schema.userTableRowType(userTable(t));
+        tRowType = schema.tableRowType(table(t));
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();

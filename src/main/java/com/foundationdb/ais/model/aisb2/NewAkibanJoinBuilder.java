@@ -17,7 +17,7 @@
 
 package com.foundationdb.ais.model.aisb2;
 
-public interface NewAkibanJoinBuilder extends NewUserTableBuilder {
+public interface NewAkibanJoinBuilder extends NewTableBuilder {
     /**
      * Adds a child -&gt; parent column pair to this join.
      *

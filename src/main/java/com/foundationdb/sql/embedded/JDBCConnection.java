@@ -34,7 +34,7 @@ import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.parser.SQLParserException;
 import com.foundationdb.sql.parser.StatementNode;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.server.api.DDLFunctions;
@@ -99,7 +99,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
     }
     
     @Override
-    public StoreAdapter getStore(final UserTable table) {
+    public StoreAdapter getStore(final Table table) {
         if (table.hasMemoryTableFactory()) {
             return adapters.get(StoreAdapter.AdapterType.MEMORY_ADAPTER);
         }

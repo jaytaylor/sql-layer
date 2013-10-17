@@ -25,8 +25,8 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.SQLJJar;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.ais.util.ChangedTableDescription;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
@@ -64,7 +64,7 @@ public interface SchemaManager {
      *
      * @return Name of the table that was created.
      */
-    TableName registerStoredInformationSchemaTable(UserTable newTable, int version);
+    TableName registerStoredInformationSchemaTable(Table newTable, int version);
 
     /**
      * Create a new table in the {@link TableName#INFORMATION_SCHEMA}
@@ -76,7 +76,7 @@ public interface SchemaManager {
      *
      * @return Name of the table that was created.
      */
-    TableName registerMemoryInformationSchemaTable(UserTable newTable, MemoryTableFactory factory);
+    TableName registerMemoryInformationSchemaTable(Table newTable, MemoryTableFactory factory);
 
     /**
      * Delete the definition of a table in the {@link TableName#INFORMATION_SCHEMA}
@@ -92,7 +92,7 @@ public interface SchemaManager {
      * @param newTable New table to add
      * @return The name of the table that was created.
      */
-    TableName createTableDefinition(Session session, UserTable newTable);
+    TableName createTableDefinition(Session session, Table newTable);
 
     /**
      * Rename an existing table.

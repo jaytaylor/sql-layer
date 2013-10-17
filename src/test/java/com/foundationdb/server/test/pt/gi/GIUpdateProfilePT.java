@@ -20,8 +20,8 @@ package com.foundationdb.server.test.pt.gi;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryBindings;
@@ -79,10 +79,10 @@ public class GIUpdateProfilePT extends PTBase
         createGroupIndex(groupName, "name_salesman", "customer.name, order.salesman");
         createGroupIndex(groupName, "name_address", "customer.name, address.address");
         schema = new Schema(ais());
-        customerRowType = schema.userTableRowType(userTable(customer));
-        orderRowType = schema.userTableRowType(userTable(order));
-        itemRowType = schema.userTableRowType(userTable(item));
-        addressRowType = schema.userTableRowType(userTable(address));
+        customerRowType = schema.tableRowType(table(customer));
+        orderRowType = schema.tableRowType(table(order));
+        itemRowType = schema.tableRowType(table(item));
+        addressRowType = schema.tableRowType(table(address));
         customerNameIndexRowType = indexType(customer, "name");
         orderSalesmanIndexRowType = indexType(order, "salesman");
         itemOidIndexRowType = indexType(item, "oid");
@@ -106,7 +106,7 @@ public class GIUpdateProfilePT extends PTBase
             Cursor cursor = cursor(scan, queryContext, queryBindings);
             cursor.openTopLevel();
             Row row;
-            RowDef customerRowDef = customerRowType.userTable().rowDef();
+            RowDef customerRowDef = customerRowType.table().rowDef();
             while ((row = cursor.next()) != null) {
                 NiceRow oldRow = new NiceRow(customer, customerRowDef);
                 NiceRow newRow  = new NiceRow(customer, customerRowDef);
@@ -141,28 +141,27 @@ public class GIUpdateProfilePT extends PTBase
         }
     }
 
-    private Group group(int userTableId)
+    private Group group(int tableId)
     {
-        return getRowDef(userTableId).table().getGroup();
+        return getRowDef(tableId).table().getGroup();
     }
 
-    private UserTable userTable(int userTableId)
+    private Table table(int tableId)
     {
-        RowDef userTableRowDef = getRowDef(userTableId);
-        return userTableRowDef.userTable();
+        return getRowDef(tableId).table();
     }
 
-    private IndexRowType indexType(int userTableId, String... searchIndexColumnNamesArray)
+    private IndexRowType indexType(int tableId, String... searchIndexColumnNamesArray)
     {
-        UserTable userTable = userTable(userTableId);
-        for (Index index : userTable.getIndexesIncludingInternal()) {
+        Table table = table(tableId);
+        for (Index index : table.getIndexesIncludingInternal()) {
             List<String> indexColumnNames = new ArrayList<>();
             for (IndexColumn indexColumn : index.getKeyColumns()) {
                 indexColumnNames.add(indexColumn.getColumn().getName());
             }
             List<String> searchIndexColumnNames = Arrays.asList(searchIndexColumnNamesArray);
             if (searchIndexColumnNames.equals(indexColumnNames)) {
-                return schema.userTableRowType(userTable(userTableId)).indexRowType(index);
+                return schema.tableRowType(table(tableId)).indexRowType(index);
             }
         }
         return null;

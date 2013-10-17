@@ -20,7 +20,7 @@ package com.foundationdb.ais.model.validation;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.error.IndexColumnIsPartialException;
 
 /**
@@ -30,7 +30,7 @@ import com.foundationdb.server.error.IndexColumnIsPartialException;
 public class IndexColumnIsNotPartial implements AISValidation {
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        for(UserTable table : ais.getUserTables().values()) {
+        for(Table table : ais.getTables().values()) {
             for(Index index : table.getIndexesIncludingInternal()) {
                 for(IndexColumn indexColumn : index.getKeyColumns()) {
                     if(indexColumn.getIndexedLength() != null) {

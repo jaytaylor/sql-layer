@@ -234,11 +234,6 @@ public class Column implements ColumnContainer
         return (Table) table;
     }
 
-    public UserTable getUserTable()
-    {
-        return (UserTable) getTable();
-    }
-
     /**
      * The initial auto-increment value used in the MySQL 
      * generated table identity columns. 

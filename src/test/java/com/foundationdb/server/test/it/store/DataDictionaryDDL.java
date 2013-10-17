@@ -37,10 +37,10 @@ public class DataDictionaryDDL {
         NewAISBuilder builder = CAOIBuilderFiller.createAndFillBuilder(schema);
         AkibanInformationSchema tempAIS = builder.ais();
 
-        ddl.createTable(session, tempAIS.getUserTable(schema, CUSTOMER_TABLE));
-        ddl.createTable(session, tempAIS.getUserTable(schema, ADDRESS_TABLE));
-        ddl.createTable(session, tempAIS.getUserTable(schema, ORDER_TABLE));
-        ddl.createTable(session, tempAIS.getUserTable(schema, ITEM_TABLE));
-        ddl.createTable(session, tempAIS.getUserTable(schema, COMPONENT_TABLE));
+        ddl.createTable(session, tempAIS.getTable(schema, CUSTOMER_TABLE));
+        ddl.createTable(session, tempAIS.getTable(schema, ADDRESS_TABLE));
+        ddl.createTable(session, tempAIS.getTable(schema, ORDER_TABLE));
+        ddl.createTable(session, tempAIS.getTable(schema, ITEM_TABLE));
+        ddl.createTable(session, tempAIS.getTable(schema, COMPONENT_TABLE));
     }
 }

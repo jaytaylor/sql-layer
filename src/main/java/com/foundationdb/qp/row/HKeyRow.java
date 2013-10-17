@@ -17,7 +17,7 @@
 
 package com.foundationdb.qp.row;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.rowtype.HKeyRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.util.HKeyCache;
@@ -53,7 +53,7 @@ public class HKeyRow extends AbstractRow
     }
 
     @Override
-    public HKey ancestorHKey(UserTable table)
+    public HKey ancestorHKey(Table table)
     {
         // TODO: This does the wrong thing for hkeys derived from group index rows!
         // TODO: See bug 997746.

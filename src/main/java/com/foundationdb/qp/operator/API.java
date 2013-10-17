@@ -18,14 +18,14 @@
 package com.foundationdb.qp.operator;
 
 import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.exec.UpdatePlannable;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.types.TAggregator;
 import com.foundationdb.server.types.TComparison;
@@ -138,8 +138,8 @@ public class API
     public static Operator groupScan_Default(Group group,
                                              int hKeyBindingPosition,
                                              boolean deep,
-                                             UserTable hKeyType,
-                                             UserTable shortenUntil)
+                                             Table hKeyType,
+                                             Table shortenUntil)
     {
         return new GroupScan_Default(
                 new GroupScan_Default.PositionalGroupCursorCreator(group, hKeyBindingPosition, deep, hKeyType, shortenUntil));
@@ -157,18 +157,18 @@ public class API
     public static Operator branchLookup_Default(Operator inputOperator,
                                                 Group group,
                                                 RowType inputRowType,
-                                                UserTableRowType outputRowType,
+                                                TableRowType outputRowType,
                                                 InputPreservationOption flag)
     {
         return groupLookup_Default(inputOperator, group, inputRowType, branchOutputRowTypes(outputRowType), flag, 1);
     }
 
-    protected static List<UserTableRowType> branchOutputRowTypes(UserTableRowType outputRowType) {
-        List<UserTableRowType> outputRowTypes = new ArrayList<>();
+    protected static List<TableRowType> branchOutputRowTypes(TableRowType outputRowType) {
+        List<TableRowType> outputRowTypes = new ArrayList<>();
         outputRowTypes.add(outputRowType);
         Schema schema = (Schema)outputRowType.schema();
         for (RowType rowType : Schema.descendentTypes(outputRowType, schema.userTableTypes())) {
-            outputRowTypes.add((UserTableRowType)rowType);
+            outputRowTypes.add((TableRowType)rowType);
         }
         return outputRowTypes;
     }
@@ -176,7 +176,7 @@ public class API
     /** deprecated */
     public static Operator branchLookup_Nested(Group group,
                                                RowType inputRowType,
-                                               UserTableRowType outputRowType,
+                                               TableRowType outputRowType,
                                                InputPreservationOption flag,
                                                int inputBindingPosition)
     {
@@ -192,8 +192,8 @@ public class API
 
     public static Operator branchLookup_Nested(Group group,
                                                RowType inputRowType,
-                                               UserTableRowType ancestorRowType,
-                                               UserTableRowType outputRowType,
+                                               TableRowType ancestorRowType,
+                                               TableRowType outputRowType,
                                                InputPreservationOption flag,
                                                int inputBindingPosition)
     {
@@ -210,8 +210,8 @@ public class API
     public static Operator branchLookup_Nested(Group group,
                                                RowType inputRowType,
                                                RowType sourceRowType,
-                                               UserTableRowType ancestorRowType,
-                                               Collection<UserTableRowType> outputRowTypes,
+                                               TableRowType ancestorRowType,
+                                               Collection<TableRowType> outputRowTypes,
                                                InputPreservationOption flag,
                                                int inputBindingPosition,
                                                int lookaheadQuantum)
@@ -247,7 +247,7 @@ public class API
     public static Operator ancestorLookup_Default(Operator inputOperator,
                                                   Group group,
                                                   RowType rowType,
-                                                  Collection<UserTableRowType> ancestorTypes,
+                                                  Collection<TableRowType> ancestorTypes,
                                                   InputPreservationOption flag)
     {
         return groupLookup_Default(inputOperator, group, rowType, ancestorTypes, flag, 1);
@@ -256,7 +256,7 @@ public class API
     public static Operator groupLookup_Default(Operator inputOperator,
                                                Group group,
                                                RowType rowType,
-                                               Collection<UserTableRowType> ancestorTypes,
+                                               Collection<TableRowType> ancestorTypes,
                                                InputPreservationOption flag,
                                                int lookaheadQuantum)
     {
@@ -265,7 +265,7 @@ public class API
 
     public static Operator ancestorLookup_Nested(Group group,
                                                  RowType rowType,
-                                                 Collection<UserTableRowType> ancestorTypes,
+                                                 Collection<TableRowType> ancestorTypes,
                                                  int hKeyBindingPosition,
                                                  int lookaheadQuantum)
     {
@@ -333,7 +333,7 @@ public class API
     public static Operator indexScan_Default(IndexRowType indexType,
                                              boolean reverse,
                                              IndexKeyRange indexKeyRange,
-                                             UserTableRowType innerJoinUntilRowType)
+                                             TableRowType innerJoinUntilRowType)
     {
         Ordering ordering = new Ordering();
         int fields = indexType.nFields();
@@ -376,13 +376,13 @@ public class API
     public static Operator indexScan_Default(IndexRowType indexType,
                                              IndexKeyRange indexKeyRange,
                                              Ordering ordering,
-                                             UserTableRowType innerJoinUntilRowType)
+                                             TableRowType innerJoinUntilRowType)
     {
         return indexScan_Default(indexType,
                                  indexKeyRange,
                                  ordering,
                                  IndexScanSelector.leftJoinAfter(indexType.index(),
-                                                                 innerJoinUntilRowType.userTable()));
+                                                                 innerJoinUntilRowType.table()));
     }
 
     public static Operator indexScan_Default(IndexRowType indexType,
@@ -403,7 +403,7 @@ public class API
             ordering.append(new TPreparedField(indexType.typeInstanceAt(f), f), true);
         }
         IndexScanSelector indexScanSelector = IndexScanSelector.leftJoinAfter(indexType.index(),
-                                                                              indexType.tableType().userTable());
+                                                                              indexType.tableType().table());
         return indexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector, lookaheadQuantum);
     }
 
@@ -455,7 +455,7 @@ public class API
     public static Operator product_NestedLoops(Operator outerInput,
                                                        Operator innerInput,
                                                        RowType outerType,
-                                                       UserTableRowType branchType,
+                                                       TableRowType branchType,
                                                        RowType innerType,
                                                        int inputBindingPosition)
     {
@@ -467,7 +467,7 @@ public class API
 
     public static Operator product_Nested(Operator input,
                                           RowType outerType,
-                                          UserTableRowType branchType,
+                                          TableRowType branchType,
                                           RowType inputType,
                                           int bindingPosition)
     {
@@ -626,7 +626,7 @@ public class API
                                              RowType leftRowType, RowType rightRowType,
                                              int leftOrderingFields, int rightOrderingFields,
                                              int comparisonFields,
-                                             UserTableRowType outputHKeyTableRowType)
+                                             TableRowType outputHKeyTableRowType)
     {
         return new HKeyUnion_Ordered(leftInput, rightInput,
                                      leftRowType, rightRowType,

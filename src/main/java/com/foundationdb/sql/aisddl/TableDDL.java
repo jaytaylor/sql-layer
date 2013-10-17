@@ -37,7 +37,6 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.Type;
 import com.foundationdb.ais.model.Types;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.error.*;
@@ -83,7 +82,7 @@ public class TableDDL
 
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
         
-        if (ais.getUserTable(tableName) == null) {
+        if (ais.getTable(tableName) == null) {
             if (existenceCheck == ExistenceCheck.IF_EXISTS)
             {
                 if (context != null)
@@ -106,7 +105,7 @@ public class TableDDL
         ExistenceCheck existenceCheck = dropGroup.getExistenceCheck();
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
         
-        if (ais.getUserTable(tableName) == null) {
+        if (ais.getTable(tableName) == null) {
             if (existenceCheck == ExistenceCheck.IF_EXISTS) {
                 if (context != null) {
                     context.warnClient(new NoSuchTableException (tableName));
@@ -115,12 +114,12 @@ public class TableDDL
             }
             throw new NoSuchTableException (tableName);
         } 
-        if (!ais.getUserTable(tableName).isRoot()) {
+        if (!ais.getTable(tableName).isRoot()) {
             throw new DropGroupNotRootException (tableName);
         }
         
-        final Group root = ais.getUserTable(tableName).getGroup();
-        for (UserTable table : ais.getUserTables().values()) {
+        final Group root = ais.getTable(tableName).getGroup();
+        for (Table table : ais.getTables().values()) {
             if (table.getGroup() == root) {
                 ViewDDL.checkDropTable(ddlFunctions, session, table.getName());
             }
@@ -152,7 +151,7 @@ public class TableDDL
 
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
 
-        if (ais.getUserTable(schemaName, tableName) != null)
+        if (ais.getTable(schemaName, tableName) != null)
             switch(condition)
             {
                 case IF_NOT_EXISTS:
@@ -167,8 +166,8 @@ public class TableDDL
             }
 
         AISBuilder builder = new AISBuilder();
-        builder.userTable(schemaName, tableName);
-        UserTable table = builder.akibanInformationSchema().getUserTable(schemaName, tableName);
+        builder.table(schemaName, tableName);
+        Table table = builder.akibanInformationSchema().getTable(schemaName, tableName);
         IndexNameGenerator namer = DefaultIndexNameGenerator.forTable(table);
 
         int colpos = 0;
@@ -314,7 +313,7 @@ public class TableDDL
     public static String addIndex(IndexNameGenerator namer, AISBuilder builder, ConstraintDefinitionNode cdn,
                                   String schemaName, String tableName, QueryContext context)  {
         // We don't (yet) have a constraint representation so override any provided
-        UserTable table = builder.akibanInformationSchema().getUserTable(schemaName, tableName);
+        Table table = builder.akibanInformationSchema().getTable(schemaName, tableName);
         final String constraint;
         String indexName = cdn.getName();
         int colPos = 0;
@@ -364,12 +363,12 @@ public class TableDDL
 
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         // Check parent table exists
-        UserTable parentTable = ais.getUserTable(parentName);
+        Table parentTable = ais.getTable(parentName);
         if (parentTable == null) {
             throw new JoinToUnknownTableException(new TableName(schemaName, tableName), parentName);
         }
         // Check child table exists
-        UserTable childTable = ais.getUserTable(schemaName, tableName);
+        Table childTable = ais.getTable(schemaName, tableName);
         if (childTable == null) {
             throw new NoSuchTableException(schemaName, tableName);
         }
@@ -429,12 +428,12 @@ public class TableDDL
             throw new JoinToSelfException(schemaName, tableName);
         }
         // Check parent table exists
-        UserTable parentTable = ais.getUserTable(parentName);
+        Table parentTable = ais.getTable(parentName);
         if (parentTable == null) {
             throw new JoinToUnknownTableException(new TableName(schemaName, tableName), parentName);
         }
 
-        builder.userTable(parentName.getSchemaName(), parentName.getTableName());
+        builder.table(parentName.getSchemaName(), parentName.getTableName());
         
         builder.index(parentName.getSchemaName(), parentName.getTableName(), Index.PRIMARY_KEY_CONSTRAINT, true,
                       Index.PRIMARY_KEY_CONSTRAINT);

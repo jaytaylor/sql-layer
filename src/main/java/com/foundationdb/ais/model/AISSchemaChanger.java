@@ -92,8 +92,8 @@ public class AISSchemaChanger implements Visitor
     }
 
     @Override
-    public void visitUserTable(UserTable userTable)
+    public void visitTable(Table table)
     {
-        updateTableName( userTable );
+        updateTableName(table);
     }
 }

@@ -627,19 +627,19 @@ public class ServerSchemaTablesServiceImpl
     static AkibanInformationSchema createTablesToRegister() {
         NewAISBuilder builder = AISBBasedBuilder.create();
         
-        builder.userTable(SERVER_INSTANCE_SUMMARY)
+        builder.table(SERVER_INSTANCE_SUMMARY)
             .colString("server_name", DESCRIPTOR_MAX, false)
             .colString("server_version", DESCRIPTOR_MAX, false)
             .colString("server_host", IDENT_MAX, false)
             .colString("server_store", IDENT_MAX, false);
         
-        builder.userTable(SERVER_SERVERS)
+        builder.table(SERVER_SERVERS)
             .colString("server_type", IDENT_MAX, false)
             .colBigInt("local_port", true)
             .colTimestamp("start_time", false)
             .colBigInt("session_count", true);
         
-        builder.userTable(SERVER_SESSIONS)
+        builder.table(SERVER_SESSIONS)
             .colBigInt("session_id", false)
             .colBigInt("caller_session_id", true)
             .colTimestamp("start_time", false)
@@ -653,42 +653,42 @@ public class ServerSchemaTablesServiceImpl
             .colBigInt("query_row_count", true)
             .colString("prepared_name", IDENT_MAX, true);
         
-        builder.userTable(ERROR_CODES)
+        builder.table(ERROR_CODES)
             .colString("code", 5, false)
             .colString("name", DESCRIPTOR_MAX, false)
             .colString("message", IDENT_MAX, false)
             .colString("description", PATH_MAX, true);
 
-        builder.userTable(SERVER_PARAMETERS)
+        builder.table(SERVER_PARAMETERS)
             .colString("parameter_name", IDENT_MAX, false)
             .colString("current_value", PATH_MAX, false);
 
-        builder.userTable(SERVER_MEMORY_POOLS)
+        builder.table(SERVER_MEMORY_POOLS)
             .colString("name", IDENT_MAX, false)
             .colString("type", DESCRIPTOR_MAX, false)
             .colBigInt("used_bytes", false)
             .colBigInt("max_bytes", false)
             .colBigInt("peak_bytes", false);
 
-        builder.userTable(SERVER_GARBAGE_COLLECTORS)
+        builder.table(SERVER_GARBAGE_COLLECTORS)
             .colString("name", IDENT_MAX, false)
             .colBigInt("total_count", false)
             .colBigInt("total_milliseconds", false);
 
-        builder.userTable(SERVER_TAPS)
+        builder.table(SERVER_TAPS)
             .colString("tap_name", IDENT_MAX, false)
             .colBigInt("in_count", false)
             .colBigInt("out_count", false)
             .colBigInt("total_nanoseconds", false);
 
-        builder.userTable(SERVER_PREPARED_STATEMENTS)
+        builder.table(SERVER_PREPARED_STATEMENTS)
             .colBigInt("session_id", false)
             .colString("prepared_name", IDENT_MAX, true)
             .colString("statement", PATH_MAX, true)
             .colTimestamp("prepare_time", true)
             .colBigInt("estimated_row_count", true);
 
-        builder.userTable(SERVER_CURSORS)
+        builder.table(SERVER_CURSORS)
             .colBigInt("session_id", false)
             .colString("cursor_name", IDENT_MAX, true)
             .colString("statement", PATH_MAX, true)
@@ -696,7 +696,7 @@ public class ServerSchemaTablesServiceImpl
             .colTimestamp("creation_time", true)
             .colBigInt("row_count", true);
 
-        builder.userTable(SERVER_USERS)
+        builder.table(SERVER_USERS)
             .colString("user_name", IDENT_MAX, false)
             .colBigInt("statement_count", false);
             

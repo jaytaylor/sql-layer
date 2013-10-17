@@ -19,7 +19,7 @@ package com.foundationdb.server.test.it.bugs.bug720768;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
@@ -43,16 +43,16 @@ public class GroupNameCollisionIT extends ITBase {
         }
 
         AkibanInformationSchema ais = ddl().getAIS(session());
-        final Group group1 = ais.getUserTable("s1", "t").getGroup();
-        final Group group2 = ais.getUserTable("s2", "t").getGroup();
+        final Group group1 = ais.getTable("s1", "t").getGroup();
+        final Group group2 = ais.getTable("s2", "t").getGroup();
         if (group1.getName().equals(group2.getName())) {
             fail("same group names: " + group1 + " and " + group2);
         }
 
-        UserTable s1T = ais.getUserTable("s1", "t");
-        UserTable s1C = ais.getUserTable("s1", "c");
-        UserTable s2T = ais.getUserTable("s2", "t");
-        UserTable s2C = ais.getUserTable("s2", "c");
+        Table s1T = ais.getTable("s1", "t");
+        Table s1C = ais.getTable("s1", "c");
+        Table s2T = ais.getTable("s2", "t");
+        Table s2C = ais.getTable("s2", "c");
 
         assertEquals("s1.t root", s1T, group1.getRoot());
         assertEquals("s1.c parent", s1T, s1C.getParentJoin().getParent());

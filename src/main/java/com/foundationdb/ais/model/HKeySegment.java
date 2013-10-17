@@ -41,7 +41,7 @@ public class HKeySegment
         return buffer.toString();
     }
 
-    public HKeySegment(HKey hKey, UserTable table)
+    public HKeySegment(HKey hKey, Table table)
     {
         this.hKey = hKey;
         this.table = table;
@@ -61,7 +61,7 @@ public class HKeySegment
         return hKey;
     }
 
-    public UserTable table()
+    public Table table()
     {
         return table;
     }
@@ -85,7 +85,7 @@ public class HKeySegment
     }
 
     private final HKey hKey;
-    private final UserTable table;
+    private final Table table;
     private final List<HKeyColumn> columns = new ArrayList<>();
     private final int positionInHKey;
 }

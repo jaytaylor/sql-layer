@@ -31,7 +31,7 @@ public class IndexColumnIsNotPartialTest {
 
     private static AkibanInformationSchema createAIS(long fullLen, Integer indexedLength) {
         AISBuilder builder = new AISBuilder();
-        builder.userTable(SCHEMA, TABLE);
+        builder.table(SCHEMA, TABLE);
         builder.column(SCHEMA, TABLE, "v", 0, "VARCHAR", fullLen, null, false, false, null, null);
         builder.index(SCHEMA, TABLE, "v", false, Index.KEY_CONSTRAINT);
         builder.indexColumn(SCHEMA, TABLE, "v", "v", 0, true, indexedLength);

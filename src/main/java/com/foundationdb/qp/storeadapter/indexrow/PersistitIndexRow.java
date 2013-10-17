@@ -18,7 +18,7 @@
 package com.foundationdb.qp.storeadapter.indexrow;
 
 import com.foundationdb.ais.model.IndexToHKey;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.row.HKey;
@@ -106,7 +106,7 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
         this.keyState = adapter.createKey();
         resetForWrite(indexRowType.index(), keyState);
         this.indexRowType = indexRowType;
-        this.leafmostTable = (UserTable) index.leafMostTable();
+        this.leafmostTable = index.leafMostTable();
         this.hKeyCache = new HKeyCache<>(adapter);
 
         this.tInstances = index.tInstances();
@@ -127,7 +127,7 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     // Object state
 
     protected final HKeyCache<PersistitHKey> hKeyCache;
-    protected final UserTable leafmostTable;
+    protected final Table leafmostTable;
     private final Key keyState;
     private final IndexRowType indexRowType;
     private final TInstance[] tInstances;

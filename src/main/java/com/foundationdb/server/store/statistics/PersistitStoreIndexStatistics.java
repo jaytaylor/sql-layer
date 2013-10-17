@@ -124,7 +124,7 @@ public class PersistitStoreIndexStatistics extends AbstractStoreIndexStatistics<
 
         Exchange exchange = getStore().getExchange(session, indexStatisticsRowDef);
         exchange.clear()
-            .append(indexStatisticsRowDef.userTable().getOrdinal())
+            .append(indexStatisticsRowDef.table().getOrdinal())
             .append((long)indexRowDef.getRowDefId())
             .append((long)index.getIndexId());
         if (!exchange.fetch().getValue().isDefined()) {

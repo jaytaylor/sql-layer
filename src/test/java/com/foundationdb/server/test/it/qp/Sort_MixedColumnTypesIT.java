@@ -18,7 +18,7 @@
 package com.foundationdb.server.test.it.qp;
 
 import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.ExpressionGenerator;
@@ -29,7 +29,7 @@ import com.foundationdb.qp.operator.RowsBuilder;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
@@ -67,8 +67,8 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
         );
 
         schema = new Schema(ddl().getAIS(session()));
-        UserTable cTable = getUserTable(customer);
-        customerRowType = schema.userTableRowType(cTable);
+        Table cTable = getTable(customer);
+        customerRowType = schema.tableRowType(cTable);
         customerGroup = cTable.getGroup();
 
     }
@@ -134,5 +134,5 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
     private Schema schema;
     private int customer;
     private Group customerGroup;
-    private UserTableRowType customerRowType;
+    private TableRowType customerRowType;
 }

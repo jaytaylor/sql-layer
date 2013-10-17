@@ -21,8 +21,8 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.NopVisitor;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.entity.model.Entity;
@@ -87,11 +87,11 @@ public class DDLBasedSpaceModifier extends AbstractSpaceModificationHandler {
     @Override
     public void addEntity(Entity newEntity) {
         if (newEntity instanceof EntityCollection) {
-            UserTable table = newAIS.getUserTable(schemaName, newEntity.getName());
+            Table table = newAIS.getTable(schemaName, newEntity.getName());
             createTableRecursively(table);
         }
         else {
-            UserTable newRoot = newAIS.getUserTable(schemaName, newEntity.getName());
+            Table newRoot = newAIS.getTable(schemaName, newEntity.getName());
             createTableRecursively(newRoot);
             if(!newRoot.getGroup().getIndexes().isEmpty()) {
                 ddlFunctions.createIndexes(session, newRoot.getGroup().getIndexes());
@@ -102,7 +102,7 @@ public class DDLBasedSpaceModifier extends AbstractSpaceModificationHandler {
     @Override
     public void dropEntity(Entity dropped) {
         if (dropped instanceof EntityCollection) {
-            UserTable table = ddlFunctions.getUserTable(session, new TableName(schemaName, dropped.getName()));
+            Table table = ddlFunctions.getTable(session, new TableName(schemaName, dropped.getName()));
             dropTableRecursively(table);
         }
         else {
@@ -169,7 +169,7 @@ public class DDLBasedSpaceModifier extends AbstractSpaceModificationHandler {
     @Override
     public void addIndex(String name) {
         String entityName = newEntity.getName();
-        UserTable rootTable = newAIS.getUserTable(schemaName, entityName);
+        Table rootTable = newAIS.getTable(schemaName, entityName);
         Index candidate = findOneIndex(rootTable, name);
         if(candidate.isGroupIndex()) {
             newGroupIndexes.add(candidate);
@@ -181,7 +181,7 @@ public class DDLBasedSpaceModifier extends AbstractSpaceModificationHandler {
 
     @Override
     public void dropIndex(String name) {
-        UserTable oldTable = oldAIS.getUserTable(schemaName, oldEntity.getName());
+        Table oldTable = oldAIS.getTable(schemaName, oldEntity.getName());
         Index candidate = findOneIndex(oldTable, name);
         if(candidate.isGroupIndex()) {
             dropGroupIndexes.add(name);
@@ -204,14 +204,14 @@ public class DDLBasedSpaceModifier extends AbstractSpaceModificationHandler {
             TableName oldGroupName = new TableName(schemaName, oldTopEntity.getName());
             ddlFunctions.dropGroupIndexes(session, oldGroupName, dropGroupIndexes);
         }
-        UserTable oldRoot = oldAIS.getUserTable(schemaName, oldTopEntity.getName());
+        Table oldRoot = oldAIS.getTable(schemaName, oldTopEntity.getName());
         oldRoot.traverseTableAndDescendants(new NopVisitor() {
             @Override
-            public void visitUserTable(UserTable table) {
+            public void visitTable(Table table) {
                 TableName oldName = table.getName();
                 TableChangeInfo changeInfo = tableChanges.get(oldName.getTableName());
                 if(changeInfo != null) {
-                    UserTable newDef = newAIS.getUserTable(new TableName(schemaName, changeInfo.newName));
+                    Table newDef = newAIS.getTable(new TableName(schemaName, changeInfo.newName));
                     ddlFunctions.alterTable(session, oldName, newDef, changeInfo.columnChanges, changeInfo.indexChanges, null);
                 }
             }
@@ -231,14 +231,14 @@ public class DDLBasedSpaceModifier extends AbstractSpaceModificationHandler {
     // Helpers
     //
 
-    private void createTableRecursively(UserTable startTable) {
+    private void createTableRecursively(Table startTable) {
         ddlFunctions.createTable(session, startTable);
         for(Join child : startTable.getChildJoins()) {
             createTableRecursively(child.getChild());
         }
     }
 
-    private void dropTableRecursively(UserTable startTable) {
+    private void dropTableRecursively(Table startTable) {
         for(Join child : startTable.getChildJoins()) {
             dropTableRecursively(child.getChild());
         }
@@ -285,11 +285,11 @@ public class DDLBasedSpaceModifier extends AbstractSpaceModificationHandler {
         getChangeSet(oldTableName).newName = newTableName;
     }
 
-    private static Index findOneIndex(UserTable root, final String indexName) {
+    private static Index findOneIndex(Table root, final String indexName) {
         final List<Index> candidates = new ArrayList<>();
         root.traverseTableAndDescendants(new NopVisitor() {
             @Override
-            public void visitUserTable(UserTable table) {
+            public void visitTable(Table table) {
                 for(Index index : table.getIndexes()) {
                     if(index.getIndexName().getName().equals(indexName)) {
                         candidates.add(index);

@@ -131,7 +131,7 @@ public class PostgresServerPreparedStatementIT extends PostgresServerITBase {
         PreparedStatement p = newCreateIndex();
         int count = p.executeUpdate();
         assertEquals("Count from create index", 0, count);
-        assertNotNull("Found new index", ais().getUserTable(TABLE_NAME).getIndex("x"));
+        assertNotNull("Found new index", ais().getTable(TABLE_NAME).getIndex("x"));
     }
 
     @Test
@@ -140,7 +140,7 @@ public class PostgresServerPreparedStatementIT extends PostgresServerITBase {
         PreparedStatement p = newDropIndex();
         int count = p.executeUpdate();
         assertEquals("Count from drop index", 0, count);
-        assertNull("Index is gone", ais().getUserTable(TABLE_NAME).getIndex("x"));
+        assertNull("Index is gone", ais().getTable(TABLE_NAME).getIndex("x"));
     }
 
     @Test

@@ -634,7 +634,7 @@ public class FlattenIT extends OperatorITBase
         IndexBound cnameBound = new IndexBound(row(customerNameItemOidIndexRowType, "nea"), new SetColumnSelector(0));
         IndexKeyRange cnameRange = IndexKeyRange.bounded(customerNameItemOidIndexRowType, cnameBound, true, cnameBound, true);
         IndexScanSelector indexScanSelector = IndexScanSelector.leftJoinAfter(customerNameItemOidIndexRowType.index(),
-                                                                              customerRowType.userTable());
+                                                                              customerRowType.table());
         Operator flatten =
             flatten_HKeyOrdered(
                 ancestorLookup_Default(

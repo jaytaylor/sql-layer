@@ -21,8 +21,8 @@ import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HKey;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.PrimaryKey;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.storeadapter.RowDataCreator;
 import com.foundationdb.qp.storeadapter.Sorter;
@@ -87,8 +87,8 @@ public abstract class StoreAdapter implements KeyCreator
     }
 
     public long rowCount(Session session, RowType tableType) {
-        assert tableType.hasUserTable() : tableType;
-        return tableType.userTable().rowDef().getTableStatus().getRowCount(session);
+        assert tableType.hasTable() : tableType;
+        return tableType.table().rowDef().getTableStatus().getRowCount(session);
     }
     
     public abstract long sequenceNextValue(TableName sequenceName);
@@ -102,7 +102,7 @@ public abstract class StoreAdapter implements KeyCreator
     public static NewRow newRow(RowDef rowDef)
     {
         NiceRow row = new NiceRow(rowDef.getRowDefId(), rowDef);
-        UserTable table = rowDef.userTable();
+        Table table = rowDef.table();
         PrimaryKey primaryKey = table.getPrimaryKeyIncludingInternal();
         if(primaryKey != null && table.getPrimaryKey() == null) {
             // Generated PK. Initialize its value to a dummy value, which will be replaced later. The

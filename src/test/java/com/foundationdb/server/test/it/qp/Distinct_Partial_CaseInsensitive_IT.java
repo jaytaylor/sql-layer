@@ -23,7 +23,7 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.collation.AkCollator;
 import org.junit.Test;
@@ -53,13 +53,13 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        tRowType = schema.userTableRowType(userTable(t));
+        tRowType = schema.tableRowType(table(t));
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         group = group(t);
-        caseSensitiveCollator = tRowType.userTable().getColumn("cs").getCollator();
-        caseInsensitiveCollator = tRowType.userTable().getColumn("ci").getCollator();
+        caseSensitiveCollator = tRowType.table().getColumn("cs").getCollator();
+        caseInsensitiveCollator = tRowType.table().getColumn("ci").getCollator();
         db = new NewRow[]{
             createNewRow(t, 0L, "aa_cs", "aa_ci", 0),
             createNewRow(t, 1L, "bb_cs", "bb_ci", 0),
@@ -465,7 +465,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
     }
 
     private int t;
-    private UserTableRowType tRowType;
+    private TableRowType tRowType;
     private Group group;
     private AkCollator caseSensitiveCollator;
     private AkCollator caseInsensitiveCollator;

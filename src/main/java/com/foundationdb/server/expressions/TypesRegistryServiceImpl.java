@@ -17,11 +17,11 @@
 
 package com.foundationdb.server.expressions;
 
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
-import com.foundationdb.ais.model.aisb2.NewUserTableBuilder;
+import com.foundationdb.ais.model.aisb2.NewTableBuilder;
 import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.memoryadapter.MemoryGroupCursor;
@@ -141,10 +141,10 @@ public final class TypesRegistryServiceImpl implements TypesRegistryService, Ser
         if (schemaManager != null) {
             OverloadsTableFactory overloadsTable = new OverloadsTableFactory(
                     TableName.create(TableName.INFORMATION_SCHEMA, "ak_overloads"));
-            schemaManager.registerMemoryInformationSchemaTable(overloadsTable.userTable(), overloadsTable);
+            schemaManager.registerMemoryInformationSchemaTable(overloadsTable.table(), overloadsTable);
             CastsTableFactory castsTable = new CastsTableFactory(
                     TableName.create(TableName.INFORMATION_SCHEMA, "ak_casts"));
-            schemaManager.registerMemoryInformationSchemaTable(castsTable.userTable(), castsTable);
+            schemaManager.registerMemoryInformationSchemaTable(castsTable.table(), castsTable);
         }
     }
 
@@ -402,12 +402,12 @@ public final class TypesRegistryServiceImpl implements TypesRegistryService, Ser
 
     private abstract class MemTableBase extends BasicFactoryBase {
 
-        protected abstract void buildUserTable(NewUserTableBuilder builder);
+        protected abstract void buildTable(NewTableBuilder builder);
 
-        public UserTable userTable() {
+        public Table table() {
             NewAISBuilder builder = AISBBasedBuilder.create();
-            buildUserTable(builder.userTable(getName()));
-            return builder.ais().getUserTable(getName());
+            buildTable(builder.table(getName()));
+            return builder.ais().getTable(getName());
         }
 
         protected MemTableBase(TableName tableName) {
@@ -418,7 +418,7 @@ public final class TypesRegistryServiceImpl implements TypesRegistryService, Ser
     private class CastsTableFactory extends MemTableBase {
 
         @Override
-        protected void buildUserTable(NewUserTableBuilder builder) {
+        protected void buildTable(NewTableBuilder builder) {
             builder.colString("source_bundle", 64, false)
                     .colString("source_type", 64, false)
                     .colString("target_bundle", 64, false)
@@ -467,7 +467,7 @@ public final class TypesRegistryServiceImpl implements TypesRegistryService, Ser
     private class OverloadsTableFactory extends MemTableBase {
 
         @Override
-        protected void buildUserTable(NewUserTableBuilder builder) {
+        protected void buildTable(NewTableBuilder builder) {
             builder.colString("name", 128, false)
                    .colBigInt("priority_order", false)
                    .colString("inputs", 256, false)

@@ -25,7 +25,7 @@ import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.IndexName;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.ais.util.TableChange.ChangeType;
 import com.foundationdb.server.service.session.Session;
@@ -63,7 +63,7 @@ public class AlterTableHelper {
         }
     }
 
-    public Integer findOldPosition(UserTable oldTable, Column newColumn) {
+    public Integer findOldPosition(Table oldTable, Column newColumn) {
         String newName = newColumn.getName();
         for(TableChange change : columnChanges) {
             if(newName.equals(change.getNewName())) {
@@ -88,7 +88,7 @@ public class AlterTableHelper {
         return oldColumn.getPosition();
     }
 
-    public List<Index> findNewIndexesToBuild(UserTable newTable) {
+    public List<Index> findNewIndexesToBuild(Table newTable) {
         List<Index> indexes = new ArrayList<>();
         for(TableChange change : indexChanges) {
             switch(change.getChangeType()) {
@@ -101,7 +101,7 @@ public class AlterTableHelper {
         return indexes;
     }
 
-    public void dropAffectedGroupIndexes(Session session, BasicDDLFunctions ddl, UserTable origTable) {
+    public void dropAffectedGroupIndexes(Session session, BasicDDLFunctions ddl, Table origTable) {
         // Drop definition and rebuild later, probably better than doing each entry individually
         if(affectedGroupIndexes.isEmpty()) {
             return;
@@ -113,7 +113,7 @@ public class AlterTableHelper {
         ddl.schemaManager().dropIndexes(session, groupIndexes);
     }
 
-    public void createAffectedGroupIndexes(Session session, BasicDDLFunctions ddl, UserTable origTable, UserTable newTable, boolean dataChange) {
+    public void createAffectedGroupIndexes(Session session, BasicDDLFunctions ddl, Table origTable, Table newTable, boolean dataChange) {
         // Ideally only would copy the Group, but that is vulnerable to changing group names. Even if we handle that
         // by looking up the new name, index creation in PSSM requires index.getName().getTableName() match the actual.
         AkibanInformationSchema tempAIS = AISCloner.clone(newTable.getAIS());
@@ -131,7 +131,7 @@ public class AlterTableHelper {
             GroupIndex tempIndex = GroupIndex.create(tempAIS, tempGroup, origIndex);
             for(int i = 0; i < columns.size(); ++i) {
                 TableColumnNames tcn = columns.get(i);
-                UserTable tempTable = tempAIS.getUserTable(tcn.tableName);
+                Table tempTable = tempAIS.getTable(tcn.tableName);
                 Column tempColumn = tempTable.getColumn(tcn.newColumnName);
                 IndexColumn.create(tempIndex,  tempColumn, i, true, null);
             }

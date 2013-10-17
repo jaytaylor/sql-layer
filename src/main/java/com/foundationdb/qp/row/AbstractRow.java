@@ -17,7 +17,7 @@
 
 package com.foundationdb.qp.row;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.types.TClass;
@@ -67,7 +67,7 @@ public abstract class AbstractRow implements Row
     public abstract ValueSource value(int i);
     
     @Override
-    public HKey ancestorHKey(UserTable table)
+    public HKey ancestorHKey(Table table)
     {
         throw new UnsupportedOperationException(getClass().toString());
     }
@@ -79,7 +79,7 @@ public abstract class AbstractRow implements Row
     }
 
     @Override
-    public boolean containsRealRowOf(UserTable userTable)
+    public boolean containsRealRowOf(Table table)
     {
         throw new UnsupportedOperationException(getClass().toString());
     }

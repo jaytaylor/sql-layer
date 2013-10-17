@@ -38,7 +38,7 @@ public class AlterColumnInSpatialIndexIT extends AlterTableITBase {
                 createNewRow(tid, "53.00", "80.00")
         );
         createIndex(SCHEMA, TABLE, INDEX_NAME, "z_order_lat_lon(c1, c2)");
-        TableIndex index = getUserTable(tid).getIndex("idx1");
+        TableIndex index = getTable(tid).getIndex("idx1");
         assertNotNull("Found index", index);
         assertEquals("Is spatial", true, index.isSpatial());
     }
@@ -50,18 +50,18 @@ public class AlterColumnInSpatialIndexIT extends AlterTableITBase {
         runAlter("ALTER TABLE t1 ALTER c2 SET DATA TYPE varchar(10)");
         final int tid = tableId(SCHEMA, TABLE);
         assertEquals("row count", ROW_COUNT, scanAll(scanAllRequest(tid)).size());
-        assertEquals("Index exists", false, getUserTable(tid).getIndex(INDEX_NAME) != null);
+        assertEquals("Index exists", false, getTable(tid).getIndex(INDEX_NAME) != null);
     }
 
     @Test
     public void alterToCompatible() {
         createAndLoadTable();
         final int tid = tableId(SCHEMA, TABLE);
-        TableIndex indexBefore = getUserTable(tid).getIndex(INDEX_NAME);
+        TableIndex indexBefore = getTable(tid).getIndex(INDEX_NAME);
         assertEquals("index row count before alter", ROW_COUNT, scanAllIndex(indexBefore).size());
         runAlter("ALTER TABLE t1 ALTER c2 SET DATA TYPE decimal(22,14)");
         assertEquals("row count", ROW_COUNT, scanAll(scanAllRequest(tid)).size());
-        TableIndex index = getUserTable(tid).getIndex(INDEX_NAME);
+        TableIndex index = getTable(tid).getIndex(INDEX_NAME);
         assertEquals("Index exists", true, index != null);
         assertEquals("index row count", ROW_COUNT, scanAllIndex(index).size());
     }
@@ -72,7 +72,7 @@ public class AlterColumnInSpatialIndexIT extends AlterTableITBase {
         runAlter("ALTER TABLE t1 DROP COLUMN c2");
         final int tid = tableId(SCHEMA, TABLE);
         assertEquals("row count", ROW_COUNT, scanAll(scanAllRequest(tid)).size());
-        assertEquals("Index exists", false, getUserTable(tid).getIndex(INDEX_NAME) != null);
+        assertEquals("Index exists", false, getTable(tid).getIndex(INDEX_NAME) != null);
     }
     
     @Test
@@ -81,6 +81,6 @@ public class AlterColumnInSpatialIndexIT extends AlterTableITBase {
         runAlter("ALTER TABLE t1 DROP COLUMN c1");
         final int tid = tableId(SCHEMA, TABLE);
         assertEquals("row count", ROW_COUNT, scanAll(scanAllRequest(tid)).size());
-        assertEquals("Index exists", false, getUserTable(tid).getIndex(INDEX_NAME) != null);
+        assertEquals("Index exists", false, getTable(tid).getIndex(INDEX_NAME) != null);
     }
 }
