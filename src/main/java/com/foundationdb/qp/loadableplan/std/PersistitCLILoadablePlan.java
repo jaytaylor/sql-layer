@@ -29,7 +29,7 @@ import com.foundationdb.qp.loadableplan.LoadableDirectObjectPlan;
 import com.foundationdb.qp.operator.BindingNotSetException;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.qp.persistitadapter.PersistitAdapter;
+import com.foundationdb.qp.storeadapter.PersistitAdapter;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.QueryCanceledException;
 import com.foundationdb.server.service.session.Session;

@@ -18,7 +18,7 @@
 package com.foundationdb.server.store.statistics;
 
 import com.foundationdb.ais.model.GroupIndex;
-import com.foundationdb.qp.persistitadapter.PersistitAdapter;
+import com.foundationdb.qp.storeadapter.PersistitAdapter;
 import com.foundationdb.server.AccumulatorAdapter;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;

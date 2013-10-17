@@ -30,7 +30,7 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import com.foundationdb.qp.persistitadapter.PersistitAdapter;
+import com.foundationdb.qp.storeadapter.PersistitAdapter;
 import com.foundationdb.server.PersistitAccumulatorTableStatusCache;
 import com.foundationdb.server.TableStatusCache;
 import com.foundationdb.server.collation.AkCollatorFactory;
@@ -41,7 +41,6 @@ import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.jmx.JmxManageable;
 import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.service.session.SessionService;
 import com.google.inject.Inject;
 import com.persistit.Configuration;
 import com.persistit.Exchange;
