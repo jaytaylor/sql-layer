@@ -25,6 +25,7 @@ import com.foundationdb.ais.model.HKeyColumn;
 import com.foundationdb.ais.model.HKeySegment;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.IndexRowComposition;
 import com.foundationdb.ais.model.IndexToHKey;
 import com.foundationdb.ais.model.NopVisitor;
 import com.foundationdb.ais.model.Table;
@@ -61,7 +62,6 @@ import com.foundationdb.server.error.QueryTimedOutException;
 import com.foundationdb.server.error.RowDefNotFoundException;
 import com.foundationdb.server.error.TableChangedByDDLException;
 import com.foundationdb.server.rowdata.FieldDef;
-import com.foundationdb.server.rowdata.IndexDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDataExtractor;
 import com.foundationdb.server.rowdata.RowDataValueSource;
@@ -261,10 +261,12 @@ public abstract class AbstractStore<SDType> implements Store {
 
     protected boolean hasNullIndexSegments(RowData rowData, Index index)
     {
-        IndexDef indexDef = index.indexDef();
-        assert indexDef.getRowDef().getRowDefId() == rowData.getRowDefId();
-        for (int i : indexDef.getFields()) {
-            if (rowData.isNull(i)) {
+        assert index.leafMostTable().rowDef().getRowDefId() == rowData.getRowDefId();
+        int nkeys = index.getKeyColumns().size();
+        IndexRowComposition indexRowComposition = index.indexRowComposition();
+        for (int i = 0; i < nkeys; i++) {
+            int fi = indexRowComposition.getFieldPosition(i);
+            if (rowData.isNull(fi)) {
                 return true;
             }
         }
@@ -278,7 +280,11 @@ public abstract class AbstractStore<SDType> implements Store {
         int fields = rowDef.getFieldCount();
         // Find the PK and FK fields
         BitSet keyField = new BitSet(fields);
-        for (int pkFieldPosition : rowDef.getPKIndex().indexDef().getFields()) {
+        TableIndex pkIndex = rowDef.getPKIndex();
+        int nkeys = pkIndex.getKeyColumns().size();
+        IndexRowComposition indexRowComposition = pkIndex.indexRowComposition();
+        for (int i = 0; i < nkeys; i++) {
+            int pkFieldPosition = indexRowComposition.getFieldPosition(i);
             keyField.set(pkFieldPosition, true);
         }
         for (int fkFieldPosition : rowDef.getParentJoinFields()) {
@@ -1013,8 +1019,9 @@ public abstract class AbstractStore<SDType> implements Store {
                              RowData oldRow,
                              RowData newRow, Key hKey,
                              PersistitIndexRowBuffer indexRowBuffer) {
-        IndexDef indexDef = index.indexDef();
-        if(!fieldsEqual(rowDef, oldRow, newRow, indexDef.getFields())) {
+        int nkeys = index.getKeyColumns().size();
+        IndexRowComposition indexRowComposition = index.indexRowComposition();
+        if(!fieldsEqual(rowDef, oldRow, newRow, nkeys, indexRowComposition)) {
             UPDATE_INDEX_TAP.in();
             try {
                 deleteIndexRow(session, index, oldRow, hKey, indexRowBuffer);
@@ -1159,8 +1166,9 @@ public abstract class AbstractStore<SDType> implements Store {
         return true;
     }
 
-    protected static boolean fieldsEqual(RowDef rowDef, RowData a, RowData b, int[] fieldIndexes) {
-        for(int fieldIndex : fieldIndexes) {
+    protected static boolean fieldsEqual(RowDef rowDef, RowData a, RowData b, int nkeys, IndexRowComposition indexRowComposition) {
+        for (int i = 0; i < nkeys; i++) {
+            int fieldIndex = indexRowComposition.getFieldPosition(i);
             if(!fieldEqual(rowDef, a, b, fieldIndex)) {
                 return false;
             }
