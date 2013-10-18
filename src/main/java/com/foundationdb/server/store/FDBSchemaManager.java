@@ -27,8 +27,8 @@ import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.SynchronizedNameGenerator;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.validation.AISValidations;
 import com.foundationdb.ais.protobuf.ProtobufReader;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
@@ -281,7 +281,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     }
 
     @Override
-    protected void clearTableStatus(Session session, UserTable table) {
+    protected void clearTableStatus(Session session, Table table) {
         tableStatusCache.clearTableStatus(session, table);
     }
 
@@ -341,12 +341,12 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     //
 
     @Override
-    public void onCreate(Session session, UserTable table) {
+    public void onCreate(Session session, Table table) {
         // None
     }
 
     @Override
-    public void onDrop(Session session, UserTable table) {
+    public void onDrop(Session session, Table table) {
         // TODO: Make this unnecessary
         // FDBStore mostly deals with directories, but doesn't get notified for drops of non-root
         Transaction txn = txnService.getTransaction(session).getTransaction();
@@ -354,7 +354,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     }
 
     @Override
-    public void onTruncate(Session session, UserTable table, boolean isFast) {
+    public void onTruncate(Session session, Table table, boolean isFast) {
         // None
     }
 
@@ -428,7 +428,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
             selector = new ProtobufWriter.SingleSchemaSelector(schema) {
                 @Override
                 public Columnar getSelected(Columnar columnar) {
-                    if(columnar.isTable() && ((UserTable)columnar).hasMemoryTableFactory()) {
+                    if(columnar.isTable() && ((Table)columnar).hasMemoryTableFactory()) {
                         return null;
                     }
                     return columnar;
@@ -462,7 +462,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         this.memoryTableAIS = AISCloner.clone(newAIS, new ProtobufWriter.TableFilterSelector() {
             @Override
             public Columnar getSelected(Columnar columnar) {
-                if(columnar.isTable() && ((UserTable)columnar).hasMemoryTableFactory()) {
+                if(columnar.isTable() && ((Table)columnar).hasMemoryTableFactory()) {
                     return columnar;
                 }
                 return null;
@@ -528,13 +528,13 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         }
         reader.loadAIS();
 
-        for(UserTable table : newAIS.getUserTables().values()) {
+        for(Table table : newAIS.getTables().values()) {
             // nameGenerator is only needed to generate hidden PK, which shouldn't happen here
             table.endTable(null);
         }
 
         // If there were any stored tables, checkDataVersions should have seen versions
-        assert dataPresent == ((newAIS.getUserTables().size() - memoryTableAIS.getUserTables().size() +
+        assert dataPresent == ((newAIS.getTables().size() - memoryTableAIS.getTables().size() +
                                 newAIS.getSequences().size() - memoryTableAIS.getSequences().size()) > 0);
 
         validateAndFreeze(session, newAIS, false);
@@ -558,7 +558,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
             // Any number of changes, or recreations, may have happened to any table ID somewhere else.
             // The new, transactional state is in newAIS *only*. Take that as the sole source.
             tableVersionMap.clear();
-            for(UserTable table : newAIS.getUserTables().values()) {
+            for(Table table : newAIS.getTables().values()) {
                 tableVersionMap.put(table.getTableId(), table.getVersion());
             }
         } finally {

@@ -98,7 +98,7 @@ public class FDBAdapter extends StoreAdapter {
 
     @Override
     public void updateRow(Row oldRow, Row newRow) {
-        RowDef rowDef = newRow.rowType().userTable().rowDef();
+        RowDef rowDef = newRow.rowType().table().rowDef();
         RowData oldRowData = rowData(rowDef, oldRow, new RowDataCreator());
         RowData newRowData = rowData(rowDef, newRow, new RowDataCreator());
         oldRowData.setExplicitRowDef(rowDef);
@@ -113,7 +113,7 @@ public class FDBAdapter extends StoreAdapter {
 
     @Override
     public void writeRow(Row newRow, Index[] indexes) {
-        RowDef rowDef = newRow.rowType().userTable().rowDef();
+        RowDef rowDef = newRow.rowType().table().rowDef();
         RowData newRowData = rowData(rowDef, newRow, new RowDataCreator());
         try {
             store.writeRow(getSession(), newRowData, indexes);
@@ -125,7 +125,7 @@ public class FDBAdapter extends StoreAdapter {
 
     @Override
     public void deleteRow(Row oldRow, boolean cascadeDelete) {
-        RowDef rowDef = oldRow.rowType().userTable().rowDef();
+        RowDef rowDef = oldRow.rowType().table().rowDef();
         RowData oldRowData = rowData(rowDef, oldRow, new RowDataCreator());
         try {
             store.deleteRow(getSession(), oldRowData, true, cascadeDelete);
