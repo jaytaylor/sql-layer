@@ -37,7 +37,6 @@ import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.FDBAdapterException;
 import com.foundationdb.server.error.QueryCanceledException;
 import com.foundationdb.server.rowdata.FieldDef;
-import com.foundationdb.server.rowdata.IndexDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.Service;
@@ -598,8 +597,8 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     public void removeTree(Session session, TreeLink treeLink) {
         if(!schemaManager.treeRemovalIsDelayed()) {
             truncateTree(session, treeLink);
-            if(treeLink instanceof IndexDef) {
-                Index index = ((IndexDef)treeLink).getIndex();
+            if(treeLink instanceof Index) {
+                Index index = (Index)treeLink;
                 if(index.isGroupIndex()) {
                     TransactionState txn = txnService.getTransaction(session);
                     txn.getTransaction().clear(packedTupleGICount((GroupIndex)index));
@@ -836,7 +835,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
 
     private void checkUniqueness(Session session, TransactionState txn, Index index, RowData rowData, Key key) {
         if(index.isUnique() && !hasNullIndexSegments(rowData, index)) {
-            int segmentCount = index.indexDef().getIndexKeySegmentCount();
+            int segmentCount = index.getKeyColumns().size();
             // An index that isUniqueAndMayContainNulls has the extra null-separating field.
             if (index.isUniqueAndMayContainNulls()) {
                 segmentCount++;

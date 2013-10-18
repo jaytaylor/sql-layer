@@ -158,7 +158,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         pKeyAppends = 0;
         int indexField = 0;
         IndexRowComposition indexRowComp = index.indexRowComposition();
-        FieldDef[] fieldDefs = index.indexDef().getRowDef().getFieldDefs();
+        FieldDef[] fieldDefs = index.leafMostTable().rowDef().getFieldDefs();
         RowDataSource rowDataValueSource = new RowDataValueSource();
         while (indexField < indexRowComp.getLength()) {
             // handleSpatialColumn will increment pKeyAppends once for all spatial columns

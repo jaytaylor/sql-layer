@@ -19,7 +19,6 @@ package com.foundationdb.server.store.statistics;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.server.error.QueryCanceledException;
-import com.foundationdb.server.rowdata.IndexDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.config.ConfigurationService;
@@ -61,13 +60,13 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
 
     @Override
     public IndexStatistics loadIndexStatistics(Session session, Index index) {
-        IndexDef indexDef = index.indexDef();
+        RowDef indexRowDef = index.leafMostTable().rowDef();
         RowDef indexStatisticsRowDef = getIndexStatsRowDef(session);
         RowDef indexStatisticsEntryRowDef = getIndexStatsEntryRowDef(session);
 
         Key hKey = getStore().createKey();
         hKey.append(indexStatisticsRowDef.table().getOrdinal())
-            .append((long) indexDef.getRowDef().getRowDefId())
+            .append((long) indexRowDef.getRowDefId())
             .append((long) index.getIndexId());
 
         IndexStatistics result = null;
@@ -88,16 +87,12 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
 
     @Override
     public void removeStatistics(Session session, Index index) {
-        IndexDef indexDef = index.indexDef();
+        RowDef indexRowDef = index.leafMostTable().rowDef();
         RowDef indexStatisticsRowDef = getIndexStatsRowDef(session);
-
-        if(indexDef == null) {
-            return;
-        }
 
         Key hKey = getStore().createKey();
         hKey.append(indexStatisticsRowDef.table().getOrdinal())
-                .append((long) indexDef.getRowDef().getRowDefId())
+                .append((long) indexRowDef.getRowDefId())
                 .append((long) index.getIndexId());
 
         Iterator<KeyValue> it = getStore().groupIterator(session, indexStatisticsRowDef.getGroup(), hKey);
