@@ -35,7 +35,6 @@ import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.OldAISException;
 import com.foundationdb.server.error.TableChangedByDDLException;
 import com.foundationdb.server.service.ServiceManagerImpl;
-import com.foundationdb.server.service.dxl.DXLReadWriteLockHook;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.test.mt.mtutil.TimePoints;
 import com.foundationdb.server.test.mt.mtutil.TimePointsComparison;
@@ -76,10 +75,6 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
     /** Used by {@link #largeEnoughTable(long)} to save length computation between tests */
     private static long lastLargeEnoughMS = 0;
     private static int lastLargeEnoughCount = 0;
-
-    private boolean isDDLLockOn() {
-        return DXLReadWriteLockHook.only().isDDLLockEnabled();
-    }
 
     @Test
     public void dropTableWhileScanningPK() throws Exception {
@@ -132,28 +127,15 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         TimedResult<Void> dropIndexResult = dropIndexFuture.get();
 
         final String[] expected;
-        if(isDDLLockOn()) {
-            // Pause is deep within DMLFunctions, DDL waits for global lock release
-            expected = new String[] {
-                    "SCAN: START",
-                    "(SCAN: PAUSE)>",
-                    "TABLE: DROP>",
-                    "<(SCAN: PAUSE)",
-                    "SCAN: FINISH",
-                    "TABLE: <DROP"
-            };
-        } else {
-            // Scan takes no table locks, DDL can proceed as-is
-            expected = new String[] {
-                    "SCAN: START",
-                    "(SCAN: PAUSE)>",
-                    "TABLE: DROP>",
-                    "TABLE: <DROP",
-                    "<(SCAN: PAUSE)",
-                    "SCAN: FINISH"
-            };
-        }
-
+        // Scan takes no table locks, DDL can proceed as-is
+        expected = new String[] {
+                "SCAN: START",
+                "(SCAN: PAUSE)>",
+                "TABLE: DROP>",
+                "TABLE: <DROP",
+                "<(SCAN: PAUSE)",
+                "SCAN: FINISH"
+        };
         new TimePointsComparison(scanResult, dropIndexResult).verify(expected);
         List<NewRow> rowsScanned = scanResult.getItem();
         assertEquals("rows scanned size", expectedScanRows.length, rowsScanned.size());
@@ -204,26 +186,14 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         TimedResult<Void> dropIndexResult = dropIndexFuture.get();
 
         final String[] expected;
-        if(isDDLLockOn()) {
-            // Pause is deep within DMLFunctions, DDL waits for global lock release
-            expected = new String[] {
-                    "SCAN: START",
-                    "SCAN: PAUSE",
-                    "TABLE: DROP>",
-                    "SCAN: CONVERTED",
-                    "TABLE: <DROP"
-            };
-        } else {
-            // Scan takes no table locks, DDL can proceed as-is
-            expected = new String[] {
-                    "SCAN: START",
-                    "SCAN: PAUSE",
-                    "TABLE: DROP>",
-                    "TABLE: <DROP",
-                    "SCAN: CONVERTED"
-            };
-        }
-
+        // Scan takes no table locks, DDL can proceed as-is
+        expected = new String[] {
+                "SCAN: START",
+                "SCAN: PAUSE",
+                "TABLE: DROP>",
+                "TABLE: <DROP",
+                "SCAN: CONVERTED"
+        };
         new TimePointsComparison(scanResult, dropIndexResult).verify(expected);
         List<NewRow> rowsScanned = scanResult.getItem();
         assertEquals("rows scanned (in order)", rowsExpected, rowsScanned);
@@ -284,28 +254,15 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         TimedResult<Void> dropIndexResult = dropIndexFuture.get();
 
         final String[] expected;
-        if(isDDLLockOn()) {
-            // Pause is deep within DMLFunctions, DDL waits for global lock release
-            expected = new String[] {
-                    "SCAN: START",
-                    "(SCAN: PAUSE)>",
-                    "INDEX: DROP>",
-                    "<(SCAN: PAUSE)",
-                    "SCAN: FINISH",
-                    "INDEX: <DROP"
-            };
-        } else {
-            // Scan takes no table locks, DDL can proceed as-is
-            expected = new String[] {
-                    "SCAN: START",
-                    "(SCAN: PAUSE)>",
-                    "INDEX: DROP>",
-                    "INDEX: <DROP",
-                    "<(SCAN: PAUSE)",
-                    "SCAN: FINISH"
-            };
-        }
-
+        // Scan takes no table locks, DDL can proceed as-is
+        expected = new String[] {
+                "SCAN: START",
+                "(SCAN: PAUSE)>",
+                "INDEX: DROP>",
+                "INDEX: <DROP",
+                "<(SCAN: PAUSE)",
+                "SCAN: FINISH"
+        };
         new TimePointsComparison(scanResult, dropIndexResult).verify(expected);
         newRowsOrdered(scanResult.getItem(), 1);
     }
@@ -359,24 +316,14 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         TimedResult<Void> createResult = createFuture.get();
 
         final String[] expected;
-        if(isDDLLockOn()) {
-            // DDL lock asserts that is only one DDL at a time
-            expected = new String[] {
-                    "DROP>",
-                    "CREATE>",
-                    "CREATE: IllegalStateException",
-                    "<DROP"
-            };
-        } else {
-            // Concurrent DDL (in different schema) is allowed
-            expected = new String[] {
-                    "DROP>",
-                    "CREATE>",
-                    "<CREATE",
-                    "<DROP"
-            };
-            expectedTableNames.add(newTableName);
-        }
+        // Concurrent DDL (in different schema) is allowed
+        expected = new String[] {
+                "DROP>",
+                "CREATE>",
+                "<CREATE",
+                "<DROP"
+        };
+        expectedTableNames.add(newTableName);
 
         new TimePointsComparison(dropResult, createResult).verify(expected);
 
@@ -419,28 +366,15 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         TimedResult<Void> dropIndexResult = dropIndexFuture.get();
 
         final String[] expected;
-        if(isDDLLockOn()) {
-            // Pause is deep within DMLFunctions, DDL waits for global lock release
-            expected = new String[] {
-                    "SCAN: START",
-                    "(SCAN: PAUSE)>",
-                    "INDEX: DROP>",
-                    "<(SCAN: PAUSE)",
-                    "SCAN: FINISH",
-                    "INDEX: <DROP"
-            };
-        } else {
-            // Scan takes no table locks, DDL can proceed as-is
-            expected = new String[] {
-                    "SCAN: START",
-                    "(SCAN: PAUSE)>",
-                    "INDEX: DROP>",
-                    "INDEX: <DROP",
-                    "<(SCAN: PAUSE)",
-                    "SCAN: FINISH"
-            };
-        }
-
+        // Scan takes no table locks, DDL can proceed as-is
+        expected = new String[] {
+                "SCAN: START",
+                "(SCAN: PAUSE)>",
+                "INDEX: DROP>",
+                "INDEX: <DROP",
+                "<(SCAN: PAUSE)",
+                "SCAN: FINISH"
+        };
         new TimePointsComparison(scanResult, dropIndexResult).verify(expected);
         List<NewRow> rowsScanned = scanResult.getItem();
         List<NewRow> rowsExpected = Arrays.asList(
@@ -535,30 +469,16 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         TimedResult<Throwable> dropIndexResult = dropIndexFuture.get();
 
         final String[] expected;
-        if(isDDLLockOn()) {
-            // OldAIS is directly related to global lock (rather, transactional AIS) but is a good proxy
-            expected = new String[] {
-                    "SCAN: PREPARING",
-                    "(SCAN: PAUSE)>",
-                    "DROP: PREPARING",
-                    "INDEX: DROP>",
-                    "<(SCAN: PAUSE)",
-                    "INDEX: <DROP",
-                    "SCAN: OldAISException"
-            };
-        } else {
-            // Pause for index is longer than scan and scan maintains a consistent view
-            expected = new String[] {
-                    "SCAN: PREPARING",
-                    "(SCAN: PAUSE)>",
-                    "DROP: PREPARING",
-                    "INDEX: DROP>",
-                    "<(SCAN: PAUSE)",
-                    "SCAN: cursorID opened",
-                    "INDEX: <DROP",
-            };
-        }
-
+        // Pause for index is longer than scan and scan maintains a consistent view
+        expected = new String[] {
+                "SCAN: PREPARING",
+                "(SCAN: PAUSE)>",
+                "DROP: PREPARING",
+                "INDEX: DROP>",
+                "<(SCAN: PAUSE)",
+                "SCAN: cursorID opened",
+                "INDEX: <DROP",
+        };
         new TimePointsComparison(scanResult, dropIndexResult).verify(expected);
         TimedExceptionCatcher.throwIfThrown(scanResult);
         TimedExceptionCatcher.throwIfThrown(dropIndexResult);
@@ -852,10 +772,6 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
     // This is a Persistit level w-w conflict due to granularity of stored AIS (schema level). Change as needed.
     @Test
     public void createIndexesConcurrentlySameSchema() throws Exception {
-        if(isDDLLockOn()) {
-            return;
-        }
-
         createJoinedTables(SCHEMA, SCHEMA);
         final List<Table> tables = joinedTableTemplates(SCHEMA, SCHEMA, true, false, true, false);
         final Index parentIndex = tables.get(0).getIndex("value");
@@ -891,10 +807,6 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
     @Test
     public void createIndexesConcurrentlyDifferentSchema() throws Exception {
-        if(isDDLLockOn()) {
-            return;
-        }
-
         createJoinedTables(SCHEMA, SCHEMA2);
         final List<Table> tables = joinedTableTemplates(SCHEMA, SCHEMA2, true, false, true, false);
         final Index parentIndex = tables.get(0).getIndex("value");
@@ -937,10 +849,6 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
      */
     @Test
     public void alterAddToGroupOrphanAdoption() throws Exception {
-        if(isDDLLockOn()) {
-            return;
-        }
-
         int cid = createTable(SCHEMA, "c", "id int not null primary key");
         int oid = createTable(SCHEMA, "o", "id int not null primary key, cid int, grouping foreign key(cid) references c(id)");
         int iid = createTable(SCHEMA, "i", "id int not null primary key, oid int"); // Grouped in test
@@ -1179,26 +1087,16 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         Future<TimedResult<Void>> updateFuture = executor.submit(dropCallable);
 
         // No OldAIS for read only DML when AIS is transactional (DDL lock not strictly related, but good proxy)
-        final boolean expectedRows = !isDDLLockOn();
         final String[] expectedTimePoints;
-        if(isDDLLockOn()) {
-            expectedTimePoints = new String[] {
-                    "DROP: IN",
-                    "(SCAN: OPEN CURSOR)>",
-                    "DROP: OUT",
-                    "SCAN: exception OldAISException"
-            };
-        } else {
-            expectedTimePoints = new String[] {
-                    "DROP: IN",
-                    "(SCAN: OPEN CURSOR)>",
-                    "<(SCAN: OPEN CURSOR)",
-                    "SCAN: START",
-                    "(SCAN: FIRST)>",
-                    "<(SCAN: FIRST)",
-                    "DROP: OUT"
-            };
-        }
+        expectedTimePoints = new String[] {
+                "DROP: IN",
+                "(SCAN: OPEN CURSOR)>",
+                "<(SCAN: OPEN CURSOR)",
+                "SCAN: START",
+                "(SCAN: FIRST)>",
+                "<(SCAN: FIRST)",
+                "DROP: OUT"
+        };
 
         try {
             scanFuture.get();
@@ -1215,18 +1113,10 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
         new TimePointsComparison(scanResult, updateResult).verify(expectedTimePoints);
 
-        if(expectedRows) {
-            assertTrue("rows were expected!", scanCallable.getRowCount() > 0);
-        } else {
-            assertTrue("rows weren't empty!", scanCallable.getRowCount() == 0);
-        }
+        assertTrue("rows were expected!", scanCallable.getRowCount() > 0);
     }
 
     private void beginWaitDDLThenScan(final DDLOp op, String indexName) throws Exception {
-        if(isDDLLockOn()) {
-            return;
-        }
-
         final int tableId = createJoinedTablesWithTwoRowsEach().get(1);
         final int indexId = (indexName == null) ? 0 : indexId(SCHEMA, TABLE, indexName);
         if(op == DDLOp.DROP_GROUP_INDEX) {
@@ -1275,10 +1165,6 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
     }
 
     private void dmlWaitAndDDL(IUDType iudType, Object[] oldCols, Object[] newCols, final DDLOp ddlOp) throws Exception {
-        if(isDDLLockOn()) {
-            return;
-        }
-
         final int POST_DML_WAIT = 1500;
         final int tableIndex = inferParentOrChild(oldCols, newCols);
         final int tableId = createJoinedTablesWithTwoRowsEach().get(tableIndex);
@@ -1328,10 +1214,6 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
     }
 
     private void ddlWaitAndDML(IUDType iudType, Object[] oldCols, Object[] newCols, final DDLOp ddlOp) throws Exception {
-        if(isDDLLockOn()) {
-            return;
-        }
-
         final int DDL_PRE_COMMIT_WAIT = 3000;
         final int tableIndex = inferParentOrChild(oldCols, newCols);
         final int tableId = createJoinedTablesWithTwoRowsEach().get(tableIndex);

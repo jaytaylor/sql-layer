@@ -48,7 +48,6 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
     private CostEstimate costEstimate;
 
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresBaseStatement: execute exclusive");
-    private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresBaseStatement: acquire exclusive lock");
     private static final Logger LOG = LoggerFactory.getLogger(PostgresModifyOperatorStatement.class);
 
     public PostgresModifyOperatorStatement(PostgresOperatorCompiler compiler) {
@@ -131,14 +130,12 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
     public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
-        boolean lockSuccess = false;
         int rowsModified = 0;
         if (resultOperator != null) {
             Cursor cursor = null;
             IOException exceptionDuringExecution = null;
             try {
-                lock(context, DXLFunction.UNSPECIFIED_DML_WRITE);
-                lockSuccess = true;
+                preExecute(context, DXLFunction.UNSPECIFIED_DML_WRITE);
                 cursor = openCursor(context, bindings);
                 PostgresOutputter<Row> outputter = null;
                 if (outputResult) {
@@ -173,7 +170,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
                     LOG.error("Exception stack", e);
                 }
                 finally {
-                    unlock(context, DXLFunction.UNSPECIFIED_DML_WRITE, lockSuccess);
+                    postExecute(context, DXLFunction.UNSPECIFIED_DML_WRITE);
                 }
                 if (exceptionDuringExecution != null) {
                     throw exceptionDuringExecution;
@@ -198,12 +195,6 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
     protected InOutTap executeTap()
     {
         return EXECUTE_TAP;
-    }
-
-    @Override
-    protected InOutTap acquireLockTap()
-    {
-        return ACQUIRE_LOCK_TAP;
     }
 
     @Override
