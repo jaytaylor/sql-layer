@@ -31,7 +31,6 @@ import java.util.List;
 public class PostgresLoadableOperator extends PostgresOperatorStatement
 {
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresLoadableOperator: execute shared");
-    private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresLoadableOperator: acquire shared lock");
 
     private ServerCallInvocation invocation;
 
@@ -49,12 +48,6 @@ public class PostgresLoadableOperator extends PostgresOperatorStatement
     protected InOutTap executeTap()
     {
         return EXECUTE_TAP;
-    }
-
-    @Override
-    protected InOutTap acquireLockTap()
-    {
-        return ACQUIRE_LOCK_TAP;
     }
 
     @Override

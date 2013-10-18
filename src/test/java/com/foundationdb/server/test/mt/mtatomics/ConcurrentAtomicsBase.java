@@ -25,7 +25,6 @@ import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.ais.model.aisb2.NewTableBuilder;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.InvalidOperationException;
-import com.foundationdb.server.service.dxl.DXLReadWriteLockHook;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.test.mt.MTBase;
 import com.foundationdb.server.test.mt.mtutil.TimePointsComparison;
@@ -89,11 +88,6 @@ class ConcurrentAtomicsBase extends MTBase {
                                         "UPDATE: OUT",
                                         "<(SCAN: PAUSE)",
                                         "SCAN: FINISH"));
-
-        // 'update: out' will get blocked until scan is done if top level r/w lock is on
-        if(DXLReadWriteLockHook.only().isDMLLockEnabled()) {
-            timePoints.add(timePoints.remove(3));
-        }
 
         new TimePointsComparison(scanResult, updateResult).verify(timePoints.toArray(new String[timePoints.size()]));
 
