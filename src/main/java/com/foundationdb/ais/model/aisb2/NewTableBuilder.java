@@ -19,7 +19,7 @@ package com.foundationdb.ais.model.aisb2;
 
 import com.foundationdb.ais.model.TableName;
 
-public interface NewUserTableBuilder extends NewAISBuilder {
+public interface NewTableBuilder extends NewAISBuilder {
     /**
      * Joins this table to another one, using the default schema
      * @param table the table to join to
@@ -56,7 +56,7 @@ public interface NewUserTableBuilder extends NewAISBuilder {
      * @param name the column's name
      * @return this
      */
-    NewUserTableBuilder colLong(String name);
+    NewTableBuilder colLong(String name);
 
     /**
      * Adds an optionally nullable Long column
@@ -64,7 +64,7 @@ public interface NewUserTableBuilder extends NewAISBuilder {
      * @param nullable whether the column is nullable
      * @return this
      */
-    NewUserTableBuilder colLong(String name, boolean nullable);
+    NewTableBuilder colLong(String name, boolean nullable);
 
     /**
      * Adds a non-nullable, sequence backed, auto-incrementing BY DEFAULT identity column
@@ -72,7 +72,7 @@ public interface NewUserTableBuilder extends NewAISBuilder {
      * @param initialValue the START WITH value
      * @return this
      */
-    NewUserTableBuilder autoIncLong(String name, int initialValue);
+    NewTableBuilder autoIncLong(String name, int initialValue);
 
     /**
      * Adds a non-nullable, sequence backed, auto-incrementing identity column
@@ -81,7 +81,7 @@ public interface NewUserTableBuilder extends NewAISBuilder {
      * @param always ALWAYS if <code>true</code>, otherwise DEFAULT
      * @return this
      */
-    NewUserTableBuilder autoIncLong(String name, int initialValue, boolean always);
+    NewTableBuilder autoIncLong(String name, int initialValue, boolean always);
 
     /**
      * Adds an optionally nullable boolean column
@@ -89,7 +89,7 @@ public interface NewUserTableBuilder extends NewAISBuilder {
      * @param nullable whether the column is nullable
      * @return this
      */
-    NewUserTableBuilder colBoolean(String name, boolean nullable);
+    NewTableBuilder colBoolean(String name, boolean nullable);
 
     /**
      * Adds a non-nullable varchar with UTF-8 encoding
@@ -97,7 +97,7 @@ public interface NewUserTableBuilder extends NewAISBuilder {
      * @param length the varchar's max length
      * @return this
      */
-    NewUserTableBuilder colString(String name, int length);
+    NewTableBuilder colString(String name, int length);
 
     /**
      * Adds an optionally nullable varchar with UTF-8 encoding
@@ -106,7 +106,7 @@ public interface NewUserTableBuilder extends NewAISBuilder {
      * @param nullable whether the column is nullable
      * @return this
      */
-    NewUserTableBuilder colString(String name, int length, boolean nullable);
+    NewTableBuilder colString(String name, int length, boolean nullable);
 
     /**
      * Adds an optionally nullable varchar with a specified encoding
@@ -116,32 +116,32 @@ public interface NewUserTableBuilder extends NewAISBuilder {
      * @param charset the column's encoding
      * @return this
      */
-    NewUserTableBuilder colString(String name, int length, boolean nullable, String charset);
+    NewTableBuilder colString(String name, int length, boolean nullable, String charset);
 
-    NewUserTableBuilder colDouble(String name);
-    NewUserTableBuilder colDouble(String name, boolean nullable);
+    NewTableBuilder colDouble(String name);
+    NewTableBuilder colDouble(String name, boolean nullable);
     
-    NewUserTableBuilder colTimestamp(String name);
-    NewUserTableBuilder colTimestamp(String name, boolean nullable);
+    NewTableBuilder colTimestamp(String name);
+    NewTableBuilder colTimestamp(String name, boolean nullable);
 
-    NewUserTableBuilder colBigInt(String name);
-    NewUserTableBuilder colBigInt(String name, boolean nullable);
+    NewTableBuilder colBigInt(String name);
+    NewTableBuilder colBigInt(String name, boolean nullable);
 
-    NewUserTableBuilder colVarBinary(String name, int length);
-    NewUserTableBuilder colVarBinary(String name, int length, boolean nullable);
+    NewTableBuilder colVarBinary(String name, int length);
+    NewTableBuilder colVarBinary(String name, int length, boolean nullable);
     
-    NewUserTableBuilder colText(String name);
-    NewUserTableBuilder colText(String name, boolean nullable);
+    NewTableBuilder colText(String name);
+    NewTableBuilder colText(String name, boolean nullable);
     
-    NewUserTableBuilder colDateTime (String name);
-    NewUserTableBuilder colDateTime (String name, boolean nullable);
+    NewTableBuilder colDateTime (String name);
+    NewTableBuilder colDateTime (String name, boolean nullable);
 
     /**
      * Adds a PK
      * @param columns the columns that are in the PK
      * @return this
      */
-    NewUserTableBuilder pk(String... columns);
+    NewTableBuilder pk(String... columns);
 
     /**
      * Adds a unique key
@@ -149,7 +149,7 @@ public interface NewUserTableBuilder extends NewAISBuilder {
      * @param columns the columns in the key
      * @return this
      */
-    NewUserTableBuilder uniqueKey(String indexName, String... columns);
+    NewTableBuilder uniqueKey(String indexName, String... columns);
 
     /**
      * Adds a non-unique key
@@ -157,5 +157,5 @@ public interface NewUserTableBuilder extends NewAISBuilder {
      * @param columns the columns in the key
      * @return this
      */
-    NewUserTableBuilder key(String indexName, String... columns);
+    NewTableBuilder key(String indexName, String... columns);
 }

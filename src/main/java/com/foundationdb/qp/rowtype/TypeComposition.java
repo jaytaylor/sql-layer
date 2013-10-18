@@ -18,7 +18,7 @@
 package com.foundationdb.qp.rowtype;
 
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.util.ArgumentValidation;
 
 import java.util.*;
@@ -35,12 +35,12 @@ public class TypeComposition
         throw new UnsupportedOperationException();
     }
 
-    public final Set<UserTable> tables()
+    public final Set<Table> tables()
     {
         return tables;
     }
 
-    public TypeComposition(RowType rowType, Collection<UserTable> tables)
+    public TypeComposition(RowType rowType, Collection<Table> tables)
     {
         ArgumentValidation.notNull("rowType", rowType);
         ArgumentValidation.notEmpty("tables", tables);
@@ -51,5 +51,5 @@ public class TypeComposition
     // Object state
 
     protected final RowType rowType;
-    protected final Set<UserTable> tables;
+    protected final Set<Table> tables;
 }

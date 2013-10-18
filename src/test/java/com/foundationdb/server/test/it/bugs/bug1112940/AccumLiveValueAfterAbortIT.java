@@ -58,7 +58,7 @@ public class AccumLiveValueAfterAbortIT extends ITBase {
         expectRowCount(tid, ROW_COUNT);
         // Approximate count doesn't have to match in general, but there
         // is no reason for it to be off in these simple scenarios
-        TableStatus tableStatus = getUserTable(tid).rowDef().getTableStatus();
+        TableStatus tableStatus = getTable(tid).rowDef().getTableStatus();
         assertEquals("ApproximateRowCount", ROW_COUNT, tableStatus.getApproximateRowCount());
     }
 

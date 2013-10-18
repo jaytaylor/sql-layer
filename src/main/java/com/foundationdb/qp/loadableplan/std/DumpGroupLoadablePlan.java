@@ -17,8 +17,8 @@
 
 package com.foundationdb.qp.loadableplan.std;
 
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.loadableplan.DirectObjectCursor;
 import com.foundationdb.qp.loadableplan.DirectObjectPlan;
 import com.foundationdb.qp.loadableplan.LoadableDirectObjectPlan;
@@ -72,9 +72,9 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
     public static class DumpGroupDirectObjectCursor extends DirectObjectCursor {
         private final QueryContext context;
         private final QueryBindings bindings;
-        private UserTable rootTable;
+        private Table rootTable;
         private RowCursor cursor;
-        private Map<UserTable,Integer> tableSizes;
+        private Map<Table,Integer> tableSizes;
         private StringBuilder buffer;
         private GroupRowFormatter formatter;
         private int messagesSent;
@@ -95,7 +95,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
                 schemaName = value.getString();
             tableName = bindings.getValue(1).getString();
             rootTable = context.getStore().schema().ais()
-                .getUserTable(schemaName, tableName);
+                .getTable(schemaName, tableName);
             if (rootTable == null)
                 throw new NoSuchTableException(schemaName, tableName);
             int commitFrequency;
@@ -147,7 +147,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
                     break;
                 }
                 RowType rowType = row.rowType();
-                UserTable rowTable = rowType.userTable();
+                Table rowTable = rowType.table();
                 int size = tableSize(rowTable);
                 if (size < 0)
                     continue;
@@ -178,7 +178,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             }
         }
 
-        private int tableSize(UserTable table) {
+        private int tableSize(Table table) {
             Integer size = tableSizes.get(table);
             if (size == null) {
                 if (table.isDescendantOf(rootTable))
@@ -206,7 +206,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
     }
 
     public static class SQLRowFormatter extends GroupRowFormatter {
-        private Map<UserTable,String> tableNames = new HashMap<>();
+        private Map<Table,String> tableNames = new HashMap<>();
         private int maxRowCount;
         private AkibanAppender appender;
         private RowType lastRowType;
@@ -231,7 +231,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
                 flush();
                 int pos = buffer.length();
                 buffer.append("INSERT INTO ");
-                buffer.append(tableName(rowType.userTable()));
+                buffer.append(tableName(rowType.table()));
                 buffer.append(" VALUES");
                 insertWidth = buffer.length() - pos;
                 lastRowType = rowType;
@@ -254,7 +254,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             }
         }
 
-        protected String tableName(UserTable table) {
+        protected String tableName(Table table) {
             String name = tableNames.get(table);
             if (name == null) {
                 TableName tableName = table.getName();

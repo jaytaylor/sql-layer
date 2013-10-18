@@ -743,14 +743,14 @@ public class StorageSchemaTablesServiceImpl
     static AkibanInformationSchema createTablesToRegister() {
         NewAISBuilder builder = AISBBasedBuilder.create();
         
-        builder.userTable(STORAGE_ALERTS_SUMMARY)
+        builder.table(STORAGE_ALERTS_SUMMARY)
             .colString("alert_level", DESCRIPTOR_MAX, false)
             .colBigInt("warn_log_interval", false)
             .colBigInt("error_log_interval", false)
             .colBigInt("history_length", false);
         
         
-        builder.userTable(STORAGE_BUFFER_POOLS)
+        builder.table(STORAGE_BUFFER_POOLS)
             .colBigInt("buffer_size", false)
             .colBigInt("buffer_count", false)
             .colBigInt("valid_pages", false)
@@ -765,11 +765,11 @@ public class StorageSchemaTablesServiceImpl
             .colBigInt("forced_chkpt_count", false)
             .colBigInt("forced_write_count", false);
             
-        builder.userTable(STORAGE_CHECKPOINT_SUMMARY)
+        builder.table(STORAGE_CHECKPOINT_SUMMARY)
             .colBigInt("checkpoint_interval", false);
 
         
-        builder.userTable(STORAGE_CLEANUP_MANAGER_SUMMARY)
+        builder.table(STORAGE_CLEANUP_MANAGER_SUMMARY)
             .colBigInt ("accepted_count", false)
             .colBigInt ("refused_count", false)
             .colBigInt("performed_count", false)
@@ -778,17 +778,17 @@ public class StorageSchemaTablesServiceImpl
             .colBigInt("poll_interval", false)
             .colBigInt("min_prune_delay", false);
 
-        builder.userTable(STORAGE_IO_METER_SUMMARY)
+        builder.table(STORAGE_IO_METER_SUMMARY)
             .colBigInt("io_rate", false)
             .colBigInt("quiescent_threshold", false)
             .colString("log_file", PATH_MAX);
         
-        builder.userTable(STORAGE_IO_METERS)
+        builder.table(STORAGE_IO_METERS)
             .colString("operation", DESCRIPTOR_MAX, false)
             .colBigInt("total_bytes", false)
             .colBigInt("operations", false);
         
-        builder.userTable(STORAGE_JOURNAL_MANAGER_SUMMARY)
+        builder.table(STORAGE_JOURNAL_MANAGER_SUMMARY)
             .colBigInt("block_size", false)
             .colBigInt("base_address", false)
             .colBigInt("current_address", false)
@@ -817,7 +817,7 @@ public class StorageSchemaTablesServiceImpl
             .colTimestamp("create_time", false);
 
         
-        builder.userTable(STORAGE_MANAGEMENT_SUMMARY)
+        builder.table(STORAGE_MANAGEMENT_SUMMARY)
             .colString("initialized", YES_NO_MAX, false)
             .colString("update_suspended", YES_NO_MAX, false)
             .colString("shutdown_suspended", YES_NO_MAX, false)
@@ -826,7 +826,7 @@ public class StorageSchemaTablesServiceImpl
             .colTimestamp("start_time", false)
             .colString("default_commit_policy", DESCRIPTOR_MAX, false);
         
-        builder.userTable(STORAGE_TRANSACTION_SUMMARY)
+        builder.table(STORAGE_TRANSACTION_SUMMARY)
             .colBigInt("active_floor", false)
             .colBigInt("active_ceiling", false)
             .colBigInt("active_count", false)
@@ -836,7 +836,7 @@ public class StorageSchemaTablesServiceImpl
             .colBigInt("free_count",false)
             .colBigInt("dropped_count", false);
 
-        builder.userTable(STORAGE_TREES)
+        builder.table(STORAGE_TREES)
             .colString("volume_name", IDENT_MAX, false)
             .colString("tree_name", IDENT_MAX, false)
             .colString("status", DESCRIPTOR_MAX, false)
@@ -846,7 +846,7 @@ public class StorageSchemaTablesServiceImpl
             .colBigInt("store_counter", false)
             .colBigInt("remove_counter", false);
             
-        builder.userTable(STORAGE_VOLUMES)
+        builder.table(STORAGE_VOLUMES)
             .colString("volume_name", IDENT_MAX, false)
             .colString("path", PATH_MAX, false)
             .colString("temporary", YES_NO_MAX, false)

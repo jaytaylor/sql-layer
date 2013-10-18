@@ -27,7 +27,7 @@ import static com.foundationdb.sql.optimizer.rule.cost.CostEstimator.simpleRound
 import com.foundationdb.sql.optimizer.plan.*;
 
 import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.geophile.SpaceLatLon;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
@@ -292,7 +292,7 @@ public class PlanCostEstimator
         @Override
         protected void estimateCost() {
             if (hasLimit()) {
-                Map<UserTable,Long> tableCounts = groupScanTableCountsToLimit(requiredTables, limit);
+                Map<Table,Long> tableCounts = groupScanTableCountsToLimit(requiredTables, limit);
                 if (tableCounts != null) {
                     costEstimate = costEstimator.costPartialGroupScanAndFlatten(tableGroup, requiredTables, tableCounts);
                     return;
@@ -462,7 +462,7 @@ public class PlanCostEstimator
         }
     }
 
-    protected Map<UserTable,Long> groupScanTableCountsToLimit(Set<TableSource> requiredTables, long limit) {
+    protected Map<Table,Long> groupScanTableCountsToLimit(Set<TableSource> requiredTables, long limit) {
         // Find the required table with the highest ordinal; we'll need limit of those
         // rows and however many of the others come before it.
         // TODO: Not as good if multiple branches are being flattened;
@@ -479,9 +479,9 @@ public class PlanCostEstimator
         if (childCount <= limit)
             // Turns out we need the whole group before reaching the limit.
             return null;
-        Map<UserTable,Long> tableCounts = new HashMap<>();
+        Map<Table,Long> tableCounts = new HashMap<>();
         tableCounts.put(lastRequired.getTable(), limit);
-        UserTable ancestor = lastRequired.getTable();
+        Table ancestor = lastRequired.getTable();
         while (true) {
             ancestor = ancestor.parentTable();
             if (ancestor == null) break;
@@ -491,10 +491,10 @@ public class PlanCostEstimator
                             (limit * ancestorCount + (childCount - 1)) / childCount);
         }
         Group group = lastRequired.getTable().getGroup();
-        Map<UserTable,Long> moreCounts = new HashMap<>();
-        for (UserTable table : lastRequired.getTable().getAIS().getUserTables().values()) {
+        Map<Table,Long> moreCounts = new HashMap<>();
+        for (Table table : lastRequired.getTable().getAIS().getTables().values()) {
             if (table.getGroup() == group) {
-                UserTable commonAncestor = table;
+                Table commonAncestor = table;
                 while (!tableCounts.containsKey(commonAncestor)) {
                     commonAncestor = commonAncestor.parentTable();
                 }

@@ -26,7 +26,7 @@ import com.foundationdb.qp.operator.TimeOperator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.error.InvalidOperationException;
 import org.junit.Test;
@@ -74,9 +74,9 @@ public class ProductCT extends CostModelBase
                            String.format("grouping foreign key(rid, root_instance) references %s(rid, root_instance)",
                                          rootTableName));
         schema = new Schema(ais());
-        rootRowType = schema.userTableRowType(userTable(root));
-        oneRowType = schema.userTableRowType(userTable(one));
-        manyRowType = schema.userTableRowType(userTable(many));
+        rootRowType = schema.tableRowType(table(root));
+        oneRowType = schema.tableRowType(table(one));
+        manyRowType = schema.tableRowType(table(many));
         rootPKIndexType = indexType(root, "rid", "root_instance");
         group = group(root);
         adapter = newStoreAdapter(schema);
@@ -234,9 +234,9 @@ public class ProductCT extends CostModelBase
     private int root;
     private int one;
     private int many;
-    private UserTableRowType rootRowType;
-    private UserTableRowType oneRowType;
-    private UserTableRowType manyRowType;
+    private TableRowType rootRowType;
+    private TableRowType oneRowType;
+    private TableRowType manyRowType;
     private IndexRowType rootPKIndexType;
     private Group group;
 }

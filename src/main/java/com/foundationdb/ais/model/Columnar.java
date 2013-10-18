@@ -136,7 +136,7 @@ public abstract class Columnar
         columnsStale = true;
     }
 
-    protected void dropColumns()
+    public void dropColumns()
     {
         columnMap.clear();
         columnsStale = true;

@@ -17,8 +17,8 @@
 
 package com.foundationdb.qp.operator;
 
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.session.Session;
@@ -38,7 +38,7 @@ public interface QueryContext
      * Get the store associated with this query.
      */
     public StoreAdapter getStore();
-    public StoreAdapter getStore(UserTable table);
+    public StoreAdapter getStore(Table table);
 
     /**
      * Get the session associated with this context.

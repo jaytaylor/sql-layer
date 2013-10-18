@@ -23,8 +23,8 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Index.IndexType;
 import com.foundationdb.ais.model.IndexName;
 import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.qp.operator.API;
@@ -288,21 +288,21 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     //
 
     @Override
-    public void onCreate(Session session, UserTable table) {
+    public void onCreate(Session session, Table table) {
         for(Index index : table.getFullTextIndexes()) {
             populateIndex(session, index.getIndexName());
         }
     }
 
     @Override
-    public void onDrop(Session session, UserTable table) {
+    public void onDrop(Session session, Table table) {
         for(FullTextIndex index : table.getFullTextIndexes()) {
             dropIndex(session, index);
         }
     }
 
     @Override
-    public void onTruncate(Session session, UserTable table, boolean isFast) {
+    public void onTruncate(Session session, Table table, boolean isFast) {
         if(isFast) {
             for(FullTextIndex index : table.getFullTextIndexes()) {
                 if(index.getIndexType() == IndexType.FULL_TEXT) {
@@ -336,17 +336,17 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     //
 
     @Override
-    public void onWrite(Session session, UserTable table, Key hKey, RowData row) {
+    public void onWrite(Session session, Table table, Key hKey, RowData row) {
         trackChange(session, table, hKey);
     }
 
     @Override
-    public void onUpdate(Session session, UserTable table, Key hKey, RowData oldRow, RowData newRow) {
+    public void onUpdate(Session session, Table table, Key hKey, RowData oldRow, RowData newRow) {
         trackChange(session, table, hKey);
     }
 
     @Override
-    public void onDelete(Session session, UserTable table, Key hKey, RowData row) {
+    public void onDelete(Session session, Table table, Key hKey, RowData row) {
         trackChange(session, table, hKey);
     }
 
@@ -448,7 +448,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         private HKeyBytesStream(Session session) {
             this.session = session;
             AkibanInformationSchema ais = getAIS(session);
-            UserTable changesTable = ais.getUserTable(CHANGES_TABLE);
+            Table changesTable = ais.getTable(CHANGES_TABLE);
             Operator plan = API.groupScan_Default(changesTable.getGroup());
             StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(ais));
             QueryContext context = new SimpleQueryContext(adapter);
@@ -466,7 +466,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                 indexName = new IndexName(new TableName(schema, tableName), iName);
                 indexID = row.value(3).getInt32();
 
-                UserTable table = getAIS(session).getUserTable(indexName.getFullTableName());
+                Table table = getAIS(session).getTable(indexName.getFullTableName());
                 Index index = (table != null) ? table.getFullTextIndex(indexName.getName()) : null;
                 // May have been deleted or recreated
                 if(index != null && index.getIndexId() == indexID) {
@@ -555,12 +555,12 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         }
     }
 
-    private void trackChange(Session session, UserTable table, Key hKey) {
+    private void trackChange(Session session, Table table, Key hKey) {
         NiceRow row = null;
         for(Index index : table.getFullTextIndexes()) {
             if(row == null) {
                 AkibanInformationSchema ais = getAIS(session);
-                UserTable changeTable = ais.getUserTable(CHANGES_TABLE);
+                Table changeTable = ais.getTable(CHANGES_TABLE);
                 row = new NiceRow(changeTable.getTableId(), changeTable.rowDef());
             }
             row.put(0, index.getIndexName().getSchemaName());
@@ -573,7 +573,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     }
 
     private long changesRowCount(Session session) {
-        return store.getAIS(session).getUserTable(CHANGES_TABLE).rowDef().getTableStatus().getRowCount(session);
+        return store.getAIS(session).getTable(CHANGES_TABLE).rowDef().getTableStatus().getRowCount(session);
     }
 
     private void registerSystemTables() {
@@ -582,7 +582,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         final String schema = TableName.INFORMATION_SCHEMA;
         NewAISBuilder builder = AISBBasedBuilder.create(schema);
         // TODO: Hidden PK too expensive?
-        builder.userTable(CHANGES_TABLE)
+        builder.table(CHANGES_TABLE)
                .colString("schema_name", identMax, false)
                .colString("table_name", identMax, false)
                .colString("index_name", identMax, false)
@@ -592,7 +592,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                .language("java", Routine.CallingConvention.JAVA)
                .externalName(Routines.class.getName(), "backgroundWait");
         AkibanInformationSchema ais = builder.ais();
-        schemaManager.registerStoredInformationSchemaTable(ais.getUserTable(CHANGES_TABLE), tableVersion);
+        schemaManager.registerStoredInformationSchemaTable(ais.getTable(CHANGES_TABLE), tableVersion);
         schemaManager.registerSystemRoutine(ais.getRoutine(BACKGROUND_WAIT_PROC_NAME));
     }
 

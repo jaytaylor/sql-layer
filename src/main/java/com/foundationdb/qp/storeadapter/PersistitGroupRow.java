@@ -17,7 +17,7 @@
 
 package com.foundationdb.qp.storeadapter;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.rowtype.RowType;
@@ -52,7 +52,7 @@ public class PersistitGroupRow extends AbstractRow
             return lastRowType;
         }
         lastRowDef = rowDef();
-        lastRowType = adapter.schema().userTableRowType(lastRowDef.userTable());
+        lastRowType = adapter.schema().tableRowType(lastRowDef.table());
         return lastRowType;
     }
 
@@ -72,7 +72,7 @@ public class PersistitGroupRow extends AbstractRow
     }
 
     @Override
-    public HKey ancestorHKey(UserTable table)
+    public HKey ancestorHKey(Table table)
     {
         PersistitHKey ancestorHKey = hKeyCache.hKey(table);
         currentHKey.copyTo(ancestorHKey);
@@ -81,9 +81,9 @@ public class PersistitGroupRow extends AbstractRow
     }
 
     @Override
-    public boolean containsRealRowOf(UserTable userTable)
+    public boolean containsRealRowOf(Table table)
     {
-        return row.getRowDef().userTable() == userTable;
+        return row.getRowDef().table() == table;
     }
 
     // PersistitGroupRow interface
@@ -120,7 +120,7 @@ public class PersistitGroupRow extends AbstractRow
             try {
                 exception = null;
                 adapter.persistit().expandRowData(exchange, rowData);
-                RowDef rowDef = adapter.schema().ais().getUserTable(rowData.getRowDefId()).rowDef();
+                RowDef rowDef = adapter.schema().ais().getTable(rowData.getRowDefId()).rowDef();
                 row.setRowDef(rowDef);
                 row.setRowData(rowData);
                 PersistitHKey persistitHKey = persistitHKey();
@@ -157,7 +157,7 @@ public class PersistitGroupRow extends AbstractRow
 
     private PersistitHKey persistitHKey()
     {
-        currentHKey = hKeyCache.hKey(row.getRowDef().userTable());
+        currentHKey = hKeyCache.hKey(row.getRowDef().table());
         return currentHKey;
     }
 

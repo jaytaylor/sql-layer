@@ -445,7 +445,7 @@ public class RowData {
             return toStringWithoutRowDef("No AIS");
         }
         int rowDefID = getRowDefId();
-        Table table = ais.getUserTable(rowDefID);
+        Table table = ais.getTable(rowDefID);
         if(table == null) {
             return toStringWithoutRowDef("Unknown RowDefID(" + rowDefID + ")");
         }

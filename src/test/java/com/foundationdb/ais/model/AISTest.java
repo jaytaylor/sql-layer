@@ -43,7 +43,7 @@ public class AISTest
             ");"
         };
         AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
-        UserTable table = ais.getUserTable("s", "t");
+        Table table = ais.getTable("s", "t");
         int expectedPosition = 0;
         for (Column column : table.getColumns()) {
             assertEquals(expectedPosition, column.getPosition().intValue());
@@ -66,7 +66,7 @@ public class AISTest
             "create index i on s.t(col5, col4, col3);"
         };
         AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
-        UserTable table = ais.getUserTable("s", "t");
+        Table table = ais.getTable("s", "t");
         Index index = table.getIndex("i");
         Iterator<IndexColumn> indexColumnScan = index.getKeyColumns().iterator();
         IndexColumn indexColumn = indexColumnScan.next();
@@ -96,7 +96,7 @@ public class AISTest
             ");"
         };
         AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
-        UserTable table = ais.getUserTable("s", "t");
+        Table table = ais.getTable("s", "t");
         PrimaryKey pk = table.getPrimaryKey();
         Iterator<Column> indexColumnScan = pk.getColumns().iterator();
         Column pkColumn = indexColumnScan.next();
@@ -125,7 +125,7 @@ public class AISTest
             ");",
         };
         AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
-        Join join = ais.getUserTable("s", "child").getParentJoin();
+        Join join = ais.getTable("s", "child").getParentJoin();
         Iterator<JoinColumn> joinColumns = join.getJoinColumns().iterator();
         JoinColumn joinColumn = joinColumns.next();
         assertEquals("p1", joinColumn.getParent().getName());
@@ -159,16 +159,16 @@ public class AISTest
         };
         AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         // ---------------- Customer -------------------------------------
-        UserTable customer = ais.getUserTable("s", "customer");
+        Table customer = ais.getTable("s", "customer");
         checkHKey(customer.hKey(),
                   customer, customer, "cid");
         // ---------------- Order -------------------------------------
-        UserTable order = ais.getUserTable("s", "order");
+        Table order = ais.getTable("s", "order");
         checkHKey(order.hKey(),
                   customer, order, "cid",
                   order, order, "oid");
         // ---------------- Item -------------------------------------
-        UserTable item = ais.getUserTable("s", "item");
+        Table item = ais.getTable("s", "item");
         checkHKey(item.hKey(),
                   customer, order, "cid",
                   order, item, "oid",
@@ -203,16 +203,16 @@ public class AISTest
         };
         AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         // ---------------- Customer -------------------------------------
-        UserTable customer = ais.getUserTable("s", "customer");
+        Table customer = ais.getTable("s", "customer");
         checkHKey(customer.hKey(),
                   customer, customer, "cid0", customer, "cid1");
         // ---------------- Order -------------------------------------
-        UserTable order = ais.getUserTable("s", "order");
+        Table order = ais.getTable("s", "order");
         checkHKey(order.hKey(),
                   customer, order, "cid0", order, "cid1",
                   order, order, "oid0", order, "oid1");
         // ---------------- Item -------------------------------------
-        UserTable item = ais.getUserTable("s", "item");
+        Table item = ais.getTable("s", "item");
         checkHKey(item.hKey(),
                   customer, order, "cid0", order, "cid1",
                   order, item, "oid0", item, "oid1",
@@ -243,16 +243,16 @@ public class AISTest
         };
         AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         // ---------------- Customer -------------------------------------
-        UserTable customer = ais.getUserTable("s", "customer");
+        Table customer = ais.getTable("s", "customer");
         checkHKey(customer.hKey(),
                   customer, customer, "cid");
         // ---------------- Order -------------------------------------
-        UserTable order = ais.getUserTable("s", "order");
+        Table order = ais.getTable("s", "order");
         checkHKey(order.hKey(),
                   customer, order, "cid",
                   order, order, "oid");
         // ---------------- Item -------------------------------------
-        UserTable item = ais.getUserTable("s", "item");
+        Table item = ais.getTable("s", "item");
         checkHKey(item.hKey(),
                   customer, item, "cid",
                   order, item, "oid",
@@ -289,16 +289,16 @@ public class AISTest
         };
         AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         // ---------------- Customer -------------------------------------
-        UserTable customer = ais.getUserTable("s", "customer");
+        Table customer = ais.getTable("s", "customer");
         checkHKey(customer.hKey(),
                   customer, customer, "cid0", customer, "cid1");
         // ---------------- Order -------------------------------------
-        UserTable order = ais.getUserTable("s", "order");
+        Table order = ais.getTable("s", "order");
         checkHKey(order.hKey(),
                   customer, order, "cid0", order, "cid1",
                   order, order, "oid0", order, "oid1");
         // ---------------- Item -------------------------------------
-        UserTable item = ais.getUserTable("s", "item");
+        Table item = ais.getTable("s", "item");
         checkHKey(item.hKey(),
                   customer, item, "cid0", item, "cid1",
                   order, item, "oid0", item, "oid1",
@@ -334,22 +334,22 @@ public class AISTest
         };
         AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         // ---------------- Customer -------------------------------------
-        UserTable customer = ais.getUserTable("s", "customer");
+        Table customer = ais.getTable("s", "customer");
         checkHKey(customer.hKey(),
                   customer, customer, "cid");
         // ---------------- Order -------------------------------------
-        UserTable order = ais.getUserTable("s", "order");
+        Table order = ais.getTable("s", "order");
         checkHKey(order.hKey(),
                   customer, order, "cid",
                   order, order, "oid");
         // ---------------- Item -------------------------------------
-        UserTable item = ais.getUserTable("s", "item");
+        Table item = ais.getTable("s", "item");
         checkHKey(item.hKey(),
                   customer, order, "cid",
                   order, item, "oid",
                   item, item, "iid");
         // ---------------- Address -------------------------------------
-        UserTable address = ais.getUserTable("s", "address");
+        Table address = ais.getTable("s", "address");
         checkHKey(address.hKey(),
                   customer, address, "cid",
                   address, address, "aid");
@@ -365,7 +365,7 @@ public class AISTest
             ");"
         };
         AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
-        UserTable table = (UserTable) ais.getTable("s", "t");
+        Table table = ais.getTable("s", "t");
         // check columns
         checkColumns(table.getColumns(), "a", "b");
         checkColumns(table.getColumnsIncludingInternal(), "a", "b", Column.AKIBAN_PK_NAME);

@@ -19,8 +19,8 @@ package com.foundationdb.server.test.it.dxl;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.server.error.ForeignConstraintDDLException;
 import com.foundationdb.server.error.InvalidOperationException;
@@ -38,16 +38,16 @@ public final class DropSchemaIT extends ITBase {
     private void expectTables(String schemaName, String... tableNames) {
         final AkibanInformationSchema ais = ddl().getAIS(session());
         for (String name : tableNames) {
-            final UserTable userTable = ais.getUserTable(schemaName, name);
-            assertNotNull(schemaName + " " + name + " doesn't exist", userTable);
+            final Table table = ais.getTable(schemaName, name);
+            assertNotNull(schemaName + " " + name + " doesn't exist", table);
         }
     }
 
     private void expectNotTables(String schemaName, String... tableNames) {
         final AkibanInformationSchema ais = ddl().getAIS(session());
         for (String name : tableNames) {
-            final UserTable userTable = ais.getUserTable(schemaName, name);
-            assertNull(schemaName + " " + name + " still exists", userTable);
+            final Table table = ais.getTable(schemaName, name);
+            assertNull(schemaName + " " + name + " still exists", table);
         }
     }
 

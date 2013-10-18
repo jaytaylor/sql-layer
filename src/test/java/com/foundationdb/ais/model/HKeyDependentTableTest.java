@@ -139,21 +139,21 @@ public class HKeyDependentTableTest
             ");",
         };
         AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
-        UserTable r = ais.getUserTable("s", "r");
-        UserTable c = ais.getUserTable("s", "c");
-        UserTable n = ais.getUserTable("s", "n");
-        UserTable cc = ais.getUserTable("s", "cc");
-        UserTable cn = ais.getUserTable("s", "cn");
-        UserTable nc = ais.getUserTable("s", "nc");
-        UserTable nn = ais.getUserTable("s", "nn");
-        UserTable ccc = ais.getUserTable("s", "ccc");
-        UserTable ccn = ais.getUserTable("s", "ccn");
-        UserTable cnc = ais.getUserTable("s", "cnc");
-        UserTable cnn = ais.getUserTable("s", "cnn");
-        UserTable ncc = ais.getUserTable("s", "ncc");
-        UserTable ncn = ais.getUserTable("s", "ncn");
-        UserTable nnc = ais.getUserTable("s", "nnc");
-        UserTable nnn = ais.getUserTable("s", "nnn");
+        Table r = ais.getTable("s", "r");
+        Table c = ais.getTable("s", "c");
+        Table n = ais.getTable("s", "n");
+        Table cc = ais.getTable("s", "cc");
+        Table cn = ais.getTable("s", "cn");
+        Table nc = ais.getTable("s", "nc");
+        Table nn = ais.getTable("s", "nn");
+        Table ccc = ais.getTable("s", "ccc");
+        Table ccn = ais.getTable("s", "ccn");
+        Table cnc = ais.getTable("s", "cnc");
+        Table cnn = ais.getTable("s", "cnn");
+        Table ncc = ais.getTable("s", "ncc");
+        Table ncn = ais.getTable("s", "ncn");
+        Table nnc = ais.getTable("s", "nnc");
+        Table nnn = ais.getTable("s", "nnn");
         // Check hkeys
         checkHKey(r.hKey(),
                   r, r, "rid");
@@ -252,17 +252,17 @@ public class HKeyDependentTableTest
         assertEquals(elements.length, e);
     }
     
-    private void checkTables(List<UserTable> expected, List<UserTable> actual)
+    private void checkTables(List<Table> expected, List<Table> actual)
     {
         // Check contents, not order
         assertEquals(new HashSet<>(expected), new HashSet<>(actual));
     }
     
-    private List<UserTable> tables(UserTable ... tables)
+    private List<Table> tables(Table ... tables)
     {
         return Arrays.asList(tables);
     }
 
     private static final SchemaFactory SCHEMA_FACTORY = new SchemaFactory();
-    private static final List<UserTable> NO_DEPENDENTS = Collections.emptyList();
+    private static final List<Table> NO_DEPENDENTS = Collections.emptyList();
 }

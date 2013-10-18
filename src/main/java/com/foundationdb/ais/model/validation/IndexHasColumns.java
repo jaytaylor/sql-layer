@@ -18,15 +18,15 @@
 package com.foundationdb.ais.model.validation;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.error.IndexLacksColumnsException;
 
 class IndexHasColumns implements AISValidation {
 
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        for (UserTable table : ais.getUserTables().values()) {
+        for (Table table : ais.getTables().values()) {
             for (TableIndex index : table.getIndexesIncludingInternal()) {
                 if (index.getKeyColumns().size() == 0) {
                     output.reportFailure(new AISValidationFailure (

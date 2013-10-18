@@ -23,7 +23,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.AisRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
@@ -339,14 +339,14 @@ public class Product_NestedIT extends OperatorITBase
         testCursorLifecycle(plan, testCase);
     }
 
-    private Set<UserTableRowType> removeDescendentTypes(AisRowType type)
+    private Set<TableRowType> removeDescendentTypes(AisRowType type)
     {
-        Set<UserTableRowType> keepTypes = type.schema().userTableTypes();
+        Set<TableRowType> keepTypes = type.schema().userTableTypes();
         keepTypes.removeAll(Schema.descendentTypes(type, keepTypes));
         return keepTypes;
     }
 
-    private List<UserTableRowType> list(UserTableRowType... rowTypes)
+    private List<TableRowType> list(TableRowType... rowTypes)
     {
         return Arrays.asList(rowTypes);
     }

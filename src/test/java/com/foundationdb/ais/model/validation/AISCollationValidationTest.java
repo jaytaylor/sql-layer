@@ -40,7 +40,7 @@ public class AISCollationValidationTest {
     @Test
     public void testSupportedCollation() {
         final AISBuilder builder = new AISBuilder();
-        builder.userTable("test", "t1");
+        builder.table("test", "t1");
         builder.column("test", "t1", "c1", 0, "INT", (long) 0, (long) 0, false, true, null, "latin1_swedish_ci");
         builder.basicSchemaIsComplete();
         Assert.assertEquals("Expect no validation failure for supported collation", 0, builder
@@ -53,7 +53,7 @@ public class AISCollationValidationTest {
         try {
             AkCollatorFactory.setCollationMode(Mode.STRICT);
             final AISBuilder builder = new AISBuilder();
-            builder.userTable("test", "t1");
+            builder.table("test", "t1");
             builder.column("test", "t1", "c1", 0, "INT", (long) 0, (long) 0, false, true, null,
                     "fricostatic_sengalese_ci");
             builder.basicSchemaIsComplete();
@@ -70,7 +70,7 @@ public class AISCollationValidationTest {
         try {
             AkCollatorFactory.setCollationMode(Mode.LOOSE);
             final AISBuilder builder = new AISBuilder();
-            builder.userTable("test", "t1");
+            builder.table("test", "t1");
             builder.column("test", "t1", "c1", 0, "INT", (long) 0, (long) 0, false, true, null,
                     "fricostatic_sengalese_ci");
             builder.basicSchemaIsComplete();

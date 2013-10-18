@@ -27,7 +27,7 @@ public class NopVisitor implements Visitor {
     }
 
     @Override
-    public void visitUserTable(UserTable userTable) {
+    public void visitTable(Table table) {
     }
 
     @Override

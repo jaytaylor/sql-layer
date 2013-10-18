@@ -20,7 +20,7 @@ package com.foundationdb.ais.model.validation;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.error.DuplicateIndexTreeNamesException;
 
 import java.util.Collection;
@@ -36,7 +36,7 @@ class IndexTreeNamesUnique implements AISValidation {
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
         Map<String,Index> treeNameMap = new HashMap<>();
 
-        for(UserTable table : ais.getUserTables().values()) {
+        for(Table table : ais.getTables().values()) {
             checkIndexes(output, treeNameMap, table.getIndexesIncludingInternal());
         }
 

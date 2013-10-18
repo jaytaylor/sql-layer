@@ -82,8 +82,8 @@ public class Intersect_OrderedVsHKeyColumnEquivalenceIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        itemRowType = schema.userTableRowType(userTable(item));
-        itemValueStateRowType = schema.userTableRowType(userTable(itemValueState));
+        itemRowType = schema.tableRowType(table(item));
+        itemValueStateRowType = schema.tableRowType(table(itemValueState));
         giItemValueState =
             groupIndexType(Index.JoinType.LEFT,
                            "item.app_id",

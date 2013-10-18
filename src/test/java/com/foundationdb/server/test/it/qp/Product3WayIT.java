@@ -73,10 +73,10 @@ public class Product3WayIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        rRowType = schema.userTableRowType(userTable(r));
-        aRowType = schema.userTableRowType(userTable(a));
-        bRowType = schema.userTableRowType(userTable(b));
-        cRowType = schema.userTableRowType(userTable(c));
+        rRowType = schema.tableRowType(table(r));
+        aRowType = schema.tableRowType(table(a));
+        bRowType = schema.tableRowType(table(b));
+        cRowType = schema.tableRowType(table(c));
         aValueIndexRowType = indexType(a, "avalue");
         rValueIndexRowType = indexType(r, "rvalue");
         rabc = group(r);
@@ -338,14 +338,14 @@ public class Product3WayIT extends OperatorITBase
 
     // TODO: Test handling of rows whose type is not involved in product.
 
-    private Set<UserTableRowType> removeDescendentTypes(AisRowType type)
+    private Set<TableRowType> removeDescendentTypes(AisRowType type)
     {
-        Set<UserTableRowType> keepTypes = type.schema().userTableTypes();
+        Set<TableRowType> keepTypes = type.schema().userTableTypes();
         keepTypes.removeAll(Schema.descendentTypes(type, keepTypes));
         return keepTypes;
     }
 
-    private List<UserTableRowType> list(UserTableRowType... rowTypes)
+    private List<TableRowType> list(TableRowType... rowTypes)
     {
         return Arrays.asList(rowTypes);
     }
@@ -354,10 +354,10 @@ public class Product3WayIT extends OperatorITBase
     protected int a;
     protected int c;
     protected int b;
-    protected UserTableRowType rRowType;
-    protected UserTableRowType aRowType;
-    protected UserTableRowType cRowType;
-    protected UserTableRowType bRowType;
+    protected TableRowType rRowType;
+    protected TableRowType aRowType;
+    protected TableRowType cRowType;
+    protected TableRowType bRowType;
     protected IndexRowType aValueIndexRowType;
     protected IndexRowType rValueIndexRowType;
     protected Group rabc;

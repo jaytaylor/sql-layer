@@ -30,10 +30,10 @@ public final class StableUuidsIT extends ITBase {
     @Test
     public void uuidsSurviveRestart() throws Exception {
         final int tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
-        UUID origUuid = ais().getUserTable(tableId).getUuid();
+        UUID origUuid = ais().getTable(tableId).getUuid();
         assertNotNull("original UUID is null", origUuid);
         safeRestartTestServices();
-        UUID afterRestartUuid = ais().getUserTable(tableId).getUuid();
+        UUID afterRestartUuid = ais().getTable(tableId).getUuid();
         assertNotNull("original UUID is null", afterRestartUuid);
         assertEquals("UUIDs for customer", origUuid, afterRestartUuid);
         assertNotSame("UUIDs are same object", origUuid, afterRestartUuid);

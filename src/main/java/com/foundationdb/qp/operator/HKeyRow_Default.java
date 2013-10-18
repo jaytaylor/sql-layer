@@ -76,7 +76,7 @@ class HKeyRow_Default extends Operator
     @Override
     public String toString() {
         return String.format("hkey for %s (%s)", 
-                             rowType.hKey().userTable().getName(), 
+                             rowType.hKey().table().getName(), 
                              expressions.toString());
     }
 
@@ -196,7 +196,7 @@ class HKeyRow_Default extends Operator
         // For use by this class
 
         private HKeyRow buildHKeyRow() {
-            StoreAdapter store = adapter(rowType.hKey().userTable());
+            StoreAdapter store = adapter(rowType.hKey().table());
             PersistitHKey hkey = store.newHKey(rowType.hKey());
             target.attach(hkey.key());
             int index = 0;

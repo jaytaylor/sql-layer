@@ -20,7 +20,7 @@ package com.foundationdb.server.entity.changes;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.NopVisitor;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.junit.NamedParameterizedRunner;
 import com.foundationdb.junit.Parameterization;
 import com.foundationdb.server.entity.model.Space;
@@ -93,10 +93,10 @@ public final class DDLBasedSpaceModifierIT extends ITBase {
         space.visit(eToAIS);
         AkibanInformationSchema ais = eToAIS.getAIS();
         for(Group group : ais.getGroups().values()) {
-            UserTable root = group.getRoot();
+            Table root = group.getRoot();
             root.traverseTableAndDescendants(new NopVisitor() {
                 @Override
-                public void visitUserTable(UserTable table) {
+                public void visitTable(Table table) {
                     ddl().createTable(session(), table);
                 }
             });

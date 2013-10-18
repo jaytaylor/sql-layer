@@ -64,7 +64,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 
 public final class SchemaManagerIT extends ITBase {
     final static String SCHEMA = "my_schema";
@@ -90,11 +90,11 @@ public final class SchemaManagerIT extends ITBase {
         });
     }
 
-    private void registerISTable(final UserTable table, final MemoryTableFactory factory) throws Exception {
+    private void registerISTable(final Table table, final MemoryTableFactory factory) throws Exception {
         schemaManager.registerMemoryInformationSchemaTable(table, factory);
     }
 
-    private void registerISTable(final UserTable table, final int version) throws Exception {
+    private void registerISTable(final Table table, final int version) throws Exception {
         schemaManager.registerStoredInformationSchemaTable(table, version);
     }
 
@@ -204,9 +204,9 @@ public final class SchemaManagerIT extends ITBase {
         assertTablesInSchema(SCHEMA, T1_NAME, T3_CHILD_T1_NAME);
 
         final AkibanInformationSchema ais = ddl().getAIS(session());
-        final UserTable t1 = ais.getUserTable(SCHEMA, T1_NAME);
+        final Table t1 = ais.getTable(SCHEMA, T1_NAME);
         assertNotNull("t1 exists", t1);
-        final UserTable t3 = ais.getUserTable(SCHEMA, T3_CHILD_T1_NAME);
+        final Table t3 = ais.getTable(SCHEMA, T3_CHILD_T1_NAME);
         assertNotNull("t3 exists", t3);
 
         // Double check grouping we are expecting
@@ -289,7 +289,7 @@ public final class SchemaManagerIT extends ITBase {
     @Test
     public void manyTablesAndRestart() throws Exception {
         final int TABLE_COUNT = 50;
-        final int UT_COUNT = ais().getUserTables().size();
+        final int UT_COUNT = ais().getTables().size();
 
         String tableNames[] = new String[TABLE_COUNT];
         for(int i = 0; i < TABLE_COUNT; ++i) {
@@ -298,26 +298,26 @@ public final class SchemaManagerIT extends ITBase {
         }
 
         AkibanInformationSchema ais = ais();
-        Collection<UserTable> before = new ArrayList<>(ais.getUserTables().values());
-        assertEquals("user tables count before", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
+        Collection<Table> before = new ArrayList<>(ais.getTables().values());
+        assertEquals("user tables count before", TABLE_COUNT + UT_COUNT, ais.getTables().size());
         assertTablesInSchema(SCHEMA, tableNames);
 
         safeRestart();
         ais = ais();
         assertNotNull(ais);
-        Collection<UserTable> after = ais.getUserTables().values();
+        Collection<Table> after = ais.getTables().values();
         // Diagnostics for occasional assertion violation of user table count
-        if (ais.getUserTables().size() != TABLE_COUNT + UT_COUNT) {
+        if (ais.getTables().size() != TABLE_COUNT + UT_COUNT) {
             System.out.println("BEFORE");
-            for (UserTable userTable : before) {
-                System.out.println(String.format("    %s", userTable));
+            for (Table table : before) {
+                System.out.println(String.format("    %s", table));
             }
             System.out.println("AFTER");
-            for (UserTable userTable : after) {
-                System.out.println(String.format("    %s", userTable));
+            for (Table table : after) {
+                System.out.println(String.format("    %s", table));
             }
         }
-        assertEquals("user tables count after", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
+        assertEquals("user tables count after", TABLE_COUNT + UT_COUNT, ais.getTables().size());
         assertTablesInSchema(SCHEMA, tableNames);
     }
 
@@ -325,14 +325,14 @@ public final class SchemaManagerIT extends ITBase {
     public void multipleSchemasAndRestart() throws Exception {
         final int TABLE_COUNT = 3;
         AkibanInformationSchema ais = ais();
-        final int UT_COUNT = ais.getUserTables().size();
+        final int UT_COUNT = ais.getTables().size();
 
         createTable(SCHEMA+"1", "t1", "id int not null primary key");
         createTable(SCHEMA+"2", "t2", "id int not null primary key");
         createTable(SCHEMA+"3", "t3", "id int not null primary key");
 
         ais = ais();
-        assertEquals("user tables count", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
+        assertEquals("user tables count", TABLE_COUNT + UT_COUNT, ais.getTables().size());
         assertTablesInSchema(SCHEMA+"1", "t1");
         assertTablesInSchema(SCHEMA+"2", "t2");
         assertTablesInSchema(SCHEMA+"3", "t3");
@@ -341,7 +341,7 @@ public final class SchemaManagerIT extends ITBase {
         ais = ais();
         assertNotNull("ais exists", ais);
 
-        assertEquals("user tables count", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
+        assertEquals("user tables count", TABLE_COUNT + UT_COUNT, ais.getTables().size());
         assertTablesInSchema(SCHEMA+"1", "t1");
         assertTablesInSchema(SCHEMA+"2", "t2");
         assertTablesInSchema(SCHEMA+"3", "t3");
@@ -361,8 +361,8 @@ public final class SchemaManagerIT extends ITBase {
         for(TableName pair[] : testNames) {
             createTable(pair[0].getSchemaName(), pair[0].getTableName(), "id int not null primary key");
             createTable(pair[1].getSchemaName(), pair[1].getTableName(), "id int not null primary key");
-            String treeName1 = ddl().getAIS(session()).getUserTable(pair[0]).getGroup().getTreeName();
-            String treeName2 = ddl().getAIS(session()).getUserTable(pair[1]).getGroup().getTreeName();
+            String treeName1 = ddl().getAIS(session()).getTable(pair[0]).getGroup().getTreeName();
+            String treeName2 = ddl().getAIS(session()).getTable(pair[1]).getGroup().getTreeName();
             assertFalse("Non unique tree name: " + treeName1, treeName1.equals(treeName2));
         }
     }
@@ -388,10 +388,10 @@ public final class SchemaManagerIT extends ITBase {
 
         assertTablesInSchema(SCHEMA1, PARENT1.getTableName(), CHILD2.getTableName());
         assertTablesInSchema(SCHEMA2, PARENT2.getTableName(), CHILD1.getTableName());
-        UserTable parent1 = ddl().getUserTable(session(), PARENT1);
-        assertEquals("parent1 and child1 group", parent1.getGroup(), ddl().getUserTable(session(), CHILD1).getGroup());
-        UserTable parent2 = ddl().getUserTable(session(), PARENT2);
-        assertEquals("parent2 and child2 group", parent2.getGroup(), ddl().getUserTable(session(), CHILD2).getGroup());
+        Table parent1 = ddl().getTable(session(), PARENT1);
+        assertEquals("parent1 and child1 group", parent1.getGroup(), ddl().getTable(session(), CHILD1).getGroup());
+        Table parent2 = ddl().getTable(session(), PARENT2);
+        assertEquals("parent2 and child2 group", parent2.getGroup(), ddl().getTable(session(), CHILD2).getGroup());
     }
 
     @Test
@@ -417,11 +417,11 @@ public final class SchemaManagerIT extends ITBase {
         ") engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin";
 
         DDLGenerator generator = new DDLGenerator();
-        UserTable statsTable = ais().getUserTable(SCHEMA, STATS_TABLE);
+        Table statsTable = ais().getTable(SCHEMA, STATS_TABLE);
         assertNotNull("Stats table present", statsTable);
         assertEquals("Stats DDL", STATS_DDL, generator.createTable(statsTable));
 
-        UserTable entryTable = ais().getUserTable(SCHEMA, ENTRY_TABLE);
+        Table entryTable = ais().getTable(SCHEMA, ENTRY_TABLE);
         assertNotNull("Entry table present", entryTable);
         assertEquals("Entry DDL", ENTRY_DDL, generator.createTable(entryTable));
     }
@@ -432,8 +432,8 @@ public final class SchemaManagerIT extends ITBase {
         ddl().renameTable(session(), tableName(SCHEMA, T1_NAME), tableName("foo", "bar"));
         createTable(SCHEMA, T1_NAME, T1_DDL);
 
-        String originalTreeName = getUserTable(SCHEMA, T1_NAME).getGroup().getTreeName();
-        String newTreeName = getUserTable("foo", "bar").getGroup().getTreeName();
+        String originalTreeName = getTable(SCHEMA, T1_NAME).getGroup().getTreeName();
+        String newTreeName = getTable("foo", "bar").getGroup().getTreeName();
         assertTrue("Unique tree names", !originalTreeName.equals(newTreeName));
     }
 
@@ -455,7 +455,7 @@ public final class SchemaManagerIT extends ITBase {
         registerISTable(makeSimpleISTable(tableName), factory);
 
         {
-            UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
+            Table testTable = ddl().getAIS(session()).getTable(tableName);
             assertNotNull("New table exists", testTable);
             assertEquals("Is memoryTable", true, testTable.hasMemoryTableFactory());
             assertSame("Exact factory preserved", factory, testTable.getMemoryTableFactory());
@@ -463,7 +463,7 @@ public final class SchemaManagerIT extends ITBase {
 
         createTable(SCHEMA, T1_NAME, T1_DDL);
         {
-            UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
+            Table testTable = ddl().getAIS(session()).getTable(tableName);
             assertNotNull("New table exists after DDL", testTable);
             assertEquals("Is memoryTable after more DDL", true, testTable.hasMemoryTableFactory());
             assertSame("Exact factory preserved after more DDL", factory, testTable.getMemoryTableFactory());
@@ -471,7 +471,7 @@ public final class SchemaManagerIT extends ITBase {
 
         {
             safeRestart();
-            UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
+            Table testTable = ddl().getAIS(session()).getTable(tableName);
             assertNull("Table did not survive restart", testTable);
         }
     }
@@ -479,7 +479,7 @@ public final class SchemaManagerIT extends ITBase {
     @Test
     public void noDuplicateMemoryTables() throws Exception {
         final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
-        final UserTable sourceTable = makeSimpleISTable(tableName);
+        final Table sourceTable = makeSimpleISTable(tableName);
         MemoryTableFactory factory = new MemoryTableFactoryMock();
         registerISTable(sourceTable, factory);
         try {
@@ -511,21 +511,21 @@ public final class SchemaManagerIT extends ITBase {
 
         registerISTable(makeSimpleISTable(tableName), VERSION);
         {
-            UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
+            Table testTable = ddl().getAIS(session()).getTable(tableName);
             assertNotNull("New table exists", testTable);
             assertEquals("Exact version is preserved", VERSION, testTable.getVersion());
         }
 
         createTable(SCHEMA, T1_NAME, T1_DDL);
         {
-            UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
+            Table testTable = ddl().getAIS(session()).getTable(tableName);
             assertNotNull("New table exists after DDL", testTable);
             assertEquals("Exact version preserved after more DDL", VERSION, testTable.getVersion());
         }
 
         {
             safeRestart();
-            UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
+            Table testTable = ddl().getAIS(session()).getTable(tableName);
             assertNotNull("Table survived restart", testTable);
             assertEquals("Exact version preserved after more DDL", VERSION, testTable.getVersion());
         }
@@ -535,7 +535,7 @@ public final class SchemaManagerIT extends ITBase {
     public void canRegisterStoredTableWithSameVersion() throws Exception {
         final Integer VERSION = 5;
         final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
-        final UserTable sourceTable = makeSimpleISTable(tableName);
+        final Table sourceTable = makeSimpleISTable(tableName);
         registerISTable(sourceTable, VERSION);
         registerISTable(sourceTable, VERSION);
     }
@@ -544,7 +544,7 @@ public final class SchemaManagerIT extends ITBase {
     public void cannotRegisterStoredTableWithDifferentVersion() throws Exception {
         final Integer VERSION = 5;
         final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
-        final UserTable sourceTable = makeSimpleISTable(tableName);
+        final Table sourceTable = makeSimpleISTable(tableName);
         registerISTable(sourceTable, VERSION);
         registerISTable(sourceTable, VERSION + 1);
     }
@@ -574,11 +574,11 @@ public final class SchemaManagerIT extends ITBase {
     public void joinToISTable() throws Exception {
         TableName name = new TableName(TableName.INFORMATION_SCHEMA, "p");
         NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
-        builder.userTable(name).colLong("id", false).pk("id");
+        builder.table(name).colLong("id", false).pk("id");
         try {
-            builder.userTable(T1_NAME).colLong("id", false).colLong("pid", true).pk("id").joinTo("information_schema", "p").on("pid", "id");
-            registerISTable(builder.unvalidatedAIS().getUserTable(name), new MemoryTableFactoryMock());
-            ddl().createTable(session(), builder.unvalidatedAIS().getUserTable(SCHEMA, T1_NAME));
+            builder.table(T1_NAME).colLong("id", false).colLong("pid", true).pk("id").joinTo("information_schema", "p").on("pid", "id");
+            registerISTable(builder.unvalidatedAIS().getTable(name), new MemoryTableFactoryMock());
+            ddl().createTable(session(), builder.unvalidatedAIS().getTable(SCHEMA, T1_NAME));
         } finally {
             // ApiTestBase#tearDownAllTables skips IS tables 
             unRegisterISTable(name);
@@ -663,7 +663,7 @@ public final class SchemaManagerIT extends ITBase {
     @Test
     public void alterIdentitySequence() {
         createTable(SCHEMA, T1_NAME, "id INT NOT NULL GENERATED BY DEFAULT AS IDENTITY");
-        final UserTable origTable = getUserTable(SCHEMA, T1_NAME);
+        final Table origTable = getTable(SCHEMA, T1_NAME);
         final Sequence origSequence = origTable.getColumn("id").getIdentityGenerator();
         final TableName name = origSequence.getSequenceName();
         assertNotNull("identity sequence", origSequence);
@@ -677,7 +677,7 @@ public final class SchemaManagerIT extends ITBase {
             }
         });
 
-        final UserTable newTable = getUserTable(SCHEMA, T1_NAME);
+        final Table newTable = getTable(SCHEMA, T1_NAME);
         final Sequence newSequence = newTable.getColumn("id").getIdentityGenerator();
         assertNotNull("has identity sequence after alter", newSequence);
         assertEquals("startsWith", 5, newSequence.getStartsWith());
@@ -706,15 +706,15 @@ public final class SchemaManagerIT extends ITBase {
         final SortedSet<String> actual = new TreeSet<>();
         Schema schemaObj = ais.getSchema(schema);
         if(schemaObj != null) {
-            actual.addAll(schemaObj.getUserTables().keySet());
+            actual.addAll(schemaObj.getTables().keySet());
         }
         assertEquals("tables in: " + schema, expected, actual);
     }
 
-    private static UserTable makeSimpleISTable(TableName name) {
+    private static Table makeSimpleISTable(TableName name) {
         NewAISBuilder builder = AISBBasedBuilder.create(name.getSchemaName());
-        builder.userTable(name.getTableName()).colLong("id", false).pk("id");
-        return builder.ais().getUserTable(name);
+        builder.table(name.getTableName()).colLong("id", false).pk("id");
+        return builder.ais().getTable(name);
     }
 
     private static class MemoryTableFactoryMock implements MemoryTableFactory {

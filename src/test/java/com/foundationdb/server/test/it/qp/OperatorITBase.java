@@ -33,7 +33,6 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimalWrapper;
 import com.foundationdb.server.types.value.UnderlyingType;
@@ -115,10 +114,10 @@ public class OperatorITBase extends ITBase
 
     protected void setupPostCreateSchema() {
         schema = new Schema(ais());
-        customerRowType = schema.userTableRowType(userTable(customer));
-        orderRowType = schema.userTableRowType(userTable(order));
-        itemRowType = schema.userTableRowType(userTable(item));
-        addressRowType = schema.userTableRowType(userTable(address));
+        customerRowType = schema.tableRowType(table(customer));
+        orderRowType = schema.tableRowType(table(order));
+        itemRowType = schema.tableRowType(table(item));
+        addressRowType = schema.tableRowType(table(address));
         orderHKeyRowType = schema.newHKeyRowType(orderRowType.hKey());
         customerNameIndexRowType = indexType(customer, "name");
         orderSalesmanIndexRowType = indexType(order, "salesman");
@@ -243,28 +242,27 @@ public class OperatorITBase extends ITBase
         writeRows(db);
     }
 
-    protected Group group(int userTableId)
+    protected Group group(int tableId)
     {
-        return getRowDef(userTableId).table().getGroup();
+        return getRowDef(tableId).table().getGroup();
     }
 
-    protected UserTable userTable(int userTableId)
+    protected Table table(int tableId)
     {
-        RowDef userTableRowDef = getRowDef(userTableId);
-        return userTableRowDef.userTable();
+        return getRowDef(tableId).table();
     }
 
-    protected IndexRowType indexType(int userTableId, String... columnNamesArray)
+    protected IndexRowType indexType(int tableId, String... columnNamesArray)
     {
         List<String> searchIndexColumnNames = Arrays.asList(columnNamesArray);
-        UserTable userTable = userTable(userTableId);
-        for (Index index : userTable.getIndexesIncludingInternal()) {
+        Table table = table(tableId);
+        for (Index index : table.getIndexesIncludingInternal()) {
             List<String> indexColumnNames = new ArrayList<>();
             for (IndexColumn indexColumn : index.getKeyColumns()) {
                 indexColumnNames.add(indexColumn.getColumn().getName());
             }
             if (searchIndexColumnNames.equals(indexColumnNames)) {
-                return schema.userTableRowType(userTable(userTableId)).indexRowType(index);
+                return schema.tableRowType(table(tableId)).indexRowType(index);
             }
         }
         return null;
@@ -459,7 +457,7 @@ public class OperatorITBase extends ITBase
 
     protected int ordinal(RowType rowType)
     {
-        return rowType.userTable().getOrdinal();
+        return rowType.table().getOrdinal();
     }
 
 
@@ -483,10 +481,10 @@ public class OperatorITBase extends ITBase
     protected int order;
     protected int item;
     protected int address;
-    protected UserTableRowType customerRowType;
-    protected UserTableRowType orderRowType;
-    protected UserTableRowType itemRowType;
-    protected UserTableRowType addressRowType;
+    protected TableRowType customerRowType;
+    protected TableRowType orderRowType;
+    protected TableRowType itemRowType;
+    protected TableRowType addressRowType;
     protected HKeyRowType orderHKeyRowType;
     protected IndexRowType customerCidIndexRowType;
     protected IndexRowType customerNameIndexRowType;

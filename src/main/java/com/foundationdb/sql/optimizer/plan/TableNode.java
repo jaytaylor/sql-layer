@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -30,7 +30,7 @@ public class TableNode extends TableTreeBase.TableNodeBase<TableNode>
     private List<TableSource> uses;
     private long branches;
 
-    public TableNode(UserTable table, TableTree tree) {
+    public TableNode(Table table, TableTree tree) {
         super(table);
         this.tree = tree;
         uses = new ArrayList<>();

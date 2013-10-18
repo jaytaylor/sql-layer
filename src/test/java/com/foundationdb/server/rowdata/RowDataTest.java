@@ -34,7 +34,7 @@ public final class RowDataTest {
     @Test
     public void reallocateOnBind() throws ClassNotFoundException {
         AkibanInformationSchema ais = AISBBasedBuilder.create()
-                .userTable("myschema", "mytable")
+                .table("myschema", "mytable")
                 .colLong("id", false)
                 .colLong("int_0", true)
                 .colLong("int_1", true)
@@ -77,7 +77,7 @@ public final class RowDataTest {
     @Test
     public void unsignedWidth() throws ClassNotFoundException {
         AkibanInformationSchema ais = AISBBasedBuilder.create()
-                .userTable("myschema", "mytable2")
+                .table("myschema", "mytable2")
                 .colLong("id", false)
                 .colString("smallstring", 129)
                 .colString("bigstring", 32769)

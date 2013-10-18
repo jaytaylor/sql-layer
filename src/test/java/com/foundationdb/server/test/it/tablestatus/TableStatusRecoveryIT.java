@@ -85,8 +85,8 @@ public class TableStatusRecoveryIT extends ITBase {
     @Test
     public void autoIncrementInsertTest() throws Exception {
         NewAISBuilder builder = AISBBasedBuilder.create("test");
-        builder.userTable("A").autoIncLong("I", 1).colString("V", 255).pk("I");
-        ddl().createTable(session(), builder.ais().getUserTable("test", "A"));
+        builder.table("A").autoIncLong("I", 1).colString("V", 255).pk("I");
+        ddl().createTable(session(), builder.ais().getTable("test", "A"));
         updateAISGeneration();
 
         int tableId = tableId("test", "A");
@@ -127,6 +127,6 @@ public class TableStatusRecoveryIT extends ITBase {
     }
 
     private int getOrdinal(final int tableId) throws Exception {
-        return getUserTable(tableId).getOrdinal();
+        return getTable(tableId).getOrdinal();
     }
 }

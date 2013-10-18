@@ -21,7 +21,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.util.DDLGenerator;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.InvalidOperationException;
@@ -37,7 +37,7 @@ import static org.junit.Assert.assertNotNull;
 
 public final class DropIndexesIT extends ITBase {
     private void checkDDL(Integer tableId, String expected) {
-        final UserTable table = getUserTable(tableId);
+        final Table table = getTable(tableId);
         DDLGenerator gen = new DDLGenerator();
         String actual = gen.createTable(table);
         assertEquals(table.getName() + "'s create statement", expected, actual);
@@ -79,10 +79,10 @@ public final class DropIndexesIT extends ITBase {
         createIndex("test", "t", "name", "name");
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("name"));
 
-        // Index should be gone from UserTable
-        UserTable uTable = getUserTable("test", "t");
-        assertNotNull(uTable);
-        assertNull(uTable.getIndex("name"));
+        // Index should be gone from Table
+        Table table = getTable("test", "t");
+        assertNotNull(table);
+        assertNull(table.getIndex("name"));
     }
     
     @Test

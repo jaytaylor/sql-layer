@@ -31,17 +31,17 @@ public class AISInvariantsTest {
     @Test (expected=InvalidOperationException.class)
     public void testDupicateTables1() {
         builder = new AISBuilder();
-        builder.userTable("test", "t1");
+        builder.table("test", "t1");
         builder.column("test", "t1", "c1", 0, "INT", (long)0, (long)0, false, true, null, null);
         
-        builder.userTable("test", "t1");
+        builder.table("test", "t1");
     }
 
     @Test (expected=InvalidOperationException.class)
     public void testDuplicateColumns() {
         builder = new AISBuilder();
         
-        builder.userTable("test", "t1");
+        builder.table("test", "t1");
         builder.column("test", "t1", "c1", 0, "int", (long)0, (long)0, false, true, null, null);
         builder.column("test", "t1", "c1", 1, "INT", (long)0, (long)0, false, false, null, null);
 
@@ -51,7 +51,7 @@ public class AISInvariantsTest {
     public void testDuplicateColumnPos() {
         builder = new AISBuilder();
         
-        builder.userTable("test", "t1");
+        builder.table("test", "t1");
         builder.column("test", "t1", "c1", 0, "int", (long)0, (long)0, false, true, null, null);
         builder.column("test", "t1", "c2", 0, "int", (long)0, (long)0, false, false, null, null);
     }
@@ -59,7 +59,7 @@ public class AISInvariantsTest {
     @Test (expected=InvalidOperationException.class)
     public void testDuplicateIndexes() {
         builder = new AISBuilder();
-        builder.userTable("test", "t1");
+        builder.table("test", "t1");
         builder.column("test", "t1", "c1", 0, "int", (long)0, (long)0, false, true, null, null);
         builder.column("test", "t1", "c2", 1, "int", (long)0, (long)0, false, false, null, null);
         
@@ -78,7 +78,7 @@ public class AISInvariantsTest {
     @Test (expected=DuplicateIndexColumnException.class)
     public void testDuplicateColumnsTableIndex() {
         builder = new AISBuilder();
-        builder.userTable("test", "t1");
+        builder.table("test", "t1");
         builder.column("test", "t1", "c1", 0, "INT", null, null, false, false, null, null);
         builder.index("test", "t1", "c1_index", false, Index.KEY_CONSTRAINT);
         builder.indexColumn("test", "t1", "c1_index", "c1", 0, true, null);
@@ -103,13 +103,13 @@ public class AISInvariantsTest {
 
     private static AISBuilder createSimpleValidGroup() {
         AISBuilder builder = new AISBuilder();
-        builder.userTable("test", "t1");
+        builder.table("test", "t1");
         builder.column("test", "t1", "c1", 0, "INT", null, null, false, false, null, null);
         builder.column("test", "t1", "x", 1, "INT", null, null, false, false, null, null);
         builder.column("test", "t1", "y", 2, "INT", null, null, false, false, null, null);
         builder.index("test", "t1", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("test", "t1", Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, null);
-        builder.userTable("test", "t2");
+        builder.table("test", "t2");
         builder.column("test", "t2", "c1", 0, "INT", null, null, false, false, null, null);
         builder.column("test", "t2", "c2", 1, "INT", null, null, false, false, null, null);
         builder.column("test", "t2", "y", 2, "INT", null, null, false, false, null, null);

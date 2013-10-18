@@ -21,7 +21,6 @@ import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.GroupCursor;
 import com.foundationdb.qp.operator.IndexScanSelector;
@@ -75,17 +74,14 @@ public class MemoryAdapter extends StoreAdapter {
             IndexScanSelector scanSelector, boolean openAllSubCursors) {
         
         Table table = index.rootMostTable();
-        if (table.isUserTable()) {
-            return ((UserTable)table).getMemoryTableFactory().getIndexCursor(index, getSession(), keyRange, ordering, scanSelector);
-        }
-        throw new UnsupportedOperationException();
+        return table.getMemoryTableFactory().getIndexCursor(index, getSession(), keyRange, ordering, scanSelector);
     }
 
     @Override
     public long rowCount(Session session, RowType tableType) {
         long count = 0;
-        if (tableType.hasUserTable()) {
-            count = tableType.userTable().getMemoryTableFactory().rowCount();
+        if (tableType.hasTable()) {
+            count = tableType.table().getMemoryTableFactory().rowCount();
         }
         return count;
     }

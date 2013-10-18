@@ -21,8 +21,8 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.rowtype.Schema;
@@ -123,7 +123,7 @@ public interface Store extends KeyCreator {
      * @param table Table
      * @throws Exception
      */
-    void removeTrees(Session session, UserTable table);
+    void removeTrees(Session session, Table table);
     void removeTree(Session session, TreeLink treeLink);
     void truncateTree(Session session, TreeLink treeLink);
 

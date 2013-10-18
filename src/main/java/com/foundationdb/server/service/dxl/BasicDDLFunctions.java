@@ -42,7 +42,6 @@ import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.ais.util.ChangedTableDescription;
 import com.foundationdb.ais.util.TableChange;
@@ -58,11 +57,8 @@ import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.row.ProjectedRow;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.rowtype.ConstraintChecker;
-import com.foundationdb.qp.rowtype.ProjectedUserTableRowType;
-import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowChecker;
+import com.foundationdb.qp.rowtype.*;
+import com.foundationdb.qp.rowtype.TableRowChecker;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.AlterMadeNoChangeException;
 import com.foundationdb.server.error.ErrorCode;
@@ -145,7 +141,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
 
         @Override
-        public StoreAdapter getStore(UserTable table) {
+        public StoreAdapter getStore(Table table) {
             return adapter;
         }
 
@@ -207,10 +203,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
 
     @Override
-    public void createTable(Session session, UserTable table)
+    public void createTable(Session session, Table table)
     {
         TableName tableName = schemaManager().createTableDefinition(session, table);
-        UserTable newTable = getAIS(session).getUserTable(tableName);
+        Table newTable = getAIS(session).getTable(tableName);
         checkCursorsForDDLModification(session, newTable);
         for(TableListener listener : listenerService.getTableListeners()) {
             listener.onCreate(session, newTable);
@@ -230,7 +226,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         final int tableID;
         txnService.beginTransaction(session);
         try {
-            UserTable table = getAIS(session).getUserTable(tableName);
+            Table table = getAIS(session).getTable(tableName);
             // Dropping a non-existing table is a no-op
             if(table == null) {
                 return;
@@ -254,7 +250,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     private void dropTableInternal(Session session, TableName tableName) {
         logger.trace("dropping table {}", tableName);
 
-        UserTable table = getAIS(session).getUserTable(tableName);
+        Table table = getAIS(session).getTable(tableName);
         if(table == null) {
             return;
         }
@@ -287,18 +283,18 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         checkCursorsForDDLModification(session, table);
     }
 
-    private void doMetadataChange(Session session, QueryContext context, UserTable origTable, UserTable newDefinition,
+    private void doMetadataChange(Session session, QueryContext context, Table origTable, Table newDefinition,
                                   Collection<ChangedTableDescription> changedTables, boolean nullChange,
                                   AlterTableHelper helper) {
         helper.dropAffectedGroupIndexes(session, this, origTable);
         if(nullChange) {
             // Check new definition
-            final ConstraintChecker checker = new UserTableRowChecker(newDefinition);
+            final ConstraintChecker checker = new TableRowChecker(newDefinition);
 
             // But scan old
             final AkibanInformationSchema origAIS = getAIS(session);
             final Schema oldSchema = SchemaCache.globalSchema(origAIS);
-            final RowType oldSourceType = oldSchema.userTableRowType(origTable);
+            final RowType oldSourceType = oldSchema.tableRowType(origTable);
             final StoreAdapter adapter = store().createAdapter(session, oldSchema);
             final QueryContext queryContext = new ShimContext(adapter, context);
             final QueryBindings queryBindings = queryContext.createBindings();
@@ -321,15 +317,15 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
         schemaManager().alterTableDefinitions(session, changedTables);
 
-        UserTable newTable = getUserTable(session, newDefinition.getName());
+        Table newTable = getTable(session, newDefinition.getName());
         helper.createAffectedGroupIndexes(session, this, origTable, newTable, false);
     }
 
-    private void doIndexChange(Session session, UserTable origTable, UserTable newDefinition,
+    private void doIndexChange(Session session, Table origTable, Table newDefinition,
                                Collection<ChangedTableDescription> changedTables, AlterTableHelper helper) {
         helper.dropAffectedGroupIndexes(session, this, origTable);
         schemaManager().alterTableDefinitions(session, changedTables);
-        UserTable newTable = getUserTable(session, newDefinition.getName());
+        Table newTable = getTable(session, newDefinition.getName());
         List<Index> indexes = helper.findNewIndexesToBuild(newTable);
         store().buildIndexes(session, indexes);
         helper.createAffectedGroupIndexes(session, this, origTable, newTable, false);
@@ -345,7 +341,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
     }
 
-    private static void collectIndexesToBuild(ChangedTableDescription desc, UserTable oldTable, UserTable newTable, Collection<Index> indexes) {
+    private static void collectIndexesToBuild(ChangedTableDescription desc, Table oldTable, Table newTable, Collection<Index> indexes) {
         for(Index index : oldTable.getIndexesIncludingInternal()) {
             String oldName = index.getIndexName().getName();
             String preserveName = desc.getPreserveIndexes().get(oldName);
@@ -358,17 +354,17 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
     }
 
-    private void doTableChange(final Session session, QueryContext context, TableName tableName, UserTable newDefinition,
+    private void doTableChange(final Session session, QueryContext context, TableName tableName, Table newDefinition,
                                final Collection<ChangedTableDescription> changedTables,
                                final AlterTableHelper helper, boolean groupChange) {
         final AkibanInformationSchema origAIS = getAIS(session);
-        final UserTable origTable = origAIS.getUserTable(tableName);
+        final Table origTable = origAIS.getTable(tableName);
 
         helper.dropAffectedGroupIndexes(session, this, origTable);
 
         // Save previous state so it can be scanned
         final Schema origSchema = SchemaCache.globalSchema(origAIS);
-        final RowType origTableType = origSchema.userTableRowType(origTable);
+        final RowType origTableType = origSchema.tableRowType(origTable);
 
         // Alter through schemaManager to get new definitions and RowDefs
         schemaManager().alterTableDefinitions(session, changedTables);
@@ -379,7 +375,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         final QueryBindings queryBindings = queryContext.createBindings();
 
         final AkibanInformationSchema newAIS = getAIS(session);
-        final UserTable newTable = newAIS.getUserTable(newDefinition.getName());
+        final Table newTable = newAIS.getTable(newDefinition.getName());
         final Schema newSchema = SchemaCache.globalSchema(newAIS);
 
         final List<Column> newColumns = newTable.getColumnsIncludingInternal();
@@ -419,30 +415,30 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             }
         }
 
-        // PUTRT for constraint checking
-        final ProjectedUserTableRowType newTableType = new ProjectedUserTableRowType(newSchema, newTable, pProjections, !groupChange);
+        // PTRT for constraint checking
+        final ProjectedTableRowType newTableType = new ProjectedTableRowType(newSchema, newTable, pProjections, !groupChange);
 
         // For any table, group affecting or not, the original rows are never modified.
         // The affected group is scanned fully and every row is inserted into its new
         // location (which may be multiple groups).
 
         // TODO: propagateDownGroup could probably be skipped, given that we know insertion order?
-        List<UserTable> roots = new ArrayList<>();
+        List<Table> roots = new ArrayList<>();
         if(groupChange && origTable.isRoot() && !newTable.isRoot()) {
-            UserTable newRoot = newTable.getGroup().getRoot();
-            UserTable oldNewRoot = origAIS.getUserTable(newRoot.getName());
+            Table newRoot = newTable.getGroup().getRoot();
+            Table oldNewRoot = origAIS.getTable(newRoot.getName());
             roots.add(oldNewRoot);
         }
         roots.add(origTable.getGroup().getRoot());
 
         final Map<RowType,RowTypeAndIndexes> typeMap = new HashMap<>();
-        for(UserTable root : roots) {
+        for(Table root : roots) {
             root.getGroup().getRoot().traverseTableAndDescendants(
                     new NopVisitor()
                     {
                         @Override
-                        public void visitUserTable(UserTable table) {
-                            RowType oldType = origSchema.userTableRowType(table);
+                        public void visitTable(Table table) {
+                            RowType oldType = origSchema.tableRowType(table);
                             final RowType newType;
                             final Index[] indexes;
                             Collection<Index> indexesToBuild = new HashSet<>();
@@ -450,11 +446,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                                 newType = newTableType;
                                 indexesToBuild.addAll(helper.findNewIndexesToBuild(newTable));
                             } else {
-                                newType = newSchema.userTableRowType(newAIS.getUserTable(table.getName()));
+                                newType = newSchema.tableRowType(newAIS.getTable(table.getName()));
                             }
                             for(ChangedTableDescription desc : changedTables) {
                                 if(table.getName().equals(desc.getOldName())) {
-                                    collectIndexesToBuild(desc, table, newType.userTable(), indexesToBuild);
+                                    collectIndexesToBuild(desc, table, newType.table(), indexesToBuild);
                                     break;
                                 }
                             }
@@ -465,7 +461,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             );
         }
 
-        for(UserTable root : roots) {
+        for(Table root : roots) {
             Operator plan = groupScan_Default(root.getGroup());
             com.foundationdb.qp.operator.Cursor cursor = API.cursor(plan, queryContext, queryBindings);
             cursor.openTopLevel();
@@ -501,7 +497,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public ChangeLevel alterTable(Session session, TableName tableName, UserTable newDefinition,
+    public ChangeLevel alterTable(Session session, TableName tableName, Table newDefinition,
                                   List<TableChange> origColChanges, List<TableChange> origIndexChanges,
                                   QueryContext context)
     {
@@ -511,7 +507,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         final TableChangeValidator validator;
         txnService.beginTransaction(session);
         try {
-            UserTable origTable = getUserTable(session, tableName);
+            Table origTable = getTable(session, tableName);
             validator = new TableChangeValidator(origTable, newDefinition, columnChanges, indexChanges,
                                                  ALTER_AUTO_INDEX_CHANGES);
 
@@ -523,7 +519,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
             TableName newParentName = null;
             for(ChangedTableDescription desc : validator.getAllChangedTables()) {
-                UserTable table = getUserTable(session, desc.getOldName());
+                Table table = getTable(session, desc.getOldName());
                 tableIDs.add(table.getTableId());
                 if(desc.getOldName().equals(tableName)) {
                     newParentName = desc.getParentName();
@@ -533,11 +529,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             // If this is a TABLE or GROUP change, we're using a new group tree. Need to lock entire group.
             if(validator.getFinalChangeLevel() == ChangeLevel.TABLE || validator.getFinalChangeLevel() == ChangeLevel.GROUP) {
                 // Old branch. Defensive because there can't currently be old parents
-                UserTable parent = origTable.parentTable();
+                Table parent = origTable.parentTable();
                 collectGroupTableIDs(tableIDs, parent);
                 // New branch
                 if(newParentName != null) {
-                    collectGroupTableIDs(tableIDs, getUserTable(session, newParentName));
+                    collectGroupTableIDs(tableIDs, getTable(session, newParentName));
                 }
             }
 
@@ -561,13 +557,13 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     private ChangeLevel alterTableInternal(Session session, Collection<Integer> affectedTableIDs,
-                                           TableName tableName, UserTable newDefinition,
+                                           TableName tableName, Table newDefinition,
                                            List<TableChange> columnChanges, List<TableChange> indexChanges,
                                            TableChangeValidator validator,
                                            QueryContext context)
     {
         final AkibanInformationSchema origAIS = getAIS(session);
-        final UserTable origTable = getUserTable(session, tableName);
+        final Table origTable = getTable(session, tableName);
 
         ChangeLevel changeLevel;
         boolean success = false;
@@ -593,7 +589,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 for(TableName name : desc.getDroppedSequences()) {
                     sequencesToDrop.add(origAIS.getSequence(name));
                 }
-                UserTable oldTable = origAIS.getUserTable(desc.getOldName());
+                Table oldTable = origAIS.getTable(desc.getOldName());
                 for(Index index : oldTable.getIndexesIncludingInternal()) {
                     String indexName = index.getIndexName().getName();
                     if(!desc.getPreserveIndexes().containsKey(indexName)) {
@@ -670,22 +666,22 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 // Be extra careful with null checks.. In a failure state, don't know what was created.
                 List<TreeLink> links = new ArrayList<>();
                 if(removeOldGroupTree) {
-                    UserTable newTable = curAIS.getUserTable(newDefinition.getName());
+                    Table newTable = curAIS.getTable(newDefinition.getName());
                     if(newTable != null) {
                         links.add(newTable.getGroup());
                     }
                 }
 
                 if(removeNewParentOldGroupTree && origTable.getParentJoin() != null) {
-                    UserTable oldParent = origTable.getParentJoin().getParent();
-                    UserTable newOldParent = curAIS.getUserTable(oldParent.getName());
+                    Table oldParent = origTable.getParentJoin().getParent();
+                    Table newOldParent = curAIS.getTable(oldParent.getName());
                     if(newOldParent != null) {
                         links.add(newOldParent.getGroup());
                     }
                 }
 
                 for(IndexName name : newIndexTrees) {
-                    UserTable table = curAIS.getUserTable(name.getFullTableName());
+                    Table table = curAIS.getTable(name.getFullTableName());
                     if(table != null) {
                         Index index = table.getIndexIncludingInternal(name.getName());
                         if(index != null) {
@@ -707,14 +703,14 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         if(removeNewParentOldGroupTree) {
             List<Join> newParent = newDefinition.getCandidateParentJoins();
             if(!newParent.isEmpty()) {
-                UserTable newParentOldTable = origAIS.getUserTable(newParent.get(0).getParent().getName());
+                Table newParentOldTable = origAIS.getTable(newParent.get(0).getParent().getName());
                 store().removeTree(session, newParentOldTable.getGroup());
             }
         }
 
         Map<TableName,TableName> allTableNames = new HashMap<>();
         for(Integer tableID : affectedTableIDs) {
-            UserTable table = origAIS.getUserTable(tableID);
+            Table table = origAIS.getTable(tableID);
             allTableNames.put(table.getName(), table.getName());
         }
         allTableNames.put(tableName, newDefinition.getName());
@@ -736,7 +732,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             AkibanInformationSchema ais = getAIS(session);
             Sequence s = ais.getSequence(sequenceName);
             if(s != null) {
-                for(UserTable table : ais.getUserTables().values()) {
+                for(Table table : ais.getTables().values()) {
                     for(Column column : table.getColumnsIncludingInternal()) {
                         if(column.getIdentityGenerator() == s) {
                             tableIDs.add(table.getTableId());
@@ -779,7 +775,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         try {
             final com.foundationdb.ais.model.Schema schema = getAIS(session).getSchema(schemaName);
             if(schema != null) {
-                for(Table table : schema.getUserTables().values()) {
+                for(Table table : schema.getTables().values()) {
                     tableIDs.add(table.getTableId());
                 }
             }
@@ -811,14 +807,14 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         // Find all groups and tables in the schema
         Set<Group> groupsToDrop = new HashSet<>();
-        List<UserTable> tablesToDrop = new ArrayList<>();
+        List<Table> tablesToDrop = new ArrayList<>();
 
-        for(UserTable table : schema.getUserTables().values()) {
+        for(Table table : schema.getTables().values()) {
             groupsToDrop.add(table.getGroup());
             // Cannot drop entire group if parent is not in the same schema
             final Join parentJoin = table.getParentJoin();
             if(parentJoin != null) {
-                final UserTable parentTable = parentJoin.getParent();
+                final Table parentTable = parentJoin.getParent();
                 if(!parentTable.getName().getSchemaName().equals(schemaName)) {
                     tablesToDrop.add(table);
                 }
@@ -840,13 +836,13 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             }
         }
         // Remove groups that contain tables in multiple schemas
-        for(UserTable table : tablesToDrop) {
+        for(Table table : tablesToDrop) {
             groupsToDrop.remove(table.getGroup());
         }
         // Sort table IDs so higher (i.e. children) are first
-        Collections.sort(tablesToDrop, new Comparator<UserTable>() {
+        Collections.sort(tablesToDrop, new Comparator<Table>() {
             @Override
-            public int compare(UserTable o1, UserTable o2) {
+            public int compare(Table o1, Table o2) {
 
                 return o2.getTableId().compareTo(o1.getTableId());
             }
@@ -868,7 +864,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         for(View view : viewsToDrop) {
             dropView(session, view.getName());
         }
-        for(UserTable table : tablesToDrop) {
+        for(Table table : tablesToDrop) {
             dropTableInternal(session, table.getName());
         }
         for(Group group : groupsToDrop) {
@@ -918,7 +914,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             if(group == null) {
                 return;
             }
-            for(Table table : ais.getUserTables().values()) {
+            for(Table table : ais.getTables().values()) {
                 if(table.getGroup() == group) {
                     tableIDs.add(table.getTableId());
                 }
@@ -944,10 +940,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             return;
         }
         store().dropGroup(session, group);
-        final UserTable root = group.getRoot();
+        final Table root = group.getRoot();
         root.traverseTableAndDescendants(new NopVisitor() {
             @Override
-            public void visitUserTable(UserTable table) {
+            public void visitTable(Table table) {
                 for(TableListener listener : listenerService.getTableListeners()) {
                     listener.onDrop(session, table);
                 }
@@ -977,7 +973,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     @Override
     public Table getTable(Session session, int tableId) throws NoSuchTableIdException {
         logger.trace("getting AIS Table for {}", tableId);
-        Table table = getAIS(session).getUserTable(tableId);
+        Table table = getAIS(session).getTable(tableId);
         if(table == null) {
             throw new NoSuchTableIdException(tableId);
         }
@@ -996,17 +992,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public UserTable getUserTable(Session session, TableName tableName) throws NoSuchTableException {
-        logger.trace("getting AIS UserTable for {}", tableName);
-        AkibanInformationSchema ais = getAIS(session);
-        UserTable table = ais.getUserTable(tableName);
-        if (table == null) {
-            throw new NoSuchTableException(tableName);
-        }
-        return table;
-    }
-
-    @Override
     public TableName getTableName(Session session, int tableId) throws NoSuchTableException {
         logger.trace("getting table name for {}", tableId);
         return getTable(session, tableId).getName();
@@ -1015,7 +1000,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     @Override
     public RowDef getRowDef(Session session, int tableId) throws RowDefNotFoundException {
         logger.trace("getting RowDef for {}", tableId);
-        return getAIS(session).getUserTable(tableId).rowDef();
+        return getAIS(session).getTable(tableId).rowDef();
     }
 
     @Override
@@ -1050,13 +1035,13 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 switch(index.getIndexType()) {
                     case FULL_TEXT: // TODO: More IDs?
                     case TABLE:
-                        UserTable table = ais.getUserTable(index.getIndexName().getFullTableName());
+                        Table table = ais.getTable(index.getIndexName().getFullTableName());
                         if(table != null) {
                             tableIDs.add(table.getTableId());
                         }
                     break;
                     case GROUP:
-                        collectAncestorTableIDs(tableIDs, ais.getUserTable(index.leafMostTable().getName()));
+                        collectAncestorTableIDs(tableIDs, ais.getTable(index.leafMostTable().getName()));
                     break;
                     default:
                         throw new IllegalStateException("Unknown index type: " + index.getIndexType());
@@ -1124,10 +1109,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             Collection<Index> indexes = new HashSet<>();
             for(String indexName : indexNamesToDrop) {
                 Index index = table.getIndex(indexName);
-                if(index == null
-                        && !(table.isUserTable()
-                                && ((index = ((UserTable)table).getFullTextIndex(indexName)) != null))) {
-                        throw new NoSuchIndexException (indexName);
+                if(index == null &&
+                   !((index = table.getFullTextIndex(indexName)) != null)) {
+                    throw new NoSuchIndexException (indexName);
                 }
                 if(index.isPrimaryKey()) {
                     throw new ProtectedIndexException(indexName, table.getName());
@@ -1281,19 +1265,19 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
     }
 
-    private void collectGroupTableIDs(final Collection<Integer> tableIDs, UserTable table) {
+    private void collectGroupTableIDs(final Collection<Integer> tableIDs, Table table) {
         if(table == null) {
             return;
         }
         table.getGroup().getRoot().traverseTableAndDescendants(new NopVisitor() {
             @Override
-            public void visitUserTable(UserTable table) {
+            public void visitTable(Table table) {
                 tableIDs.add(table.getTableId());
             }
         });
     }
 
-    private void collectAncestorTableIDs(Collection<Integer> tableIDs, UserTable table) {
+    private void collectAncestorTableIDs(Collection<Integer> tableIDs, Table table) {
         while(table != null) {
             tableIDs.add(table.getTableId());
             table = table.parentTable();
@@ -1356,7 +1340,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             throw new NoSuchSequenceException (sequenceName);
         }
 
-        for (UserTable table : getAIS(session).getUserTables().values()) {
+        for (Table table : getAIS(session).getTables().values()) {
             if (table.getIdentityColumn() != null && table.getIdentityColumn().getIdentityGenerator().equals(sequence)) {
                 throw new DropSequenceNotAllowedException(sequence.getSequenceName().getTableName(), table.getName());
             }

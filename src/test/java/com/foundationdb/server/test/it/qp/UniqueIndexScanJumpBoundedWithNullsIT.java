@@ -75,7 +75,7 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        tRowType = schema.userTableRowType(userTable(t));
+        tRowType = schema.tableRowType(table(t));
         idxRowType = indexType(t, "a", "b", "c");
         db = new NewRow[] {
             createNewRow(t, 1010L, 1L, 11L, 110L),

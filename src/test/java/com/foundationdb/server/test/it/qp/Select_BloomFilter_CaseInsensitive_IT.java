@@ -26,7 +26,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.PersistitKeyValueSource;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
@@ -75,14 +75,14 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        dRowType = schema.userTableRowType(userTable(d));
-        fRowType = schema.userTableRowType(userTable(f));
+        dRowType = schema.tableRowType(table(d));
+        fRowType = schema.tableRowType(table(f));
         dIndexRowType = indexType(d, "test_id", "a", "b");
         fabIndexRowType = indexType(f, "a", "b");
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
-        ciCollator = dRowType.userTable().getColumn("a").getCollator();
+        ciCollator = dRowType.table().getColumn("a").getCollator();
         db = new NewRow[]{
             // Test 0: No d or f rows
             // Test 1: No f rows
@@ -332,8 +332,8 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
 
     private int d;
     private int f;
-    private UserTableRowType dRowType;
-    private UserTableRowType fRowType;
+    private TableRowType dRowType;
+    private TableRowType fRowType;
     private RowType outputRowType;
     IndexRowType dIndexRowType;
     IndexRowType fabIndexRowType;

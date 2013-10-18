@@ -19,7 +19,7 @@ package com.foundationdb.qp.operator;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Index;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.junit.NamedParameterizedRunner;
 import com.foundationdb.junit.OnlyIf;
@@ -142,29 +142,29 @@ public final class IndexScanSelectorTest {
     private static class AisStruct {
         public AisStruct() {
             AkibanInformationSchema ais = AISBBasedBuilder.create("coih")
-                    .userTable("customers").colLong("cid").colString("name", 32).pk("cid")
-                    .userTable("orders").colLong("oid").colLong("c_id").colLong("priority").pk("oid")
+                    .table("customers").colLong("cid").colString("name", 32).pk("cid")
+                    .table("orders").colLong("oid").colLong("c_id").colLong("priority").pk("oid")
                         .key("o_index", "priority")
                         .joinTo("customers").on("c_id", "cid")
-                    .userTable("items").colLong("iid").colLong("o_id").colLong("sku").pk("iid")
+                    .table("items").colLong("iid").colLong("o_id").colLong("sku").pk("iid")
                         .joinTo("orders").on("o_id", "oid")
-                    .userTable("handling").colLong("hid").colLong("i_id").colString("description", 32)
+                    .table("handling").colLong("hid").colLong("i_id").colString("description", 32)
                         .joinTo("items").on("i_id", "iid")
                     .groupIndex("sku_priority_gi").on("items", "sku").and("orders", "priority")
                     .ais();
-            c = ais.getUserTable("coih", "customers");
-            o = ais.getUserTable("coih", "orders");
-            i = ais.getUserTable("coih", "items");
-            h = ais.getUserTable("coih", "handling");
+            c = ais.getTable("coih", "customers");
+            o = ais.getTable("coih", "orders");
+            i = ais.getTable("coih", "items");
+            h = ais.getTable("coih", "handling");
             oTableIndex = o.getIndex("o_index");
             oiGroupIndex = i.getGroup().getIndex("sku_priority_gi");
         }
 
 
-        private final UserTable c;
-        private final UserTable o;
-        private final UserTable i;
-        private final UserTable h;
+        private final Table c;
+        private final Table o;
+        private final Table i;
+        private final Table h;
         private final Index oiGroupIndex;
         private final Index oTableIndex;
     }

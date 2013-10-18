@@ -52,7 +52,7 @@ public abstract class BasicFactoryBase implements MemoryTableFactory {
     }
 
     public RowType getRowType(MemoryAdapter adapter) {
-        return adapter.schema().userTableRowType(adapter.schema().ais().getUserTable(sourceTable));
+        return adapter.schema().tableRowType(adapter.schema().ais().getTable(sourceTable));
     }
     
     public static String boolResult(boolean bool) {

@@ -17,7 +17,7 @@
 
 package com.foundationdb.qp.operator;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
@@ -408,7 +408,7 @@ final class UnionAll_Default extends Operator {
         }
 
         @Override
-        public HKey ancestorHKey(UserTable table)
+        public HKey ancestorHKey(Table table)
         {
             return delegate.ancestorHKey(table);
         }
@@ -419,7 +419,7 @@ final class UnionAll_Default extends Operator {
         }
 
         @Override
-        public boolean containsRealRowOf(UserTable userTable) {
+        public boolean containsRealRowOf(Table table) {
             throw new UnsupportedOperationException(getClass().toString());
         }
 

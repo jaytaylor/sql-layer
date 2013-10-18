@@ -21,9 +21,9 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.Types;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.error.KeyColumnMismatchException;
 import com.foundationdb.server.error.NoSuchColumnException;
 
@@ -40,7 +40,7 @@ import static org.junit.Assert.assertEquals;
 public class PrimaryKeyParserTest {
     private static Index createIndex(int colCount) {
         AkibanInformationSchema ais = new AkibanInformationSchema();
-        UserTable table = UserTable.create(ais, "test", "t", 0);
+        Table table = Table.create(ais, "test", "t", 0);
         Index pk = TableIndex.create(ais, table, Index.PRIMARY_KEY_CONSTRAINT, 0, true, Index.PRIMARY_KEY_CONSTRAINT);
         char colName = 'a';
         for(int i = 0; i < colCount; ++i) {

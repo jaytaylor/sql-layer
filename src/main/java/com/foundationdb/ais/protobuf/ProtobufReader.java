@@ -169,10 +169,10 @@ public class ProtobufReader {
         
         for(NewGroupInfo newGroupInfo : newGroups) {
             String rootTableName = newGroupInfo.pbGroup.getRootTableName();
-            UserTable rootUserTable = destAIS.getUserTable(newGroupInfo.schema, rootTableName);
-            rootUserTable.setGroup(newGroupInfo.group);
-            joinsNeedingGroup.addAll(rootUserTable.getCandidateChildJoins());
-            newGroupInfo.group.setRootTable(rootUserTable);
+            Table rootTable = destAIS.getTable(newGroupInfo.schema, rootTableName);
+            rootTable.setGroup(newGroupInfo.group);
+            joinsNeedingGroup.addAll(rootTable.getCandidateChildJoins());
+            newGroupInfo.group.setRootTable(rootTable);
         }
         
         for(int i = 0; i < joinsNeedingGroup.size(); ++i) {
@@ -193,14 +193,14 @@ public class ProtobufReader {
         int generatedId = 1;
         for(AISProtobuf.Table pbTable : pbTables) {
             hasRequiredFields(pbTable);
-            UserTable userTable = UserTable.create(
+            Table table = Table.create(
                     destAIS,
                     schema,
                     pbTable.getTableName(),
                     pbTable.hasTableId() ? pbTable.getTableId() : generatedId++
             );
             if(pbTable.hasOrdinal()) {
-                userTable.setOrdinal(pbTable.getOrdinal());
+                table.setOrdinal(pbTable.getOrdinal());
             }
             UUID uuid;
             if (pbTable.hasUuid()) {
@@ -211,16 +211,16 @@ public class ProtobufReader {
                             AISProtobuf.Table.getDescriptor().getFullName(),
                             "invalid UUID string: " + pbTable.getUuid());
                 }
-                userTable.setUuid(uuid);
+                table.setUuid(uuid);
             }
-            userTable.setCharsetAndCollation(getCharColl(pbTable.hasCharColl(), pbTable.getCharColl()));
+            table.setCharsetAndCollation(getCharColl(pbTable.hasCharColl(), pbTable.getCharColl()));
             if(pbTable.hasVersion()) {
-                userTable.setVersion(pbTable.getVersion());
+                table.setVersion(pbTable.getVersion());
             }
-            loadColumns(userTable, pbTable.getColumnsList());
-            loadTableIndexes(userTable, pbTable.getIndexesList());
+            loadColumns(table, pbTable.getColumnsList());
+            loadTableIndexes(table, pbTable.getIndexesList());
             if (pbTable.hasPendingOSC()) {
-                userTable.setPendingOSC(loadPendingOSC(pbTable.getPendingOSC()));
+                table.setPendingOSC(loadPendingOSC(pbTable.getPendingOSC()));
             }
         }
     }
@@ -254,8 +254,8 @@ public class ProtobufReader {
                 hasRequiredFields(pbJoin);
                 AISProtobuf.TableName pbParentName = pbJoin.getParentTable();
                 hasRequiredFields(pbParentName);
-                UserTable childTable = destAIS.getUserTable(schema, pbTable.getTableName());
-                UserTable parentTable = destAIS.getUserTable(pbParentName.getSchemaName(), pbParentName.getTableName());
+                Table childTable = destAIS.getTable(schema, pbTable.getTableName());
+                Table parentTable = destAIS.getTable(pbParentName.getSchemaName(), pbParentName.getTableName());
 
                 if(parentTable == null) {
                     throw new ProtobufReadException(
@@ -375,12 +375,12 @@ public class ProtobufReader {
         }
     }
     
-    private void loadTableIndexes(UserTable userTable, Collection<AISProtobuf.Index> pbIndexes) {
+    private void loadTableIndexes(Table table, Collection<AISProtobuf.Index> pbIndexes) {
         for(AISProtobuf.Index pbIndex : pbIndexes) {
             hasRequiredFields(pbIndex);
             TableIndex tableIndex = TableIndex.create(
                     destAIS,
-                    userTable,
+                    table,
                     pbIndex.getIndexName(),
                     pbIndex.getIndexId(),
                     pbIndex.getIsUnique(),
@@ -388,7 +388,7 @@ public class ProtobufReader {
             );
             handleTreeName(tableIndex, pbIndex);
             handleSpatial(tableIndex, pbIndex);
-            loadIndexColumns(userTable, tableIndex, pbIndex.getColumnsList());
+            loadIndexColumns(table, tableIndex, pbIndex.getColumnsList());
         }
     }
 
@@ -414,16 +414,16 @@ public class ProtobufReader {
         for(AISProtobuf.Table pbTable : pbTables) {
             for(AISProtobuf.Index pbIndex : pbTable.getFullTextIndexesList()) {
                 hasRequiredFields(pbIndex);
-                UserTable userTable = destAIS.getUserTable(schema, pbTable.getTableName());
+                Table table = destAIS.getTable(schema, pbTable.getTableName());
                 FullTextIndex textIndex = FullTextIndex.create(
                         destAIS,
-                        userTable,
+                        table,
                         pbIndex.getIndexName(),
                         pbIndex.getIndexId()
                         );
                 handleTreeName(textIndex, pbIndex);
                 handleSpatial(textIndex, pbIndex);
-                loadIndexColumns(userTable, textIndex, pbIndex.getColumnsList());
+                loadIndexColumns(table, textIndex, pbIndex.getColumnsList());
             }
         }        
     }
@@ -451,12 +451,12 @@ public class ProtobufReader {
         }
     }
 
-    private void loadIndexColumns(UserTable table, Index index, Collection<AISProtobuf.IndexColumn> pbIndexColumns) {
+    private void loadIndexColumns(Table table, Index index, Collection<AISProtobuf.IndexColumn> pbIndexColumns) {
         for(AISProtobuf.IndexColumn pbIndexColumn : pbIndexColumns) {
             hasRequiredFields(pbIndexColumn);
             if(pbIndexColumn.hasTableName()) {
                 hasRequiredFields(pbIndexColumn.getTableName());
-                table = destAIS.getUserTable(convertTableNameOrNull(true, pbIndexColumn.getTableName()));
+                table = destAIS.getTable(convertTableNameOrNull(true, pbIndexColumn.getTableName()));
             }
             Integer indexedLength = null;
             if(pbIndexColumn.hasIndexedLength()) {

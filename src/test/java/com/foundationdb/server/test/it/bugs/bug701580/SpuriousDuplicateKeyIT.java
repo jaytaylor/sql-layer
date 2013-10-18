@@ -18,7 +18,7 @@
 package com.foundationdb.server.test.it.bugs.bug701580;
 
 import com.foundationdb.ais.model.Index;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
 
@@ -80,15 +80,15 @@ public final class SpuriousDuplicateKeyIT extends ITBase {
      */
     private void confirmIds(String tableName, int startingAt, int expectedUIndexes)
             throws Exception {
-        UserTable uTable = ddl().getAIS(session()).getUserTable("test", tableName);
+        Table table = ddl().getAIS(session()).getTable("test", tableName);
 
         Set<Integer> expectedUTableIds = new HashSet<>();
         Set<Integer> actualUTableIds = new HashSet<>();
-        for (Index index : uTable.getIndexes()) {
+        for (Index index : table.getIndexes()) {
             actualUTableIds.add(index.getIndexId());
             expectedUTableIds.add( expectedUTableIds.size() + startingAt );
         }
 
-        assertEquals("uTable index count", expectedUIndexes, actualUTableIds.size());
+        assertEquals("table index count", expectedUIndexes, actualUTableIds.size());
     }
 }

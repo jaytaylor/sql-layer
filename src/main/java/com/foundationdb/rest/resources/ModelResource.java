@@ -19,8 +19,8 @@ package com.foundationdb.rest.resources;
 
 import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.ais.util.UuidAssigner;
 import com.foundationdb.rest.ResourceRequirements;
@@ -157,7 +157,7 @@ public final class ModelResource {
                         parser.setStringWidth(parseInt(defaultWidth, DEFAULT_STRING_WIDTH));
                         MODEL_PARSE.in();
                         try (Session session = reqs.sessionService.createSession()) {
-                            final UserTable created;
+                            final Table created;
                             if(doCreate) {
                                 created = parser.parseAndCreate(reqs.dxlService.ddlFunctions(),
                                                                 session,

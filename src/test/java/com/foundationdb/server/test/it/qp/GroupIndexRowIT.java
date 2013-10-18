@@ -26,7 +26,7 @@ import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
 
@@ -67,9 +67,9 @@ public class GroupIndexRowIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new com.foundationdb.qp.rowtype.Schema(ais());
-        userRowType = schema.userTableRowType(userTable(user));
-        memberInfoRowType = schema.userTableRowType(userTable(memberInfo));
-        entitlementUserGroupRowType = schema.userTableRowType(userTable(entitlementUserGroup));
+        userRowType = schema.tableRowType(table(user));
+        memberInfoRowType = schema.tableRowType(table(memberInfo));
+        entitlementUserGroupRowType = schema.tableRowType(table(entitlementUserGroup));
         groupIndexRowType = groupIndexType(Index.JoinType.LEFT, "entitlement_user_group.uid", "member_info.lastLogin");
         group = group(user);
         adapter = newStoreAdapter(schema);
@@ -120,9 +120,9 @@ public class GroupIndexRowIT extends OperatorITBase
     private int user;
     private int memberInfo;
     private int entitlementUserGroup;
-    private UserTableRowType userRowType;
-    private UserTableRowType memberInfoRowType;
-    private UserTableRowType entitlementUserGroupRowType;
+    private TableRowType userRowType;
+    private TableRowType memberInfoRowType;
+    private TableRowType entitlementUserGroupRowType;
     private IndexRowType groupIndexRowType;
     private Group group;
 }

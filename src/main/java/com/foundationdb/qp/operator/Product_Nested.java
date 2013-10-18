@@ -21,7 +21,7 @@ import com.foundationdb.qp.row.ProductRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.ProductRowType;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
@@ -45,7 +45,7 @@ import java.util.Set;
  <li><b>RowType outerType:</b> Type of one child row. parent rows to be
  flattened.
 
- <li><b>UserTableRowType branchType:</b> Ancestor type of outerType and inputType. Output will consist
+ <li><b>TableRowType branchType:</b> Ancestor type of outerType and inputType. Output will consist
  of the cartesian product of outer and input rows that match when projected to the branch type.
 
  <li><b>RowType inputType:</b> Type of the other child row.
@@ -154,7 +154,7 @@ class Product_Nested extends Operator
 
     public Product_Nested(Operator inputOperator,
                           RowType outerType,
-                          UserTableRowType branchType,
+                          TableRowType branchType,
                           RowType inputType,
                           int bindingPosition)
     {

@@ -22,7 +22,7 @@ import com.foundationdb.qp.row.HKeyRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.HKeyRowType;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.util.HKeyCache;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types.TClass;
@@ -52,7 +52,7 @@ import static java.lang.Math.min;
 <li><b>int leftOrderingFields:</b> Number of trailing fields of left input rows to be used for ordering and matching rows.
 <li><b>int rightOrderingFields:</b> Number of trailing fields of right input rows to be used for ordering and matching rows.
 <li><b>int comparisonFields:</b> Number of ordering fields to be compared.
-<li><b>UserTableRowType outputHKeyTableRowType:</b> Before eliminating duplicate hkeys, hkeys from the input stream
+<li><b>TableRowType outputHKeyTableRowType:</b> Before eliminating duplicate hkeys, hkeys from the input stream
  are shortened to match <tt>outputHKeyTableRowType</tt>'s table's hkey type.
 
  <h1>Behavior</h1>
@@ -125,7 +125,7 @@ class HKeyUnion_Ordered extends Operator
                              int leftOrderingFields,
                              int rightOrderingFields,
                              int comparisonFields,
-                             UserTableRowType outputHKeyTableRowType)
+                             TableRowType outputHKeyTableRowType)
     {
         ArgumentValidation.notNull("left", left);
         ArgumentValidation.notNull("right", right);
@@ -146,7 +146,7 @@ class HKeyUnion_Ordered extends Operator
         this.advanceLeftOnMatch = leftOrderingFields >= rightOrderingFields;
         this.advanceRightOnMatch = rightOrderingFields >= leftOrderingFields;
         this.outputHKeyTableRowType = outputHKeyTableRowType;
-        com.foundationdb.ais.model.HKey outputHKeyDefinition = outputHKeyTableRowType.userTable().hKey();
+        com.foundationdb.ais.model.HKey outputHKeyDefinition = outputHKeyTableRowType.table().hKey();
         this.outputHKeyRowType = outputHKeyTableRowType.schema().newHKeyRowType(outputHKeyDefinition);
         this.outputHKeySegments = outputHKeyDefinition.segments().size();
         // Setup for row comparisons
@@ -171,7 +171,7 @@ class HKeyUnion_Ordered extends Operator
     private final RankExpressions fieldRankingExpressions;
     private final boolean advanceLeftOnMatch;
     private final boolean advanceRightOnMatch;
-    private final UserTableRowType outputHKeyTableRowType;
+    private final TableRowType outputHKeyTableRowType;
     private final HKeyRowType outputHKeyRowType;
     private final int outputHKeySegments;
     private final int leftFields;

@@ -38,13 +38,13 @@ public interface SchemaMXBean {
     void forceSchemaGenerationUpdate() throws Exception;
 
     /**
-     * Gets the list of known user tables, with each table's DDL.
+     * Gets the list of known tables, with each table's DDL.
      * 
      * @return a map of table names to DDL
      * @throws Exception
      *             if there was a problem in retrieving the information
      */
-    Map<TableName, String> getUserTables() throws Exception;
+    Map<TableName, String> getTables() throws Exception;
 
     boolean isProtectedTable(int rowDefId);
 

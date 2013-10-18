@@ -20,7 +20,7 @@ package com.foundationdb.server.entity.fromais;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.NopVisitor;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.junit.NamedParameterizedRunner;
 import com.foundationdb.junit.Parameterization;
 import com.foundationdb.server.entity.model.Space;
@@ -84,10 +84,10 @@ public final class AisToSpaceTest {
     private class SetUuidAssigner extends NopVisitor {
 
         @Override
-        public void visitUserTable(UserTable userTable) {
-            UUID uuid = setUuids.get(userTable.getName().getTableName());
-            assertNotNull("uuid for " + userTable, uuid);
-            userTable.setUuid(uuid);
+        public void visitTable(Table table) {
+            UUID uuid = setUuids.get(table.getName().getTableName());
+            assertNotNull("uuid for " + table, uuid);
+            table.setUuid(uuid);
         }
 
         @Override

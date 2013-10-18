@@ -26,7 +26,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
@@ -65,13 +65,13 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        pRowType = schema.userTableRowType(userTable(p));
-        cRowType = schema.userTableRowType(userTable(c));
-        dRowType = schema.userTableRowType(userTable(d));
+        pRowType = schema.tableRowType(table(p));
+        cRowType = schema.tableRowType(table(c));
+        dRowType = schema.tableRowType(table(d));
         pXIndexRowType = indexType(p, "x");
         cYIndexRowType = indexType(c, "y");
         dZIndexRowType = indexType(d, "z");
-        hKeyRowType = schema.newHKeyRowType(pRowType.userTable().hKey());
+        hKeyRowType = schema.newHKeyRowType(pRowType.table().hKey());
         coi = group(p);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
@@ -269,15 +269,15 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
 
     private String pKey(Long pid)
     {
-        return String.format("{%d,%s}", pRowType.userTable().getOrdinal(), hKeyValue(pid));
+        return String.format("{%d,%s}", pRowType.table().getOrdinal(), hKeyValue(pid));
     }
 
     private int p;
     private int c;
     private int d;
-    private UserTableRowType pRowType;
-    private UserTableRowType cRowType;
-    private UserTableRowType dRowType;
+    private TableRowType pRowType;
+    private TableRowType cRowType;
+    private TableRowType dRowType;
     private IndexRowType pXIndexRowType;
     private IndexRowType cYIndexRowType;
     private IndexRowType dZIndexRowType;

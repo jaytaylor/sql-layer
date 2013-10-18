@@ -21,7 +21,7 @@ import java.nio.charset.Charset;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.error.UnsupportedCharsetException;
 
 /**
@@ -34,7 +34,7 @@ class CharacterSetSupported implements AISValidation {
 
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        for (UserTable table : ais.getUserTables().values()) {
+        for (Table table : ais.getTables().values()) {
             final String tableCharset = table.getCharsetAndCollation().charset(); 
             if (tableCharset != null && !Charset.isSupported(tableCharset)) {
                 output.reportFailure(new AISValidationFailure (

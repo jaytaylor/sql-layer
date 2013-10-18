@@ -17,8 +17,8 @@
 
 package com.foundationdb.server.test.it.dxl;
 
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import org.junit.After;
 import org.junit.Test;
 
@@ -90,17 +90,17 @@ public class AlterTableCAOIConflatedKeysIT extends AlterTableITBase {
     }
 
     private void groupsMatch(TableName name1, TableName... names) {
-        UserTable t1 = getUserTable(name1);
+        Table t1 = getTable(name1);
         for(TableName name : names) {
-            UserTable t2 = getUserTable(name);
+            Table t2 = getTable(name);
             assertSame("Groups match for " + name1 + " and " + name, t1.getGroup(), t2.getGroup());
         }
     }
 
     private void groupsDiffer(TableName name1, TableName... names) {
-        UserTable t1 = getUserTable(name1);
+        Table t1 = getTable(name1);
         for(TableName name : names) {
-            UserTable t2 = getUserTable(name);
+            Table t2 = getTable(name);
             assertNotSame("Groups differ for " + name1 + " and " + name, t1.getGroup(), t2.getGroup());
         }
     }

@@ -34,8 +34,8 @@ import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.JoinColumn;
 import com.foundationdb.ais.model.PrimaryKey;
 import com.foundationdb.ais.model.Schema;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.AkType;
 import com.sun.jersey.core.impl.provider.entity.Inflector;
@@ -118,7 +118,7 @@ public abstract class ClassBuilder {
         Map<Integer, CtClass> implClassMap = new TreeMap<Integer, CtClass>();
 
         helper.startClass(scn, true, null, null, IMPORTS);
-        for (final UserTable table : ais.getSchema(schema).getUserTables().values()) {
+        for (final Table table : ais.getSchema(schema).getTables().values()) {
             if (table.isRoot()) {
                 helper.addExtentAccessor(table, scn, true);
             }
@@ -132,7 +132,7 @@ public abstract class ClassBuilder {
          * Precompile the implementation classes
          */
 
-        for (final UserTable table : ais.getSchema(schema).getUserTables().values()) {
+        for (final Table table : ais.getSchema(schema).getTables().values()) {
             helper.generateImplementationClass(table, schema);
             implClassMap.put(table.getTableId(), helper.getCurrentClass());
         }
@@ -140,7 +140,7 @@ public abstract class ClassBuilder {
          * Precompile the extent class
          */
         helper.startExtentClass(schema, scn);
-        for (final UserTable table : ais.getSchema(schema).getUserTables().values()) {
+        for (final Table table : ais.getSchema(schema).getTables().values()) {
             if (table.isRoot()) {
                 helper.addExtentAccessor(table, scn, false);
             }
@@ -157,14 +157,14 @@ public abstract class ClassBuilder {
         String scn = schemaClassName(schema);
         startClass(scn, true, null, null, IMPORTS);
         if ("*".equals(tableName.getTableName())) {
-            for (final UserTable table : ais.getSchema(schema).getUserTables().values()) {
+            for (final Table table : ais.getSchema(schema).getTables().values()) {
                 if (table.isRoot()) {
                     addExtentAccessor(table, scn, true);
                 }
                 generateInterfaceClass(table, scn);
             }
         } else {
-            final UserTable table = ais.getUserTable(tableName);
+            final Table table = ais.getTable(tableName);
             if (table == null) {
                 throw new NoSuchTableException(tableName);
             }
@@ -180,12 +180,12 @@ public abstract class ClassBuilder {
             throws CannotCompileException, NotFoundException {
         if ("*".equals(tableName.getTableName())) {
             Schema schema = ais.getSchema(tableName.getSchemaName());
-            for (final UserTable table : schema.getUserTables().values()) {
+            for (final Table table : schema.getTables().values()) {
                 generateImplementationClass(table, tableName.getSchemaName());
             }
             String scn = schemaClassName(tableName.getSchemaName());
             startExtentClass(tableName.getSchemaName(), scn);
-            for (final UserTable table : schema.getUserTables().values()) {
+            for (final Table table : schema.getTables().values()) {
                 if (table.isRoot()) {
                     addExtentAccessor(table, scn, false);
                 }
@@ -193,7 +193,7 @@ public abstract class ClassBuilder {
             end();
 
         } else {
-            UserTable table = ais.getUserTable(tableName);
+            Table table = ais.getTable(tableName);
             if (table == null) {
                 throw new NoSuchTableException(tableName);
             }
@@ -206,11 +206,11 @@ public abstract class ClassBuilder {
         final String schema = tableName.getSchemaName();
         String scn = schemaClassName(schema);
         if ("*".equals(tableName.getTableName())) {
-            for (final UserTable table : ais.getSchema(schema).getUserTables().values()) {
+            for (final Table table : ais.getSchema(schema).getTables().values()) {
                 generateInterfaceClass(table, scn);
             }
             startClass("$$$extent$$$", true, null, null, null);
-            for (final UserTable table : ais.getSchema(schema).getUserTables().values()) {
+            for (final Table table : ais.getSchema(schema).getTables().values()) {
                 if (table.isRoot()) {
                     addExtentAccessor(table, scn, false);
                 }
@@ -218,7 +218,7 @@ public abstract class ClassBuilder {
             end();
 
         } else {
-            final UserTable table = ais.getUserTable(tableName);
+            final Table table = ais.getTable(tableName);
             if (table == null) {
                 throw new NoSuchTableException(tableName);
             }
@@ -226,7 +226,7 @@ public abstract class ClassBuilder {
         }
     }
 
-    void generateInterfaceClass(UserTable table, String scn) throws CannotCompileException, NotFoundException {
+    void generateInterfaceClass(Table table, String scn) throws CannotCompileException, NotFoundException {
         table.getName().getTableName();
         String typeName = scn + "$" + asJavaName(table.getName().getTableName(), true);
         startClass(typeName, true, null, null, null);
@@ -235,7 +235,7 @@ public abstract class ClassBuilder {
         end();
     }
 
-    void generateImplementationClass(UserTable table, String schemaName) throws CannotCompileException,
+    void generateImplementationClass(Table table, String schemaName) throws CannotCompileException,
             NotFoundException {
         table.getName().getTableName();
         String scn = schemaClassName(schemaName);
@@ -254,7 +254,7 @@ public abstract class ClassBuilder {
         addStaticInitializer(null);
     }
 
-    void addExtentAccessor(UserTable table, String scn, boolean iface) {
+    void addExtentAccessor(Table table, String scn, boolean iface) {
         String tableName = table.getName().getTableName();
         String className = scn + "$" + asJavaName(tableName, true);
 
@@ -293,7 +293,7 @@ public abstract class ClassBuilder {
         }
     }
 
-    private void addMethods(UserTable table, String scn, String typeName, String className, boolean iface) {
+    private void addMethods(Table table, String scn, String typeName, String className, boolean iface) {
         /*
          * Add a property per column
          */
@@ -314,7 +314,7 @@ public abstract class ClassBuilder {
          */
         Join parentJoin = table.getParentJoin();
         if (parentJoin != null) {
-            UserTable parentTable = parentJoin.getParent();
+            Table parentTable = parentJoin.getParent();
             String parentTableName = parentTable.getName().getTableName();
             String parentClassName = scn + "$" + asJavaName(parentTableName, true);
             String[] body = null;
@@ -393,7 +393,7 @@ public abstract class ClassBuilder {
      * will give the base class metadata about the columns.
      */
     @SuppressWarnings("unchecked")
-    private String columnMetadataString(final UserTable table) {
+    private String columnMetadataString(final Table table) {
         String[] columnArray = new String[table == null ? 0 : table.getColumns().size()];
         if (table != null) {
             PrimaryKey pk = table.getPrimaryKey();
@@ -490,7 +490,7 @@ public abstract class ClassBuilder {
 
     }
 
-    private String buildDirectIterableExpr(final String className, final UserTable table) {
+    private String buildDirectIterableExpr(final String className, final Table table) {
         return String.format("(new com.foundationdb.direct.DirectIterableImpl" + "(%s.class, \"%s\", this))",
                 className, table.getName().getTableName());
     }
