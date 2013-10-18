@@ -35,7 +35,6 @@ import com.foundationdb.server.api.FixedCountLimit;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.scan.PredicateLimit;
 import com.foundationdb.server.api.dml.scan.ScanLimit;
-import com.foundationdb.server.rowdata.IndexDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
@@ -175,9 +174,9 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     }
 
     @Override
-    public IndexDef getIndexDef()
+    public TableIndex getPredicateIndex()
     {
-        return predicateIndex == null ? null : predicateIndex.indexDef();
+        return predicateIndex;
     }
 
     @Override

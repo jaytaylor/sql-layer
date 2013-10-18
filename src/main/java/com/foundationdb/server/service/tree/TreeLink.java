@@ -19,7 +19,7 @@ package com.foundationdb.server.service.tree;
 
 /**
  * Abstracts the information needed by TreeService to select an Exchange.
- * RowDef, IndexDef and other classes implement this interface.
+ * Group, Index and other classes implement this interface.
  *  
  * @author peter
  *

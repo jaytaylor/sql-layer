@@ -734,7 +734,12 @@ public class RowDefCacheTest
     }
 
     private int[] indexFields(Index index) {
-        return index.indexDef().getFields();
+        int[] fields = new int[index.getKeyColumns().size()];
+        IndexRowComposition indexRowComposition = index.indexRowComposition();
+        for (int i = 0; i < fields.length; i++) {
+            fields[i] = indexRowComposition.getFieldPosition(i);
+        }
+        return fields;
     }
 
     private static final String SCHEMA = "schema";

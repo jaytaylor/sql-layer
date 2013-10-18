@@ -138,7 +138,7 @@ public abstract class AbstractStoreIndexStatistics<S extends Store> {
 
     /** Store statistics into database. */
     public final void storeIndexStatistics(Session session, Index index, IndexStatistics indexStatistics) {
-        int tableId = index.indexDef().getRowDef().getRowDefId();
+        int tableId = index.leafMostTable().rowDef().getRowDefId();
         RowDef indexStatisticsRowDef = store.getRowDef(session, INDEX_STATISTICS_TABLE_NAME);
         RowDef indexStatisticsEntryRowDef = store.getRowDef(session, INDEX_STATISTICS_ENTRY_TABLE_NAME);
 

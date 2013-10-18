@@ -21,7 +21,6 @@ import com.foundationdb.ais.model.validation.AISInvariants;
 import com.foundationdb.qp.storeadapter.SpatialHelper;
 import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.geophile.SpaceLatLon;
-import com.foundationdb.server.rowdata.IndexDef;
 import com.foundationdb.server.service.tree.TreeCache;
 import com.foundationdb.server.service.tree.TreeLink;
 import com.foundationdb.server.types.TInstance;
@@ -247,16 +246,6 @@ public abstract class Index implements Traversable, TreeLink
         traversePreOrder(visitor);
     }
 
-    public IndexDef indexDef()
-    {
-        return indexDef;
-    }
-
-    public void indexDef(IndexDef indexDef)
-    {
-        this.indexDef = indexDef;
-    }
-
     public IndexType getIndexType()
     {
         return isTableIndex() ? IndexType.TABLE : IndexType.GROUP;
@@ -441,7 +430,6 @@ public abstract class Index implements Traversable, TreeLink
     private boolean columnsStale = true;
     private boolean columnsFrozen = false;
     private String treeName;
-    private IndexDef indexDef;
     protected IndexRowComposition indexRowComposition;
     protected List<IndexColumn> keyColumns;
     protected List<IndexColumn> allColumns;

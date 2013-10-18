@@ -29,7 +29,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import com.foundationdb.ais.model.*;
 import com.foundationdb.server.AkServerUtil;
-import com.foundationdb.server.rowdata.IndexDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.TableStatistics;
@@ -656,18 +655,18 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                 }
             }
             else {
-                IndexDef indexDef = rc.getIndexDef();
-                if (indexDef == null) {
-                    Index index = ddlFunctions.getRowDef(session, rc.getTableId()).getPKIndex();
-                    indexDef = index != null ? index.indexDef() : null;
+                TableIndex index = rc.getPredicateIndex();
+                if (index == null) {
+                    index = ddlFunctions.getRowDef(session, rc.getTableId()).getPKIndex();
                 }
-                if (indexDef != null) {
-                    assert indexDef.getIndex().isTableIndex();
-                    TableIndex index = (TableIndex) indexDef.getIndex();
+                if (index != null) {
                     if (index.getTable().getTableId() != tableId) {
                         continue;
                     }
-                    for (int field : indexDef.getFields()) {
+                    int nkeys = index.getKeyColumns().size();
+                    IndexRowComposition indexRowComposition = index.indexRowComposition();
+                    for (int i = 0; i < nkeys; i++) {
+                        int field = indexRowComposition.getFieldPosition(i);
                         if (columnSelector.includesColumn(field)
                                 && !AkServerUtil.equals(oldRow.get(field), newRow.get(field)))
                         {

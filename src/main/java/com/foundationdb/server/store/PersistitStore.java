@@ -226,7 +226,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     {
         if (index.isUnique() && !hasNullIndexSegments(rowData, index)) {
             Key key = iEx.getKey();
-            int segmentCount = index.indexDef().getIndexKeySegmentCount();
+            int segmentCount = index.getKeyColumns().size();
             // An index that isUniqueAndMayContainNulls has the extra null-separating field.
             if (index.isUniqueAndMayContainNulls()) {
                 segmentCount++;
