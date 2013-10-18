@@ -18,7 +18,7 @@
 package com.foundationdb.sql.optimizer.rule.cost;
 
 import com.foundationdb.ais.model.Join;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.rowtype.*;
 
 import java.util.ArrayList;
@@ -42,13 +42,13 @@ public class CostModel
         return treeScan(treeStatistics.rowWidth(), treeStatistics.rowCount());
     }
 
-    public double fullGroupScan(UserTableRowType rootTableRowType)
+    public double fullGroupScan(TableRowType rootTableRowType)
     {
         // A group scan basically does no random access, even to the very first row (I think, at least as far as CPU
         // costs are concerned). So for each table in the group, subtract the cost of a tree scan for 0 rows to account
         // for this. This leaves just the sequential access costs.
         long cost = 0;
-        for (UserTableRowType rowType : groupTableRowTypes(rootTableRowType)) {
+        for (TableRowType rowType : groupTableRowTypes(rootTableRowType)) {
             TreeStatistics treeStatistics = statisticsMap.get(rowType.typeId());
             cost += 
                 treeScan(treeStatistics.rowWidth(), treeStatistics.rowCount()) 
@@ -57,24 +57,24 @@ public class CostModel
         return cost;
     }
 
-    public double partialGroupScan(UserTableRowType rowType, long rowCount)
+    public double partialGroupScan(TableRowType rowType, long rowCount)
     {
         TreeStatistics treeStatistics = statisticsMap.get(rowType.typeId());
         return treeScan(treeStatistics.rowWidth(), rowCount) 
              - treeScan(treeStatistics.rowWidth(), 0);
     }
 
-    public double ancestorLookup(List<UserTableRowType> ancestorTableTypes)
+    public double ancestorLookup(List<TableRowType> ancestorTableTypes)
     {
         // Overhead of AncestorLookup_Default not measured
         double cost = 0;
-        for (UserTableRowType ancestorTableType : ancestorTableTypes) {
+        for (TableRowType ancestorTableType : ancestorTableTypes) {
             cost += hKeyBoundGroupScanSingleRow(ancestorTableType);
         }
         return cost;
     }
     
-    public double branchLookup(UserTableRowType branchRootType)
+    public double branchLookup(TableRowType branchRootType)
     {
         // Overhead of BranchLookup_Default not measured
         // TODO: Add filtering by row type
@@ -143,13 +143,13 @@ public class CostModel
             inputRows * (BLOOM_FILTER_SCAN_PER_ROW + selectivity * BLOOM_FILTER_SCAN_SELECTIVITY_COEFFICIENT);
     }
 
-    private double hKeyBoundGroupScanSingleRow(UserTableRowType rootTableRowType)
+    private double hKeyBoundGroupScanSingleRow(TableRowType rootTableRowType)
     {
         TreeStatistics treeStatistics = treeStatistics(rootTableRowType);
         return treeScan(treeStatistics.rowWidth(), 1);
     }
     
-    private double hKeyBoundGroupScanBranch(UserTableRowType rootTableRowType)
+    private double hKeyBoundGroupScanBranch(TableRowType rootTableRowType)
     {
         // Cost includes access to root
         double cost = hKeyBoundGroupScanSingleRow(rootTableRowType);
@@ -177,18 +177,18 @@ public class CostModel
         return statisticsMap.get(rowType.typeId());
     }
 
-    private List<UserTableRowType> groupTableRowTypes(UserTableRowType rootTableRowType)
+    private List<TableRowType> groupTableRowTypes(TableRowType rootTableRowType)
     {
-        List<UserTableRowType> rowTypes = new ArrayList<>();
-        List<UserTable> groupTables = new ArrayList<>();
-        findGroupTables(rootTableRowType.userTable(), groupTables);
-        for (UserTable table : groupTables) {
-            rowTypes.add(schema.userTableRowType(table));
+        List<TableRowType> rowTypes = new ArrayList<>();
+        List<Table> groupTables = new ArrayList<>();
+        findGroupTables(rootTableRowType.table(), groupTables);
+        for (Table table : groupTables) {
+            rowTypes.add(schema.tableRowType(table));
         }
         return rowTypes;
     }
     
-    private void findGroupTables(UserTable table, List<UserTable> groupTables)
+    private void findGroupTables(Table table, List<Table> groupTables)
     {
         groupTables.add(table);
         for (Join join : table.getChildJoins()) {
@@ -201,7 +201,7 @@ public class CostModel
         this.schema = schema;
         this.tableRowCounts = tableRowCounts;
         for (RowType rowType : schema.allTableTypes()) {
-            UserTableRowType tableRowType = (UserTableRowType)rowType;
+            TableRowType tableRowType = (TableRowType)rowType;
             TreeStatistics tableStatistics = TreeStatistics.forTable(tableRowType, tableRowCounts);
             statisticsMap.put(tableRowType.typeId(), tableStatistics);
             for (IndexRowType indexRowType : tableRowType.indexRowTypes()) {

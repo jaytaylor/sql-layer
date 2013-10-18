@@ -159,7 +159,7 @@ public class SchemaDDLTest {
     private AkibanInformationSchema factory () throws Exception
     {
         AISBuilder builder = new AISBuilder();
-        builder.userTable("s", "t");
+        builder.table("s", "t");
         builder.column ("s", "t", "c1", 0, "int", null, null, false, false, null, null);
         builder.index("s", "t", "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("s", "t", "PRIMARY", "c1", 0, true, 0);

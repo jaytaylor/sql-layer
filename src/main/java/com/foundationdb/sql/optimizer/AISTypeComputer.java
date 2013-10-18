@@ -25,7 +25,7 @@ import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import com.foundationdb.ais.model.Column;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,7 +56,7 @@ public class AISTypeComputer extends TypeComputer
     @Override
     protected void insertNode(InsertNode node) throws StandardException {
         TableName tableName = node.getTargetTableName();
-        UserTable table = (UserTable)tableName.getUserData();
+        Table table = (Table)tableName.getUserData();
         if (table == null) return;
         ResultSetNode source = node.getResultSetNode();
         int ncols = source.getResultColumns().size();

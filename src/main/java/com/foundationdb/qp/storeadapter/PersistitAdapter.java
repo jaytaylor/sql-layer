@@ -101,8 +101,8 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
 
     @Override
     public void updateRow(Row oldRow, Row newRow) {
-        RowDef rowDef = oldRow.rowType().userTable().rowDef();
-        RowDef rowDefNewRow = newRow.rowType().userTable().rowDef();
+        RowDef rowDef = oldRow.rowType().table().rowDef();
+        RowDef rowDefNewRow = newRow.rowType().table().rowDef();
         if (rowDef.getRowDefId() != rowDefNewRow.getRowDefId()) {
             throw new IllegalArgumentException(String.format("%s != %s", rowDef, rowDefNewRow));
         }
@@ -122,7 +122,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
     }
     @Override
     public void writeRow (Row newRow, Index[] indexes) {
-        RowDef rowDef = newRow.rowType().userTable().rowDef();
+        RowDef rowDef = newRow.rowType().table().rowDef();
         try {
             RowData newRowData = rowData (rowDef, newRow, rowDataCreator());
             newRowData.setExplicitRowDef(rowDef);
@@ -135,7 +135,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
 
     @Override
     public void deleteRow (Row oldRow, boolean cascadeDelete) {
-        RowDef rowDef = oldRow.rowType().userTable().rowDef();
+        RowDef rowDef = oldRow.rowType().table().rowDef();
         RowData oldRowData = rowData(rowDef, oldRow, rowDataCreator());
         oldRowData.setExplicitRowDef(rowDef);
         try {
@@ -148,7 +148,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
 
     @Override
     public long rowCount(Session session, RowType tableType) {
-        RowDef rowDef = tableType.userTable().rowDef();
+        RowDef rowDef = tableType.table().rowDef();
         return rowDef.getTableStatus().getRowCount(session);
     }
 
@@ -169,7 +169,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
 
     public RowDef rowDef(int tableId)
     {
-        return schema.ais().getUserTable(tableId).rowDef();
+        return schema.ais().getTable(tableId).rowDef();
     }
 
     private RowDataCreator rowDataCreator() {

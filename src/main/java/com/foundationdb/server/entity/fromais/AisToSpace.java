@@ -19,7 +19,7 @@ package com.foundationdb.server.entity.fromais;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.entity.model.Entity;
 import com.foundationdb.server.entity.model.Space;
 import com.google.common.base.Function;
@@ -35,7 +35,7 @@ public final class AisToSpace {
     public static Space create(AkibanInformationSchema ais, Function<String, UUID> uuidGenerator) {
         Collection<Entity> entities = new ArrayList<>(ais.getGroups().size());
         for (Group group : ais.getGroups().values()) {
-            UserTable root = group.getRoot();
+            Table root = group.getRoot();
             Entity entity = new EntityBuilder(root).getEntity();
             entities.add(entity);
         }

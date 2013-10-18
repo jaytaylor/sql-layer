@@ -16,7 +16,7 @@
  */
 package com.foundationdb.qp.storeadapter;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.rowtype.RowType;
@@ -46,10 +46,10 @@ public class FDBGroupRow extends AbstractRow {
 
     public void set(Key key, RowData rowData) {
         this.rowData = rowData;
-        RowDef rowDef = adapter.schema().ais().getUserTable(rowData.getRowDefId()).rowDef();
+        RowDef rowDef = adapter.schema().ais().getTable(rowData.getRowDefId()).rowDef();
         row = new LegacyRowWrapper(rowDef, rowData);
 
-        currentHKey = hKeyCache.hKey(rowDef.userTable());
+        currentHKey = hKeyCache.hKey(rowDef.table());
         if(key != null) {
             currentHKey.copyFrom(key);
             rowData.hKey(currentHKey.key());
@@ -60,7 +60,7 @@ public class FDBGroupRow extends AbstractRow {
     @Override
     public RowType rowType()
     {
-        return adapter.schema().userTableRowType(rowDef().userTable());
+        return adapter.schema().tableRowType(rowDef().table());
     }
 
     @Override
@@ -79,7 +79,7 @@ public class FDBGroupRow extends AbstractRow {
     }
 
     @Override
-    public HKey ancestorHKey(UserTable table)
+    public HKey ancestorHKey(Table table)
     {
         PersistitHKey ancestorHKey = hKeyCache.hKey(table);
         currentHKey.copyTo(ancestorHKey);
@@ -88,9 +88,9 @@ public class FDBGroupRow extends AbstractRow {
     }
 
     @Override
-    public boolean containsRealRowOf(UserTable userTable)
+    public boolean containsRealRowOf(Table table)
     {
-        return row.getRowDef().userTable() == userTable;
+        return row.getRowDef().table() == table;
     }
 
     RowDef rowDef()
@@ -99,7 +99,7 @@ public class FDBGroupRow extends AbstractRow {
             return row.getRowDef();
         }
         if (rowData != null) {
-            return adapter.schema().ais().getUserTable(rowData.getRowDefId()).rowDef();
+            return adapter.schema().ais().getTable(rowData.getRowDefId()).rowDef();
         }
         throw new IllegalStateException("no active row");
     }

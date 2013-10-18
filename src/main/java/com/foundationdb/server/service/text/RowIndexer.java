@@ -18,10 +18,10 @@
 package com.foundationdb.server.service.text;
 
 import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.server.types.value.ValueSource;
 import com.persistit.Key;
 
@@ -55,8 +55,8 @@ public class RowIndexer implements Closeable
     private static final Logger logger = LoggerFactory.getLogger(RowIndexer.class);
 
     public RowIndexer(FullTextIndexInfo index, IndexWriter writer, boolean updating) {
-        UserTableRowType indexedRowType = index.getIndexedRowType();
-        int depth = indexedRowType.userTable().getDepth();
+        TableRowType indexedRowType = index.getIndexedRowType();
+        int depth = indexedRowType.table().getDepth();
         ancestorRowTypes = new HashMap<>(depth+1);
         ancestors = new Row[depth+1];
         fieldsByRowType = index.getFieldsByRowType();
@@ -65,7 +65,7 @@ public class RowIndexer implements Closeable
         for (RowType rowType : rowTypes) {
             if ((rowType == indexedRowType) ||
                 rowType.ancestorOf(indexedRowType)) {
-                Integer ancestorDepth = rowType.userTable().getDepth();
+                Integer ancestorDepth = rowType.table().getDepth();
                 ancestorRowTypes.put(rowType, ancestorDepth);
             }
             else if (indexedRowType.ancestorOf(rowType)) {

@@ -18,14 +18,14 @@
 package com.foundationdb.qp.rowtype;
 
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NotNullViolationException;
 
 import java.util.BitSet;
 
-public class UserTableRowChecker implements ConstraintChecker
+public class TableRowChecker implements ConstraintChecker
 {
     @Override
     public void checkConstraints(Row row) throws InvalidOperationException
@@ -44,22 +44,22 @@ public class UserTableRowChecker implements ConstraintChecker
         return row.value(f).isNull();
     }
 
-    public UserTableRowChecker(RowType rowType)
+    public TableRowChecker(RowType rowType)
     {
-        assert rowType.hasUserTable() : rowType;
+        assert rowType.hasTable() : rowType;
         fields = rowType.nFields();
-        table = rowType.userTable();
+        table = rowType.table();
         notNull = table.notNull();
     }
 
-    public UserTableRowChecker(UserTable userTable)
+    public TableRowChecker(Table table)
     {
-        fields = userTable.getColumnsIncludingInternal().size();
-        table = userTable;
+        this.table = table;
+        fields = table.getColumnsIncludingInternal().size();
         notNull = table.notNull();
     }
 
+    private final Table table;
     private final int fields;
-    private final UserTable table;
     private final BitSet notNull;
 }

@@ -57,7 +57,7 @@ public class IndexScanInvolvingUndeclaredColumnsIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        regionChildrenRowType = schema.userTableRowType(userTable(regionChildren));
+        regionChildrenRowType = schema.tableRowType(table(regionChildren));
         idxRowType = indexType(regionChildren, "locid");
         db = new NewRow[]{
             // region

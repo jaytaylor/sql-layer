@@ -22,7 +22,7 @@ import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.TimeOperator;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.error.InvalidOperationException;
 import org.junit.Test;
 
@@ -61,9 +61,9 @@ public class MapCT extends CostModelBase
                         "primary key(did)",
                         String.format("grouping foreign key(pid) references %s(pid)", pTableName));
         schema = new Schema(ais());
-        pRowType = schema.userTableRowType(userTable(p));
-        cRowType = schema.userTableRowType(userTable(c));
-        dRowType = schema.userTableRowType(userTable(d));
+        pRowType = schema.tableRowType(table(p));
+        cRowType = schema.tableRowType(table(c));
+        dRowType = schema.tableRowType(table(d));
         group = group(p);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
@@ -109,8 +109,8 @@ public class MapCT extends CostModelBase
     private int p;
     private int c;
     private int d;
-    private UserTableRowType pRowType;
-    private UserTableRowType cRowType;
-    private UserTableRowType dRowType;
+    private TableRowType pRowType;
+    private TableRowType cRowType;
+    private TableRowType dRowType;
     private Group group;
 }

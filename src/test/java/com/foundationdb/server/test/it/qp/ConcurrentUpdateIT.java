@@ -26,7 +26,7 @@ import com.foundationdb.qp.operator.UpdateFunction;
 import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
@@ -63,8 +63,8 @@ public class ConcurrentUpdateIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        aRowType = schema.userTableRowType(userTable(a));
-        bRowType = schema.userTableRowType(userTable(b));
+        aRowType = schema.tableRowType(table(a));
+        bRowType = schema.tableRowType(table(b));
         aGroup = group(a);
         bGroup = group(b);
         db = new NewRow[]{
@@ -182,8 +182,8 @@ public class ConcurrentUpdateIT extends OperatorITBase
 
     private int a;
     private int b;
-    private UserTableRowType aRowType;
-    private UserTableRowType bRowType;
+    private TableRowType aRowType;
+    private TableRowType bRowType;
     private Group aGroup;
     private Group bGroup;
 }

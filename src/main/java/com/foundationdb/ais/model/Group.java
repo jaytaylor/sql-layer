@@ -64,12 +64,12 @@ public class Group implements Traversable, TreeLink
         return name.toString();
     }
 
-    public void setRootTable(UserTable rootTable)
+    public void setRootTable(Table rootTable)
     {
         this.rootTable = rootTable;
     }
 
-    public UserTable getRoot()
+    public Table getRoot()
     {
         return rootTable;
     }
@@ -182,5 +182,5 @@ public class Group implements Traversable, TreeLink
     private final Map<String, GroupIndex> indexMap;
     private final AtomicReference<TreeCache> treeCache = new AtomicReference<>();
     private String treeName;
-    private UserTable rootTable;
+    private Table rootTable;
 }

@@ -19,7 +19,6 @@ package com.foundationdb.sql.aisddl;
 import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.error.DropSequenceNotAllowedException;
 import com.foundationdb.server.error.NoSuchSequenceException;

@@ -19,7 +19,7 @@ package com.foundationdb.ais.model.aisb2;
 
 import java.util.Properties;
 
-public interface NewViewBuilder extends NewUserTableBuilder {
+public interface NewViewBuilder extends NewTableBuilder {
     NewViewBuilder definition(String definition);
 
     NewViewBuilder definition(String definition, Properties properties);

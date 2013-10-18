@@ -21,7 +21,6 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.HKeyColumn;
 import com.foundationdb.ais.model.HKeySegment;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.ais.model.UserTable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -150,27 +149,25 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N
 
     private void emit(N first, N second, Collection<N> output)
     {
-        Table firstTable = first.getLeafMostUTable();
-        Table secondTable = second.getLeafMostUTable();
+        Table firstTable = first.getLeafMostAisTable();
+        Table secondTable = second.getLeafMostAisTable();
         List<Column> comparisonCols = getComparisonColumns(first, second);
         if (comparisonCols.isEmpty())
             return;
-        UserTable firstUTable = (UserTable) firstTable;
-        UserTable secondUTable = (UserTable) secondTable;
         int comparisonsLen = comparisonCols.size();
-        // find the UserTable associated with the common N. This works for multi- as well as single-branch
-        UserTable commonAncestor = first.findCommonAncestor(second);
+        // find the Table associated with the common N. This works for multi- as well as single-branch
+        Table commonAncestor = first.findCommonAncestor(second);
         assert commonAncestor == second.findCommonAncestor(first) : first + "'s ancestor not reflexive with " + second;
         boolean isMultiBranch = true;
-        if (firstUTable != secondUTable) {
-            if (commonAncestor == firstUTable) {
+        if (firstTable != secondTable) {
+            if (commonAncestor == firstTable) {
                 isMultiBranch = false;
-                if (includesHKey(firstUTable, comparisonCols))
+                if (includesHKey(firstTable, comparisonCols))
                     output.add(intersect(second, first, comparisonsLen));
             }
             else {
                 // in single-branch cases, we only want to output the leafmost's index
-                isMultiBranch = (commonAncestor != secondUTable);
+                isMultiBranch = (commonAncestor != secondTable);
             }
         }
         if (isMultiBranch && includesHKey(commonAncestor, comparisonCols)) {
@@ -178,7 +175,7 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N
         }
     }
 
-    private boolean includesHKey(UserTable table, List<Column> columns) {
+    private boolean includesHKey(Table table, List<Column> columns) {
         // TODO this seems horridly inefficient, but the data set is going to be quite small
         for (HKeySegment segment : table.hKey().segments()) {
             for (HKeyColumn hKeyCol : segment.columns()) {

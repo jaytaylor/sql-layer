@@ -21,8 +21,8 @@ import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import com.foundationdb.qp.storeadapter.FDBAdapter;
 import com.foundationdb.qp.storeadapter.PersistitHKey;
@@ -583,7 +583,7 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
     }
 
     @Override
-    public void removeTrees(Session session, UserTable table) {
+    public void removeTrees(Session session, Table table) {
         Transaction txn = txnService.getTransaction(session).getTransaction();
         // Table and indexes (and group and group indexes if root table)
         rootDir.removeIfExists(txn, FDBNameGenerator.dataPath(table.getName()));

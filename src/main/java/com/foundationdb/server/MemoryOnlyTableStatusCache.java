@@ -17,7 +17,7 @@
 
 package com.foundationdb.server;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.server.service.session.Session;
 
@@ -45,7 +45,7 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
     }
 
     @Override
-    public void clearTableStatus(Session session, UserTable table) {
+    public void clearTableStatus(Session session, Table table) {
         tableStatusMap.remove(table.getTableId());
     }
 

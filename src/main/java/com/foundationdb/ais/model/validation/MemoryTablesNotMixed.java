@@ -19,7 +19,7 @@ package com.foundationdb.ais.model.validation;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.error.GroupMixedTableTypes;
 
 /**
@@ -37,16 +37,16 @@ public class MemoryTablesNotMixed implements AISValidation {
     }
 
     private static void validateGroup (AkibanInformationSchema ais, Group group, AISValidationOutput output) {
-        UserTable rootTable = group.getRoot();
+        Table rootTable = group.getRoot();
         if(rootTable == null) {
             return; // Caught elsewhere
         }
         boolean rootMemoryTable = rootTable.hasMemoryTableFactory();
-        for (UserTable userTable : ais.getUserTables().values()) {
-            if (userTable.getGroup() == group &&
-                    userTable.hasMemoryTableFactory() != rootMemoryTable) {
+        for (Table table : ais.getTables().values()) {
+            if (table.getGroup() == group &&
+                    table.hasMemoryTableFactory() != rootMemoryTable) {
                 output.reportFailure(new AISValidationFailure (
-                        new GroupMixedTableTypes(group.getName(), rootMemoryTable, userTable.getName())));
+                        new GroupMixedTableTypes(group.getName(), rootMemoryTable, table.getName())));
             }
         }
     }

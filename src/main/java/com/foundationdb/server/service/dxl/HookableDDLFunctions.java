@@ -24,7 +24,6 @@ import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.qp.operator.QueryContext;
@@ -53,7 +52,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
     
     @Override
-    public void createTable(Session session, UserTable table) {
+    public void createTable(Session session, Table table) {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.CREATE_TABLE);
@@ -98,7 +97,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public ChangeLevel alterTable(Session session, TableName tableName, UserTable newDefinition,
+    public ChangeLevel alterTable(Session session, TableName tableName, Table newDefinition,
                                   List<TableChange> columnChanges, List<TableChange> indexChanges,
                                   QueryContext context) {
         Throwable thrown = null;
@@ -321,21 +320,6 @@ public final class HookableDDLFunctions implements DDLFunctions {
             throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DXLFunction.GET_TABLE_BY_NAME, thrown);
-        }
-    }
-
-    @Override
-    public UserTable getUserTable(Session session, TableName tableName) {
-        Throwable thrown = null;
-        try {
-            hook.hookFunctionIn(session, DXLFunction.GET_USER_TABLE_BY_NAME);
-            return delegate.getUserTable(session, tableName);
-        } catch (Throwable t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunction.GET_USER_TABLE_BY_NAME, t);
-            throw throwAlways(t);
-        } finally {
-            hook.hookFunctionFinally(session, DXLFunction.GET_USER_TABLE_BY_NAME, thrown);
         }
     }
 

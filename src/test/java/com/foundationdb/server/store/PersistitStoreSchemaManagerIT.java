@@ -65,8 +65,8 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
     public void groupAndIndexTreeDelayedRemoval() throws Exception {
         createAndLoad();
 
-        String groupTreeName = getUserTable(tid).getGroup().getTreeName();
-        String pkTreeName = getUserTable(tid).getPrimaryKey().getIndex().getTreeName();
+        String groupTreeName = getTable(tid).getGroup().getTreeName();
+        String pkTreeName = getTable(tid).getPrimaryKey().getIndex().getTreeName();
         Set<String> treeNames = pssm.getTreeNames(session());
         assertEquals("Group tree is in set before drop", true, treeNames.contains(groupTreeName));
         assertEquals("PK tree is in set before drop", true, treeNames.contains(pkTreeName));
@@ -156,7 +156,7 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
 
     @Test
     public void clearUnreferencedAndOpenTransaction() throws Exception {
-        final int expectedTableCount = ais().getUserTables().size();
+        final int expectedTableCount = ais().getTables().size();
         createTable(SCHEMA, T1_NAME+1, T1_DDL);
         createTable(SCHEMA, T1_NAME+2, T1_DDL);
 
@@ -172,7 +172,7 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
         txnService().beginTransaction(session());
         try {
             AkibanInformationSchema ais = ddl().getAIS(session());
-            assertEquals("Table count after creates", expectedTableCount + 3, ais.getUserTables().size());
+            assertEquals("Table count after creates", expectedTableCount + 3, ais.getTables().size());
             pssm.clearUnreferencedAISMap();
             assertEquals("AIS map size after clearing", 2, pssm.getAISMapSize());
         } finally {
@@ -200,7 +200,7 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
                 txnService().beginTransaction(session);
                 AkibanInformationSchema ais = ddl().getAIS(session);
                 b1.await();
-                assertEquals("Table count (session 2)", tableCount, ais.getUserTables().size());
+                assertEquals("Table count (session 2)", tableCount, ais.getTables().size());
                 b2.await();
                 txnService().commitTransaction(session);
             } catch(Exception e) {

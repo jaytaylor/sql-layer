@@ -20,18 +20,18 @@ package com.foundationdb.ais.model;
 import java.util.ArrayList;
 
 public class AISTableNameChanger {
-    public AISTableNameChanger(UserTable table)
+    public AISTableNameChanger(Table table)
     {
         this.table = table;
         this.newSchemaName = table.getName().getSchemaName();
         this.newTableName = table.getName().getTableName();
     }
 
-    public AISTableNameChanger(UserTable table, TableName newName) {
+    public AISTableNameChanger(Table table, TableName newName) {
         this(table, newName.getSchemaName(), newName.getTableName());
     }
 
-    public AISTableNameChanger(UserTable table, String newSchemaName, String newTableName) {
+    public AISTableNameChanger(Table table, String newSchemaName, String newTableName) {
         this.table = table;
         this.newSchemaName = newSchemaName;
         this.newTableName = newTableName;
@@ -71,11 +71,11 @@ public class AISTableNameChanger {
         }
         // Rename the table and put back in AIS
         table.setTableName(newName);
-        ais.addUserTable(table);
+        ais.addTable(table);
     }
 
 
-    UserTable table;
+    Table table;
     String newSchemaName;
     String newTableName;
 }

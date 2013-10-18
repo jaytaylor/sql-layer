@@ -20,7 +20,7 @@ package com.foundationdb.sql.optimizer.rule.cost;
 import com.foundationdb.ais.model.*;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.sql.optimizer.OptimizerTestBase;
@@ -51,7 +51,7 @@ public class UnorderedIntersectCostSensitivityTest
         idxAOrdered = index("t", "idx_a_orderby");
         idxBUnordered = index("t", "idx_b");
         idxCUnordered = index("t", "idx_c");
-        tRowType = schema.userTableRowType(t);
+        tRowType = schema.tableRowType(t);
         idxBRowType = schema.indexRowType(idxBUnordered);
         idxCRowType = schema.indexRowType(idxCUnordered);
         costEstimator = new TestCostEstimator(ais, schema, new File(RESOURCE_DIR, "stats.yaml"), false, new Properties());
@@ -203,7 +203,7 @@ public class UnorderedIntersectCostSensitivityTest
         return costAncestorLookup(tRowType, 1).getCost();
     }
 
-    private CostEstimate costAncestorLookup(UserTableRowType rowType, long nRows)
+    private CostEstimate costAncestorLookup(TableRowType rowType, long nRows)
     {
         return new CostEstimate(nRows, nRows * costModel.ancestorLookup(Arrays.asList(rowType)));
     }
@@ -222,9 +222,9 @@ public class UnorderedIntersectCostSensitivityTest
         return buffer.toString();
     }
 
-    private UserTable table(String name)
+    private Table table(String name)
     {
-        return (UserTable) ais.getTable(SCHEMA, name);
+        return ais.getTable(SCHEMA, name);
     }
 
     private Index index(String table, String name)
@@ -308,11 +308,11 @@ public class UnorderedIntersectCostSensitivityTest
     private CostEstimator costEstimator;
     private CostModel costModel;
     private Schema schema;
-    private UserTable t;
+    private Table t;
     private Index idxAOrdered;
     private Index idxBUnordered;
     private Index idxCUnordered;
-    private UserTableRowType tRowType;
+    private TableRowType tRowType;
     private IndexRowType idxBRowType;
     private IndexRowType idxCRowType;
 

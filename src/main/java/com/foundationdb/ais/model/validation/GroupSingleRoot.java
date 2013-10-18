@@ -19,7 +19,7 @@ package com.foundationdb.ais.model.validation;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.error.GroupHasMultipleRootsException;
 
 class GroupSingleRoot implements AISValidation {
@@ -32,14 +32,14 @@ class GroupSingleRoot implements AISValidation {
     }
     
     private void validateGroup (AkibanInformationSchema ais, Group group, AISValidationOutput output) {
-        UserTable root = null;
-        for (UserTable userTable : ais.getUserTables().values()) {
-            if (userTable.getGroup() == group && userTable.isRoot()) {
+        Table root = null;
+        for (Table table : ais.getTables().values()) {
+            if (table.getGroup() == group && table.isRoot()) {
                 if (root == null) {
-                    root = userTable;
+                    root = table;
                 } else {
                     output.reportFailure(new AISValidationFailure (
-                            new GroupHasMultipleRootsException(group.getName(), root.getName(), userTable.getName())));
+                            new GroupHasMultipleRootsException(group.getName(), root.getName(), table.getName())));
                 }
             }
         }

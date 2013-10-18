@@ -23,8 +23,8 @@ import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.qp.operator.QueryContext;
@@ -45,7 +45,7 @@ import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
  */
 public class DDLFunctionsMockBase implements DDLFunctions {
     @Override
-    public void createTable(Session session, UserTable table) {
+    public void createTable(Session session, Table table) {
         throw new UnsupportedOperationException();
     }
 
@@ -60,7 +60,7 @@ public class DDLFunctionsMockBase implements DDLFunctions {
     }
     
     @Override
-    public ChangeLevel alterTable(Session session, TableName tableName, UserTable newDefinition,
+    public ChangeLevel alterTable(Session session, TableName tableName, Table newDefinition,
                            List<TableChange> columnChanges, List<TableChange> indexChanges, QueryContext context) {
         throw new UnsupportedOperationException();
     }
@@ -102,11 +102,6 @@ public class DDLFunctionsMockBase implements DDLFunctions {
 
     @Override
     public Table getTable(Session session, TableName tableName) throws NoSuchTableException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public UserTable getUserTable(Session session, TableName tableName) throws NoSuchTableException {
         throw new UnsupportedOperationException();
     }
 

@@ -47,7 +47,7 @@ public class SortPT extends QPProfilePTBase
             "filler varchar(20)");
         group = group(t);
         schema = new Schema(ais());
-        tRowType = schema.userTableRowType(userTable(t));
+        tRowType = schema.tableRowType(table(t));
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();

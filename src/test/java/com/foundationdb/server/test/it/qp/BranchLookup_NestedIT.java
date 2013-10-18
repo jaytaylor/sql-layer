@@ -25,7 +25,7 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
@@ -71,10 +71,10 @@ public class BranchLookup_NestedIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        rRowType = schema.userTableRowType(userTable(r));
-        aRowType = schema.userTableRowType(userTable(a));
-        bRowType = schema.userTableRowType(userTable(b));
-        cRowType = schema.userTableRowType(userTable(c));
+        rRowType = schema.tableRowType(table(r));
+        aRowType = schema.tableRowType(table(a));
+        bRowType = schema.tableRowType(table(b));
+        cRowType = schema.tableRowType(table(c));
         rValueIndexRowType = indexType(r, "rvalue");
         aValueIndexRowType = indexType(a, "avalue");
         bValueIndexRowType = indexType(b, "bvalue");
@@ -118,7 +118,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
     @Test(expected = IllegalArgumentException.class)
     public void testBLNOutputRowTypesEmpty()
     {
-        branchLookup_Nested(rabc, aRowType, aRowType, null, Collections.<UserTableRowType>emptyList(), InputPreservationOption.KEEP_INPUT, 0, 1);
+        branchLookup_Nested(rabc, aRowType, aRowType, null, Collections.<TableRowType>emptyList(), InputPreservationOption.KEEP_INPUT, 0, 1);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -416,10 +416,10 @@ public class BranchLookup_NestedIT extends OperatorITBase
     protected int a;
     protected int c;
     protected int b;
-    protected UserTableRowType rRowType;
-    protected UserTableRowType aRowType;
-    protected UserTableRowType bRowType;
-    protected UserTableRowType cRowType;
+    protected TableRowType rRowType;
+    protected TableRowType aRowType;
+    protected TableRowType bRowType;
+    protected TableRowType cRowType;
     protected IndexRowType rValueIndexRowType;
     protected IndexRowType aValueIndexRowType;
     protected IndexRowType bValueIndexRowType;

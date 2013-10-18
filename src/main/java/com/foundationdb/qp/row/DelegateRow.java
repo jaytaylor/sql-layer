@@ -17,7 +17,7 @@
 
 package com.foundationdb.qp.row;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.types.value.ValueSource;
 
@@ -47,7 +47,7 @@ public class DelegateRow implements Row {
     }
 
     @Override
-    public HKey ancestorHKey(UserTable table) {
+    public HKey ancestorHKey(Table table) {
         return delegate.ancestorHKey(table);
     }
 
@@ -57,8 +57,8 @@ public class DelegateRow implements Row {
     }
 
     @Override
-    public boolean containsRealRowOf(UserTable userTable) {
-        return delegate.containsRealRowOf(userTable);
+    public boolean containsRealRowOf(Table table) {
+        return delegate.containsRealRowOf(table);
     }
 
     @Override

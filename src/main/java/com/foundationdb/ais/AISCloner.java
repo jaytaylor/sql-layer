@@ -19,8 +19,8 @@ package com.foundationdb.ais;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Schema;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.protobuf.AISProtobuf;
 import com.foundationdb.ais.protobuf.ProtobufReader;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
@@ -44,8 +44,8 @@ public class AISCloner {
         // Preserve the memory table factories for any I_S tables
         Schema schema = destAIS.getSchema(TableName.INFORMATION_SCHEMA);
         if(schema != null) {
-            for(UserTable newTable : schema.getUserTables().values()) {
-                UserTable oldTable = srcAIS.getUserTable(newTable.getName());
+            for(Table newTable : schema.getTables().values()) {
+                Table oldTable = srcAIS.getTable(newTable.getName());
                 if(oldTable != null) {
                     newTable.setMemoryTableFactory(oldTable.getMemoryTableFactory());
                 }

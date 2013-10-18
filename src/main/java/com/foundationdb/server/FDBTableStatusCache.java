@@ -24,7 +24,7 @@ import com.foundationdb.server.store.FDBTransactionService.TransactionState;
 import com.foundationdb.Database;
 import com.foundationdb.MutationType;
 import com.foundationdb.Transaction;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.async.Function;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.server.rowdata.RowDef;
@@ -104,7 +104,7 @@ public class FDBTableStatusCache implements TableStatusCache {
     }
 
     @Override
-    public synchronized void clearTableStatus(Session session, UserTable table) {
+    public synchronized void clearTableStatus(Session session, Table table) {
         TableStatus status = table.rowDef().getTableStatus();
         if(status instanceof FDBTableStatus) {
             ((FDBTableStatus)status).clearState(session);

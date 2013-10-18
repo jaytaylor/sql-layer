@@ -26,7 +26,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.OutOfRangeException;
@@ -68,8 +68,8 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        pointRowType = schema.userTableRowType(userTable(point));
-        pointOrdinal = pointRowType.userTable().getOrdinal();
+        pointRowType = schema.tableRowType(table(point));
+        pointOrdinal = pointRowType.table().getOrdinal();
         latLonIndexRowType = indexType(point, "lat", "lon");
         beforeLatLonIndexRowType = indexType(point, "before", "lat", "lon");
         latLonAfterIndexRowType = indexType(point, "lat", "lon", "after");
@@ -875,7 +875,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
     private static final int DLON = 10;
 
     private int point;
-    private UserTableRowType pointRowType;
+    private TableRowType pointRowType;
     private int pointOrdinal;
     private IndexRowType latLonIndexRowType;
     private IndexRowType beforeLatLonIndexRowType;

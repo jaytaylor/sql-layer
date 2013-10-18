@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 
@@ -36,14 +36,14 @@ public abstract class BasePlannable extends BasePlanNode
     private List<PhysicalResultColumn> resultColumns;
     private RowType rowType;
     private CostEstimate costEstimate;
-    private Set<UserTable> affectedTables;
+    private Set<Table> affectedTables;
 
     protected BasePlannable(Plannable plannable,
                             DataTypeDescriptor[] parameterTypes,
                             RowType rowType,
                             List<PhysicalResultColumn> resultColumns,
                             CostEstimate costEstimate,
-                            Set<UserTable> affectedTables) {
+                            Set<Table> affectedTables) {
         this.plannable = plannable;
         this.parameterTypes = parameterTypes;
         this.rowType = rowType;
@@ -71,7 +71,7 @@ public abstract class BasePlannable extends BasePlanNode
         return costEstimate;
     }
 
-    public Set<UserTable> getAffectedTables() {
+    public Set<Table> getAffectedTables() {
         return affectedTables;
     }
 

@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.pg;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.AkType;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.sql.optimizer.TypesTranslation;
@@ -37,7 +37,7 @@ import java.util.Set;
 public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
 {
     private PostgresOperatorCompiler compiler;
-    private Set<UserTable> affectedTables;
+    private Set<Table> affectedTables;
 
     protected PostgresBaseOperatorStatement(PostgresOperatorCompiler compiler) {
         this.compiler = compiler;
@@ -100,11 +100,11 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
         return parameterTypes;
     }
 
-    public Set<UserTable> getAffectedTables() {
+    public Set<Table> getAffectedTables() {
         return affectedTables;
     }
 
-    public void setAffectedTables(Set<UserTable> affectedTables) {
+    public void setAffectedTables(Set<Table> affectedTables) {
         this.affectedTables = affectedTables;
     }
 }

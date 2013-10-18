@@ -19,8 +19,8 @@ package com.foundationdb.server.test.it.dxl;
 
 import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.server.error.NotNullViolationException;
 import com.foundationdb.server.error.PrimaryKeyNullColumnException;
@@ -106,17 +106,17 @@ public class AlterTableCAOIIT extends AlterTableITBase {
     }
 
     private void groupsMatch(TableName name1, TableName... names) {
-        UserTable t1 = getUserTable(name1);
+        Table t1 = getTable(name1);
         for(TableName name : names) {
-            UserTable t2 = getUserTable(name);
+            Table t2 = getTable(name);
             assertSame("Groups match for " + name1 + " and " + name, t1.getGroup(), t2.getGroup());
         }
     }
 
     private void groupsDiffer(TableName name1, TableName... names) {
-        UserTable t1 = getUserTable(name1);
+        Table t1 = getTable(name1);
         for(TableName name : names) {
-            UserTable t2 = getUserTable(name);
+            Table t2 = getTable(name);
             assertNotSame("Groups differ for " + name1 + " and " + name, t1.getGroup(), t2.getGroup());
         }
     }
@@ -592,10 +592,10 @@ public class AlterTableCAOIIT extends AlterTableITBase {
 
         AISBuilder builder = new AISBuilder();
         // stub parent
-        builder.userTable(SCHEMA, O_TABLE);
+        builder.table(SCHEMA, O_TABLE);
         builder.column(SCHEMA, O_TABLE, "id", 0, "int", null, null, false, false, null, null);
         // Changed child
-        builder.userTable(SCHEMA, I_TABLE);
+        builder.table(SCHEMA, I_TABLE);
         builder.column(SCHEMA, I_TABLE, "id", 0, "int", null, null, false, false, null, null);
         builder.column(SCHEMA, I_TABLE, "oid", 1, "int", null, null, false, false, null, null);
         builder.column(SCHEMA, I_TABLE, "ii", 2, "varchar", 5L, null, true, false, null, null);
@@ -614,7 +614,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         builder.groupingIsComplete();
 
         try {
-            UserTable newDef = builder.akibanInformationSchema().getUserTable(I_NAME);
+            Table newDef = builder.akibanInformationSchema().getTable(I_NAME);
             runAlter(ChangeLevel.GROUP, I_NAME, newDef, Arrays.asList(TableChange.createModify("oid", "oid")), NO_CHANGES);
             fail("Expected NotNullViolationException");
         } catch(NotNullViolationException e) {

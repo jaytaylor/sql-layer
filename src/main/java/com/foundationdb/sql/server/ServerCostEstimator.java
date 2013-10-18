@@ -22,7 +22,6 @@ import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.store.statistics.IndexStatistics;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
@@ -68,7 +67,7 @@ public class ServerCostEstimator extends CostEstimator
     }
 
     @Override
-    protected void checkRowCountChanged(UserTable table, IndexStatistics stats, long rowCount) {
+    protected void checkRowCountChanged(Table table, IndexStatistics stats, long rowCount) {
         if (!testMode) {
             indexStatistics.checkRowCountChanged(session.getSession(), table, stats, rowCount);
         }

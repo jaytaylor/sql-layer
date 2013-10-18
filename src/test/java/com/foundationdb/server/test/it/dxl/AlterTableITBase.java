@@ -22,9 +22,9 @@ import com.foundationdb.ais.model.AISTableNameChanger;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.row.Row;
@@ -124,7 +124,7 @@ public class AlterTableITBase extends ITBase {
         runAlter(changeLevel, SCHEMA, sql);
     }
 
-    protected void runAlter(ChangeLevel expectedChangeLevel, TableName name, UserTable newDefinition,
+    protected void runAlter(ChangeLevel expectedChangeLevel, TableName name, Table newDefinition,
                             List<TableChange> columnChanges, List<TableChange> indexChanges) {
         ChangeLevel actual = ddlForAlter().alterTable(session(), name, newDefinition, columnChanges, indexChanges, queryContext());
         assertEquals("ChangeLevel", expectedChangeLevel, actual);
@@ -133,18 +133,18 @@ public class AlterTableITBase extends ITBase {
 
     protected void runRenameTable(TableName oldName, TableName newName) {
         AkibanInformationSchema aisCopy = AISCloner.clone(ddl().getAIS(session()));
-        UserTable oldTable = aisCopy.getUserTable(oldName);
+        Table oldTable = aisCopy.getTable(oldName);
         assertNotNull("Found old table " + oldName, oldTable);
-        AISTableNameChanger changer = new AISTableNameChanger(aisCopy.getUserTable(oldName), newName);
+        AISTableNameChanger changer = new AISTableNameChanger(aisCopy.getTable(oldName), newName);
         changer.doChange();
-        UserTable newTable = aisCopy.getUserTable(newName);
+        Table newTable = aisCopy.getTable(newName);
         assertNotNull("Found new table " + newName, oldTable);
         runAlter(ChangeLevel.METADATA, oldName, newTable, NO_CHANGES, NO_CHANGES);
     }
 
     protected void runRenameColumn(TableName tableName, String oldColName, String newColName) {
         AkibanInformationSchema aisCopy = AISCloner.clone(ddl().getAIS(session()));
-        UserTable tableCopy = aisCopy.getUserTable(tableName);
+        Table tableCopy = aisCopy.getTable(tableName);
         assertNotNull("Found table " + tableName, tableCopy);
         Column oldColumn = tableCopy.getColumn(oldColName);
         assertNotNull("Found old column " + oldColName, oldColumn);
@@ -227,7 +227,7 @@ public class AlterTableITBase extends ITBase {
 
         updateAISGeneration();
         AkibanInformationSchema ais = ddl().getAIS(session());
-        UserTable table = ais.getUserTable(tableID);
+        Table table = ais.getTable(tableID);
         List<NewRow> tableRows = new ArrayList<>(scanAll(scanAllRequest(tableID, true)));
 
         for(TableIndex index : table.getIndexesIncludingInternal()) {
@@ -254,7 +254,7 @@ public class AlterTableITBase extends ITBase {
 
     @After
     public final void doCheckAllSingleColumnIndexes() {
-        for(UserTable table : ddl().getAIS(session()).getUserTables().values()) {
+        for(Table table : ddl().getAIS(session()).getTables().values()) {
             if(!TableName.INFORMATION_SCHEMA.equals(table.getName().getSchemaName())) {
                 checkIndexContents(table.getTableId());
             }

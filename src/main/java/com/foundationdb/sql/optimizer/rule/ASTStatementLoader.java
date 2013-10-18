@@ -39,7 +39,7 @@ import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Routine;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 
 import com.foundationdb.server.error.InsertWrongCountException;
 import com.foundationdb.server.error.NoSuchTableException;
@@ -445,14 +445,14 @@ public class ASTStatementLoader extends BaseRule
                 if (tb == null)
                     throw new UnsupportedSQLException("FROM table",
                                                       fromTable);
-                UserTable userTable = (UserTable)tb.getTable();
-                TableNode table = getTableNode(userTable);
+                Table aisTable = (Table)tb.getTable();
+                TableNode table = getTableNode(aisTable);
                 String name = fromTable.getCorrelationName();
                 if (name == null) {
-                    if (userTable.getName().getSchemaName().equals(rulesContext.getDefaultSchemaName()))
-                        name = userTable.getName().getTableName();
+                    if (aisTable.getName().getSchemaName().equals(rulesContext.getDefaultSchemaName()))
+                        name = aisTable.getName().getTableName();
                     else
-                        name = userTable.getName().toString();
+                        name = aisTable.getName().toString();
                 }
                 result = new TableSource(table, required, name);
             }
@@ -1308,7 +1308,7 @@ public class ASTStatementLoader extends BaseRule
         protected TableNode getTargetTable(DMLModStatementNode statement)
                 throws StandardException {
             TableName tableName = statement.getTargetTableName();
-            UserTable table = (UserTable)tableName.getUserData();
+            Table table = (Table)tableName.getUserData();
             if (table == null)
                 throw new NoSuchTableException(tableName.getSchemaName(), 
                                                tableName.getTableName());
@@ -1328,7 +1328,7 @@ public class ASTStatementLoader extends BaseRule
         protected Deque<EquivalenceFinder<ColumnExpression>> columnEquivalences
                 = new ArrayDeque<>(1);
 
-        protected TableNode getTableNode(UserTable table)
+        protected TableNode getTableNode(Table table)
                 throws StandardException {
             Group group = table.getGroup();
             TableTree tables = groups.get(group);
@@ -1341,7 +1341,7 @@ public class ASTStatementLoader extends BaseRule
 
         protected TableNode getColumnTableNode(Column column)
                 throws StandardException {
-            return getTableNode(column.getUserTable());
+            return getTableNode(column.getTable());
         }
 
         /** Translate expression to intermediate form. */

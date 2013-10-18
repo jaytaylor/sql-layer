@@ -626,7 +626,7 @@ public class ApiTestBase {
     protected final int createTableFromTypes(String schema, String table, boolean firstIsPk, boolean createIndexes,
                                              SimpleColumn... columns) {
         AISBuilder builder = new AISBuilder();
-        builder.userTable(schema, table);
+        builder.table(schema, table);
 
         int colPos = 0;
         SimpleColumn pk = firstIsPk ? columns[0] : new SimpleColumn("id", "int");
@@ -645,7 +645,7 @@ public class ApiTestBase {
             }
         }
 
-        UserTable tempTable = builder.akibanInformationSchema().getUserTable(schema, table);
+        Table tempTable = builder.akibanInformationSchema().getTable(schema, table);
         ddl().createTable(session(), tempTable);
         updateAISGeneration();
         return tableId(schema, table);
@@ -663,7 +663,7 @@ public class ApiTestBase {
     protected final int createTable(String schema, String table, String definition) throws InvalidOperationException {
         String ddl = String.format("CREATE TABLE \"%s\" (%s)", table, definition);
         AkibanInformationSchema tempAIS = createFromDDL(schema, ddl);
-        UserTable tempTable = tempAIS.getUserTable(schema, table);
+        Table tempTable = tempAIS.getTable(schema, table);
         ddl().createTable(session(), tempTable);
         updateAISGeneration();
         return ddl().getTableId(session(), new TableName(schema, table));
@@ -729,7 +729,7 @@ public class ApiTestBase {
 
     protected final TableIndex createIndex(String schema, String table, String indexName, String... indexCols) {
         AkibanInformationSchema tempAIS = createIndexInternal(schema, table, indexName, indexCols);
-        Index tempIndex = tempAIS.getUserTable(schema, table).getIndex(indexName);
+        Index tempIndex = tempAIS.getTable(schema, table).getIndex(indexName);
         ddl().createIndexes(session(), Collections.singleton(tempIndex));
         updateAISGeneration();
         return ddl().getTable(session(), new TableName(schema, table)).getIndex(indexName);
@@ -737,7 +737,7 @@ public class ApiTestBase {
 
     protected final TableIndex createUniqueIndex(String schema, String table, String indexName, String... indexCols) {
         AkibanInformationSchema tempAIS = createUniqueIndexInternal(schema, table, indexName, indexCols);
-        Index tempIndex = tempAIS.getUserTable(schema, table).getIndex(indexName);
+        Index tempIndex = tempAIS.getTable(schema, table).getIndex(indexName);
         ddl().createIndexes(session(), Collections.singleton(tempIndex));
         updateAISGeneration();
         return ddl().getTable(session(), new TableName(schema, table)).getIndex(indexName);
@@ -747,7 +747,7 @@ public class ApiTestBase {
                                                        int firstSpatialArgument, int dimensions,
                                                        String... indexCols) {
         AkibanInformationSchema tempAIS = AISCloner.clone(createIndexInternal(schema, table, indexName, indexCols));
-        TableIndex tempIndex = tempAIS.getUserTable(schema, table).getIndex(indexName);
+        TableIndex tempIndex = tempAIS.getTable(schema, table).getIndex(indexName);
         tempIndex.markSpatial(firstSpatialArgument, dimensions);
         ddl().createIndexes(session(), Collections.singleton(tempIndex));
         updateAISGeneration();
@@ -762,10 +762,10 @@ public class ApiTestBase {
     protected final TableIndex createGroupingFKIndex(String schema, String table, String indexName, String... indexCols) {
         assertTrue("grouping fk index must start with __akiban", indexName.startsWith("__akiban"));
         AkibanInformationSchema tempAIS = AISCloner.clone(createIndexInternal(schema, table, indexName, indexCols));
-        UserTable userTable = tempAIS.getUserTable(schema, table);
-        TableIndex tempIndex = userTable.getIndex(indexName);
-        userTable.removeIndexes(Collections.singleton(tempIndex));
-        TableIndex fkIndex = TableIndex.create(tempAIS, userTable, indexName, 0, false, "FOREIGN KEY");
+        Table tempTable = tempAIS.getTable(schema, table);
+        TableIndex tempIndex = tempTable.getIndex(indexName);
+        tempTable.removeIndexes(Collections.singleton(tempIndex));
+        TableIndex fkIndex = TableIndex.create(tempAIS, tempTable, indexName, 0, false, "FOREIGN KEY");
         for(IndexColumn col : tempIndex.getKeyColumns()) {
             IndexColumn.create(fkIndex, col.getColumn(), col.getPosition(), col.isAscending(), col.getIndexedLength());
         }
@@ -776,10 +776,10 @@ public class ApiTestBase {
 
     protected final TableIndex createTableIndex(int tableId, String indexName, boolean unique, String... columns) {
         AkibanInformationSchema temp = AISCloner.clone(ais());
-        return createTableIndex(temp.getUserTable(tableId), indexName, unique, columns);
+        return createTableIndex(temp.getTable(tableId), indexName, unique, columns);
     }
     
-    protected final TableIndex createTableIndex(UserTable table, String indexName, boolean unique, String... columns) {
+    protected final TableIndex createTableIndex(Table table, String indexName, boolean unique, String... columns) {
         TableIndex index = new TableIndex(table, indexName, 0, unique, "KEY");
         int pos = 0;
         for (String columnName : columns) {
@@ -787,7 +787,7 @@ public class ApiTestBase {
             IndexColumn.create(index, column, pos++, true, null);
         }
         ddl().createIndexes(session(), Collections.singleton(index));
-        return getUserTable(table.getTableId()).getIndex(indexName);
+        return getTable(table.getTableId()).getIndex(indexName);
     }
 
     /** @deprecated  **/
@@ -835,10 +835,10 @@ public class ApiTestBase {
     
     protected final FullTextIndex createFullTextIndex(String schema, String table, String indexName, String... indexCols) {
         AkibanInformationSchema tempAIS = createIndexInternal(schema, table, indexName, "FULL_TEXT(" + Strings.join(Arrays.asList(indexCols), ",") + ")");
-        Index tempIndex = tempAIS.getUserTable(schema, table).getFullTextIndex(indexName);
+        Index tempIndex = tempAIS.getTable(schema, table).getFullTextIndex(indexName);
         ddl().createIndexes(session(), Collections.singleton(tempIndex));
         updateAISGeneration();
-        return ddl().getUserTable(session(), new TableName(schema, table)).getFullTextIndex(indexName);
+        return ddl().getTable(session(), new TableName(schema, table)).getFullTextIndex(indexName);
     }
 
     protected int createTablesAndIndexesFromDDL(String schema, String ddl) {
@@ -849,10 +849,10 @@ public class ApiTestBase {
 
         // Construct AIS again to get just newly created objects. Sort to find first root table of the user schema.
         AkibanInformationSchema ais = schemaFactory.ais(ddl);
-        List<UserTable> tables = new ArrayList<>(ais.getUserTables().values());
-        Collections.sort(tables, new Comparator<UserTable>() {
+        List<Table> tables = new ArrayList<>(ais.getTables().values());
+        Collections.sort(tables, new Comparator<Table>() {
             @Override
-            public int compare(UserTable t1, UserTable t2) {
+            public int compare(Table t1, Table t2) {
                 return t1.getTableId().compareTo(t2.getTableId());
             }
         });
@@ -960,9 +960,9 @@ public class ApiTestBase {
     }
 
     protected final ScanAllRequest scanAllRequest(int tableId, boolean includingInternal) {
-        Table uTable = ddl().getTable(session(), tableId);
+        Table table = ddl().getTable(session(), tableId);
         Set<Integer> allCols = new HashSet<>();
-        int MAX = includingInternal ? uTable.getColumnsIncludingInternal().size() : uTable.getColumns().size();
+        int MAX = includingInternal ? table.getColumnsIncludingInternal().size() : table.getColumns().size();
         for (int i=0; i < MAX; ++i) {
             allCols.add(i);
         }
@@ -971,8 +971,8 @@ public class ApiTestBase {
 
     protected final int indexId(String schema, String table, String index) {
         AkibanInformationSchema ais = ddl().getAIS(session());
-        UserTable userTable = ais.getUserTable(schema, table);
-        Index aisIndex = userTable.getIndex(index);
+        Table aisTable = ais.getTable(schema, table);
+        Index aisIndex = aisTable.getIndex(index);
         if (aisIndex == null) {
             throw new RuntimeException("no such index: " + index);
         }
@@ -981,21 +981,21 @@ public class ApiTestBase {
 
     protected final CursorId openFullScan(String schema, String table, String index) throws InvalidOperationException {
         AkibanInformationSchema ais = ddl().getAIS(session());
-        UserTable userTable = ais.getUserTable(schema, table);
-        Index aisIndex = userTable.getIndex(index);
+        Table aisTable = ais.getTable(schema, table);
+        Index aisIndex = aisTable.getIndex(index);
         if (aisIndex == null) {
             throw new RuntimeException("no such index: " + index);
         }
         return openFullScan(
-            userTable.getTableId(),
+            aisTable.getTableId(),
             aisIndex.getIndexId()
                            );
     }
 
     protected final CursorId openFullScan(int tableId, int indexId) throws InvalidOperationException {
-        Table uTable = ddl().getTable(session(), tableId);
+        Table table = ddl().getTable(session(), tableId);
         Set<Integer> allCols = new HashSet<>();
-        for (int i=0, MAX=uTable.getColumns().size(); i < MAX; ++i) {
+        for (int i=0, MAX=table.getColumns().size(); i < MAX; ++i) {
             allCols.add(i);
         }
         ScanRequest request = new ScanAllRequest(tableId, allCols, indexId,
@@ -1166,7 +1166,7 @@ public class ApiTestBase {
 
         // Note: Group names, being derived, can change across DDL. Save root names instead.
         Set<TableName> groupRoots = new HashSet<>();
-        for(UserTable table : ddl().getAIS(session).getUserTables().values()) {
+        for(Table table : ddl().getAIS(session).getTables().values()) {
             if(table.getParentJoin() == null && 
                !TableName.INFORMATION_SCHEMA.equals(table.getName().getSchemaName()) &&
                !TableName.SECURITY_SCHEMA.equals(table.getName().getSchemaName())) {
@@ -1174,7 +1174,7 @@ public class ApiTestBase {
             }
         }
         for(TableName rootName : groupRoots) {
-            ddl().dropGroup(session, getUserTable(rootName).getGroup().getName());
+            ddl().dropGroup(session, getTable(rootName).getGroup().getName());
         }
 
         for(Sequence s : ddl().getAIS(session).getSequences().values()) {
@@ -1188,7 +1188,7 @@ public class ApiTestBase {
         }
 
         // Now sanity check
-        Set<TableName> uTables = new HashSet<>(ddl().getAIS(session).getUserTables().keySet());
+        Set<TableName> uTables = new HashSet<>(ddl().getAIS(session).getTables().keySet());
         for (Iterator<TableName> iter = uTables.iterator(); iter.hasNext();) {
             String schemaName = iter.next().getSchemaName();
             if (TableName.INFORMATION_SCHEMA.equals(schemaName) ||
@@ -1250,41 +1250,38 @@ public class ApiTestBase {
         return new TableName(schema, table);
     }
 
-    protected final UserTable getUserTable(String schema, String name) {
-        return getUserTable(tableName(schema, name));
+    protected final Table getTable(String schema, String name) {
+        return getTable(tableName(schema, name));
     }
 
-    protected final UserTable getUserTable(TableName name) {
-        return ddl().getUserTable(session(), name);
+    protected final Table getTable(TableName name) {
+        return ddl().getTable(session(), name);
     }
 
     protected final RowDef getRowDef(int rowDefId) {
-        return getUserTable(rowDefId).rowDef();
+        return getTable(rowDefId).rowDef();
     }
 
     protected final RowDef getRowDef(String schema, String table) {
-        return getUserTable(schema, table).rowDef();
+        return getTable(schema, table).rowDef();
     }
 
     protected final RowDef getRowDef(TableName tableName) {
-        return getUserTable(tableName).rowDef();
+        return getTable(tableName).rowDef();
     }
 
-    protected final UserTable getUserTable(int tableId) {
+    protected final Table getTable(int tableId) {
         final Table table;
         try {
             table = ddl().getTable(session(), tableId);
         } catch (NoSuchTableException e) {
             throw new TestException(e);
         }
-        if (table.isUserTable()) {
-            return (UserTable) table;
-        }
-        throw new RuntimeException("not a user table: " + table);
+        return table;
     }
 
-    protected final Map<TableName,UserTable> getUserTables() {
-        return stripAISTables(ddl().getAIS(session()).getUserTables());
+    protected final Map<TableName,Table> getTables() {
+        return stripAISTables(ddl().getAIS(session()).getTables());
     }
 
     private static <T extends Table> Map<TableName,T> stripAISTables(Map<TableName,T> map) {
@@ -1298,7 +1295,7 @@ public class ApiTestBase {
     }
 
     protected void expectIndexes(int tableId, String... expectedIndexNames) {
-        UserTable table = getUserTable(tableId);
+        Table table = getTable(tableId);
         Set<String> expectedIndexesSet = new TreeSet<>(Arrays.asList(expectedIndexNames));
         Set<String> actualIndexes = new TreeSet<>();
         for (Index index : table.getIndexes()) {

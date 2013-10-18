@@ -24,9 +24,9 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.JoinColumn;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.Type;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.Visitor;
 import com.foundationdb.server.error.UnsupportedDataTypeException;
 import com.foundationdb.server.error.UnsupportedIndexDataTypeException;
@@ -91,7 +91,7 @@ class SupportedColumnTypes implements AISValidation {
         }
 
         @Override
-        public void visitUserTable(UserTable userTable) {
+        public void visitTable(Table table) {
         }
     }
 }

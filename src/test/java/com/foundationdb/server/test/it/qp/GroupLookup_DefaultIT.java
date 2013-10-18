@@ -25,10 +25,9 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -675,7 +674,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
 
     // For use by this class
 
-    private Operator indexRowToAncestorPlan(int iid, UserTableRowType ... rowTypes)
+    private Operator indexRowToAncestorPlan(int iid, TableRowType... rowTypes)
     {
         return
             groupLookup_Default
@@ -687,7 +686,7 @@ public class GroupLookup_DefaultIT extends OperatorITBase
                  lookaheadQuantum());
     }
 
-    private Operator groupRowToAncestorPlan(int iid, boolean keepInput, UserTableRowType ... rowTypes)
+    private Operator groupRowToAncestorPlan(int iid, boolean keepInput, TableRowType... rowTypes)
     {
         return
             groupLookup_Default
@@ -891,17 +890,17 @@ public class GroupLookup_DefaultIT extends OperatorITBase
         return new IndexBound(row(itemIidIndexRowType, iid), new SetColumnSelector(0));
     }
 
-    private List<UserTableRowType> descendants(UserTableRowType root)
+    private List<TableRowType> descendants(TableRowType root)
     {
-        List<UserTableRowType> result = new ArrayList<>();
+        List<TableRowType> result = new ArrayList<>();
         result.add(root);
         for (RowType rowType : Schema.descendentTypes(root, schema.userTableTypes())) {
-            result.add((UserTableRowType)rowType);
+            result.add((TableRowType)rowType);
         }
         return result;
     }
 
-    private List<UserTableRowType> list(UserTableRowType... rowTypes)
+    private List<TableRowType> list(TableRowType... rowTypes)
     {
         return Arrays.asList(rowTypes);
     }

@@ -170,7 +170,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     @Override
     public int getTableId()
     {
-        return predicateType.userTable().getTableId();
+        return predicateType.table().getTableId();
     }
 
     @Override
@@ -213,9 +213,6 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         if (start != null && end != null && start.getRowDefId() != end.getRowDefId()) {
             throw new IllegalArgumentException(String.format("start row def id: %s, end row def id: %s",
                                                              start.getRowDefId(), end.getRowDefId()));
-        }
-        if(!rowDef.isUserTable()) {
-            throw new IllegalArgumentException("Must scan a UserTable: " + rowDef);
         }
         OperatorBasedRowCollector rowCollector =
               new OneTableRowCollector(session,
@@ -269,10 +266,10 @@ public abstract class OperatorBasedRowCollector implements RowCollector
             Operator indexScan = indexScan_Default(indexRowType,
                                                    descending,
                                                    indexKeyRange);
-            List<UserTableRowType> outputTypes = ancestorTypes();
+            List<TableRowType> outputTypes = ancestorTypes();
             outputTypes.add(predicateType);
             for (RowType rowType : Schema.descendentTypes(predicateType, schema.userTableTypes())) {
-                outputTypes.add((UserTableRowType)rowType);
+                outputTypes.add((TableRowType)rowType);
             }
             plan = groupLookup_Default(indexScan,
                     group,
@@ -316,16 +313,16 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         return keepTypes;
     }
 
-    private List<UserTableRowType> ancestorTypes()
+    private List<TableRowType> ancestorTypes()
     {
-        UserTableRowType queryRootType = schema.userTableRowType(queryRootTable);
-        List<UserTableRowType> ancestorTypes = new ArrayList<>();
+        TableRowType queryRootType = schema.tableRowType(queryRootTable);
+        List<TableRowType> ancestorTypes = new ArrayList<>();
         if (predicateType != null && queryRootType != predicateType) {
-            UserTable ancestor = predicateType.userTable();
+            Table ancestor = predicateType.table();
             do {
                 ancestor = ancestor.parentTable();
-                ancestorTypes.add(schema.userTableRowType(ancestor));
-            } while (ancestor != queryRootType.userTable());
+                ancestorTypes.add(schema.tableRowType(ancestor));
+            } while (ancestor != queryRootType.table());
         }
         return ancestorTypes;
     }
@@ -334,35 +331,35 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     {
         Set<AisRowType> cutTypes = new HashSet<>();
         if (!deep) {
-            // Find the leafmost tables in requiredUserTables and cut everything below those. It is possible
+            // Find the leafmost tables in requiredTables and cut everything below those. It is possible
             // that a column bit map includes, for example, customer and item but not order. This case is NOT
             // handled -- we'll just include (i.e. not cut) customer, order and item.
-            Set<UserTable> leafmostRequiredUserTables = new HashSet<>(requiredUserTables);
-            for (UserTable requiredUserTable : requiredUserTables) {
-                UserTable ancestor = requiredUserTable.parentTable();
+            Set<Table> leafmostRequiredTables = new HashSet<>(requiredTables);
+            for (Table requiredTable : requiredTables) {
+                Table ancestor = requiredTable.parentTable();
                 while (ancestor != null) {
-                    leafmostRequiredUserTables.remove(ancestor);
+                    leafmostRequiredTables.remove(ancestor);
                     ancestor = ancestor.parentTable();
                 }
             }
             // Cut below each leafmost required table
-            for (UserTable leafmostRequiredUserTable : leafmostRequiredUserTables) {
-                cutTypes.add(schema.userTableRowType(leafmostRequiredUserTable));
+            for (Table leafmostRequiredTable : leafmostRequiredTables) {
+                cutTypes.add(schema.tableRowType(leafmostRequiredTable));
             }
         }
         if (predicateType != null) {
-            UserTable predicateTable = predicateType.userTable();
+            Table predicateTable = predicateType.table();
             if (predicateTable != queryRootTable) {
                 // Cut tables not on the path from the predicate table up to query table
-                UserTable table = predicateTable;
-                UserTable childOnPath;
+                Table table = predicateTable;
+                Table childOnPath;
                 while (table != queryRootTable) {
                     childOnPath = table;
                     table = table.parentTable();
                     for (Join join : table.getChildJoins()) {
-                        UserTable child = join.getChild();
+                        Table child = join.getChild();
                         if (child != childOnPath) {
-                            cutTypes.add(schema.userTableRowType(child));
+                            cutTypes.add(schema.tableRowType(child));
                         }
                     }
                 }
@@ -379,7 +376,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                 ("Cannot specify limit along with SCAN_FLAGS_SINGLE_ROW");
         }
         if (singleRow) {
-            limit = new PredicateLimit(predicateType.userTable().getTableId(), 1);
+            limit = new PredicateLimit(predicateType.table().getTableId(), 1);
         }
         return limit;
     }
@@ -394,16 +391,16 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     private long rowCollectorId;
     protected final Schema schema;
     protected StoreAdapter adapter;
-    protected UserTable queryRootTable;
-    protected UserTableRowType queryRootType;
+    protected Table queryRootTable;
+    protected TableRowType queryRootType;
     protected TableIndex predicateIndex;
-    protected UserTableRowType predicateType;
+    protected TableRowType predicateType;
     // If we're querying a user table, then requiredUse
     // rTables contains just queryRootTable
     // If we're querying a group table, it contains those user tables containing columns in the
     // columnBitMap.
     private Operator operator;
-    protected final Set<UserTable> requiredUserTables = new HashSet<>();
+    protected final Set<Table> requiredTables = new HashSet<>();
     protected IndexKeyRange indexKeyRange;
     private Cursor cursor;
     private int rowCount = 0;

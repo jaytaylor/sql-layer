@@ -50,7 +50,7 @@ public class ProjectCT extends CostModelBase
                         "id int not null",
                         "primary key(id)");
         schema = new Schema(ais());
-        tRowType = schema.userTableRowType(userTable(t));
+        tRowType = schema.tableRowType(table(t));
         group = group(t);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);

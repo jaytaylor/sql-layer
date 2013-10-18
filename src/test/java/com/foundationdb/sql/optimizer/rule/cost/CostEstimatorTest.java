@@ -72,7 +72,7 @@ public class CostEstimatorTest
     }
 
     protected TableNode tableNode(String name) {
-        return tree.addNode((UserTable)table(name));
+        return tree.addNode(table(name));
     }
 
     protected TableSource tableSource(String name) {
@@ -300,18 +300,18 @@ public class CostEstimatorTest
                                      Collection<TableSource> requiredTables) {
         TableGroup tableGroup = new TableGroup(indexTable.getTable().getTable().getGroup());
         indexTable.setGroup(tableGroup);
-        Map<UserTable,TableSource> tableSources = new HashMap<>();
+        Map<Table,TableSource> tableSources = new HashMap<>();
         tableSources.put(indexTable.getTable().getTable(), indexTable);
         for (TableSource table : requiredTables) {
             tableSources.put(table.getTable().getTable(), table);
             table.setGroup(tableGroup);
         }
-        for (UserTable childTable : new ArrayList<>(tableSources.keySet())) {
+        for (Table childTable : new ArrayList<>(tableSources.keySet())) {
             TableSource childSource = tableSources.get(childTable);
             while (true) {
                 Join parentJoin = childTable.getParentJoin();
                 if (parentJoin == null) break;
-                UserTable parentTable = parentJoin.getParent();
+                Table parentTable = parentJoin.getParent();
                 TableSource parentSource = tableSources.get(parentTable);
                 if (parentSource == null) {
                     parentSource = new TableSource(tree.addNode(parentTable), true,

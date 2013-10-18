@@ -18,7 +18,7 @@
 package com.foundationdb.sql.server;
 
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContextBase;
 import com.foundationdb.qp.operator.StoreAdapter;
@@ -50,7 +50,7 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
     }
 
     @Override
-    public StoreAdapter getStore(UserTable table) {
+    public StoreAdapter getStore(Table table) {
         return server.getStore(table);
     }
 

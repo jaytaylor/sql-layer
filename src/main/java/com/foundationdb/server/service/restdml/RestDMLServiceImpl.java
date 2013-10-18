@@ -21,8 +21,8 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexName;
 import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.Quote;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.InvalidArgumentTypeException;
@@ -157,8 +157,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         ENTITY_GET.in();
         try (Session session = sessionService.createSession();
              CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
-            UserTable uTable = dxlService.ddlFunctions().getUserTable(session, tableName);
-            Index pkIndex = uTable.getPrimaryKeyIncludingInternal().getIndex();
+            Table table = dxlService.ddlFunctions().getTable(session, tableName);
+            Index pkIndex = table.getPrimaryKeyIncludingInternal().getIndex();
             List<List<String>> pks = PrimaryKeyParser.parsePrimaryKeys(identifiers, pkIndex);
             extDataService.dumpBranchAsJson(session,
                     writer,

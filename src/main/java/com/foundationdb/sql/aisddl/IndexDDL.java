@@ -80,7 +80,7 @@ public class IndexDDL
         // if the user supplies the table for the index, look only there
         if (indexTableName != null) {
             tableName = TableName.create(indexSchemaName == null ? defaultSchemaName : indexSchemaName, indexTableName);
-            UserTable table = ddlFunctions.getAIS(session).getUserTable(tableName);
+            Table table = ddlFunctions.getAIS(session).getTable(tableName);
             if (table == null) {
                 if(returnHere(condition, new NoSuchTableException(tableName), context))
                     return;
@@ -105,7 +105,7 @@ public class IndexDDL
         // the user has not supplied a table name for the index to drop, 
         // scan all groups/tables for the index name
         else {
-            for (UserTable table : ddlFunctions.getAIS(session).getUserTables().values()) {
+            for (Table table : ddlFunctions.getAIS(session).getTables().values()) {
                 if (indexSchemaName != null && !table.getName().getSchemaName().equalsIgnoreCase(indexSchemaName)) {
                     continue;
                 }
@@ -163,7 +163,7 @@ public class IndexDDL
         final String indexName = index.getObjectName().getTableName();
 
         final TableName tableName = TableName.create(schemaName, index.getIndexTableName().getTableName());
-        if (ais.getUserTable(tableName) == null) {
+        if (ais.getTable(tableName) == null) {
             throw new NoSuchTableException (tableName);
         }
 
@@ -255,7 +255,7 @@ public class IndexDDL
     }
 
     protected static Index buildGroupIndex (AISBuilder builder, TableName tableName, String indexName, IndexDefinition index) {
-        final TableName groupName = builder.akibanInformationSchema().getUserTable(tableName).getGroup().getName();
+        final TableName groupName = builder.akibanInformationSchema().getTable(tableName).getGroup().getName();
         
         if (builder.akibanInformationSchema().getGroup(groupName) == null) {
             throw new NoSuchGroupException(groupName);
@@ -311,14 +311,14 @@ public class IndexDDL
 
             final String columnName = col.getColumnName(); 
 
-            if (builder.akibanInformationSchema().getUserTable(columnTable) == null) {
+            if (builder.akibanInformationSchema().getTable(columnTable) == null) {
                 throw new NoSuchTableException(columnTable);
             }
             
-            if (builder.akibanInformationSchema().getUserTable(columnTable).getGroup().getName() != groupName)
+            if (builder.akibanInformationSchema().getTable(columnTable).getGroup().getName() != groupName)
                 throw new IndexTableNotInGroupException(indexName, columnName, columnTable.getTableName());
 
-            Column tableCol = builder.akibanInformationSchema().getUserTable(columnTable).getColumn(columnName); 
+            Column tableCol = builder.akibanInformationSchema().getTable(columnTable).getColumn(columnName); 
             if (tableCol == null) {
                 throw new NoSuchColumnException (col.getColumnName());
             }
@@ -332,7 +332,7 @@ public class IndexDDL
     }
 
     protected static Index buildFullTextIndex (AISBuilder builder, TableName tableName, String indexName, IndexDefinition index) {
-        UserTable table = builder.akibanInformationSchema().getUserTable(tableName);
+        Table table = builder.akibanInformationSchema().getTable(tableName);
         
         if (index.getJoinType() != null) {
             throw new TableIndexJoinTypeException();
@@ -353,14 +353,14 @@ public class IndexDDL
 
             final String columnName = col.getColumnName(); 
 
-            if (builder.akibanInformationSchema().getUserTable(columnTable) == null) {
+            if (builder.akibanInformationSchema().getTable(columnTable) == null) {
                 throw new NoSuchTableException(columnTable);
             }
             
-            if (builder.akibanInformationSchema().getUserTable(columnTable).getGroup() != table.getGroup())
+            if (builder.akibanInformationSchema().getTable(columnTable).getGroup() != table.getGroup())
                 throw new IndexTableNotInGroupException(indexName, columnName, columnTable.getTableName());
 
-            Column tableCol = builder.akibanInformationSchema().getUserTable(columnTable).getColumn(columnName); 
+            Column tableCol = builder.akibanInformationSchema().getTable(columnTable).getColumn(columnName); 
             if (tableCol == null) {
                 throw new NoSuchColumnException (col.getColumnName());
             }
@@ -370,7 +370,7 @@ public class IndexDDL
             builder.fullTextIndexColumn(tableName, indexName, schemaName, columnTable.getTableName(), columnName, i);
             i++;
         }
-        return builder.akibanInformationSchema().getUserTable(tableName).getFullTextIndex(indexName);
+        return builder.akibanInformationSchema().getTable(tableName).getFullTextIndex(indexName);
     }
 
     private static void clone(AISBuilder builder, AkibanInformationSchema ais) {

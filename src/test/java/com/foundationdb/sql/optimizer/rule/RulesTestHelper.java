@@ -64,7 +64,7 @@ public class RulesTestHelper
         return result;
     }
 
-    // Make fake row def cache to keep UserTableRowType constructor
+    // Make fake row def cache to keep TableRowType constructor
     // and Index.getAllColumns() from getting NPE.
     public static void ensureRowDefs(AkibanInformationSchema ais) {
         new SchemaFactory().buildRowDefs(ais);

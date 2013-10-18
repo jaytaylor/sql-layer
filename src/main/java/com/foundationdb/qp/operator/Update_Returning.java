@@ -62,7 +62,7 @@ The row as modified by the updateFunction().
 <h1>Assumptions</h1>
 
 Selected rows must have a <i>RowType</i> such
-that <i>rowType.hasUserTable() == true</i>.
+that <i>rowType.hasTable() == true</i>.
 
 <h1>Performance</h1>
 

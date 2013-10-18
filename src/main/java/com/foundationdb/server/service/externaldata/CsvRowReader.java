@@ -18,7 +18,7 @@
 package com.foundationdb.server.service.externaldata;
 
 import com.foundationdb.ais.model.Column;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.ExternalRowReaderException;
@@ -34,7 +34,7 @@ public class CsvRowReader extends RowReader
     private enum State { ROW_START, FIELD_START, IN_FIELD, IN_QUOTE, AFTER_QUOTE };
     private State state;
 
-    public CsvRowReader(UserTable table, List<Column> columns, InputStream inputStream,
+    public CsvRowReader(Table table, List<Column> columns, InputStream inputStream,
                         CsvFormat format, QueryContext queryContext) {
         super(table, columns, inputStream, format.getEncoding(), format.getNullBytes(), 
               queryContext);

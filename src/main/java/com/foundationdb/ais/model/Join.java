@@ -24,8 +24,8 @@ public class Join implements Traversable, HasGroup
 {
     public static Join create(AkibanInformationSchema ais,
                               String joinName,
-                              UserTable parent,
-                              UserTable child)
+                              Table parent,
+                              Table child)
     {
         ais.checkMutability();
         Join join = new Join(ais, joinName, parent, child);
@@ -71,12 +71,12 @@ public class Join implements Traversable, HasGroup
         return joinName;
     }
 
-    public UserTable getParent()
+    public Table getParent()
     {
         return parent;
     }
 
-    public UserTable getChild()
+    public Table getChild()
     {
         return child;
     }
@@ -135,7 +135,7 @@ public class Join implements Traversable, HasGroup
         joinName = newName;
     }
 
-    private Join(AkibanInformationSchema ais, String joinName, UserTable parent, UserTable child)
+    private Join(AkibanInformationSchema ais, String joinName, Table parent, Table child)
     {
         this.ais = ais;
         this.joinName = joinName;
@@ -171,9 +171,9 @@ public class Join implements Traversable, HasGroup
                         out.add("join contained null child column: " + this);
                     } else if (parent == null) {
                         out.add("join contained null parent column: " + this);
-                    } else if (!child.getUserTable().equals(this.child)) {
+                    } else if (!child.getTable().equals(this.child)) {
                         out.add("child column's table wasn't child table: " + child + " <--> " + this.child);
-                    } else if (!parent.getUserTable().equals(this.parent)) {
+                    } else if (!parent.getTable().equals(this.parent)) {
                         out.add("parent column's table wasn't parent table: " + child + " <--> " + this.parent);
                     }
                 }
@@ -185,8 +185,8 @@ public class Join implements Traversable, HasGroup
     // State
 
     private final AkibanInformationSchema ais;
-    private final UserTable parent;
-    private final UserTable child;
+    private final Table parent;
+    private final Table child;
     private final List<JoinColumn> joinColumns;
     private String joinName;
     private Group group;

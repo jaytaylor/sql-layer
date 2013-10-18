@@ -42,9 +42,9 @@ public class HKey
         return buffer.toString();
     }
     
-    public UserTable userTable()
+    public Table table()
     {
-        return (UserTable) table;
+        return table;
     }
 
     public List<HKeySegment> segments()
@@ -75,10 +75,10 @@ public class HKey
         this.table = table;
     }
 
-    public synchronized HKeySegment addSegment(UserTable segmentTable)
+    public synchronized HKeySegment addSegment(Table segmentTable)
     {
         assert keyDepth == null : segmentTable; // Should only be computed after HKeySegments are completely formed.
-        UserTable lastSegmentTable = segments.isEmpty() ? null : segments.get(segments.size() - 1).table();
+        Table lastSegmentTable = segments.isEmpty() ? null : segments.get(segments.size() - 1).table();
         assert segmentTable.parentTable() == lastSegmentTable;
         HKeySegment segment = new HKeySegment(this, segmentTable);
         segments.add(segment);

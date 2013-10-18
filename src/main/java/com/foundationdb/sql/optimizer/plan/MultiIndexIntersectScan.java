@@ -18,7 +18,7 @@
 package com.foundationdb.sql.optimizer.plan;
 
 import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.util.Strings;
 import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
 
@@ -132,7 +132,7 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     @Override
-    public UserTable getLeafMostUTable() {
+    public Table getLeafMostAisTable() {
         return outputScan.getLeafMostTable().getTable().getTable();
     }
 
@@ -221,7 +221,7 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     @Override
-    public UserTable findCommonAncestor(IndexScan other) {
+    public Table findCommonAncestor(IndexScan other) {
         return outputScan.findCommonAncestor(other);
     }
 

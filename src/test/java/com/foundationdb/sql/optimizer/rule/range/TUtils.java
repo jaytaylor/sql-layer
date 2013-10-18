@@ -18,7 +18,7 @@
 package com.foundationdb.sql.optimizer.rule.range;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
@@ -100,9 +100,9 @@ final class TUtils {
 
     static {
         AkibanInformationSchema ais = AISBBasedBuilder.create("s")
-            .userTable("t1").colString("first_name", 32).colString("last_name", 32)
+            .table("t1").colString("first_name", 32).colString("last_name", 32)
             .ais();
-        UserTable table = ais.getUserTable("s", "t1");
+        Table table = ais.getTable("s", "t1");
         TableNode node = new TableNode(table, new TableTree());
         TableSource source = new TableSource(node, true, "t1");
         lastName = new ColumnExpression(source, table.getColumn("first_name"));

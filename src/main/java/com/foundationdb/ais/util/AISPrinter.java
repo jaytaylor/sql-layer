@@ -28,8 +28,8 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.JoinColumn;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.Type;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.Visitor;
 
 public class AISPrinter
@@ -75,9 +75,9 @@ public class AISPrinter
             }
 
             @Override
-            public void visitUserTable(UserTable userTable) 
+            public void visitTable(Table table) 
             {
-                output.println(userTable);
+                output.println(table);
             }
 
             @Override

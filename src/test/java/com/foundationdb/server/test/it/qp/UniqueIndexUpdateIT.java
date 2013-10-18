@@ -19,11 +19,11 @@ package com.foundationdb.server.test.it.qp;
 
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
 
@@ -49,7 +49,7 @@ public class UniqueIndexUpdateIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        tRowType = schema.userTableRowType(userTable(t));
+        tRowType = schema.tableRowType(table(t));
         xyIndexRowType = indexType(t, "x", "y");
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
@@ -199,6 +199,6 @@ public class UniqueIndexUpdateIT extends OperatorITBase
     }
 
     private int t;
-    private UserTableRowType tRowType;
+    private TableRowType tRowType;
     private IndexRowType xyIndexRowType;
 }

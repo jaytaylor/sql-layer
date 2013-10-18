@@ -32,7 +32,6 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.ScanLimit;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager.BindingsConfigurationProvider;
 import com.foundationdb.server.store.PersistitStore;
 import com.foundationdb.server.test.it.PersistitITBase;
@@ -65,28 +64,27 @@ public class QPProfilePTBase extends PTBase
         return store.createAdapter(session(), schema);
     }
 
-    protected Group group(int userTableId)
+    protected Group group(int tableId)
     {
-        return getRowDef(userTableId).table().getGroup();
+        return getRowDef(tableId).table().getGroup();
     }
 
-    protected UserTable userTable(int userTableId)
+    protected Table table(int tableId)
     {
-        RowDef userTableRowDef = getRowDef(userTableId);
-        return userTableRowDef.userTable();
+        return getRowDef(tableId).table();
     }
 
-    protected IndexRowType indexType(int userTableId, String... searchIndexColumnNamesArray)
+    protected IndexRowType indexType(int tableId, String... searchIndexColumnNamesArray)
     {
-        UserTable userTable = userTable(userTableId);
-        for (Index index : userTable.getIndexesIncludingInternal()) {
+        Table table = table(tableId);
+        for (Index index : table.getIndexesIncludingInternal()) {
             List<String> indexColumnNames = new ArrayList<>();
             for (IndexColumn indexColumn : index.getKeyColumns()) {
                 indexColumnNames.add(indexColumn.getColumn().getName());
             }
             List<String> searchIndexColumnNames = Arrays.asList(searchIndexColumnNamesArray);
             if (searchIndexColumnNames.equals(indexColumnNames)) {
-                return schema.userTableRowType(userTable(userTableId)).indexRowType(index);
+                return schema.tableRowType(table(tableId)).indexRowType(index);
             }
         }
         return null;

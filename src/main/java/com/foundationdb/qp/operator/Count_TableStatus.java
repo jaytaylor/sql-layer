@@ -20,7 +20,7 @@ package com.foundationdb.qp.operator;
 import com.foundationdb.qp.row.ValuesRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.rowtype.ValuesRowType;
 import com.foundationdb.server.explain.CompoundExplainer;
 import com.foundationdb.server.explain.ExplainContext;
@@ -106,8 +106,8 @@ class Count_TableStatus extends Operator
     public Count_TableStatus(RowType tableType)
     {
         ArgumentValidation.notNull("tableType", tableType);
-        ArgumentValidation.isTrue("tableType instanceof UserTableRowType",
-                                  tableType instanceof UserTableRowType);
+        ArgumentValidation.isTrue("tableType instanceof TableRowType",
+                                  tableType instanceof TableRowType);
         this.tableType = tableType;
         this.resultType = tableType.schema().newValuesType(MNumeric.BIGINT.instance(false));
     }
