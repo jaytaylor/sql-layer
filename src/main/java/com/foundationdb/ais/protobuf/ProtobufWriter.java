@@ -33,9 +33,9 @@ public class ProtobufWriter {
     public static interface WriteSelector {
         Columnar getSelected(Columnar columnar);
         boolean isSelected(Group group);
-        /** Called for all parent joins where getSelected(UserTable) is not null **/
+        /** Called for all parent joins where getSelected(Table) is not null **/
         boolean isSelected(Join parentJoin);
-        /** Called for all GroupIndexes and all table indexes where getSelected(UserTable) is not null **/
+        /** Called for all GroupIndexes and all table indexes where getSelected(Table) is not null **/
         boolean isSelected(Index index);
         boolean isSelected(Sequence sequence);
         boolean isSelected(Routine routine);
@@ -258,8 +258,8 @@ public class ProtobufWriter {
         boolean isEmpty = true;
 
         // Write groups into same schema as root table
-        for(UserTable table : schema.getUserTables().values()) {
-            table = (UserTable)selector.getSelected(table);
+        for(Table table : schema.getTables().values()) {
+            table = (Table)selector.getSelected(table);
             if(table != null) {
                 Group group = table.getGroup();
                 if((table.getParentJoin() == null) && (group != null) && selector.isSelected(group)) {
@@ -305,7 +305,7 @@ public class ProtobufWriter {
     }
 
     private static void writeGroup(AISProtobuf.Schema.Builder schemaBuilder, Group group, WriteSelector selector) {
-        final UserTable rootTable = group.getRoot();
+        final Table rootTable = group.getRoot();
         AISProtobuf.Group.Builder groupBuilder = AISProtobuf.Group.newBuilder().
                 setRootTableName(rootTable.getName().getTableName());
         if(group.getTreeName() != null) {
@@ -321,7 +321,7 @@ public class ProtobufWriter {
         schemaBuilder.addGroups(groupBuilder.build());
     }
 
-    private static void writeTable(AISProtobuf.Schema.Builder schemaBuilder, UserTable table, WriteSelector selector) {
+    private static void writeTable(AISProtobuf.Schema.Builder schemaBuilder, Table table, WriteSelector selector) {
         AISProtobuf.Table.Builder tableBuilder = AISProtobuf.Table.newBuilder();
         tableBuilder.
                 setTableName(table.getName().getTableName()).
@@ -353,7 +353,7 @@ public class ProtobufWriter {
 
         Join join = table.getParentJoin();
         if((join != null) && selector.isSelected(join)) {
-            final UserTable parent = join.getParent();
+            final Table parent = join.getParent();
             AISProtobuf.Join.Builder joinBuilder = AISProtobuf.Join.newBuilder();
             joinBuilder.setParentTable(AISProtobuf.TableName.newBuilder().
                     setSchemaName(parent.getName().getSchemaName()).

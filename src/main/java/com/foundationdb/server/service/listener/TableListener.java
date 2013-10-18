@@ -18,16 +18,16 @@
 package com.foundationdb.server.service.listener;
 
 import com.foundationdb.ais.model.Index;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.service.session.Session;
 
 import java.util.Collection;
 
 public interface TableListener
 {
-    void onCreate(Session session, UserTable table);
-    void onDrop(Session session, UserTable table);
-    void onTruncate(Session session, UserTable table, boolean isFast);
+    void onCreate(Session session, Table table);
+    void onDrop(Session session, Table table);
+    void onTruncate(Session session, Table table, boolean isFast);
 
     void onCreateIndex(Session session, Collection<? extends Index> indexes);
     void onDropIndex(Session session, Collection<? extends Index> indexes);

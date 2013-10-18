@@ -35,9 +35,9 @@ public class HKeyRow_DefaultIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema() {
         super.setupPostCreateSchema();
-        customerHKeyRowType = schema.newHKeyRowType(userTable(customer).hKey());
-        orderHKeyRowType = schema.newHKeyRowType(userTable(order).hKey());
-        itemHKeyRowType = schema.newHKeyRowType(userTable(item).hKey());
+        customerHKeyRowType = schema.newHKeyRowType(table(customer).hKey());
+        orderHKeyRowType = schema.newHKeyRowType(table(order).hKey());
+        itemHKeyRowType = schema.newHKeyRowType(table(item).hKey());
         use(db);
     }
 

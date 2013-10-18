@@ -209,12 +209,12 @@ public final class RowDataConversionTest extends ConversionTestBase {
 
         private void createEnvironment(TestCase<?> testCase) {
             AkibanInformationSchema ais = AISBBasedBuilder.create("mySchema")
-                    .userTable("testTable")
+                    .table("testTable")
                     .colLong("id")
                     .pk("id")
                     .ais(false);
             Column col = Column.create(
-                    ais.getUserTable("mySchema", "testTable"),
+                    ais.getTable("mySchema", "testTable"),
                     "c1",
                     1,
                     colType(testCase.type())

@@ -18,7 +18,7 @@
 package com.foundationdb.server;
 
 import com.foundationdb.ais.model.Index;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.qp.storeadapter.PersistitAdapter;
 import com.foundationdb.server.error.PersistitAdapterException;
@@ -41,7 +41,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         this.treeService = treeService;
     }
 
-    public synchronized void clearTableStatus(Session session, UserTable table) {
+    public synchronized void clearTableStatus(Session session, Table table) {
         // Nothing for the status itself, Accumulators attached to Tree
         memoryStatuses.remove(table.getTableId());
     }

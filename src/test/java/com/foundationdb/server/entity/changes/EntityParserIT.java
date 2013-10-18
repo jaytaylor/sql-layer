@@ -31,9 +31,9 @@ import org.junit.Test;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Join;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.Types;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.test.it.ITBase;
 
 public class EntityParserIT extends ITBase {
@@ -79,14 +79,14 @@ public class EntityParserIT extends ITBase {
                 "\"test.addresses\": {\"aid\": 104, \"cid\": 6, \"state\": \"MA\", \"city\": \"Boston\"}}";
         AkibanInformationSchema ais = processParse(tableName, postInput);
         
-        UserTable c = ais.getUserTable(tableName);
+        Table c = ais.getTable(tableName);
         assertTrue(c.getColumns().size() == 4);
         assertTrue(c.getColumn(3).getName().equals(EntityParser.PK_COL_NAME));
         assertTrue(c.getColumn(3).getType().equals(Types.INT));
 
         tableName = new TableName ("test", "addresses");
         assertNotNull (ais.getTable(tableName));
-        UserTable a = ais.getUserTable(tableName);
+        Table a = ais.getTable(tableName);
         assertTrue(a.getColumns().size() == 5);
         assertTrue(a.getColumn(0).getName().equals("aid"));
         assertTrue(a.getColumn(1).getName().equals("cid"));
@@ -106,7 +106,7 @@ public class EntityParserIT extends ITBase {
         String postInput ="{\"cid\": 6, \"first_name\": \"John\", \"ordered\": false, \"order_date\": null, \"tax_rate\": 0.01}";
         AkibanInformationSchema ais = processParse(tableName, postInput);
 
-        UserTable c = ais.getUserTable(tableName);
+        Table c = ais.getTable(tableName);
         assertTrue(c.getColumns().size() == 5);
         assertTrue(c.getColumn(0).getName().equals("cid"));
         assertTrue(c.getColumn(0).getType().equals(Types.BIGINT));
@@ -128,12 +128,12 @@ public class EntityParserIT extends ITBase {
                 "\"orders\": {\"oid\" : 103, \"cid\" : 2, \"odate\": \"2012-12-31T12:00:00\"}}";
         AkibanInformationSchema ais = processParse(tableName, postInput);
         
-        UserTable c = ais.getUserTable(tableName);
+        Table c = ais.getTable(tableName);
         
         assertNotNull (ais.getTable(new TableName("test", "addresses")));
-        UserTable a = ais.getUserTable (new TableName ("test", "addresses"));
+        Table a = ais.getTable (new TableName ("test", "addresses"));
         assertNotNull (ais.getTable(new TableName("test", "orders")));
-        UserTable o = ais.getUserTable(new TableName ("test", "orders"));
+        Table o = ais.getTable(new TableName ("test", "orders"));
         Join join = a.getParentJoin();
         assertTrue (join.getParent() == c);
         assertTrue (join.getChild() == a);
@@ -151,11 +151,11 @@ public class EntityParserIT extends ITBase {
                 "\"addresses\": [{\"aid\": 104, \"cid\": 6, \"state\": \"MA\", \"city\": \"Boston\"}, " +
                 "{\"aid\": 105, \"cid\": 6, \"state\": \"MA\", \"city\": \"Boston\"}]}";
         AkibanInformationSchema ais = processParse (tableName, postInput);
-        UserTable c = ais.getUserTable(tableName);
+        Table c = ais.getTable(tableName);
 
         tableName = new TableName ("test", "addresses");
         assertNotNull (ais.getTable(tableName));
-        UserTable a = ais.getUserTable(tableName);
+        Table a = ais.getTable(tableName);
         assertNotNull(a.getParentJoin());
         Join join = a.getParentJoin();
         assertTrue (join.getParent() == c);
@@ -167,9 +167,9 @@ public class EntityParserIT extends ITBase {
         TableName tableName = new TableName ("test", "campaign");
         String postInput = "{\"next_offset\":20, \"_acl\":[]}";
         AkibanInformationSchema ais = processParse (tableName, postInput);
-        UserTable c = ais.getUserTable(tableName);
+        Table c = ais.getTable(tableName);
         
-        UserTable a = ais.getUserTable("test", "_acl");
+        Table a = ais.getTable("test", "_acl");
         assertNotNull (a);
         assertNotNull (a.getParentJoin());
         Join join = a.getParentJoin();
@@ -185,9 +185,9 @@ public class EntityParserIT extends ITBase {
         TableName tableName = new TableName ("test", "campaign");
         String postInput = "{\"next_offset\":20, \"_acl\":[1,3,5]}";
         AkibanInformationSchema ais = processParse (tableName, postInput);
-        UserTable c = ais.getUserTable(tableName);
+        Table c = ais.getTable(tableName);
         
-        UserTable a = ais.getUserTable("test", "_acl");
+        Table a = ais.getTable("test", "_acl");
         assertNotNull (a);
         assertNotNull (a.getParentJoin());
         Join join = a.getParentJoin();
@@ -203,9 +203,9 @@ public class EntityParserIT extends ITBase {
         TableName tableName = new TableName ("test", "campaign");
         String postInput = "{\"next_offset\":20, \"_acl\":[\"1\",\"3\",\"5\"]}";
         AkibanInformationSchema ais = processParse (tableName, postInput);
-        UserTable c = ais.getUserTable(tableName);
+        Table c = ais.getTable(tableName);
         
-        UserTable a = ais.getUserTable("test", "_acl");
+        Table a = ais.getTable("test", "_acl");
         assertNotNull (a);
         assertNotNull (a.getParentJoin());
         Join join = a.getParentJoin();
@@ -221,9 +221,9 @@ public class EntityParserIT extends ITBase {
         TableName tableName = new TableName ("test", "campaign");
         String postInput = "{\"next_offset\":20, \"_acl\":{}}";
         AkibanInformationSchema ais = processParse (tableName, postInput);
-        UserTable c = ais.getUserTable(tableName);
+        Table c = ais.getTable(tableName);
         
-        UserTable a = ais.getUserTable("test", "_acl");
+        Table a = ais.getTable("test", "_acl");
         assertNotNull (a);
         assertNotNull (a.getParentJoin());
         Join join = a.getParentJoin();
@@ -240,9 +240,9 @@ public class EntityParserIT extends ITBase {
         TableName tableName = new TableName ("test", "campaign");
         String postInput = "{\"next_offset\":20, \"_acl\":[{}]}";
         AkibanInformationSchema ais = processParse (tableName, postInput);
-        UserTable c = ais.getUserTable(tableName);
+        Table c = ais.getTable(tableName);
         
-        UserTable a = ais.getUserTable("test", "_acl");
+        Table a = ais.getTable("test", "_acl");
         assertNotNull (a);
         assertNotNull (a.getParentJoin());
         Join join = a.getParentJoin();
@@ -260,11 +260,11 @@ public class EntityParserIT extends ITBase {
                 "{\"id\":\"14092603-6cf8-d791-2b72-5138fb3819d7\",\"name\":\"T-Squared Techs\","+
                 "\"_acl\":{\"fields\":{}}}]}";
         AkibanInformationSchema ais = processParse (tableName, postInput);
-        UserTable c = ais.getUserTable(tableName);
-        UserTable r = ais.getUserTable("test", "records");
+        Table c = ais.getTable(tableName);
+        Table r = ais.getTable("test", "records");
         assertNotNull (r.getParentJoin());
-        UserTable a = ais.getUserTable("test", "_acl");
-        UserTable f = ais.getUserTable("test", "fields");
+        Table a = ais.getTable("test", "_acl");
+        Table f = ais.getTable("test", "fields");
         
         assertTrue (f.getParentJoin().getParent() == a);
         assertTrue (a.getParentJoin().getParent() == r);

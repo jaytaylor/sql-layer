@@ -32,20 +32,20 @@ public class Schema {
         return name;
     }
 
-    public Map<String, UserTable> getUserTables() {
-        return userTables;
+    public Map<String, Table> getTables() {
+        return tables;
     }
 
-    public UserTable getUserTable(String tableName) {
-        return userTables.get(tableName);
+    public Table getTable(String tableName) {
+        return tables.get(tableName);
     }
 
-    void addUserTable(UserTable userTable) {
-        userTables.put(userTable.getName().getTableName(), userTable);
+    void addTable(Table table) {
+        tables.put(table.getName().getTableName(), table);
     }
 
     void removeTable(String tableName) {
-        userTables.remove(tableName);
+        tables.remove(tableName);
     }
 
     public Map<String, Sequence> getSequences() {
@@ -122,7 +122,7 @@ public class Schema {
     }
 
     private final String name;
-    private final Map<String, UserTable> userTables = new TreeMap<>();
+    private final Map<String, Table> tables = new TreeMap<>();
     private final Map<String, Sequence> sequences = new TreeMap<>();
     private final Map<String, View> views = new TreeMap<>();
     private final Map<String, Routine> routines = new TreeMap<>();

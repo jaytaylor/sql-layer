@@ -54,7 +54,7 @@ public class Sort_General_RandomIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        tRowType = schema.userTableRowType(userTable(t));
+        tRowType = schema.tableRowType(table(t));
         group = group(t);
         List<NewRow> rows = new ArrayList<>();
         Random random = new Random(123456789);

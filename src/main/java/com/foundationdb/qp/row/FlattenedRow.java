@@ -17,7 +17,7 @@
 
 package com.foundationdb.qp.row;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.rowtype.FlattenedRowType;
 
 public class FlattenedRow extends CompoundRow
@@ -39,12 +39,12 @@ public class FlattenedRow extends CompoundRow
     }
 
     @Override
-    public boolean containsRealRowOf(UserTable userTable)
+    public boolean containsRealRowOf(Table table)
     {
-        return     (first() != null && first().rowType().hasUserTable() && first().rowType().userTable() == userTable)
-                   || (second() != null && second().rowType().hasUserTable() && second().rowType().userTable() == userTable)
-                   || (first() != null && first().containsRealRowOf(userTable))
-                   || (second() != null && second().containsRealRowOf(userTable))
+        return     (first() != null && first().rowType().hasTable() && first().rowType().table() == table)
+                   || (second() != null && second().rowType().hasTable() && second().rowType().table() == table)
+                   || (first() != null && first().containsRealRowOf(table))
+                   || (second() != null && second().containsRealRowOf(table))
             ;
     }
 

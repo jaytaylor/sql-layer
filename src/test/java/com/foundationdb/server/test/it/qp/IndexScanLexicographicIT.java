@@ -59,7 +59,7 @@ public class IndexScanLexicographicIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        tRowType = schema.userTableRowType(userTable(t));
+        tRowType = schema.tableRowType(table(t));
         idxRowType = indexType(t, "a", "b", "c", "id");
         db = new NewRow[]{
             // No nulls

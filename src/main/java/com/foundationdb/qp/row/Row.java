@@ -17,7 +17,7 @@
 
 package com.foundationdb.qp.row;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.types.value.ValueRecord;
 import com.foundationdb.qp.rowtype.RowType;
 
@@ -25,9 +25,9 @@ public interface Row extends ValueRecord
 {
     RowType rowType();
     HKey hKey();
-    HKey ancestorHKey(UserTable table);
+    HKey ancestorHKey(Table table);
     boolean ancestorOf(Row that);
-    boolean containsRealRowOf(UserTable userTable);
+    boolean containsRealRowOf(Table table);
     Row subRow(RowType subRowType);
 
     /**

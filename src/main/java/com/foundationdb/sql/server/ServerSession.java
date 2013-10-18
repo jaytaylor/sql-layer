@@ -26,7 +26,7 @@ import com.foundationdb.sql.optimizer.rule.PipelineConfiguration;
 import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.server.error.ErrorCode;
@@ -106,7 +106,7 @@ public interface ServerSession
     public StoreAdapter getStore();
 
     /** Return an adapter for the session's store. */
-    public StoreAdapter getStore(UserTable table);
+    public StoreAdapter getStore(Table table);
 
     /** Return the transaction service */
     public TransactionService getTransactionService();

@@ -58,8 +58,8 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        parentRowType = schema.userTableRowType(userTable(parent));
-        childRowType = schema.userTableRowType(userTable(child));
+        parentRowType = schema.tableRowType(table(parent));
+        childRowType = schema.tableRowType(table(child));
         parentPidIndexRowType = indexType(parent, "pid");
         parentXIndexRowType = indexType(parent, "x");
         parentYIndexRowType = indexType(parent, "y");
@@ -507,13 +507,13 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
 
     private String pKey(Long pid)
     {
-        return String.format("{%d,%s}", parentRowType.userTable().getOrdinal(), hKeyValue(pid));
+        return String.format("{%d,%s}", parentRowType.table().getOrdinal(), hKeyValue(pid));
     }
 
     private int parent;
     private int child;
-    private UserTableRowType parentRowType;
-    private UserTableRowType childRowType;
+    private TableRowType parentRowType;
+    private TableRowType childRowType;
     private IndexRowType parentPidIndexRowType;
     private IndexRowType parentXIndexRowType;
     private IndexRowType parentYIndexRowType;

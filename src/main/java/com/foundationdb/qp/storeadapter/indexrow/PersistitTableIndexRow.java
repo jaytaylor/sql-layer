@@ -17,8 +17,8 @@
 package com.foundationdb.qp.storeadapter.indexrow;
 
 import com.foundationdb.ais.model.IndexToHKey;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.row.HKey;
@@ -29,7 +29,7 @@ public class PersistitTableIndexRow extends PersistitIndexRow
     // Row interface
 
     @Override
-    public HKey ancestorHKey(UserTable table)
+    public HKey ancestorHKey(Table table)
     {
         PersistitHKey ancestorHKey;
         PersistitHKey leafmostHKey = hKeyCache.hKey(leafmostTable);

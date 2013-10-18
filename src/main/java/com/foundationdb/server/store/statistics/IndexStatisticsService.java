@@ -18,8 +18,8 @@
 package com.foundationdb.server.store.statistics;
 
 import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.TableStatistics;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.ais.model.Index;
@@ -47,7 +47,7 @@ public interface IndexStatisticsService
     public IndexStatistics getIndexStatistics(Session session, Index index);
 
     /** @deprecated Get old style table statistics */
-    TableStatistics getTableStatistics(Session session, UserTable table);
+    TableStatistics getTableStatistics(Session session, Table table);
 
     /** Update statistics for the given indexes. */
     public void updateIndexStatistics(Session session, 
@@ -75,6 +75,6 @@ public interface IndexStatisticsService
     public void missingStats(Session session, Index index, Column column);
 
     /** Check for out of date stats, based on table being much larger. */
-    public void checkRowCountChanged(Session session, UserTable table,
+    public void checkRowCountChanged(Session session, Table table,
                                      IndexStatistics stats, long rowCount);
 }

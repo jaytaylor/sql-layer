@@ -24,7 +24,7 @@ import com.foundationdb.sql.parser.ResultColumn;
 import com.foundationdb.sql.parser.StatementNode;
 
 import com.foundationdb.ais.model.Column;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.server.error.NoSuchColumnException;
 import com.foundationdb.server.error.NoSuchTableException;
@@ -45,7 +45,7 @@ import java.util.*;
 /** COPY ... FROM */
 public class PostgresCopyInStatement extends PostgresBaseStatement
 {
-    private UserTable toTable;
+    private Table toTable;
     private List<Column> toColumns;
     private File fromFile;
     private CopyStatementNode.Format format;
@@ -88,7 +88,7 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
         String tableName = copyStmt.getTableName().getTableName();
         if (schemaName == null)
             schemaName = server.getDefaultSchemaName();
-        toTable = server.getAIS().getUserTable(schemaName, tableName);
+        toTable = server.getAIS().getTable(schemaName, tableName);
         if (toTable == null)
             throw new NoSuchTableException(schemaName, tableName, 
                                            copyStmt.getTableName());

@@ -20,7 +20,7 @@ package com.foundationdb.server.service.text;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Index.IndexType;
 import com.foundationdb.ais.model.IndexName;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.rowtype.RowType;
@@ -96,19 +96,19 @@ public class ThrowingFullTextService implements Service, FullTextIndexService, T
     //
 
     @Override
-    public void onCreate(Session session, UserTable table) {
+    public void onCreate(Session session, Table table) {
         if(!table.getFullTextIndexes().isEmpty()) {
             throw EX;
         }
     }
 
     @Override
-    public void onDrop(Session session, UserTable table) {
+    public void onDrop(Session session, Table table) {
         // None
     }
 
     @Override
-    public void onTruncate(Session session, UserTable table, boolean isFast) {
+    public void onTruncate(Session session, Table table, boolean isFast) {
         // NOne
     }
 

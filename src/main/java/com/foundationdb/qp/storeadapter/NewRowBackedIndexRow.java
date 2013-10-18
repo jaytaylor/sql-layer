@@ -17,8 +17,8 @@
 
 package com.foundationdb.qp.storeadapter;
 
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
@@ -58,7 +58,7 @@ public class NewRowBackedIndexRow implements Row
     }
 
     @Override
-    public HKey ancestorHKey(UserTable table) {
+    public HKey ancestorHKey(Table table) {
         throw new UnsupportedOperationException();
     }
 
@@ -68,7 +68,7 @@ public class NewRowBackedIndexRow implements Row
     }
 
     @Override
-    public boolean containsRealRowOf(UserTable userTable) {
+    public boolean containsRealRowOf(Table table) {
         throw new UnsupportedOperationException(getClass().toString());
     }
 

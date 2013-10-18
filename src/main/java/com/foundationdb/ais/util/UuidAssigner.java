@@ -19,17 +19,17 @@ package com.foundationdb.ais.util;
 
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.NopVisitor;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 
 import java.util.UUID;
 
 public class UuidAssigner extends NopVisitor {
 
     @Override
-    public void visitUserTable(UserTable userTable) {
-        if (userTable.getUuid() == null) {
+    public void visitTable(Table table) {
+        if (table.getUuid() == null) {
             assignedAny = true;
-            userTable.setUuid(UUID.randomUUID());
+            table.setUuid(UUID.randomUUID());
         }
     }
 

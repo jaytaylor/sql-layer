@@ -17,8 +17,8 @@
 
 package com.foundationdb.qp.operator;
 
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.session.Session;
@@ -43,7 +43,7 @@ public class SimpleQueryContext extends QueryContextBase
     }
 
     @Override
-    public StoreAdapter getStore(UserTable table) {
+    public StoreAdapter getStore(Table table) {
         return adapter;
     }
     

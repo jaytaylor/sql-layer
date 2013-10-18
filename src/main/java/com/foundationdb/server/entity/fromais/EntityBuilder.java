@@ -25,7 +25,7 @@ import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.JoinColumn;
 import com.foundationdb.ais.model.PrimaryKey;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.entity.model.Entity;
 import com.foundationdb.server.entity.model.EntityCollection;
 import com.foundationdb.server.entity.model.FieldProperty;
@@ -50,12 +50,12 @@ import java.util.UUID;
 
 final class EntityBuilder {
 
-    public EntityBuilder(UserTable rootTable) {
+    public EntityBuilder(Table rootTable) {
         entity = Entity.modifiableEntity(uuidOrCreate(rootTable));
         buildContainer(entity, rootTable);
     }
 
-    private void buildFields(List<EntityField> fields, UserTable table) {
+    private void buildFields(List<EntityField> fields, Table table) {
         for (Column column : table.getColumns()) {
             TInstance tInstance = column.tInstance();
             TClass tClass = tInstance.typeClass();
@@ -81,7 +81,7 @@ final class EntityBuilder {
         }
     }
 
-    private void buildIdentifying(List<String> identifying, UserTable rootTable) {
+    private void buildIdentifying(List<String> identifying, Table rootTable) {
         PrimaryKey pk = rootTable.getPrimaryKey();
         if (pk != null) {
             for (Column c : pk.getColumns())
@@ -89,26 +89,26 @@ final class EntityBuilder {
         }
     }
 
-    private void buildGroupingFields(List<String> groupingFields, UserTable table) {
+    private void buildGroupingFields(List<String> groupingFields, Table table) {
         for (JoinColumn joinColumn : table.getParentJoin().getJoinColumns())
             groupingFields.add(joinColumn.getChild().getName());
     }
 
-    private void buildCollections(Collection<EntityCollection> collections, UserTable table) {
+    private void buildCollections(Collection<EntityCollection> collections, Table table) {
         List<Join> childJoins = table.getChildJoins();
         for (Join childJoin : childJoins) {
-            UserTable child = childJoin.getChild();
+            Table child = childJoin.getChild();
             collections.add(buildCollection(child));
         }
     }
 
-    private EntityCollection buildCollection(UserTable table) {
+    private EntityCollection buildCollection(Table table) {
         EntityCollection collection = EntityCollection.modifiableCollection(uuidOrCreate(table));
         buildContainer(collection, table);
         return collection;
     }
 
-    private void buildContainer(Entity container, UserTable table) {
+    private void buildContainer(Entity container, Table table) {
         buildFields(container.getFields(), table);
         buildIdentifying(container.getIdentifying(), table);
         if (container instanceof EntityCollection) {
@@ -129,7 +129,7 @@ final class EntityBuilder {
      * @param table the table to build from
      * @return the json names of the unique indexes
      */
-    private Set<String> buildIndexes(BiMap<String, EntityIndex> out, UserTable table) {
+    private Set<String> buildIndexes(BiMap<String, EntityIndex> out, Table table) {
         Set<String> uniques = new HashSet<>(out.size());
         for (Index index : getAllIndexes(table)) {
             if (index.isPrimaryKey() || index.getIndexName().getName().startsWith("__akiban"))
@@ -161,7 +161,7 @@ final class EntityBuilder {
         return uniques;
     }
 
-    private Iterable<? extends Index> getAllIndexes(final UserTable table) {
+    private Iterable<? extends Index> getAllIndexes(final Table table) {
         Collection<? extends Index> tableIndexes = table.getIndexes();
         Collection<? extends Index> ftIndexes = table.getOwnFullTextIndexes();
         Collection<? extends Index> gis = Collections2.filter(table.getGroupIndexes(), new Predicate<GroupIndex>() {
@@ -173,7 +173,7 @@ final class EntityBuilder {
         return Iterables.concat(tableIndexes, ftIndexes, gis);
     }
 
-    private static IndexField.FieldName buildIndexField(List<IndexColumn> indexColumns, int i, UserTable contextTable) {
+    private static IndexField.FieldName buildIndexField(List<IndexColumn> indexColumns, int i, Table contextTable) {
         Column column = indexColumns.get(i).getColumn();
         return (column.getTable() == contextTable)
                 ? new IndexField.FieldName(column.getName())
@@ -190,7 +190,7 @@ final class EntityBuilder {
         return entity;
     }
 
-    private static UUID uuidOrCreate(UserTable table) {
+    private static UUID uuidOrCreate(Table table) {
         UUID uuid = table.getUuid();
         assert uuid != null : table;
         return uuid;

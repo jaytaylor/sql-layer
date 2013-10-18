@@ -23,9 +23,8 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.AisRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -246,9 +245,9 @@ public class FilterIT extends OperatorITBase
     // No test for cursor lifecycle needed -- tested in several other operator ITs, including
     // GroupScanIT.testCursor.
 
-    private Set<UserTableRowType> removeDescendentTypes(AisRowType type)
+    private Set<TableRowType> removeDescendentTypes(AisRowType type)
     {
-        Set<UserTableRowType> keepTypes = type.schema().userTableTypes();
+        Set<TableRowType> keepTypes = type.schema().userTableTypes();
         keepTypes.removeAll(Schema.descendentTypes(type, keepTypes));
         return keepTypes;
     }

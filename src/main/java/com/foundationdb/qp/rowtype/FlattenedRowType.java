@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.foundationdb.ais.model.HKey;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.explain.CompoundExplainer;
 import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.Label;
@@ -69,7 +69,7 @@ public class FlattenedRowType extends CompoundRowType
     {
         super(schema, typeId, parent, child);
         // re-replace the type composition with the single branch type
-        List<UserTable> parentAndChildTables = new ArrayList<>(parent.typeComposition().tables());
+        List<Table> parentAndChildTables = new ArrayList<>(parent.typeComposition().tables());
         parentAndChildTables.addAll(child.typeComposition().tables());
         typeComposition(new SingleBranchTypeComposition(this, parentAndChildTables));
         

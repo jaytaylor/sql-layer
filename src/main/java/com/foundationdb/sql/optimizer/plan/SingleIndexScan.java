@@ -19,7 +19,7 @@ package com.foundationdb.sql.optimizer.plan;
 
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.sql.optimizer.plan.ConditionsCount.HowMany;
 import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
@@ -287,8 +287,8 @@ public final class SingleIndexScan extends IndexScan implements EqualityColumnsS
     }
 
     @Override
-    public UserTable getLeafMostUTable() {
-        return (UserTable) index.leafMostTable();
+    public Table getLeafMostAisTable() {
+        return index.leafMostTable();
     }
 
     @Override
@@ -322,7 +322,7 @@ public final class SingleIndexScan extends IndexScan implements EqualityColumnsS
     }
 
     @Override
-    public UserTable findCommonAncestor(IndexScan otherScan) {
+    public Table findCommonAncestor(IndexScan otherScan) {
         TableSource myTable = getLeafMostTable();
         TableSource otherTable = otherScan.getLeafMostTable();
         int myDepth = myTable.getTable().getDepth();

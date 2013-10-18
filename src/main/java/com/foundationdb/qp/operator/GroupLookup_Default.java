@@ -18,14 +18,11 @@
 package com.foundationdb.qp.operator;
 
 import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.rowtype.HKeyRowType;
-import com.foundationdb.qp.rowtype.IndexRowType;
-import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.*;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.explain.std.LookUpOperatorExplainer;
 import com.foundationdb.util.ArgumentValidation;
@@ -65,7 +62,7 @@ import static java.lang.Math.min;
  <li><b>RowType inputRowType:</b> Other tables will be located for input rows
  of this type.
 
- <li><b>Collection<UserTableRowType> outputRowTypes:</b> Tables to be located.
+ <li><b>Collection<TableRowType> outputRowTypes:</b> Tables to be located.
 
  <li><b>API.InputPreservationOption flag:</b> Indicates whether rows of type rowType
  will be preserved in the output stream (flag = KEEP_INPUT), or
@@ -162,7 +159,7 @@ class GroupLookup_Default extends Operator
     public GroupLookup_Default(Operator inputOperator,
                                Group group,
                                RowType inputRowType,
-                               Collection<UserTableRowType> outputRowTypes,
+                               Collection<TableRowType> outputRowTypes,
                                API.InputPreservationOption flag,
                                int lookaheadQuantum)
     {
@@ -173,9 +170,9 @@ class GroupLookup_Default extends Operator
         this.lookaheadQuantum = lookaheadQuantum;
 
         ArgumentValidation.notEmpty("outputRowTypes", outputRowTypes);
-        UserTableRowType tableRowType;
-        if (inputRowType instanceof UserTableRowType) {
-            tableRowType = (UserTableRowType)inputRowType;
+        TableRowType tableRowType;
+        if (inputRowType instanceof TableRowType) {
+            tableRowType = (TableRowType)inputRowType;
         } else if (inputRowType instanceof IndexRowType) {
             // Keeping index rows not supported
             ArgumentValidation.isTrue("flag == API.InputPreservationOption.DISCARD_INPUT",
@@ -184,32 +181,32 @@ class GroupLookup_Default extends Operator
         } else if (inputRowType instanceof HKeyRowType) {
             ArgumentValidation.isTrue("flag == API.InputPreservationOption.DISCARD_INPUT",
                                       flag == API.InputPreservationOption.DISCARD_INPUT);
-            tableRowType = ((Schema) inputRowType.schema()).userTableRowType(((HKeyRowType) inputRowType).hKey().userTable());
+            tableRowType = ((Schema) inputRowType.schema()).tableRowType(((HKeyRowType) inputRowType).hKey().table());
         } else {
             ArgumentValidation.isTrue("invalid rowType", false);
             tableRowType = null;
         }
-        UserTable inputTable = tableRowType.userTable();
+        Table inputTable = tableRowType.table();
         this.ancestors = new ArrayList<>(outputRowTypes.size());
-        List<UserTableRowType> branchOutputRowTypes = null;
-        UserTable branchRoot = null;
+        List<TableRowType> branchOutputRowTypes = null;
+        Table branchRoot = null;
         boolean outputInputTable = false;
-        for (UserTableRowType outputRowType : outputRowTypes) {
+        for (TableRowType outputRowType : outputRowTypes) {
             if (outputRowType == tableRowType) {
                 ArgumentValidation.isTrue("flag == API.InputPreservationOption.DISCARD_INPUT",
                                           flag == API.InputPreservationOption.DISCARD_INPUT);
                 outputInputTable = true;
             } else if (outputRowType.ancestorOf(tableRowType)) {
-                ancestors.add(outputRowType.userTable());
+                ancestors.add(outputRowType.table());
             } else if (tableRowType.ancestorOf(outputRowType)) {
                 if (branchOutputRowTypes == null)
                     branchOutputRowTypes = new ArrayList<>();
                 branchOutputRowTypes.add(outputRowType);
                 if (branchRoot != inputTable) {
                     // Get immediate child of input above desired output.
-                    UserTable childTable = outputRowType.userTable();
+                    Table childTable = outputRowType.table();
                     while (true) {
-                        UserTable parentTable = childTable.parentTable();
+                        Table parentTable = childTable.parentTable();
                         if (parentTable ==  inputTable) break;
                         childTable = parentTable;
                     }
@@ -255,29 +252,29 @@ class GroupLookup_Default extends Operator
     
     // For use by this class
 
-    private static final Comparator<UserTable> SORT_TABLE_BY_DEPTH =
-        new Comparator<UserTable>() 
+    private static final Comparator<Table> SORT_TABLE_BY_DEPTH =
+        new Comparator<Table>() 
         {
             @Override
-            public int compare(UserTable x, UserTable y)
+            public int compare(Table x, Table y)
             {
                 return x.getDepth() - y.getDepth();
             }
         };
-    private static final Comparator<UserTableRowType> SORT_ROWTYPE_BY_DEPTH =
-        new Comparator<UserTableRowType>() 
+    private static final Comparator<TableRowType> SORT_ROWTYPE_BY_DEPTH =
+        new Comparator<TableRowType>()
         {
             @Override
-            public int compare(UserTableRowType x, UserTableRowType y)
+            public int compare(TableRowType x, TableRowType y)
             {
-                return x.userTable().getDepth() - y.userTable().getDepth();
+                return x.table().getDepth() - y.table().getDepth();
             }
         };
 
-    private List<UserTableRowType> outputRowTypes() {
-        List<UserTableRowType> types = new ArrayList<>();
-        for (UserTable table : ancestors) {
-            types.add(((Schema) inputRowType.schema()).userTableRowType(table));
+    private List<TableRowType> outputRowTypes() {
+        List<TableRowType> types = new ArrayList<>();
+        for (Table table : ancestors) {
+            types.add(((Schema) inputRowType.schema()).tableRowType(table));
         }
         if (branchOutputRowTypes != null) {
             types.addAll(branchOutputRowTypes);
@@ -285,14 +282,14 @@ class GroupLookup_Default extends Operator
         return types;
     }
 
-    private static UserTable commonAncestor(UserTable inputTable, UserTable outputTable)
+    private static Table commonAncestor(Table inputTable, Table outputTable)
     {
         int minLevel = min(inputTable.getDepth(), outputTable.getDepth());
-        UserTable inputAncestor = inputTable;
+        Table inputAncestor = inputTable;
         while (inputAncestor.getDepth() > minLevel) {
             inputAncestor = inputAncestor.parentTable();
         }
-        UserTable outputAncestor = outputTable;
+        Table outputAncestor = outputTable;
         while (outputAncestor.getDepth() > minLevel) {
             outputAncestor = outputAncestor.parentTable();
         }
@@ -314,8 +311,8 @@ class GroupLookup_Default extends Operator
     private final Operator inputOperator;
     private final Group group;
     private final RowType inputRowType;
-    private final List<UserTable> ancestors;
-    private final List<UserTableRowType> branchOutputRowTypes;
+    private final List<Table> ancestors;
+    private final List<TableRowType> branchOutputRowTypes;
     private final boolean keepInput;
     private final int branchRootOrdinal;
     private final int lookaheadQuantum;
@@ -324,7 +321,7 @@ class GroupLookup_Default extends Operator
     public CompoundExplainer getExplainer(ExplainContext context)
     {
         Attributes atts = new Attributes();
-        for (UserTableRowType outputType : outputRowTypes()) {
+        for (TableRowType outputType : outputRowTypes()) {
             atts.put(Label.OUTPUT_TYPE, outputType.getExplainer(context));
         }
         atts.put(Label.PIPELINE, PrimitiveExplainer.getInstance(lookaheadQuantum));

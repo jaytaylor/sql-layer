@@ -43,8 +43,8 @@ import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.operator.API.InputPreservationOption;
 import com.foundationdb.qp.operator.API.JoinType;
 import com.foundationdb.server.collation.AkCollator;
@@ -137,7 +137,7 @@ public class OperatorAssembler extends BaseRule
         RowType valuesRowType(ExpressionsSource expressionsSource);
 
         void fillNulls(Index index, T[] keys);
-        List<T> assembleUpdates(UserTableRowType targetRowType, List<UpdateColumn> updateColumns,
+        List<T> assembleUpdates(TableRowType targetRowType, List<UpdateColumn> updateColumns,
                                          ColumnExpressionToIndex fieldOffsets);
         T[] createNulls(Index index, int nkeys);
         Operator ifEmptyNulls(Operator input, RowType rowType,
@@ -194,7 +194,7 @@ public class OperatorAssembler extends BaseRule
         }
 
         @Override
-        public List<Explainable> assembleUpdates(UserTableRowType targetRowType, List<UpdateColumn> updateColumns,
+        public List<Explainable> assembleUpdates(TableRowType targetRowType, List<UpdateColumn> updateColumns,
                                                 ColumnExpressionToIndex fieldOffsets) {
             return null;
         }
@@ -380,7 +380,7 @@ public class OperatorAssembler extends BaseRule
             }
 
             @Override
-            public List<T> assembleUpdates(UserTableRowType targetRowType, List<UpdateColumn> updateColumns,
+            public List<T> assembleUpdates(TableRowType targetRowType, List<UpdateColumn> updateColumns,
                                            ColumnExpressionToIndex fieldOffsets) {
                 List<T> updates = assembleExpressionsA(updateColumns, fieldOffsets);
                 // Have a list of expressions in the order specified.
@@ -547,7 +547,7 @@ public class OperatorAssembler extends BaseRule
         private Schema schema;
         private final PartialAssembler<TPreparedExpression> newPartialAssembler;
         private final PartialAssembler<?> partialAssembler;
-        private final Set<UserTable> affectedTables;
+        private final Set<Table> affectedTables;
 
         public Assembler(PlanContext planContext) {
             this.planContext = planContext;
@@ -649,9 +649,9 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleInsertProjectTable (RowStream input, 
                 List<ExpressionNode> projectFields, InsertStatement insert) {
 
-            UserTableRowType targetRowType = 
+            TableRowType targetRowType =
                     tableRowType(insert.getTargetTable());
-            UserTable table = insert.getTargetTable().getTable();
+            Table table = insert.getTargetTable().getTable();
 
             List<TPreparedExpression> insertsP = null;
             if (projectFields != null) {
@@ -769,7 +769,7 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleUpdateStatement (UpdateStatement updateStatement) {
             UPDATE_COUNT.hit();
             RowStream stream = assembleQuery (updateStatement.getInput());
-            UserTableRowType targetRowType = tableRowType(updateStatement.getTargetTable());
+            TableRowType targetRowType = tableRowType(updateStatement.getTargetTable());
             assert (stream.rowType == targetRowType);
 
             List<UpdateColumn> updateColumns = updateStatement.getUpdateColumns();
@@ -801,7 +801,7 @@ public class OperatorAssembler extends BaseRule
             DELETE_COUNT.hit();
             RowStream stream = assembleQuery(delete.getInput());
             
-            UserTableRowType targetRowType = tableRowType(delete.getTargetTable());
+            TableRowType targetRowType = tableRowType(delete.getTargetTable());
             
             stream.operator = API.delete_Returning(stream.operator, false);
             stream.fieldOffsets = new ColumnSourceFieldOffsets(delete.getTable(), targetRowType);
@@ -824,7 +824,7 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleUpdateInput(UpdateInput updateInput) {
             RowStream stream = assembleQuery(updateInput.getInput());
             TableSource table = updateInput.getTable();
-            UserTableRowType rowType = tableRowType(table);
+            TableRowType rowType = tableRowType(table);
             if ((stream.rowType != rowType) ||
                 !boundRowIsForTable(stream.fieldOffsets, table)) {
                 int rowIndex = lookupNestedBoundRowIndex(table);
@@ -1254,7 +1254,7 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleAncestorLookup(AncestorLookup ancestorLookup) {
             RowStream stream;
             Group group = ancestorLookup.getDescendant().getGroup();
-            List<UserTableRowType> outputRowTypes =
+            List<TableRowType> outputRowTypes =
                 new ArrayList<>(ancestorLookup.getAncestors().size());
             for (TableNode table : ancestorLookup.getAncestors()) {
                 outputRowTypes.add(tableRowType(table));
@@ -1310,7 +1310,7 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleBranchLookup(BranchLookup branchLookup) {
             RowStream stream;
             Group group = branchLookup.getSource().getGroup();
-            List<UserTableRowType> outputRowTypes =
+            List<TableRowType> outputRowTypes =
                 new ArrayList<>(branchLookup.getTables().size());
             if (false)      // TODO: Any way to check that this matched?
                 outputRowTypes.add(tableRowType(branchLookup.getBranch()));
@@ -1393,7 +1393,7 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected RowStream assembleProduct(Product product) {
-            UserTableRowType ancestorRowType = null;
+            TableRowType ancestorRowType = null;
             if (product.getAncestor() != null)
                 ancestorRowType = tableRowType(product.getAncestor());
             RowStream pstream = new RowStream();
@@ -1850,21 +1850,21 @@ public class OperatorAssembler extends BaseRule
             return ordering;
         }
 
-        protected UserTableRowType tableRowType(TableSource table) {
+        protected TableRowType tableRowType(TableSource table) {
             return tableRowType(table.getTable());
         }
 
-        protected UserTableRowType tableRowType(TableNode table) {
-            UserTable userTable = table.getTable();
-            affectedTables.add(userTable);
-            return schema.userTableRowType(userTable);
+        protected TableRowType tableRowType(TableNode table) {
+            Table aisTable = table.getTable();
+            affectedTables.add(aisTable);
+            return schema.tableRowType(aisTable);
         }
 
         protected IndexRowType getIndexRowType(SingleIndexScan index) {
             Index aisIndex = index.getIndex();
             AkibanInformationSchema ais = schema.ais();
             for (int i : aisIndex.getAllTableIDs()) {
-                affectedTables.add(ais.getUserTable(i));
+                affectedTables.add(ais.getTable(i));
             }
             return schema.indexRowType(aisIndex);
         }

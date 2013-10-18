@@ -35,11 +35,11 @@ public class MultipleNullUniqueIndexIT  extends ITBase {
         String TABLE = "t1";
         String COLUMN = "c1";
         AISBuilder builder = new AISBuilder();
-        builder.userTable(SCHEMA, TABLE);
+        builder.table(SCHEMA, TABLE);
         builder.column(SCHEMA, TABLE, COLUMN, 0, "TINYINT", null, null, true, true, null, null);
         builder.index(SCHEMA, TABLE, "c1", true, "UNIQUE");
         builder.indexColumn(SCHEMA, TABLE, COLUMN, COLUMN, 0, true, null);
-        ddl().createTable(session(), builder.akibanInformationSchema().getUserTable(SCHEMA, TABLE));
+        ddl().createTable(session(), builder.akibanInformationSchema().getTable(SCHEMA, TABLE));
         updateAISGeneration();
         final int tid = tableId(SCHEMA, TABLE);
         

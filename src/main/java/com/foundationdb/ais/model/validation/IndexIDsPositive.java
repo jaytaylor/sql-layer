@@ -20,7 +20,7 @@ package com.foundationdb.ais.model.validation;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.error.InvalidIndexIDException;
 
 import java.util.Collection;
@@ -34,7 +34,7 @@ import java.util.Collection;
 public class IndexIDsPositive implements AISValidation {
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        for(UserTable table : ais.getUserTables().values()) {
+        for(Table table : ais.getTables().values()) {
             checkIDs(table.getIndexesIncludingInternal(), output);
         }
         for(Group group : ais.getGroups().values()) {

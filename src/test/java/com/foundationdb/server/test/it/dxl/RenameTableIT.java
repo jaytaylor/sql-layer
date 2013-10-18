@@ -17,8 +17,8 @@
 
 package com.foundationdb.server.test.it.dxl;
 
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.DuplicateTableNameException;
 import com.foundationdb.server.error.NoSuchTableException;
@@ -103,7 +103,7 @@ public class RenameTableIT extends ITBase {
     
     private void expectTablesInSchema(String schemaName, String... tableNames) {
         Set<String> actualInSchema = new TreeSet<>();
-        for(UserTable table : ddl().getAIS(session()).getUserTables().values()) {
+        for(Table table : ddl().getAIS(session()).getTables().values()) {
             if(table.getName().getSchemaName().equals(schemaName)) {
                 actualInSchema.add(table.getName().getTableName());
             }
@@ -313,7 +313,7 @@ public class RenameTableIT extends ITBase {
         for(int i = 1; i <= LOOPS; ++i) {
             // Create new table, copy old table from a pk scan
             int tid2 = createTable(NAME2, COL_DEFS);
-            List<NewRow> pkRows = scanAllIndex(getUserTable(tableId(NAME1)).getPrimaryKeyIncludingInternal().getIndex());
+            List<NewRow> pkRows = scanAllIndex(getTable(tableId(NAME1)).getPrimaryKeyIncludingInternal().getIndex());
             assertEquals("Row scanned from original on loop "+i, 3, pkRows.size());
             for(NewRow row : pkRows) {
                 writeRow(tid2, row.get(0), -1L);

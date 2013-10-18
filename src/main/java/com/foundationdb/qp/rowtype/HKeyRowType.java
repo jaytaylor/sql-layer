@@ -55,7 +55,7 @@ public class HKeyRowType extends DerivedRowType
     public CompoundExplainer getExplainer(ExplainContext context)
     {
         CompoundExplainer explainer = super.getExplainer(context);
-        TableName tableName = hKey.userTable().getName();
+        TableName tableName = hKey.table().getName();
         explainer.addAttribute(Label.TABLE_SCHEMA, PrimitiveExplainer.getInstance(tableName.getSchemaName()));
         explainer.addAttribute(Label.TABLE_NAME, PrimitiveExplainer.getInstance(tableName.getTableName()));
         return explainer;

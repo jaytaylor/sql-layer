@@ -65,7 +65,7 @@ public class KeyToObjectIT extends ITBase {
      * @throws Exception On error.
      */
     private void testKeyToObjectInternal(int tableId, int expectedRowCount, String indexName) throws Exception {
-        final Table table = getUserTable(tableId);
+        final Table table = getTable(tableId);
         final Index index = table.getIndex(indexName);
         assertNotNull("expected index named: "+indexName, index);
         

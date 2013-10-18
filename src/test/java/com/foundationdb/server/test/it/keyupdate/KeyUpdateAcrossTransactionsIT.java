@@ -19,8 +19,8 @@ package com.foundationdb.server.test.it.keyupdate;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.IndexKeyVisitor;
 import com.foundationdb.server.test.it.ITBase;
@@ -59,7 +59,7 @@ public final class KeyUpdateAcrossTransactionsIT extends ITBase
                         "unique(u)");
         writeRows(createNewRow(tableId, 0, 0));
         AkibanInformationSchema ais = ddl().getAIS(session());
-        UserTable table = ais.getUserTable(tableId);
+        Table table = ais.getTable(tableId);
         Index uIndex = null;
         for (TableIndex index : table.getIndexes()) {
             if (index.getKeyColumns().get(0).getColumn().getName().equals("u")) {

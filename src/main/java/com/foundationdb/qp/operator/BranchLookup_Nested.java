@@ -18,12 +18,12 @@
 package com.foundationdb.qp.operator;
 
 import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.rowtype.*;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.explain.*;
@@ -65,10 +65,10 @@ import static java.lang.Math.min;
  <li><b>RowType sourceRowType:</b> Branches will be located for input
  rows of this type. Possibly a subrow of inputRowType.
  
- <li><b>UserTableRowType ancestorRowType:</b> Identifies the table in the group at which branching occurs.
+ <li><b>TableRowType ancestorRowType:</b> Identifies the table in the group at which branching occurs.
  Must be an ancestor of both inputRowType's table and outputRowTypes' tables.
 
- <li><b>UserTableRowType outputRowTypes:</b> Types within the branch to be
+ <li><b>TableRowType outputRowTypes:</b> Types within the branch to be
  retrieved.
 
  <li><b>API.InputPreservationOption flag:</b> Indicates whether rows of type rowType
@@ -179,8 +179,8 @@ public class BranchLookup_Nested extends Operator
     public BranchLookup_Nested(Group group,
                                RowType inputRowType,
                                RowType sourceRowType,
-                               UserTableRowType ancestorRowType,
-                               Collection<UserTableRowType> outputRowTypes,
+                               TableRowType ancestorRowType,
+                               Collection<TableRowType> outputRowTypes,
                                API.InputPreservationOption flag,
                                int inputBindingPosition,
                                int lookaheadQuantum)
@@ -190,32 +190,32 @@ public class BranchLookup_Nested extends Operator
         ArgumentValidation.notNull("sourceRowType", sourceRowType);
         ArgumentValidation.notEmpty("outputRowTypes", outputRowTypes);
         ArgumentValidation.notNull("flag", flag);
-        ArgumentValidation.isTrue("sourceRowType instanceof UserTableRowType || flag == API.InputPreservationOption.DISCARD_INPUT",
-                                  sourceRowType instanceof UserTableRowType || flag == API.InputPreservationOption.DISCARD_INPUT);
+        ArgumentValidation.isTrue("sourceRowType instanceof TableRowType || flag == API.InputPreservationOption.DISCARD_INPUT",
+                                  sourceRowType instanceof TableRowType || flag == API.InputPreservationOption.DISCARD_INPUT);
         ArgumentValidation.isGTE("hKeyBindingPosition", inputBindingPosition, 0);
-        UserTableRowType inputTableType = null;
-        if (sourceRowType instanceof UserTableRowType) {
-            inputTableType = (UserTableRowType) sourceRowType;
+        TableRowType inputTableType = null;
+        if (sourceRowType instanceof TableRowType) {
+            inputTableType = (TableRowType) sourceRowType;
         } else if (sourceRowType instanceof IndexRowType) {
             inputTableType = ((IndexRowType) sourceRowType).tableType();
         } else if (sourceRowType instanceof HKeyRowType) {
             Schema schema = outputRowTypes.iterator().next().schema();
-            inputTableType = schema.userTableRowType(sourceRowType.hKey().userTable());
+            inputTableType = schema.tableRowType(sourceRowType.hKey().table());
         }
         assert inputTableType != null : sourceRowType;
-        UserTable inputTable = inputTableType.userTable();
+        Table inputTable = inputTableType.table();
         ArgumentValidation.isSame("inputTable.getGroup()", inputTable.getGroup(), 
                                   "group", group);
-        UserTable commonAncestor;
+        Table commonAncestor;
         if (ancestorRowType == null) {
             commonAncestor = inputTable;
         } else {
-            commonAncestor = ancestorRowType.userTable();
+            commonAncestor = ancestorRowType.table();
             ArgumentValidation.isTrue("ancestorRowType.ancestorOf(inputTableType)",
                                       ancestorRowType.ancestorOf(inputTableType));
         }
-        for (UserTableRowType outputRowType : outputRowTypes) {
-            UserTable outputTable = outputRowType.userTable();
+        for (TableRowType outputRowType : outputRowTypes) {
+            Table outputTable = outputRowType.table();
             ArgumentValidation.isSame("outputTable.getGroup()", outputTable.getGroup(), 
                                       "group", group);
             if (ancestorRowType == null) {
@@ -231,12 +231,12 @@ public class BranchLookup_Nested extends Operator
         this.sourceRowType = sourceRowType;
         this.outputRowTypes = new ArrayList<>(outputRowTypes);
         Collections.sort(this.outputRowTypes, 
-                         new Comparator<UserTableRowType>() 
+                         new Comparator<TableRowType>()
                          {
                              @Override
-                             public int compare(UserTableRowType x, UserTableRowType y)
+                             public int compare(TableRowType x, TableRowType y)
                                  {
-                                     return x.userTable().getDepth() - y.userTable().getDepth();
+                                     return x.table().getDepth() - y.table().getDepth();
                                  }
                          });
         this.commonAncestor = commonAncestor;
@@ -245,7 +245,7 @@ public class BranchLookup_Nested extends Operator
         this.lookaheadQuantum = lookaheadQuantum;
         // See whether there is a single branch beneath commonAncestor
         // with all output row types.
-        UserTable outputTable = this.outputRowTypes.get(0).userTable();
+        Table outputTable = this.outputRowTypes.get(0).table();
         boolean allOneBranch;
         if (outputTable == commonAncestor) {
             allOneBranch = false;
@@ -254,7 +254,7 @@ public class BranchLookup_Nested extends Operator
             while (outputTable.parentTable() != commonAncestor) {
                 outputTable = outputTable.parentTable();
             }
-            UserTableRowType outputTableRowType = this.outputRowTypes.get(0).schema().userTableRowType(outputTable);
+            TableRowType outputTableRowType = this.outputRowTypes.get(0).schema().tableRowType(outputTable);
             allOneBranch = true;
             for (int i = 1; i < this.outputRowTypes.size(); i++) {
                 if (!outputTableRowType.ancestorOf(this.outputRowTypes.get(i))) {
@@ -277,7 +277,7 @@ public class BranchLookup_Nested extends Operator
         } else if (inputTable == commonAncestor) {
             this.inputPrecedesBranch = true;
         } else {
-            UserTable ancestorOfInputAndChildOfCommon = inputTable;
+            Table ancestorOfInputAndChildOfCommon = inputTable;
             while (ancestorOfInputAndChildOfCommon.parentTable() != commonAncestor) {
                 ancestorOfInputAndChildOfCommon = ancestorOfInputAndChildOfCommon.parentTable();
             }
@@ -287,14 +287,14 @@ public class BranchLookup_Nested extends Operator
 
     // For use by this class
 
-    private static UserTable commonAncestor(UserTable inputTable, UserTable outputTable)
+    private static Table commonAncestor(Table inputTable, Table outputTable)
     {
         int minLevel = min(inputTable.getDepth(), outputTable.getDepth());
-        UserTable inputAncestor = inputTable;
+        Table inputAncestor = inputTable;
         while (inputAncestor.getDepth() > minLevel) {
             inputAncestor = inputAncestor.parentTable();
         }
-        UserTable outputAncestor = outputTable;
+        Table outputAncestor = outputTable;
         while (outputAncestor.getDepth() > minLevel) {
             outputAncestor = outputAncestor.parentTable();
         }
@@ -315,13 +315,13 @@ public class BranchLookup_Nested extends Operator
 
     private final Group group;
     private final RowType inputRowType, sourceRowType;
-    private final List<UserTableRowType> outputRowTypes;
+    private final List<TableRowType> outputRowTypes;
     private final boolean keepInput;
     // If keepInput is true, inputPrecedesBranch controls whether input row appears before the retrieved branch.
     private final boolean inputPrecedesBranch;
     private final int inputBindingPosition;
     private final int lookaheadQuantum;
-    private final UserTable commonAncestor;
+    private final Table commonAncestor;
     private final int branchRootOrdinal;
 
     @Override
@@ -329,11 +329,11 @@ public class BranchLookup_Nested extends Operator
     {
         Attributes atts = new Attributes();
         atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(inputBindingPosition));
-        for (UserTableRowType outputRowType : outputRowTypes) {
+        for (TableRowType outputRowType : outputRowTypes) {
             atts.put(Label.OUTPUT_TYPE, outputRowType.getExplainer(context));
         }
-        UserTableRowType outputRowType = outputRowTypes.get(0);
-        UserTableRowType ancestorRowType = outputRowType.schema().userTableRowType(commonAncestor);
+        TableRowType outputRowType = outputRowTypes.get(0);
+        TableRowType ancestorRowType = outputRowType.schema().tableRowType(commonAncestor);
         if ((ancestorRowType != sourceRowType) && (ancestorRowType != outputRowType)) {
             atts.put(Label.ANCESTOR_TYPE, ancestorRowType.getExplainer(context));
         }

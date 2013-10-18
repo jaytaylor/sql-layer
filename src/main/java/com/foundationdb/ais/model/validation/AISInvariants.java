@@ -107,7 +107,7 @@ public class AISInvariants {
 
     public static boolean isIndexInTable (Table table, String indexName)
     {
-        return table.getIndex(indexName) != null || ((UserTable)table).getFullTextIndex(indexName) != null;
+        return table.getIndex(indexName) != null || table.getFullTextIndex(indexName) != null;
     }
  
     public static void checkDuplicateIndexColumnPosition (Index index, Integer position) {

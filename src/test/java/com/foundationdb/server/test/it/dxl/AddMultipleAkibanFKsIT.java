@@ -19,7 +19,7 @@ package com.foundationdb.server.test.it.dxl;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Join;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
 
@@ -55,10 +55,10 @@ public class AddMultipleAkibanFKsIT extends ITBase
         ddl().renameTable(session(), tableName("schema", "TEMP"), tableName("schema", "child3"));
         ddl().dropTable(session(), tableName("schema", "TEMP2"));
         AkibanInformationSchema ais = ddl().getAIS(session());
-        UserTable root = ais.getUserTable("schema", "root");
+        Table root = ais.getTable("schema", "root");
         int check = 0;
         for (Join join : root.getChildJoins()) {
-            UserTable child = join.getChild();
+            Table child = join.getChild();
             assertEquals(root, join.getParent());
             assertEquals(join, child.getParentJoin());
             String childName = child.getName().getTableName();
@@ -73,8 +73,8 @@ public class AddMultipleAkibanFKsIT extends ITBase
             }
         }
         assertEquals(0x7, check);
-        for (UserTable userTable : ais.getUserTables().values()) {
-            assertTrue(!userTable.getName().getTableName().startsWith("TEMP"));
+        for (Table table : ais.getTables().values()) {
+            assertTrue(!table.getName().getTableName().startsWith("TEMP"));
         }
     }
 }

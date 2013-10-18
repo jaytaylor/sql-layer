@@ -48,7 +48,7 @@ public class IndexScanPT extends QPProfilePTBase
             "primary key(id)");
         createIndex("schema", "t", "idx_x", "x");
         schema = new Schema(ais());
-        tRowType = schema.userTableRowType(userTable(t));
+        tRowType = schema.tableRowType(table(t));
         idxRowType = indexType(t, "x");
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);

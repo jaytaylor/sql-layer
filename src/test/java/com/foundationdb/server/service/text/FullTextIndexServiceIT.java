@@ -237,7 +237,7 @@ public class FullTextIndexServiceIT extends FullTextIndexServiceITBase
 
 
     protected RowType rowType(String tableName) {
-        return schema.newHKeyRowType(ais().getUserTable(SCHEMA, tableName).hKey());
+        return schema.newHKeyRowType(ais().getTable(SCHEMA, tableName).hKey());
     }
 
     protected TestRow row(RowType rowType, Object... fields) {

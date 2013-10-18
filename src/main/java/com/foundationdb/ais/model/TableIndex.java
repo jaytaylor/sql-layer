@@ -108,7 +108,6 @@ public class TableIndex extends Index
                     if (table.getColumnsIncludingInternal().contains(column)) {
                         toIndexRowBuilder.rowCompEntry(column.getPosition(), -1);
                     } else {
-                        assert hKeySegment.table().isUserTable() : this;
                         toIndexRowBuilder.rowCompEntry(-1, hKeyColumn.positionInHKey());
                     }
                     indexColumns.add(column);
@@ -176,7 +175,7 @@ public class TableIndex extends Index
     public HKey hKey()
     {
         if (hKey == null) {
-            hKey = ((UserTable) table).hKey();
+            hKey = table.hKey();
         }
         return hKey;
     }

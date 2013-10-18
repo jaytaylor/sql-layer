@@ -19,8 +19,8 @@ package com.foundationdb.server.service.externaldata;
 
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.storeadapter.RowDataCreator;
 import com.foundationdb.server.api.dml.scan.NewRow;
@@ -74,7 +74,7 @@ public abstract class RowReader
     private final byte[] fileBuffer = new byte[1024];
     private int fileIndex, fileAvail;
 
-    protected RowReader(UserTable table, List<Column> columns, 
+    protected RowReader(Table table, List<Column> columns, 
                         InputStream inputStream, String encoding, byte[] nullBytes,
                         QueryContext queryContext) {
         this.tableId = table.getTableId();

@@ -37,7 +37,6 @@ import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.qp.operator.QueryContext;
@@ -83,7 +82,7 @@ public class AlterTableDDL {
                                          QueryContext context) {
         final AkibanInformationSchema curAIS = ddlFunctions.getAIS(session);
         final TableName tableName = convertName(defaultSchemaName, alterTable.getObjectName());
-        final UserTable table = curAIS.getUserTable(tableName);
+        final Table table = curAIS.getTable(tableName);
         checkExists(tableName, table);
 
         if (alterTable.isUpdateStatistics()) {
@@ -107,13 +106,13 @@ public class AlterTableDDL {
         throw new UnsupportedSQLException (alterTable.statementToString(), alterTable);
     }
 
-    private static void checkExists(TableName tableName, UserTable table) {
+    private static void checkExists(TableName tableName, Table table) {
         if (table == null) {
             throw new NoSuchTableException(tableName);
         }
     }
 
-    private static ChangeLevel processAlter(Session session, DDLFunctions ddl, String defaultSchema, UserTable table,
+    private static ChangeLevel processAlter(Session session, DDLFunctions ddl, String defaultSchema, Table table,
                                             TableElementList elements, QueryContext context) {
         // Should never come this way from the parser, but be defensive
         if((elements == null) || elements.isEmpty()) {
@@ -205,7 +204,7 @@ public class AlterTableDDL {
         }
         
         final AkibanInformationSchema origAIS = table.getAIS();
-        final UserTable tableCopy = copyTable(table, columnChanges);
+        final Table tableCopy = copyTable(table, columnChanges);
         final AkibanInformationSchema aisCopy = tableCopy.getAIS();
         final AISBuilder builder = new AISBuilder(aisCopy);
 
@@ -242,7 +241,7 @@ public class AlterTableDDL {
                     throw new JoinToMultipleParentsException(table.getName());
                 }
                 TableName parent = TableDDL.getReferencedName(defaultSchema, fk);
-                if((aisCopy.getUserTable(parent) == null) && (origAIS.getUserTable(parent) != null)) {
+                if((aisCopy.getTable(parent) == null) && (origAIS.getTable(parent) != null)) {
                     TableDDL.addParentTable(builder, origAIS, fk, defaultSchema, newName.getTableName());
                 }
                 tableCopy.setGroup(null);
@@ -253,7 +252,7 @@ public class AlterTableDDL {
         return ddl.alterTable(session, table.getName(), tableCopy, columnChanges, indexChanges, context);
     }
 
-    private static void handleModifyColumnNode(ModifyColumnNode modNode, AISBuilder builder, UserTable tableCopy) {
+    private static void handleModifyColumnNode(ModifyColumnNode modNode, AISBuilder builder, Table tableCopy) {
         AkibanInformationSchema aisCopy = tableCopy.getAIS();
         Column column = tableCopy.getColumn(modNode.getColumnName());
         if(column == null) {
@@ -326,14 +325,14 @@ public class AlterTableDDL {
         }
     }
 
-    private static void checkColumnChange(UserTable table, String columnName) {
+    private static void checkColumnChange(Table table, String columnName) {
         Column column = table.getColumn(columnName);
         if(column == null) {
             throw new NoSuchColumnException(columnName);
         }
     }
 
-    private static void checkIndexChange(UserTable table, String indexName, boolean isNew) {
+    private static void checkIndexChange(Table table, String indexName, boolean isNew) {
         Index index = table.getIndex(indexName);
         if(index == null && !isNew) {
             if(Index.PRIMARY_KEY_CONSTRAINT.equals(indexName)) {
@@ -363,7 +362,7 @@ public class AlterTableDDL {
         return oldName;
     }
 
-    private static UserTable copyTable(UserTable origTable, List<TableChange> columnChanges) {
+    private static Table copyTable(Table origTable, List<TableChange> columnChanges) {
         for(TableChange change : columnChanges) {
             if(change.getChangeType() != ChangeType.ADD) {
                 checkColumnChange(origTable, change.getOldName());
@@ -371,7 +370,7 @@ public class AlterTableDDL {
         }
 
         AkibanInformationSchema aisCopy = AISCloner.clone(origTable.getAIS(), new GroupSelector(origTable.getGroup()));
-        UserTable tableCopy = aisCopy.getUserTable(origTable.getName());
+        Table tableCopy = aisCopy.getTable(origTable.getName());
 
         // Remove all and recreate (note: hidden PK and column are handled by DDL interface)
         tableCopy.dropColumns();
@@ -389,7 +388,7 @@ public class AlterTableDDL {
         return tableCopy;
     }
     
-    private static void copyTableIndexes(UserTable origTable, UserTable tableCopy,
+    private static void copyTableIndexes(Table origTable, Table tableCopy,
                                          List<TableChange> columnChanges, List<TableChange> indexChanges) {
         for(TableChange change : indexChanges) {
             checkIndexChange(origTable, change.getOldName(), change.getChangeType() == ChangeType.ADD);

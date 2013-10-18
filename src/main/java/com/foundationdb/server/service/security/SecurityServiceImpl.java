@@ -523,9 +523,9 @@ public class SecurityServiceImpl implements SecurityService, Service {
 
     protected void registerSystemObjects() {
         AkibanInformationSchema ais = buildSystemObjects();
-        schemaManager.registerStoredInformationSchemaTable(ais.getUserTable(SCHEMA, ROLES_TABLE_NAME), TABLE_VERSION);
-        schemaManager.registerStoredInformationSchemaTable(ais.getUserTable(SCHEMA, USERS_TABLE_NAME), TABLE_VERSION);
-        schemaManager.registerStoredInformationSchemaTable(ais.getUserTable(SCHEMA, USER_ROLES_TABLE_NAME), TABLE_VERSION);
+        schemaManager.registerStoredInformationSchemaTable(ais.getTable(SCHEMA, ROLES_TABLE_NAME), TABLE_VERSION);
+        schemaManager.registerStoredInformationSchemaTable(ais.getTable(SCHEMA, USERS_TABLE_NAME), TABLE_VERSION);
+        schemaManager.registerStoredInformationSchemaTable(ais.getTable(SCHEMA, USER_ROLES_TABLE_NAME), TABLE_VERSION);
         schemaManager.registerSystemRoutine(ais.getRoutine(SCHEMA, ADD_ROLE_PROC_NAME));
         schemaManager.registerSystemRoutine(ais.getRoutine(SCHEMA, ADD_USER_PROC_NAME));
     }
@@ -537,12 +537,12 @@ public class SecurityServiceImpl implements SecurityService, Service {
 
     protected AkibanInformationSchema buildSystemObjects() {
         NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
-        builder.userTable(ROLES_TABLE_NAME)
+        builder.table(ROLES_TABLE_NAME)
             .autoIncLong("id", 1)
             .colString("name", 128, false)
             .pk("id")
             .uniqueKey("role_name", "name");
-        builder.userTable(USERS_TABLE_NAME)
+        builder.table(USERS_TABLE_NAME)
             .autoIncLong("id", 1)
             .colString("name", 128, false)
             .colString("password_basic", 36, true)
@@ -550,7 +550,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
             .colString("password_md5", 35, true)
             .pk("id")
             .uniqueKey("user_name", "name");
-        builder.userTable(USER_ROLES_TABLE_NAME)
+        builder.table(USER_ROLES_TABLE_NAME)
             .autoIncLong("id", 1)
             .colLong("role_id", false)
             .colLong("user_id", false)

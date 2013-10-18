@@ -30,7 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // AISBuilder can be used to create an AIS. The API is designed to sify the creation of an AIS during a scan
-// of a dump. The user need not search the AIS and hold on to AIS objects (UserTable, Column, etc.). Instead,
+// of a dump. The user need not search the AIS and hold on to AIS objects (Table, Column, etc.). Instead,
 // only names from the dump need be supplied. 
 
 public class AISBuilder {
@@ -80,16 +80,16 @@ public class AISBuilder {
         return identityGenerator;
     }
     
-    public UserTable userTable(String schemaName, String tableName) {
-        LOG.trace("userTable: " + schemaName + "." + tableName);
-        return UserTable.create(ais, schemaName, tableName, nameGenerator.generateTableID(new TableName(schemaName, tableName)));
+    public Table table(String schemaName, String tableName) {
+        LOG.trace("table: " + schemaName + "." + tableName);
+        return Table.create(ais, schemaName, tableName, nameGenerator.generateTableID(new TableName(schemaName, tableName)));
     }
 
-    public UserTable userTableInitialAutoIncrement(String schemaName,
+    public Table tableInitialAutoIncrement(String schemaName,
             String tableName, Long initialAutoIncrementValue) {
-        LOG.trace("userTableInitialAutoIncrement: " + schemaName + "."
+        LOG.trace("tableInitialAutoIncrement: " + schemaName + "."
                 + tableName + " = " + initialAutoIncrementValue);
-        UserTable table = ais.getUserTable(schemaName, tableName);
+        Table table = ais.getTable(schemaName, tableName);
         checkFound(table, "setting initial autoincrement value", "user table",
                 concat(schemaName, tableName));
         table.setInitialAutoIncrementValue(initialAutoIncrementValue);
@@ -231,7 +231,7 @@ public class AISBuilder {
     public void fullTextIndex(TableName tableName, String indexName)
     {
         LOG.trace("fullTextIndex: " + tableName + "." + indexName);
-        UserTable table = ais.getUserTable(tableName);
+        Table table = ais.getTable(tableName);
         checkFound(table, "creating full text index", "table", tableName);
         int indexID = nameGenerator.generateIndexID(getRooTableID(table));
         Index index = FullTextIndex.create(ais, table, indexName, indexID);
@@ -241,7 +241,7 @@ public class AISBuilder {
                                     String schemaName, String tableName, String columnName, Integer position)
     {
         LOG.trace("fullTextIndexColumn: " + indexedTableName + "." + indexName + ":" + columnName);
-        UserTable indexedTable = ais.getUserTable(indexedTableName);
+        Table indexedTable = ais.getTable(indexedTableName);
         checkFound(indexedTable, "creating full text index column", "table", indexedTableName);
         Index index = indexedTable.getFullTextIndex(indexName);
         checkFound(index, "creating full text index column", "index", concat(tableName.toString(), indexName));
@@ -258,10 +258,10 @@ public class AISBuilder {
         LOG.trace("joinTables: " + joinName + ": " + childSchemaName + "."
                 + childTableName + " -> " + parentSchemaName + "."
                 + parentTableName);
-        UserTable child = ais.getUserTable(childSchemaName, childTableName);
+        Table child = ais.getTable(childSchemaName, childTableName);
         checkFound(child, "creating join", "child table",
                 concat(childSchemaName, childTableName));
-        UserTable parent = ais.getUserTable(parentSchemaName, parentTableName);
+        Table parent = ais.getTable(parentSchemaName, parentTableName);
         if (parent == null) {
             TableName parentName = new TableName(parentSchemaName,
                     parentTableName);
@@ -284,15 +284,15 @@ public class AISBuilder {
                 + parentSchemaName + "." + parentTableName + "."
                 + parentColumnName);
         // Get child info
-        UserTable childTable = ais
-                .getUserTable(childSchemaName, childTableName);
+        Table childTable = ais
+                .getTable(childSchemaName, childTableName);
         checkFound(childTable, "creating join column", "child table",
                 concat(childSchemaName, childTableName));
         Column childColumn = childTable.getColumn(childColumnName);
         checkFound(childColumn, "creating join column", "child column",
                 concat(childSchemaName, childTableName, childColumnName));
         // Handle parent - could be a forward reference
-        UserTable parentTable = ais.getUserTable(parentSchemaName,
+        Table parentTable = ais.getTable(parentSchemaName,
                 parentTableName);
         if (parentTable == null) {
             // forward reference
@@ -407,8 +407,8 @@ public class AISBuilder {
     public void basicSchemaIsComplete() {
         LOG.trace("basicSchemaIsComplete");
         for (ForwardTableReference forwardTableReference : forwardReferences.values()) {
-            UserTable childTable = forwardTableReference.childTable();
-            UserTable parentTable = ais.getUserTable(forwardTableReference
+            Table childTable = forwardTableReference.childTable();
+            Table parentTable = ais.getTable(forwardTableReference
                     .parentTableName().getSchemaName(), forwardTableReference
                     .parentTableName().getTableName());
             
@@ -448,8 +448,8 @@ public class AISBuilder {
         Group group = ais.getGroup(groupName);
         checkFound(group, "deleting group", "group", groupName);
         boolean groupEmpty = true;
-        for (UserTable userTable : ais.getUserTables().values()) {
-            if (userTable.getGroup() == group) {
+        for (Table table : ais.getTables().values()) {
+            if (table.getGroup() == group) {
                 groupEmpty = false;
             }
         }
@@ -473,7 +473,7 @@ public class AISBuilder {
         Group group = ais.getGroup(groupName);
         checkFound(group, "adding table to group", "group", groupName);
         // table
-        UserTable table = ais.getUserTable(schemaName, tableName);
+        Table table = ais.getTable(schemaName, tableName);
         checkFound(table, "adding table to group", "table",
                 concat(schemaName, tableName));
         checkGroupAddition(group, table.getGroup(),
@@ -503,7 +503,7 @@ public class AISBuilder {
         // parent
         String parentSchemaName = join.getParent().getName().getSchemaName();
         String parentTableName = join.getParent().getName().getTableName();
-        UserTable parent = ais.getUserTable(parentSchemaName, parentTableName);
+        Table parent = ais.getTable(parentSchemaName, parentTableName);
         checkFound(parent, "adding join to group", "parent table",
                 concat(parentSchemaName, parentTableName));
         checkGroupAddition(group, parent.getGroup(),
@@ -512,7 +512,7 @@ public class AISBuilder {
         // child
         String childSchemaName = join.getChild().getName().getSchemaName();
         String childTableName = join.getChild().getName().getTableName();
-        UserTable child = ais.getUserTable(childSchemaName, childTableName);
+        Table child = ais.getTable(childSchemaName, childTableName);
         checkFound(child, "adding join to group", "child table",
                 concat(childSchemaName, childTableName));
         checkGroupAddition(group, child.getGroup(),
@@ -537,7 +537,7 @@ public class AISBuilder {
         Group group = ais.getGroup(groupName);
         checkFound(group, "removing join from group", "group", groupName);
         // table
-        UserTable table = ais.getUserTable(schemaName, tableName);
+        Table table = ais.getTable(schemaName, tableName);
         checkFound(table, "removing join from group", "table table",
                 concat(schemaName, tableName));
         checkInGroup(group, table, "removing join from group", "table table");
@@ -567,14 +567,14 @@ public class AISBuilder {
         // parent
         String parentSchemaName = join.getParent().getName().getSchemaName();
         String parentTableName = join.getParent().getName().getTableName();
-        UserTable parent = ais.getUserTable(parentSchemaName, parentTableName);
+        Table parent = ais.getTable(parentSchemaName, parentTableName);
         checkFound(parent, "removing join from group", "parent table",
                 concat(parentSchemaName, parentTableName));
         checkInGroup(group, parent, "removing join from group", "parent table");
         // child
         String childSchemaName = join.getChild().getName().getSchemaName();
         String childTableName = join.getChild().getName().getTableName();
-        UserTable child = ais.getUserTable(childSchemaName, childTableName);
+        Table child = ais.getTable(childSchemaName, childTableName);
         checkFound(child, "removing join from group", "child table",
                 concat(childSchemaName, childTableName));
         checkInGroup(group, child, "removing join from group", "child table");
@@ -603,7 +603,7 @@ public class AISBuilder {
         LOG.trace("moveTree: " + schemaName + "." + tableName + " -> "
                 + groupName + " via join " + joinName);
         // table
-        UserTable table = ais.getUserTable(schemaName, tableName);
+        Table table = ais.getTable(schemaName, tableName);
         checkFound(table, "moving tree", "table", concat(schemaName, tableName));
 
         // group
@@ -642,7 +642,7 @@ public class AISBuilder {
         LOG.trace("moveTree: " + schemaName + "." + tableName
                 + " -> empty group " + groupName);
         // table
-        UserTable table = ais.getUserTable(schemaName, tableName);
+        Table table = ais.getTable(schemaName, tableName);
         checkFound(table, "moving tree", "table", concat(schemaName, tableName));
 
         // group
@@ -674,10 +674,10 @@ public class AISBuilder {
             }
         }
         // Create hidden PKs if needed. Needs group hooked up before it can be called (to generate index id).
-        for (UserTable userTable : ais.getUserTables().values()) {
-            userTable.endTable(nameGenerator);
+        for (Table table : ais.getTables().values()) {
+            table.endTable(nameGenerator);
             // endTable may have created new index, set its tree name if so
-            Index index = userTable.getPrimaryKeyIncludingInternal().getIndex();
+            Index index = table.getPrimaryKeyIncludingInternal().getIndex();
             if (index.getTreeName() == null) {
                 index.setTreeName(nameGenerator.generateIndexTreeName(index));
             }
@@ -687,7 +687,7 @@ public class AISBuilder {
     public void clearGroupings() {
         LOG.trace("clear groupings");
         ais.getGroups().clear();
-        for (UserTable table : ais.getUserTables().values()) {
+        for (Table table : ais.getTables().values()) {
             setTablesGroup(table, null);
         }
         for (Join join : ais.getJoins().values()) {
@@ -702,9 +702,9 @@ public class AISBuilder {
         return ais;
     }
 
-    private UserTable findRoot(Group group) {
-        UserTable root = null;
-        for(UserTable table : ais.getUserTables().values()) {
+    private Table findRoot(Group group) {
+        Table root = null;
+        for(Table table : ais.getTables().values()) {
             if((table.getGroup() == group) && table.isRoot()) {
                 if(root != null) {
                     return null; // Multiple roots
@@ -757,7 +757,7 @@ public class AISBuilder {
         }
     }
 
-    private void checkCycle(UserTable table, Group group) {
+    private void checkCycle(Table table, Group group) {
         if (table.getGroup() == group) {
             String exception = table + " is already in " + group
                     + ". Group must be acyclic";
@@ -858,7 +858,7 @@ public class AISBuilder {
 
     private class ForwardTableReference {
         public ForwardTableReference(String joinName,
-                TableName parentTableName, UserTable childTable) {
+                TableName parentTableName, Table childTable) {
             this.joinName = joinName;
             this.parentTableName = parentTableName;
             this.childTable = childTable;
@@ -872,7 +872,7 @@ public class AISBuilder {
             return parentTableName;
         }
 
-        public UserTable childTable() {
+        public Table childTable() {
             return childTable;
         }
 
@@ -887,7 +887,7 @@ public class AISBuilder {
         }
 
         private final String joinName;
-        private final UserTable childTable;
+        private final Table childTable;
         private final TableName parentTableName;
         private final List<ForwardColumnReference> forwardColumnReferences = new ArrayList<>();
     }

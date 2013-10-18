@@ -20,7 +20,7 @@ package com.foundationdb.server.store;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.IndexRowComposition;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.geophile.Space;
@@ -56,20 +56,20 @@ class StoreGIHandler<SDType> {
 
     private final AbstractStore<SDType> store;
     private final Session session;
-    private final UserTable sourceTable;
+    private final Table sourceTable;
     private final PersistitIndexRowBuffer indexRow;
     private final Value zSource_t3 = new Value(MNumeric.BIGINT.instance(true));
 
-    private StoreGIHandler(AbstractStore<SDType> store, Session session, UserTable sourceTable) {
+    private StoreGIHandler(AbstractStore<SDType> store, Session session, Table sourceTable) {
         this.store = store;
         this.session = session;
         this.indexRow = new PersistitIndexRowBuffer(store);
         this.sourceTable = sourceTable;
     }
 
-    public static <SDType> StoreGIHandler forTable(AbstractStore<SDType> store, Session session, UserTable userTable) {
-        ArgumentValidation.notNull("userTable", userTable);
-        return new StoreGIHandler<>(store, session, userTable);
+    public static <SDType> StoreGIHandler forTable(AbstractStore<SDType> store, Session session, Table table) {
+        ArgumentValidation.notNull("table", table);
+        return new StoreGIHandler<>(store, session, table);
     }
 
     public static <SDType> StoreGIHandler forBuilding(AbstractStore<SDType> store, Session session) {
@@ -126,7 +126,7 @@ class StoreGIHandler<SDType> {
         }
     }
 
-    public UserTable getSourceTable () {
+    public Table getSourceTable () {
         return sourceTable;
     }
 
@@ -164,8 +164,8 @@ class StoreGIHandler<SDType> {
     // position 0.
     private long tableBitmap(GroupIndex groupIndex, Row row) {
         long result = 0;
-        UserTable table = groupIndex.leafMostTable();
-        UserTable end = groupIndex.rootMostTable().parentTable();
+        Table table = groupIndex.leafMostTable();
+        Table end = groupIndex.rootMostTable().parentTable();
         while(table != null && !table.equals(end)) {
             if(row.containsRealRowOf(table)) {
                 result |= (1 << table.getDepth());
@@ -175,8 +175,8 @@ class StoreGIHandler<SDType> {
         return result;
     }
 
-    private GroupIndexPosition positionWithinBranch(GroupIndex groupIndex, UserTable table) {
-        final UserTable leafMost = groupIndex.leafMostTable();
+    private GroupIndexPosition positionWithinBranch(GroupIndex groupIndex, Table table) {
+        final Table leafMost = groupIndex.leafMostTable();
         if(table == null) {
             return GroupIndexPosition.ABOVE_SEGMENT;
         }

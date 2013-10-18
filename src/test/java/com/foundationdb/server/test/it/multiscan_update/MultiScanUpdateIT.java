@@ -199,7 +199,7 @@ public class MultiScanUpdateIT extends ITBase {
             default:
                 throw new RuntimeException(scanIndex.name());
         }
-        int scanIndexId = ddl().getUserTable(session(), TABLE_NAME).getIndex(scanIndexName).getIndexId();
+        int scanIndexId = ddl().getTable(session(), TABLE_NAME).getIndex(scanIndexName).getIndexId();
 
         ScanRequest request = new ScanAllRequest(tableId, set(0, 1, 2), scanIndexId, null, ScanLimit.NONE);
         ScanIterator scanIterator = new ScanIterator(dml(), aisGeneration(), 1024, request, session());

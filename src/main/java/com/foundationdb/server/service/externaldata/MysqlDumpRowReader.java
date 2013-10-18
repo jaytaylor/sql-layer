@@ -18,7 +18,7 @@
 package com.foundationdb.server.service.externaldata;
 
 import com.foundationdb.ais.model.Column;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.ExternalRowReaderException;
@@ -50,7 +50,7 @@ public class MysqlDumpRowReader extends RowReader
     
     private static final Logger logger = LoggerFactory.getLogger(MysqlDumpRowReader.class);
 
-    public MysqlDumpRowReader(UserTable table, List<Column> columns,
+    public MysqlDumpRowReader(Table table, List<Column> columns,
                               InputStream inputStream, String encoding,
                               QueryContext queryContext) {
         super(table, columns, inputStream, encoding, getBytes("NULL", encoding), 

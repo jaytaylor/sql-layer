@@ -19,8 +19,8 @@ package com.foundationdb.server.service.externaldata;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.test.it.ITBase;
@@ -215,7 +215,7 @@ public class ExternalDataServiceIT extends ITBase
                               "name VARCHAR(128)",
                               "source VARCHAR(128) DEFAULT CURRENT SCHEMA");
         AkibanInformationSchema ais = ais();
-        UserTable table = ais.getUserTable(tid);
+        Table table = ais.getTable(tid);
         List<Column> columns = Collections.singletonList(table.getColumn("name"));
         InputStream istr = new ByteArrayInputStream(CSV.getBytes("UTF-8"));
         Schema schema = SchemaCache.globalSchema(ais);
@@ -238,7 +238,7 @@ public class ExternalDataServiceIT extends ITBase
                                                0, table, columns,
                                                -1, 1, queryContext);
         assertEquals(4, nrows);
-        RowType rowType = schema.userTableRowType(table);
+        RowType rowType = schema.tableRowType(table);
         compareRows(new Row[] {
                         testRow(rowType, 1L, "Fred", SCHEMA),
                         testRow(rowType, 2L, "Wilma", SCHEMA),

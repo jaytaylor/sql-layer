@@ -26,9 +26,9 @@ import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.JoinColumn;
 import com.foundationdb.ais.model.NopVisitor;
 import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.MultipleCauseException;
 import com.google.common.base.Objects;
@@ -76,8 +76,8 @@ public class TableChangeValidator {
         }
     }
 
-    private final UserTable oldTable;
-    private final UserTable newTable;
+    private final Table oldTable;
+    private final Table newTable;
     private final List<TableChange> columnChanges;
     private final List<TableChange> indexChanges;
     private final List<RuntimeException> errors;
@@ -90,7 +90,7 @@ public class TableChangeValidator {
     private boolean primaryKeyChanged;
     private boolean didCompare;
 
-    public TableChangeValidator(UserTable oldTable, UserTable newTable,
+    public TableChangeValidator(Table oldTable, Table newTable,
                                 List<TableChange> columnChanges, List<TableChange> indexChanges,
                                 boolean automaticIndexChanges) {
         ArgumentValidation.notNull("oldTable", oldTable);
@@ -239,8 +239,8 @@ public class TableChangeValidator {
     }
 
     private void compareGroupIndexes() {
-        final Set<UserTable> keepTables = new HashSet<>();
-        final UserTable traverseStart;
+        final Set<Table> keepTables = new HashSet<>();
+        final Table traverseStart;
         if(parentChange == ParentChange.DROP) {
             traverseStart = oldTable;
         } else {
@@ -249,7 +249,7 @@ public class TableChangeValidator {
 
         traverseStart.traverseTableAndDescendants(new NopVisitor() {
             @Override
-            public void visitUserTable(UserTable table) {
+            public void visitTable(Table table) {
                 keepTables.add(table);
             }
         });
@@ -259,7 +259,7 @@ public class TableChangeValidator {
             List<TableColumnNames> remainingCols = new ArrayList<>();
             for(IndexColumn iCol : index.getKeyColumns()) {
                 Column column = iCol.getColumn();
-                if(!keepTables.contains(column.getUserTable())) {
+                if(!keepTables.contains(column.getTable())) {
                     remainingCols.clear();
                     break;
                 }
@@ -462,7 +462,7 @@ public class TableChangeValidator {
 
         Collection<Join> oldChildJoins = new ArrayList<>(oldTable.getCandidateChildJoins());
         for(Join join : oldChildJoins) {
-            UserTable oldChildTable = join.getChild();
+            Table oldChildTable = join.getChild();
 
             // If referenced column has anymore has a TABLE change (or is missing), join needs dropped
             boolean dropParent = false;
@@ -507,10 +507,10 @@ public class TableChangeValidator {
         }
     }
 
-    private void propagateChildChange(final UserTable table, final ParentChange change, final boolean allIndexes) {
+    private void propagateChildChange(final Table table, final ParentChange change, final boolean allIndexes) {
         table.traverseTableAndDescendants(new NopVisitor() {
             @Override
-            public void visitUserTable(UserTable curTable) {
+            public void visitTable(Table curTable) {
                 if(table != curTable) {
                     TableName parentName = curTable.getParentJoin().getParent().getName();
                     trackChangedTable(curTable, change, parentName, null, allIndexes);
@@ -519,7 +519,7 @@ public class TableChangeValidator {
         });
     }
 
-    private void trackChangedTable(UserTable table, ParentChange parentChange, TableName parentName,
+    private void trackChangedTable(Table table, ParentChange parentChange, TableName parentName,
                                    Map<String, String> parentRenames, boolean doPreserve) {
         Map<String,String> preserved = new HashMap<>();
         if(doPreserve) {
@@ -645,8 +645,8 @@ public class TableChangeValidator {
             return ParentChange.ADD;
         }
 
-        UserTable oldParent = oldJoin.getParent();
-        UserTable newParent = newJoin.getParent();
+        Table oldParent = oldJoin.getParent();
+        Table newParent = newJoin.getParent();
         if(!oldParent.getName().equals(newParent.getName()) ||
            (oldJoin.getJoinColumns().size() != newJoin.getJoinColumns().size())) {
             return ParentChange.ADD;

@@ -37,13 +37,13 @@ public class SimpleBlobIT extends ITBase {
     
     private int setUpTable() {
         AISBuilder builder = new AISBuilder();
-        builder.userTable(SCHEMA, TABLE);
+        builder.table(SCHEMA, TABLE);
         builder.column(SCHEMA, TABLE, "a", 0, "int", null, null, false, false, null, null);
         builder.column(SCHEMA, TABLE, "b", 1, "blob", null, null, false, false, null, null);
         builder.column(SCHEMA, TABLE, "c", 2, "mediumblob", null, null, false, false, null, null);
         builder.index(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, "a", 0, true, null);
-        ddl().createTable(session(), builder.akibanInformationSchema().getUserTable(SCHEMA, TABLE));
+        ddl().createTable(session(), builder.akibanInformationSchema().getTable(SCHEMA, TABLE));
         updateAISGeneration();
         return tableId(SCHEMA, TABLE);
     }

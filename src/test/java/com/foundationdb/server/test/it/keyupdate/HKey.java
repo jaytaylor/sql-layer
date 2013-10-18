@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.test.it.keyupdate;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.rowdata.RowDef;
 
 import java.util.ArrayList;
@@ -36,7 +36,7 @@ public class HKey implements Comparable<HKey>
     {
         int h = 0;
         for (Object element : elements) {
-            h = h * 9987001 + (element instanceof UserTable ? ((UserTable) element).getTableId() : element.hashCode());
+            h = h * 9987001 + (element instanceof Table ? ((Table) element).getTableId() : element.hashCode());
         }
         return h;
     }
@@ -52,7 +52,7 @@ public class HKey implements Comparable<HKey>
             while (eq && i < elements.size()) {
                 Object thisElement = this.elements.get(i);
                 Object thatElement = that.elements.get(i);
-                eq = thisElement == thatElement // Takes care of UserTables
+                eq = thisElement == thatElement // Takes care of Tables
                      || thisElement.equals(thatElement);
                 i++;
             }
@@ -72,8 +72,8 @@ public class HKey implements Comparable<HKey>
             } else {
                 buffer.append(", ");
             }
-            if (element instanceof UserTable) {
-                UserTable table = (UserTable) element;
+            if (element instanceof Table) {
+                Table table = (Table) element;
                 buffer.append(table.getName().getTableName());
             } else {
                 buffer.append(element);
@@ -102,8 +102,8 @@ public class HKey implements Comparable<HKey>
                 c = 1;
             } else {
                 assertSame(iElement.getClass(), jElement.getClass());
-                if (iElement instanceof UserTable) {
-                    c = ((UserTable) iElement).getTableId() - ((UserTable) jElement).getTableId();
+                if (iElement instanceof Table) {
+                    c = ((Table) iElement).getTableId() - ((Table) jElement).getTableId();
                 } else {
                     c = ((Comparable)iElement).compareTo(jElement);
                 }
@@ -134,7 +134,7 @@ public class HKey implements Comparable<HKey>
         this.elements = new ArrayList<>();
         for (Object element : elements) {
             if (element instanceof RowDef) {
-                element = ((RowDef) element).userTable();
+                element = ((RowDef) element).table();
             }
             this.elements.add(element);
         }

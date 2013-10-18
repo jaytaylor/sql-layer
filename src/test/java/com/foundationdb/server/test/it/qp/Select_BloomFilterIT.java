@@ -25,7 +25,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.test.ExpressionGenerators;
@@ -63,7 +63,7 @@ public class Select_BloomFilterIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        fRowType = schema.userTableRowType(userTable(f));
+        fRowType = schema.tableRowType(table(f));
         dIndexRowType = indexType(d, "test_id", "a", "b");
         fabIndexRowType = indexType(f, "a", "b");
         adapter = newStoreAdapter(schema);
@@ -323,7 +323,7 @@ public class Select_BloomFilterIT extends OperatorITBase
 
     private int d;
     private int f;
-    private UserTableRowType fRowType;
+    private TableRowType fRowType;
     private RowType outputRowType;
     IndexRowType dIndexRowType;
     IndexRowType fabIndexRowType;

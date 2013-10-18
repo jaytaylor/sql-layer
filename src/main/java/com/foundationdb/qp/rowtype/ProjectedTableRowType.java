@@ -20,31 +20,31 @@ package com.foundationdb.qp.rowtype;
 import java.util.List;
 
 import com.foundationdb.ais.model.HKey;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 
-public class ProjectedUserTableRowType extends ProjectedRowType {
+public class ProjectedTableRowType extends ProjectedRowType {
 
-    public ProjectedUserTableRowType(DerivedTypesSchema schema, UserTable table, List<? extends TPreparedExpression> tExprs) {
+    public ProjectedTableRowType(DerivedTypesSchema schema, Table table, List<? extends TPreparedExpression> tExprs) {
         this(schema, table, tExprs, false);
     }
 
-    public ProjectedUserTableRowType(DerivedTypesSchema schema, UserTable table, List<? extends TPreparedExpression> tExprs,
-                                     boolean includeInternalColumn) {
+    public ProjectedTableRowType(DerivedTypesSchema schema, Table table, List<? extends TPreparedExpression> tExprs,
+                                 boolean includeInternalColumn) {
         super(schema, table.getTableId(), tExprs);
         this.nFields = includeInternalColumn ? table.getColumnsIncludingInternal().size() : table.getColumns().size();
         this.table = table;
-        this.constraintChecker = new UserTableRowChecker(this);
+        this.constraintChecker = new TableRowChecker(this);
     }
 
     @Override
-    public UserTable userTable() {
+    public Table table() {
         return table;
     }
 
     @Override
-    public boolean hasUserTable() {
+    public boolean hasTable() {
         return table != null;
     }
     
@@ -82,6 +82,6 @@ public class ProjectedUserTableRowType extends ProjectedRowType {
     }
 
     private final int nFields;
-    private final UserTable table;
+    private final Table table;
     private final ConstraintChecker constraintChecker;
 }

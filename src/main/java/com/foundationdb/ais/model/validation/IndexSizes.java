@@ -27,7 +27,7 @@ import com.foundationdb.ais.model.HKeySegment;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Type;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.encoding.EncoderFactory;
 import com.foundationdb.server.error.JoinParentNoExplicitPK;
 import com.foundationdb.server.error.UnsupportedIndexPrefixException;
@@ -54,7 +54,7 @@ class IndexSizes implements AISValidation {
 
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        for (UserTable table : ais.getUserTables().values()) {
+        for (Table table : ais.getTables().values()) {
             long hkeySize = 0;
             if (table.getGroup() != null) {
                 hkeySize = validateHKeySize (table, output);
@@ -114,7 +114,7 @@ class IndexSizes implements AISValidation {
         return EncoderFactory.valueOf(type.encoding(), type).getMaxKeyStorageSize(column);
     }
 
-    private long validateHKeySize (UserTable table, AISValidationOutput output) {
+    private long validateHKeySize (Table table, AISValidationOutput output) {
         long hkeySize = 0;
         HKey hkey; 
         try {

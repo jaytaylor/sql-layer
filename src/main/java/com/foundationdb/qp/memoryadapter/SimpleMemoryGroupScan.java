@@ -43,7 +43,7 @@ public abstract class SimpleMemoryGroupScan<T> implements MemoryGroupCursor.Grou
 
     public SimpleMemoryGroupScan(MemoryAdapter adapter, TableName tableName, Iterator<? extends T> iterator) {
         this.iterator = iterator;
-        this.rowType = adapter.schema().userTableRowType(adapter.schema().ais().getUserTable(tableName));
+        this.rowType = adapter.schema().tableRowType(adapter.schema().ais().getTable(tableName));
     }
 
     private final Iterator<? extends T> iterator;

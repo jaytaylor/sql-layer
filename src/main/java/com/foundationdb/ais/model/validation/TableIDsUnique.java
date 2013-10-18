@@ -23,14 +23,14 @@ import java.util.TreeMap;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.error.DuplicateTableIdException;
 
 class TableIDsUnique implements AISValidation {
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
         final Map<Integer, Table> tableIDList= new TreeMap<>();
-        for (UserTable table : ais.getUserTables().values()) {
+        for (Table table : ais.getTables().values()) {
             checkTableID (output, tableIDList, table);
         }
     }

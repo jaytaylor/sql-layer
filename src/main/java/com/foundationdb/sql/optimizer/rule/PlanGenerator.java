@@ -22,13 +22,14 @@ import static com.foundationdb.util.Strings.join;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.foundationdb.qp.rowtype.TableRowType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.NopVisitor;
 import com.foundationdb.ais.model.PrimaryKey;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.expression.RowBasedUnboundExpressions;
@@ -37,7 +38,6 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.API.Ordering;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.UserTableRowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.ColumnSelector;
@@ -67,14 +67,14 @@ public class PlanGenerator {
      *   
      *   
      */
-    public static Operator generateScanPlan (AkibanInformationSchema ais, UserTable table) {
+    public static Operator generateScanPlan (AkibanInformationSchema ais, Table table) {
         final Schema schema = SchemaCache.globalSchema(ais);
         Operator plan = API.groupScan_Default(table.getGroup());
         final List<RowType> keepTypes = new ArrayList<>();
         table.traverseTableAndDescendants(new NopVisitor() {
             @Override
-            public void visitUserTable(UserTable table) {
-                keepTypes.add(schema.userTableRowType(table));
+            public void visitTable(Table table) {
+                keepTypes.add(schema.tableRowType(table));
             }
         });
         plan = API.filter_Default(plan, keepTypes);
@@ -98,7 +98,7 @@ public class PlanGenerator {
      * Branch Lookup 
      *   Index Scan (table, pk-> ?[, ?...])
      */
-    public static Operator generateBranchPlan (AkibanInformationSchema ais, UserTable table) {
+    public static Operator generateBranchPlan (AkibanInformationSchema ais, Table table) {
         final Operator indexScan = generateIndexScan(ais, table);
         final Schema schema = SchemaCache.globalSchema(ais);
         PrimaryKey pkey = table.getPrimaryKeyIncludingInternal();
@@ -106,13 +106,13 @@ public class PlanGenerator {
         return generateBranchPlan(table, indexScan, indexType);
     }
 
-    public static Operator generateBranchPlan (UserTable table, Operator scan, RowType scanType) {
+    public static Operator generateBranchPlan (Table table, Operator scan, RowType scanType) {
         final Schema schema = (Schema)scanType.schema();
-        final UserTableRowType tableType = schema.userTableRowType(table);
-        final List<UserTableRowType> tableTypes = new ArrayList<>();
+        final TableRowType tableType = schema.tableRowType(table);
+        final List<TableRowType> tableTypes = new ArrayList<>();
         tableTypes.add(tableType);
         for (RowType rowType : Schema.descendentTypes(tableType, schema.userTableTypes())) {
-            tableTypes.add((UserTableRowType)rowType);
+            tableTypes.add((TableRowType)rowType);
         }
         Operator plan = API.groupLookup_Default(scan, table.getGroup(), 
                                                 scanType, tableTypes, 
@@ -132,11 +132,11 @@ public class PlanGenerator {
      * AncestorScan (Table)
      *   IndexScan (table, pk->?[, ?])
      */
-    public static Operator generateAncestorPlan (AkibanInformationSchema ais, UserTable table) {
+    public static Operator generateAncestorPlan (AkibanInformationSchema ais, Table table) {
         final Schema schema = SchemaCache.globalSchema(ais);
-        UserTableRowType tableType = schema.userTableRowType(table);
+        TableRowType tableType = schema.tableRowType(table);
 
-        List<UserTableRowType> ancestorType = new ArrayList<>(1);
+        List<TableRowType> ancestorType = new ArrayList<>(1);
         ancestorType.add (tableType);
 
         IndexRowType indexType = schema.indexRowType(table.getPrimaryKeyIncludingInternal().getIndex());
@@ -163,7 +163,7 @@ public class PlanGenerator {
      * @param table
      * @return Operator plan for the Index scan 
      */
-    private static Operator generateIndexScan (AkibanInformationSchema ais, UserTable table) {
+    private static Operator generateIndexScan (AkibanInformationSchema ais, Table table) {
         final Schema schema = SchemaCache.globalSchema(ais);
         PrimaryKey pkey = table.getPrimaryKeyIncludingInternal();
         final int nkeys = pkey.getColumns().size();

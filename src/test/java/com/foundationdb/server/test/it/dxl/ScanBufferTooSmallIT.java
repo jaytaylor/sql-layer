@@ -19,7 +19,6 @@ package com.foundationdb.server.test.it.dxl;
 
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.api.FixedCountLimit;
 import com.foundationdb.server.api.dml.scan.BufferFullException;
 import com.foundationdb.server.api.dml.scan.CursorId;
@@ -65,9 +64,9 @@ public final class ScanBufferTooSmallIT extends ITBase {
     }
 
     @Test(expected=BufferFullException.class)
-    public void onUserTable() throws InvalidOperationException, BufferFullException {
-        UserTable userTable = getUserTable("ts", "c");
-        doTest(userTable, userTable.getPrimaryKey().getIndex().getIndexId());
+    public void onTable() throws InvalidOperationException, BufferFullException {
+        Table table = getTable("ts", "c");
+        doTest(table, table.getPrimaryKey().getIndex().getIndexId());
     }
 
     private void doTest(Table table, int indexId) throws InvalidOperationException, BufferFullException {

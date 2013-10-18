@@ -60,7 +60,7 @@ public class SkipScanPerformanceIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        tRowType = schema.userTableRowType(userTable(t));
+        tRowType = schema.tableRowType(table(t));
         tIdIndexRowType = indexType(t, "id");
         tXIndexRowType = indexType(t, "x");
         tYIndexRowType = indexType(t, "y");

@@ -36,7 +36,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
@@ -91,11 +91,11 @@ public class FlattenLeftJoinIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        ancestorRowType = schema.userTableRowType(userTable(ancestor));
-        parentRowType = schema.userTableRowType(userTable(parent));
-        beforeChildRowType = schema.userTableRowType(userTable(beforeChild));
-        childRowType = schema.userTableRowType(userTable(child));
-        afterChildRowType = schema.userTableRowType(userTable(afterChild));
+        ancestorRowType = schema.tableRowType(table(ancestor));
+        parentRowType = schema.tableRowType(table(parent));
+        beforeChildRowType = schema.tableRowType(table(beforeChild));
+        childRowType = schema.tableRowType(table(child));
+        afterChildRowType = schema.tableRowType(table(afterChild));
         parentPidIndexType = indexType(parent, "pid");
         group = group(ancestor);
         db = new NewRow[]{
@@ -559,11 +559,11 @@ public class FlattenLeftJoinIT extends OperatorITBase
     private int beforeChild;
     private int child;
     private int afterChild;
-    private UserTableRowType ancestorRowType;
-    private UserTableRowType parentRowType;
-    private UserTableRowType beforeChildRowType;
-    private UserTableRowType childRowType;
-    private UserTableRowType afterChildRowType;
+    private TableRowType ancestorRowType;
+    private TableRowType parentRowType;
+    private TableRowType beforeChildRowType;
+    private TableRowType childRowType;
+    private TableRowType afterChildRowType;
     private IndexRowType parentPidIndexType;
     private Group group;
 }
