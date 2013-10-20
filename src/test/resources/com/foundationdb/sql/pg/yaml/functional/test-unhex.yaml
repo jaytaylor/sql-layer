@@ -1,43 +1,36 @@
-## Test the UNHEX(str) function
-## BUG 890232
-## Status triaged
-##
-## BUG 994757:
-## Status: new
-##
-## BUG 997247
-## Status fix committed
+#
+# bugs 890232, 994757, 997247
+#
 ---
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types(varchar_field, bigint_field, char_field)
               VALUES ('416B736572766572', 20, 'f');
---- # test non-ascii character
-- Statement: SELECT UNHEX('FF');
-- output: [[!!binary '/w==']]
+
+---
+- Statement: SELECT unhex(char_field) from all_types
+- output: [[!!binary 'Dw==']]
+---
+- Statement: SELECT UNHEX(varchar_field) from all_types;
+- output: [[!!binary 'QWtzZXJ2ZXI=']]
+---
+- Statement: SELECT bigint_field from all_types where unhex(bigint_field) = ' ';
+- output: [[20]]
+---
+- Statement: SELECT bigint_field from all_types where UNHEX(?) = '9';
+- params: [['39']]
+- output: [[20]]
+
 ---
 - Statement: SELECT UNHEX('f8Ac') = UNHEX('F8aC');
 - output: [['true']]
 ---
 - Statement: SELECT UNHEX('f8Ab') = UNHEX('F8aC');
 - output: [['false']]
-#--- varbinary field
-#- Statement: SELECT unhex(char_field) from all_types;
-#- output: [['']]
---- # akiban
+---
 - Statement: SELECT UNHEX('616B6962616E');
 - output: [[!!binary 'YWtpYmFu']]
-#--- VARCHAR and VARBINARY comparison
-#- Statement: SELECT bigint_field from all_types where unhex(bigint_field) = ' ';
-#- output: [[20]]
-#---
-#- Statement: SELECT bigint_field from all_types where UNHEX(?) = '9';
-#- params: [['39']]
-#- output: [[20]]
---- # Akserveer
-- Statement: SELECT UNHEX(varchar_field) from all_types;
-- output: [[!!binary 'QWtzZXJ2ZXI=']]
---- # Hello, world
+---
 - Statement: SELECT UNHEX(HEX('Hello, world'));
 - output: [[!!binary 'SGVsbG8sIHdvcmxk']]
 ---
@@ -48,21 +41,32 @@
 - Statement: SELECT unhex('xyz');
 - output: [[null]]
 
+# bounds test
 ---
-- CreateTable: t(c CHAR(1))
+- Statement: SELECT UNHEX('00'), UNHEX('7F') #, UNHEX('FF')
+- output: [ [!!binary 'AA==', !!binary 'fw==' ]] #, !!binary '/w=='] ]
+
+# snowman
 ---
-- Statement: INSERT INTO t VALUES ('a'), ('b'), ('c'), ('d'), ('e'), ('f'), ('g'), ('h'), ('i'), ('j'),
-                                  ('k'), ('l'), ('m'), ('n'), ('o'), ('p'), ('q'), ('r'), ('s'), ('t'),
-                                  ('u'), ('v'), ('w'), ('x'), ('y'), ('z')
+- Statement: SELECT CAST(UNHEX('E29883') AS CHAR(1) CHARACTER SET UTF8);
+- output: [ [!unicode "\u2603"] ]
+
+# a-z
 ---
-- Statement: SELECT c, HEX(c), CAST(UNHEX((HEX(C))) AS CHAR(1)) FROM t
+- CreateTable: t(c CHAR(2))
+---
+- Statement: INSERT INTO t VALUES ('61'), ('62'), ('63'), ('64'), ('65'), ('66'), ('67'), ('68'), ('69'), ('6A'),
+                                  ('6B'), ('6C'), ('6D'), ('6E'), ('6F'), ('70'), ('71'), ('72'), ('73'), ('74'),
+                                  ('75'), ('76'), ('77'), ('78'), ('79'), ('7A')
+---
+- Statement: SELECT c, CAST(UNHEX(c) AS CHAR(1)) FROM t
 - output: [
-    ['a','61','a'], ['b','62','b'], ['c','63','c'], ['d','64','d'], ['e','65','e'],
-    ['f','66','f'], ['g','67','g'], ['h','68','h'], ['i','69','i'], ['j','6A','j'],
-    ['k','6B','k'], ['l','6C','l'], ['m','6D','m'], ['n','6E','n'], ['o','6F','o'],
-    ['p','70','p'], ['q','71','q'], ['r','72','r'], ['s','73','s'], ['t','74','t'],
-    ['u','75','u'], ['v','76','v'], ['w','77','w'], ['x','78','x'], ['y','79','y'],
-    ['z','7A','z']
+    ['61','a'], ['62','b'], ['63','c'], ['64','d'], ['65','e'],
+    ['66','f'], ['67','g'], ['68','h'], ['69','i'], ['6A','j'],
+    ['6B','k'], ['6C','l'], ['6D','m'], ['6E','n'], ['6F','o'],
+    ['70','p'], ['71','q'], ['72','r'], ['73','s'], ['74','t'],
+    ['75','u'], ['76','v'], ['77','w'], ['78','x'], ['79','y'],
+    ['7A','z']
 ]
 
 ...
