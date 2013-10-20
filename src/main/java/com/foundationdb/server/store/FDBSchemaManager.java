@@ -17,7 +17,6 @@
 
 package com.foundationdb.server.store;
 
-import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Columnar;
 import com.foundationdb.ais.model.DefaultNameGenerator;
@@ -47,6 +46,7 @@ import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.session.SessionService;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.FDBTransactionService.TransactionState;
+import com.foundationdb.server.store.format.FDBStorageFormatRegistry;
 import com.foundationdb.util.GrowableByteBuffer;
 import com.foundationdb.KeyValue;
 import com.foundationdb.Range;
@@ -121,7 +121,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
                             TransactionService txnService,
                             ListenerService listenerService,
                             ServiceManager serviceManager) {
-        super(config, sessionService, txnService);
+        super(config, sessionService, txnService, new FDBStorageFormatRegistry());
         this.holder = holder;
         if(txnService instanceof FDBTransactionService) {
             this.txnService = (FDBTransactionService)txnService;
@@ -201,11 +201,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     //
 
     @Override
-    protected NameGenerator getNameGenerator(Session session, boolean memoryTable) {
-        if(memoryTable) {
-            // Tree names are still required (unfortunately), but nothing is ever persisted so skip directory.
-            return nameGenerator;
-        }
+    protected NameGenerator getNameGenerator(Session session) {
         Transaction txn = txnService.getTransaction(session).getTransaction();
         return isAlterTableActive(session) ?
             FDBNameGenerator.createForAlterPath(txn, rootDir, nameGenerator) :
@@ -323,11 +319,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     @Override
     public boolean treeRemovalIsDelayed() {
         return false;
-    }
-
-    @Override
-    public void treeWasRemoved(Session session, String schemaName, String treeName) {
-        // None
     }
 
     @Override
@@ -459,7 +450,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
 
     private void saveMemoryTables(AkibanInformationSchema newAIS) {
         // Want *just* non-persisted memory tables and system routines
-        this.memoryTableAIS = AISCloner.clone(newAIS, new ProtobufWriter.TableFilterSelector() {
+        this.memoryTableAIS = aisCloner.clone(newAIS, new ProtobufWriter.TableFilterSelector() {
             @Override
             public Columnar getSelected(Columnar columnar) {
                 if(columnar.isTable() && ((Table)columnar).hasMemoryTableFactory()) {
@@ -514,12 +505,12 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     private AkibanInformationSchema loadAISFromStorage(final Session session) {
         // Start with existing memory tables, merge in stored ones
         // TODO: Is this vulnerable to table ID conflicts if another node creates a persisted I_S table?
-        final AkibanInformationSchema newAIS = AISCloner.clone(memoryTableAIS);
+        final AkibanInformationSchema newAIS = aisCloner.clone(memoryTableAIS);
 
         TransactionState txn = txnService.getTransaction(session);
         boolean dataPresent = checkDataVersions(txn.getTransaction());
 
-        ProtobufReader reader = new ProtobufReader(newAIS);
+        ProtobufReader reader = new ProtobufReader(storageFormatRegistry, newAIS);
         byte[] packedPBKey = smDirectory.createOrOpen(txn.getTransaction(), PROTOBUF_DIR_PATH).pack();
         for(KeyValue kv : txn.getTransaction().getRange(Range.startsWith(packedPBKey))) {
             byte[] storedAIS = kv.getValue();

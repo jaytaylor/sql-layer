@@ -27,7 +27,6 @@ import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.tuple.Tuple;
 import com.foundationdb.util.layers.DirectorySubspace;
-import org.apache.commons.codec.binary.Base64;
 
 import java.util.List;
 import java.util.Set;
@@ -79,12 +78,6 @@ import java.util.Set;
  *     sub-directory, {@link #ALTER_PATH_NAME}, which is used for that purpose.
  * </p>
  *
- * <p>
- *     As a concession to existing interfaces, <code>byte[]</code> prefixes
- *     returned from {@link DirectorySubspace#getKey()} are <code>Base64</code>
- *     encoded to yield a <code>String</code> value. While unique as-is,
- *     decoding will yield a smaller, yet still unique, prefix.
- * </p>
  */
 public class FDBNameGenerator implements NameGenerator
 {
@@ -162,19 +155,39 @@ public class FDBNameGenerator implements NameGenerator
     // Directory based generation
     //
 
+    public byte[] generateIndexPrefixBytes(Index index) {
+        return generate(makeIndexPath(pathPrefix, index));
+    }
+
+    public byte[] generateGroupPrefixBytes(String schemaName, String groupName) {
+        return generate(makeTablePath(pathPrefix, schemaName, groupName));
+    }
+
+    public byte[] generateSequencePrefixBytes(Sequence sequence) {
+        return generate(makeSequencePath(pathPrefix, sequence));
+    }
+
+
+    //
+    // Unused tree name based generation
+    //
+
     @Override
     public String generateIndexTreeName(Index index) {
-        return generate(makeIndexPath(pathPrefix, index));
+        assert false;
+        return wrapped.generateIndexTreeName(index);
     }
 
     @Override
     public String generateGroupTreeName(String schemaName, String groupName) {
-        return generate(makeTablePath(pathPrefix, schemaName, groupName));
+        assert false;
+        return wrapped.generateGroupTreeName(schemaName, groupName);
     }
 
     @Override
     public String generateSequenceTreeName(Sequence sequence) {
-        return generate(makeSequencePath(pathPrefix, sequence));
+        assert false;
+        return wrapped.generateSequenceTreeName(sequence);
     }
 
     @Override
@@ -240,12 +253,11 @@ public class FDBNameGenerator implements NameGenerator
     // Internal
     //
 
-    private String generate(Tuple path) {
+    private byte[] generate(Tuple path) {
         // Directory should always hand out unique prefixes.
         // So use createOrOpen() and do not pass to wrapped for unique check as AISValidation confirms
         DirectorySubspace indexDir = directory.createOrOpen(txn, path);
-        byte[] packedPrefix = indexDir.pack();
-        return Base64.encodeBase64String(packedPrefix);
+        return indexDir.pack();
     }
 
 

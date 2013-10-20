@@ -16,7 +16,7 @@
  */
 package com.foundationdb.server.store;
 
-import com.foundationdb.server.service.tree.TreeLink;
+import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.KeyValue;
 import com.persistit.Key;
 import com.persistit.Value;
@@ -24,14 +24,14 @@ import com.persistit.Value;
 import java.util.Iterator;
 
 public class FDBStoreData {
-    final TreeLink link;
+    final FDBStorageDescription storageDescription;
     public final Key key;
     public byte[] value;
     Value persistitValue;
     Iterator<KeyValue> it;
 
-    public FDBStoreData(TreeLink link, Key key) {
-        this.link = link;
+    public FDBStoreData(FDBStorageDescription storageDescription, Key key) {
+        this.storageDescription = storageDescription;
         this.key = key;
     }
 }

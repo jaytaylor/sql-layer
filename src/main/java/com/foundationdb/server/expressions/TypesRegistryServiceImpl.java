@@ -141,10 +141,10 @@ public final class TypesRegistryServiceImpl implements TypesRegistryService, Ser
         if (schemaManager != null) {
             OverloadsTableFactory overloadsTable = new OverloadsTableFactory(
                     TableName.create(TableName.INFORMATION_SCHEMA, "ak_overloads"));
-            schemaManager.registerMemoryInformationSchemaTable(overloadsTable.table(), overloadsTable);
+            schemaManager.registerMemoryInformationSchemaTable(overloadsTable.table(), overloadsTable, true);
             CastsTableFactory castsTable = new CastsTableFactory(
                     TableName.create(TableName.INFORMATION_SCHEMA, "ak_casts"));
-            schemaManager.registerMemoryInformationSchemaTable(castsTable.table(), castsTable);
+            schemaManager.registerMemoryInformationSchemaTable(castsTable.table(), castsTable, true);
         }
     }
 

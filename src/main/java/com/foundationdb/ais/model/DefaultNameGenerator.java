@@ -41,7 +41,7 @@ public class DefaultNameGenerator implements NameGenerator {
     static final int IS_TABLE_ID_OFFSET = 1000000000;
     private static final String TREE_NAME_SEPARATOR = ".";
 
-    private final Set<String> treeNames;
+    protected final Set<String> treeNames;
     private final Set<TableName> sequenceNames;
     private final SortedSet<Integer> tableIDSet;
     private final SortedSet<Integer> isTableIDSet;
@@ -177,7 +177,6 @@ public class DefaultNameGenerator implements NameGenerator {
 
     @Override
     public void mergeAIS(AkibanInformationSchema ais) {
-        treeNames.addAll(collectTreeNames(ais));
         sequenceNames.addAll(ais.getSequences().keySet());
         isTableIDSet.addAll(collectTableIDs(ais, true));
         tableIDSet.addAll(collectTableIDs(ais, false));
@@ -246,27 +245,6 @@ public class DefaultNameGenerator implements NameGenerator {
             idMap.put(group.getRoot().getTableId(), visitor.getMaxIndexID());
         }
         return idMap;
-    }
-
-    public static Set<String> collectTreeNames(AkibanInformationSchema ais) {
-        Set<String> treeNames = new HashSet<>();
-        for(Group group : ais.getGroups().values()) {
-            treeNames.add(group.getTreeName());
-            for(Index index : group.getIndexes()) {
-                treeNames.add(index.getTreeName());
-            }
-        }
-        for(Table table : ais.getTables().values()) {
-            for(Index index : table.getIndexesIncludingInternal()) {
-                treeNames.add(index.getTreeName());
-            }
-        }
-        for (Sequence sequence : ais.getSequences().values()){
-            if(sequence.getTreeName() != null) {
-                treeNames.add(sequence.getTreeName());
-            }
-        }
-        return treeNames;
     }
 
     private static TableName makeUnique(Set<TableName> set, TableName original) {

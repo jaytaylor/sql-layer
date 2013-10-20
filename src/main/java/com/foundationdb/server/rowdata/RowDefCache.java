@@ -28,6 +28,7 @@ import java.util.TreeMap;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.server.TableStatus;
 import com.foundationdb.server.TableStatusCache;
@@ -129,7 +130,7 @@ public class RowDefCache {
     }
 
     private RowDef createTableRowDef(Session session, Table table) {
-        RowDef rowDef = createRowDefCommon(table, table.getMemoryTableFactory());
+        RowDef rowDef = createRowDefCommon(table, table.hasMemoryTableFactory() ? MemoryAdapter.getMemoryTableFactory(table) : null);
         // parentRowDef
         int[] parentJoinFields;
         if (table.getParentJoin() != null) {

@@ -159,14 +159,14 @@ public class SchemaFactory {
 
         @Override
         public void createTable(Session session, Table newTable) {
-            AISMerge merge = AISMerge.newForAddTable(new DefaultNameGenerator(ais), ais, newTable);
+            AISMerge merge = AISMerge.newForAddTable(getAISCloner(), new DefaultNameGenerator(ais), ais, newTable);
             merge.merge();
             ais = merge.getAIS();
         }
 
         @Override
         public void createView(Session session, View view) {
-            ais = AISMerge.mergeView(ais, view);
+            ais = AISMerge.mergeView(getAISCloner(), ais, view);
         }
 
         @Override
@@ -176,7 +176,7 @@ public class SchemaFactory {
 
         @Override
         public void createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
-            AISMerge merge = AISMerge.newForAddIndex(new DefaultNameGenerator(ais), ais);
+            AISMerge merge = AISMerge.newForAddIndex(getAISCloner(), new DefaultNameGenerator(ais), ais);
             for(Index newIndex : indexesToAdd) {
                 merge.mergeIndex(newIndex);
             }
@@ -186,13 +186,13 @@ public class SchemaFactory {
         
         @Override
         public void createSequence(Session session, Sequence sequence) {
-            AISMerge merge = AISMerge.newForOther(new DefaultNameGenerator(ais), ais);
+            AISMerge merge = AISMerge.newForOther(getAISCloner(), new DefaultNameGenerator(ais), ais);
             ais = merge.mergeSequence(sequence);
         }
 
         @Override
         public void createRoutine(Session session, Routine routine, boolean replaceExisting) {
-            ais = AISMerge.mergeRoutine(ais, routine);
+            ais = AISMerge.mergeRoutine(getAISCloner(), ais, routine);
         }
     }
 }

@@ -153,12 +153,12 @@ public class IndexDDL
         
         Collection<Index> indexesToAdd = new LinkedList<>();
 
-        indexesToAdd.add(buildIndex(ais, defaultSchemaName, createIndex));
+        indexesToAdd.add(buildIndex(ddlFunctions, ais, defaultSchemaName, createIndex));
         
         ddlFunctions.createIndexes(session, indexesToAdd);
     }
     
-    protected static Index buildIndex (AkibanInformationSchema ais, String defaultSchemaName, CreateIndexNode index){
+    protected static Index buildIndex (DDLFunctions ddlFunctions, AkibanInformationSchema ais, String defaultSchemaName, CreateIndexNode index){
         final String schemaName = index.getObjectName().getSchemaName() != null ? index.getObjectName().getSchemaName() : defaultSchemaName;
         final String indexName = index.getObjectName().getTableName();
 
@@ -168,7 +168,7 @@ public class IndexDDL
         }
 
         AISBuilder builder = new AISBuilder();
-        clone(builder, ais);
+        clone(ddlFunctions.getAISCloner(), builder, ais);
         Index tableIndex;
         
         if (index.getColumnList().functionType() == IndexColumnList.FunctionType.FULL_TEXT) {
@@ -373,8 +373,8 @@ public class IndexDDL
         return builder.akibanInformationSchema().getTable(tableName).getFullTextIndex(indexName);
     }
 
-    private static void clone(AISBuilder builder, AkibanInformationSchema ais) {
-        AISCloner.clone(builder.akibanInformationSchema(), ais, ProtobufWriter.ALL_SELECTOR);
+    private static void clone(AISCloner aisCloner, AISBuilder builder, AkibanInformationSchema ais) {
+        aisCloner.clone(builder.akibanInformationSchema(), ais, ProtobufWriter.ALL_SELECTOR);
     }
 
     private static void checkColAscending(IndexColumn indexColumn) {

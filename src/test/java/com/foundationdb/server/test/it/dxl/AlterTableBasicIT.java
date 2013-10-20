@@ -574,7 +574,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
                 createNewRow(cid, 3, "C", "1")
         );
 
-        AkibanInformationSchema ais = AISCloner.clone(ddl().getAIS(session()));
+        AkibanInformationSchema ais = aisCloner().clone(ddl().getAIS(session()));
         Table table = ais.getTable(SCHEMA, "c");
         table.removeIndexes(Collections.singleton(table.getIndex("foo")));
         AISBuilder builder = new AISBuilder(ais);
@@ -607,7 +607,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
                 createNewRow(cid, 3L, "C", "1")
         );
 
-        AkibanInformationSchema ais = AISCloner.clone(ddl().getAIS(session()));
+        AkibanInformationSchema ais = aisCloner().clone(ddl().getAIS(session()));
         Table table = ais.getTable(SCHEMA, "c");
         table.removeIndexes(Collections.singleton(table.getIndex("foo")));
         AISBuilder builder = new AISBuilder(ais);
@@ -635,7 +635,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         createAndLoadCOI();
 
         // ALTER TABLE o DROP COLUMN o1, ADD COLUMN o1 INT, ADD INDEX x(o1), ADD INDEX y(cid)
-        AkibanInformationSchema ais = AISCloner.clone(ddl().getAIS(session()));
+        AkibanInformationSchema ais = aisCloner().clone(ddl().getAIS(session()));
         Table table = ais.getTable(SCHEMA, "o");
         table.dropColumn("o1");
         AISBuilder builder = new AISBuilder(ais);

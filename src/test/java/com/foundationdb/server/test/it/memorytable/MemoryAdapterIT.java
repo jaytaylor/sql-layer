@@ -51,7 +51,7 @@ public class MemoryAdapterIT extends ServerSessionITBase {
     private Table table;
     
     private void registerISTable(final Table table, final MemoryTableFactory factory) throws Exception {
-        schemaManager.registerMemoryInformationSchemaTable(table, factory);
+        schemaManager.registerMemoryInformationSchemaTable(table, factory, true);
     }
 
     @Before

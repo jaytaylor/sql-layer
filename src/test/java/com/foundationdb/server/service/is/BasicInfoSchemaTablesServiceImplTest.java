@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.service.is;
 
+import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
@@ -38,6 +39,8 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
+import com.foundationdb.server.store.format.DummyStorageFormatRegistry;
+import com.foundationdb.server.store.format.StorageFormatRegistry;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
@@ -235,7 +238,6 @@ public class BasicInfoSchemaTablesServiceImplTest {
         // Add all roots
         for(Table table : ais.getTables().values()) {
             if(table.isRoot()) {
-                table.getGroup().setTreeName(table.getName().getTableName() + "_tree");
                 remainingTables.add(table);
             }
         }
@@ -244,7 +246,6 @@ public class BasicInfoSchemaTablesServiceImplTest {
             ordinalMap.put(table, 0);
             for(Index index : table.getIndexesIncludingInternal()) {
                 index.computeFieldAssociations(ordinalMap);
-                index.setTreeName(index.getIndexName().getName() + "_tree");
             }
             // Add all immediate children
             for(Join join : table.getChildJoins()) {
@@ -254,7 +255,6 @@ public class BasicInfoSchemaTablesServiceImplTest {
         for(Group group : ais.getGroups().values()) {
             for(Index index : group.getIndexes()) {
                 index.computeFieldAssociations(ordinalMap);
-                index.setTreeName(index.getIndexName().getName() + "_tree");
             }
         }
 
@@ -289,7 +289,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
     private MemoryTableFactory getFactory(TableName name) {
         Table table = ais.getTable(name);
         assertNotNull("No such table: " + name, table);
-        MemoryTableFactory factory = table.getMemoryTableFactory();
+        MemoryTableFactory factory = MemoryAdapter.getMemoryTableFactory(table);
         assertNotNull("No factory for table " + name, factory);
         return factory;
     }
@@ -675,6 +675,15 @@ public class BasicInfoSchemaTablesServiceImplTest {
             return ais;
         }
 
+        @Override
+        public StorageFormatRegistry getStorageFormatRegistry() {
+            return DummyStorageFormatRegistry.create();
+        }
+
+        @Override
+        public AISCloner getAISCloner() {
+            return DummyStorageFormatRegistry.aisCloner();
+        }
 
         @Override
         public void setAlterTableActive(Session session, boolean isActive) {
@@ -687,7 +696,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
 
         @Override
-        public TableName registerMemoryInformationSchemaTable(Table newTable, MemoryTableFactory factory) {
+        public TableName registerMemoryInformationSchemaTable(Table newTable, MemoryTableFactory factory, boolean doRegister) {
             throw new UnsupportedOperationException();
         }
 
@@ -788,11 +797,6 @@ public class BasicInfoSchemaTablesServiceImplTest {
 
         @Override
         public boolean treeRemovalIsDelayed() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void treeWasRemoved(Session session, String schemaName, String treeName) {
             throw new UnsupportedOperationException();
         }
 

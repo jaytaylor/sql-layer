@@ -21,6 +21,7 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
+import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.HKeyColumn;
 import com.foundationdb.ais.model.HKeySegment;
 import com.foundationdb.ais.model.Index;
@@ -28,6 +29,7 @@ import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.IndexRowComposition;
 import com.foundationdb.ais.model.IndexToHKey;
 import com.foundationdb.ais.model.NopVisitor;
+import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
@@ -69,7 +71,6 @@ import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.listener.RowListener;
 import com.foundationdb.server.service.lock.LockService;
 import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.service.tree.TreeLink;
 import com.foundationdb.sql.optimizer.rule.PlanGenerator;
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.PointTap;
@@ -121,14 +122,14 @@ public abstract class AbstractStore<SDType> implements Store {
     // Implementation methods
     //
 
-    /** Create store specific data for working with the given TreeLink. */
-    abstract SDType createStoreData(Session session, TreeLink treeLink);
+    /** Create store specific data for working with the given storage area. */
+    abstract SDType createStoreData(Session session, StorageDescription storageDescription);
 
-    /** Release (or cache) any data created through {@link #createStoreData(Session, TreeLink)}. */
+    /** Release (or cache) any data created through {@link #createStoreData(Session, HasStorage)}. */
     abstract void releaseStoreData(Session session, SDType storeData);
 
-    /** Get the <code>TreeLink</code> that this store data works with. */
-    abstract TreeLink getTreeLink(SDType storeData);
+    /** Get the <code>StorageDescription</code> that this store data works on. */
+    abstract StorageDescription getStorageDescription(SDType storeData);
 
     /** Get the associated key */
     abstract Key getKey(Session session, SDType storeData);
@@ -184,6 +185,10 @@ public abstract class AbstractStore<SDType> implements Store {
     // AbstractStore
     //
 
+    protected SDType createStoreData(Session session, HasStorage object) {
+        return createStoreData(session, object.getStorageDescription());
+    }
+
     protected void constructHKey(Session session, RowDef rowDef, RowData rowData, boolean isInsert, Key hKeyOut) {
         // Initialize the HKey being constructed
         hKeyOut.clear();
@@ -214,7 +219,7 @@ public abstract class AbstractStore<SDType> implements Store {
                         RowDef parentRowDef = rowDef.getParentRowDef();
                         TableIndex parentPkIndex = parentRowDef.getPKIndex();
                         indexToHKey = parentPkIndex.indexToHKey();
-                        parentStoreData = createStoreData(session, parentPkIndex);
+                        parentStoreData = createStoreData(session, parentPkIndex.getStorageDescription());
                         parentPKIndexRow = readIndexRow(session, parentPkIndex, parentStoreData, rowDef, rowData);
                         i2hPosition = hKeyColumn.positionInHKey();
                     }
@@ -734,9 +739,9 @@ public abstract class AbstractStore<SDType> implements Store {
     }
 
     @Override
-    public void removeTrees(Session session, Collection<? extends TreeLink> treeLinks) {
-        for(TreeLink link : treeLinks) {
-            removeTree(session, link);
+    public void removeTrees(Session session, Collection<? extends HasStorage> objects) {
+        for(HasStorage object : objects) {
+            removeTree(session, object);
         }
     }
 

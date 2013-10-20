@@ -21,8 +21,6 @@ import com.foundationdb.ais.model.validation.AISInvariants;
 import com.foundationdb.qp.storeadapter.SpatialHelper;
 import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.geophile.SpaceLatLon;
-import com.foundationdb.server.service.tree.TreeCache;
-import com.foundationdb.server.service.tree.TreeLink;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
@@ -30,7 +28,7 @@ import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
-public abstract class Index implements Traversable, TreeLink
+public abstract class Index extends HasStorage implements Traversable
 {
     public abstract HKey hKey();
     public abstract boolean isTableIndex();
@@ -429,7 +427,6 @@ public abstract class Index implements Traversable, TreeLink
     private IndexName indexName;
     private boolean columnsStale = true;
     private boolean columnsFrozen = false;
-    private String treeName;
     protected IndexRowComposition indexRowComposition;
     protected List<IndexColumn> keyColumns;
     protected List<IndexColumn> allColumns;
@@ -437,7 +434,6 @@ public abstract class Index implements Traversable, TreeLink
     // For a spatial index
     private Space space;
     private int firstSpatialArgument;
-    private AtomicReference<TreeCache> treeCache = new AtomicReference<>();
 
     public enum JoinType {
         LEFT, RIGHT
@@ -465,30 +461,11 @@ public abstract class Index implements Traversable, TreeLink
         NORMAL, Z_ORDER_LAT_LON, FULL_TEXT
     }
 
-    // TreeLink interface
+    // HasStorage
 
     @Override
     public String getSchemaName() {
         return indexName.getSchemaName();
-    }
-
-    @Override
-    public String getTreeName() {
-        return treeName;
-    }
-
-    public void setTreeName(String treeName) {
-        this.treeName = treeName;
-    }
-
-    @Override
-    public void setTreeCache(TreeCache cache) {
-       treeCache.set(cache);
-    }
-
-    @Override
-    public TreeCache getTreeCache() {
-        return treeCache.get();
     }
 
 }

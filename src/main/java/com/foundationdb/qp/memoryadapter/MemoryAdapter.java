@@ -41,6 +41,7 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;
+import com.foundationdb.server.store.format.MemoryTableStorageDescription;
 import com.foundationdb.util.tap.InOutTap;
 import com.persistit.Key;
 
@@ -50,6 +51,22 @@ public class MemoryAdapter extends StoreAdapter {
             Session session,
             ConfigurationService config) {
         super(schema, session, config);
+    }
+
+    public static MemoryTableFactory getMemoryTableFactory(Index index) {
+        return getMemoryTableFactory(index.rootMostTable());
+    }
+
+    public static MemoryTableFactory getMemoryTableFactory(Table table) {
+        // NOTE: This assumes that a memory table group never has more
+        // than one table or at least that they all have equivalent
+        // factories.
+        return getMemoryTableFactory(table.getGroup());
+    }
+
+    public static MemoryTableFactory getMemoryTableFactory(Group group) {
+        return ((MemoryTableStorageDescription)group.getStorageDescription())
+            .getMemoryTableFactory();
     }
 
     @Override
@@ -72,16 +89,14 @@ public class MemoryAdapter extends StoreAdapter {
     public RowCursor newIndexCursor(QueryContext context, Index index,
             IndexKeyRange keyRange, Ordering ordering,
             IndexScanSelector scanSelector, boolean openAllSubCursors) {
-        
-        Table table = index.rootMostTable();
-        return table.getMemoryTableFactory().getIndexCursor(index, getSession(), keyRange, ordering, scanSelector);
+        return getMemoryTableFactory(index).getIndexCursor(index, getSession(), keyRange, ordering, scanSelector);
     }
 
     @Override
     public long rowCount(Session session, RowType tableType) {
         long count = 0;
         if (tableType.hasTable()) {
-            count = tableType.table().getMemoryTableFactory().rowCount();
+            count = getMemoryTableFactory(tableType.table()).rowCount();
         }
         return count;
     }
