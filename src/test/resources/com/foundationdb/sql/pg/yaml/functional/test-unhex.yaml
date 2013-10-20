@@ -55,4 +55,9 @@
 - Statement: SELECT CAST(UNHEX('E29883') AS CHAR(1) CHARACTER SET UTF8);
 - output: [ [!unicode "\u2603"] ]
 
+# Issue #526
+---
+- Statement: SELECT UNHEX(HEX('z')) = 'z'
+- output: [ [true] ]
+
 ...
