@@ -274,21 +274,13 @@ public abstract class Strings {
         int odd = st.length() & 0x01;
         int outputLen = (st.length() >> 1) + odd;
         byte ret[] = new byte[outputLen];
-
-        int stIndex;
-        if (odd == 0) {
-            ret[0] = hexCharsToByte(st.charAt(0), st.charAt(1));
-            stIndex = 2;
-        } else {
-            ret[0] = (byte)hexCharToInt(st.charAt(0));
-            stIndex = 1;
+        int si = 0, ri = 0;
+        if (odd == 1) {
+            ret[ri++] = (byte)hexCharToInt(st.charAt(si++));
         }
-        
-        // starting from here, all characters should be evenly divided into pair        
-        for(int retIndex = 1; retIndex < ret.length; ++retIndex, stIndex += 2) {
-            ret[retIndex] = hexCharsToByte(st.charAt(stIndex), st.charAt(stIndex + 1));
+        while(ri < ret.length) {
+            ret[ri++] = hexCharsToByte(st.charAt(si++), st.charAt(si++));
         }
-        
         return new WrappingByteSource(ret);
     }
     
