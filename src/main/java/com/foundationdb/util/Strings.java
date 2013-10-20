@@ -48,15 +48,6 @@ import java.util.jar.JarEntry;
 public abstract class Strings {
     
     public static final String NL = nl();
-    private static final int BASE_CHAR = 10 -'a';
-    private static final Set<Character> LEGAL_HEX = new HashSet<>();
-    static
-    {
-       for (char ch = 'a'; ch <= 'f'; ++ch)
-           LEGAL_HEX.add(ch);
-       for (char ch = '0'; ch <= '9'; ++ch)
-           LEGAL_HEX.add(ch); 
-    }
 
     public static List<String> entriesToString(Map<?, ?> map) {
         List<String> result = new ArrayList<>(map.size());
@@ -260,51 +251,43 @@ public abstract class Strings {
         return hex(byteSource.byteArray(), byteSource.byteArrayOffset(), byteSource.byteArrayLength());
     }
    
-    /**
-     * @param c: character
-     * @return the HEX value of this char
-     * @throws InvalidParameterValueException if c is not a valid hex digit
-     * 
-     * Eg., 'a' would return 10
-     */
-    private static int getHex (char c)
+    /** For example, '0' returns 0, 'a' or 'A' returns 10, etc */
+    private static int hexCharToInt(char c)
     {
-        if (!LEGAL_HEX.contains(c |= 32))
-            throw new InvalidParameterValueException("Invalid HEX digit: " + c);
-        
-        return c > 'a'
-                    ? c + BASE_CHAR
-                    : c - '0';
+        int lower = c | 32;
+        if(lower >= '0' && lower <= '9')
+            return lower - '0';
+        if(lower >= 'a' && lower <= 'f')
+            return 10 + lower - 'a';
+        throw new InvalidParameterValueException("Invalid HEX digit: " + c);
     }
     
     
-    /**
-     * @return a character whose (ASCII) code is equal to the hexadecimal value
-     *         of <highChar><lowChar>
-     *         Eg., parseByte('2', '0') should return ' ' (space character)
-     */
-    private static byte getByte (char highChar, char lowChar)
+    /** For example, ('2','0') returns 32 */
+    private static byte hexCharsToByte(char highChar, char lowChar)
     {
-        return (byte)((getHex(highChar) << 4) + getHex(lowChar));
+        return (byte)((hexCharToInt(highChar) << 4) + hexCharToInt(lowChar));
     }
     
     public static ByteSource parseHexWithout0x (String st) 
     {
-        double quotient = st.length() / 2.0;
-        byte ret[] = new byte[(int)Math.ceil(quotient)];
-        int stIndex = 0, retIndex = 0;
-        
-        // if all the chars in st can be evenly divided into pairs
-        if (ret.length == (int)quotient)
-            // two first hex digits make a byte
-            ret[retIndex++] = getByte(st.charAt(stIndex), st.charAt(++stIndex));
-        else // if not
-            // only the first one does
-            ret[retIndex++] = (byte)getHex(st.charAt(stIndex));
+        int odd = st.length() & 0x01;
+        int outputLen = (st.length() >> 1) + odd;
+        byte ret[] = new byte[outputLen];
+
+        int stIndex;
+        if (odd == 0) {
+            ret[0] = hexCharsToByte(st.charAt(0), st.charAt(1));
+            stIndex = 2;
+        } else {
+            ret[0] = (byte)hexCharToInt(st.charAt(0));
+            stIndex = 1;
+        }
         
         // starting from here, all characters should be evenly divided into pair        
-        for (; retIndex < ret.length; ++retIndex)
-            ret[retIndex] = getByte(st.charAt(++stIndex), st.charAt(++stIndex));
+        for(int retIndex = 1; retIndex < ret.length; ++retIndex, stIndex += 2) {
+            ret[retIndex] = hexCharsToByte(st.charAt(stIndex), st.charAt(stIndex + 1));
+        }
         
         return new WrappingByteSource(ret);
     }
