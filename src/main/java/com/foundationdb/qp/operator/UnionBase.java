@@ -103,6 +103,10 @@ public abstract class UnionBase extends Operator {
     RowType inputRowType (int i) {
         return inputTypes.get(i);
     }
+    
+    int getInputSize() {
+        return inputs.size();
+    }
     // for use in this package (in ctor and unit tests)
 
     protected static RowType rowType(RowType rowType1, RowType rowType2) {

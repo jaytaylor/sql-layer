@@ -20,7 +20,6 @@ package com.foundationdb.qp.operator;
 import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
-import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.explain.*;
@@ -30,10 +29,7 @@ import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
 
 import static java.lang.Math.abs;
 import static java.lang.Math.min;
@@ -422,7 +418,7 @@ class Union_Ordered extends UnionBase
         {
             if (!leftSkipRowFixed) {
                 if (leftSkipRow == null)
-                    leftSkipRow = new ValuesHolderRow(rowType);
+                    leftSkipRow = new ValuesHolderRow(rowType());
                 assert leftRow != null;
                 int f = 0;
                 while (f < fixedFields) {
@@ -449,7 +445,7 @@ class Union_Ordered extends UnionBase
                     f++;
                 }
                 while (f < rowType().nFields()) {
-                    rightSkipRow.pvalueAt(f++).putNull();
+                    rightSkipRow.valueAt(f++).putNull();
                 }
                 rightSkipRowFixed = true;
             }

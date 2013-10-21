@@ -20,23 +20,14 @@ package com.foundationdb.qp.operator;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.value.ValueSource;
-import com.foundationdb.util.ArgumentValidation;
-import com.foundationdb.util.Strings;
 import com.foundationdb.util.tap.InOutTap;
 
-import com.google.common.base.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 /**
  <h1>Overview</h1>
@@ -182,7 +173,7 @@ final class UnionAll_Default extends UnionBase {
                 currentCursor = null;
             }
             if (openBoth) {
-                while (++inputOperatorsIndex < inputs.size()) {
+                while (++inputOperatorsIndex < getInputSize()) {
                     cursors[inputOperatorsIndex].close();
                 }
             }
@@ -260,7 +251,7 @@ final class UnionAll_Default extends UnionBase {
             super(context);
             MultipleQueryBindingsCursor multiple = new MultipleQueryBindingsCursor(bindingsCursor);
             this.bindingsCursor = multiple;
-            cursors = new Cursor[getInputOperators().size()];
+            cursors = new Cursor[getInputSize()];
             for (int i = 0; i < cursors.length; i++) {
                 cursors[i] = operator(i).cursor(context, multiple.newCursor());
             }
@@ -273,7 +264,7 @@ final class UnionAll_Default extends UnionBase {
          * @return the first row of the next cursor that has a non-null row, or null if no such cursors remain
          */
         private Row nextCursorFirstRow() {
-            while (++inputOperatorsIndex < getInputOperators().size()) {
+            while (++inputOperatorsIndex < getInputSize()) {
                 Cursor nextCursor = cursors[inputOperatorsIndex];
                 if (!openBoth) {
                     nextCursor.open();
@@ -299,7 +290,7 @@ final class UnionAll_Default extends UnionBase {
             if (currentInputRowType == rowType()) {
                 return inputRow;
             }
-            MasqueradingRow row = new MasqueradingRow(outputRowType, inputRow);
+            MasqueradingRow row = new MasqueradingRow(rowType(), inputRow);
             return row;
         }
 
