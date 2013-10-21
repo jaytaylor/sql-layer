@@ -104,9 +104,8 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
         final String EX_MSG = "Intentional";
         createAndLoad();
 
-        // This is a bit of a hack, but only makes minor assumptions.
-        // DDL.dropTable() performs 2 transactions, first to get table ID to lock and then second to do DDL.
-        // Set up a hook for the end of the first that adds another hook for pre-commit of the second to cause a failure.
+        // This is a bit of a hack. Makes an impl assumption:
+        // Set up a hook for the end of the DDL transaction to cause a failure.
 
         final TransactionService.Callback preCommitCB = new TransactionService.Callback() {
             @Override
@@ -114,13 +113,7 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
                 throw new RuntimeException(EX_MSG);
             }
         };
-        final TransactionService.Callback firstEndCB = new TransactionService.Callback() {
-            @Override
-            public void run(Session session, long timestamp) {
-                txnService().addCallbackOnInactive(session, TransactionService.CallbackType.PRE_COMMIT, preCommitCB);
-            }
-        };
-        txnService().addCallbackOnInactive(session(), TransactionService.CallbackType.END, firstEndCB);
+        txnService().addCallbackOnInactive(session(), TransactionService.CallbackType.PRE_COMMIT, preCommitCB);
 
         try {
             ddl().dropTable(session(), TABLE_NAME);
