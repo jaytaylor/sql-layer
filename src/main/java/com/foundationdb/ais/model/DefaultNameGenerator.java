@@ -43,15 +43,15 @@ public class DefaultNameGenerator implements NameGenerator {
 
     private final Set<String> treeNames;
     private final Set<TableName> sequenceNames;
+    private final SortedSet<Integer> tableIDSet;
     private final SortedSet<Integer> isTableIDSet;
-    private final SortedSet<Integer> userTableIDSet;
     private final Map<Integer,Integer> indexIDMap;
 
 
     public DefaultNameGenerator() {
         treeNames = new HashSet<>();
         sequenceNames = new HashSet<>();
-        userTableIDSet = new TreeSet<>();
+        tableIDSet = new TreeSet<>();
         isTableIDSet = new TreeSet<>();
         indexIDMap = new HashMap<>();
     }
@@ -134,7 +134,7 @@ public class DefaultNameGenerator implements NameGenerator {
                 tableName = ((TableIndex)index).getTable().getName();
             break;
             case GROUP:
-                UserTable root = ((GroupIndex)index).getGroup().getRoot();
+                Table root = ((GroupIndex)index).getGroup().getRoot();
                 if(root == null) {
                     throw new IllegalArgumentException("Grouping incomplete (no root)");
                 }
@@ -180,14 +180,14 @@ public class DefaultNameGenerator implements NameGenerator {
         treeNames.addAll(collectTreeNames(ais));
         sequenceNames.addAll(ais.getSequences().keySet());
         isTableIDSet.addAll(collectTableIDs(ais, true));
-        userTableIDSet.addAll(collectTableIDs(ais, false));
+        tableIDSet.addAll(collectTableIDs(ais, false));
         indexIDMap.putAll(collectMaxIndexIDs(ais));
     }
 
     @Override
     public void removeTableID(int tableID) {
         isTableIDSet.remove(tableID);
-        userTableIDSet.remove(tableID);
+        tableIDSet.remove(tableID);
     }
 
     @Override
@@ -212,15 +212,15 @@ public class DefaultNameGenerator implements NameGenerator {
         if(isISTable) {
             nextID = isTableIDSet.isEmpty() ? IS_TABLE_ID_OFFSET : isTableIDSet.last() + 1;
         } else {
-            nextID = userTableIDSet.isEmpty() ? USER_TABLE_ID_OFFSET : userTableIDSet.last() + 1;
+            nextID = tableIDSet.isEmpty() ? USER_TABLE_ID_OFFSET : tableIDSet.last() + 1;
         }
-        while(isTableIDSet.contains(nextID) || userTableIDSet.contains(nextID)) {
+        while(isTableIDSet.contains(nextID) || tableIDSet.contains(nextID)) {
             nextID += 1;
         }
         if(isISTable) {
             isTableIDSet.add(nextID);
         } else {
-            userTableIDSet.add(nextID);
+            tableIDSet.add(nextID);
         }
         return nextID;
     }
@@ -231,7 +231,7 @@ public class DefaultNameGenerator implements NameGenerator {
             if(TableName.INFORMATION_SCHEMA.equals(schema.getName()) != onlyISTables) {
                 continue;
             }
-            for(UserTable table : schema.getUserTables().values()) {
+            for(Table table : schema.getTables().values()) {
                 idSet.add(table.getTableId());
             }
         }
@@ -256,7 +256,7 @@ public class DefaultNameGenerator implements NameGenerator {
                 treeNames.add(index.getTreeName());
             }
         }
-        for(UserTable table : ais.getUserTables().values()) {
+        for(Table table : ais.getTables().values()) {
             for(Index index : table.getIndexesIncludingInternal()) {
                 treeNames.add(index.getTreeName());
             }
@@ -326,7 +326,7 @@ public class DefaultNameGenerator implements NameGenerator {
         }
 
         @Override
-        public void visitUserTable(UserTable table) {
+        public void visitTable(Table table) {
             checkIndexes(table.getIndexesIncludingInternal());
         }
 

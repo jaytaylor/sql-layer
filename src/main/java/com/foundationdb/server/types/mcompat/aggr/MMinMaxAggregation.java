@@ -22,10 +22,10 @@ import com.foundationdb.server.types.TAggregatorBase;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TOverloadResult;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
-import com.foundationdb.server.types.pvalue.PValueTargets;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
+import com.foundationdb.server.types.value.ValueTargets;
 
 public class MMinMaxAggregation extends TAggregatorBase {
 
@@ -56,22 +56,22 @@ public class MMinMaxAggregation extends TAggregatorBase {
     }
 
     @Override
-    public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, Object o) {
+    public void input(TInstance instance, ValueSource source, TInstance stateType, Value state, Object o) {
         if (source.isNull())
             return;
         if (!state.hasAnyValue()) {
-            PValueTargets.copyFrom(source, state);
+            ValueTargets.copyFrom(source, state);
             return;
         }
         TClass tClass = instance.typeClass();
         assert stateType.typeClass().equals(tClass) : "incompatible types " + instance + " and " + stateType;
         int comparison = TClass.compare(instance, source, stateType, state);
         if (mType.condition(comparison))
-            PValueTargets.copyFrom(source, state);
+            ValueTargets.copyFrom(source, state);
     }
 
     @Override
-    public void emptyValue(PValueTarget state) {
+    public void emptyValue(ValueTarget state) {
         state.putNull();
     }
 

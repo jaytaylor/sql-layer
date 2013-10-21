@@ -24,8 +24,8 @@ import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.error.NameIsNullException;
 import com.foundationdb.server.error.NoSuchColumnException;
 import com.foundationdb.server.error.NoSuchGroupException;
@@ -99,7 +99,7 @@ public class GroupIndexCreator {
                 }
                 final String tableName = tableCol.substring(0, period).trim();
                 final String columnName = tableCol.substring(period+1).trim();
-                final UserTable table = findTableInGroup(ais, group, tableName);
+                final Table table = findTableInGroup(ais, group, tableName);
                 if(table == null) {
                     throw new NoSuchTableException ("", tableName);
                 }
@@ -121,8 +121,8 @@ public class GroupIndexCreator {
         return tmpIndex;
     }
 
-    private static UserTable findTableInGroup(AkibanInformationSchema ais, Group group, String tableName) {
-        for(UserTable table : ais.getUserTables().values()) {
+    private static Table findTableInGroup(AkibanInformationSchema ais, Group group, String tableName) {
+        for(Table table : ais.getTables().values()) {
             if(table.getGroup().equals(group) && table.getName().getTableName().equals(tableName)) {
                 return table;
             }

@@ -34,8 +34,8 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.aksql.aktypes.AkInterval;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.util.ByteSource;
 import com.foundationdb.util.Strings;
 import com.foundationdb.util.WrappingByteSource;
@@ -168,12 +168,12 @@ public final class RowDataConversionTest extends ConversionTestBase {
 
     private static final class ConversionPair implements LinkedConversion<ByteSource> {
         @Override
-        public PValueSource linkedSource() {
+        public ValueSource linkedSource() {
             return source;
         }
 
         @Override
-        public PValueTarget linkedTarget() {
+        public ValueTarget linkedTarget() {
             return target;
         }
 
@@ -209,12 +209,12 @@ public final class RowDataConversionTest extends ConversionTestBase {
 
         private void createEnvironment(TestCase<?> testCase) {
             AkibanInformationSchema ais = AISBBasedBuilder.create("mySchema")
-                    .userTable("testTable")
+                    .table("testTable")
                     .colLong("id")
                     .pk("id")
                     .ais(false);
             Column col = Column.create(
-                    ais.getUserTable("mySchema", "testTable"),
+                    ais.getTable("mySchema", "testTable"),
                     "c1",
                     1,
                     colType(testCase.type())
@@ -241,11 +241,11 @@ public final class RowDataConversionTest extends ConversionTestBase {
         }
 
         private final TestableRowDataValueSource source = new TestableRowDataValueSource();
-        private final RowDataPValueTarget target = new RowDataPValueTarget();
+        private final RowDataValueTarget target = new RowDataValueTarget();
         private FieldDef fieldDef;
     }
 
-    private static class TestableRowDataValueSource extends AbstractRowDataPValueSource {
+    private static class TestableRowDataValueSource extends AbstractRowDataValueSource {
         @Override
         protected long getRawOffsetAndWidth() {
             return width;

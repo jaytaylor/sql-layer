@@ -62,7 +62,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         // PSQL \d, \dt, \dv
         PSQL_LIST_TABLES("SELECT n.nspname as \"Schema\",\\s*" +
                          "c.relname as \"Name\",\\s*" +
-                         "CASE c.relkind WHEN 'r' THEN 'table' WHEN 'v' THEN 'view' WHEN 'i' THEN 'index' WHEN 'S' THEN 'sequence' WHEN 's' THEN 'special' (?:WHEN 'f' THEN 'foreign table' )?END as \"Type\",\\s+" +
+                         "CASE c.relkind WHEN 'r' THEN 'table' WHEN 'v' THEN 'view'(?: WHEN 'm' THEN 'materialized view')? WHEN 'i' THEN 'index' WHEN 'S' THEN 'sequence' WHEN 's' THEN 'special' (?:WHEN 'f' THEN 'foreign table' )?END as \"Type\",\\s+" +
                          "(?:pg_catalog.pg_get_userbyid\\(c.relowner\\)|u.usename|r.rolname) as \"Owner\"\\s+" +
                          "FROM pg_catalog.pg_class c\\s+" +
                          "(?:LEFT JOIN pg_catalog.pg_user u ON u.usesysid = c.relowner\\s+)?" +
@@ -105,9 +105,10 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                                "FROM pg_catalog.pg_attrdef d\\s+" +
                                "WHERE d.adrelid = a.attrelid AND d.adnum = a.attnum AND a.atthasdef\\),\\s*" +
                                "a.attnotnull, a.attnum,?\\s*" +
-                               "(NULL AS attcollation\\s+)?" + // 1
+                               "(NULL AS attcollation,?\\s+)?" + // 1
+                               "(NULL AS indexdef,\\s+NULL AS attfdwoptions\\s+)?" + // 2
                                "FROM pg_catalog.pg_attribute a\\s+" +
-                               "WHERE a.attrelid = '(-?\\d+)' AND a.attnum > 0 AND NOT a.attisdropped\\s+" + // 2
+                               "WHERE a.attrelid = '(-?\\d+)' AND a.attnum > 0 AND NOT a.attisdropped\\s+" + // 3
                                "ORDER BY a.attnum;?", true),
         PSQL_DESCRIBE_TABLES_4A("SELECT c.oid::pg_catalog.regclass FROM pg_catalog.pg_class c, pg_catalog.pg_inherits i WHERE c.oid=i.inhparent AND i.inhrelid = '(-?\\d+)' ORDER BY inhseqno;?", true),
         PSQL_DESCRIBE_TABLES_4B("SELECT c.oid::pg_catalog.regclass FROM pg_catalog.pg_class c, pg_catalog.pg_inherits i WHERE c.oid=i.inhrelid AND i.inhparent = '(-?\\d+)' ORDER BY c.oid::pg_catalog.regclass::pg_catalog.text;?", true),
@@ -291,9 +292,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             types = new PostgresType[] { BOOL_PG_TYPE, CHAR1_PG_TYPE, INT2_PG_TYPE, INT2_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, OID_PG_TYPE };
             break;
         case PSQL_DESCRIBE_TABLES_3:
-            ncols = (groups.get(1) != null) ? 6 : 5;
-            names = new String[] { "attname", "format_type", "?column?", "attnotnull", "attnum", "attcollation" };
-            types = new PostgresType[] { IDENT_PG_TYPE, TYPNAME_PG_TYPE, DEFVAL_PG_TYPE, BOOL_PG_TYPE, INT2_PG_TYPE, IDENT_PG_TYPE };
+            ncols = (groups.get(2) != null) ? 8 : (groups.get(1) != null) ? 6 : 5;
+            names = new String[] { "attname", "format_type", "?column?", "attnotnull", "attnum", "attcollation", "indexdef", "attfdwoptions" };
+            types = new PostgresType[] { IDENT_PG_TYPE, TYPNAME_PG_TYPE, DEFVAL_PG_TYPE, BOOL_PG_TYPE, INT2_PG_TYPE, IDENT_PG_TYPE, CHAR0_PG_TYPE, CHAR0_PG_TYPE };
             break;
         case PSQL_DESCRIBE_TABLES_4A:
         case PSQL_DESCRIBE_TABLES_4B:
@@ -584,7 +585,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return null;
     }
 
-    protected void writeColumn(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger,
+    protected static void writeColumn(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger,
                                int col, Object value, PostgresType type) throws IOException {
         ServerValueEncoder encoder = server.getValueEncoder();        
         boolean binary = context.isColumnBinary(col);
@@ -626,7 +627,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     private int npgsqlTypeQuery(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows) throws IOException {
         int nrows = 0;
         List<String> types = new ArrayList<>();
-        for (String type : groups.get(1).split(",")) {
+        for (String type : groups.get(1).split(",\\s*")) {
             if ((type.charAt(0) == '\'') && (type.charAt(type.length()-1) == '\''))
                 type = type.substring(1, type.length()-1);
             types.add(type);
@@ -691,7 +692,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         List<Columnar> tables = new ArrayList<>();
         AkibanInformationSchema ais = server.getAIS();
         if (types.contains("'r'"))
-            tables.addAll(ais.getUserTables().values());
+            tables.addAll(ais.getTables().values());
         if (types.contains("'v'"))
             tables.addAll(ais.getViews().values());
         boolean noIS = (groups.get(2) != null) || (groups.get(3) != null);
@@ -731,7 +732,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             if (LIST_TABLES_BY_GROUP) {
                 String path = null;
                 if (table.isTable()) {
-                    path = tableGroupPath((UserTable)table, name.getSchemaName());
+                    path = tableGroupPath((Table)table, name.getSchemaName());
                 }
                 writeColumn(context, server, messenger,
                             3, path, PATH_PG_TYPE);
@@ -765,12 +766,12 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             Group g1 = null, g2 = null;
             Integer d1 = null, d2 = null;
             if (t1.isTable()) {
-                UserTable ut1 = ((UserTable)t1);
+                Table ut1 = (Table)t1;
                 g1 = ut1.getGroup();
                 d1 = ut1.getDepth();
             }
             if (t2.isTable()) {
-                UserTable ut2 = ((UserTable)t2);
+                Table ut2 = (Table)t2;
                 g2 = ut2.getGroup();
                 d2 = ut2.getDepth();
             }
@@ -783,7 +784,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         }
     };
 
-    private String tableGroupPath(UserTable table, String schemaName) {
+    private String tableGroupPath(Table table, String schemaName) {
         StringBuilder str = new StringBuilder();
         do {
             if (str.length() > 0)
@@ -803,7 +804,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         Map<Integer,TableName> nonTableNames = null;
         List<TableName> names = new ArrayList<>();
         AkibanInformationSchema ais = server.getAIS();
-        names.addAll(ais.getUserTables().keySet());
+        names.addAll(ais.getTables().keySet());
         names.addAll(ais.getViews().keySet());
         Pattern schemaPattern = null, tablePattern = null;
         if (groups.get(1) != null)
@@ -866,7 +867,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             }
         }
         else {
-            UserTable table = ais.getUserTable(id);
+            Table table = ais.getTable(id);
             if (server.isSchemaAccessible(table.getName().getSchemaName())) {
                 return table;
             }
@@ -927,12 +928,13 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
 
     private int psqlDescribeTables3Query(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows) throws IOException {
         int nrows = 0;
-        Columnar table = getTableById(server, groups.get(2));
+        Columnar table = getTableById(server, groups.get(3));
         if (table == null) return 0;
         boolean hasCollation = (groups.get(1) != null);
+        boolean hasIndexdef = (groups.get(2) != null);
         for (Column column : table.getColumns()) {
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
-            messenger.writeShort(hasCollation ? 6 : 5); // 5-6 columns for this query
+            messenger.writeShort(hasIndexdef ? 8 : hasCollation ? 6 : 5); // 5-8 columns for this query
             writeColumn(context, server, messenger,  // attname
                         0, column.getName(), IDENT_PG_TYPE);
             writeColumn(context, server, messenger, // format_type
@@ -963,6 +965,12 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                             5, (charAndColl == null) ? null : charAndColl.collation(), 
                             IDENT_PG_TYPE);
             }
+            if (hasIndexdef) {
+                writeColumn(context, server, messenger, // indexdef
+                            6, null, CHAR0_PG_TYPE);
+                writeColumn(context, server, messenger, // attfdwoptions
+                            7, null, CHAR0_PG_TYPE);
+            }
             messenger.sendMessage();
             nrows++;
             if ((maxrows > 0) && (nrows >= maxrows)) {
@@ -982,7 +990,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         int nrows = 0;
         Columnar columnar = getTableById(server, groups.get(4));
         if ((columnar == null) || !columnar.isTable()) return 0;
-        UserTable table = (UserTable)columnar;
+        Table table = (Table)columnar;
         Map<String,Index> indexes = new TreeMap<>();
         for (Index index : table.getIndexesIncludingInternal()) {
             if (isAkibanPKIndex(index)) continue;
@@ -1057,7 +1065,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         int nrows = 0;
         Columnar columnar = getTableById(server, groups.get(1));
         if ((columnar == null) || !columnar.isTable()) return 0;
-        Join join = ((UserTable)columnar).getParentJoin();
+        Join join = ((Table)columnar).getParentJoin();
         if (join == null) return 0;
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
         messenger.writeShort(2); // 2 columns for this query
@@ -1074,7 +1082,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         int nrows = 0;
         Columnar columnar = getTableById(server, groups.get(1));
         if ((columnar == null) || !columnar.isTable()) return 0;
-        for (Join join : ((UserTable)columnar).getChildJoins()) {
+        for (Join join : ((Table)columnar).getChildJoins()) {
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
             messenger.writeShort(3); // 3 columns for this query
             writeColumn(context, server, messenger,  // conname
@@ -1100,7 +1108,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     private boolean hasIndexes(Columnar table) {
         if (!table.isTable())
             return false;
-        Collection<? extends Index> indexes = ((UserTable)table).getIndexes();
+        Collection<? extends Index> indexes = ((Table)table).getIndexes();
         if (indexes.isEmpty())
             return false;
         if (indexes.size() > 1)
@@ -1110,13 +1118,13 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return true;
     }
 
-    private boolean hasTriggers(Columnar table) {
-        if (!table.isTable())
+    private boolean hasTriggers(Columnar columnar) {
+        if (!columnar.isTable())
             return false;
-        UserTable userTable = (UserTable)table;
-        if (userTable.getParentJoin() != null)
+        Table table = (Table)columnar;
+        if (table.getParentJoin() != null)
             return true;
-        if (!userTable.getChildJoins().isEmpty())
+        if (!table.getChildJoins().isEmpty())
             return true;
         return false;
     }
@@ -1127,7 +1135,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 indexColumns.get(0).getColumn().isAkibanPKColumn());
     }
 
-    private boolean isTableReferenced(UserTable table, Index groupIndex) {
+    private boolean isTableReferenced(Table table, Index groupIndex) {
         for (IndexColumn indexColumn : groupIndex.getKeyColumns()) {
             // A table may only be referenced by hKey components, in
             // which case we don't want to display it.
@@ -1138,7 +1146,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return false;
     }
 
-    private String formatIndexdef(Index index, UserTable table) {
+    private String formatIndexdef(Index index, Table table) {
         StringBuilder str = new StringBuilder();
         // Postgres CREATE INDEX has USING method, btree|hash|gist|gin|...
         // That is where the client starts including output.
@@ -1240,7 +1248,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         int nrows = 0;
         List<Columnar> tables = new ArrayList<>();
         AkibanInformationSchema ais = server.getAIS();
-        tables.addAll(ais.getUserTables().values());
+        tables.addAll(ais.getTables().values());
         tables.addAll(ais.getViews().values());
         Iterator<Columnar> iter = tables.iterator();
         while (iter.hasNext()) {
@@ -1279,8 +1287,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         int nrows = 0;
         String name = groups.get(1);
         AkibanInformationSchema ais = server.getAIS();
-        List<UserTable> tables = new ArrayList<>();
-        for (UserTable table : ais.getUserTables().values()) {
+        List<Table> tables = new ArrayList<>();
+        for (Table table : ais.getTables().values()) {
             TableName tableName = table.getName();
             if (server.isSchemaAccessible(tableName.getSchemaName()) &&
                 tableName.getTableName().equalsIgnoreCase(name)) {
@@ -1289,7 +1297,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         }
         Collections.sort(tables, tablesByName);
         rows:
-        for (UserTable table : tables) {
+        for (Table table : tables) {
             TableIndex index = table.getIndex(Index.PRIMARY_KEY_CONSTRAINT);
             if (index != null) {
                 TableName tableName = table.getName();
@@ -1323,8 +1331,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         int nrows = 0;
         String name = groups.get(1);
         AkibanInformationSchema ais = server.getAIS();
-        List<UserTable> tables = new ArrayList<>();
-        for (UserTable table : ais.getUserTables().values()) {
+        List<Table> tables = new ArrayList<>();
+        for (Table table : ais.getTables().values()) {
             TableName tableName = table.getName();
             if (server.isSchemaAccessible(tableName.getSchemaName()) &&
                 tableName.getTableName().equalsIgnoreCase(name)) {
@@ -1333,7 +1341,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         }
         Collections.sort(tables, tablesByName);
         rows:
-        for (UserTable table : tables) {
+        for (Table table : tables) {
             Join join = table.getParentJoin();
             if (join != null) {
                 TableName childName = table.getName();
@@ -1384,8 +1392,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         int nrows = 0;
         String name = groups.get(1);
         AkibanInformationSchema ais = server.getAIS();
-        List<UserTable> tables = new ArrayList<>();
-        for (UserTable table : ais.getUserTables().values()) {
+        List<Table> tables = new ArrayList<>();
+        for (Table table : ais.getTables().values()) {
             TableName tableName = table.getName();
             if (server.isSchemaAccessible(tableName.getSchemaName()) &&
                 tableName.getTableName().equalsIgnoreCase(name)) {
@@ -1394,7 +1402,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         }
         Collections.sort(tables, tablesByName);
         rows:
-        for (UserTable table : tables) {
+        for (Table table : tables) {
             TableName tableName = table.getName();
             for (Column column : table.getColumns()) {
                 PostgresType type = PostgresType.fromAIS(column);
@@ -1451,7 +1459,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         List<Columnar> tables = new ArrayList<>();
         AkibanInformationSchema ais = server.getAIS();
         if ("r".equals(type))
-            tables.addAll(ais.getUserTables().values());
+            tables.addAll(ais.getTables().values());
         if ("v".equals(type))
             tables.addAll(ais.getViews().values());
         Iterator<Columnar> iter = tables.iterator();
@@ -1497,7 +1505,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             }
         }
         else {
-            tables.addAll(ais.getUserTables().values());
+            tables.addAll(ais.getTables().values());
             tables.addAll(ais.getViews().values());
             Iterator<Columnar> iter = tables.iterator();
             while (iter.hasNext()) {
@@ -1543,7 +1551,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             }
         }
         else {
-            tables.addAll(ais.getUserTables().values());
+            tables.addAll(ais.getTables().values());
             tables.addAll(ais.getViews().values());
             Iterator<Columnar> iter = tables.iterator();
             while (iter.hasNext()) {
@@ -1588,7 +1596,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         List<Columnar> tables = new ArrayList<>();
         AkibanInformationSchema ais = server.getAIS();
         if ("r".equals(type))
-            tables.addAll(ais.getUserTables().values());
+            tables.addAll(ais.getTables().values());
         if ("v".equals(type))
             tables.addAll(ais.getViews().values());
         Iterator<Columnar> iter = tables.iterator();
@@ -1621,7 +1629,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         List<Columnar> tables = new ArrayList<>();
         AkibanInformationSchema ais = server.getAIS();
         if ("r".equals(type))
-            tables.addAll(ais.getUserTables().values());
+            tables.addAll(ais.getTables().values());
         if ("v".equals(type))
             tables.addAll(ais.getViews().values());
         boolean exists = false;
@@ -1656,7 +1664,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             }
         }
         else {
-            tables.addAll(ais.getUserTables().values());
+            tables.addAll(ais.getTables().values());
             tables.addAll(ais.getViews().values());
             Iterator<Columnar> iter = tables.iterator();
             while (iter.hasNext()) {

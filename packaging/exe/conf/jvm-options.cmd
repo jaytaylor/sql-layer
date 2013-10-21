@@ -1,9 +1,10 @@
 REM This file is for Windows. For Unix-like systems, look in jvm.options.
 REM It is important that none of the property values have spaces in them.
 
-REM The amount of memory to allocate to the JVM at startup, you almost
-REM certainly want to adjust this for your environment.
-REM SET MAX_HEAP_SIZE=1024M
+REM The amount of memory, in megabytes, to allocate to the JVM at startup.
+REM You almost certainly want to adjust this for your environment.
+REM Do not include unit suffix.
+REM SET MAX_HEAP_MB=1024
 
 REM Here we create the arguments that will get passed to the jvm when starting.
 

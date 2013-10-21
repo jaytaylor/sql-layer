@@ -60,55 +60,55 @@ public final class SchemaTableServiceIT extends ITBase {
     
     @Test
     public void baseInfoExamine() {
-        assertEquals ("Table count", 19, BasicInfoSchemaTablesServiceImpl.createTablesToRegister().getUserTables().size());
-        assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.SCHEMATA));
-        assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.TABLES));
-        assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.COLUMNS));
-        assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.TABLE_CONSTRAINTS));
-        assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.REFERENTIAL_CONSTRAINTS));
-        assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.GROUPING_CONSTRAINTS));
-        assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.KEY_COLUMN_USAGE));
-        assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.INDEXES));
-        assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.INDEX_COLUMNS));
-        assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.SEQUENCES));
-        assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.VIEWS));
-        assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.VIEW_TABLE_USAGE));
-        assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.VIEW_COLUMN_USAGE));
-        assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.ROUTINES));
-        assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.PARAMETERS));
-        assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.JARS));
-        assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.ROUTINE_JAR_USAGE));
+        assertEquals ("Table count", 19, BasicInfoSchemaTablesServiceImpl.createTablesToRegister().getTables().size());
+        assertNotNull (ais.getTable(BasicInfoSchemaTablesServiceImpl.SCHEMATA));
+        assertNotNull (ais.getTable(BasicInfoSchemaTablesServiceImpl.TABLES));
+        assertNotNull (ais.getTable(BasicInfoSchemaTablesServiceImpl.COLUMNS));
+        assertNotNull (ais.getTable(BasicInfoSchemaTablesServiceImpl.TABLE_CONSTRAINTS));
+        assertNotNull (ais.getTable(BasicInfoSchemaTablesServiceImpl.REFERENTIAL_CONSTRAINTS));
+        assertNotNull (ais.getTable(BasicInfoSchemaTablesServiceImpl.GROUPING_CONSTRAINTS));
+        assertNotNull (ais.getTable(BasicInfoSchemaTablesServiceImpl.KEY_COLUMN_USAGE));
+        assertNotNull (ais.getTable(BasicInfoSchemaTablesServiceImpl.INDEXES));
+        assertNotNull (ais.getTable(BasicInfoSchemaTablesServiceImpl.INDEX_COLUMNS));
+        assertNotNull (ais.getTable(BasicInfoSchemaTablesServiceImpl.SEQUENCES));
+        assertNotNull (ais.getTable(BasicInfoSchemaTablesServiceImpl.VIEWS));
+        assertNotNull (ais.getTable(BasicInfoSchemaTablesServiceImpl.VIEW_TABLE_USAGE));
+        assertNotNull (ais.getTable(BasicInfoSchemaTablesServiceImpl.VIEW_COLUMN_USAGE));
+        assertNotNull (ais.getTable(BasicInfoSchemaTablesServiceImpl.ROUTINES));
+        assertNotNull (ais.getTable(BasicInfoSchemaTablesServiceImpl.PARAMETERS));
+        assertNotNull (ais.getTable(BasicInfoSchemaTablesServiceImpl.JARS));
+        assertNotNull (ais.getTable(BasicInfoSchemaTablesServiceImpl.ROUTINE_JAR_USAGE));
     }
     
     @Test
     public void storageExamine() {
-        assertEquals ("Table count", 11, StorageSchemaTablesServiceImpl.createTablesToRegister().getUserTables().size());
-        assertNotNull (ais.getUserTable(StorageSchemaTablesServiceImpl.STORAGE_ALERTS_SUMMARY));
-        assertNotNull (ais.getUserTable(StorageSchemaTablesServiceImpl.STORAGE_BUFFER_POOLS));
-        assertNotNull (ais.getUserTable(StorageSchemaTablesServiceImpl.STORAGE_CHECKPOINT_SUMMARY));
-        assertNotNull (ais.getUserTable(StorageSchemaTablesServiceImpl.STORAGE_CLEANUP_MANAGER_SUMMARY));
-        assertNotNull (ais.getUserTable(StorageSchemaTablesServiceImpl.STORAGE_IO_METER_SUMMARY));
-        assertNotNull (ais.getUserTable(StorageSchemaTablesServiceImpl.STORAGE_IO_METERS));
-        assertNotNull (ais.getUserTable(StorageSchemaTablesServiceImpl.STORAGE_JOURNAL_MANAGER_SUMMARY));
-        assertNotNull (ais.getUserTable(StorageSchemaTablesServiceImpl.STORAGE_MANAGEMENT_SUMMARY));
-        assertNotNull (ais.getUserTable(StorageSchemaTablesServiceImpl.STORAGE_TRANSACTION_SUMMARY));
-        assertNotNull (ais.getUserTable(StorageSchemaTablesServiceImpl.STORAGE_TREES));
-        assertNotNull (ais.getUserTable(StorageSchemaTablesServiceImpl.STORAGE_VOLUMES));
+        assertEquals ("Table count", 11, StorageSchemaTablesServiceImpl.createTablesToRegister().getTables().size());
+        assertNotNull (ais.getTable(StorageSchemaTablesServiceImpl.STORAGE_ALERTS_SUMMARY));
+        assertNotNull (ais.getTable(StorageSchemaTablesServiceImpl.STORAGE_BUFFER_POOLS));
+        assertNotNull (ais.getTable(StorageSchemaTablesServiceImpl.STORAGE_CHECKPOINT_SUMMARY));
+        assertNotNull (ais.getTable(StorageSchemaTablesServiceImpl.STORAGE_CLEANUP_MANAGER_SUMMARY));
+        assertNotNull (ais.getTable(StorageSchemaTablesServiceImpl.STORAGE_IO_METER_SUMMARY));
+        assertNotNull (ais.getTable(StorageSchemaTablesServiceImpl.STORAGE_IO_METERS));
+        assertNotNull (ais.getTable(StorageSchemaTablesServiceImpl.STORAGE_JOURNAL_MANAGER_SUMMARY));
+        assertNotNull (ais.getTable(StorageSchemaTablesServiceImpl.STORAGE_MANAGEMENT_SUMMARY));
+        assertNotNull (ais.getTable(StorageSchemaTablesServiceImpl.STORAGE_TRANSACTION_SUMMARY));
+        assertNotNull (ais.getTable(StorageSchemaTablesServiceImpl.STORAGE_TREES));
+        assertNotNull (ais.getTable(StorageSchemaTablesServiceImpl.STORAGE_VOLUMES));
     }
     
     @Test
     public void serverExamine() {
-        assertEquals ("Table count", 11, ServerSchemaTablesServiceImpl.createTablesToRegister().getUserTables().size());
-        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.ERROR_CODES));
-        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_INSTANCE_SUMMARY));
-        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_SERVERS));
-        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_SESSIONS));
-        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_PARAMETERS));
-        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_MEMORY_POOLS));
-        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_GARBAGE_COLLECTORS));
-        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_TAPS));
-        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_PREPARED_STATEMENTS));
-        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_CURSORS));
-        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_USERS));
+        assertEquals ("Table count", 11, ServerSchemaTablesServiceImpl.createTablesToRegister().getTables().size());
+        assertNotNull (ais.getTable(ServerSchemaTablesServiceImpl.ERROR_CODES));
+        assertNotNull (ais.getTable(ServerSchemaTablesServiceImpl.SERVER_INSTANCE_SUMMARY));
+        assertNotNull (ais.getTable(ServerSchemaTablesServiceImpl.SERVER_SERVERS));
+        assertNotNull (ais.getTable(ServerSchemaTablesServiceImpl.SERVER_SESSIONS));
+        assertNotNull (ais.getTable(ServerSchemaTablesServiceImpl.SERVER_PARAMETERS));
+        assertNotNull (ais.getTable(ServerSchemaTablesServiceImpl.SERVER_MEMORY_POOLS));
+        assertNotNull (ais.getTable(ServerSchemaTablesServiceImpl.SERVER_GARBAGE_COLLECTORS));
+        assertNotNull (ais.getTable(ServerSchemaTablesServiceImpl.SERVER_TAPS));
+        assertNotNull (ais.getTable(ServerSchemaTablesServiceImpl.SERVER_PREPARED_STATEMENTS));
+        assertNotNull (ais.getTable(ServerSchemaTablesServiceImpl.SERVER_CURSORS));
+        assertNotNull (ais.getTable(ServerSchemaTablesServiceImpl.SERVER_USERS));
     }
 }

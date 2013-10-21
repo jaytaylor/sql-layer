@@ -38,8 +38,8 @@ import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.aksql.akfuncs.AkIfElse;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.TString;
-import com.foundationdb.server.types.pvalue.PUnderlying;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.UnderlyingType;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.server.types.texpressions.TCastExpression;
 import com.foundationdb.server.types.texpressions.TComparisonExpression;
@@ -159,7 +159,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
         TPreptimeValue tpv = node.getPreptimeValue();
         if (tpv != null) {
             TInstance instance = tpv.instance();
-            PValueSource value = tpv.value();
+            ValueSource value = tpv.value();
             if (instance != null && value != null)
                 result = new TPreparedLiteral(instance, value);
         }
@@ -200,7 +200,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
         TClass tClass = leftInstance.typeClass();
         assert tClass.compatibleForCompare(rightInstance.typeClass())
                 : tClass + " != " + rightInstance.typeClass();
-        if (tClass.underlyingType() != PUnderlying.STRING)
+        if (tClass.underlyingType() != UnderlyingType.STRING)
             return null;
         CharacterTypeAttributes leftAttributes = StringAttribute.characterTypeAttributes(leftInstance);
         CharacterTypeAttributes rightAttributes = StringAttribute.characterTypeAttributes(rightInstance);
@@ -278,7 +278,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
         TPreptimeValue preptimeValue = expr.evaluateConstant(planContext.getQueryContext());
         if (preptimeValue == null)
             throw new AkibanInternalException("required constant expression: " + expr);
-        PValueSource valueSource = preptimeValue.value();
+        ValueSource valueSource = preptimeValue.value();
         if (valueSource == null)
             throw new AkibanInternalException("required constant expression: " + expr);
         if (node instanceof ConditionExpression) {
@@ -326,8 +326,8 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
         }
 
         @Override
-        protected int compare(TInstance leftInstance, PValueSource left, TInstance rightInstance,
-                                  PValueSource right) {
+        protected int compare(TInstance leftInstance, ValueSource left, TInstance rightInstance,
+                                  ValueSource right) {
             return reverseComparison
                     ? - comparison.compare(rightInstance, right, leftInstance, left)
                     :   comparison.compare(leftInstance, left, rightInstance, right);

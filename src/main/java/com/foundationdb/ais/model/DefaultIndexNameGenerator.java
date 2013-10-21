@@ -29,7 +29,7 @@ public class DefaultIndexNameGenerator implements IndexNameGenerator {
         indexNames.addAll(initialIndexNames);
     }
 
-    public static DefaultIndexNameGenerator forTable(UserTable table) {
+    public static DefaultIndexNameGenerator forTable(Table table) {
         Set<String> indexNames = new HashSet<>();
         for(Index index : table.getIndexesIncludingInternal()) {
             indexNames.add(index.getIndexName().getName());

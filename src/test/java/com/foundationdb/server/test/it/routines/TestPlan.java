@@ -18,7 +18,7 @@
 package com.foundationdb.server.test.it.routines;
 
 import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.loadableplan.LoadableOperator;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.rowtype.RowType;
@@ -48,8 +48,8 @@ public class TestPlan extends LoadableOperator
     {
         // select id, value, $1 from test
         Group group = ais().getGroup("test");
-        UserTable testTable = ais().getUserTable("test", "test");
-        RowType testRowType = schema().userTableRowType(testTable);
+        Table testTable = ais().getTable("test", "test");
+        RowType testRowType = schema().tableRowType(testTable);
         return
             project_Default(
                 groupScan_Default(group),

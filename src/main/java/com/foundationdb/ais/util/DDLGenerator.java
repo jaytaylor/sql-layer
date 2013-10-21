@@ -29,8 +29,8 @@ import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.Type;
 import com.foundationdb.ais.model.Join;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.Types;
-import com.foundationdb.ais.model.UserTable;
 
 public class DDLGenerator
 {
@@ -159,8 +159,8 @@ public class DDLGenerator
             columnDecls.add(declaration(indexColumn));
         }
         
-        if(index.getConstraint().equals("FOREIGN KEY") && index.getTable().isUserTable()) {
-            Join join = ((UserTable)index.getTable()).getParentJoin();
+        if(index.getConstraint().equals("FOREIGN KEY")){
+            Join join = index.getTable().getParentJoin();
             
             if(join == null) {
                 return new String("");

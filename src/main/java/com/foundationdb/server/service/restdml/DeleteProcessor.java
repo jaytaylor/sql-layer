@@ -18,6 +18,7 @@ package com.foundationdb.server.service.restdml;
 
 import java.util.List;
 
+import com.foundationdb.server.types.value.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +34,6 @@ import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValue;
 
 public class DeleteProcessor extends DMLProcessor {
 
@@ -62,7 +62,7 @@ public class DeleteProcessor extends DMLProcessor {
         Index pkIndex = context.table.getPrimaryKeyIncludingInternal().getIndex();
         List<List<String>> pks = PrimaryKeyParser.parsePrimaryKeys(identifiers, pkIndex);
         
-        PValue pvalue = new PValue(MString.VARCHAR.instance(Integer.MAX_VALUE, false));
+        Value value = new Value(MString.VARCHAR.instance(Integer.MAX_VALUE, false));
         Cursor cursor = null;
 
         try {
@@ -72,8 +72,8 @@ public class DeleteProcessor extends DMLProcessor {
             for (List<String> key : pks) {
                 for (int i = 0; i < key.size(); i++) {
                     String akey = key.get(i);
-                    pvalue.putString(akey, null);
-                    context.queryBindings.setPValue(i, pvalue);
+                    value.putString(akey, null);
+                    context.queryBindings.setValue(i, value);
                 }
     
                 cursor.openTopLevel();

@@ -24,8 +24,8 @@ import com.foundationdb.server.explain.*;
 import com.foundationdb.server.explain.std.TExpressionExplainer;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueSources;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.util.AkibanAppender;
 
 public final class TPreparedLiteral implements TPreparedExpression {
@@ -71,10 +71,10 @@ public final class TPreparedLiteral implements TPreparedExpression {
         return sb.toString();
     }
 
-    public TPreparedLiteral(TInstance tInstance, PValueSource value) {
+    public TPreparedLiteral(TInstance tInstance, ValueSource value) {
         if (tInstance == null) {
             this.tInstance = null;
-            this.value = PValueSources.getNullSource(null);
+            this.value = ValueSources.getNullSource(null);
         }
         else {
             this.tInstance = tInstance;
@@ -83,11 +83,11 @@ public final class TPreparedLiteral implements TPreparedExpression {
     }
 
     private final TInstance tInstance;
-    private final PValueSource value;
+    private final ValueSource value;
 
     private static class Evaluation implements TEvaluatableExpression {
         @Override
-        public PValueSource resultValue() {
+        public ValueSource resultValue() {
             return value;
         }
 
@@ -107,10 +107,10 @@ public final class TPreparedLiteral implements TPreparedExpression {
         public void with(QueryBindings bindings) {
         }
 
-        private Evaluation(PValueSource value) {
+        private Evaluation(ValueSource value) {
             this.value = value;
         }
 
-        private final PValueSource value;
+        private final ValueSource value;
     }
 }

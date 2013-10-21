@@ -25,7 +25,6 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.ColumnSelector;
@@ -37,9 +36,9 @@ import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueSources;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.server.types.texpressions.AnySubqueryTExpression;
 import com.foundationdb.server.types.texpressions.ExistsSubqueryTExpression;
@@ -130,7 +129,7 @@ public final class ExpressionGenerators {
         };
     }
 
-    public static IndexBound indexBound(RowBase row, ColumnSelector columnSelector)
+    public static IndexBound indexBound(Row row, ColumnSelector columnSelector)
     {
         return new IndexBound(row, columnSelector);
     }
@@ -145,10 +144,10 @@ public final class ExpressionGenerators {
         return new ExpressionGenerator() {
             @Override
             public TPreparedExpression getTPreparedExpression() {
-                TPreptimeValue tpv = PValueSources.fromObject(value, (TInstance)null);
+                TPreptimeValue tpv = ValueSources.fromObject(value, (TInstance) null);
                 
                 //FromObjectValueSource valueSource = new FromObjectValueSource().setReflectively(value);
-                //TPreptimeValue tpv = PValueSources.fromObject(value, valueSource.getConversionType());
+                //TPreptimeValue tpv = ValueSources.fromObject(value, valueSource.getConversionType());
                 return new TPreparedLiteral(tpv.instance(), tpv.value());
             }
         };
@@ -159,7 +158,7 @@ public final class ExpressionGenerators {
         return new ExpressionGenerator() {
             @Override
             public TPreparedExpression getTPreparedExpression() {
-                TPreptimeValue tpv = PValueSources.fromObject(value, type);
+                TPreptimeValue tpv = ValueSources.fromObject(value, type);
                 return new TPreparedLiteral(tpv.instance(), tpv.value());
             }
         };
@@ -208,18 +207,18 @@ public final class ExpressionGenerators {
                         final TEvaluatableExpression eval = expr.build();
                         return new TEvaluatableExpression() {
                             @Override
-                            public PValueSource resultValue() {
-                                return pValue;
+                            public ValueSource resultValue() {
+                                return value;
                             }
 
                             @Override
                             public void evaluate() {
                                 eval.evaluate();
-                                PValueSource inSrc = eval.resultValue();
+                                ValueSource inSrc = eval.resultValue();
                                 if (inSrc.isNull())
-                                    pValue.putNull();
+                                    value.putNull();
                                 else
-                                    pValue.putString(inSrc.getString(), null);
+                                    value.putString(inSrc.getString(), null);
                             }
 
                             @Override
@@ -237,7 +236,7 @@ public final class ExpressionGenerators {
                                 eval.with(bindings);
                             }
 
-                            private final PValue pValue = new PValue(MString.VARCHAR.instance(255, true));
+                            private final Value value = new Value(MString.VARCHAR.instance(255, true));
                         };
                     }
 

@@ -20,7 +20,7 @@ package com.foundationdb.sql.optimizer.rule.cost;
 import com.foundationdb.ais.model.*;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 
 public abstract class TreeStatistics
 {
@@ -30,7 +30,7 @@ public abstract class TreeStatistics
 
     public abstract RowType rowType();
 
-    public static TreeStatistics forTable(UserTableRowType rowType, TableRowCounts tableRowCounts)
+    public static TreeStatistics forTable(TableRowType rowType, TableRowCounts tableRowCounts)
     {
         return new TableStatistics(rowType, tableRowCounts);
     }
@@ -127,7 +127,7 @@ public abstract class TreeStatistics
     {
         public long rowCount()
         {
-            return tableRowCounts.getTableRowCount(rowType.userTable());
+            return tableRowCounts.getTableRowCount(rowType.table());
         }
 
         @Override
@@ -135,11 +135,11 @@ public abstract class TreeStatistics
         {
             // Columns
             int rowWidth = 0;
-            for (Column column : rowType.userTable().getColumnsIncludingInternal()) {
+            for (Column column : rowType.table().getColumnsIncludingInternal()) {
                 rowWidth += fieldWidth(column);
             }
             // Attempt to estimate hkey width
-            for (HKeySegment segment : rowType().userTable().hKey().segments()) {
+            for (HKeySegment segment : rowType().table().hKey().segments()) {
                 // ordinal
                 rowWidth += 1;
                 for (HKeyColumn hKeyColumn : segment.columns()) {
@@ -154,13 +154,13 @@ public abstract class TreeStatistics
             return rowType;
         }
 
-        public TableStatistics(UserTableRowType rowType, TableRowCounts tableRowCounts)
+        public TableStatistics(TableRowType rowType, TableRowCounts tableRowCounts)
         {
             super(tableRowCounts);
             this.rowType = rowType;
         }
 
-        private final UserTableRowType rowType;
+        private final TableRowType rowType;
     }
     
     private static abstract class IndexStatistics extends TreeStatistics
@@ -196,7 +196,7 @@ public abstract class TreeStatistics
         public long rowCount()
         {
             TableIndex index = (TableIndex) rowType.index();
-            UserTable table = (UserTable) index.getTable();
+            Table table = index.getTable();
             return tableRowCounts.getTableRowCount(table);
         }
 

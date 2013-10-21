@@ -24,7 +24,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 
 public final class TPreparedBoundField implements TPreparedExpression {
     
@@ -72,7 +72,7 @@ public final class TPreparedBoundField implements TPreparedExpression {
     private static class InnerEvaluation implements TEvaluatableExpression {
 
         @Override
-        public PValueSource resultValue() {
+        public ValueSource resultValue() {
             return fieldEvaluation.resultValue();
         }
 

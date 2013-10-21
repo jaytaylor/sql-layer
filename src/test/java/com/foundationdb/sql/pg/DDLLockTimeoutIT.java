@@ -19,7 +19,6 @@ package com.foundationdb.sql.pg;
 
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.error.ErrorCode;
-import com.foundationdb.server.service.dxl.DXLReadWriteLockHook;
 import com.foundationdb.server.service.lock.LockService;
 import com.foundationdb.server.service.session.Session;
 import static com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
@@ -59,10 +58,6 @@ public class DDLLockTimeoutIT extends PostgresServerITBase
         notifyAll();
     }
 
-    private DXLReadWriteLockHook getDXLLock() {
-        return DXLReadWriteLockHook.only();
-    }
-
     @Test
     public void test() throws Exception {
         int tableID = createTable(TABLE_NAME, "id int");
@@ -95,10 +90,7 @@ public class DDLLockTimeoutIT extends PostgresServerITBase
                 setState(DDLLockTimeoutIT.State.TIMEOUT_SET);
                 waitForState(DDLLockTimeoutIT.State.QUERY);
                 try {
-                    if (getDXLLock().isDDLLockEnabled())
-                        statement.executeQuery("SELECT 2+2");
-                    else
-                        statement.executeUpdate("INSERT INTO "+TABLE_NAME+" VALUES(1)");
+                    statement.executeUpdate("INSERT INTO "+TABLE_NAME+" VALUES(1)");
                     fail("Query did not time out");
                 }
                 catch (SQLException ex) {
@@ -124,17 +116,11 @@ public class DDLLockTimeoutIT extends PostgresServerITBase
         }
 
         private void doLock(Session session) throws InterruptedException {
-            if (getDXLLock().isDDLLockEnabled())
-                getDXLLock().lock(session, DXLFunction.UNSPECIFIED_DDL_WRITE, -1);
-            else
-                lockService().claimTableInterruptible(session, LockService.Mode.EXCLUSIVE, tableID);
+            lockService().claimTableInterruptible(session, LockService.Mode.EXCLUSIVE, tableID);
         }
 
         private void doUnlock(Session session) throws InterruptedException {
-            if (getDXLLock().isDDLLockEnabled())
-                getDXLLock().unlock(session, DXLFunction.UNSPECIFIED_DDL_WRITE);
-            else
-                lockService().releaseTable(session, LockService.Mode.EXCLUSIVE, tableID);
+            lockService().releaseTable(session, LockService.Mode.EXCLUSIVE, tableID);
         }
 
         @Override

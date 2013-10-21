@@ -41,9 +41,9 @@ import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueSources;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.server.types.texpressions.TValidatedScalar;
 import com.foundationdb.server.types.texpressions.TValidatedOverload;
 import com.foundationdb.sql.optimizer.TypesTranslation;
@@ -532,7 +532,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
             // constant-fold if the condition is constant
             if (conditions.size() == 1) {
-                PValueSource conditionVal = pval(conditions.get(0));
+                ValueSource conditionVal = pval(conditions.get(0));
                 if (conditionVal != null) {
                     boolean conditionMet = conditionVal.getBoolean(false);
                     return conditionMet ? thenExpr : elseExpr;
@@ -646,12 +646,12 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                             TCast colToConst = casts.cast(columnType, constType);
                             if (colToConst != null) {
                                 TPreptimeValue constValue = right.getPreptimeValue();
-                                PValueSource asColType = castValue(constToCol, constValue, columnType);
+                                ValueSource asColType = castValue(constToCol, constValue, columnType);
                                 TPreptimeValue asColTypeTpv = (asColType == null)
                                         ? null
                                         : new TPreptimeValue(columnType, asColType);
-                                PValueSource backToConstType = castValue(colToConst, asColTypeTpv, constType);
-                                if (PValueSources.areEqual(constValue.value(), backToConstType, constType)) {
+                                ValueSource backToConstType = castValue(colToConst, asColTypeTpv, constType);
+                                if (ValueSources.areEqual(constValue.value(), backToConstType, constType)) {
                                     TPreptimeValue constTpv = new TPreptimeValue(columnType, asColType);
                                     ConstantExpression constCasted = new ConstantExpression(constTpv);
                                     expression.setRight(constCasted);
@@ -799,12 +799,12 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             return expression;
         }
 
-        private static PValueSource pval(ExpressionNode expression) {
+        private static ValueSource pval(ExpressionNode expression) {
             return expression.getPreptimeValue().value();
         }
     }
 
-    private static PValueSource castValue(TCast cast, TPreptimeValue source, TInstance targetInstance) {
+    private static ValueSource castValue(TCast cast, TPreptimeValue source, TInstance targetInstance) {
         if (source == null)
             return null;
         boolean targetsMatch = targetInstance.typeClass() == cast.targetClass();
@@ -821,7 +821,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 ErrorHandlingMode.ERROR,
                 ErrorHandlingMode.ERROR
         );
-        PValue result = new PValue(targetInstance);
+        Value result = new Value(targetInstance);
         try {
             cast.evaluate(context, source.value(), result);
         } catch (Exception e) {
@@ -988,7 +988,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             return castExpression;
         }
         if (expression instanceof NullSource) {
-            PValueSource nullSource = PValueSources.getNullSource(targetInstance);
+            ValueSource nullSource = ValueSources.getNullSource(targetInstance);
             expression.setPreptimeValue(new TPreptimeValue(targetInstance, nullSource));
             return expression;
         }

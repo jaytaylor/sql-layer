@@ -23,22 +23,21 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.foundationdb.server.rowdata.IndexDef;
-import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.server.api.FixedCountLimit;
 import com.foundationdb.server.api.dml.scan.BufferFullException;
+import com.foundationdb.server.api.dml.scan.Cursor;
+import com.foundationdb.server.api.dml.scan.CursorId;
+import com.foundationdb.server.api.dml.scan.LegacyRowOutput;
 import com.foundationdb.server.api.dml.scan.ScanLimit;
+import com.foundationdb.server.error.CursorIsFinishedException;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.store.RowCollector;
 import com.foundationdb.util.GrowableByteBuffer;
 import com.persistit.exception.PersistitException;
 import org.junit.Assert;
 import org.junit.Test;
-
-import com.foundationdb.server.api.dml.scan.Cursor;
-import com.foundationdb.server.api.dml.scan.CursorId;
-import com.foundationdb.server.api.dml.scan.LegacyRowOutput;
-import com.foundationdb.server.error.CursorIsFinishedException;
-import com.foundationdb.server.error.InvalidOperationException;
-import com.foundationdb.server.store.RowCollector;
 
 public final class BasicDMLFunctionsTest {
     
@@ -128,7 +127,7 @@ public final class BasicDMLFunctionsTest {
         }
 
         @Override
-        public IndexDef getIndexDef() {
+        public TableIndex getPredicateIndex() {
             throw new UnsupportedOperationException();
         }
 

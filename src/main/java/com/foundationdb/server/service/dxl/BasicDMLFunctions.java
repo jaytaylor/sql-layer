@@ -29,7 +29,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import com.foundationdb.ais.model.*;
 import com.foundationdb.server.AkServerUtil;
-import com.foundationdb.server.rowdata.IndexDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.TableStatistics;
@@ -130,7 +129,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     public TableStatistics getTableStatistics(Session session, int tableId, boolean updateFirst)
     {
         logger.trace("stats for {} updating: {}", tableId, updateFirst);
-        UserTable table = (UserTable)ddlFunctions.getTable(session, tableId);
+        Table table = ddlFunctions.getTable(session, tableId);
         if (updateFirst) {
             ddlFunctions.updateTableStatistics(session, table.getName(), null);
         }
@@ -656,18 +655,18 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                 }
             }
             else {
-                IndexDef indexDef = rc.getIndexDef();
-                if (indexDef == null) {
-                    Index index = ddlFunctions.getRowDef(session, rc.getTableId()).getPKIndex();
-                    indexDef = index != null ? index.indexDef() : null;
+                TableIndex index = rc.getPredicateIndex();
+                if (index == null) {
+                    index = ddlFunctions.getRowDef(session, rc.getTableId()).getPKIndex();
                 }
-                if (indexDef != null) {
-                    assert indexDef.getIndex().isTableIndex();
-                    TableIndex index = (TableIndex) indexDef.getIndex();
+                if (index != null) {
                     if (index.getTable().getTableId() != tableId) {
                         continue;
                     }
-                    for (int field : indexDef.getFields()) {
+                    int nkeys = index.getKeyColumns().size();
+                    IndexRowComposition indexRowComposition = index.indexRowComposition();
+                    for (int i = 0; i < nkeys; i++) {
+                        int field = indexRowComposition.getFieldPosition(i);
                         if (columnSelector.includesColumn(field)
                                 && !AkServerUtil.equals(oldRow.get(field), newRow.get(field)))
                         {
@@ -682,12 +681,12 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
     private boolean isHKeyModified(Session session, NewRow oldRow, NewRow newRow, ColumnSelector columns, int tableId)
     {
-        UserTable userTable = ddlFunctions.getAIS(session).getUserTable(tableId);
-        HKey hKey = userTable.hKey();
+        Table table = ddlFunctions.getAIS(session).getTable(tableId);
+        HKey hKey = table.hKey();
         for (HKeySegment segment : hKey.segments()) {
             for (HKeyColumn hKeyColumn : segment.columns()) {
                 Column column = hKeyColumn.column();
-                if (column.getTable() != userTable) {
+                if (column.getTable() != table) {
                     continue;
                 }
                 int pos = column.getPosition();
@@ -700,32 +699,32 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     }
 
     /**
-     * Determine if a UserTable can be truncated 'quickly' through the Store interface.
+     * Determine if a Table can be truncated 'quickly' through the Store interface.
      * This is possible if the entire group can be truncated. Specifically, all other
      * tables in the group must have no rows.
      * @param session Session to operation on
-     * @param userTable UserTable to determine if a fast truncate is possible on
+     * @param table Table to determine if a fast truncate is possible on
      * @param descendants <code>true</code> to ignore descendants of
-     * <code>userTable</code> in the check
+     * <code>table</code> in the check
      * @return true if store.truncateGroup() used, false otherwise
      * @throws Exception 
      */
-    private boolean canFastTruncate(Session session, UserTable userTable, boolean descendants) {
-        if(!userTable.getFullTextIndexes().isEmpty()) {
+    private boolean canFastTruncate(Session session, Table table, boolean descendants) {
+        if(!table.getFullTextIndexes().isEmpty()) {
             return false;
         }
-        List<UserTable> tableList = new ArrayList<>();
-        tableList.add(userTable.getGroup().getRoot());
+        List<Table> tableList = new ArrayList<>();
+        tableList.add(table.getGroup().getRoot());
         while(!tableList.isEmpty()) {
-            UserTable table = tableList.remove(tableList.size() - 1);
-            if(table != userTable) {
-                TableStatistics stats = getTableStatistics(session, table.getTableId(), false);
+            Table aTable = tableList.remove(tableList.size() - 1);
+            if(aTable != table) {
+                TableStatistics stats = getTableStatistics(session, aTable.getTableId(), false);
                 if(stats.getRowCount() > 0) {
                     return false;
                 }
             }
-            if((table != userTable) || !descendants) {
-                for(Join join : table.getChildJoins()) {
+            if((aTable != table) || !descendants) {
+                for(Join join : aTable.getChildJoins()) {
                     tableList.add(join.getChild());
                 }
             }
@@ -745,7 +744,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         logger.trace("truncating tableId={}", tableId);
         final int knownAIS = ddlFunctions.getGenerationAsInt(session);
         final TableName name = ddlFunctions.getTableName(session, tableId);
-        final UserTable utable = ddlFunctions.getUserTable(session, name);
+        final Table utable = ddlFunctions.getTable(session, name);
 
         if(canFastTruncate(session, utable, descendants)) {
             store().truncateGroup(session, utable.getGroup());
@@ -760,11 +759,11 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     }
 
     private void slowTruncate(final Session session, final int knownAIS, 
-                              final UserTable utable, final int tableId,
+                              final Table utable, final int tableId,
                               final boolean descendants) {
         if (descendants) {
             for(Join join : utable.getChildJoins()) {
-                UserTable ctable = join.getChild();
+                Table ctable = join.getChild();
                 slowTruncate(session, knownAIS, ctable, ctable.getTableId(), descendants);
             }
         }

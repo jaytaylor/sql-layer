@@ -22,7 +22,7 @@ import java.util.Set;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Join;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.error.JoinToMultipleParentsException;
 
 
@@ -35,7 +35,7 @@ public class JoinToOneParent implements AISValidation {
 
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        Set<UserTable> childTables = new HashSet<>();
+        Set<Table> childTables = new HashSet<>();
         
         for (Join join : ais.getJoins().values()) {
             if (childTables.contains(join.getChild())) {

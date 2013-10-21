@@ -20,17 +20,20 @@ package com.foundationdb.qp.operator;
 import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
+import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types.pvalue.PValueTargets;
+import com.foundationdb.server.types.value.ValueTargets;
 import com.foundationdb.util.ArgumentValidation;
-import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 import static java.lang.Math.abs;
 import static java.lang.Math.min;
@@ -118,7 +121,6 @@ class Union_Ordered extends UnionBase
         ArgumentValidation.isLTE("ascending.length()", ascending.length, min(leftOrderingFields, rightOrderingFields));
         // The following assumptions will be relaxed when this operator is generalized to support inputs from different
         // indexes.
-        //ArgumentValidation.isEQ("leftRowType", leftRowType, "rightRowType", rightRowType);
         ArgumentValidation.isEQ("leftOrderingFields", leftOrderingFields, "rightOrderingFields", rightOrderingFields);
         // Setup for row comparisons
         this.fixedFields = rowType().nFields() - leftOrderingFields;
@@ -173,7 +175,7 @@ class Union_Ordered extends UnionBase
                 nextLeftRow();
                 nextRightRow();
                 closed = false;
-                if (leftRow.isEmpty() && rightRow.isEmpty()) {
+                if (leftRow == null && rightRow == null) {
                     close();
                 }
                 leftSkipRowFixed = rightSkipRowFixed = false; // Fixed fields are per iteration.
@@ -194,22 +196,22 @@ class Union_Ordered extends UnionBase
                 }
                 Row next = null;
                 if (isActive()) {
-                    assert !(leftRow.isEmpty() && rightRow.isEmpty());
+                    assert !(leftRow == null && rightRow == null);
                     int c = compareRows();
                     if (c < 0) {
-                        next = leftRow.get();
+                        next = leftRow;
                         nextLeftRow();
                     } else if (c > 0) {
-                        next = rightRow.get();
+                        next = rightRow;
                         nextRightRow();
                     } else {
                         // left and right rows match. Output at least one.
-                        next = leftRow.get();
+                        next = leftRow;
                         nextLeftRow();
                         if (!outputEqual)
                             nextRightRow();
                     }
-                    if (leftRow.isEmpty() && rightRow.isEmpty()) {
+                    if (leftRow == null && rightRow == null) {
                         close();
                     }
                 }
@@ -234,7 +236,7 @@ class Union_Ordered extends UnionBase
         {
             nextLeftRowSkip(jumpRow, fixedFields, jumpRowColumnSelector);
             nextRightRowSkip(jumpRow, fixedFields, jumpRowColumnSelector);
-            if (leftRow.isEmpty() && rightRow.isEmpty()) {
+            if (leftRow == null && rightRow == null) {
                 close();
             }
         }
@@ -244,8 +246,8 @@ class Union_Ordered extends UnionBase
         {
             CursorLifecycle.checkIdleOrActive(this);
             if (!closed) {
-                leftRow.release();
-                rightRow.release();
+                leftRow = null;
+                rightRow = null;
                 leftInput.close();
                 rightInput.close();
                 closed = true;
@@ -326,7 +328,7 @@ class Union_Ordered extends UnionBase
         private void nextLeftRow()
         {
             Row row = leftInput.next();
-            leftRow.hold(row);
+            leftRow = row;
             if (LOG_EXECUTION) {
                 LOG.debug("Union_Ordered: left {}", row);
             }
@@ -335,7 +337,7 @@ class Union_Ordered extends UnionBase
         private void nextRightRow()
         {
             Row row = rightInput.next();
-            rightRow.hold(row);
+            rightRow = row;
             if (LOG_EXECUTION) {
                 LOG.debug("Union_Ordered: right {}", row);
             }
@@ -345,13 +347,13 @@ class Union_Ordered extends UnionBase
         {
             int c;
             assert !closed;
-            assert !(leftRow.isEmpty() && rightRow.isEmpty());
-            if (leftRow.isEmpty()) {
+            assert !(leftRow == null && rightRow == null);
+            if (leftRow == null) {
                 c = 1;
-            } else if (rightRow.isEmpty()) {
+            } else if (rightRow == null) {
                 c = -1;
             } else {
-                c = leftRow.get().compareTo(rightRow.get(), fixedFields, fixedFields, fieldsToCompare);
+                c = leftRow.compareTo(rightRow, fixedFields, fixedFields, fieldsToCompare);
                 c = adjustComparison(c);
             }
             return c;
@@ -370,8 +372,8 @@ class Union_Ordered extends UnionBase
 
         private void nextLeftRowSkip(Row jumpRow, int jumpRowFixedFields, ColumnSelector jumpRowColumnSelector)
         {
-            if (leftRow.isHolding()) {
-                int c = leftRow.get().compareTo(jumpRow, fixedFields, jumpRowFixedFields, fieldsToCompare);
+            if (leftRow != null) {
+                int c = leftRow.compareTo(jumpRow, fixedFields, jumpRowFixedFields, fieldsToCompare);
                 c = adjustComparison(c);
                 if (c >= 0) return;
                 addSuffixToSkipRow(leftSkipRow(),
@@ -379,14 +381,14 @@ class Union_Ordered extends UnionBase
                                    jumpRow,
                                    jumpRowFixedFields);
                 leftInput.jump(leftSkipRow, jumpRowColumnSelector);
-                leftRow.hold(leftInput.next());
+                leftRow = leftInput.next();
             }
         }
 
         private void nextRightRowSkip(Row jumpRow, int jumpRowFixedFields, ColumnSelector jumpRowColumnSelector)
         {
-            if (rightRow.isHolding()) {
-                int c = rightRow.get().compareTo(jumpRow, fixedFields, jumpRowFixedFields, fieldsToCompare);
+            if (rightRow != null) {
+                int c = rightRow.compareTo(jumpRow, fixedFields, jumpRowFixedFields, fieldsToCompare);
                 c = adjustComparison(c);
                 if (c >= 0) return;
                 addSuffixToSkipRow(rightSkipRow(),
@@ -394,7 +396,7 @@ class Union_Ordered extends UnionBase
                                    jumpRow,
                                    jumpRowFixedFields);
                 rightInput.jump(rightSkipRow, jumpRowColumnSelector);
-                rightRow.hold(rightInput.next());
+                rightRow = rightInput.next();
             }
         }
 
@@ -405,13 +407,13 @@ class Union_Ordered extends UnionBase
         {
             if (suffixRow == null) {
                 for (int f = 0; f < fieldsToCompare; f++) {
-                    skipRow.pvalueAt(skipRowFixedFields + f).putNull();
+                    skipRow.valueAt(skipRowFixedFields + f).putNull();
                 }
             } else {
                 for (int f = 0; f < fieldsToCompare; f++) {
-                    PValueTargets.copyFrom(suffixRow.pvalue(
+                    ValueTargets.copyFrom(suffixRow.value(
                             suffixRowFixedFields + f),
-                            skipRow.pvalueAt(skipRowFixedFields + f));
+                            skipRow.valueAt(skipRowFixedFields + f));
                 }
             }
         }
@@ -420,15 +422,15 @@ class Union_Ordered extends UnionBase
         {
             if (!leftSkipRowFixed) {
                 if (leftSkipRow == null)
-                    leftSkipRow = new ValuesHolderRow(rowType());
-                assert leftRow.isHolding();
+                    leftSkipRow = new ValuesHolderRow(rowType);
+                assert leftRow != null;
                 int f = 0;
                 while (f < fixedFields) {
-                    PValueTargets.copyFrom(leftRow.get().pvalue(f), leftSkipRow.pvalueAt(f));
+                    ValueTargets.copyFrom(leftRow.value(f), leftSkipRow.valueAt(f));
                     f++;
                 }
                 while (f < rowType().nFields()) {
-                    leftSkipRow.pvalueAt(f++).putNull();
+                    leftSkipRow.valueAt(f++).putNull();
                 }
                 leftSkipRowFixed = true;
             }
@@ -440,10 +442,10 @@ class Union_Ordered extends UnionBase
             if (!rightSkipRowFixed) {
                 if (rightSkipRow == null)
                     rightSkipRow = new ValuesHolderRow(rowType());
-                assert rightRow.isHolding();
+                assert rightRow != null;
                 int f = 0;
                 while (f < fixedFields) {
-                    PValueTargets.copyFrom(rightRow.get().pvalue(f), rightSkipRow.pvalueAt(f));
+                    ValueTargets.copyFrom(rightRow.value(f), rightSkipRow.valueAt(f));
                     f++;
                 }
                 while (f < rowType().nFields()) {
@@ -455,16 +457,13 @@ class Union_Ordered extends UnionBase
         }
 
         // Object state
-        
-        // Rows from each input stream are bound to the QueryContext. However, QueryContext doesn't use
-        // ShareHolders, so they are needed here.
 
         private boolean closed = true;
         private final QueryBindingsCursor bindingsCursor;
         private final Cursor leftInput;
         private final Cursor rightInput;
-        private final ShareHolder<Row> leftRow = new ShareHolder<>();
-        private final ShareHolder<Row> rightRow = new ShareHolder<>();
+        private Row leftRow;
+        private Row rightRow;
         private ValuesHolderRow leftSkipRow;
         private ValuesHolderRow rightSkipRow;
         private boolean leftSkipRowFixed;

@@ -24,11 +24,11 @@ import java.util.List;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.expressions.OverloadResolver;
 import com.foundationdb.server.expressions.OverloadResolver.OverloadResult;
 import com.foundationdb.server.types.TCast;
@@ -36,8 +36,8 @@ import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSources;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.server.types.texpressions.TCastExpression;
 import com.foundationdb.server.types.texpressions.TNullExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
@@ -48,7 +48,7 @@ import com.foundationdb.server.types.texpressions.TValidatedScalar;
 
 public class InsertGenerator extends OperatorGenerator{
 
-    private UserTable table;
+    private Table table;
     
     public InsertGenerator (AkibanInformationSchema ais) {
         super(ais);
@@ -57,7 +57,7 @@ public class InsertGenerator extends OperatorGenerator{
     @Override
     protected Operator create(TableName tableName) {
         
-        table = ais().getUserTable(tableName);
+        table = ais().getTable(tableName);
 
         RowStream stream = assembleValueScan (table);
         stream = assembleProjectTable (stream, table);
@@ -66,10 +66,10 @@ public class InsertGenerator extends OperatorGenerator{
         return stream.operator; 
     }
     
-    protected RowStream assembleProjectTable (RowStream input, UserTable table) {
+    protected RowStream assembleProjectTable (RowStream input, Table table) {
         
         int nfields = input.rowType.nFields();
-        UserTableRowType targetRowType = schema().userTableRowType(table);
+        TableRowType targetRowType = schema().tableRowType(table);
         List<TPreparedExpression> insertsP = new ArrayList<>(targetRowType.nFields());
         
         for (int i = 0; i < nfields; ++i) {
@@ -86,7 +86,7 @@ public class InsertGenerator extends OperatorGenerator{
 
             if (row[i] == null) {
                 TInstance tinst = targetRowType.typeInstanceAt(i);
-                final PValue defaultValueSource = new PValue(tinst);
+                final Value defaultValueSource = new Value(tinst);
                 defaultValueSource.putNull();
                 row[i] = new TPreparedLiteral(tinst, defaultValueSource);
             } else if (!column.tInstance().equals(row[i].resultType())) {
@@ -100,20 +100,20 @@ public class InsertGenerator extends OperatorGenerator{
                 row[i] = sequenceGenerator(sequence, column, row[i]);
             } else if (column.getDefaultValue() != null) {
                 final String defaultValue = column.getDefaultValue();
-                final PValue defaultValueSource;
+                final Value defaultValueSource;
                 TInstance tinst = targetRowType.typeInstanceAt(i);
                 TCast cast = tinst.typeClass().castFromVarchar();
                 if (cast != null) {
-                    defaultValueSource = new PValue(tinst);
+                    defaultValueSource = new Value(tinst);
                     TInstance valInst = MString.VARCHAR.instance(defaultValue.length(), false);
                     TExecutionContext executionContext = new TExecutionContext(
                             Collections.singletonList(valInst),
                             tinst, queryContext());
                     cast.evaluate(executionContext,
-                                  new PValue(MString.varcharFor(defaultValue), defaultValue),
+                                  new Value(MString.varcharFor(defaultValue), defaultValue),
                                   defaultValueSource);
                 } else {
-                    defaultValueSource = new PValue (tinst, defaultValue);
+                    defaultValueSource = new Value(tinst, defaultValue);
                 }
                 row[i] = generateIfNull (insertsP.get(i), new TPreparedLiteral(tinst, defaultValueSource));
             }
@@ -131,8 +131,8 @@ public class InsertGenerator extends OperatorGenerator{
         TInstance instance = column.tInstance();
         
         List<TPreptimeValue> input = new ArrayList<>(2);
-        input.add(PValueSources.fromObject(sequence.getSequenceName().getSchemaName(), MString.varchar()));
-        input.add(PValueSources.fromObject(sequence.getSequenceName().getTableName(), MString.varchar()));
+        input.add(ValueSources.fromObject(sequence.getSequenceName().getSchemaName(), MString.varchar()));
+        input.add(ValueSources.fromObject(sequence.getSequenceName().getTableName(), MString.varchar()));
     
         TValidatedScalar overload = resolver.get("NEXTVAL", input).getOverload();
     

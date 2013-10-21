@@ -61,10 +61,10 @@ public class InsertProfilePT extends QPProfilePTBase
         createGroupIndex(groupName, "name_salesman", "customer.name, order.salesman");
         createGroupIndex(groupName, "name_address", "customer.name, address.address");
         schema = new Schema(ais());
-        customerRowType = schema.userTableRowType(userTable(customer));
-        orderRowType = schema.userTableRowType(userTable(order));
-        itemRowType = schema.userTableRowType(userTable(item));
-        addressRowType = schema.userTableRowType(userTable(address));
+        customerRowType = schema.tableRowType(table(customer));
+        orderRowType = schema.tableRowType(table(order));
+        itemRowType = schema.tableRowType(table(item));
+        addressRowType = schema.tableRowType(table(address));
         customerNameIndexRowType = indexType(customer, "name");
         orderSalesmanIndexRowType = indexType(order, "salesman");
         itemOidIndexRowType = indexType(item, "oid");

@@ -23,7 +23,6 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.error.GroupTreeNameIsNullException;
 import com.foundationdb.server.error.IndexTreeNameIsNullException;
 import com.foundationdb.server.error.SequenceTreeNameIsNullException;
@@ -37,7 +36,7 @@ public class TreeNamesAreNotNull implements AISValidation {
 
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        for(UserTable table : ais.getUserTables().values()) {
+        for(Table table : ais.getTables().values()) {
             checkTable(table);
         }
         for(Group group : ais.getGroups().values()) {
@@ -58,13 +57,7 @@ public class TreeNamesAreNotNull implements AISValidation {
     }
 
     private static void checkTable(Table table) {
-        final Collection<TableIndex> indexes;
-        if(table.isUserTable()) {
-            indexes = ((UserTable)table).getIndexesIncludingInternal();
-        } else {
-            indexes = table.getIndexes();
-        }
-        for(Index index : indexes) {
+        for(Index index : table.getIndexesIncludingInternal()) {
             checkIndex(index);
         }
     }

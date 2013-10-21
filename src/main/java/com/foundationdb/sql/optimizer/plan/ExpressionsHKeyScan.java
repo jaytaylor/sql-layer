@@ -18,7 +18,6 @@
 package com.foundationdb.sql.optimizer.plan;
 
 import com.foundationdb.ais.model.HKey;
-import com.foundationdb.ais.model.UserTable;
 
 import java.util.ArrayList;
 import java.util.List;

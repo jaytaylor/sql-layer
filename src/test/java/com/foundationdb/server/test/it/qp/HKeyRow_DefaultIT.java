@@ -19,7 +19,7 @@ package com.foundationdb.server.test.it.qp;
 
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.HKeyRowType;
 
 import org.junit.Test;
@@ -35,9 +35,9 @@ public class HKeyRow_DefaultIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema() {
         super.setupPostCreateSchema();
-        customerHKeyRowType = schema.newHKeyRowType(userTable(customer).hKey());
-        orderHKeyRowType = schema.newHKeyRowType(userTable(order).hKey());
-        itemHKeyRowType = schema.newHKeyRowType(userTable(item).hKey());
+        customerHKeyRowType = schema.newHKeyRowType(table(customer).hKey());
+        orderHKeyRowType = schema.newHKeyRowType(table(order).hKey());
+        itemHKeyRowType = schema.newHKeyRowType(table(item).hKey());
         use(db);
     }
 
@@ -73,7 +73,7 @@ public class HKeyRow_DefaultIT extends OperatorITBase
                 coi, itemHKeyRowType, Arrays.asList(itemRowType),
                 InputPreservationOption.DISCARD_INPUT, 0);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(itemRowType, 121L, 12L),
         };
         compareRows(expected, cursor);
@@ -87,7 +87,7 @@ public class HKeyRow_DefaultIT extends OperatorITBase
                 coi, orderHKeyRowType, orderRowType,
                 InputPreservationOption.DISCARD_INPUT);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(orderRowType, 22L, 2L, "jack"),
             row(itemRowType, 221L, 22L),
             row(itemRowType, 222L, 22L),
@@ -105,9 +105,9 @@ public class HKeyRow_DefaultIT extends OperatorITBase
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
-            public RowBase[] firstExpectedRows()
+            public Row[] firstExpectedRows()
             {
-                return new RowBase[] {
+                return new Row[] {
                     row(customerRowType, 1L, "xyz"),
                 };
             }

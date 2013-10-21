@@ -30,12 +30,12 @@ public class CAOIBuilderFiller {
     public static NewAISBuilder createAndFillBuilder(String schema) {
         NewAISBuilder builder = AISBBasedBuilder.create(schema);
 
-        builder.userTable(CUSTOMER_TABLE).
+        builder.table(CUSTOMER_TABLE).
                 colBigInt("customer_id", false).
                 colString("customer_name", 100, false).
                 pk("customer_id");
 
-        builder.userTable(ADDRESS_TABLE).
+        builder.table(ADDRESS_TABLE).
                 colBigInt("customer_id", false).
                 colLong("instance_id", false).
                 colString("address_line1", 60, false).
@@ -44,14 +44,14 @@ public class CAOIBuilderFiller {
                 pk("customer_id", "instance_id").
                 joinTo("customer").on("customer_id", "customer_id");
 
-        builder.userTable(ORDER_TABLE).
+        builder.table(ORDER_TABLE).
                 colBigInt("order_id", false).
                 colBigInt("customer_id", false).
                 colLong("order_date", false).
                 pk("order_id").
                 joinTo("customer").on("customer_id", "customer_id");
 
-        builder.userTable(ITEM_TABLE).
+        builder.table(ITEM_TABLE).
                 colBigInt("order_id", false).
                 colBigInt("part_id", false).
                 colLong("quantity", false).
@@ -59,7 +59,7 @@ public class CAOIBuilderFiller {
                 pk("part_id").
                 joinTo("order").on("order_id", "order_id");
 
-        builder.userTable(COMPONENT_TABLE).
+        builder.table(COMPONENT_TABLE).
                 colBigInt("part_id", false).
                 colBigInt("component_id", false).
                 colLong("supplier_id", false).

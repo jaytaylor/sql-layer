@@ -21,8 +21,8 @@ import com.foundationdb.server.types.LazyList;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 
 import java.util.List;
@@ -30,7 +30,7 @@ import java.util.List;
 enum RoundingOverloadSignature {
     ONE_ARG {
         @Override
-        protected int roundToScale(LazyList<? extends PValueSource> inputs) {
+        protected int roundToScale(LazyList<? extends ValueSource> inputs) {
             return 0;
         }
 
@@ -40,15 +40,15 @@ enum RoundingOverloadSignature {
         }
 
         @Override
-        protected PValueSource getScaleOperand(List<? extends TPreptimeValue> inputs) {
+        protected ValueSource getScaleOperand(List<? extends TPreptimeValue> inputs) {
             return ZERO;
         }
 
-        private final PValueSource ZERO = new PValue(MNumeric.INT.instance(false), 0);
+        private final ValueSource ZERO = new Value(MNumeric.INT.instance(false), 0);
     },
     TWO_ARGS {
         @Override
-        protected int roundToScale(LazyList<? extends PValueSource> inputs) {
+        protected int roundToScale(LazyList<? extends ValueSource> inputs) {
             return inputs.get(1).getInt32();
         }
 
@@ -58,12 +58,12 @@ enum RoundingOverloadSignature {
         }
 
         @Override
-        protected PValueSource getScaleOperand(List<? extends TPreptimeValue> inputs) {
+        protected ValueSource getScaleOperand(List<? extends TPreptimeValue> inputs) {
             return inputs.get(1).value();
         }
     };
 
-    protected abstract int roundToScale(LazyList<? extends PValueSource> inputs);
+    protected abstract int roundToScale(LazyList<? extends ValueSource> inputs);
     protected abstract void buildInputSets(TClass arg0, TInputSetBuilder builder);
-    protected abstract PValueSource getScaleOperand(List<? extends TPreptimeValue> inputs);
+    protected abstract ValueSource getScaleOperand(List<? extends TPreptimeValue> inputs);
 }

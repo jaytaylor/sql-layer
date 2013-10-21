@@ -69,7 +69,7 @@ public abstract class IndexRowType extends AisRowType
         return index().getKeyColumns().size();
     }
 
-    public UserTableRowType tableType()
+    public TableRowType tableType()
     {
         return tableType;
     }
@@ -84,19 +84,19 @@ public abstract class IndexRowType extends AisRowType
         return this;
     }
 
-    public static IndexRowType createIndexRowType(Schema schema, UserTableRowType tableType, Index index)
+    public static IndexRowType createIndexRowType(Schema schema, TableRowType tableType, Index index)
     {
         return new Conventional(schema, tableType, index);
     }
 
     // For use by subclasses
 
-    protected IndexRowType(Schema schema, UserTableRowType tableType, Index index)
+    protected IndexRowType(Schema schema, TableRowType tableType, Index index)
     {
         super(schema, schema.nextTypeId());
         if (index.isGroupIndex()) {
             GroupIndex groupIndex = (GroupIndex) index;
-            assert groupIndex.leafMostTable() == tableType.userTable();
+            assert groupIndex.leafMostTable() == tableType.table();
         }
         this.tableType = tableType;
         this.index = index;
@@ -104,8 +104,8 @@ public abstract class IndexRowType extends AisRowType
 
     // Object state
 
-    // If index is a GroupIndex, then tableType.userTable() is the leafmost table of the GroupIndex.
-    private final UserTableRowType tableType;
+    // If index is a GroupIndex, then tableType.table() is the leafmost table of the GroupIndex.
+    private final TableRowType tableType;
     private final Index index;
 
     // Inner classes
@@ -118,7 +118,7 @@ public abstract class IndexRowType extends AisRowType
             return spatialIndexRowType == null ? this : spatialIndexRowType;
         }
 
-        public Conventional(Schema schema, UserTableRowType tableType, Index index)
+        public Conventional(Schema schema, TableRowType tableType, Index index)
         {
             super(schema, tableType, index);
             spatialIndexRowType = index.isSpatial() ? new Spatial(schema, tableType, index) : null;
@@ -138,7 +138,7 @@ public abstract class IndexRowType extends AisRowType
             return null;
         }
 
-        public Spatial(Schema schema, UserTableRowType tableType, Index index)
+        public Spatial(Schema schema, TableRowType tableType, Index index)
         {
             super(schema, tableType, index);
         }

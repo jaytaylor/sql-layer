@@ -17,8 +17,8 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.Table;
 
 import java.util.Iterator;
 
@@ -26,14 +26,14 @@ public class TableSubTreeBase<T extends TableSubTreeBase.TableNodeBase<T>>
                implements Iterable<T>
 {
     public static class TableNodeBase<T extends TableNodeBase<T>> {
-        private UserTable table;
+        private Table table;
         private T parent, firstChild, nextSibling;
 
-        public TableNodeBase(UserTable table) {
+        public TableNodeBase(Table table) {
             this.table = table;
         }
 
-        public UserTable getTable() {
+        public Table getTable() {
             return table;
         }
 

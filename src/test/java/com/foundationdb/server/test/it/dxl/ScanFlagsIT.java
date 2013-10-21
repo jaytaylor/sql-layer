@@ -18,7 +18,7 @@
 package com.foundationdb.server.test.it.dxl;
 
 import com.foundationdb.ais.model.Index;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.api.dml.scan.CursorId;
@@ -121,7 +121,7 @@ public class ScanFlagsIT extends ITBase
     {
         rowDefId = createTable("schema", "t", "id int not null primary key, idcopy int");
         createIndex("schema", "t", "idcopy", "idcopy");
-        UserTable table = super.getUserTable(rowDefId);
+        Table table = super.getTable(rowDefId);
         Index idCopyIndex = null;
         for (Index index : table.getIndexes()) {
             if (!index.isPrimaryKey()) {

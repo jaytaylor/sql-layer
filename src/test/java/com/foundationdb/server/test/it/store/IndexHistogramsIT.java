@@ -253,8 +253,8 @@ public final class IndexHistogramsIT extends ITBase {
 
     @Test
     public void edgeAnalysis() {
-        int cTable = getUserTable(SCHEMA, "customers").getTableId();
-        int oTable = getUserTable(SCHEMA, "orders").getTableId();
+        int cTable = getTable(SCHEMA, "customers").getTableId();
+        int oTable = getTable(SCHEMA, "orders").getTableId();
         int maxCid = bucketCount() * Sampler.OVERSAMPLE_FACTOR;
         insertRows(cTable, oTable, CUSTOMERS_COUNT, maxCid);
         validateHistogram("customers", PK, 1, 
@@ -294,8 +294,8 @@ public final class IndexHistogramsIT extends ITBase {
 
     @Test
     public void largeAnalysis() {
-        int cTable = getUserTable(SCHEMA, "customers").getTableId();
-        int oTable = getUserTable(SCHEMA, "orders").getTableId();
+        int cTable = getTable(SCHEMA, "customers").getTableId();
+        int oTable = getTable(SCHEMA, "orders").getTableId();
         int maxCid = bucketCount() * Sampler.OVERSAMPLE_FACTOR+1;
         insertRows(cTable, oTable, CUSTOMERS_COUNT, maxCid);
         validateHistogram("customers", PK, 1,
@@ -335,8 +335,8 @@ public final class IndexHistogramsIT extends ITBase {
 
     @Test
     public void oversampleNotEvenlyDistributed() {
-        int cTable = getUserTable(SCHEMA, "customers").getTableId();
-        int oTable = getUserTable(SCHEMA, "orders").getTableId();
+        int cTable = getTable(SCHEMA, "customers").getTableId();
+        int oTable = getTable(SCHEMA, "orders").getTableId();
         double interval = 2.02;
         double oversamples = bucketCount() * Sampler.OVERSAMPLE_FACTOR;
         int maxCid = (int) Math.round(interval * oversamples);
@@ -379,7 +379,7 @@ public final class IndexHistogramsIT extends ITBase {
                 akibanFK("cid", "customers", "cid"));
         createIndex(SCHEMA, "orders", "placed", "placed");
         // schema: GIs
-        TableName groupName = getUserTable(SCHEMA, "customers").getGroup().getName();
+        TableName groupName = getTable(SCHEMA, "customers").getGroup().getName();
         namePlacedGi = createGroupIndex(groupName, "namePlaced", "customers.name,orders.placed");
 
         // insert data
@@ -439,8 +439,8 @@ public final class IndexHistogramsIT extends ITBase {
             HistogramEntryDescription... entries
     ) {
         Index index =  PK.equals(indexName)
-                ? getUserTable(SCHEMA, tableName).getPrimaryKey().getIndex()
-                : getUserTable(SCHEMA, tableName).getIndex(indexName);
+                ? getTable(SCHEMA, tableName).getPrimaryKey().getIndex()
+                : getTable(SCHEMA, tableName).getIndex(indexName);
         validateHistogram(
                 index, expectedColumns,
                 entries

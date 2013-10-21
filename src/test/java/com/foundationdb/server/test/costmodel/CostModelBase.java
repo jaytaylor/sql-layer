@@ -21,7 +21,7 @@ import com.foundationdb.ais.model.*;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -44,27 +44,27 @@ public class CostModelBase extends ApiTestBase
         disableTaps();
     }
 
-    protected Group group(int userTableId)
+    protected Group group(int tableId)
     {
-        return getRowDef(userTableId).table().getGroup();
+        return getRowDef(tableId).table().getGroup();
     }
 
-    protected UserTable userTable(int userTableId)
+    protected Table table(int tableId)
     {
-        return getRowDef(userTableId).userTable();
+        return getRowDef(tableId).table();
     }
 
-    protected IndexRowType indexType(int userTableId, String... searchIndexColumnNamesArray)
+    protected IndexRowType indexType(int tableId, String... searchIndexColumnNamesArray)
     {
-        UserTable userTable = userTable(userTableId);
-        for (Index index : userTable.getIndexesIncludingInternal()) {
+        Table table = table(tableId);
+        for (Index index : table.getIndexesIncludingInternal()) {
             List<String> indexColumnNames = new ArrayList<>();
             for (IndexColumn indexColumn : index.getKeyColumns()) {
                 indexColumnNames.add(indexColumn.getColumn().getName());
             }
             List<String> searchIndexColumnNames = Arrays.asList(searchIndexColumnNamesArray);
             if (searchIndexColumnNames.equals(indexColumnNames)) {
-                return schema.userTableRowType(userTable(userTableId)).indexRowType(index);
+                return schema.tableRowType(table(tableId)).indexRowType(index);
             }
         }
         return null;
@@ -88,7 +88,7 @@ public class CostModelBase extends ApiTestBase
         };
     }
 
-    protected RowBase row(RowType rowType, Object... fields)
+    protected Row row(RowType rowType, Object... fields)
     {
         return new TestRow(rowType, fields);
     }

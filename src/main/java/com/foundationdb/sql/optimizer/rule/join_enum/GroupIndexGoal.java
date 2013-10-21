@@ -663,7 +663,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     /** Get an expression form of the given group column. */
     protected static ExpressionNode getColumnExpression(TableSource leafMostTable,
                                                         Column column) {
-        UserTable indexTable = column.getUserTable();
+        Table indexTable = column.getTable();
         for (TableSource table = leafMostTable;
              null != table;
              table = table.getParentTable()) {
@@ -1863,7 +1863,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         FullTextIndex foundIndex = null;
         TableSource foundTable = null;
         find_index:
-        for (FullTextIndex index : textFields.get(0).getColumn().getColumn().getUserTable().getFullTextIndexes()) {
+        for (FullTextIndex index : textFields.get(0).getColumn().getColumn().getTable().getFullTextIndexes()) {
             TableSource indexTable = null;
             for (FullTextField textField : textFields) {
                 Column column = textField.getColumn().getColumn();
@@ -1875,7 +1875,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                         }
                         found = true;
                         if ((indexTable == null) &&
-                            (indexColumn.getColumn().getUserTable() == index.getIndexedTable())) {
+                            (indexColumn.getColumn().getTable() == index.getIndexedTable())) {
                             indexTable = (TableSource)textField.getColumn().getTable();
                         }
                         break;

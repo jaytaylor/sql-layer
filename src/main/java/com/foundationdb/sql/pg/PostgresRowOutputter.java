@@ -36,7 +36,7 @@ public class PostgresRowOutputter extends PostgresOutputter<Row>
         for (int i = 0; i < ncols; i++) {
             PostgresType type = columnTypes.get(i);
             boolean binary = context.isColumnBinary(i);
-            ByteArrayOutputStream bytes = encoder.encodePValue(row.pvalue(i), type, binary);
+            ByteArrayOutputStream bytes = encoder.encodeValue(row.value(i), type, binary);
             if (bytes == null) {
                 messenger.writeInt(-1);
             }

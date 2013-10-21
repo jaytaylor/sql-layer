@@ -22,7 +22,7 @@ import java.util.HashSet;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Index;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.sql.Main;
 import com.foundationdb.server.service.dxl.DXLService;
 import com.foundationdb.server.service.session.Session;
@@ -78,7 +78,7 @@ public class ManageMXBeanImpl implements ManageMXBean {
 
     @Override
     public String getVersionString() {
-        return Main.VERSION_STRING;
+        return Main.VERSION_INFO.versionLong;
     }
 
     private Store getStore() {
@@ -115,7 +115,7 @@ public class ManageMXBeanImpl implements ManageMXBean {
     private Collection<Index> gatherIndexes(Session session, String arg) {
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
         Collection<Index> indexes = new HashSet<>();
-        for(UserTable table : ais.getUserTables().values()) {
+        for(Table table : ais.getTables().values()) {
             for(Index index : table.getIndexes()) {
                 if(isIndexSelected(index, arg)) {
                     indexes.add(index);

@@ -20,9 +20,5 @@ package com.foundationdb.sql;
 public interface LayerInfoInterface
 {
     String getServerName();
-    String getServerVersion();
-    String getServerShortVersion();
-    int getServerMajorVersion();
-    int getServerMinorVersion();
-    int getServerPatchVersion();
+    LayerVersionInfo getVersionInfo();
 }

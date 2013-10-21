@@ -33,8 +33,8 @@ import com.foundationdb.ais.model.NopVisitor;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.ais.util.ChangedTableDescription;
@@ -61,6 +61,8 @@ import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.session.Session.Key;
 import com.foundationdb.server.service.session.SessionService;
 import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.service.transaction.TransactionService.Callback;
+import com.foundationdb.server.service.transaction.TransactionService.CallbackType;
 import com.foundationdb.server.util.ReadWriteMap;
 import com.foundationdb.util.ArgumentValidation;
 import com.persistit.exception.PersistitException;
@@ -145,7 +147,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     /** Run the given callable under a transaction, retrying if necessary. Session should be closed when finished. */
     protected abstract <V> V transactionally(Session session, ThrowingCallable<V> callable);
     /** Remove any persisted table status state associated with the given table. */
-    protected abstract void clearTableStatus(Session session, UserTable table);
+    protected abstract void clearTableStatus(Session session, Table table);
     /** Called immediately prior to {@link #saveAISChangeWithRowDefs} when renaming a table */
     protected abstract void renamingTable(Session session, TableName oldName, TableName newName);
 
@@ -185,13 +187,13 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     }
 
     @Override
-    public TableName registerStoredInformationSchemaTable(final UserTable newTable, final int version) {
+    public TableName registerStoredInformationSchemaTable(final Table newTable, final int version) {
         transactionally(sessionService.createSession(), new ThrowingRunnable() {
             @Override
             public void run(Session session) throws PersistitException {
                 final TableName newName = newTable.getName();
                 checkSystemSchema(newName, true);
-                UserTable curTable = getAis(session).getUserTable(newName);
+                Table curTable = getAis(session).getTable(newName);
                 if(curTable != null) {
                     Integer oldVersion = curTable.getVersion();
                     if(oldVersion != null && oldVersion == version) {
@@ -208,7 +210,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     }
 
     @Override
-    public TableName registerMemoryInformationSchemaTable(final UserTable newTable, final MemoryTableFactory factory) {
+    public TableName registerMemoryInformationSchemaTable(final Table newTable, final MemoryTableFactory factory) {
         if(factory == null) {
             throw new IllegalArgumentException("MemoryTableFactory may not be null");
         }
@@ -234,7 +236,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     }
 
     @Override
-    public TableName createTableDefinition(Session session, UserTable newTable) {
+    public TableName createTableDefinition(Session session, Table newTable) {
         return createTableCommon(session, newTable, false, null, null);
     }
 
@@ -244,7 +246,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         checkTableName(session, newName, false, false);
 
         final AkibanInformationSchema newAIS = AISCloner.clone(getAis(session));
-        final UserTable newTable = newAIS.getUserTable(currentName);
+        final Table newTable = newAIS.getTable(currentName);
         // Rename does not affect scan or modify data, bumping version not required
 
         AISTableNameChanger nameChanger = new AISTableNameChanger(newTable);
@@ -346,13 +348,13 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             if(!oldName.equals(newName)) {
                 checkTableName(session, newName, false, false);
             }
-            UserTable newTable = desc.getNewDefinition();
+            Table newTable = desc.getNewDefinition();
             if(newTable != null) {
                 checkJoinTo(newTable.getParentJoin(), newName, false);
             }
             schemas.add(oldName.getSchemaName());
             schemas.add(newName.getSchemaName());
-            tableIDs.add(oldAIS.getUserTable(oldName).getTableId());
+            tableIDs.add(oldAIS.getTable(oldName).getTableId());
         }
 
         AISMerge merge = AISMerge.newForModifyTable(getNameGenerator(session, false), getAis(session), alteredTables);
@@ -366,14 +368,14 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         // Although ugly, it is safe because accumulators are transactional.
         for(ChangedTableDescription desc : alteredTables) {
             if(desc.isNewGroup()) {
-                UserTable newTable = newAIS.getUserTable(desc.getOldName());
+                Table newTable = newAIS.getTable(desc.getOldName());
                 newTable.setOrdinal(null);
             }
         }
         // Two passes to ensure all tables in a group are reset before beginning assignment
         for(ChangedTableDescription desc : alteredTables) {
             if(desc.isNewGroup()) {
-                UserTable newTable = newAIS.getUserTable(desc.getOldName());
+                Table newTable = newAIS.getTable(desc.getOldName());
                 assignNewOrdinal(newTable);
             }
         }
@@ -527,7 +529,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     @Override
     public boolean hasTableChanged(Session session, int tableID) {
-        UserTable table = getAis(session).getUserTable(tableID);
+        Table table = getAis(session).getTable(tableID);
         if(table == null) {
             throw new IllegalStateException("Unknown table: " + tableID);
         }
@@ -559,7 +561,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     // Internal methods
     //
 
-    private TableName createTableCommon(Session session, UserTable newTable, boolean isInternal,
+    private TableName createTableCommon(Session session, Table newTable, boolean isInternal,
                                         Integer version, MemoryTableFactory factory) {
         final TableName newName = newTable.getName();
         checkTableName(session, newName, false, isInternal);
@@ -575,7 +577,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         AISMerge merge = AISMerge.newForAddTable(getNameGenerator(session, factory != null), getAis(session), newTable);
         merge.merge();
         AkibanInformationSchema newAIS = merge.getAIS();
-        UserTable mergedTable = newAIS.getUserTable(newName);
+        Table mergedTable = newAIS.getTable(newName);
 
         if(version == null) {
             version = 0; // New user or memory table
@@ -598,7 +600,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     private void dropTableCommon(Session session, TableName tableName, final DropBehavior dropBehavior,
                                  final boolean isInternal, final boolean mustBeMemory) {
         checkTableName(session, tableName, true, isInternal);
-        final UserTable table = getAis(session).getUserTable(tableName);
+        final Table table = getAis(session).getTable(tableName);
 
         final List<TableName> tables = new ArrayList<>();
         final Set<String> schemas = new HashSet<>();
@@ -608,20 +610,20 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         // Collect all tables in branch below this point
         table.traverseTableAndDescendants(new NopVisitor() {
             @Override
-            public void visitUserTable(UserTable userTable) {
-                if(mustBeMemory && !userTable.hasMemoryTableFactory()) {
+            public void visitTable(Table table) {
+                if(mustBeMemory && !table.hasMemoryTableFactory()) {
                     throw new IllegalArgumentException("Cannot un-register non-memory table");
                 }
 
-                if((dropBehavior == DropBehavior.RESTRICT) && !userTable.getChildJoins().isEmpty()) {
+                if((dropBehavior == DropBehavior.RESTRICT) && !table.getChildJoins().isEmpty()) {
                     throw new ReferencedTableException (table);
                 }
 
-                TableName name = userTable.getName();
+                TableName name = table.getName();
                 tables.add(name);
                 schemas.add(name.getSchemaName());
-                tableIDs.add(userTable.getTableId());
-                for (Column column : userTable.getColumnsIncludingInternal()) {
+                tableIDs.add(table.getTableId());
+                for (Column column : table.getColumnsIncludingInternal()) {
                     if (column.getIdentityGenerator() != null) {
                         sequences.add(column.getIdentityGenerator().getSequenceName());
                     }
@@ -634,7 +636,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         trackBumpTableVersion(session, newAIS, tableIDs);
 
         for(Integer tableID : tableIDs) {
-            clearTableStatus(session, oldAIS.getUserTable(tableID));
+            clearTableStatus(session, oldAIS.getTable(tableID));
         }
 
         if(table.hasMemoryTableFactory()) {
@@ -727,8 +729,9 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         if(tableAndVersions == null) {
             tableAndVersions = new HashMap<>();
             session.put(TABLE_VERSIONS, tableAndVersions);
-            txnService.addCallback(session, TransactionService.CallbackType.COMMIT, bumpTableVersionCommit);
-            txnService.addCallback(session, TransactionService.CallbackType.END, cleanTableVersion);
+            txnService.addCallback(session, TransactionService.CallbackType.PRE_COMMIT, CLAIM_TABLE_VERSION_MAP);
+            txnService.addCallback(session, TransactionService.CallbackType.COMMIT, BUMP_TABLE_VERSIONS);
+            txnService.addCallback(session, TransactionService.CallbackType.END, CLEAR_TABLE_VERSIONS);
         }
 
         // Set the new table version  for tables in the NewAIS
@@ -739,7 +742,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
                 newVersion = (current == null) ? 1 : current + 1;
                 tableAndVersions.put(tableID, newVersion);
             }
-            UserTable table = newAIS.getUserTable(tableID);
+            Table table = newAIS.getTable(tableID);
             if(table != null) { // From a drop
                 table.setVersion(newVersion);
             }
@@ -748,18 +751,32 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     protected final static Session.MapKey<Integer,Integer> TABLE_VERSIONS = Session.MapKey.mapNamed("TABLE_VERSIONS");
 
+    protected final TransactionService.Callback CLAIM_TABLE_VERSION_MAP = new Callback() {
+        @Override
+        public void run(Session session, long timestamp) {
+            tableVersionMap.claimExclusive();
+            txnService.addCallback(session, CallbackType.END, RELEASE_TABLE_VERSION_MAP);
+        }
+    };
+
+    protected final TransactionService.Callback RELEASE_TABLE_VERSION_MAP = new Callback() {
+        @Override
+        public void run(Session session, long timestamp) {
+            tableVersionMap.releaseExclusive();
+        }
+    };
+
     // If the Alter table fails, make sure to clean up the TABLE_VERSION change list on end
     // If the Alter succeeds, the bumpTableVersionCommit process will clean up, and this does nothing. 
-    protected final TransactionService.Callback cleanTableVersion = new TransactionService.Callback() {
+    protected final TransactionService.Callback CLEAR_TABLE_VERSIONS = new TransactionService.Callback() {
         
         @Override
         public void run(Session session, long timestamp) {
             session.remove(TABLE_VERSIONS);
         }
     };
-    
-    
-    protected final TransactionService.Callback bumpTableVersionCommit = new TransactionService.Callback() {
+
+    protected final TransactionService.Callback BUMP_TABLE_VERSIONS = new TransactionService.Callback() {
         @Override
         public void run(Session session, long timestamp) {
             Map<Integer,Integer> tableAndVersions = session.remove(TABLE_VERSIONS);
@@ -785,7 +802,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         }
     }
 
-    private static void assignNewOrdinal(final UserTable newTable) {
+    private static void assignNewOrdinal(final Table newTable) {
         assert newTable.getOrdinal() == null : newTable + ": " + newTable.getOrdinal();
         MaxOrdinalVisitor visitor = new MaxOrdinalVisitor();
         newTable.getGroup().getRoot().traverseTableAndDescendants(visitor);
@@ -850,7 +867,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         public int maxOrdinal = 0;
 
         @Override
-        public void visitUserTable(UserTable table) {
+        public void visitTable(Table table) {
             Integer ordinal = table.getOrdinal();
             if((ordinal != null) && (ordinal > maxOrdinal)) {
                 maxOrdinal = ordinal;

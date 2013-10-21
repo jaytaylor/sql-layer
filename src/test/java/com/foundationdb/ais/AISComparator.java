@@ -21,8 +21,8 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 
 import java.util.Collection;
 import java.util.TreeSet;
@@ -46,8 +46,8 @@ public class AISComparator {
         GroupMaps rhsGroups = new GroupMaps(rhs.getGroups().values(), withIDs);
         lhsGroups.compareAndAssert(realPrefix, rhsGroups);
 
-        TableMaps lhsTables = new TableMaps(lhs.getUserTables().values(), withIDs);
-        TableMaps rhsTables = new TableMaps(rhs.getUserTables().values(), withIDs);
+        TableMaps lhsTables = new TableMaps(lhs.getTables().values(), withIDs);
+        TableMaps rhsTables = new TableMaps(rhs.getTables().values(), withIDs);
         lhsTables.compareAndAssert(realPrefix, rhsTables);
     }
 
@@ -76,8 +76,8 @@ public class AISComparator {
         public final Collection<String> columns = new TreeSet<>();
         public final Collection<String> charAndCols = new TreeSet<>();
 
-        public TableMaps(Collection<UserTable> tables, boolean withIDs) {
-            for(UserTable table : tables) {
+        public TableMaps(Collection<Table> tables, boolean withIDs) {
+            for(Table table : tables) {
                 names.add(table.getName().toString() + (withIDs ? table.getTableId() : ""));
                 for(Column column : table.getColumnsIncludingInternal()) {
                     columns.add(column.toString() + " " + column.getTypeDescription() + " " + column.getCharsetAndCollation());

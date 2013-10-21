@@ -17,7 +17,7 @@
 
 package com.foundationdb.qp.operator;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.exec.Plannable;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.util.tap.InOutTap;
@@ -56,7 +56,7 @@ public abstract class Operator implements Plannable
 
     /**
      * Find the derived types created by this operator and its inputs. A <i>derived type</i> is a type generated
-     * by an operator, and as such, does not correspond to an AIS UserTable or Index.
+     * by an operator, and as such, does not correspond to an AIS Table or Index.
      * @param derivedTypes Derived types created by this operator or input operators are added to derivedTypes.
      */
     public void findDerivedTypes(Set<RowType> derivedTypes)
@@ -89,7 +89,7 @@ public abstract class Operator implements Plannable
 
     // For use by subclasses
 
-    protected int ordinal(UserTable table)
+    protected int ordinal(Table table)
     {
         return table.getOrdinal();
     }

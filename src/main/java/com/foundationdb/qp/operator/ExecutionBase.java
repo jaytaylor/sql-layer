@@ -17,7 +17,7 @@
 
 package com.foundationdb.qp.operator;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 
 public abstract class ExecutionBase
 {
@@ -26,7 +26,7 @@ public abstract class ExecutionBase
         return context.getStore();
     }
 
-    protected StoreAdapter adapter(UserTable name)
+    protected StoreAdapter adapter(Table name)
     {
         return context.getStore(name);
     }

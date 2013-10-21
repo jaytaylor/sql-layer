@@ -28,8 +28,8 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.value.Value;
 import com.foundationdb.sql.TestBase;
-import com.foundationdb.server.types.pvalue.PValue;
 
 import com.foundationdb.junit.NamedParameterizedRunner;
 import com.foundationdb.junit.Parameterization;
@@ -108,10 +108,10 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
                 }
             };
         QueryBindings queryBindings = queryContext.createBindings();
-        queryBindings.setPValue(0, new PValue(MString.varcharFor(SCHEMA_NAME), SCHEMA_NAME));
-        queryBindings.setPValue(1, new PValue(MString.varcharFor(GROUP_NAME), GROUP_NAME));
+        queryBindings.setValue(0, new Value(MString.varcharFor(SCHEMA_NAME), SCHEMA_NAME));
+        queryBindings.setValue(1, new Value(MString.varcharFor(GROUP_NAME), GROUP_NAME));
         if (multiple)
-            queryBindings.setPValue(2, new PValue(MNumeric.INT.instance(false), 10));
+            queryBindings.setValue(2, new Value(MNumeric.INT.instance(false), 10));
 
         DirectObjectCursor cursor = plan.cursor(queryContext, queryBindings);
         

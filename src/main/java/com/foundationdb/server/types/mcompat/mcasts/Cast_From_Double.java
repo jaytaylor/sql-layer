@@ -23,28 +23,28 @@ import com.foundationdb.server.types.TCastPath;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 
 public final class Cast_From_Double {
 
     public static final TCast FLOAT_TO_DOUBLE = new TCastBase(MApproximateNumber.FLOAT, MApproximateNumber.DOUBLE) {
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
             target.putDouble(source.getFloat());
         }
     };
 
     public static final TCast FLOAT_UNSIGNED_TO_DOUBLE = new TCastBase(MApproximateNumber.FLOAT_UNSIGNED, MApproximateNumber.DOUBLE) {
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
             target.putDouble(source.getFloat());
         }
     };
 
     public static final TCast DOUBLE_UNSIGNED_TO_DOUBLE = new TCastBase(MApproximateNumber.DOUBLE_UNSIGNED, MApproximateNumber.DOUBLE) {
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
             target.putDouble(source.getDouble());
         }
     };
@@ -69,7 +69,7 @@ public final class Cast_From_Double {
 
     public static final TCast TO_FLOAT = new TCastBase(MApproximateNumber.DOUBLE, MApproximateNumber.FLOAT) {
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
             double orig = source.getDouble();
             double positive = Math.abs(orig);
             if (positive > Float.MAX_VALUE) {
@@ -82,7 +82,7 @@ public final class Cast_From_Double {
 
     public static final TCast TO_FLOAT_UNSIGNED = new TCastBase(MApproximateNumber.DOUBLE, MApproximateNumber.FLOAT_UNSIGNED) {
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
             double orig = source.getDouble();
             if (orig < 0) {
                 context.reportTruncate(Double.toString(orig), "0");
@@ -98,7 +98,7 @@ public final class Cast_From_Double {
 
     public static final TCast TO_DOUBLE_UNSIGNED = new TCastBase(MApproximateNumber.DOUBLE, MApproximateNumber.DOUBLE_UNSIGNED) {
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
             double orig = source.getDouble();
             if (orig < 0) {
                 context.reportTruncate(Double.toString(orig), "0");

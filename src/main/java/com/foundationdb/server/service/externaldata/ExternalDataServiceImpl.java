@@ -20,7 +20,7 @@ package com.foundationdb.server.service.externaldata;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.CacheValueGenerator;
 import com.foundationdb.ais.model.Column;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
@@ -44,7 +44,7 @@ import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValue;
+import com.foundationdb.server.types.value.Value;
 import com.foundationdb.util.AkibanAppender;
 
 import com.google.inject.Inject;
@@ -88,8 +88,8 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
         this.serviceManager = serviceManager;
     }
 
-    private UserTable getTable(AkibanInformationSchema ais, String schemaName, String tableName) {
-        UserTable table = ais.getUserTable(schemaName, tableName);
+    private Table getTable(AkibanInformationSchema ais, String schemaName, String tableName) {
+        Table table = ais.getTable(schemaName, tableName);
         if (table == null) {
             // TODO: Consider sending in-band as JSON.
             throw new NoSuchTableException(schemaName, tableName);
@@ -97,18 +97,15 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
         return table;
     }
 
-    private StoreAdapter getAdapter(Session session, UserTable table, Schema schema) {
+    private StoreAdapter getAdapter(Session session, Table table, Schema schema) {
         if (table.hasMemoryTableFactory())
             return new MemoryAdapter(schema, session, configService);
-        StoreAdapter adapter = session.get(StoreAdapter.STORE_ADAPTER_KEY);
-        if (adapter == null)
-            adapter = store.createAdapter(session, schema);
-        return adapter;
+        return store.createAdapter(session, schema);
     }
 
     private void dumpAsJson(Session session,
                             PrintWriter writer,
-                            UserTable table,
+                            Table table,
                             List<List<String>> keys,
                             int depth,
                             boolean withTransaction,
@@ -139,12 +136,12 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
             if (keys == null) {
                 begun = json.writeRows(cursor, appender, "\n", rowWriter);
             } else {
-                PValue pvalue = new PValue(MString.VARCHAR.instance(Integer.MAX_VALUE, false));
+                Value value = new Value(MString.VARCHAR.instance(Integer.MAX_VALUE, false));
                 for (List<String> key : keys) {
                     for (int i = 0; i < key.size(); i++) {
                         String akey = key.get(i);
-                        pvalue.putString(akey, null);
-                        queryBindings.setPValue(i, pvalue);
+                        value.putString(akey, null);
+                        queryBindings.setValue(i, value);
                     }
                     if (json.writeRows(cursor, appender, begun ? ",\n" : "\n", rowWriter))
                         begun = true;
@@ -172,7 +169,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                               String schemaName, String tableName,
                               int depth, boolean withTransaction) {
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-        UserTable table = getTable(ais, schemaName, tableName);
+        Table table = getTable(ais, schemaName, tableName);
         logger.debug("Writing all of {}", table);
         PlanGenerator generator = ais.getCachedValue(this, CACHED_PLAN_GENERATOR);
         Operator plan = generator.generateScanPlan(table);
@@ -185,7 +182,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                                  List<List<String>> keys, int depth,
                                  boolean withTransaction) {
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-        UserTable table = getTable(ais, schemaName, tableName);
+        Table table = getTable(ais, schemaName, tableName);
         logger.debug("Writing from {}: {}", table, keys);
         PlanGenerator generator = ais.getCachedValue(this, CACHED_PLAN_GENERATOR);
         Operator plan = generator.generateBranchPlan(table);
@@ -198,7 +195,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                                  Operator scan, RowType scanType, int depth,
                                  boolean withTransaction) {
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-        UserTable table = getTable(ais, schemaName, tableName);
+        Table table = getTable(ais, schemaName, tableName);
         logger.debug("Writing from {}: {}", table, scan);
         PlanGenerator generator = ais.getCachedValue(this, CACHED_PLAN_GENERATOR);
         Operator plan = generator.generateBranchPlan(table, scan, scanType);
@@ -208,7 +205,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     @Override
     public long loadTableFromCsv(Session session, InputStream inputStream, 
                                  CsvFormat format, long skipRows,
-                                 UserTable toTable, List<Column> toColumns,
+                                 Table toTable, List<Column> toColumns,
                                  long commitFrequency, int maxRetries,
                                  QueryContext context) 
             throws IOException {
@@ -223,7 +220,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     @Override
     public long loadTableFromMysqlDump(Session session, InputStream inputStream, 
                                        String encoding,
-                                       UserTable toTable, List<Column> toColumns,
+                                       Table toTable, List<Column> toColumns,
                                        long commitFrequency, int maxRetries,
                                        QueryContext context) 
             throws IOException {

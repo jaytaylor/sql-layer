@@ -324,6 +324,7 @@ public class PostgresServerConnection extends ServerSessionBase
             }
             server.removeConnection(sessionId);
             reqs.monitor().deregisterSessionMonitor(sessionMonitor, session);
+            logger.debug("Disconnect");
         }
     }
 
@@ -522,7 +523,7 @@ public class PostgresServerConnection extends ServerSessionBase
     // This is enough to make the JDBC driver happy.
     protected static final String[] INITIAL_STATUS_SETTINGS = {
         "client_encoding", "server_encoding", "server_version", "session_authorization",
-        "DateStyle"
+        "DateStyle", "integer_datetimes"
     };
 
     protected void authenticationOkay() throws IOException {
@@ -818,7 +819,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 boolean binary = false;
                 if ((paramsBinary != null) && (i < paramsBinary.length))
                     binary = paramsBinary[i];
-                valueDecoder.decodePValue(params[i], pgType, binary, bindings, i);
+                valueDecoder.decodeValue(params[i], pgType, binary, bindings, i);
             }
         }
         bound.setBindings(bindings);
@@ -940,25 +941,11 @@ public class PostgresServerConnection extends ServerSessionBase
     // When the AIS changes, throw everything away, since it might
     // point to obsolete objects.
     protected void updateAIS(PostgresQueryContext context) {
-        boolean locked = false;
-        try {
-            if (context != null) {
-                // If there is long-running DDL like creating an index, this is almost
-                // always where other queries will lock.
-                context.lock(DXLFunction.UNSPECIFIED_DDL_READ);
-                locked = true;
-            }
-            DDLFunctions ddl = reqs.dxl().ddlFunctions();
-            AkibanInformationSchema newAIS = ddl.getAIS(session);
-            if ((ais != null) && (ais.getGeneration() == newAIS.getGeneration()))
-                return;             // Unchanged.
-            ais = newAIS;
-        }
-        finally {
-            if (locked) {
-                context.unlock(DXLFunction.UNSPECIFIED_DDL_READ);
-            }
-        }
+        DDLFunctions ddl = reqs.dxl().ddlFunctions();
+        AkibanInformationSchema newAIS = ddl.getAIS(session);
+        if ((ais != null) && (ais.getGeneration() == newAIS.getGeneration()))
+            return;             // Unchanged.
+        ais = newAIS;
         rebuildCompiler();
     }
 
@@ -1332,6 +1319,8 @@ public class PostgresServerConnection extends ServerSessionBase
             return "ISO, MDY";
         else if ("transaction_isolation".equals(key))
             return "serializable";
+        else if ("integer_datetimes".equals(key))
+            return "on";
         else
             return null;
     }

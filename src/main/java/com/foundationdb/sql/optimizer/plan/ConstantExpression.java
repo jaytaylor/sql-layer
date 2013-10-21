@@ -24,8 +24,8 @@ import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.StringFactory;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueSources;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.optimizer.TypesTranslation;
 import com.foundationdb.sql.parser.ValueNode;
@@ -42,13 +42,13 @@ public class ConstantExpression extends BaseExpression
 
     public static ConstantExpression typedNull(DataTypeDescriptor sqlType, ValueNode sqlSource, TInstance tInstance) {
         if (sqlType == null) {
-            PValueSource nullSource = PValueSources.getNullSource(null);
+            ValueSource nullSource = ValueSources.getNullSource(null);
             ConstantExpression result = new ConstantExpression(new TPreptimeValue(null, nullSource));
             return result;
         }
         ConstantExpression result = new ConstantExpression((Object)null, sqlType, sqlSource);
         if (tInstance != null) {
-            PValueSource nullSource = PValueSources.getNullSource(tInstance);
+            ValueSource nullSource = ValueSources.getNullSource(tInstance);
             result.setPreptimeValue(new TPreptimeValue(tInstance, nullSource));
         } else {
             result.setPreptimeValue(new TPreptimeValue());
@@ -70,7 +70,7 @@ public class ConstantExpression extends BaseExpression
                    StringFactory.NULL_COLLATION_ID, 
                    tInstance.nullability());
         }
-        this.preptimeValue = PValueSources.fromObject(value,tInstance);
+        this.preptimeValue = ValueSources.fromObject(value, tInstance);
     }
    
     public ConstantExpression(TPreptimeValue preptimeValue) {
@@ -82,7 +82,7 @@ public class ConstantExpression extends BaseExpression
     @Override
     public TPreptimeValue getPreptimeValue() {
         if (preptimeValue == null) {
-            this.preptimeValue = PValueSources.fromObject(value, (TInstance)null);
+            this.preptimeValue = ValueSources.fromObject(value, (TInstance) null);
         }
         return preptimeValue;
     }
@@ -120,10 +120,10 @@ public class ConstantExpression extends BaseExpression
 
     public Object getValue() {
         if (value == null && preptimeValue != null) {
-            PValueSource pValueSource = preptimeValue.value();
-            if (pValueSource == null || pValueSource.isNull())
+            ValueSource valueSource = preptimeValue.value();
+            if (valueSource == null || valueSource.isNull())
                 return null;
-            value = PValueSources.toObject(pValueSource);
+            value = ValueSources.toObject(valueSource);
         }
         return value;
     }
@@ -163,14 +163,14 @@ public class ConstantExpression extends BaseExpression
 
     @Override
     public String toString() {
-        PValueSource valueSource;
+        ValueSource valueSource;
         TInstance tInstance;
 
         if (preptimeValue != null) {
             valueSource = preptimeValue.value();
             tInstance = preptimeValue.instance();
         } else {
-            valueSource = PValueSources.fromObject(value, (TInstance)null).value();
+            valueSource = ValueSources.fromObject(value, (TInstance) null).value();
             tInstance = (valueSource == null? null : valueSource.tInstance());
         }
         if (valueSource == null || valueSource.isNull())

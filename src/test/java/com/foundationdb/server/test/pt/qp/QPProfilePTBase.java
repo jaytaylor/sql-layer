@@ -22,17 +22,16 @@ import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Limit;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.qp.persistitadapter.PersistitAdapter;
-import com.foundationdb.qp.persistitadapter.PersistitGroupRow;
-import com.foundationdb.qp.persistitadapter.PersistitRowLimit;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.storeadapter.PersistitAdapter;
+import com.foundationdb.qp.storeadapter.PersistitGroupRow;
+import com.foundationdb.qp.storeadapter.PersistitRowLimit;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.ScanLimit;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager.BindingsConfigurationProvider;
 import com.foundationdb.server.store.PersistitStore;
 import com.foundationdb.server.test.it.PersistitITBase;
@@ -65,28 +64,27 @@ public class QPProfilePTBase extends PTBase
         return store.createAdapter(session(), schema);
     }
 
-    protected Group group(int userTableId)
+    protected Group group(int tableId)
     {
-        return getRowDef(userTableId).table().getGroup();
+        return getRowDef(tableId).table().getGroup();
     }
 
-    protected UserTable userTable(int userTableId)
+    protected Table table(int tableId)
     {
-        RowDef userTableRowDef = getRowDef(userTableId);
-        return userTableRowDef.userTable();
+        return getRowDef(tableId).table();
     }
 
-    protected IndexRowType indexType(int userTableId, String... searchIndexColumnNamesArray)
+    protected IndexRowType indexType(int tableId, String... searchIndexColumnNamesArray)
     {
-        UserTable userTable = userTable(userTableId);
-        for (Index index : userTable.getIndexesIncludingInternal()) {
+        Table table = table(tableId);
+        for (Index index : table.getIndexesIncludingInternal()) {
             List<String> indexColumnNames = new ArrayList<>();
             for (IndexColumn indexColumn : index.getKeyColumns()) {
                 indexColumnNames.add(indexColumn.getColumn().getName());
             }
             List<String> searchIndexColumnNames = Arrays.asList(searchIndexColumnNamesArray);
             if (searchIndexColumnNames.equals(indexColumnNames)) {
-                return schema.userTableRowType(userTable(userTableId)).indexRowType(index);
+                return schema.tableRowType(table(tableId)).indexRowType(index);
             }
         }
         return null;
@@ -110,12 +108,12 @@ public class QPProfilePTBase extends PTBase
         };
     }
 
-    protected RowBase row(RowType rowType, Object... fields)
+    protected Row row(RowType rowType, Object... fields)
     {
         return new TestRow(rowType, fields);
     }
 
-    protected RowBase row(int tableId, Object... values /* alternating field position and value */)
+    protected Row row(int tableId, Object... values /* alternating field position and value */)
     {
         NewRow niceRow = createNewRow(tableId);
         int i = 0;
@@ -133,8 +131,8 @@ public class QPProfilePTBase extends PTBase
         try {
             cursor.openTopLevel();
             count = 0;
-            List<RowBase> actualRows = new ArrayList<>(); // So that result is viewable in debugger
-            RowBase actualRow;
+            List<Row> actualRows = new ArrayList<>(); // So that result is viewable in debugger
+            Row actualRow;
             while ((actualRow = cursor.next()) != null) {
                 assertEquals(expected[count], actualRow.hKey().toString());
                 count++;

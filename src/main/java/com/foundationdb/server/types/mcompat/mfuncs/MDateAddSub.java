@@ -34,8 +34,8 @@ import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes.StringType;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 import java.util.List;
@@ -143,7 +143,7 @@ public class MDateAddSub extends TScalarBase
             return TOverloadResult.fixed(MString.VARCHAR, 29);
         }
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             long ymd[] = new long[6];
             StringType stType;
@@ -265,7 +265,7 @@ public class MDateAddSub extends TScalarBase
             }
             
             @Override
-            long[] decode(PValueSource val, TExecutionContext context)
+            long[] decode(ValueSource val, TExecutionContext context)
             {
                 long ret[] = MDatetimes.decodeTime(val.getInt32());
                 MDatetimes.timeToDatetime(ret);
@@ -277,7 +277,7 @@ public class MDateAddSub extends TScalarBase
             }
             
             @Override
-            protected void putResult(PValueTarget out, MutableDateTime par3, TExecutionContext context)
+            protected void putResult(ValueTarget out, MutableDateTime par3, TExecutionContext context)
             {
                 out.putInt32(MDatetimes.encodeDate(MDatetimes.fromJodaDatetime(par3)));
             }
@@ -285,13 +285,13 @@ public class MDateAddSub extends TScalarBase
         DATE_STR(MString.VARCHAR, 29)
         {
             @Override
-            long[] decode(PValueSource val, TExecutionContext context)
+            long[] decode(ValueSource val, TExecutionContext context)
             {
                 return FirstType.TIME_TO_DATE.decode(val, context);
             }
             
             @Override
-            protected void putResult(PValueTarget out, MutableDateTime par3, TExecutionContext context)
+            protected void putResult(ValueTarget out, MutableDateTime par3, TExecutionContext context)
             {
                 out.putString(par3.toString("YYYY-MM-dd"), null);
             }
@@ -299,13 +299,13 @@ public class MDateAddSub extends TScalarBase
         DATETIME_STR(MString.VARCHAR, 29)
         {
             @Override
-            long[] decode(PValueSource val, TExecutionContext context)
+            long[] decode(ValueSource val, TExecutionContext context)
             {
                 return FirstType.TIME_TO_DATE.decode(val, context);
             }
             
             @Override
-            protected void putResult(PValueTarget out, MutableDateTime par3, TExecutionContext context)
+            protected void putResult(ValueTarget out, MutableDateTime par3, TExecutionContext context)
             {
                 out.putString(par3.toString("YYYY-MM-dd HH:mm:ss"), null);
             }
@@ -313,13 +313,13 @@ public class MDateAddSub extends TScalarBase
         VARCHAR(MString.VARCHAR, 29)
         {
             @Override
-            long[] decode(PValueSource val, TExecutionContext context)
+            long[] decode(ValueSource val, TExecutionContext context)
             {
                 throw new AkibanInternalException("shouldn't have been used");
             }
             
             @Override
-            protected void putResult(PValueTarget out, MutableDateTime par3, TExecutionContext context)
+            protected void putResult(ValueTarget out, MutableDateTime par3, TExecutionContext context)
             {
                 throw new AkibanInternalException("shouldn't have been used");
             }
@@ -338,7 +338,7 @@ public class MDateAddSub extends TScalarBase
             }
             
             @Override
-            long[] decode(PValueSource val, TExecutionContext context)
+            long[] decode(ValueSource val, TExecutionContext context)
             {
                 long ret[] = MDatetimes.decodeDate(val.getInt32());
          
@@ -349,7 +349,7 @@ public class MDateAddSub extends TScalarBase
             }
             
             @Override
-            protected void putResult(PValueTarget out, MutableDateTime par3, TExecutionContext context)
+            protected void putResult(ValueTarget out, MutableDateTime par3, TExecutionContext context)
             {
                 out.putInt32(MDatetimes.encodeDate(MDatetimes.fromJodaDatetime(par3)));
             }
@@ -358,14 +358,14 @@ public class MDateAddSub extends TScalarBase
         TIME(MDatetimes.TIME)
         {
             @Override
-            long[] decode(PValueSource val, TExecutionContext context)
+            long[] decode(ValueSource val, TExecutionContext context)
             {
                 long ret[] = MDatetimes.decodeTime(val.getInt32());
                 return MDatetimes.isValidHrMinSec(ret, false) ? ret : null;
             }
             
             @Override
-            protected void putResult(PValueTarget out, MutableDateTime par3, TExecutionContext context)
+            protected void putResult(ValueTarget out, MutableDateTime par3, TExecutionContext context)
             {
                 out.putInt32(MDatetimes.encodeTime(MDatetimes.fromJodaDatetime(par3)));
             }
@@ -373,7 +373,7 @@ public class MDateAddSub extends TScalarBase
         DATETIME(MDatetimes.DATETIME)
         {
             @Override
-            long[] decode(PValueSource val, TExecutionContext context)
+            long[] decode(ValueSource val, TExecutionContext context)
             {
                 long ret[] = MDatetimes.decodeDatetime(val.getInt64());
                 return MDatetimes.isValidDatetime(ret) 
@@ -383,7 +383,7 @@ public class MDateAddSub extends TScalarBase
             }
             
             @Override
-            protected void putResult(PValueTarget out, MutableDateTime par3, TExecutionContext context)
+            protected void putResult(ValueTarget out, MutableDateTime par3, TExecutionContext context)
             {
                 out.putInt64(MDatetimes.encodeDatetime(MDatetimes.fromJodaDatetime(par3)));
             }
@@ -391,13 +391,13 @@ public class MDateAddSub extends TScalarBase
         TIMESTAMP(MDatetimes.TIMESTAMP)
         {
             @Override
-            long[] decode(PValueSource val, TExecutionContext context)
+            long[] decode(ValueSource val, TExecutionContext context)
             {
                 return MDatetimes.decodeTimestamp(val.getInt32(), context.getCurrentTimezone());
             }
             
             @Override
-            protected void putResult(PValueTarget out, MutableDateTime par3, TExecutionContext context)
+            protected void putResult(ValueTarget out, MutableDateTime par3, TExecutionContext context)
             {
                 out.putInt32((int)MDatetimes.encodeTimetamp(par3.getMillis(), context));
             }
@@ -409,8 +409,8 @@ public class MDateAddSub extends TScalarBase
             this.attrs = attrs;
         }
 
-        abstract long[] decode (PValueSource val, TExecutionContext context);
-        protected abstract void putResult(PValueTarget out, MutableDateTime par3, TExecutionContext context);
+        abstract long[] decode (ValueSource val, TExecutionContext context);
+        protected abstract void putResult(ValueTarget out, MutableDateTime par3, TExecutionContext context);
         
         FirstType adjustFirstArg(TInstance ins) // to be overriden in DATE
         {
@@ -426,7 +426,7 @@ public class MDateAddSub extends TScalarBase
         INTERVAL_MILLIS(AkInterval.SECONDS)
         {
             @Override
-            protected long toMillis(PValueSource arg)
+            protected long toMillis(ValueSource arg)
             {
                 return AkInterval.secondsIntervalAs(arg, TimeUnit.MILLISECONDS);
             }
@@ -434,7 +434,7 @@ public class MDateAddSub extends TScalarBase
         INTERVAL_MONTH(AkInterval.MONTHS)
         {
             @Override
-            protected long toMillis(PValueSource arg)
+            protected long toMillis(ValueSource arg)
             {
                 // this return the number of months, not millis
                  return arg.getInt64();
@@ -443,7 +443,7 @@ public class MDateAddSub extends TScalarBase
         TIME(MDatetimes.TIME)
         {
             @Override
-            protected long toMillis(PValueSource arg)
+            protected long toMillis(ValueSource arg)
             {
                 int val = arg.getInt32();
                 long hms[] = MDatetimes.decodeTime(val);
@@ -455,7 +455,7 @@ public class MDateAddSub extends TScalarBase
         TIME_STRING(MString.VARCHAR)
         {
             @Override
-            protected long toMillis(PValueSource arg)
+            protected long toMillis(ValueSource arg)
             {
                 String st = arg.getString();
                 long hms[] = new long[6];
@@ -473,7 +473,7 @@ public class MDateAddSub extends TScalarBase
         SECOND(MApproximateNumber.DOUBLE)
         {
             @Override
-            protected long toMillis(PValueSource arg)
+            protected long toMillis(ValueSource arg)
             {
                 return Math.round(arg.getDouble()) * 1000L;
             }
@@ -481,7 +481,7 @@ public class MDateAddSub extends TScalarBase
         DAY(MApproximateNumber.DOUBLE)
         {
             @Override
-            protected long toMillis(PValueSource arg)
+            protected long toMillis(ValueSource arg)
             {
                 return Math.round(arg.getDouble()) * MILLS_PER_DAY;
             }
@@ -492,7 +492,7 @@ public class MDateAddSub extends TScalarBase
             type = t;
         }
         
-        protected abstract long toMillis(PValueSource arg);
+        protected abstract long toMillis(ValueSource arg);
         
         TClass type;
         private static final long MILLS_PER_DAY = 24 * 3600 * 1000;
@@ -521,9 +521,9 @@ public class MDateAddSub extends TScalarBase
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
-        PValueSource arg0 = inputs.get(pos0);
+        ValueSource arg0 = inputs.get(pos0);
         long ymd[] = firstArg.decode(arg0, context);
         if (ymd == null)
         {

@@ -101,10 +101,6 @@ public class OperatorCompiler extends SchemaRulesContext
         assert (parserContext != null) : "initParser() not called";
     }
 
-    public boolean usesPValues() {
-        return rulesAre(DEFAULT_RULES_NEWTYPES);
-    }
-
     /** Compile a statement into an operator tree. */
     public BasePlannable compile(DMLStatementNode stmt, List<ParameterNode> params) {
         return compile(stmt, params, new PlanContext(this));
@@ -130,9 +126,6 @@ public class OperatorCompiler extends SchemaRulesContext
             }
             catch (IncomparableException e) // catch this and let the resolvers decide
             {
-                if (!this.usesPValues())
-                    throw new SQLParserInternalException(e);  
-                
             }
                     
             stmt = subqueryFlattener.flatten(stmt);

@@ -18,7 +18,7 @@
 package com.foundationdb.server.test.it.dxl;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.ais.util.DDLGenerator;
 import com.foundationdb.server.error.UnsupportedIndexSizeException;
@@ -210,7 +210,7 @@ public class AtomicSchemaChangesIT extends ITBase
             public Map<String, String> call() throws Exception {
                 DDLGenerator generator = new DDLGenerator();
                 Map<String, String> map = new TreeMap<>();
-                for(UserTable table : ais().getSchema(schema).getUserTables().values()) {
+                for(Table table : ais().getSchema(schema).getTables().values()) {
                     map.put(table.getName().getTableName(), generator.createTable(table));
                 }
                 return map;

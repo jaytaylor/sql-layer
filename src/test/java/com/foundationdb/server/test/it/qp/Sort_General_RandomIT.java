@@ -22,7 +22,7 @@ import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.scan.NewRow;
@@ -54,7 +54,7 @@ public class Sort_General_RandomIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        tRowType = schema.userTableRowType(userTable(t));
+        tRowType = schema.tableRowType(table(t));
         group = group(t);
         List<NewRow> rows = new ArrayList<>();
         Random random = new Random(123456789);
@@ -99,9 +99,9 @@ public class Sort_General_RandomIT extends OperatorITBase
         }
     }
 
-    private RowBase[] expected(final boolean ... asc)
+    private Row[] expected(final boolean ... asc)
     {
-        RowBase[] sorted = new RowBase[db.length];
+        Row[] sorted = new Row[db.length];
         Comparator<NewRow> comparator =
             new Comparator<NewRow>()
             {

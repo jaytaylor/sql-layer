@@ -20,8 +20,8 @@ package com.foundationdb.server.expressions;
 import com.foundationdb.server.types.*;
 import com.foundationdb.server.types.TypesTestClass;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.service.InstanceFinder;
 import com.foundationdb.server.types.texpressions.Constantness;
 import org.junit.Test;
@@ -238,7 +238,7 @@ public final class TypesRegistryServiceImplTest {
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
             throw new UnsupportedOperationException();
         }
     }

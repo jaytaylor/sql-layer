@@ -23,8 +23,8 @@ import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Parameter;
 import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.ais.model.validation.AISInvariants;
 import com.foundationdb.ais.model.validation.AISValidationResults;
@@ -90,37 +90,37 @@ public class AISBBasedBuilder
         }
 
         @Override
-        public NewUserTableBuilder userTable(String table) {
-            return userTable(defaultSchema, table);
+        public NewTableBuilder table(String table) {
+            return table(defaultSchema, table);
         }
 
         @Override
-        public NewUserTableBuilder userTable(String schema, String table) {
+        public NewTableBuilder table(String schema, String table) {
             checkUsable();
             AISInvariants.checkDuplicateTables(aisb.akibanInformationSchema(), schema, table);
             this.schema = schema;
-            this.userTable = table;
+            this.object = table;
             TableName tableName= new TableName (schema, table);
-            aisb.userTable(schema, table);
+            aisb.table(schema, table);
             aisb.createGroup(table, schema);
             aisb.addTableToGroup(tableName, schema, table);
             tablesToGroups.put(TableName.create(schema, table), tableName);
-            uTableColumnPos = 0;
+            tableColumnPos = 0;
             return this;
         }
 
         @Override
-        public NewUserTableBuilder getUserTable() {
+        public NewTableBuilder getTable() {
             return this;
         }
         
         @Override 
-        public NewUserTableBuilder getUserTable(TableName table) {
+        public NewTableBuilder getTable(TableName table) {
             checkUsable();
             this.schema = table.getSchemaName();
-            this.userTable = table.getTableName();
+            this.object = table.getTableName();
             assert aisb.akibanInformationSchema().getTable(table) != null;
-            uTableColumnPos = aisb.akibanInformationSchema().getTable(table).getColumns().size();
+            tableColumnPos = aisb.akibanInformationSchema().getTable(table).getColumns().size();
             return this;
         }
         
@@ -138,8 +138,8 @@ public class AISBBasedBuilder
         }
 
         @Override
-        public NewUserTableBuilder userTable(TableName tableName) {
-            return userTable(tableName.getSchemaName(), tableName.getTableName());
+        public NewTableBuilder table(TableName tableName) {
+            return table(tableName.getSchemaName(), tableName.getTableName());
         }
 
         @Override
@@ -152,7 +152,7 @@ public class AISBBasedBuilder
             checkUsable();
             AISInvariants.checkDuplicateTables(aisb.akibanInformationSchema(), schema, view);
             this.schema = schema;
-            this.userTable = view;
+            this.object = view;
             return this;
         }
 
@@ -171,7 +171,7 @@ public class AISBBasedBuilder
             checkUsable();
             AISInvariants.checkDuplicateRoutine(aisb.akibanInformationSchema(), schema, procedure);
             this.schema = schema;
-            this.userTable = procedure;
+            this.object = procedure;
             return this;
         }
 
@@ -190,7 +190,7 @@ public class AISBBasedBuilder
             checkUsable();
             AISInvariants.checkDuplicateSQLJJar(aisb.akibanInformationSchema(), schema, jarName);
             this.schema = schema;
-            this.userTable = jarName;
+            this.object = jarName;
             return this;
         }
 
@@ -210,41 +210,41 @@ public class AISBBasedBuilder
             return actual.groupIndex(indexName, joinType);
         }
 
-        // NewUserTableBuilder interface
+        // NewTableBuilder interface
 
         @Override
-        public NewUserTableBuilder colLong(String name) {
+        public NewTableBuilder colLong(String name) {
             return colLong(name, NULLABLE_DEFAULT, null, null);
         }
 
         @Override
-        public NewUserTableBuilder colLong(String name, boolean nullable) {
+        public NewTableBuilder colLong(String name, boolean nullable) {
             return colLong(name, nullable, null, null);
         }
 
         @Override
-        public NewUserTableBuilder autoIncLong(String name, int initialValue) {
+        public NewTableBuilder autoIncLong(String name, int initialValue) {
             return colLong(name, false, initialValue, true);
         }
 
         @Override
-        public NewUserTableBuilder autoIncLong(String name, int initialValue, boolean always) {
+        public NewTableBuilder autoIncLong(String name, int initialValue, boolean always) {
             return colLong(name, false, initialValue, !always);
         }
 
-        private NewUserTableBuilder colLong(String name, boolean nullable, Integer initialAutoInc, Boolean defaultIdentity) {
+        private NewTableBuilder colLong(String name, boolean nullable, Integer initialAutoInc, Boolean defaultIdentity) {
             checkUsable();
-            aisb.column(schema, userTable, name, uTableColumnPos++, "INT", 10L, null, nullable, false, null, null);
+            aisb.column(schema, object, name, tableColumnPos++, "INT", 10L, null, nullable, false, null, null);
             if (initialAutoInc != null) {
                 assert defaultIdentity != null;
-                String sequenceName = "temp-seq-" + userTable + "-" + name;
+                String sequenceName = "temp-seq-" + object + "-" + name;
                 long initValue = initialAutoInc.longValue();
                 aisb.sequence(schema, sequenceName, 
                               initValue, 1L, initValue, Long.MAX_VALUE,
                               false);
-                aisb.columnAsIdentity(schema, userTable, name, sequenceName, defaultIdentity);
+                aisb.columnAsIdentity(schema, object, name, sequenceName, defaultIdentity);
                 aisb.akibanInformationSchema().
-                     getUserTable(schema, userTable).
+                     getTable(schema, object).
                      getColumn(name).
                      setInitialAutoIncrementValue(initValue);
             }
@@ -252,117 +252,117 @@ public class AISBBasedBuilder
         }
 
         @Override
-        public NewUserTableBuilder colBoolean(String name, boolean nullable) {
+        public NewTableBuilder colBoolean(String name, boolean nullable) {
             checkUsable();
-            aisb.column(schema, userTable, name, uTableColumnPos++, "BOOLEAN", null, null, nullable, false, null, null);
+            aisb.column(schema, object, name, tableColumnPos++, "BOOLEAN", null, null, nullable, false, null, null);
             return this;
         }
 
         @Override
-        public NewUserTableBuilder colString(String name, int length) {
+        public NewTableBuilder colString(String name, int length) {
             return colString(name, length, NULLABLE_DEFAULT);
         }
 
         @Override
-        public NewUserTableBuilder colString(String name, int length, boolean nullable) {
+        public NewTableBuilder colString(String name, int length, boolean nullable) {
             return colString(name, length, nullable, CHARSET_DEFAULT);
         }
 
         @Override
-        public NewUserTableBuilder colString(String name, int length, boolean nullable, String charset) {
+        public NewTableBuilder colString(String name, int length, boolean nullable, String charset) {
             checkUsable();
-            aisb.column(schema, userTable, name, uTableColumnPos++, "VARCHAR", (long)length, null, nullable, false, charset, null);
+            aisb.column(schema, object, name, tableColumnPos++, "VARCHAR", (long)length, null, nullable, false, charset, null);
             return this;
         }
 
         @Override
-        public NewUserTableBuilder colDouble(String name) {
+        public NewTableBuilder colDouble(String name) {
             return colDouble(name, NULLABLE_DEFAULT);
         }
 
         @Override
-        public NewUserTableBuilder colDouble(String name, boolean nullable) {
+        public NewTableBuilder colDouble(String name, boolean nullable) {
             checkUsable();
-            aisb.column(schema, userTable, name, uTableColumnPos++, "DOUBLE", null, null, nullable, false, null, null);
+            aisb.column(schema, object, name, tableColumnPos++, "DOUBLE", null, null, nullable, false, null, null);
             return this;
         }
 
         @Override
-        public NewUserTableBuilder colTimestamp(String name) {
+        public NewTableBuilder colTimestamp(String name) {
             return colTimestamp(name, NULLABLE_DEFAULT);
         }
 
         @Override
-        public NewUserTableBuilder colTimestamp(String name, boolean nullable) {
-            aisb.column(schema, userTable, name, uTableColumnPos++, "TIMESTAMP", null, null, nullable, false, null, null);
+        public NewTableBuilder colTimestamp(String name, boolean nullable) {
+            aisb.column(schema, object, name, tableColumnPos++, "TIMESTAMP", null, null, nullable, false, null, null);
             return this;
         }
 
         @Override
-        public NewUserTableBuilder colBigInt(String name) {
+        public NewTableBuilder colBigInt(String name) {
             return colBigInt(name, NULLABLE_DEFAULT);
         }
 
         @Override
-        public NewUserTableBuilder colBigInt(String name, boolean nullable) {
-            aisb.column(schema, userTable, name, uTableColumnPos++, "BIGINT", null, null, nullable, false, null, null);
+        public NewTableBuilder colBigInt(String name, boolean nullable) {
+            aisb.column(schema, object, name, tableColumnPos++, "BIGINT", null, null, nullable, false, null, null);
             return this;
         }
 
         @Override
-        public NewUserTableBuilder colVarBinary(String name, int length) {
+        public NewTableBuilder colVarBinary(String name, int length) {
             return colVarBinary(name, length, NULLABLE_DEFAULT);
         }
 
         @Override
-        public NewUserTableBuilder colVarBinary(String name, int length, boolean nullable) {
-            aisb.column(schema, userTable, name, uTableColumnPos++, "VARBINARY", (long)length, null, nullable, false, null, null);
+        public NewTableBuilder colVarBinary(String name, int length, boolean nullable) {
+            aisb.column(schema, object, name, tableColumnPos++, "VARBINARY", (long)length, null, nullable, false, null, null);
             return this;
         }
 
         @Override
-        public NewUserTableBuilder colText(String name) {
+        public NewTableBuilder colText(String name) {
             return colText(name, NULLABLE_DEFAULT);
         }
 
         @Override
-        public NewUserTableBuilder colText(String name, boolean nullable) {
-            aisb.column(schema, userTable, name, uTableColumnPos++, "TEXT", null, null, nullable, false, null, null);
+        public NewTableBuilder colText(String name, boolean nullable) {
+            aisb.column(schema, object, name, tableColumnPos++, "TEXT", null, null, nullable, false, null, null);
             return this;
         }
         
         @Override
-        public NewUserTableBuilder colDateTime (String name) {
+        public NewTableBuilder colDateTime (String name) {
             return colDateTime(name, NULLABLE_DEFAULT);
         }
         
         @Override
-        public NewUserTableBuilder colDateTime (String name, boolean nullable) {
-            aisb.column(schema, userTable, name, uTableColumnPos++, "DATETIME", null, null, nullable, false, null, null);
+        public NewTableBuilder colDateTime (String name, boolean nullable) {
+            aisb.column(schema, object, name, tableColumnPos++, "DATETIME", null, null, nullable, false, null, null);
             return this;
         }
 
 
         @Override
-        public NewUserTableBuilder pk(String... columns) {
+        public NewTableBuilder pk(String... columns) {
             return key(PRIMARY, columns, true, Index.PRIMARY_KEY_CONSTRAINT);
         }
 
         @Override
-        public NewUserTableBuilder uniqueKey(String indexName, String... columns) {
+        public NewTableBuilder uniqueKey(String indexName, String... columns) {
             return key(indexName, columns, true, Index.UNIQUE_KEY_CONSTRAINT);
         }
 
         @Override
-        public NewUserTableBuilder key(String indexName, String... columns) {
+        public NewTableBuilder key(String indexName, String... columns) {
             return key(indexName, columns, false, Index.KEY_CONSTRAINT);
         }
 
-        private NewUserTableBuilder key(String indexName, String[] columns, boolean unique, String constraint) {
+        private NewTableBuilder key(String indexName, String[] columns, boolean unique, String constraint) {
             checkUsable();
-            aisb.index(schema, userTable, indexName, unique, constraint);
+            aisb.index(schema, object, indexName, unique, constraint);
             for (int i=0; i < columns.length; ++i) {
-                aisb.indexColumn(schema, userTable, indexName, columns[i], i, true, null);
+                aisb.indexColumn(schema, object, indexName, columns[i], i, true, null);
             }
             return this;
         }
@@ -379,7 +379,7 @@ public class AISBBasedBuilder
 
         @Override
         public NewAkibanJoinBuilder joinTo(String schema, String table) {
-            String generated = "autogenerated_"+userTable+"_references_" + table;
+            String generated = "autogenerated_"+object+"_references_" + table;
             return joinTo(schema, table, generated);
         }
 
@@ -392,15 +392,15 @@ public class AISBBasedBuilder
             this.referencesSchema = schema;
             this.referencesTable = table;
 
-            Group oldGroup = aisb.akibanInformationSchema().getUserTable(this.schema, this.userTable).getGroup();
+            Group oldGroup = aisb.akibanInformationSchema().getTable(this.schema, this.object).getGroup();
 
-            aisb.index(this.schema, this.userTable, fkIndexName, false, Index.FOREIGN_KEY_CONSTRAINT);
-            aisb.joinTables(fkJoinName, schema, table, this.schema, this.userTable);
+            aisb.index(this.schema, this.object, fkIndexName, false, Index.FOREIGN_KEY_CONSTRAINT);
+            aisb.joinTables(fkJoinName, schema, table, this.schema, this.object);
 
             TableName fkGroupName = tablesToGroups.get(TableName.create(referencesSchema, referencesTable));
-            aisb.moveTreeToGroup(this.schema, this.userTable, fkGroupName, fkJoinName);
+            aisb.moveTreeToGroup(this.schema, this.object, fkGroupName, fkJoinName);
             aisb.akibanInformationSchema().removeGroup(oldGroup);
-            TableName oldGroupName = tablesToGroups.put(TableName.create(this.schema, this.userTable), fkGroupName);
+            TableName oldGroupName = tablesToGroups.put(TableName.create(this.schema, this.object), fkGroupName);
             assert oldGroup.getName().equals(oldGroupName) : oldGroup.getName() + " != " + oldGroupName;
             return this;
         }
@@ -410,8 +410,8 @@ public class AISBBasedBuilder
         @Override
         public NewAkibanJoinBuilder on(String childColumn, String parentColumn) {
             checkUsable();
-            aisb.indexColumn(schema, userTable, fkIndexName, childColumn, fkIndexPos, true, null);
-            aisb.joinColumns(fkJoinName, referencesSchema, referencesTable, parentColumn, schema, userTable, childColumn);
+            aisb.indexColumn(schema, object, fkIndexName, childColumn, fkIndexPos, true, null);
+            aisb.joinColumns(fkJoinName, referencesSchema, referencesTable, parentColumn, schema, object, childColumn);
             return this;
         }
 
@@ -431,7 +431,7 @@ public class AISBBasedBuilder
 
         @Override
         public NewViewBuilder definition(String definition, Properties properties) {
-            aisb.view(schema, userTable,
+            aisb.view(schema, object,
                       definition, properties, 
                       new HashMap<TableName,Collection<String>>());
             return this;
@@ -445,7 +445,7 @@ public class AISBBasedBuilder
         @Override
         public NewViewBuilder references(String schema, String table, String... columns) {
             checkUsable();
-            View view = aisb.akibanInformationSchema().getView(this.schema, this.userTable);
+            View view = aisb.akibanInformationSchema().getView(this.schema, this.object);
             TableName tableName = TableName.create(schema, table);
             Collection<String> entry = view.getTableColumnReferences().get(tableName);
             if (entry == null) {
@@ -462,43 +462,43 @@ public class AISBBasedBuilder
 
         @Override
         public NewRoutineBuilder language(String language, Routine.CallingConvention callingConvention) {
-            aisb.routine(schema, userTable, language, callingConvention);
+            aisb.routine(schema, object, language, callingConvention);
             return this;
         }
     
         @Override
         public NewRoutineBuilder paramLongIn(String name) {
-            aisb.parameter(schema, userTable, name, Parameter.Direction.IN, "BIGINT", null, null);
+            aisb.parameter(schema, object, name, Parameter.Direction.IN, "BIGINT", null, null);
             return this;
         }
 
         @Override
         public NewRoutineBuilder paramStringIn(String name, int length) {
-            aisb.parameter(schema, userTable, name, Parameter.Direction.IN, "VARCHAR", (long)length, null);
+            aisb.parameter(schema, object, name, Parameter.Direction.IN, "VARCHAR", (long)length, null);
             return this;
         }
 
         @Override
         public NewRoutineBuilder paramDoubleIn(String name) {
-            aisb.parameter(schema, userTable, name, Parameter.Direction.IN, "DOUBLE", null, null);
+            aisb.parameter(schema, object, name, Parameter.Direction.IN, "DOUBLE", null, null);
             return this;
         }
 
         @Override
         public NewRoutineBuilder paramLongOut(String name) {
-            aisb.parameter(schema, userTable, name, Parameter.Direction.OUT, "BIGINT", null, null);
+            aisb.parameter(schema, object, name, Parameter.Direction.OUT, "BIGINT", null, null);
             return this;
         }
 
         @Override
         public NewRoutineBuilder paramStringOut(String name, int length) {
-            aisb.parameter(schema, userTable, name, Parameter.Direction.OUT, "VARCHAR", (long)length, null);
+            aisb.parameter(schema, object, name, Parameter.Direction.OUT, "VARCHAR", (long)length, null);
             return this;
         }
 
         @Override
         public NewRoutineBuilder paramDoubleOut(String name) {
-            aisb.parameter(schema, userTable, name, Parameter.Direction.OUT, "DOUBLE", null, null);
+            aisb.parameter(schema, object, name, Parameter.Direction.OUT, "DOUBLE", null, null);
             return this;
         }
 
@@ -521,7 +521,7 @@ public class AISBBasedBuilder
         @Override
         public NewRoutineBuilder externalName(String jarSchema, String jarName, 
                                               String className, String methodName) {
-            aisb.routineExternalName(schema, userTable, 
+            aisb.routineExternalName(schema, object, 
                                      jarSchema, jarName, 
                                      className, methodName);
             return this;
@@ -529,31 +529,31 @@ public class AISBBasedBuilder
 
         @Override
         public NewRoutineBuilder procDef(String definition) {
-            aisb.routineDefinition(schema, userTable, definition);
+            aisb.routineDefinition(schema, object, definition);
             return this;
         }
 
         @Override
         public NewRoutineBuilder sqlAllowed(Routine.SQLAllowed sqlAllowed) {
-            aisb.routineSQLAllowed(schema, userTable, sqlAllowed);
+            aisb.routineSQLAllowed(schema, object, sqlAllowed);
             return this;
         }
 
         @Override
         public NewRoutineBuilder dynamicResultSets(int dynamicResultSets) {
-            aisb.routineDynamicResultSets(schema, userTable, dynamicResultSets);
+            aisb.routineDynamicResultSets(schema, object, dynamicResultSets);
             return this;
         }
 
         @Override
         public NewRoutineBuilder deterministic(boolean deterministic) {
-            aisb.routineDeterministic(schema, userTable, deterministic);
+            aisb.routineDeterministic(schema, object, deterministic);
             return this;
         }
 
         @Override
         public NewRoutineBuilder calledOnNullInput(boolean calledOnNullInput) {
-            aisb.routineCalledOnNullInput(schema, userTable, calledOnNullInput);
+            aisb.routineCalledOnNullInput(schema, object, calledOnNullInput);
             return this;
         }
 
@@ -572,7 +572,7 @@ public class AISBBasedBuilder
                 }
                 catch (MalformedURLException ex2) {
                     // Report original failure.
-                    throw new InvalidSQLJJarURLException(schema, userTable, ex1);
+                    throw new InvalidSQLJJarURLException(schema, object, ex1);
                 }
                 if (checkReadable && file.canRead())
                     checkReadable = false; // Can tell quickly.
@@ -583,7 +583,7 @@ public class AISBBasedBuilder
                     istr = url.openStream(); // Must be able to load it.
                 }
                 catch (IOException ex) {
-                    throw new InvalidSQLJJarURLException(schema, userTable, ex);
+                    throw new InvalidSQLJJarURLException(schema, object, ex);
                 }
                 finally {
                     if (istr != null) {
@@ -595,7 +595,7 @@ public class AISBBasedBuilder
                     }
                 }
             }
-            aisb.sqljJar(schema, userTable, url);
+            aisb.sqljJar(schema, object, url);
             return this;
         }
 
@@ -620,9 +620,9 @@ public class AISBBasedBuilder
         private final AISBuilder aisb;
         private String defaultSchema;
         private String schema;
-        private String userTable;
+        private String object;
 
-        private int uTableColumnPos;
+        private int tableColumnPos;
 
         private String fkIndexName;
         private String fkJoinName;
@@ -684,14 +684,14 @@ public class AISBBasedBuilder
 
         @Override
         public NewAISGroupIndexBuilder on(String schema, String table, String column) {
-            UserTable userTable = aisb.akibanInformationSchema().getUserTable(schema, table);
-            if (userTable == null) {
+            Table aisTable = aisb.akibanInformationSchema().getTable(schema, table);
+            if (aisTable == null) {
                 throw new NoSuchElementException("no table " + schema + '.' + table);
             }
-            if (userTable.getGroup() == null) {
+            if (aisTable.getGroup() == null) {
                 throw new IllegalStateException("ungrouped table: " + schema + '.' + table);
             }
-            TableName localGroupName = userTable.getGroup().getName();
+            TableName localGroupName = aisTable.getGroup().getName();
             if (localGroupName == null) {
                 throw new IllegalStateException("unnamed group for " + schema + '.' + table);
             }

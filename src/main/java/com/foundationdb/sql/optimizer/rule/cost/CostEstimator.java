@@ -17,21 +17,21 @@
 
 package com.foundationdb.sql.optimizer.rule.cost;
 
+import com.foundationdb.server.PersistitKeyValueTarget;
 import com.foundationdb.server.store.statistics.Histogram;
 import com.foundationdb.server.store.statistics.HistogramEntry;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.sql.optimizer.rule.SchemaRulesContext;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
 
 import com.foundationdb.ais.model.*;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
-import com.foundationdb.server.PersistitKeyPValueTarget;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.store.statistics.IndexStatistics;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.pvalue.PValueSource;
 import com.persistit.Key;
 
 import com.google.common.primitives.UnsignedBytes;
@@ -50,7 +50,7 @@ public abstract class CostEstimator implements TableRowCounts
     private final Properties properties;
     private final CostModel model;
     private final Key key;
-    private final PersistitKeyPValueTarget keyPTarget;
+    private final PersistitKeyValueTarget keyPTarget;
     private final Comparator<byte[]> bytesComparator;
 
     protected CostEstimator(Schema schema, Properties properties, KeyCreator keyCreator) {
@@ -58,7 +58,7 @@ public abstract class CostEstimator implements TableRowCounts
         this.properties = properties;
         model = CostModel.newCostModel(schema, this);
         key = keyCreator.createKey();
-        keyPTarget = new PersistitKeyPValueTarget();
+        keyPTarget = new PersistitKeyValueTarget();
         bytesComparator = UnsignedBytes.lexicographicalComparator();
     }
 
@@ -187,7 +187,7 @@ public abstract class CostEstimator implements TableRowCounts
                 return 1;
             }
         }
-        UserTable indexedTable = (UserTable) index.leafMostTable();
+        Table indexedTable = index.leafMostTable();
         long rowCount = getTableRowCount(indexedTable);
         // TODO: FIX THIS COMMENT. Should it refer to getSingleColumnHistogram?
         // Get IndexStatistics for each column. If the ith element is non-null, then it definitely has
@@ -244,7 +244,7 @@ public abstract class CostEstimator implements TableRowCounts
         return nrows;
     }
 
-    private IndexStatistics tableIndexStatistics(UserTable indexedTable,
+    private IndexStatistics tableIndexStatistics(Table indexedTable,
                                                  Index[] indexColumnsIndexes,
                                                  Histogram[] histograms) {
         // At least one of the index columns must be from the indexed table
@@ -499,21 +499,21 @@ public abstract class CostEstimator implements TableRowCounts
     }
 
     protected boolean encodeKeyValue(ExpressionNode node, Index index, int column) {
-        PValueSource pvalue = null;
+        ValueSource value = null;
         if (node instanceof ConstantExpression) {
             if (node.getPreptimeValue() != null) {
                 if (node.getPreptimeValue().instance() == null) { // Literal null
                     keyPTarget.putNull();
                     return true;
                 }
-                pvalue = node.getPreptimeValue().value();
+                value = node.getPreptimeValue().value();
             }
         }
         else if (node instanceof IsNullIndexKey) {
             keyPTarget.putNull();
             return true;
         }
-        if (pvalue == null)
+        if (value == null)
             return false;
         TInstance tInstance;
         determine_type:
@@ -530,7 +530,7 @@ public abstract class CostEstimator implements TableRowCounts
             }
             tInstance = index.getAllColumns().get(column).getColumn().tInstance();
         }
-        tInstance.writeCollating(pvalue, keyPTarget);
+        tInstance.writeCollating(value, keyPTarget);
         return true;
     }
 
@@ -560,7 +560,7 @@ public abstract class CostEstimator implements TableRowCounts
         coverBranches(tableGroup, startNode, requiredTables);
         long rowCount = 1;
         double cost = 0.0;
-        List<UserTableRowType> ancestorTypes = new ArrayList<>();
+        List<TableRowType> ancestorTypes = new ArrayList<>();
         for (TableGroupJoinNode ancestorNode = startNode;
              ancestorNode != null;
              ancestorNode = ancestorNode.getParent()) {
@@ -569,7 +569,7 @@ public abstract class CostEstimator implements TableRowCounts
                     (getSideBranches(ancestorNode) != 0)) {
                     continue;   // Branch, not ancestor.
                 }
-                ancestorTypes.add(schema.userTableRowType(ancestorNode.getTable().getTable().getTable()));
+                ancestorTypes.add(schema.tableRowType(ancestorNode.getTable().getTable().getTable()));
             }
         }
         // Cost to get main branch.
@@ -594,7 +594,7 @@ public abstract class CostEstimator implements TableRowCounts
                 // Multiplier from this branch.
                 rowCount *= descendantCardinality(branchNode, branchRoot);
                 // Cost to get side branch.
-                cost += model.branchLookup(schema.userTableRowType(nextToRoot.getTable().getTable().getTable()));
+                cost += model.branchLookup(schema.tableRowType(nextToRoot.getTable().getTable().getTable()));
             }
         }
         for (TableGroupJoinNode node : tableGroup) {
@@ -640,14 +640,14 @@ public abstract class CostEstimator implements TableRowCounts
      * scan itself and the flatten, since they are tied together. */
     public CostEstimate costPartialGroupScanAndFlatten(TableGroupJoinTree tableGroup,
                                                        Set<TableSource> requiredTables,
-                                                       Map<UserTable,Long> tableCounts) {
+                                                       Map<Table,Long> tableCounts) {
         TableGroupJoinNode rootNode = tableGroup.getRoot();
         coverBranches(tableGroup, rootNode, requiredTables);
         int branchCount = 0;
         long rowCount = 1;
         double cost = 0.0;
-        for (Map.Entry<UserTable,Long> entry : tableCounts.entrySet()) {
-            cost += model.partialGroupScan(schema.userTableRowType(entry.getKey()), 
+        for (Map.Entry<Table,Long> entry : tableCounts.entrySet()) {
+            cost += model.partialGroupScan(schema.tableRowType(entry.getKey()),
                                            entry.getValue());
         }
         for (TableGroupJoinNode node : tableGroup) {
@@ -679,11 +679,11 @@ public abstract class CostEstimator implements TableRowCounts
         long rowCount = 1;
         double cost = 0.0;
         if (insideIsParent) {
-            cost += model.ancestorLookup(Collections.singletonList(schema.userTableRowType(insideTable.getTable().getTable())));
+            cost += model.ancestorLookup(Collections.singletonList(schema.tableRowType(insideTable.getTable().getTable())));
         }
         else {
             rowCount *= descendantCardinality(insideTable, outsideTable);
-            cost += model.branchLookup(schema.userTableRowType(insideTable.getTable().getTable()));
+            cost += model.branchLookup(schema.tableRowType(insideTable.getTable().getTable()));
         }
         for (TableGroupJoinNode node : tableGroup) {
             if (isFlattenable(node)) {
@@ -975,15 +975,15 @@ public abstract class CostEstimator implements TableRowCounts
     // TODO: Need to account for tables actually wanted?
     public CostEstimate costGroupScan(Group group) {
         long nrows = 0;
-        UserTable root = null;
-        for (UserTable table : group.getRoot().getAIS().getUserTables().values()) {
+        Table root = null;
+        for (Table table : group.getRoot().getAIS().getTables().values()) {
             if (table.getGroup() == group) {
                 if (table.getParentJoin() == null)
                     root = table;
                 nrows += getTableRowCount(table);
             }
         }
-        return new CostEstimate(nrows, model.fullGroupScan(schema.userTableRowType(root)));
+        return new CostEstimate(nrows, model.fullGroupScan(schema.tableRowType(root)));
     }
 
     public CostEstimate costValues(ExpressionsSource values, boolean selectToo) {
@@ -1069,7 +1069,7 @@ public abstract class CostEstimator implements TableRowCounts
     protected void missingStats(Index index, Column column) {
     }
 
-    protected void checkRowCountChanged(UserTable table, IndexStatistics stats, 
+    protected void checkRowCountChanged(Table table, IndexStatistics stats, 
                                         long rowCount) {
     }
 

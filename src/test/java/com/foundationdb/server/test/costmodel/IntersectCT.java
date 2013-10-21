@@ -26,7 +26,7 @@ import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.operator.TimeOperator;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
@@ -63,7 +63,7 @@ public class IntersectCT extends CostModelBase
             "primary key(c1, c2, c3, c4, c5)");
         Index index = createIndex(schemaName(), tableName, "idx", "index_key");
         schema = new Schema(ais());
-        tRowType = schema.userTableRowType(userTable(t));
+        tRowType = schema.tableRowType(table(t));
         indexRowType = schema.indexRowType(index);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
@@ -147,7 +147,7 @@ public class IntersectCT extends CostModelBase
     private final Random random = new Random();
     private int t;
     private Schema schema;
-    private UserTableRowType tRowType;
+    private TableRowType tRowType;
     private IndexRowType indexRowType;
     private StoreAdapter adapter;
 }

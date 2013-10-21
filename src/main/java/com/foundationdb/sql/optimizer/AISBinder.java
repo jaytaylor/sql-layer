@@ -42,7 +42,6 @@ import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.JoinColumn;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.View;
 
 import java.util.*;
@@ -678,7 +677,7 @@ public class AISBinder implements Visitor
     }
 
     protected Table lookupTableName(TableName origName, String schemaName, String tableName) {
-        Table result = ais.getUserTable(schemaName, tableName);
+        Table result = ais.getTable(schemaName, tableName);
         if ((result == null) || 
             ((context != null) && !context.isAccessible(result.getName())))
             throw new NoSuchTableException(schemaName, tableName, origName);
@@ -944,8 +943,8 @@ public class AISBinder implements Visitor
             valueNode.setUserData(new ColumnBinding(fromTable, column, 
                                                     tableBinding.isNullable()));
         }
-        if (recursive && (table instanceof UserTable)) {
-            for (Join child : ((UserTable)table).getChildJoins()) {
+        if (recursive && (table instanceof Table)) {
+            for (Join child : ((Table)table).getChildJoins()) {
                 rcList.addResultColumn(childJoinSubquery(fromTable, child));
             }
         }
@@ -1025,16 +1024,16 @@ public class AISBinder implements Visitor
             throws StandardException {
         NodeFactory nodeFactory = parentTable.getNodeFactory();
         SQLParserContext parserContext = parentTable.getParserContext();
-        UserTable childUserTable = child.getChild();
+        Table childAisTable = child.getChild();
         Object childName = nodeFactory.getNode(NodeTypes.TABLE_NAME,
-                                               childUserTable.getName().getSchemaName(),
-                                               childUserTable.getName().getTableName(),
+                                               childAisTable.getName().getSchemaName(),
+                                               childAisTable.getName().getTableName(),
                                                parserContext);
         FromBaseTable childTable = (FromBaseTable)
             nodeFactory.getNode(NodeTypes.FROM_BASE_TABLE,
-                                childName, childUserTable.getName().getTableName(),
+                                childName, childAisTable.getName().getTableName(),
                                 null,  null, null, parserContext);
-        childTable.setUserData(new TableBinding(childUserTable, false));
+        childTable.setUserData(new TableBinding(childAisTable, false));
         ValueNode whereClause = null;
         for (JoinColumn join : child.getJoinColumns()) {
             ColumnReference parentPK = (ColumnReference)
@@ -1080,7 +1079,7 @@ public class AISBinder implements Visitor
                                 parserContext);
         ResultColumn resultColumn = (ResultColumn)
             nodeFactory.getNode(NodeTypes.RESULT_COLUMN,
-                                childUserTable.getNameForOutput(),
+                                childAisTable.getNameForOutput(),
                                 subquery,
                                 parserContext);
         return resultColumn;

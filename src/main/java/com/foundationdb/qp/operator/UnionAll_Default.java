@@ -17,19 +17,26 @@
 
 package com.foundationdb.qp.operator;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.util.ShareHolder;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.util.ArgumentValidation;
+import com.foundationdb.util.Strings;
 import com.foundationdb.util.tap.InOutTap;
 
+import com.google.common.base.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  <h1>Overview</h1>
@@ -175,13 +182,12 @@ final class UnionAll_Default extends UnionBase {
                 currentCursor = null;
             }
             if (openBoth) {
-                while (++inputOperatorsIndex < getInputOperators().size()) {
+                while (++inputOperatorsIndex < inputs.size()) {
                     cursors[inputOperatorsIndex].close();
                 }
             }
             inputOperatorsIndex = -1;
             currentInputRowType = null;
-            rowHolder.release();
             idle = true;
         }
 
@@ -293,21 +299,10 @@ final class UnionAll_Default extends UnionBase {
             if (currentInputRowType == rowType()) {
                 return inputRow;
             }
-            MasqueradingRow row;
-            if (rowHolder.isEmpty() || rowHolder.isShared()) {
-                row = new MasqueradingRow(rowType(), inputRow);
-                rowHolder.hold(row);
-            }
-            else {
-                row = rowHolder.get();
-                rowHolder.release();
-                row.setRow(inputRow);
-            }
-            rowHolder.hold(row);
+            MasqueradingRow row = new MasqueradingRow(outputRowType, inputRow);
             return row;
         }
 
-        private final ShareHolder<MasqueradingRow> rowHolder = new ShareHolder<>();
         private final QueryBindingsCursor bindingsCursor;
         private int inputOperatorsIndex = -1; // right before the first operator
         private Cursor[] cursors;
@@ -326,7 +321,7 @@ final class UnionAll_Default extends UnionBase {
     private static class MasqueradingRow implements Row {
 
         @Override
-        public int compareTo(RowBase row, int leftStartIndex, int rightStartIndex, int fieldCount)
+        public int compareTo(Row row, int leftStartIndex, int rightStartIndex, int fieldCount)
         {
             return delegate.compareTo(row, leftStartIndex, rightStartIndex, fieldCount);
         }
@@ -342,18 +337,18 @@ final class UnionAll_Default extends UnionBase {
         }
 
         @Override
-        public HKey ancestorHKey(UserTable table)
+        public HKey ancestorHKey(Table table)
         {
             return delegate.ancestorHKey(table);
         }
 
         @Override
-        public boolean ancestorOf(RowBase that) {
+        public boolean ancestorOf(Row that) {
             return delegate.ancestorOf(that);
         }
 
         @Override
-        public boolean containsRealRowOf(UserTable userTable) {
+        public boolean containsRealRowOf(Table table) {
             throw new UnsupportedOperationException(getClass().toString());
         }
 
@@ -363,40 +358,8 @@ final class UnionAll_Default extends UnionBase {
         }
 
         @Override
-        public PValueSource pvalue(int index) {
-            return delegate.pvalue(index);
-        }
-
-        /**
-         * @see #isShared()
-         */
-        @Override
-        public void acquire() {
-            ++shares;
-            delegate.acquire();
-        }
-
-        /**
-         * Returns this MasqueradingRow, or its delegate, are shared. It's not enough to only delegate this method
-         * (and the acquire/release methods that go along with it), because if the delegate row is never shared (as
-         * happens with an immutable row, for instance), we still want to mark this MasqueradingRow as shared.
-         * Without that, the Execution will reuse this wrapper -- by giving it a new delegate -- which will break
-         * the sharing contract.
-         * @return whether this row is shared
-         */
-        @Override
-        public boolean isShared() {
-            return (shares > 1) || delegate.isShared();
-        }
-
-        /**
-         * @see #isShared()
-         */
-        @Override
-        public void release() {
-            assert shares > 0 : shares;
-            delegate.release();
-            --shares;
+        public ValueSource value(int index) {
+            return delegate.value(index);
         }
 
         @Override
@@ -404,19 +367,12 @@ final class UnionAll_Default extends UnionBase {
             return delegate.toString() + " of type " + rowType;
         }
 
-        void setRow(Row row) {
-            assert shares == 0;
-            this.delegate = row;
-        }
-
         private MasqueradingRow(RowType rowType, Row wrapped) {
             this.rowType = rowType;
             this.delegate = wrapped;
-            shares = 0;
         }
 
-        private Row delegate;
+        private final Row delegate;
         private final RowType rowType;
-        private int shares;
     }
 }

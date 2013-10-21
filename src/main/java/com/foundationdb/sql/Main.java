@@ -24,7 +24,6 @@ import com.foundationdb.server.service.session.SessionService;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.util.GCMonitor;
 import com.foundationdb.util.OsUtils;
-import com.foundationdb.util.Strings;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,46 +41,27 @@ import javax.management.ObjectName;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.util.Arrays;
+import java.util.Properties;
 import java.util.concurrent.Semaphore;
 
 public class Main implements Service, JmxManageable, LayerInfoInterface
 {
-    private static final Logger LOG = LoggerFactory.getLogger(Main.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
-    private static final String VERSION_STRING_FILE = "version/fdbsql_version";
-    public static final String VERSION_STRING, SHORT_VERSION_STRING;
-    public static final int VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH;
+    private static final String VERSION_PROPERTY_FILE = "version/fdbsql_version.properties";
+    public static final LayerVersionInfo VERSION_INFO;
+
     static {
-        String vlong, vshort;
-        int major = 0, minor = 0, patch = 0;
-        try {
-            vlong = Strings.join(Strings.dumpResource(null, VERSION_STRING_FILE));
+        Properties props = new Properties();
+        try(InputStream stream = ClassLoader.getSystemResourceAsStream(VERSION_PROPERTY_FILE)) {
+            props.load(stream);
         } catch (IOException e) {
-            LOG.warn("Couldn't read resource file");
-            vlong = "Error: " + e;
+            LOG.warn("Couldn't read version resource file: {}", VERSION_PROPERTY_FILE);
         }
-        int endpos = vlong.indexOf('-');
-        if (endpos < 0) endpos = vlong.length();
-        vshort = vlong.substring(0, endpos);
-        String[] nums = vshort.split("\\.");
-        try {
-            if (nums.length > 0)
-                major = Integer.parseInt(nums[0]);
-            if (nums.length > 1)
-                minor = Integer.parseInt(nums[1]);
-            if (nums.length > 2)
-                patch = Integer.parseInt(nums[2]);
-        }
-        catch (NumberFormatException ex) {
-            LOG.warn("Couldn't parse version number: " + vshort);
-        }
-        VERSION_STRING = vlong;
-        SHORT_VERSION_STRING = vshort;
-        VERSION_MAJOR = major; 
-        VERSION_MINOR = minor; 
-        VERSION_PATCH = patch;
+        VERSION_INFO = new LayerVersionInfo(props);
     }
 
     private static final String NAME_PROP = "fdbsql.name";
@@ -151,29 +131,8 @@ public class Main implements Service, JmxManageable, LayerInfoInterface
     }
 
     @Override
-    public String getServerVersion()
-    {
-        return VERSION_STRING;
-    }
-
-    @Override
-    public String getServerShortVersion() {
-        return SHORT_VERSION_STRING;
-    }
-
-    @Override
-    public int getServerMajorVersion() {
-        return VERSION_MAJOR;
-    }
-
-    @Override
-    public int getServerMinorVersion() {
-        return VERSION_MINOR;
-    }
-
-    @Override
-    public int getServerPatchVersion() {
-        return VERSION_PATCH;
+    public LayerVersionInfo getVersionInfo() {
+        return VERSION_INFO;
     }
 
     public interface ShutdownMXBean {

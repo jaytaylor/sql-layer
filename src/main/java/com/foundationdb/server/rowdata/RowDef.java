@@ -99,16 +99,10 @@ public class RowDef {
         varLenFieldMap = new byte[(fieldDefs.length + 7) / 8][];
         preComputeFieldCoordinates(fieldDefs);
         autoIncrementField = -1;
-        if (table.isUserTable()) {
-            final UserTable userTable = (UserTable) table;
-            if (userTable.getAutoIncrementColumn() != null) {
-                autoIncrementField = userTable.getAutoIncrementColumn()
-                        .getPosition();
-            }
-            this.hasAkibanPK = userTable.getPrimaryKeyIncludingInternal().isAkibanPK();
-        } else {
-            this.hasAkibanPK = false;
+        if (table.getAutoIncrementColumn() != null) {
+            autoIncrementField = table.getAutoIncrementColumn().getPosition();
         }
+        this.hasAkibanPK = table.getPrimaryKeyIncludingInternal().isAkibanPK();
     }
 
     public Table table() {
@@ -117,11 +111,6 @@ public class RowDef {
 
     public boolean hasAkibanPK() {
         return hasAkibanPK;
-    }
-
-    public UserTable userTable() {
-        assert table instanceof UserTable : this;
-        return (UserTable) table;
     }
 
     /**
@@ -388,20 +377,18 @@ public class RowDef {
     }
 
     public int getParentRowDefId() {
-        UserTable userTable = (UserTable) table;
-        Join parentJoin = userTable.getParentJoin();
+        Join parentJoin = table.getParentJoin();
         return parentJoin == null ? 0 : parentJoin.getParent().getTableId();
     }
 
     public RowDef getParentRowDef() {
-        UserTable userTable = (UserTable) table;
-        Join parentJoin = userTable.getParentJoin();
+        Join parentJoin = table.getParentJoin();
         return (parentJoin == null) ? null : parentJoin.getParent().rowDef();
     }
 
     public String getPkTreeName() {
         final Index pkIndex = getPKIndex();
-        return pkIndex != null ? pkIndex.indexDef().getTreeName() : null;
+        return pkIndex != null ? pkIndex.getTreeName() : null;
     }
 
     public int getRowDefId() {
@@ -418,10 +405,6 @@ public class RowDef {
 
     public String getSchemaName() {
         return table.getName().getSchemaName();
-    }
-
-    public boolean isUserTable() {
-        return table.isUserTable();
     }
 
     public void setIndexes(TableIndex[] indexes) {
@@ -449,7 +432,6 @@ public class RowDef {
     }
 
     public TableIndex getPKIndex() {
-        assert isUserTable() : this;
         if (indexes != null && indexes.length > 0) {
             return indexes[0];
         } else {
@@ -513,14 +495,12 @@ public class RowDef {
         // hkeyDepth is hkey position of the last column in the last segment.
         // (Or the position
         // of the last segment if that segment has no columns.)
-        if (isUserTable()) {
-            List<HKeySegment> segments = userTable().hKey().segments();
-            HKeySegment lastSegment = segments.get(segments.size() - 1);
-            List<HKeyColumn> lastColumns = lastSegment.columns();
-            hkeyDepth = 1 + (lastColumns.isEmpty() ? lastSegment
-                    .positionInHKey() : lastColumns.get(lastColumns.size() - 1)
-                    .positionInHKey());
-        }
+        List<HKeySegment> segments = table.hKey().segments();
+        HKeySegment lastSegment = segments.get(segments.size() - 1);
+        List<HKeyColumn> lastColumns = lastSegment.columns();
+        hkeyDepth = 1 + (lastColumns.isEmpty() ? lastSegment
+                         .positionInHKey() : lastColumns.get(lastColumns.size() - 1)
+                         .positionInHKey());
         for (Index index : indexes) {
             index.computeFieldAssociations(ordinalMap);
         }

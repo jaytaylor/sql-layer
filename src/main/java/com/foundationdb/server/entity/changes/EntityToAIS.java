@@ -22,10 +22,10 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.CharsetAndCollation;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.Type;
 import com.foundationdb.ais.model.Types;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.entity.model.Entity;
 import com.foundationdb.server.entity.model.EntityCollection;
 import com.foundationdb.server.entity.model.EntityField;
@@ -132,7 +132,7 @@ public class EntityToAIS implements EntityVisitor {
     @Override
     public void enterCollection(EntityCollection collection) {
         final TableInfo parentInfo = tableInfoStack.peek();
-        final UserTable childTable = startTable(collection);
+        final Table childTable = startTable(collection);
         // FKs
         buildFks(collection, childTable, parentInfo);
 
@@ -140,9 +140,9 @@ public class EntityToAIS implements EntityVisitor {
         finishTable(collection);
     }
 
-    private void buildFks(EntityCollection childEntity, UserTable childTable, TableInfo parentInfo) {
+    private void buildFks(EntityCollection childEntity, Table childTable, TableInfo parentInfo) {
         final Entity parentEntity = parentInfo.entity;
-        UserTable parentTable = parentInfo.table;
+        Table parentTable = parentInfo.table;
         List<String> pkFields = parentEntity.getIdentifying();
         if (pkFields.isEmpty())
             throw new IllegalArgumentException(parentTable + " has no PK, but has child " + childEntity);
@@ -267,9 +267,9 @@ public class EntityToAIS implements EntityVisitor {
     // Helpers
     //
 
-    private UserTable startTable(Entity entity) {
+    private Table startTable(Entity entity) {
         String name = entity.getName();
-        UserTable table = builder.userTable(schemaName, name);
+        Table table = builder.table(schemaName, name);
         table.setUuid(entity.getUuid());
         // fields
         for (int f = 0, len = entity.getFields().size(); f < len; f++)
@@ -390,10 +390,10 @@ public class EntityToAIS implements EntityVisitor {
     }
 
     private static class TableInfo {
-        public final UserTable table;
+        public final Table table;
         public final Entity entity;
 
-        private TableInfo(UserTable table, Entity entity) {
+        private TableInfo(Table table, Entity entity) {
             this.table = table;
             this.entity = entity;
         }

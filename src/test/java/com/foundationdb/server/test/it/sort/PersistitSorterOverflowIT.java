@@ -17,15 +17,15 @@
 
 package com.foundationdb.server.test.it.sort;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.persistitadapter.TempVolume;
-import com.foundationdb.qp.persistitadapter.indexcursor.PersistitSorter;
+import com.foundationdb.qp.storeadapter.TempVolume;
+import com.foundationdb.qp.storeadapter.indexcursor.PersistitSorter;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.util.SchemaCache;
@@ -107,15 +107,15 @@ public class PersistitSorterOverflowIT extends PersistitITBase
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         StoreAdapter adapter = newStoreAdapter(schema);
 
-        UserTable userTable = getUserTable(SCHEMA, TABLE);
-        RowType rowType = schema.userTableRowType(userTable);
+        Table table = getTable(SCHEMA, TABLE);
+        RowType rowType = schema.tableRowType(table);
         API.Ordering ordering = API.ordering();
         ordering.append(ExpressionGenerators.field(rowType, 1), true);
 
         QueryContext context = queryContext(adapter);
         QueryBindings bindings = context.createBindings();
         Cursor inputCursor = API.cursor(
-                API.groupScan_Default(userTable.getGroup()),
+                API.groupScan_Default(table.getGroup()),
                 context, bindings
         );
 

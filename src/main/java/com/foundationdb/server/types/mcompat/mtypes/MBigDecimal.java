@@ -19,24 +19,14 @@ package com.foundationdb.server.types.mcompat.mtypes;
 
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.rowdata.ConversionHelperBigDecimal;
-import com.foundationdb.server.types.Attribute;
-import com.foundationdb.server.types.IllegalNameException;
-import com.foundationdb.server.types.PValueIO;
-import com.foundationdb.server.types.TClass;
-import com.foundationdb.server.types.TClassBase;
-import com.foundationdb.server.types.TExecutionContext;
-import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.TParsers;
+import com.foundationdb.server.types.*;
+import com.foundationdb.server.types.ValueIO;
 import com.foundationdb.server.types.aksql.AkCategory;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.common.NumericFormatter;
 import com.foundationdb.server.types.mcompat.MBundle;
-import com.foundationdb.server.types.pvalue.PBasicValueSource;
-import com.foundationdb.server.types.pvalue.PBasicValueTarget;
-import com.foundationdb.server.types.pvalue.PUnderlying;
-import com.foundationdb.server.types.pvalue.PValueCacher;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.*;
+import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.server.types.texpressions.Serialization;
 import com.foundationdb.server.types.texpressions.SerializeAs;
 import com.foundationdb.sql.types.DataTypeDescriptor;
@@ -55,7 +45,7 @@ public class MBigDecimal extends TClassBase {
     public static final int MAX_INDEX = 0;
     public static final int MIN_INDEX = 1;
 
-    public static BigDecimalWrapper getWrapper(PValueSource source, TInstance tInstance) {
+    public static BigDecimalWrapper getWrapper(ValueSource source, TInstance tInstance) {
         if (source.hasCacheValue())
             return (BigDecimalWrapper) source.getObject();
         byte[] bytes = source.getBytes();
@@ -76,8 +66,8 @@ public class MBigDecimal extends TClassBase {
         return wrapper;
     }
 
-    public static void adjustAttrsAsNeeded(TExecutionContext context, PValueSource source,
-                                           TInstance targetInstance, PValueTarget target)
+    public static void adjustAttrsAsNeeded(TExecutionContext context, ValueSource source,
+                                           TInstance targetInstance, ValueTarget target)
     {
         TInstance inputInstance = context.inputTInstanceAt(0);
         int inputPrecision = inputInstance.attribute(Attrs.PRECISION);
@@ -106,22 +96,22 @@ public class MBigDecimal extends TClassBase {
     }
 
     @Override
-    protected PValueIO getPValueIO() {
+    protected ValueIO getValueIO() {
         return valueIO;
     }
 
     public MBigDecimal(String name, int defaultVarcharLen){
         super(MBundle.INSTANCE.id(), name, AkCategory.DECIMAL, Attrs.class, NumericFormatter.FORMAT.BIGDECIMAL, 1, 1, 8,
-                PUnderlying.BYTES, TParsers.DECIMAL, defaultVarcharLen);
+                UnderlyingType.BYTES, TParsers.DECIMAL, defaultVarcharLen);
     }
 
     @Override
-    public Object formatCachedForNiceRow(PValueSource source) {
+    public Object formatCachedForNiceRow(ValueSource source) {
         return ((BigDecimalWrapper)source.getObject()).asBigDecimal();
     }
 
     @Override
-    protected int doCompare(TInstance instanceA, PValueSource sourceA, TInstance instanceB, PValueSource sourceB)
+    protected int doCompare(TInstance instanceA, ValueSource sourceA, TInstance instanceB, ValueSource sourceB)
     {
         if (sourceA.hasRawValue() && sourceB.hasRawValue()) // both have bytearrays
             return super.doCompare(instanceA, sourceA, instanceB, sourceB);
@@ -130,8 +120,8 @@ public class MBigDecimal extends TClassBase {
     }
 
     @Override
-    public void selfCast(TExecutionContext context, TInstance sourceInstance, PValueSource source,
-                         TInstance targetInstance, PValueTarget target)
+    public void selfCast(TExecutionContext context, TInstance sourceInstance, ValueSource source,
+                         TInstance targetInstance, ValueTarget target)
     {
         adjustAttrsAsNeeded(context, source, targetInstance, target);
     }
@@ -156,7 +146,7 @@ public class MBigDecimal extends TClassBase {
     }
     
     @Override
-    public PValueCacher cacher() {
+    public ValueCacher cacher() {
         return cacher;
     }
 
@@ -214,10 +204,10 @@ public class MBigDecimal extends TClassBase {
         return tclass.instance(resultPrecision, resultScale, nullable);
     }
 
-    public static final PValueCacher cacher = new PValueCacher() {
+    public static final ValueCacher cacher = new ValueCacher() {
 
         @Override
-        public void cacheToValue(Object bdw, TInstance tInstance, PBasicValueTarget target) {
+        public void cacheToValue(Object bdw, TInstance tInstance, BasicValueTarget target) {
             BigDecimal bd = ((BigDecimalWrapper)bdw).asBigDecimal();
             int precision = tInstance.attribute(Attrs.PRECISION);
             int scale = tInstance.attribute(Attrs.SCALE);
@@ -226,7 +216,7 @@ public class MBigDecimal extends TClassBase {
         }
 
         @Override
-        public BigDecimalWrapper valueToCache(PBasicValueSource value, TInstance tInstance) {
+        public BigDecimalWrapper valueToCache(BasicValueSource value, TInstance tInstance) {
             int precision = tInstance.attribute(Attrs.PRECISION);
             int scale = tInstance.attribute(Attrs.SCALE);
             byte[] bb = value.getBytes();
@@ -252,9 +242,9 @@ public class MBigDecimal extends TClassBase {
         }
     };
 
-    private static final PValueIO valueIO = new PValueIO() {
+    private static final ValueIO valueIO = new ValueIO() {
         @Override
-        public void copyCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
+        public void copyCanonical(ValueSource in, TInstance typeInstance, ValueTarget out) {
             if (in.hasCacheValue()) {
                 if (out.supportsCachedObjects())
                     out.putObject(in.getObject());
@@ -269,13 +259,13 @@ public class MBigDecimal extends TClassBase {
         }
 
         @Override
-        public void writeCollating(PValueSource in, TInstance typeInstance, PValueTarget out) {
+        public void writeCollating(ValueSource in, TInstance typeInstance, ValueTarget out) {
             BigDecimalWrapper wrapper = getWrapper(in, typeInstance);
             out.putObject(wrapper.asBigDecimal());
         }
 
         @Override
-        public void readCollating(PValueSource in, TInstance typeInstance, PValueTarget out) {
+        public void readCollating(ValueSource in, TInstance typeInstance, ValueTarget out) {
             Object input = in.getObject();
             BigDecimal bigDecimal;
             if (input instanceof MBigDecimalWrapper) {
@@ -284,7 +274,7 @@ public class MBigDecimal extends TClassBase {
                 bigDecimal = (BigDecimal)input;
             } else {
                 bigDecimal = null;
-                assert false : "bad PValueSource input type: " + input.getClass().toString();
+                assert false : "bad ValueSource input type: " + input.getClass().toString();
             }
             int allowedScale = typeInstance.attribute(Attrs.SCALE);
             int allowedPrecision = typeInstance.attribute(Attrs.PRECISION);
@@ -302,8 +292,8 @@ public class MBigDecimal extends TClassBase {
     };
 
     @Override
-    protected boolean tryFromObject(TExecutionContext context, PValueSource in, PValueTarget out) {
-        // If the incoming PValueSource is a DECIMAL, *and* it has a cache value (ie an BigDecimalWrapper), then
+    protected boolean tryFromObject(TExecutionContext context, ValueSource in, ValueTarget out) {
+        // If the incoming ValueSource is a DECIMAL, *and* it has a cache value (ie an BigDecimalWrapper), then
         // we can just copy the wrapper into the output. If the incoming is a DECIMAL with bytes (its raw form), we
         // can only copy those bytes if the TInstance match -- and super.tryFromObject already makes that check.
         if (in.tInstance().typeClass() instanceof MBigDecimal && in.hasCacheValue()) {

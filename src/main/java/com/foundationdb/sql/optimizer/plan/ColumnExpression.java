@@ -34,7 +34,7 @@ public class ColumnExpression extends BaseExpression
                             DataTypeDescriptor sqlType, ValueNode sqlSource) {
         super(sqlType, column.getType().akType(), sqlSource);
         this.table = table;
-        assert (table.getTable().getTable() == column.getUserTable());
+        assert (table.getTable().getTable() == column.getTable());
         this.column = column;
         this.position = column.getPosition();
     }

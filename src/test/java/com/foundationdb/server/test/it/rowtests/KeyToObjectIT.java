@@ -21,13 +21,13 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.server.PersistitKeyPValueSource;
+import com.foundationdb.server.PersistitKeyValueSource;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.UnsupportedIndexDataTypeException;
 import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
 import com.foundationdb.server.store.IndexVisitor;
 import com.foundationdb.server.test.it.ITBase;
-import com.foundationdb.server.types.pvalue.PValueSources;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.util.WrappingByteSource;
 import com.persistit.Key;
 import com.persistit.Value;
@@ -65,7 +65,7 @@ public class KeyToObjectIT extends ITBase {
      * @throws Exception On error.
      */
     private void testKeyToObjectInternal(int tableId, int expectedRowCount, String indexName) throws Exception {
-        final Table table = getUserTable(tableId);
+        final Table table = getTable(tableId);
         final Index index = table.getIndex(indexName);
         assertNotNull("expected index named: "+indexName, index);
         
@@ -91,12 +91,12 @@ public class KeyToObjectIT extends ITBase {
                     Column column = indexColumn.getColumn();
                     int colPos = column.getPosition();
                     Object objFromRow = row.get(colPos);
-                    PersistitKeyPValueSource valueSource = new PersistitKeyPValueSource(indexColumn.getColumn().tInstance());
+                    PersistitKeyValueSource valueSource = new PersistitKeyValueSource(indexColumn.getColumn().tInstance());
                     valueSource.attach(key, indexColumn);
                     
                     final Object lastConvertedValue;
                     try {
-                        lastConvertedValue = PValueSources.toObject(valueSource);
+                        lastConvertedValue = ValueSources.toObject(valueSource);
                     } catch (Exception e) {
                         throw new RuntimeException("with AkType." + column.getType().akType(), e);
                     }

@@ -23,9 +23,9 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueSources;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.util.AkibanAppender;
 
 import org.joda.time.DateTime;
@@ -61,10 +61,10 @@ public class ServerValueEncoder
 
     public static final String ROUND_ZERO_DATETIME = "0001-01-01 00:00:00";
     public static final String ROUND_ZERO_DATE = "0001-01-01";
-    public static final PValueSource ROUND_ZERO_DATETIME_SOURCE
-            = new PValue(MDatetimes.DATETIME.instance(false), MDatetimes.parseDatetime(ROUND_ZERO_DATETIME));
-    public static final PValueSource ROUND_ZERO_DATE_SOURCE
-            = new PValue(MDatetimes.DATE.instance(false), MDatetimes.parseDate(ROUND_ZERO_DATE, null));
+    public static final ValueSource ROUND_ZERO_DATETIME_SOURCE
+            = new Value(MDatetimes.DATETIME.instance(false), MDatetimes.parseDatetime(ROUND_ZERO_DATETIME));
+    public static final ValueSource ROUND_ZERO_DATE_SOURCE
+            = new Value(MDatetimes.DATE.instance(false), MDatetimes.parseDate(ROUND_ZERO_DATE, null));
     
     private String encoding;
     private ZeroDateTimeBehavior zeroDateTimeBehavior;
@@ -125,7 +125,7 @@ public class ServerValueEncoder
      * to
      * <code>writeByteStream</code>.
      */
-    public ByteArrayOutputStream encodePValue(PValueSource value, ServerType type, 
+    public ByteArrayOutputStream encodeValue(ValueSource value, ServerType type,
                                              boolean binary) throws IOException {
         if (value.isNull())
             return null;
@@ -147,7 +147,7 @@ public class ServerValueEncoder
             }
         }
         reset();
-        appendPValue(value, type, binary);
+        appendValue(value, type, binary);
         return getByteStream();
     }
 
@@ -167,7 +167,7 @@ public class ServerValueEncoder
     }
     
     /** Append the given value to the buffer. */
-    public void appendPValue(PValueSource value, ServerType type, boolean binary) 
+    public void appendValue(ValueSource value, ServerType type, boolean binary)
             throws IOException {
         if (!binary) {
             // Handle unusual text encoding of binary types.
@@ -191,7 +191,12 @@ public class ServerValueEncoder
                 getDataStream().write(value.getInt8());
                 break;
             case INT_16:
-                getDataStream().writeShort(value.getInt16());
+                {
+                    short val = value.getInt16();
+                    if (type.getInstance().typeClass() == MDatetimes.YEAR)
+                        val += (short)1900;
+                    getDataStream().writeShort(val);
+                }
                 break;
             case INT_32:
                 getDataStream().writeInt(value.getInt32());
@@ -212,10 +217,19 @@ public class ServerValueEncoder
                 getDataStream().write(value.getBoolean() ? 1 : 0);
                 break;
             case TIMESTAMP_FLOAT64_SECS_2000_NOTZ:
-                getDataStream().writeDouble(seconds2000NoTZ(value.getInt64()));
+                getDataStream().writeDouble(seconds2000NoTZ(valueUnixtime(value, type)));
                 break;
             case TIMESTAMP_INT64_MICROS_2000_NOTZ:
-                getDataStream().writeLong(seconds2000NoTZ(value.getInt64()) * 1000000L);
+                getDataStream().writeLong(seconds2000NoTZ(valueUnixtime(value, type)) * 1000000L);
+                break;
+            case DAYS_2000:
+                getDataStream().writeInt(days2000(value.getInt32()));
+                break;
+            case TIME_FLOAT64_SECS_NOTZ:
+                getDataStream().writeDouble(timeSecsNoTZ(value.getInt32()));
+                break;
+            case TIME_INT64_MICROS_NOTZ:
+                getDataStream().writeLong(timeSecsNoTZ(value.getInt32()) * 1000000L);
                 break;
             case DECIMAL_PG_NUMERIC_VAR:
                 for (short d : pgNumericVar(MBigDecimal.getWrapper(value, type.getInstance()).asBigDecimal())) {
@@ -245,8 +259,8 @@ public class ServerValueEncoder
             value = javaDateValue(value, tInstance);
         }
         // TODO this is inefficient, but I want to get it working. I created a task to fix it in pivotal.
-        PValueSource source = PValueSources.pValuefromObject(value, tInstance);
-        appendPValue(source, type, binary);
+        ValueSource source = ValueSources.valuefromObject(value, tInstance);
+        appendValue(source, type, binary);
     }
     
     private TInstance javaDateTInstance(Object value) {
@@ -284,17 +298,50 @@ public class ServerValueEncoder
         return printWriter;
     }
 
+    private static int valueUnixtime(ValueSource value, ServerType type) {
+        if (type.getInstance().typeClass() == MDatetimes.DATETIME) {
+            long ymdhms = value.getInt64();
+            int y = (int)(ymdhms / 10000000000L);
+            int mo = (int)((ymdhms / 100000000) % 100);
+            int d = (int)((ymdhms / 1000000) % 100);
+            int h = (int)((ymdhms / 10000) % 100);
+            int mi = (int)((ymdhms / 100) % 100);
+            int s = (int)(ymdhms % 100);
+            DateTime dt = new DateTime(y, mo, d, h, mi, s);
+            return (int)(dt.getMillis() / 1000);
+        }
+        else {
+            return value.getInt32(); // TIMESTAMP
+        }
+    }
+
     /** Adjust seconds since 1970-01-01 00:00:00-UTC to seconds since
      * 2000-01-01 00:00:00 timezoneless. A conversion from local time
      * to UTC involves an offset that varies for Summer time. A
      * conversion from local time to timezoneless just removes the
      * zone as though all days were the same length.
      */
-    private static long seconds2000NoTZ(long unixtime) {
-        long delta = 946702800L; // 2000-01-01 00:00:00-UTC.
+    private static int seconds2000NoTZ(int unixtime) {
+        int delta = 946684800; // 2000-01-01 00:00:00-UTC.
         DateTimeZone dtz = DateTimeZone.getDefault();
-        delta -= (dtz.getOffset(unixtime * 1000) - dtz.getStandardOffset(unixtime * 1000)) / 1000;
+        unixtime += dtz.getOffset(unixtime * 1000L) / 1000;
         return unixtime - delta;
+    }
+
+    public static int days2000(int date) {
+        int y = date / 512;
+        int m = date / 32 % 16;
+        int d = date % 32;
+        DateTime dt = new DateTime(y, m, d, 0, 0, 0);
+        int secs = seconds2000NoTZ((int)(dt.getMillis() / 1000));
+        return (int)(secs / 86400);
+    }
+
+    public static int timeSecsNoTZ(int time) {
+        int h  = time / 10000;
+        int m = (time / 100) % 100;
+        int s = time % 100;
+        return (h * 3600 + m * 60 + s);
     }
 
     private static final short NUMERIC_POS = 0x0000;

@@ -17,8 +17,8 @@
 
 package com.foundationdb.server.types;
 
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.Constantness;
 
 public abstract class TCastBase implements TCast
@@ -41,7 +41,7 @@ public abstract class TCastBase implements TCast
     }
 
     @Override
-    public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+    public void evaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
         if (source.isNull())
             target.putNull();
         else
@@ -53,7 +53,7 @@ public abstract class TCastBase implements TCast
         return targetClass().instance(source.isNullable()); // you may want to override this, especially for varchars
     }
 
-    protected abstract void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target);
+    protected abstract void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target);
 
     @Override
     public Constantness constness()

@@ -26,8 +26,8 @@ import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.util.ByteSource;
 import com.foundationdb.util.Undef;
 
@@ -152,11 +152,11 @@ public final class TestCase<T> {
         return charset;
     }
 
-    public void put(PValueTarget target) {
+    public void put(ValueTarget target) {
         if (TClass.comparisonNeedsCasting(target.tInstance(), tInstance)) {
             throw new WrongValueGetException (target.tInstance(), tInstance);
         }
-        switch (TInstance.pUnderlying(target.tInstance())) {
+        switch (TInstance.underlyingType(target.tInstance())) {
         case BOOL:
             target.putBool(long2bool(valLong)); break;
         case BYTES:
@@ -192,8 +192,8 @@ public final class TestCase<T> {
 
     // for use in this package
 
-    void check(PValueSource source) {
-        switch (TInstance.pUnderlying(source.tInstance())) {
+    void check(ValueSource source) {
+        switch (TInstance.underlyingType(source.tInstance())) {
         case BOOL:
             assertEquals(niceString(), long2bool(valLong), source.getBoolean());
             break;
@@ -247,7 +247,7 @@ public final class TestCase<T> {
         return value != 0;
     }
 
-    void get(PValueSource source) {
+    void get(ValueSource source) {
         if (TClass.comparisonNeedsCasting(source.tInstance(), tInstance)) {
             throw new WrongValueGetException (source.tInstance(), tInstance);
         }

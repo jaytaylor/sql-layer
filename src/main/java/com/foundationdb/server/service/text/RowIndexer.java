@@ -18,12 +18,11 @@
 package com.foundationdb.server.service.text;
 
 import com.foundationdb.qp.operator.Cursor;
-import com.foundationdb.qp.persistitadapter.PersistitHKey;
+import com.foundationdb.qp.rowtype.TableRowType;
+import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.UserTableRowType;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.util.ShareHolder;
+import com.foundationdb.server.types.value.ValueSource;
 import com.persistit.Key;
 
 import org.apache.lucene.document.Document;
@@ -44,7 +43,7 @@ import org.apache.lucene.document.StringField;
 public class RowIndexer implements Closeable
 {
     private Map<RowType,Integer> ancestorRowTypes;
-    private ShareHolder<Row>[] ancestors;
+    private Row[] ancestors;
     private Set<RowType> descendantRowTypes;
     private Map<RowType,List<IndexedField>> fieldsByRowType;
     private IndexWriter writer;
@@ -56,19 +55,18 @@ public class RowIndexer implements Closeable
     private static final Logger logger = LoggerFactory.getLogger(RowIndexer.class);
 
     public RowIndexer(FullTextIndexInfo index, IndexWriter writer, boolean updating) {
-        UserTableRowType indexedRowType = index.getIndexedRowType();
-        int depth = indexedRowType.userTable().getDepth();
+        TableRowType indexedRowType = index.getIndexedRowType();
+        int depth = indexedRowType.table().getDepth();
         ancestorRowTypes = new HashMap<>(depth+1);
-        ancestors = (ShareHolder<Row>[])new ShareHolder<?>[depth+1];
+        ancestors = new Row[depth+1];
         fieldsByRowType = index.getFieldsByRowType();
         Set<RowType> rowTypes = index.getRowTypes();
         descendantRowTypes = new HashSet<>(rowTypes.size() - ancestorRowTypes.size());
         for (RowType rowType : rowTypes) {
             if ((rowType == indexedRowType) ||
                 rowType.ancestorOf(indexedRowType)) {
-                Integer ancestorDepth = rowType.userTable().getDepth();
+                Integer ancestorDepth = rowType.table().getDepth();
                 ancestorRowTypes.put(rowType, ancestorDepth);
-                ancestors[ancestorDepth] = new ShareHolder<>();
             }
             else if (indexedRowType.ancestorOf(rowType)) {
                 descendantRowTypes.add(rowType);
@@ -90,32 +88,29 @@ public class RowIndexer implements Closeable
         RowType rowType = row.rowType();
         Integer ancestorDepth = ancestorRowTypes.get(rowType);
         if (ancestorDepth != null) {
-            ancestors[ancestorDepth].hold(row);
+            ancestors[ancestorDepth] = row;
             if (ancestorDepth == ancestors.length - 1) {
                 addDocument();
                 currentDocument = new Document();
                 getKeyBytes(row);
                 addFields(row, fieldsByRowType.get(rowType));
                 for (int i = 0; i < ancestors.length - 1; i++) {
-                    ShareHolder<Row> holder = ancestors[i];
-                    if (holder != null) {
-                        Row ancestor = holder.get();
-                        if (ancestor != null) {
-                            // We may have remembered an ancestor with no
-                            // children and then this row is an orphan.
-                            if (ancestor.ancestorOf(row)) {
-                                addFields(ancestor, fieldsByRowType.get(ancestor.rowType()));
-                            }
-                            else {
-                                holder.release();
-                            }
+                    Row ancestor = ancestors[i];
+                    if (ancestor != null) {
+                        // We may have remembered an ancestor with no
+                        // children and then this row is an orphan.
+                        if (ancestor.ancestorOf(row)) {
+                            addFields(ancestor, fieldsByRowType.get(ancestor.rowType()));
+                        }
+                        else {
+                            ancestors[i] = null;
                         }
                     }
                 }
             }
         }
         else if (descendantRowTypes.contains(rowType)) {
-            Row ancestor = ancestors[ancestors.length - 1].get();
+            Row ancestor = ancestors[ancestors.length - 1];
             if ((ancestor != null) && ancestor.ancestorOf(row)) {
                 addFields(row, fieldsByRowType.get(rowType));
             }
@@ -171,7 +166,7 @@ public class RowIndexer implements Closeable
     protected void addFields(Row row, List<IndexedField> fields) throws IOException {
         if (fields == null) return;
         for (IndexedField indexedField : fields) {
-            PValueSource value = row.pvalue(indexedField.getPosition());
+            ValueSource value = row.value(indexedField.getPosition());
             Field field = indexedField.getField(value);
             currentDocument.add(field);
         }
@@ -191,11 +186,7 @@ public class RowIndexer implements Closeable
 
     @Override
     public void close() {
-        for (ShareHolder<Row> holder : ancestors) {
-            if (holder != null) {
-                holder.release();
-            }
-        }
+        Arrays.fill(ancestors, null);
     }
 
 }

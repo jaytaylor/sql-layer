@@ -18,14 +18,13 @@
 package com.foundationdb.server.test.mt.mtatomics;
 
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
-import com.foundationdb.ais.model.aisb2.NewUserTableBuilder;
+import com.foundationdb.ais.model.aisb2.NewTableBuilder;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.InvalidOperationException;
-import com.foundationdb.server.service.dxl.DXLReadWriteLockHook;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.test.mt.MTBase;
 import com.foundationdb.server.test.mt.mtutil.TimePointsComparison;
@@ -37,7 +36,6 @@ import com.foundationdb.server.service.dxl.DXLService;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -91,27 +89,22 @@ class ConcurrentAtomicsBase extends MTBase {
                                         "<(SCAN: PAUSE)",
                                         "SCAN: FINISH"));
 
-        // 'update: out' will get blocked until scan is done if top level r/w lock is on
-        if(DXLReadWriteLockHook.only().isDMLLockEnabled()) {
-            timePoints.add(timePoints.remove(3));
-        }
-
         new TimePointsComparison(scanResult, updateResult).verify(timePoints.toArray(new String[timePoints.size()]));
 
         assertEquals("rows scanned (in order)", scanCallableExpected, scanResult.getItem());
         expectFullRows(tableId, endStateExpected.toArray(new NewRow[endStateExpected.size()]));
     }
 
-    protected static List<UserTable> joinedTableTemplates(String parentSchema, String childSchema,
+    protected static List<Table> joinedTableTemplates(String parentSchema, String childSchema,
                                                           boolean extraParentKey, boolean alteredChild,
                                                           boolean extraChildKey, boolean groupIndex) {
         NewAISBuilder builder = AISBBasedBuilder.create();
-        NewUserTableBuilder parentBuilder = builder.userTable(parentSchema, PARENT);
+        NewTableBuilder parentBuilder = builder.table(parentSchema, PARENT);
         parentBuilder.colLong("id", false).colLong("value", true).pk("id");
         if(extraParentKey) {
             parentBuilder.key("value", "value");
         }
-        NewUserTableBuilder childBuilder = builder.userTable(childSchema, TABLE);
+        NewTableBuilder childBuilder = builder.table(childSchema, TABLE);
         childBuilder.colLong("id", false).colString("name", 32, true).
                 pk("id").key("name", "name").
                 joinTo(parentSchema, PARENT, "fk_0").on("id", "id");
@@ -127,8 +120,8 @@ class ConcurrentAtomicsBase extends MTBase {
             builder.groupIndex("g_i", Index.JoinType.LEFT).on(childSchema, TABLE, "extra").and(parentSchema, PARENT, "value");
         }
         return Arrays.asList(
-                builder.ais().getUserTable(parentSchema, PARENT),
-                builder.ais().getUserTable(childSchema, TABLE)
+                builder.ais().getTable(parentSchema, PARENT),
+                builder.ais().getTable(childSchema, TABLE)
         );
     }
 
@@ -138,7 +131,7 @@ class ConcurrentAtomicsBase extends MTBase {
     protected List<Integer> createJoinedTables(String parentSchema, String childSchema,
                                                boolean extraParentKey, boolean alteredChild,
                                                boolean extraChildKey, boolean groupIndex) {
-        List<UserTable> tables = joinedTableTemplates(parentSchema, childSchema, extraParentKey, alteredChild, extraChildKey, groupIndex);
+        List<Table> tables = joinedTableTemplates(parentSchema, childSchema, extraParentKey, alteredChild, extraChildKey, groupIndex);
         ddl().createTable(session(), tables.get(0));
         ddl().createTable(session(), tables.get(1));
         updateAISGeneration();

@@ -33,11 +33,12 @@ import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes.StringType;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.DateTimeField;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
+
 import java.util.List;
 
 public abstract class MDateFormat extends TScalarBase
@@ -49,7 +50,7 @@ public abstract class MDateFormat extends TScalarBase
             new MDateFormat(MDatetimes.DATE)
             {
                 @Override
-                protected long[] getYMDHMS(PValueSource source)
+                protected long[] getYMDHMS(ValueSource source)
                 {
                     long ret[] = MDatetimes.decodeDate(source.getInt32());
                     return MDatetimes.isValidDayMonth(ret) ? ret : null;
@@ -58,7 +59,7 @@ public abstract class MDateFormat extends TScalarBase
             new MDateFormat(MDatetimes.DATETIME)
             {
                 @Override
-                protected long[] getYMDHMS(PValueSource source)
+                protected long[] getYMDHMS(ValueSource source)
                 {
                     long ret[] = MDatetimes.decodeDatetime(source.getInt64());
                     return MDatetimes.isValidDatetime(ret) ? ret : null;
@@ -67,7 +68,7 @@ public abstract class MDateFormat extends TScalarBase
             new MDateFormat(MDatetimes.TIME)
             {
                 @Override
-                protected long[] getYMDHMS(PValueSource source)
+                protected long[] getYMDHMS(ValueSource source)
                 {
                     // input cannot be a TIME
                     // explicity define this so TIMEs wouldn't get cast to other things
@@ -77,7 +78,7 @@ public abstract class MDateFormat extends TScalarBase
             new MDateFormat(MString.VARCHAR)
             {
                 @Override
-                protected long[] getYMDHMS(PValueSource source)
+                protected long[] getYMDHMS(ValueSource source)
                 {
                     long ret[] = new long[6];
                     StringType strType = MDatetimes.parseDateOrTime(source.getString(), ret);
@@ -101,7 +102,7 @@ public abstract class MDateFormat extends TScalarBase
     private static final int RET_INDEX = 0;
     private static final int ERROR_INDEX = 1;
     
-    protected abstract long[] getYMDHMS(PValueSource source);
+    protected abstract long[] getYMDHMS(ValueSource source);
     
     private final TClass dateType;
     
@@ -117,7 +118,7 @@ public abstract class MDateFormat extends TScalarBase
     }
     
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
         String ret = null;
         InvalidOperationException error = null;
@@ -158,7 +159,7 @@ public abstract class MDateFormat extends TScalarBase
             {
                 TPreptimeValue formatArg = inputs.get(1);
                 
-                PValueSource format = formatArg.value();
+                ValueSource format = formatArg.value();
                 
                 int length;
                 
@@ -168,7 +169,7 @@ public abstract class MDateFormat extends TScalarBase
                     length = formatArg.instance().attribute(StringAttribute.MAX_LENGTH) * 10;
                 else
                 {
-                    PValueSource date = inputs.get(0).value();
+                    ValueSource date = inputs.get(0).value();
                     
                     // if the date string is not literal, get the length
                     // from the format string

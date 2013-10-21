@@ -86,10 +86,8 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
         int nrows = 0;
         Cursor cursor = null;
         OutputStream outputStream = null;
-        boolean lockSuccess = false;
         try {
-            lock(context, DXLFunction.UNSPECIFIED_DML_READ);
-            lockSuccess = true;
+            preExecute(context, DXLFunction.UNSPECIFIED_DML_READ);
             cursor = context.startCursor(this, bindings);
             outputStream = new FileOutputStream(toFile);
             int ncols = getColumnTypes().size();
@@ -109,7 +107,7 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
             if (outputStream != null)
                 outputStream.close();
             context.finishCursor(this, cursor, nrows, false);
-            unlock(context, DXLFunction.UNSPECIFIED_DML_READ, lockSuccess);
+            postExecute(context, DXLFunction.UNSPECIFIED_DML_READ);
         }
         {        
             PostgresMessenger messenger = server.getMessenger();

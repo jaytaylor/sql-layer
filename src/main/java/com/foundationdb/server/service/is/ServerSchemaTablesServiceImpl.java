@@ -34,7 +34,7 @@ import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.PValuesRow;
+import com.foundationdb.qp.row.ValuesRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.sql.LayerInfoInterface;
 import com.foundationdb.server.error.ErrorCode;
@@ -190,9 +190,9 @@ public class ServerSchemaTablesServiceImpl
                     // do nothing -> Can't get the local host name/ip address
                     // return null as a host name
                 }
-                PValuesRow row = new PValuesRow (rowType,
+                ValuesRow row = new ValuesRow(rowType,
                         serverInterface.getServerName(),
-                        serverInterface.getServerVersion(),
+                        serverInterface.getVersionInfo().versionLong,
                         hostName,
                         store.getName(),
                         ++rowCounter);
@@ -229,7 +229,7 @@ public class ServerSchemaTablesServiceImpl
                     return null;
                 }
                 ServerMonitor server = servers.next();
-                PValuesRow row = new PValuesRow(rowType,
+                ValuesRow row = new ValuesRow(rowType,
                                               server.getServerType(),
                                               (server.getLocalPort() < 0) ? null : Long.valueOf(server.getLocalPort()),
                                               server.getStartTimeMillis()/1000,
@@ -270,7 +270,7 @@ public class ServerSchemaTablesServiceImpl
                 }
                 SessionMonitor session = sessions.next();
                 MonitorStage stage = session.getCurrentStage();
-                PValuesRow row = new PValuesRow(rowType,
+                ValuesRow row = new ValuesRow(rowType,
                                               (long)session.getSessionId(),
                                               session.getCallerSessionId() < 0 ? null : (long)session.getCallerSessionId(),
                                               (int)(session.getStartTimeMillis()/1000),
@@ -316,7 +316,7 @@ public class ServerSchemaTablesServiceImpl
             public Row next() {
                 if (rowCounter >= codes.length)
                     return null;
-                return new PValuesRow (rowType,
+                return new ValuesRow(rowType,
                         codes[(int)rowCounter].getFormattedValue(),
                         codes[(int)rowCounter].name(),
                         codes[(int)rowCounter].getMessage(),
@@ -354,7 +354,7 @@ public class ServerSchemaTablesServiceImpl
                 if (!propertyIt.hasNext())
                     return null;
                 Map.Entry<String,String> prop = propertyIt.next();
-                return new PValuesRow (rowType,
+                return new ValuesRow(rowType,
                                       prop.getKey(),
                                       prop.getValue(),
                                       ++rowCounter);
@@ -391,7 +391,7 @@ public class ServerSchemaTablesServiceImpl
                     return null;
                 }
                 MemoryPoolMXBean pool = it.next();
-                return new PValuesRow (rowType,
+                return new ValuesRow(rowType,
                                       pool.getName(),
                                       pool.getType().name(),
                                       pool.getUsage().getUsed(),
@@ -431,7 +431,7 @@ public class ServerSchemaTablesServiceImpl
                     return null;
                 }
                 GarbageCollectorMXBean pool = it.next();
-                return new PValuesRow (rowType,
+                return new ValuesRow(rowType,
                                       pool.getName(),
                                       pool.getCollectionCount(),
                                       pool.getCollectionTime(),
@@ -474,7 +474,7 @@ public class ServerSchemaTablesServiceImpl
                     return null;
                 }
                 TapReport report = reports[it++];
-                return new PValuesRow (rowType,
+                return new ValuesRow(rowType,
                                       report.getName(),
                                       report.getInCount(),
                                       report.getOutCount(),
@@ -522,7 +522,7 @@ public class ServerSchemaTablesServiceImpl
                     statements = sessions.next().getPreparedStatements().iterator();
                 }
                 PreparedStatementMonitor preparedStatement = statements.next();
-                PValuesRow row = new PValuesRow(rowType,
+                ValuesRow row = new ValuesRow(rowType,
                                               (long)preparedStatement.getSessionId(),
                                               preparedStatement.getName(),
                                               preparedStatement.getSQL(),
@@ -572,7 +572,7 @@ public class ServerSchemaTablesServiceImpl
                     statements = sessions.next().getCursors().iterator();
                 }
                 CursorMonitor cursor = statements.next();
-                PValuesRow row = new PValuesRow(rowType,
+                ValuesRow row = new ValuesRow(rowType,
                                               (long)cursor.getSessionId(),
                                               cursor.getName(),
                                               cursor.getSQL(),
@@ -614,7 +614,7 @@ public class ServerSchemaTablesServiceImpl
                     return null;
                 }
                 UserMonitor user = users.next();
-                PValuesRow row = new PValuesRow (rowType,
+                ValuesRow row = new ValuesRow(rowType,
                                             user.getUserName(),
                                             user.getStatementCount(),
                                             ++rowCounter);
@@ -627,19 +627,19 @@ public class ServerSchemaTablesServiceImpl
     static AkibanInformationSchema createTablesToRegister() {
         NewAISBuilder builder = AISBBasedBuilder.create();
         
-        builder.userTable(SERVER_INSTANCE_SUMMARY)
+        builder.table(SERVER_INSTANCE_SUMMARY)
             .colString("server_name", DESCRIPTOR_MAX, false)
             .colString("server_version", DESCRIPTOR_MAX, false)
             .colString("server_host", IDENT_MAX, false)
             .colString("server_store", IDENT_MAX, false);
         
-        builder.userTable(SERVER_SERVERS)
+        builder.table(SERVER_SERVERS)
             .colString("server_type", IDENT_MAX, false)
             .colBigInt("local_port", true)
             .colTimestamp("start_time", false)
             .colBigInt("session_count", true);
         
-        builder.userTable(SERVER_SESSIONS)
+        builder.table(SERVER_SESSIONS)
             .colBigInt("session_id", false)
             .colBigInt("caller_session_id", true)
             .colTimestamp("start_time", false)
@@ -653,42 +653,42 @@ public class ServerSchemaTablesServiceImpl
             .colBigInt("query_row_count", true)
             .colString("prepared_name", IDENT_MAX, true);
         
-        builder.userTable(ERROR_CODES)
+        builder.table(ERROR_CODES)
             .colString("code", 5, false)
             .colString("name", DESCRIPTOR_MAX, false)
             .colString("message", IDENT_MAX, false)
             .colString("description", PATH_MAX, true);
 
-        builder.userTable(SERVER_PARAMETERS)
+        builder.table(SERVER_PARAMETERS)
             .colString("parameter_name", IDENT_MAX, false)
             .colString("current_value", PATH_MAX, false);
 
-        builder.userTable(SERVER_MEMORY_POOLS)
+        builder.table(SERVER_MEMORY_POOLS)
             .colString("name", IDENT_MAX, false)
             .colString("type", DESCRIPTOR_MAX, false)
             .colBigInt("used_bytes", false)
             .colBigInt("max_bytes", false)
             .colBigInt("peak_bytes", false);
 
-        builder.userTable(SERVER_GARBAGE_COLLECTORS)
+        builder.table(SERVER_GARBAGE_COLLECTORS)
             .colString("name", IDENT_MAX, false)
             .colBigInt("total_count", false)
             .colBigInt("total_milliseconds", false);
 
-        builder.userTable(SERVER_TAPS)
+        builder.table(SERVER_TAPS)
             .colString("tap_name", IDENT_MAX, false)
             .colBigInt("in_count", false)
             .colBigInt("out_count", false)
             .colBigInt("total_nanoseconds", false);
 
-        builder.userTable(SERVER_PREPARED_STATEMENTS)
+        builder.table(SERVER_PREPARED_STATEMENTS)
             .colBigInt("session_id", false)
             .colString("prepared_name", IDENT_MAX, true)
             .colString("statement", PATH_MAX, true)
             .colTimestamp("prepare_time", true)
             .colBigInt("estimated_row_count", true);
 
-        builder.userTable(SERVER_CURSORS)
+        builder.table(SERVER_CURSORS)
             .colBigInt("session_id", false)
             .colString("cursor_name", IDENT_MAX, true)
             .colString("statement", PATH_MAX, true)
@@ -696,7 +696,7 @@ public class ServerSchemaTablesServiceImpl
             .colTimestamp("creation_time", true)
             .colBigInt("row_count", true);
 
-        builder.userTable(SERVER_USERS)
+        builder.table(SERVER_USERS)
             .colString("user_name", IDENT_MAX, false)
             .colBigInt("statement_count", false);
             

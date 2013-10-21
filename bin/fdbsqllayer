@@ -32,68 +32,86 @@ fi
 
 infer_home_dir()
 {
-    local loc_local="$(cd $(dirname $0)/..; pwd -P)"
+    local loc_dev="$(cd $(dirname $0)/..; pwd -P)"
+    local loc_local="/usr/local/foundationdb/sql"
     local loc_global="/usr/share/foundationdb/sql"
+    local value=""
 
     # Only infer if passed no argument
     if [ -z "$1" ]; then
-        # If this is called via system location, assume global
-        if [ "$0" = "/usr/sbin/fdbsqllayer" ]; then
-            echo $loc_global
+        if [ -d "$loc_dev/target" ]; then
+            value="$loc_dev"
+        elif [ -d "$loc_local" ]; then
+            value="$loc_local"
+        elif [ -d "$loc_global" ]; then
+            value="$loc_global"
         else
-            echo $loc_local
+            echo "Unknown home location" >&2
+            exit 1
         fi
     else
-        echo "$1"
+        value="$1"
     fi
+    export FDBSQL_HOME="$value"
 }
 
 infer_jar_file()
 {
-    local loc_local="${FDBSQL_HOME}/target/fdb-sql-layer-1.9.1-SNAPSHOT.jar"
-    local loc_global="/usr/share/foundationdb/sql/fdb-sql-layer.jar"
+    local loc_dev="${FDBSQL_HOME}/target"
+    local loc_home="${FDBSQL_HOME}/fdb-sql-layer.jar"
+    local value=""
 
     # Only infer if passed no argument
     if [ -z "$1" ]; then
-        # Try local first so you can develop *and* have a system package installed
-        if [ -f "$loc_local" ]; then
-            echo $loc_local
-        elif [ -f "$loc_global" ]; then
-            echo $loc_global
+        # Try dev first so you can develop *and* have a system package installed
+        if [ -d "$loc_dev" ]; then
+            value=$(ls "$loc_dev"/fdb-sql-layer*.jar |grep -v -E '\-sources|\-tests')
+            if [ -z "$value" ]; then
+                echo "Developer directory detected but no jar found" >&2
+                exit 1
+            fi
+        elif [ -f "$loc_home" ]; then
+            value="$loc_home"
         else
-            echo "<UNKNOWN>"
+            echo "Unknown jar location" >&2
+            exit 1
         fi
     else
-        echo "$1"
+        value="$1"
     fi
+    export JAR_FILE="$value"
 }
 
 infer_dep_dir()
 {
-    local loc_local="${FDBSQL_HOME}/target/dependency"
-    local loc_global="/usr/share/foundationdb/sql/server"
+    local loc_dev="${FDBSQL_HOME}/target/dependency"
+    local loc_home="${FDBSQL_HOME}/server"
+    local value=""
 
     # Only infer if passed no argument
     if [ -z "$1" ]; then
-        # Try local first so you can develop *and* have a system package installed
-        if [ -d "$loc_local" ]; then
-            echo $loc_local
-        elif [ -d "$loc_global" ]; then
-            echo $loc_global
+        # Try dev first so you can develop *and* have a system package installed
+        if [ -d "$loc_dev" ]; then
+            value="$loc_dev"
+        elif [ -d "$loc_home" ]; then
+            value="$loc_home"
         else
-            echo "<UNKNOWN>"
+            echo "Unknown dependency location" >&2
+            exit 1
         fi
     else
-        echo "$1"
+        value="$1"
     fi
+    export DEP_DIR="$value"
 }
 
 
 get_version()
 {
-    jar_file=$(infer_jar_file $1)
-    dep_dir=$(infer_dep_dir $2)
-    CLASSPATH=$jar_file:$dep_dir/*
+    infer_home_dir "$1"
+    infer_jar_file "$2"
+    infer_dep_dir "$3"
+    CLASSPATH="$JAR_FILE":"$DEP_DIR"/*
 
     server_version=$(exec "$JAVA" -cp "$CLASSPATH" com.foundationdb.server.GetVersion)
     persistit_version=$(exec "$JAVA" -cp "$CLASSPATH" com.persistit.GetVersion)
@@ -103,13 +121,13 @@ get_version()
 
 launch_service()
 {
-    FDBSQL_HOME=$(infer_home_dir $1)
+    infer_home_dir "$1"
     foreground=$2
     props=$3
     usegui=$4
     pidpath=$5
-    JAR_FILE=$(infer_jar_file $6)
-    DEP_DIR=$(infer_dep_dir $7)
+    infer_jar_file "$6"
+    infer_dep_dir "$7"
     FDBSQL_CONF=$8
 
     if [ -z "$FDBSQL_CONF" ]; then
@@ -232,7 +250,7 @@ while true; do
             shift
         ;;
         -v)
-            get_version $jarfile $depdir
+            get_version "$homedir" "$jarfile" "$depdir"
             exit 0
         ;;
         --)

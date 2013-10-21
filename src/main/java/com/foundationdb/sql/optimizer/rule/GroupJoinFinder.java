@@ -28,7 +28,7 @@ import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.JoinColumn;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 
 import com.foundationdb.util.ListUtils;
 
@@ -849,11 +849,11 @@ public class GroupJoinFinder extends BaseRule
     
     protected static int compareTableSources(TableSource ts1, TableSource ts2) {
         TableNode t1 = ts1.getTable();
-        UserTable ut1 = t1.getTable();
+        Table ut1 = t1.getTable();
         Group g1 = ut1.getGroup();
         TableGroup tg1 = ts1.getGroup();
         TableNode t2 = ts2.getTable();
-        UserTable ut2 = t2.getTable();
+        Table ut2 = t2.getTable();
         Group g2 = ut2.getGroup();
         TableGroup tg2 = ts2.getGroup();
         if (g1 != g2)

@@ -25,12 +25,10 @@ import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.std.DistinctExplainer;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TString;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueSources;
-import com.foundationdb.server.types.pvalue.PValueTargets;
+import com.foundationdb.server.types.value.*;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.ArgumentValidation;
-import com.foundationdb.util.ShareHolder;
 import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -203,7 +201,7 @@ class Distinct_Partial extends Operator
         {
             if (!idle) {
                 input.close();
-                currentRow.release();
+                currentRow = null;
                 idle = true;
             }
         }
@@ -239,41 +237,41 @@ class Distinct_Partial extends Operator
             super(context, input);
 
             nfields = distinctType.nFields();
-            currentPValues = new PValue[nfields];
+            currentValues = new Value[nfields];
             for (int i = 0; i < nfields; ++i) {
-                currentPValues[i] = new PValue(distinctType.typeInstanceAt(i));
+                currentValues[i] = new Value(distinctType.typeInstanceAt(i));
             }
         }
 
         private boolean isDistinctP(Row inputRow) {
-            if ((nvalid == 0) && currentRow.isEmpty()) {
+            if ((nvalid == 0) && currentRow == null) {
                 // Very first row.
-                currentRow.hold(inputRow);
+                currentRow = inputRow;
                 return true;
             }
             for (int i = 0; i < nfields; i++) {
                 if (i == nvalid) {
-                    assert currentRow.isHolding();
-                    PValueTargets.copyFrom(currentRow.get().pvalue(i), currentPValues[i]);
+                    assert currentRow != null;
+                    ValueTargets.copyFrom(currentRow.value(i), currentValues[i]);
                     nvalid++;
                     if (nvalid == nfields)
                         // Once we have copies of all fields, don't need row any more.
-                        currentRow.release();
+                        currentRow = null;
                 }
-                PValueSource inputValue = inputRow.pvalue(i);
-                if (!eqP(currentPValues[i], inputValue, rowType().typeInstanceAt(i))) {
-                    PValueTargets.copyFrom(inputValue, currentPValues[i]);
+                ValueSource inputValue = inputRow.value(i);
+                if (!eqP(currentValues[i], inputValue, rowType().typeInstanceAt(i))) {
+                    ValueTargets.copyFrom(inputValue, currentValues[i]);
                     nvalid = i + 1;
                     if (i < nfields - 1)
                         // Might need later fields.
-                        currentRow.hold(inputRow);
+                        currentRow = inputRow;
                     return true;
                 }
             }
             return false;
         }
 
-        private boolean eqP(PValueSource x, PValueSource y, TInstance tinst)
+        private boolean eqP(ValueSource x, ValueSource y, TInstance tinst)
         {
             if (tinst.typeClass() instanceof TString) {
                 AkCollator collator = TString.getCollator(tinst);
@@ -281,17 +279,17 @@ class Distinct_Partial extends Operator
                     return collator.compare(x, y) == 0;
                 }
             }
-            return PValueSources.areEqual(x, y, tinst);
+            return ValueSources.areEqual(x, y, tinst);
         }
 
         // Object state
 
-        private final ShareHolder<Row> currentRow = new ShareHolder<>();
+        private Row currentRow;
         private final int nfields;
         // currentValues contains copies of the first nvalid of currentRow's fields,
         // filled as needed.
         private int nvalid;
-        private final PValue[] currentPValues;
+        private final Value[] currentValues;
         private boolean idle = true;
         private boolean destroyed = false;
     }

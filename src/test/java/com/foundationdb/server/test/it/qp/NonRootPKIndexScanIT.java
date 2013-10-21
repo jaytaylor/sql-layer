@@ -21,7 +21,7 @@ import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -59,8 +59,8 @@ public class NonRootPKIndexScanIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        parentRowType = schema.userTableRowType(userTable(parent));
-        childRowType = schema.userTableRowType(userTable(child));
+        parentRowType = schema.tableRowType(table(parent));
+        childRowType = schema.tableRowType(table(child));
         childPKRowType = indexType(child, "cid");
         db = new NewRow[] {
             createNewRow(parent, 1L, 1L),
@@ -88,7 +88,7 @@ public class NonRootPKIndexScanIT extends OperatorITBase
                 IndexBound hiBound = new IndexBound(row(childPKRowType, childPK, parentPK, parentPK), SELECTOR);
                 IndexKeyRange range = IndexKeyRange.bounded(childPKRowType, loBound, true, hiBound, true);
                 Operator plan = indexScan_Default(childPKRowType, range, ordering(orderingMask));
-                RowBase[] expected = new RowBase[] {
+                Row[] expected = new Row[] {
                     row(childRowType, childPK, parentPK, parentPK),
                 };
                 compareRows(expected, cursor(plan, queryContext, queryBindings));
@@ -109,7 +109,7 @@ public class NonRootPKIndexScanIT extends OperatorITBase
                 IndexBound hiBound = new IndexBound(row(childPKRowType, childPK, parentPK + 1, parentPK + 1), SELECTOR);
                 IndexKeyRange range = IndexKeyRange.bounded(childPKRowType, loBound, true, hiBound, true);
                 Operator plan = indexScan_Default(childPKRowType, range, ordering(orderingMask));
-                RowBase[] expected = new RowBase[] {
+                Row[] expected = new Row[] {
                 };
                 compareRows(expected, cursor(plan, queryContext, queryBindings));
             }
@@ -120,7 +120,7 @@ public class NonRootPKIndexScanIT extends OperatorITBase
                 IndexBound hiBound = new IndexBound(row(childPKRowType, childPK, parentPK, parentPK + 1), SELECTOR);
                 IndexKeyRange range = IndexKeyRange.bounded(childPKRowType, loBound, true, hiBound, true);
                 Operator plan = indexScan_Default(childPKRowType, range, ordering(orderingMask));
-                RowBase[] expected = new RowBase[] {
+                Row[] expected = new Row[] {
                 };
                 compareRows(expected, cursor(plan, queryContext, queryBindings));
             }
@@ -131,7 +131,7 @@ public class NonRootPKIndexScanIT extends OperatorITBase
                 IndexBound hiBound = new IndexBound(row(childPKRowType, childPK, parentPK, parentPK + 1), SELECTOR);
                 IndexKeyRange range = IndexKeyRange.bounded(childPKRowType, loBound, true, hiBound, true);
                 Operator plan = indexScan_Default(childPKRowType, range, ordering(orderingMask));
-                RowBase[] expected = new RowBase[] {
+                Row[] expected = new Row[] {
                     row(childRowType, childPK, parentPK, parentPK),
                 };
                 compareRows(expected, cursor(plan, queryContext, queryBindings));
@@ -151,7 +151,7 @@ public class NonRootPKIndexScanIT extends OperatorITBase
                 IndexBound hiBound = new IndexBound(row(childPKRowType, childPK, parentPK, parentPK), SELECTOR);
                 IndexKeyRange range = IndexKeyRange.bounded(childPKRowType, loBound, true, hiBound, true);
                 Operator plan = indexScan_Default(childPKRowType, range, ordering(orderingMask));
-                RowBase[] expected = new RowBase[] {
+                Row[] expected = new Row[] {
                     row(childRowType, childPK, parentPK, parentPK),
                 };
                 compareRows(expected, cursor(plan, queryContext, queryBindings));
@@ -169,7 +169,7 @@ public class NonRootPKIndexScanIT extends OperatorITBase
                 IndexBound bound = new IndexBound(row(childPKRowType, childPK, parentPK, parentPK), SELECTOR);
                 IndexKeyRange range = IndexKeyRange.bounded(childPKRowType, bound, true, bound, true);
                 Operator plan = indexScan_Default(childPKRowType, range, ordering(orderingMask));
-                RowBase[] expected = new RowBase[] {
+                Row[] expected = new Row[] {
                     row(childRowType, childPK, parentPK, parentPK),
                 };
                 compareRows(expected, cursor(plan, queryContext, queryBindings));
@@ -189,7 +189,7 @@ public class NonRootPKIndexScanIT extends OperatorITBase
                 IndexBound hiBound = new IndexBound(row(childPKRowType, childPK, parentPK + 1, parentPK + 1), SELECTOR);
                 IndexKeyRange range = IndexKeyRange.bounded(childPKRowType, loBound, true, hiBound, true);
                 Operator plan = indexScan_Default(childPKRowType, range, ordering(orderingMask));
-                RowBase[] expected = new RowBase[] {
+                Row[] expected = new Row[] {
                 };
                 compareRows(expected, cursor(plan, queryContext, queryBindings));
             }
@@ -200,7 +200,7 @@ public class NonRootPKIndexScanIT extends OperatorITBase
                 IndexBound hiBound = new IndexBound(row(childPKRowType, childPK, parentPK, parentPK + 1), SELECTOR);
                 IndexKeyRange range = IndexKeyRange.bounded(childPKRowType, loBound, true, hiBound, true);
                 Operator plan = indexScan_Default(childPKRowType, range, ordering(orderingMask));
-                RowBase[] expected = new RowBase[] {
+                Row[] expected = new Row[] {
                 };
                 compareRows(expected, cursor(plan, queryContext, queryBindings));
             }
@@ -211,7 +211,7 @@ public class NonRootPKIndexScanIT extends OperatorITBase
                 IndexBound hiBound = new IndexBound(row(childPKRowType, childPK, parentPK, parentPK + 1), SELECTOR);
                 IndexKeyRange range = IndexKeyRange.bounded(childPKRowType, loBound, true, hiBound, true);
                 Operator plan = indexScan_Default(childPKRowType, range, ordering(orderingMask));
-                RowBase[] expected = new RowBase[] {
+                Row[] expected = new Row[] {
                     row(childRowType, childPK, parentPK, parentPK),
                 };
                 compareRows(expected, cursor(plan, queryContext, queryBindings));
@@ -230,7 +230,7 @@ public class NonRootPKIndexScanIT extends OperatorITBase
                 IndexBound hiBound = new IndexBound(row(childPKRowType, childPK, parentPK, parentPK), SELECTOR);
                 IndexKeyRange range = IndexKeyRange.bounded(childPKRowType, loBound, true, hiBound, true);
                 Operator plan = indexScan_Default(childPKRowType, range, ordering(orderingMask));
-                RowBase[] expected = new RowBase[] {
+                Row[] expected = new Row[] {
                     row(childRowType, childPK, parentPK, parentPK),
                 };
                 compareRows(expected, cursor(plan, queryContext, queryBindings));

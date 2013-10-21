@@ -19,7 +19,7 @@ package com.foundationdb.sql.optimizer.rule;
 
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValue;
+import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.JoinNode;
@@ -39,7 +39,7 @@ import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Routine;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 
 import com.foundationdb.server.error.InsertWrongCountException;
 import com.foundationdb.server.error.NoSuchTableException;
@@ -448,14 +448,14 @@ public class ASTStatementLoader extends BaseRule
                 if (tb == null)
                     throw new UnsupportedSQLException("FROM table",
                                                       fromTable);
-                UserTable userTable = (UserTable)tb.getTable();
-                TableNode table = getTableNode(userTable);
+                Table aisTable = (Table)tb.getTable();
+                TableNode table = getTableNode(aisTable);
                 String name = fromTable.getCorrelationName();
                 if (name == null) {
-                    if (userTable.getName().getSchemaName().equals(rulesContext.getDefaultSchemaName()))
-                        name = userTable.getName().getTableName();
+                    if (aisTable.getName().getSchemaName().equals(rulesContext.getDefaultSchemaName()))
+                        name = aisTable.getName().getTableName();
                     else
-                        name = userTable.getName().toString();
+                        name = aisTable.getName().toString();
                 }
                 result = new TableSource(table, required, name);
             }
@@ -1311,7 +1311,7 @@ public class ASTStatementLoader extends BaseRule
         protected TableNode getTargetTable(DMLModStatementNode statement)
                 throws StandardException {
             TableName tableName = statement.getTargetTableName();
-            UserTable table = (UserTable)tableName.getUserData();
+            Table table = (Table)tableName.getUserData();
             if (table == null)
                 throw new NoSuchTableException(tableName.getSchemaName(), 
                                                tableName.getTableName());
@@ -1331,7 +1331,7 @@ public class ASTStatementLoader extends BaseRule
         protected Deque<EquivalenceFinder<ColumnExpression>> columnEquivalences
                 = new ArrayDeque<>(1);
 
-        protected TableNode getTableNode(UserTable table)
+        protected TableNode getTableNode(Table table)
                 throws StandardException {
             Group group = table.getGroup();
             TableTree tables = groups.get(group);
@@ -1344,7 +1344,7 @@ public class ASTStatementLoader extends BaseRule
 
         protected TableNode getColumnTableNode(Column column)
                 throws StandardException {
-            return getTableNode(column.getUserTable());
+            return getTableNode(column.getTable());
         }
 
         /** Translate expression to intermediate form. */
@@ -1615,12 +1615,12 @@ public class ASTStatementLoader extends BaseRule
                 // Extract the (potential) schema name as the first parameter
                 params.add(new ConstantExpression(
                         new TPreptimeValue(MString.VARCHAR.instance(schema.length(), false),
-                                           new PValue(MString.varcharFor(schema), schema))));
+                                           new Value(MString.varcharFor(schema), schema))));
                 // Extract the schema name as the second parameter
                 String sequence = seqNode.getSequenceName().getTableName();
                 params.add(new ConstantExpression(
                         new TPreptimeValue(MString.VARCHAR.instance(sequence.length(), false),
-                                           new PValue(MString.varcharFor(sequence), sequence))));
+                                           new Value(MString.varcharFor(sequence), sequence))));
                 
                 return new FunctionExpression ("nextval", params,
                                                 valueNode.getType(), valueNode);
@@ -1635,12 +1635,12 @@ public class ASTStatementLoader extends BaseRule
                 // Extract the (potential) schema name as the first parameter
                 params.add(new ConstantExpression(
                         new TPreptimeValue(MString.VARCHAR.instance(schema.length(), false),
-                                           new PValue(MString.varcharFor(schema), schema))));
+                                           new Value(MString.varcharFor(schema), schema))));
                 // Extract the schema name as the second parameter
                 String sequence = seqNode.getSequenceName().getTableName();
                 params.add(new ConstantExpression(
                         new TPreptimeValue(MString.VARCHAR.instance(sequence.length(), false),
-                                           new PValue(MString.varcharFor(sequence), sequence))));
+                                           new Value(MString.varcharFor(sequence), sequence))));
                 
                 return new FunctionExpression ("currval", params,
                                                 valueNode.getType(), valueNode);

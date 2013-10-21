@@ -23,8 +23,8 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 
-import com.foundationdb.server.PersistitKeyPValueSource;
-import com.foundationdb.server.PersistitKeyPValueTarget;
+import com.foundationdb.server.PersistitKeyValueSource;
+import com.foundationdb.server.PersistitKeyValueTarget;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.AkType;
@@ -32,8 +32,8 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSources;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.util.AkibanAppender;
 import com.persistit.Key;
 
@@ -173,7 +173,7 @@ public class IndexStatisticsYamlLoader
             firstSpatialColumn = index.firstSpatialArgument();
         }
         key.clear();
-        PersistitKeyPValueTarget keyTarget = new PersistitKeyPValueTarget();
+        PersistitKeyValueTarget keyTarget = new PersistitKeyValueTarget();
         keyTarget.attach(key);
         for (int i = 0; i < columnCount; i++) {
             Object value = values.get(i);
@@ -200,16 +200,16 @@ public class IndexStatisticsYamlLoader
             // MBigDecimal.writeCollating knows how to unwrap into
             // a Key.
             
-            TPreptimeValue pvalue= null;
+            TPreptimeValue pvalue = null;
             if (value == null)
-                pvalue = PValueSources.fromObject(value, tInstance);
+                pvalue = ValueSources.fromObject(value, tInstance);
             else
-                pvalue = PValueSources.fromObject(value, (TInstance)null);
+                pvalue = ValueSources.fromObject(value, (TInstance) null);
             TExecutionContext context = new TExecutionContext(null,
                                                               Collections.singletonList(pvalue.instance()),
                                                               tInstance,
                                                               null, null, null, null);
-            PValue pvalue2 = new PValue(tInstance);
+            Value pvalue2 = new Value(tInstance);
             tInstance.typeClass().fromObject(context, pvalue.value(), pvalue2);
             tInstance.writeCollating(pvalue2, keyTarget);
         }
@@ -321,10 +321,10 @@ public class IndexStatisticsYamlLoader
                 keyValue = getRawSegment(key, i);
             }
             else {
-                PersistitKeyPValueSource keySource = new PersistitKeyPValueSource(tInstance);
+                PersistitKeyValueSource keySource = new PersistitKeyValueSource(tInstance);
                 keySource.attach(key, i, tInstance);
                 if (convertToType(akType)) {
-                    keyValue = PValueSources.toObject(keySource, akType);
+                    keyValue = ValueSources.toObject(keySource, akType);
                 }
                 else if (keySource.isNull()) {
                     keyValue = null;

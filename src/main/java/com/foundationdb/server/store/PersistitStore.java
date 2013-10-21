@@ -19,13 +19,13 @@ package com.foundationdb.server.store;
 
 import com.foundationdb.ais.model.*;
 import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
-import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.persistitadapter.PersistitAdapter;
-import com.foundationdb.qp.persistitadapter.PersistitHKey;
-import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRow;
-import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
+import com.foundationdb.qp.storeadapter.PersistitAdapter;
+import com.foundationdb.qp.storeadapter.PersistitHKey;
+import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRow;
+import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.*;
 import com.foundationdb.server.AccumulatorAdapter.AccumInfo;
 import com.foundationdb.server.collation.CString;
@@ -42,14 +42,12 @@ import com.foundationdb.server.service.tree.TreeLink;
 import com.foundationdb.server.service.tree.TreeService;
 import com.google.inject.Inject;
 import com.persistit.*;
-import com.persistit.Management.DisplayFilter;
 import com.persistit.encoding.CoderManager;
 import com.persistit.exception.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.rmi.RemoteException;
 import java.util.*;
 
 import static com.persistit.Key.EQ;
@@ -65,7 +63,6 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     private final ConfigurationService config;
     private final TreeService treeService;
     private final SchemaManager schemaManager;
-    private DisplayFilter originalDisplayFilter;
     private RowDataValueCoder valueCoder;
 
 
@@ -84,16 +81,9 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
 
     @Override
     public synchronized void start() {
-        try {
-            CoderManager cm = getDb().getCoderManager();
-            Management m = getDb().getManagement();
-            cm.registerValueCoder(RowData.class, valueCoder = new RowDataValueCoder());
-            cm.registerKeyCoder(CString.class, new CStringKeyCoder());
-            originalDisplayFilter = m.getDisplayFilter();
-            m.setDisplayFilter(new RowDataDisplayFilter(originalDisplayFilter));
-        } catch (RemoteException e) {
-            throw new DisplayFilterSetException (e.getMessage());
-        }
+        CoderManager cm = getDb().getCoderManager();
+        cm.registerValueCoder(RowData.class, valueCoder = new RowDataValueCoder());
+        cm.registerKeyCoder(CString.class, new CStringKeyCoder());
         if (config != null) {
             writeLockEnabled = Boolean.parseBoolean(config.getProperty(WRITE_LOCK_ENABLED_CONFIG));
         }
@@ -101,13 +91,8 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
 
     @Override
     public synchronized void stop() {
-        try {
-            getDb().getCoderManager().unregisterValueCoder(RowData.class);
-            getDb().getCoderManager().unregisterKeyCoder(CString.class);
-            getDb().getManagement().setDisplayFilter(originalDisplayFilter);
-        } catch (RemoteException e) {
-            throw new DisplayFilterSetException (e.getMessage());
-        }
+        getDb().getCoderManager().unregisterValueCoder(RowData.class);
+        getDb().getCoderManager().unregisterKeyCoder(CString.class);
     }
 
     @Override
@@ -133,7 +118,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     public Exchange getExchange(final Session session, final Index index) {
-        return createStoreData(session, index.indexDef());
+        return createStoreData(session, index);
     }
 
     public void releaseExchange(final Session session, final Exchange exchange) {
@@ -161,6 +146,11 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     @Override
     protected void releaseStoreData(Session session, Exchange exchange) {
         treeService.releaseExchange(session, exchange);
+    }
+
+    @Override
+    TreeLink getTreeLink(Exchange exchange) {
+        return (TreeLink)exchange.getAppCache();
     }
 
     @Override
@@ -194,10 +184,10 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     @Override
     public void truncateIndexes(Session session, Collection<? extends Index> indexes) {
         for(Index index : indexes) {
-            truncateTree(session, index.indexDef());
+            truncateTree(session, index);
             if(index.isGroupIndex()) {
                 try {
-                    Tree tree = index.indexDef().getTreeCache().getTree();
+                    Tree tree = index.getTreeCache().getTree();
                     new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, tree).set(0);
                 } catch(PersistitException | RollbackException e) {
                     throw PersistitAdapter.wrapPersistitException(session, e);
@@ -223,7 +213,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         Exchange iEx = getExchange(session, index);
         try {
             constructIndexRow(session, iEx, rowData, index, hKey, indexRow, true);
-            checkUniqueness(index, rowData, iEx);
+            checkUniqueness(session, rowData, index, iEx);
             iEx.store();
         } catch(PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
@@ -232,18 +222,20 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         }
     }
 
-    private void checkUniqueness(Index index, RowData rowData, Exchange iEx) throws PersistitException
+    private void checkUniqueness(Session session, RowData rowData, Index index, Exchange iEx) throws PersistitException
     {
         if (index.isUnique() && !hasNullIndexSegments(rowData, index)) {
             Key key = iEx.getKey();
-            int segmentCount = index.indexDef().getIndexKeySegmentCount();
+            int segmentCount = index.getKeyColumns().size();
             // An index that isUniqueAndMayContainNulls has the extra null-separating field.
             if (index.isUniqueAndMayContainNulls()) {
                 segmentCount++;
             }
             key.setDepth(segmentCount);
             if (keyExistsInIndex(index, iEx)) {
-                throw new DuplicateKeyException(index.getIndexName().getName(), key);
+                LOG.debug("Duplicate key for index {}, raw: {}", index.getIndexName(), key);
+                String msg = formatIndexRowString(session, rowData, index);
+                throw new DuplicateKeyException(index.getIndexName(), msg);
             }
         }
     }
@@ -495,9 +487,9 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         return visitor;
     }
 
-    private static PersistitAdapter adapter(Session session)
+    private PersistitAdapter adapter(Session session)
     {
-        return (PersistitAdapter) session.get(StoreAdapter.STORE_ADAPTER_KEY);
+        return createAdapter(session, SchemaCache.globalSchema(schemaManager.getAis(session)));
     }
 
     private void lockKeys(PersistitAdapter adapter, RowDef rowDef, RowData rowData, Exchange exchange)
@@ -506,7 +498,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         // Temporary fix for #1118871 and #1078331 
         // disable the  lock used to prevent write skew for some cases of data loading
         if (!writeLockEnabled) return;
-        UserTable table = rowDef.userTable();
+        Table table = rowDef.table();
         // Make fieldDefs big enough to accommodate PK field defs and FK field defs
         FieldDef[] fieldDefs = new FieldDef[table.getColumnsIncludingInternal().size()];
         Key lockKey = adapter.newKey();
@@ -529,7 +521,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     private void lockKey(RowData rowData,
-                         UserTable lockTable,
+                         Table lockTable,
                          FieldDef[] fieldDefs,
                          int nFields,
                          PersistitKeyAppender lockKeyAppender,
@@ -566,7 +558,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
 
     @Override
     public long nullIndexSeparatorValue(Session session, Index index) {
-        Tree tree = index.indexDef().getTreeCache().getTree();
+        Tree tree = index.getTreeCache().getTree();
         AccumulatorAdapter accumulator = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.UNIQUE_ID, tree);
         return accumulator.seqAllocate();
     }

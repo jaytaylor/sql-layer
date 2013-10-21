@@ -24,7 +24,7 @@ import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.std.SortOperatorExplainer;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
-import com.foundationdb.qp.persistitadapter.Sorter;
+import com.foundationdb.qp.storeadapter.Sorter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

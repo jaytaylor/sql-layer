@@ -26,8 +26,8 @@ import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.common.types.StringFactory;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 import com.google.common.collect.ObjectArrays;
@@ -43,7 +43,7 @@ public abstract class MLength extends TScalarBase
     public static final TScalar CHAR_LENGTH = new MLength("CHAR_LENGTH")
     {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             output.putInt32((inputs.get(0).getString()).length());
         }
@@ -70,7 +70,7 @@ public abstract class MLength extends TScalarBase
         }
 
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             int charsetId = context.inputTInstanceAt(0).attribute(StringAttribute.CHARSET);
             String charset = (StringFactory.Charset.values())[charsetId].name();

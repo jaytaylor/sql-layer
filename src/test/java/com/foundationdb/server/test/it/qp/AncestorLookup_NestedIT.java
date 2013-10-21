@@ -22,10 +22,10 @@ import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
@@ -70,10 +70,10 @@ public class AncestorLookup_NestedIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema() {
         schema = new Schema(ais());
-        rRowType = schema.userTableRowType(userTable(r));
-        aRowType = schema.userTableRowType(userTable(a));
-        bRowType = schema.userTableRowType(userTable(b));
-        cRowType = schema.userTableRowType(userTable(c));
+        rRowType = schema.tableRowType(table(r));
+        aRowType = schema.tableRowType(table(a));
+        bRowType = schema.tableRowType(table(b));
+        cRowType = schema.tableRowType(table(c));
         aValueIndexRowType = indexType(a, "avalue");
         bValueIndexRowType = indexType(b, "bvalue");
         cValueIndexRowType = indexType(c, "cvalue");
@@ -127,7 +127,7 @@ public class AncestorLookup_NestedIT extends OperatorITBase
     @Test(expected = IllegalArgumentException.class)
     public void testALNAncestorTypesEmpty()
     {
-        ancestorLookup_Nested(rabc, aValueIndexRowType, Collections.<UserTableRowType>emptyList(), 0, 1);
+        ancestorLookup_Nested(rabc, aValueIndexRowType, Collections.<TableRowType>emptyList(), 0, 1);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -147,7 +147,7 @@ public class AncestorLookup_NestedIT extends OperatorITBase
                 ancestorLookup_Nested(rabc, aValueIndexRowType, Collections.singleton(aRowType), 0, lookaheadQuantum()),
                 0, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(aRowType, 13L, 1L, "a13"),
             row(aRowType, 14L, 1L, "a14"),
             row(aRowType, 23L, 2L, "a23"),
@@ -165,7 +165,7 @@ public class AncestorLookup_NestedIT extends OperatorITBase
                 ancestorLookup_Nested(rabc, aValueIndexRowType, Arrays.asList(aRowType, rRowType), 0, lookaheadQuantum()),
                 0, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(rRowType, 1L, "r1"),
             row(aRowType, 13L, 1L, "a13"),
             row(rRowType, 1L, "r1"),
@@ -187,7 +187,7 @@ public class AncestorLookup_NestedIT extends OperatorITBase
                 ancestorLookup_Nested(rabc, aValueIndexRowType, Arrays.asList(rRowType, aRowType), 0, lookaheadQuantum()),
                 0, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(rRowType, 1L, "r1"),
             row(aRowType, 13L, 1L, "a13"),
             row(rRowType, 1L, "r1"),
@@ -212,7 +212,7 @@ public class AncestorLookup_NestedIT extends OperatorITBase
                 ancestorLookup_Nested(rabc, aRowType, Arrays.asList(rRowType), 1, lookaheadQuantum()),
                 1, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(rRowType, 1L, "r1"),
             row(rRowType, 1L, "r1"),
             row(rRowType, 2L, "r2"),
@@ -242,7 +242,7 @@ public class AncestorLookup_NestedIT extends OperatorITBase
                 ancestorLookup_Nested(rabc, abIndexScan.rowType(), Collections.singleton(rRowType), 0, lookaheadQuantum()),
                 0, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(rRowType, 1L, "r1"),
             row(rRowType, 2L, "r2"),
         };
@@ -278,7 +278,7 @@ public class AncestorLookup_NestedIT extends OperatorITBase
                 ancestorLookup_Nested(rabc, abcIndexScan.rowType(), Collections.singleton(rRowType), 0, lookaheadQuantum()),
                 0, pipelineMap(), 1);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(rRowType, 1L, "r1"),
         };
         compareRows(expected, cursor);
@@ -295,9 +295,9 @@ public class AncestorLookup_NestedIT extends OperatorITBase
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
-            public RowBase[] firstExpectedRows()
+            public Row[] firstExpectedRows()
             {
-                return new RowBase[] {
+                return new Row[] {
                     row(aRowType, 13L, 1L, "a13"),
                     row(aRowType, 14L, 1L, "a14"),
                     row(aRowType, 23L, 2L, "a23"),
@@ -347,10 +347,10 @@ public class AncestorLookup_NestedIT extends OperatorITBase
     protected int a;
     protected int c;
     protected int b;
-    protected UserTableRowType rRowType;
-    protected UserTableRowType aRowType;
-    protected UserTableRowType cRowType;
-    protected UserTableRowType bRowType;
+    protected TableRowType rRowType;
+    protected TableRowType aRowType;
+    protected TableRowType cRowType;
+    protected TableRowType bRowType;
     protected IndexRowType aValueIndexRowType;
     protected IndexRowType bValueIndexRowType;
     protected IndexRowType cValueIndexRowType;

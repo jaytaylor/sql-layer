@@ -23,10 +23,11 @@ import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
+
 import java.util.Arrays;
 
 /**
@@ -43,7 +44,7 @@ public abstract class MExtract extends TScalarBase
             {
 
                 @Override
-                protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+                protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
                 {
                     int date = inputs.get(0).getInt32();
                     long ymd[] = MDatetimes.decodeDate(date);
@@ -61,7 +62,7 @@ public abstract class MExtract extends TScalarBase
             {
 
                 @Override
-                protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+                protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
                 {
                     output.putInt32(0);
                 }
@@ -75,7 +76,7 @@ public abstract class MExtract extends TScalarBase
                 }
 
                 @Override
-                protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+                protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
                 {
                     long datetime = inputs.get(0).getInt64();
                     long ymd[] = MDatetimes.decodeDatetime(datetime);
@@ -98,7 +99,7 @@ public abstract class MExtract extends TScalarBase
                 }
 
                 @Override
-                protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+                protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
                 {
                     int time = inputs.get(0).getInt32();
                     long ymdHMS[] = MDatetimes.decodeTime(time);
@@ -109,7 +110,7 @@ public abstract class MExtract extends TScalarBase
             new MExtract(MDatetimes.TIME, "TIME")
             {
                 @Override
-                protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+                protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
                 {
                     int time = inputs.get(0).getInt32();
                     long hms[] = MDatetimes.decodeTime(time);

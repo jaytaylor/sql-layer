@@ -19,7 +19,7 @@ package com.foundationdb.sql.embedded;
 
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.sql.server.ServerJavaValues;
 import com.foundationdb.sql.server.ServerQueryContext;
 
@@ -57,13 +57,13 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
         }
 
         @Override
-        protected PValueSource getPValue(int index) {
-            return bindings.getPValue(index);
+        protected ValueSource getValue(int index) {
+            return bindings.getValue(index);
         }
 
         @Override
-        protected void setPValue(int index, PValueSource source) {
-            bindings.setPValue(index, source);
+        protected void setValue(int index, ValueSource source) {
+            bindings.setValue(index, source);
         }
 
 

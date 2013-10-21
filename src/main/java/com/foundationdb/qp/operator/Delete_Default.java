@@ -70,7 +70,7 @@ import org.slf4j.LoggerFactory;
  of the same RowType.
 
  The Delete_Default operator assumes (and requires) the input row types
- be of a UserTableRowType, and not any derived type. This can't be
+ be of a TableRowType, and not any derived type. This can't be
  enforced by the constructor because <i>PhysicalOperator#rowType()</i>
  isn't implemented for all operators.
 

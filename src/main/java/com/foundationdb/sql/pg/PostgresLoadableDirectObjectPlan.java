@@ -34,7 +34,6 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
                                        implements PostgresCursorGenerator<DirectObjectCursor>
 {
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresLoadableDirectObjectPlan: execute shared");
-    private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresLoadableDirectObjectPlan: acquire shared lock");
 
     private ServerCallInvocation invocation;
     private DirectObjectPlan plan;
@@ -55,12 +54,6 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
     protected InOutTap executeTap()
     {
         return EXECUTE_TAP;
-    }
-
-    @Override
-    protected InOutTap acquireLockTap()
-    {
-        return ACQUIRE_LOCK_TAP;
     }
 
     @Override
