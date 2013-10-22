@@ -218,7 +218,9 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             throw new IllegalArgumentException("MemoryTableFactory may not be null");
         }
         Group group = newTable.getGroup();
-        group.setStorageDescription(storageFormatRegistry.registerMemoryFactory(factory, group));
+        // Factory will actually get applied at the end of AISMerge.merge() onto
+        // a new table.
+        storageFormatRegistry.registerMemoryFactory(group.getName(), factory);
         if (doRegister) {
             transactionally(sessionService.createSession(), new ThrowingRunnable() {
                     @Override
@@ -604,6 +606,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
         if(memoryTable) {
             // Memory only table changed, no reason to re-serialize
+            assert mergedTable.hasMemoryTableFactory();
             unSavedAISChangeWithRowDefs(session, newAIS);
         } else {
             saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(newName.getSchemaName()));

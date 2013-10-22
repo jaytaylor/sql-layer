@@ -73,11 +73,8 @@ public abstract class StorageFormatRegistry
         }
     }
 
-    public StorageDescription registerMemoryFactory(MemoryTableFactory memoryFactory, Group group) {
-        // TODO: Is there ever a case where the group has already been
-        // loaded without knowing it and needs to be updated in place?
-        memoryTableFactories.put(group.getName(), memoryFactory);
-        return new MemoryTableStorageDescription(group, memoryFactory);
+    public void registerMemoryFactory(TableName name, MemoryTableFactory memoryFactory) {
+        memoryTableFactories.put(name, memoryFactory);
     }
 
     public void unregisterMemoryFactory(TableName name) {
@@ -86,10 +83,19 @@ public abstract class StorageFormatRegistry
 
     public abstract StorageDescription convertTreeName(String treeName, HasStorage forObject);
 
-    public abstract void finishStorageDescription(HasStorage object, NameGenerator nameGenerator);
-
-    protected StorageDescription generateFullTextIndexStorageDescription(FullTextIndex index, NameGenerator nameGenerator) {
-        // TODO: Really only needs to be unique relative to other full-text indexes.
-        return new FullTextIndexFileStorageDescription(index, new File(nameGenerator.generateIndexTreeName(index)));
+    public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
+        if (object.getStorageDescription() == null) {
+            if (object instanceof Group) {
+                MemoryTableFactory factory = memoryTableFactories.get(((Group)object).getName());
+                if (factory != null) {
+                    object.setStorageDescription(new MemoryTableStorageDescription(object, factory));
+                }
+            }
+            else if (object instanceof FullTextIndex) {
+                File path = new File(nameGenerator.generateIndexTreeName((FullTextIndex)object));
+                object.setStorageDescription(new FullTextIndexFileStorageDescription(object, path));
+            }
+        }
     }
+
 }

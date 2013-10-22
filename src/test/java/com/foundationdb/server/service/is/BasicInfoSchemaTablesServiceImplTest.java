@@ -701,7 +701,10 @@ public class BasicInfoSchemaTablesServiceImplTest {
             if (doRegister)
                 throw new UnsupportedOperationException();
             Group group = newTable.getGroup();
-            group.setStorageDescription(storageFormatRegistry.registerMemoryFactory(factory, group));
+            storageFormatRegistry.registerMemoryFactory(group.getName(), factory);
+            // No copying or name registry; just apply right now.
+            group.setStorageDescription(null);
+            storageFormatRegistry.finishStorageDescription(group, null);
             return group.getName();
         }
 
