@@ -58,13 +58,12 @@ public class FDBStorageFormatRegistry extends StorageFormatRegistry
     }
 
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
+        super.finishStorageDescription(object, nameGenerator);
+        // TODO: Once there are multiple formats, this will need to handle the
+        // case of a (subclass of) FDBStorageDescription but without its
+        // prefixBytes filled in yet.
         if (object.getStorageDescription() == null) {
-            if (object instanceof FullTextIndex) {
-                object.setStorageDescription(generateFullTextIndexStorageDescription((FullTextIndex)object, nameGenerator));
-            }
-            else {
-                object.setStorageDescription(new FDBStorageDescription(object, generatePrefixBytes(object, (FDBNameGenerator)nameGenerator.unwrap())));
-            }
+            object.setStorageDescription(new FDBStorageDescription(object, generatePrefixBytes(object, (FDBNameGenerator)nameGenerator.unwrap())));
         }
     }
 
