@@ -1112,22 +1112,32 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         txnService.beginTransaction(session);
         try {
             final Table table = getTable(session, tableName);
-            Collection<Index> indexes = new HashSet<>();
+            Collection<Index> tableIndexes = new HashSet<>();
+            Collection<Index> allIndexes = tableIndexes;
             for(String indexName : indexNamesToDrop) {
                 Index index = table.getIndex(indexName);
-                if(index == null &&
-                   !((index = table.getFullTextIndex(indexName)) != null)) {
-                    throw new NoSuchIndexException (indexName);
+                if(index != null) {
+                    tableIndexes.add(index);
+                }
+                else if ((index = table.getFullTextIndex(indexName)) != null) {
+                    if (allIndexes == tableIndexes) {
+                        allIndexes = new HashSet<>(allIndexes);
+                    }
+                }
+                else {
+                    throw new NoSuchIndexException(indexName);
                 }
                 if(index.isPrimaryKey()) {
                     throw new ProtectedIndexException(indexName, table.getName());
                 }
-                indexes.add(index);
+                if (allIndexes != tableIndexes) {
+                    allIndexes.add(index);
+                }
             }
-            schemaManager().dropIndexes(session, indexes);
-            store().deleteIndexes(session, indexes);
+            schemaManager().dropIndexes(session, allIndexes);
+            store().deleteIndexes(session, tableIndexes);
             for(TableListener listener : listenerService.getTableListeners()) {
-                listener.onDropIndex(session, indexes);
+                listener.onDropIndex(session, allIndexes);
             }
             checkCursorsForDDLModification(session, table);
             txnService.commitTransaction(session);
