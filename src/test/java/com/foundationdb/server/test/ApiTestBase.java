@@ -514,6 +514,10 @@ public class ApiTestBase {
         return ddl().getAIS(session());
     }
 
+    protected final AISCloner aisCloner() {
+        return ddl().getAISCloner();
+    }
+
     protected final ServiceManager serviceManager() {
         return sm;
     }
@@ -746,7 +750,7 @@ public class ApiTestBase {
     protected final TableIndex createSpatialTableIndex(String schema, String table, String indexName,
                                                        int firstSpatialArgument, int dimensions,
                                                        String... indexCols) {
-        AkibanInformationSchema tempAIS = AISCloner.clone(createIndexInternal(schema, table, indexName, indexCols));
+        AkibanInformationSchema tempAIS = aisCloner().clone(createIndexInternal(schema, table, indexName, indexCols));
         TableIndex tempIndex = tempAIS.getTable(schema, table).getIndex(indexName);
         tempIndex.markSpatial(firstSpatialArgument, dimensions);
         ddl().createIndexes(session(), Collections.singleton(tempIndex));
@@ -761,7 +765,7 @@ public class ApiTestBase {
      */
     protected final TableIndex createGroupingFKIndex(String schema, String table, String indexName, String... indexCols) {
         assertTrue("grouping fk index must start with __akiban", indexName.startsWith("__akiban"));
-        AkibanInformationSchema tempAIS = AISCloner.clone(createIndexInternal(schema, table, indexName, indexCols));
+        AkibanInformationSchema tempAIS = aisCloner().clone(createIndexInternal(schema, table, indexName, indexCols));
         Table tempTable = tempAIS.getTable(schema, table);
         TableIndex tempIndex = tempTable.getIndex(indexName);
         tempTable.removeIndexes(Collections.singleton(tempIndex));
@@ -775,7 +779,7 @@ public class ApiTestBase {
     }
 
     protected final TableIndex createTableIndex(int tableId, String indexName, boolean unique, String... columns) {
-        AkibanInformationSchema temp = AISCloner.clone(ais());
+        AkibanInformationSchema temp = aisCloner().clone(ais());
         return createTableIndex(temp.getTable(tableId), indexName, unique, columns);
     }
     
@@ -809,7 +813,7 @@ public class ApiTestBase {
             throws InvalidOperationException {
         AkibanInformationSchema ais = ddl().getAIS(session());
         final Index index;
-        index = GroupIndexCreator.createIndex(ais, groupName, indexName, tableColumnPairs, joinType);
+        index = GroupIndexCreator.createIndex(aisCloner(), ais, groupName, indexName, tableColumnPairs, joinType);
         ddl().createIndexes(session(), Collections.singleton(index));
         return ddl().getAIS(session()).getGroup(groupName).getIndex(indexName);
     }
@@ -821,7 +825,7 @@ public class ApiTestBase {
                                                        Index.JoinType joinType)
         throws InvalidOperationException {
         AkibanInformationSchema ais = ddl().getAIS(session());
-        Index index = GroupIndexCreator.createIndex(ais, groupName, indexName, tableColumnPairs, joinType);
+        Index index = GroupIndexCreator.createIndex(aisCloner(), ais, groupName, indexName, tableColumnPairs, joinType);
         index.markSpatial(firstSpatialArgument, dimensions);
         ddl().createIndexes(session(), Collections.singleton(index));
         return ddl().getAIS(session()).getGroup(groupName).getIndex(indexName);

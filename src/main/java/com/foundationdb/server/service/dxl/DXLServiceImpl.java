@@ -46,11 +46,10 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class DXLServiceImpl implements DXLService, Service, JmxManageable {
-    private final static String CONFIG_USE_GLOBAL_LOCK = "fdbsql.dxl.use_global_lock";
     private final static Logger LOG = LoggerFactory.getLogger(DXLServiceImpl.class);
 
     // For alterSequence routine
@@ -79,10 +78,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     @Override
     public void start() {
-        boolean useGlobalLock = Boolean.parseBoolean(configService.getProperty(CONFIG_USE_GLOBAL_LOCK));
-        DXLReadWriteLockHook.only().setDDLLockEnabled(useGlobalLock);
-        LOG.debug("Using global DDL lock: {}", useGlobalLock);
-        List<DXLFunctionsHook> hooks = getHooks(useGlobalLock);
+        List<DXLFunctionsHook> hooks = getHooks();
         BasicDXLMiddleman middleman = BasicDXLMiddleman.create();
         HookableDDLFunctions localDdlFunctions
                 = new HookableDDLFunctions(createDDLFunctions(middleman), hooks,sessionService);
@@ -139,14 +135,8 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
         return ret;
     }
 
-    protected List<DXLFunctionsHook> getHooks(boolean useGlobalLock) {
-        List<DXLFunctionsHook> hooks = new ArrayList<>();
-        if(useGlobalLock) {
-            LOG.warn("Global DDL lock is enabled");
-            hooks.add(DXLReadWriteLockHook.only());
-        }
-        hooks.add(new DXLTransactionHook(txnService));
-        return hooks;
+    protected List<DXLFunctionsHook> getHooks() {
+        return Arrays.<DXLFunctionsHook>asList(new DXLTransactionHook(txnService));
     }
 
     @Override

@@ -204,7 +204,7 @@ public class AlterTableDDL {
         }
         
         final AkibanInformationSchema origAIS = table.getAIS();
-        final Table tableCopy = copyTable(table, columnChanges);
+        final Table tableCopy = copyTable(ddl.getAISCloner(), table, columnChanges);
         final AkibanInformationSchema aisCopy = tableCopy.getAIS();
         final AISBuilder builder = new AISBuilder(aisCopy);
 
@@ -362,14 +362,14 @@ public class AlterTableDDL {
         return oldName;
     }
 
-    private static Table copyTable(Table origTable, List<TableChange> columnChanges) {
+    private static Table copyTable(AISCloner aisCloner, Table origTable, List<TableChange> columnChanges) {
         for(TableChange change : columnChanges) {
             if(change.getChangeType() != ChangeType.ADD) {
                 checkColumnChange(origTable, change.getOldName());
             }
         }
 
-        AkibanInformationSchema aisCopy = AISCloner.clone(origTable.getAIS(), new GroupSelector(origTable.getGroup()));
+        AkibanInformationSchema aisCopy = aisCloner.clone(origTable.getAIS(), new GroupSelector(origTable.getGroup()));
         Table tableCopy = aisCopy.getTable(origTable.getName());
 
         // Remove all and recreate (note: hidden PK and column are handled by DDL interface)

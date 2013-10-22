@@ -1,0 +1,14 @@
+// Special akiban_information_schema protobuf extensions description file
+
+import "akiban_information_schema.proto";
+
+package akiban_schema.protobuf;
+option java_package = "com.foundationdb.ais.protobuf";
+option java_outer_classname = "CommonProtobuf";
+
+extend Storage {
+    optional bool memory_table_factory = 1001;
+    optional string full_text_index_path = 1002;
+
+    optional string test = 1999;
+}

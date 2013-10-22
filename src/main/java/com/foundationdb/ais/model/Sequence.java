@@ -20,10 +20,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.foundationdb.ais.model.validation.AISInvariants;
 import com.foundationdb.server.error.SequenceLimitExceededException;
-import com.foundationdb.server.service.tree.TreeCache;
-import com.foundationdb.server.service.tree.TreeLink;
 
-public class Sequence implements TreeLink {
+public class Sequence extends HasStorage {
 
     public static Sequence create (AkibanInformationSchema ais,
             String schemaName, 
@@ -70,19 +68,6 @@ public class Sequence implements TreeLink {
         return sequenceName;
     }
     
-    @Override 
-    public final String getTreeName() {
-        return treeName;
-    }
-    public final void setTreeName(String treeName) {
-        this.treeName = treeName;
-    }
-    public final Integer getAccumIndex() {
-        return accumIndex;
-    }
-    public final void setAccumIndex(int accumIndex) {
-        this.accumIndex = accumIndex;
-    }
     public final long getStartsWith() {
         return startsWith;
     }
@@ -104,8 +89,6 @@ public class Sequence implements TreeLink {
     
     // State
     protected final TableName sequenceName;
-    protected String treeName;
-    private Integer accumIndex;
     
     private final long startsWith;
     private final long increment;
@@ -114,23 +97,10 @@ public class Sequence implements TreeLink {
     private final boolean cycle;
     private final long cacheSize;
 
-    private AtomicReference<TreeCache> treeCache = new AtomicReference<>();
-    
-   
-    // TreeLink implementation
+    // HasStorage implementation
     @Override
     public String getSchemaName() {
         return sequenceName.getSchemaName();
-    }
-
-    @Override
-    public void setTreeCache(TreeCache cache) {
-        treeCache.set(cache);
-    }
-
-    @Override
-    public TreeCache getTreeCache() {
-        return treeCache.get();
     }
 
     /**

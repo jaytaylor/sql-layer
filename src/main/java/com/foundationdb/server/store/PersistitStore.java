@@ -38,8 +38,8 @@ import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.lock.LockService;
 import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.service.tree.TreeLink;
 import com.foundationdb.server.service.tree.TreeService;
+import com.foundationdb.server.store.format.PersistitStorageDescription;
 import com.google.inject.Inject;
 import com.persistit.*;
 import com.persistit.encoding.CoderManager;
@@ -62,7 +62,6 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
 
     private final ConfigurationService config;
     private final TreeService treeService;
-    private final SchemaManager schemaManager;
     private RowDataValueCoder valueCoder;
 
 
@@ -75,7 +74,6 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
         super(lockService, schemaManager, listenerService);
         this.treeService = treeService;
         this.config = config;
-        this.schemaManager = schemaManager;
     }
 
 
@@ -139,8 +137,8 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
-    protected Exchange createStoreData(Session session, TreeLink treeLink) {
-        return treeService.getExchange(session, treeLink);
+    protected Exchange createStoreData(Session session, StorageDescription storageDescription) {
+        return treeService.getExchange(session, (PersistitStorageDescription)storageDescription);
     }
 
     @Override
@@ -149,8 +147,8 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
-    TreeLink getTreeLink(Exchange exchange) {
-        return (TreeLink)exchange.getAppCache();
+    PersistitStorageDescription getStorageDescription(Exchange exchange) {
+        return (PersistitStorageDescription)exchange.getAppCache();
     }
 
     @Override
@@ -187,7 +185,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
             truncateTree(session, index);
             if(index.isGroupIndex()) {
                 try {
-                    Tree tree = index.getTreeCache().getTree();
+                    Tree tree = ((PersistitStorageDescription)index.getStorageDescription()).getTreeCache().getTree();
                     new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, tree).set(0);
                 } catch(PersistitException | RollbackException e) {
                     throw PersistitAdapter.wrapPersistitException(session, e);
@@ -544,8 +542,8 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
-    public boolean treeExists(Session session, String schemaName, String treeName) {
-        return treeService.treeExists(schemaName, treeName);
+    public boolean treeExists(Session session, StorageDescription storageDescription) {
+        return treeService.treeExists(storageDescription.getSchemaName(), ((PersistitStorageDescription)storageDescription).getTreeName());
     }
 
     @Override
@@ -558,7 +556,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
 
     @Override
     public long nullIndexSeparatorValue(Session session, Index index) {
-        Tree tree = index.getTreeCache().getTree();
+        Tree tree = ((PersistitStorageDescription)index.getStorageDescription()).getTreeCache().getTree();
         AccumulatorAdapter accumulator = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.UNIQUE_ID, tree);
         return accumulator.seqAllocate();
     }
@@ -569,8 +567,8 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
-    public void truncateTree(Session session, TreeLink treeLink) {
-        Exchange iEx = treeService.getExchange(session, treeLink);
+    public void truncateTree(Session session, HasStorage object) {
+        Exchange iEx = treeService.getExchange(session, (PersistitStorageDescription)object.getStorageDescription());
         try {
             iEx.removeAll();
         } catch (PersistitException | RollbackException e) {
@@ -581,14 +579,15 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     @Override
-    public void removeTree(Session session, TreeLink treeLink) {
+    public void removeTree(Session session, HasStorage object) {
+        PersistitStorageDescription storageDescription = (PersistitStorageDescription)object.getStorageDescription();
         try {
             if(!schemaManager.treeRemovalIsDelayed()) {
-                Exchange ex = treeService.getExchange(session, treeLink);
+                Exchange ex = treeService.getExchange(session, storageDescription);
                 ex.removeTree();
                 // Do not releaseExchange, causes caching and leak for now unused tree
             }
-            schemaManager.treeWasRemoved(session, treeLink.getSchemaName(), treeLink.getTreeName());
+            ((PersistitStoreSchemaManager)schemaManager).treeWasRemoved(session, object.getSchemaName(), storageDescription.getTreeName());
         } catch (PersistitException | RollbackException e) {
             LOG.debug("Exception removing tree from Persistit", e);
             throw PersistitAdapter.wrapPersistitException(session, e);
@@ -614,7 +613,7 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     }
 
     private AccumulatorAdapter getAdapter(Sequence sequence)  {
-        Tree tree = sequence.getTreeCache().getTree();
+        Tree tree = ((PersistitStorageDescription)sequence.getStorageDescription()).getTreeCache().getTree();
         return new AccumulatorAdapter(AccumInfo.SEQUENCE, tree);
     }
     

@@ -132,7 +132,7 @@ public class AlterTableITBase extends ITBase {
     }
 
     protected void runRenameTable(TableName oldName, TableName newName) {
-        AkibanInformationSchema aisCopy = AISCloner.clone(ddl().getAIS(session()));
+        AkibanInformationSchema aisCopy = aisCloner().clone(ddl().getAIS(session()));
         Table oldTable = aisCopy.getTable(oldName);
         assertNotNull("Found old table " + oldName, oldTable);
         AISTableNameChanger changer = new AISTableNameChanger(aisCopy.getTable(oldName), newName);
@@ -143,7 +143,7 @@ public class AlterTableITBase extends ITBase {
     }
 
     protected void runRenameColumn(TableName tableName, String oldColName, String newColName) {
-        AkibanInformationSchema aisCopy = AISCloner.clone(ddl().getAIS(session()));
+        AkibanInformationSchema aisCopy = aisCloner().clone(ddl().getAIS(session()));
         Table tableCopy = aisCopy.getTable(tableName);
         assertNotNull("Found table " + tableName, tableCopy);
         Column oldColumn = tableCopy.getColumn(oldColName);

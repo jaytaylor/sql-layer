@@ -152,7 +152,7 @@ public class RowDef {
         StringBuilder sb = new StringBuilder(String.format("RowDef #%d %s (%s)",
                                                            table.getTableId(),
                                                            table.getName(),
-                                                           getPkTreeName()));
+                                                           getPkStorageNameString()));
         sb.append(" fieldCount ").append(getFieldCount()).append(' ');
 
         for (int i = 0; i < fieldDefs.length; i++) {
@@ -386,9 +386,9 @@ public class RowDef {
         return (parentJoin == null) ? null : parentJoin.getParent().rowDef();
     }
 
-    public String getPkTreeName() {
+    public String getPkStorageNameString() {
         final Index pkIndex = getPKIndex();
-        return pkIndex != null ? pkIndex.getTreeName() : null;
+        return pkIndex != null ? pkIndex.getStorageNameString() : null;
     }
 
     public int getRowDefId() {

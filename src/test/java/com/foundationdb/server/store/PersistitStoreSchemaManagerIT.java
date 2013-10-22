@@ -22,6 +22,7 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.store.format.PersistitStorageDescription;
 
 import org.junit.Test;
 
@@ -65,8 +66,10 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
     public void groupAndIndexTreeDelayedRemoval() throws Exception {
         createAndLoad();
 
-        String groupTreeName = getTable(tid).getGroup().getTreeName();
-        String pkTreeName = getTable(tid).getPrimaryKey().getIndex().getTreeName();
+        PersistitStorageDescription groupStorage = (PersistitStorageDescription)getTable(tid).getGroup().getStorageDescription();
+        PersistitStorageDescription pkStorage = (PersistitStorageDescription)getTable(tid).getPrimaryKey().getIndex().getStorageDescription();
+        String groupTreeName = groupStorage.getTreeName();
+        String pkTreeName = pkStorage.getTreeName();
         Set<String> treeNames = pssm.getTreeNames(session());
         assertEquals("Group tree is in set before drop", true, treeNames.contains(groupTreeName));
         assertEquals("PK tree is in set before drop", true, treeNames.contains(pkTreeName));
@@ -82,8 +85,8 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
         treeNames = pssm.getTreeNames(session());
         assertEquals("Group tree is in set after restart", false, treeNames.contains(groupTreeName));
         assertEquals("PK tree is in set after restart", false, treeNames.contains(pkTreeName));
-        assertEquals("Group tree exist after restart", false, store().treeExists(session(), SCHEMA, groupTreeName));
-        assertEquals("PK tree exists after restart", false, store().treeExists(session(), SCHEMA, pkTreeName));
+        assertEquals("Group tree exist after restart", false, store().treeExists(session(), groupStorage));
+        assertEquals("PK tree exists after restart", false, store().treeExists(session(), pkStorage));
     }
 
     @Test

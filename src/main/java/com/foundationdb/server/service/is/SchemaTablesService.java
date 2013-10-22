@@ -47,11 +47,7 @@ public class SchemaTablesService {
         } catch(Exception e) {
             throw new RuntimeException(e);
         }
-        if(doRegister) {
-            schemaManager.registerMemoryInformationSchemaTable(table, factory);
-        } else {
-            table.setMemoryTableFactory(factory);
-        }
+        schemaManager.registerMemoryInformationSchemaTable(table, factory, doRegister);
     }
     
     protected abstract class BaseScan implements GroupScan {
