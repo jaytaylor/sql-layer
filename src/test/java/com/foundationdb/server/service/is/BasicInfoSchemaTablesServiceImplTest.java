@@ -393,20 +393,20 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void tablesScan() {
         final Object[][] expected = {
-                { "gco", "a", "TABLE", LONG_NULL, null, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "gco", "b", "TABLE", LONG_NULL, null, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "gco", "m", "TABLE", LONG_NULL, null, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "gco", "r", "TABLE", LONG_NULL, null, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "gco", "w", "TABLE", LONG_NULL, null, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "gco", "x", "TABLE", LONG_NULL, null, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "test", "bar", "TABLE", LONG_NULL, null, "bar_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "test", "bar2", "TABLE", LONG_NULL, null, "bar_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "test", "defaults", "TABLE", LONG_NULL, null, "defaults_tree", I_S, VARCHAR, I_S, VARCHAR, LONG},
-                { "test", "foo", "TABLE", LONG_NULL, null, "foo_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "test", "seq-table", "TABLE", LONG_NULL, null, "seq-table_tree", I_S, VARCHAR, I_S, VARCHAR, LONG},
-                { "zap", "pow", "TABLE", LONG_NULL, null, "pow_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "zzz", "zzz1", "TABLE", LONG_NULL, null, "zzz1_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "zzz", "zzz2", "TABLE", LONG_NULL, null, "zzz1_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "a", "TABLE", LONG_NULL, null, "gco.r_standin", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "b", "TABLE", LONG_NULL, null, "gco.r_standin", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "m", "TABLE", LONG_NULL, null, "gco.r_standin", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "r", "TABLE", LONG_NULL, null, "gco.r_standin", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "w", "TABLE", LONG_NULL, null, "gco.r_standin", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "x", "TABLE", LONG_NULL, null, "gco.r_standin", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "test", "bar", "TABLE", LONG_NULL, null, "test.bar_standin", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "test", "bar2", "TABLE", LONG_NULL, null, "test.bar_standin", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "test", "defaults", "TABLE", LONG_NULL, null, "test.defaults_standin", I_S, VARCHAR, I_S, VARCHAR, LONG},
+                { "test", "foo", "TABLE", LONG_NULL, null, "test.foo_standin", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "test", "seq-table", "TABLE", LONG_NULL, null, "test.seq-table_standin", I_S, VARCHAR, I_S, VARCHAR, LONG},
+                { "zap", "pow", "TABLE", LONG_NULL, null, "zap.pow_standin", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "zzz", "zzz1", "TABLE", LONG_NULL, null, "zzz.zzz1_standin", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "zzz", "zzz2", "TABLE", LONG_NULL, null, "zzz.zzz1_standin", I_S, VARCHAR, I_S, VARCHAR, LONG },
                 { "test", "voo", "VIEW", null, null, null, null, null, null, null, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLES).getGroupScan(adapter);
@@ -539,16 +539,16 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void indexesScan() {
         final Object[][] expected = {
-                { "gco", "a", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, null, LONG },
-                { "gco", "b", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, null, LONG },
-                { "gco", "m", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, null, LONG },
-                { "gco", "r", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, null, LONG },
-                { "test", "bar", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, null, LONG },
-                { "test", "bar2", "foo_name", null, LONG, "foo_name_tree", "INDEX", false, "RIGHT", null, LONG },
-                { "test", "seq-table", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, null, LONG},
-                { "zap", "pow", "name_value", "name_value", LONG, "name_value_tree", "UNIQUE", true, null, null, LONG },
-                { "zzz", "zzz1", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, null, LONG },
-                { "zzz", "zzz2", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, null, LONG },
+                { "gco", "a", "PRIMARY", "PRIMARY", LONG, "gco.a.PRIMARY_standin", "PRIMARY", true, null, null, LONG },
+                { "gco", "b", "PRIMARY", "PRIMARY", LONG, "gco.b.PRIMARY_standin", "PRIMARY", true, null, null, LONG },
+                { "gco", "m", "PRIMARY", "PRIMARY", LONG, "gco.m.PRIMARY_standin", "PRIMARY", true, null, null, LONG },
+                { "gco", "r", "PRIMARY", "PRIMARY", LONG, "gco.r.PRIMARY_standin", "PRIMARY", true, null, null, LONG },
+                { "test", "bar", "PRIMARY", "PRIMARY", LONG, "test.bar.PRIMARY_standin", "PRIMARY", true, null, null, LONG },
+                { "test", "bar2", "foo_name", null, LONG, "test.bar.foo_name_standin", "INDEX", false, "RIGHT", null, LONG },
+                { "test", "seq-table", "PRIMARY", "PRIMARY", LONG, "test.seq-table.PRIMARY_standin", "PRIMARY", true, null, null, LONG},
+                { "zap", "pow", "name_value", "name_value", LONG, "zap.pow.name_value_standin", "UNIQUE", true, null, null, LONG },
+                { "zzz", "zzz1", "PRIMARY", "PRIMARY", LONG, "zzz.zzz1.PRIMARY_standin", "PRIMARY", true, null, null, LONG },
+                { "zzz", "zzz2", "PRIMARY", "PRIMARY", LONG, "zzz.zzz2.PRIMARY_standin", "PRIMARY", true, null, null, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.INDEXES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
@@ -579,9 +579,9 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void sequencesScan() {
         final Object[][] expected = {
-                {"test", "_col_sequence", "test._col_sequence", 1L, 1L, 0L, 1000L, false, LONG},
-                {"test", "sequence", "test.sequence", 1L, 1L, 0L, 1000L, false, LONG },
-                {"test", "sequence1", "test.sequence1", 1000L, -1L, 0L, 1000L, false, LONG},
+                {"test", "_col_sequence", "test._col_sequence_standin", 1L, 1L, 0L, 1000L, false, LONG},
+                {"test", "sequence", "test.sequence_standin", 1L, 1L, 0L, 1000L, false, LONG },
+                {"test", "sequence1", "test.sequence1_standin", 1000L, -1L, 0L, 1000L, false, LONG},
         };
         GroupScan scan = getFactory (BasicInfoSchemaTablesServiceImpl.SEQUENCES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
@@ -665,6 +665,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
 
     private static class MockSchemaManager implements SchemaManager {
         final AkibanInformationSchema ais;
+        final StorageFormatRegistry storageFormatRegistry = DummyStorageFormatRegistry.create();
 
         public MockSchemaManager(AkibanInformationSchema ais) {
             this.ais = ais;
@@ -677,12 +678,12 @@ public class BasicInfoSchemaTablesServiceImplTest {
 
         @Override
         public StorageFormatRegistry getStorageFormatRegistry() {
-            return DummyStorageFormatRegistry.create();
+            return storageFormatRegistry;
         }
 
         @Override
         public AISCloner getAISCloner() {
-            return DummyStorageFormatRegistry.aisCloner();
+            return new AISCloner(storageFormatRegistry);
         }
 
         @Override
@@ -697,12 +698,16 @@ public class BasicInfoSchemaTablesServiceImplTest {
 
         @Override
         public TableName registerMemoryInformationSchemaTable(Table newTable, MemoryTableFactory factory, boolean doRegister) {
-            throw new UnsupportedOperationException();
+            if (doRegister)
+                throw new UnsupportedOperationException();
+            Group group = newTable.getGroup();
+            group.setStorageDescription(storageFormatRegistry.registerMemoryFactory(factory, group));
+            return group.getName();
         }
 
         @Override
         public void unRegisterMemoryInformationSchemaTable(TableName tableName) {
-            throw new UnsupportedOperationException();
+            storageFormatRegistry.unregisterMemoryFactory(tableName);
         }
 
         @Override
