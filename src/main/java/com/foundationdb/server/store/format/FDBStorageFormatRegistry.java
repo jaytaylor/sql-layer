@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.store.format;
 
+import com.foundationdb.ais.model.FullTextIndex;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Index;
@@ -51,14 +52,19 @@ public class FDBStorageFormatRegistry extends StorageFormatRegistry
         }
     }
     
-    // The old tree name field as the prefix bytes Base64 encoded.
+    // The old tree name field was the prefix bytes Base64 encoded.
     public StorageDescription convertTreeName(String treeName, HasStorage forObject) {
         return new FDBStorageDescription(forObject, Base64.decodeBase64(treeName));
     }
 
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
         if (object.getStorageDescription() == null) {
-            object.setStorageDescription(new FDBStorageDescription(object, generatePrefixBytes(object, (FDBNameGenerator)nameGenerator)));
+            if (object instanceof FullTextIndex) {
+                object.setStorageDescription(generateFullTextIndexStorageDescription((FullTextIndex)object, nameGenerator));
+            }
+            else {
+                object.setStorageDescription(new FDBStorageDescription(object, generatePrefixBytes(object, (FDBNameGenerator)nameGenerator.unwrap())));
+            }
         }
     }
 

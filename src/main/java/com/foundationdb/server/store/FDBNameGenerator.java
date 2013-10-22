@@ -108,6 +108,10 @@ public class FDBNameGenerator implements NameGenerator
         return new FDBNameGenerator(txn, dir, ALTER_PATH_NAME, wrapped);
     }
 
+    @Override
+    public NameGenerator unwrap() {
+        return this;
+    }
 
     //
     // DATA_PATH_NAME helpers
