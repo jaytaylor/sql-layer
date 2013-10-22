@@ -589,7 +589,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
                 newColumn.setUuid(UUID.randomUUID());
         }
 
-        AISMerge merge = AISMerge.newForAddTable(aisCloner, memoryTable ? null : getNameGenerator(session), getAis(session), newTable);
+        AISMerge merge = AISMerge.newForAddTable(aisCloner, getNameGenerator(session), getAis(session), newTable);
         merge.merge();
         AkibanInformationSchema newAIS = merge.getAIS();
         Table mergedTable = newAIS.getTable(newName);

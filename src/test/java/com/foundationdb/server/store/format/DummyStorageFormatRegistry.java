@@ -18,6 +18,7 @@
 package com.foundationdb.server.store.format;
 
 import com.foundationdb.ais.AISCloner;
+import com.foundationdb.ais.model.FullTextIndex;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Index;
@@ -65,7 +66,12 @@ public class DummyStorageFormatRegistry extends StorageFormatRegistry
 
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
         if (object.getStorageDescription() == null) {
-            object.setStorageDescription(new TestStorageDescription(object, generateTreeName(object, nameGenerator)));
+            if (object instanceof FullTextIndex) {
+                object.setStorageDescription(generateFullTextIndexStorageDescription((FullTextIndex)object, nameGenerator));
+            }
+            else {
+                object.setStorageDescription(new TestStorageDescription(object, generateTreeName(object, nameGenerator)));
+            }
         }
     }
 

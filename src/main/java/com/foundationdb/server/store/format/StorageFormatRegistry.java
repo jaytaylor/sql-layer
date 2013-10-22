@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.store.format;
 
+import com.foundationdb.ais.model.FullTextIndex;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.NameGenerator;
@@ -71,4 +72,9 @@ public abstract class StorageFormatRegistry
     public abstract StorageDescription convertTreeName(String treeName, HasStorage forObject);
 
     public abstract void finishStorageDescription(HasStorage object, NameGenerator nameGenerator);
+
+    protected StorageDescription generateFullTextIndexStorageDescription(FullTextIndex index, NameGenerator nameGenerator) {
+        // TODO: Really only needs to be unique relative to other full-text indexes.
+        return new FullTextIndexFileStorageDescription(index, new File(nameGenerator.generateIndexTreeName(index)));
+    }
 }

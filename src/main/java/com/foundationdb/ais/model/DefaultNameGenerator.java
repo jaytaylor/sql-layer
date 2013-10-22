@@ -61,6 +61,10 @@ public class DefaultNameGenerator implements NameGenerator {
         mergeAIS(ais);
     }
 
+    public NameGenerator unwrap() {
+        return this;
+    }
+
     int getMaxIndexID() {
         int max = 1;
         for(Integer id : indexIDMap.values()) {
