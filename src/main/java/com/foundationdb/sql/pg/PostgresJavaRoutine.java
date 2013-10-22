@@ -42,7 +42,6 @@ import java.io.IOException;
 public abstract class PostgresJavaRoutine extends PostgresDMLStatement
 {
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresJavaRoutine: execute shared");
-    private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresJavaRoutine: acquire shared lock");
 
     protected ServerCallInvocation invocation;
 
@@ -116,12 +115,6 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
     protected InOutTap executeTap()
     {
         return EXECUTE_TAP;
-    }
-
-    @Override
-    protected InOutTap acquireLockTap()
-    {
-        return ACQUIRE_LOCK_TAP;
     }
 
     @Override

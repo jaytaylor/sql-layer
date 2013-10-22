@@ -33,24 +33,14 @@ public abstract class PostgresBaseStatement implements PostgresStatement
 {
     protected long aisGeneration;
     protected abstract InOutTap executeTap();
-    protected abstract InOutTap acquireLockTap();
 
-    protected void lock(PostgresQueryContext context, DXLFunction operationType)
+    protected void preExecute(PostgresQueryContext context, DXLFunction operationType)
     {
-        acquireLockTap().in();
         executeTap().in();
-        try {
-            context.lock(operationType);
-        } 
-        finally {
-            acquireLockTap().out();
-        }
     }
 
-    protected void unlock(PostgresQueryContext context, DXLFunction operationType, boolean lockSuccess)
+    protected void postExecute(PostgresQueryContext context, DXLFunction operationType)
     {
-        if (lockSuccess)
-            context.unlock(operationType);
         executeTap().out();
     }
 

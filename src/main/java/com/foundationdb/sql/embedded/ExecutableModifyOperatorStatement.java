@@ -26,9 +26,6 @@ import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.row.ImmutableRow;
 import com.foundationdb.qp.row.ProjectedRow;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
-import com.foundationdb.sql.server.ServerSession;
-import com.foundationdb.sql.server.ServerTransaction;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +53,6 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
             // count right and have this all happen even if the caller
             // does not read all of the generated keys.
             returningRows = new SpoolCursor();
-        context.lock(DXLFunction.UNSPECIFIED_DML_WRITE);
         Cursor cursor = null;
         RuntimeException runtimeException = null;
         try {
@@ -85,7 +81,6 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
                 else
                     logger.warn("Error cleaning up cursor with exception already pending", ex);
             }
-            context.unlock(DXLFunction.UNSPECIFIED_DML_WRITE);
             if (runtimeException != null)
                 throw runtimeException;
         }

@@ -43,7 +43,6 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresOperatorStatement.class);
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresOperatorStatement: execute shared");
-    private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresOperatorStatement: acquire shared lock");
 
     public PostgresOperatorStatement(PostgresOperatorCompiler compiler) {
         super(compiler);
@@ -100,11 +99,9 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
         int nrows = 0;
         Cursor cursor = null;
         IOException exceptionDuringExecution = null;
-        boolean lockSuccess = false;
         boolean suspended = false;
         try {
-            lock(context, DXLFunction.UNSPECIFIED_DML_READ);
-            lockSuccess = true;
+            preExecute(context, DXLFunction.UNSPECIFIED_DML_READ);
             cursor = context.startCursor(this, bindings);
             PostgresOutputter<Row> outputter = getRowOutputter(context);
             outputter.beforeData();
@@ -135,7 +132,7 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
                 logger.error("Caught exception while cleaning up cursor for {0}", resultOperator.describePlan(), e);
             }
             finally {
-                unlock(context, DXLFunction.UNSPECIFIED_DML_READ, lockSuccess);
+                postExecute(context, DXLFunction.UNSPECIFIED_DML_READ);
             }
             if (exceptionDuringExecution != null) {
                 throw exceptionDuringExecution;
@@ -159,12 +156,6 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
     protected InOutTap executeTap()
     {
         return EXECUTE_TAP;
-    }
-
-    @Override
-    protected InOutTap acquireLockTap()
-    {
-        return ACQUIRE_LOCK_TAP;
     }
 
     @Override
