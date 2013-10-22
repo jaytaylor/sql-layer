@@ -68,13 +68,9 @@ public class DummyStorageFormatRegistry extends StorageFormatRegistry
     }
 
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
+        super.finishStorageDescription(object, nameGenerator);
         if (object.getStorageDescription() == null) {
-            if (object instanceof FullTextIndex) {
-                object.setStorageDescription(generateFullTextIndexStorageDescription((FullTextIndex)object, nameGenerator));
-            }
-            else {
-                object.setStorageDescription(new TestStorageDescription(object, generateTreeName(object, nameGenerator)));
-            }
+            object.setStorageDescription(new TestStorageDescription(object, generateTreeName(object, nameGenerator)));
         }
     }
 
