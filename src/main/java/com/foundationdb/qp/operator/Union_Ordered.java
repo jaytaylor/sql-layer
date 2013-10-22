@@ -145,12 +145,18 @@ class Union_Ordered extends UnionBase
     public CompoundExplainer getExplainer(ExplainContext context) {
         Attributes atts = new Attributes();
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
+        
         atts.put(Label.NUM_SKIP, PrimitiveExplainer.getInstance(fixedFields));
         atts.put(Label.NUM_COMPARE, PrimitiveExplainer.getInstance(fieldsToCompare));
-        atts.put(Label.INPUT_OPERATOR, left().getExplainer(context));
-        atts.put(Label.INPUT_OPERATOR, right().getExplainer(context));
+
+        for (Operator op : getInputOperators())
+            atts.put(Label.INPUT_OPERATOR, op.getExplainer(context));
+        for (RowType type : getInputTypes())
+            atts.put(Label.INPUT_TYPE, type.getExplainer(context));
         if (outputEqual)
             atts.put(Label.UNION_OPTION, PrimitiveExplainer.getInstance("ALL"));
+        atts.put(Label.OUTPUT_TYPE, rowType().getExplainer(context));
+        
         return new CompoundExplainer(Type.ORDERED, atts);
     }
 
@@ -215,7 +221,9 @@ class Union_Ordered extends UnionBase
                     LOG.debug("Union_Ordered: yield {}", next);
                 }
                 
-                if (useOverlayRow()) {
+                if (next == null) {
+                    return next;
+                } else if (useOverlayRow()) {
                     return new OverlayingRow (next, rowType());
                 } else {
                     return next;

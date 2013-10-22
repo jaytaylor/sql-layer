@@ -1405,15 +1405,12 @@ public class OperatorAssembler extends BaseRule
                 leftStream.rowType = leftStream.operator.rowType();
 
                 
-                leftStream.operator = API.sort_General(rightStream.operator, rightStream.rowType,
+                rightStream.operator = API.sort_General(rightStream.operator, rightStream.rowType,
                         assembleUnionOrdering(rightStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
-                leftStream.rowType = rightStream.operator.rowType();
-                
-                assert leftStream.rowType.nFields() == rightStream.rowType.nFields();
-                
+                rightStream.rowType = rightStream.operator.rowType();
+               
                 boolean[] ascending = new boolean[rightStream.rowType.nFields()];
-                
-                
+                Arrays.fill(ascending, Boolean.TRUE);
                 RowType leftRowType = leftStream.rowType;
                 RowType rightRowType = rightStream.rowType;
                 int leftOrderingFields = leftRowType.nFields();

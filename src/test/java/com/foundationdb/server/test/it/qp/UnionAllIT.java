@@ -26,9 +26,8 @@ import org.junit.Test;
 
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.test.ExpressionGenerators;
 import com.foundationdb.server.types.texpressions.Comparison;
@@ -58,9 +57,9 @@ public class UnionAllIT extends OperatorITBase {
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        tRowType = schema.userTableRowType(userTable(t));
-        uRowType = schema.userTableRowType(userTable(u));
-        vRowType = schema.userTableRowType(userTable(v));
+        tRowType = schema.tableRowType(table(t));
+        uRowType = schema.tableRowType(table(u));
+        vRowType = schema.tableRowType(table(v));
         tGroupTable = group(t);
         uGroupTable = group(u);
         vGroupTable = group(v);
@@ -84,7 +83,7 @@ public class UnionAllIT extends OperatorITBase {
         use(db);
     }
     private int t, u, v;
-    private UserTableRowType tRowType, uRowType, vRowType;
+    private TableRowType tRowType, uRowType, vRowType;
     private Group tGroupTable, uGroupTable, vGroupTable;
     
     @Test
@@ -109,7 +108,7 @@ public class UnionAllIT extends OperatorITBase {
                         ExpressionGenerators.literal(7), castResolver())),
                 uRowType, 
                 true);
-        RowBase[] expected = new RowBase[]{
+        TestRow[] expected = new TestRow[]{
             row(tRowType, 1000L, 8L),
             row(tRowType, 1002L, 8L),
             row(tRowType, 1004L, 8L),
@@ -144,7 +143,7 @@ public class UnionAllIT extends OperatorITBase {
                 2,
                 ascending (true, true),
                 false);
-        RowBase[] expected = new RowBase[]{
+        TestRow[] expected = new TestRow[]{
             row(tRowType, 1001L, 9L),
             row(uRowType, 1002L, 9L),
             row(tRowType, 1003L, 9L),

@@ -1,4 +1,4 @@
-PhysicalSelect[column1:null, column2:null]
+PhysicalSelect[cid:int[INT], name:varchar(32)[VARCHAR]]
   Union_Ordered(skip 0, compare 2)
     Sort_General(Field(0) ASC, Field(1) ASC, SUPPRESS DUPLICATES)
       Union_Ordered(skip 0, compare 2)
