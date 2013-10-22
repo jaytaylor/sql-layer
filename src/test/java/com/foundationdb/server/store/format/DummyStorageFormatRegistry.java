@@ -18,6 +18,7 @@
 package com.foundationdb.server.store.format;
 
 import com.foundationdb.ais.AISCloner;
+import com.foundationdb.ais.model.AISBuilder.StandinStorageDescription;
 import com.foundationdb.ais.model.FullTextIndex;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
@@ -56,7 +57,9 @@ public class DummyStorageFormatRegistry extends StorageFormatRegistry
             return new TestStorageDescription(forObject, pbStorage.getExtension(CommonProtobuf.test));
         }
         else {
-            return null;
+            // These don't serialize, but we still want to pass
+            // validation until rendezvoused with real storage.
+            return new StandinStorageDescription(forObject);
         }
     }
     

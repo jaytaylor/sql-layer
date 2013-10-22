@@ -58,7 +58,7 @@ public class AISBuilder {
     // Used when no format registry is passed to constructor. Adds a
     // StorageDescription that trivially passes validation and must be
     // replaced later. NOTE: this does not serialize; cf. TestStorageDescription.
-    private static class StandinStorageDescription extends StorageDescription {
+    public static class StandinStorageDescription extends StorageDescription {
         public StandinStorageDescription(HasStorage forObject) {
             super(forObject);
         }

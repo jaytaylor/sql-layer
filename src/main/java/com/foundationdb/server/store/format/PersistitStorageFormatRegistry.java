@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.store.format;
 
+import com.foundationdb.ais.model.FullTextIndex;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Index;
@@ -58,7 +59,12 @@ public class PersistitStorageFormatRegistry extends StorageFormatRegistry
         // case of a (subclass of) PersistitStorageDescription but without its
         // treeName filled in yet.
         if (object.getStorageDescription() == null) {
-            object.setStorageDescription(new PersistitStorageDescription(object, generateTreeName(object, nameGenerator)));
+            if (object instanceof FullTextIndex) {
+                object.setStorageDescription(generateFullTextIndexStorageDescription((FullTextIndex)object, nameGenerator));
+            }
+            else {
+                object.setStorageDescription(new PersistitStorageDescription(object, generateTreeName(object, nameGenerator)));
+            }
         }
     }
 
