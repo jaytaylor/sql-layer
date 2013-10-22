@@ -102,6 +102,10 @@ union-6: select * union
 
 union-7: Left column null 
 
+union-8: both sides null column
+
+union-9: constant expression right side of union
+
 update-1: change column to literal
 
 update-2: change column to expression (column itself)

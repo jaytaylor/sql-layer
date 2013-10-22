@@ -45,6 +45,7 @@ import com.foundationdb.server.error.InsertWrongCountException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.error.ProtectedTableDDLException;
 import com.foundationdb.server.error.SQLParserInternalException;
+import com.foundationdb.server.error.SetWrongNumColumns;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.error.OrderGroupByNonIntegerConstant;
 import com.foundationdb.server.error.OrderGroupByIntegerOutOfRange;
@@ -291,35 +292,117 @@ public class ASTStatementLoader extends BaseRule
             }
             else if (resultSet instanceof UnionNode) {
                 UnionNode union = (UnionNode)resultSet;
-                boolean all = union.isAll();
-                PlanNode left = toQueryForSelect(union.getLeftResultSet());
-                PlanNode right = toQueryForSelect(union.getRightResultSet());
-                PlanNode newUnion = new Union(left, right, all);
-                List<ResultField> results = resultColumns (union.getResultColumns());
-                PlanNode query = new ResultSet(newUnion, results);
+                PlanNode newUnion = newUnion(union);
+                PlanNode query = new ResultSet(newUnion, ((Union)newUnion).getResults());
                 return query;
             }
             else
                 throw new UnsupportedSQLException("Unsupported query", resultSet);
         }
 
+        // This is a little ugly. This looks down the Plan Node tree for the 
+        // inputs to the Union node, looking for Project (or Union), then 
+        // adds castExpressions to the Projects to ensure the two inputs
+        // have the same types. 
+        // e.g. select 1 UNION select 'a' -> both output as VARCHARs
+        protected PlanNode newUnion(UnionNode union) throws StandardException {
+            
+            PlanNode left = toQueryForSelect(union.getLeftResultSet());
+            PlanNode right = toQueryForSelect(union.getRightResultSet());
+            List<ResultField> results = new ArrayList<>(union.getResultColumns().size());
+            
+            if (((ResultSet)left).getFields().size() != ((ResultSet)right).getFields().size()) {
+                throw new SetWrongNumColumns (((ResultSet)left).getFields().size(),((ResultSet)right).getFields().size());
+            }
+
+            Project leftProject = getProject(left);
+            Project rightProject= getProject(right);
+            
+            // Cast the fields of the incoming to the same (dominate) type 
+            // So the union is combining the same field types. 
+            for (int i= 0; i < leftProject.nFields(); i++) {
+                DataTypeDescriptor leftType = leftProject.getFields().get(i).getSQLtype();
+                DataTypeDescriptor rightType = rightProject.getFields().get(i).getSQLtype();
+                
+                
+                DataTypeDescriptor projectType = null;
+                // Case of SELECT null UNION SELECT null -> pick a type
+                if (leftType == null && rightType == null)
+                    projectType = new DataTypeDescriptor (TypeId.VARCHAR_ID, true);
+                if (leftType == null)
+                    projectType = rightType;
+                else if (rightType == null) 
+                    projectType = leftType;
+                else if (leftType.comparable(rightType, true)) {
+                    projectType = leftType.getDominantType(rightType);
+                } else {
+                    // The types are not close enough, the user must make an explicit cast
+                    // will be caught in the OperatorAssembler#assembleUnion() -> UnionBase constructor
+                    // as part of the Union construction. Needs to be there for the error message. 
+                    continue;
+                }
+             
+                ValueNode leftSource = leftProject.getFields().get(i).getSQLsource();
+                ValueNode rightSource = rightProject.getFields().get(i).getSQLsource();
+
+                leftProject.getFields().set(i, 
+                        new CastExpression (leftProject.getFields().get(i), projectType, leftSource));
+                rightProject.getFields().set(i, 
+                        new CastExpression (rightProject.getFields().get(i), projectType, rightSource));
+                
+                // Also do the ResultsFields with the correct Types. 
+                results.add(resultColumn(union.getResultColumns().get(i), projectType));
+
+            }
+            Union newUnion = new Union(left, right, union.isAll());
+            newUnion.setResults(results);
+            return newUnion;
+        }
+        
+        protected Project getProject(PlanNode node) {
+            PlanNode project = ((BasePlanWithInput)node).getInput();
+            if (project instanceof Project)
+                return (Project)project;
+            else if (project instanceof Union) {
+                Union union = (Union)project;
+                project = getProject(((Union)project).getLeft());
+                Project oldProject = (Project)project;
+                
+                Project unionProject = (Project) project.duplicate();
+                unionProject.replaceInput(oldProject.getInput(), union);
+                return unionProject;
+            }
+            else if (!(project instanceof BasePlanWithInput)) 
+                return null;
+            project = ((BasePlanWithInput)project).getInput();
+            if (project instanceof Project)
+                return (Project)project;
+            // Add a project on top of the (nested) union 
+            // to make sure the casts work on the way up
+            return null;
+        }
+        
+        protected ResultField resultColumn (ResultColumn result, DataTypeDescriptor type) 
+                throws StandardException {
+            String name = result.getName();
+            boolean nameDefaulted =
+                (result.getExpression() instanceof ColumnReference) &&
+                (name == ((ColumnReference)result.getExpression()).getColumnName());
+            Column column = null;
+            ExpressionNode expr = toExpression(result.getExpression());
+            if (expr instanceof ColumnExpression) {
+                column = ((ColumnExpression)expr).getColumn();
+                if ((column != null) && nameDefaulted)
+                    name = column.getName();
+            }
+            return new ResultField(name, type, column);
+        }
+
         protected List<ResultField> resultColumns(ResultColumnList rcl) 
                         throws StandardException {
             List<ResultField> results = new ArrayList<>(rcl.size());
             for (ResultColumn result : rcl) {
-                String name = result.getName();
-                DataTypeDescriptor type = result.getType();
-                boolean nameDefaulted =
-                    (result.getExpression() instanceof ColumnReference) &&
-                    (name == ((ColumnReference)result.getExpression()).getColumnName());
-                Column column = null;
-                ExpressionNode expr = toExpression(result.getExpression());
-                if (expr instanceof ColumnExpression) {
-                    column = ((ColumnExpression)expr).getColumn();
-                    if ((column != null) && nameDefaulted)
-                        name = column.getName();
-                }
-                results.add(new ResultField(name, type, column));
+                results.add(resultColumn(result, result.getType()));
             }
             return results;
         }

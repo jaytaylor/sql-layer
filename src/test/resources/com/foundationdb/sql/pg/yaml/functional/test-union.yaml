@@ -15,7 +15,7 @@
 ---
 - Statement: INSERT INTO customers (cid, name) VALUES (1, 'Smith'), (2, 'Jones'), (3, 'Smithson')
 ---
-- Statement: INSERT INTO handling (hid, iid) VALUES (1, 100), (2, 200), (3, 300)
+- Statement: INSERT INTO handling (hid, iid) VALUES (10, 100), (20, 200), (30, 300)
 ---
 - Statement: INSERT INTO categories (cat, sku) values (1, 'Square'), (2, 'Circle'), (3, 'Hexagon')
 ---
@@ -57,7 +57,7 @@
 - output: [[1, 'Smith'], [1, 'Square'], [2, 'Circle'], [2, 'Jones'],[3, 'Hexagon'],[3, 'Smithson']]
 ---
 - Statement: select cid, name from customers  UNION select hid, cast (iid as VARCHAR(32)) from handling
-- output: [[1, '100'], [1, 'Smith'], [2, '200'], [2, 'Jones'], [3, '300'], [3, 'Smithson']]
+- output: [[1, 'Smith'],  [2, 'Jones'], [3, 'Smithson'], [10, '100'], [20, '200'], [30, '300']]
 ---
 - Statement: select cid, name from customers  UNION select hid from handling
 - error: [4251E, 'ERROR: Set operation has mis-matched number of columns: `2` vs. `1`']
@@ -65,6 +65,9 @@
 - Statement: select cid, name from customers  UNION select hid, iid from handling
 - error: [4251F, 'ERROR: Set operation has mis-matched column types: (`[MCOMPAT_ INTEGER(11) NOT NULL, MCOMPAT_ VARCHAR(32, UTF8, UCS_BINARY) NOT NULL]`) vs. (`[MCOMPAT_ INTEGER(11) NOT NULL, MCOMPAT_ INTEGER(11) NOT NULL]`)']
 ---
-- Statement: select cid, cast( null as VARCHAR(32)) from customers UNION select cat, sku from categories
+- Statement: select cid, null from customers UNION select cat, sku from categories
 - output: [[1, null], [1, 'Square'], [2, null], [2, 'Circle'], [3, null], [3, 'Hexagon']]
+---
+- Statement: SELECT cid, name from customers UNION SELECT cat, sku FROM categories UNION select 1, cast ('Simple' as VARCHAR(32))
+- output: [[1, 'Simple'], [1, 'Smith'], [1, 'Square'], [2, 'Circle'], [2, 'Jones'],[3, 'Hexagon'],[3, 'Smithson']]
 ...

@@ -1391,6 +1391,10 @@ public class OperatorAssembler extends BaseRule
             RowStream leftStream = assembleStream (left);
             RowStream rightStream = assembleStream (right);
             
+            // TOOD: Replace the expressions in the projectDefault at the top 
+            // of both streams with casts to the common row type.
+            
+            
             if (union.isAll()) {
                 leftStream.operator = 
                     API.unionAll_Default(leftStream.operator, leftStream.rowType, 

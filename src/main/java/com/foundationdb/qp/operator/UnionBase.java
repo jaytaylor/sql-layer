@@ -114,7 +114,7 @@ public abstract class UnionBase extends Operator {
     }
     // for use in this package (in ctor and unit tests)
 
-    protected static RowType rowType(RowType rowType1, RowType rowType2) {
+    public static RowType rowType(RowType rowType1, RowType rowType2) {
         if (rowType1 == rowType2)
             return rowType1;
         if (rowType1.nFields() != rowType2.nFields())
