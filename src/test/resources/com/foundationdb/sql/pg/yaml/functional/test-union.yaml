@@ -28,6 +28,13 @@
             ['    Project_Default(categories.cat, categories.sku)'],
             ['      IndexScan_Default(Index(categories.cat_sku), cat, sku)']]
 ---
+- Statement: Explain SELECT cid, name from customers UNION ALL SELECT cat, sku FROM categories
+- output: [['UnionAll_Default()'],
+            ['  Project_Default(customers.cid, customers.name)'],
+            ['    IndexScan_Default(Index(customers.name), name, cid)'],
+            ['  Project_Default(categories.cat, categories.sku)'],
+            ['    IndexScan_Default(Index(categories.cat_sku), cat, sku)']]
+---
 - Statement: SELECT cid, name from customers UNION SELECT cat, sku FROM categories
 - output: [[1, 'Smith'], [1, 'Square'], [2, 'Circle'], [2, 'Jones'],[3, 'Hexagon'],[3, 'Smithson']]
 ---
