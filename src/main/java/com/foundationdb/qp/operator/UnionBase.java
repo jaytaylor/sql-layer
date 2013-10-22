@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Set;
 
 import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.error.SetWrongNumColumns;
+import com.foundationdb.server.error.SetWrongTypeColumns;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.Strings;
@@ -36,7 +38,10 @@ public abstract class UnionBase extends Operator {
         ArgumentValidation.notNull("right", right);
         ArgumentValidation.notNull("leftRowType", leftType);
         ArgumentValidation.notNull("rightRowType", rightType);
-        ArgumentValidation.isEQ("leftRowType.fields", leftType.nFields(), "rightRowType.fields", rightType.nFields());
+        
+        if (leftType.nFields() != rightType.nFields()) {
+            throw new SetWrongNumColumns (leftType.nFields(), rightType.nFields());
+        }
         this.outputRowType = rowType(leftType, rightType);
         overlayRow = !(outputRowType == leftType);
         
@@ -137,19 +142,7 @@ public abstract class UnionBase extends Operator {
         return rowType1.schema().newValuesType(types);
     }
 
-    private static IllegalArgumentException notSameShape(RowType rt1, RowType rt2) {
-        return new IllegalArgumentException(String.format("RowTypes not of same shape: %s (%s), %s (%s)",
-                rt1, tInstanceOf(rt1),
-                rt2, tInstanceOf(rt2)
-        ));
+    private static SetWrongTypeColumns notSameShape(RowType rt1, RowType rt2) {
+        return new SetWrongTypeColumns (rt1, rt2);
     }
-
-    static String tInstanceOf (RowType rt) {
-        TInstance[] result = new TInstance[rt.nFields()];
-        for (int i = 0; i < result.length; ++i) {
-            result[i] = rt.typeInstanceAt(i);
-        }
-        return Arrays.toString(result);
-    }
-
 }

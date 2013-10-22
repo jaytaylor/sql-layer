@@ -51,4 +51,13 @@
 ---
 - Statement: select cid, name from customers  UNION select hid, cast (iid as VARCHAR(32)) from handling
 - output: [[1, '100'], [1, 'Smith'], [2, '200'], [2, 'Jones'], [3, '300'], [3, 'Smithson']]
+---
+- Statement: select cid, name from customers  UNION select hid from handling
+- error: [4251E, 'ERROR: Set operation has mis-matched number of columns: `2` vs. `1`']
+---
+- Statement: select cid, name from customers  UNION select hid, iid from handling
+- error: [4251F, 'ERROR: Set operation has mis-matched column types: (`[MCOMPAT_ INTEGER(11) NOT NULL, MCOMPAT_ VARCHAR(32, UTF8, UCS_BINARY) NOT NULL]`) vs. (`[MCOMPAT_ INTEGER(11) NOT NULL, MCOMPAT_ INTEGER(11) NOT NULL]`)']
+---
+- Statement: select cid, cast( null as VARCHAR(32)) from customers UNION select cat, sku from categories
+- output: [[1, null], [1, 'Square'], [2, null], [2, 'Circle'], [3, null], [3, 'Hexagon']]
 ...

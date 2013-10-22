@@ -164,7 +164,11 @@ public class ValueSortKeyAdapter extends SortKeyAdapter<ValueSource, TPreparedEx
 
         @Override
         public void append(ValueSource source, TInstance tInstance) {
-            tInstance.writeCollating(source, target);
+            if (source.isNull()) {
+                target.putNull();
+            } else {
+                tInstance.writeCollating(source, target);
+            }
         }
 
         protected final PersistitKeyValueTarget target = new PersistitKeyValueTarget(SORT_KEY_MAX_SEGMENT_SIZE);
