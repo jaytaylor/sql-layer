@@ -17,6 +17,10 @@
 
 package com.foundationdb.ais.model;
 
+import com.foundationdb.ais.AISCloner;
+import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.store.format.DummyStorageFormatRegistry;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotSame;
@@ -28,8 +32,6 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.foundationdb.server.error.InvalidOperationException;
-
 public class AISMergeTest {
 
     private AkibanInformationSchema t;
@@ -38,12 +40,14 @@ public class AISMergeTest {
     private static final String SCHEMA= "test";
     private static final String TABLE  = "t1";
     private static final TableName TABLENAME = new TableName(SCHEMA,TABLE);
+    private AISCloner aisCloner;
     
     @Before
     public void createSchema() throws Exception {
         t = new AkibanInformationSchema();
         s = new AkibanInformationSchema();
         b = new AISBuilder(s);
+        aisCloner = DummyStorageFormatRegistry.aisCloner();
     }
 
     @Test
@@ -58,7 +62,7 @@ public class AISMergeTest {
         assertNotNull(s.getTable(SCHEMA, TABLE));
         assertNotNull(s.getTable(SCHEMA, TABLE).getAIS());
         
-        AISMerge merge = new AISMerge (t, s.getTable(TABLENAME));
+        AISMerge merge = new AISMerge (aisCloner, t, s.getTable(TABLENAME));
         t = merge.merge().getAIS();
         Table targetTable = t.getTable(TABLENAME);
         Table sourceTable = s.getTable(TABLENAME);
@@ -90,7 +94,7 @@ public class AISMergeTest {
         b.index(SCHEMA, TABLE, "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
         b.indexColumn(SCHEMA, TABLE, "PRIMARY", "c1", 0, true, null);
         b.basicSchemaIsComplete();
-        AISMerge merge = new AISMerge (t,s.getTable(TABLENAME));
+        AISMerge merge = new AISMerge (aisCloner, t, s.getTable(TABLENAME));
         t = merge.merge().getAIS();
         
         Table targetTable = t.getTable(TABLENAME);
@@ -111,7 +115,7 @@ public class AISMergeTest {
         b.index(SCHEMA, TABLE, "c1", true, Index.UNIQUE_KEY_CONSTRAINT);
         b.indexColumn(SCHEMA, TABLE, "c1", "c1", 0, true, null);
         
-        AISMerge merge = new AISMerge (t,s.getTable(TABLENAME));
+        AISMerge merge = new AISMerge (aisCloner, t, s.getTable(TABLENAME));
         t = merge.merge().getAIS();
         
         Table targetTable = t.getTable(TABLENAME);
@@ -138,7 +142,7 @@ public class AISMergeTest {
         b.createGroup("FRED", SCHEMA);
         b.addTableToGroup("FRED", SCHEMA, TABLE);
         b.groupingIsComplete();
-        AISMerge merge = new AISMerge (t,s.getTable(TABLENAME));
+        AISMerge merge = new AISMerge (aisCloner, t, s.getTable(TABLENAME));
         t = merge.merge().getAIS();
         assertTrue (t.isFrozen());
         assertEquals (TABLENAME, t.getTable(TABLENAME).getGroup().getName());
@@ -152,7 +156,7 @@ public class AISMergeTest {
         b.addJoinToGroup("FRED", "test/t1/test/t2", 0);
         b.groupingIsComplete();
         
-        merge = new AISMerge (t, s.getTable(SCHEMA, "t2"));
+        merge = new AISMerge (aisCloner, t, s.getTable(SCHEMA, "t2"));
         t = merge.merge().getAIS();
         
         assertEquals (1, t.getJoins().size());
@@ -173,7 +177,7 @@ public class AISMergeTest {
         b.createGroup("FRED", SCHEMA);
         b.addTableToGroup("FRED", SCHEMA, TABLE);
         b.groupingIsComplete();
-        AISMerge merge = new AISMerge (t,s.getTable(TABLENAME));
+        AISMerge merge = new AISMerge (aisCloner, t, s.getTable(TABLENAME));
         t = merge.merge().getAIS();
         assertTrue (t.isFrozen());
 
@@ -186,7 +190,7 @@ public class AISMergeTest {
         b.addJoinToGroup("FRED", "test/t1/test/t2", 0);
         b.groupingIsComplete();
         
-        merge = new AISMerge (t, s.getTable(SCHEMA, "t2"));
+        merge = new AISMerge (aisCloner, t, s.getTable(SCHEMA, "t2"));
         t = merge.merge().getAIS();
         assertNotNull (t.getTable(SCHEMA, "t2").getParentJoin());
         assertEquals (1, t.getTable(TABLENAME).getChildJoins().size());
@@ -201,7 +205,7 @@ public class AISMergeTest {
         b.addJoinToGroup("FRED", "test/t1/test/t3", 0);
         b.groupingIsComplete();
         
-        merge = new AISMerge (t, s.getTable(SCHEMA, "t3"));
+        merge = new AISMerge (aisCloner, t, s.getTable(SCHEMA, "t3"));
         t = merge.merge().getAIS();
         assertNotNull (t.getTable(SCHEMA, "t3").getParentJoin());
         assertEquals (2, t.getTable(TABLENAME).getChildJoins().size());
@@ -223,7 +227,7 @@ public class AISMergeTest {
         b.createGroup("FRED", SCHEMA);
         b.addTableToGroup("FRED", SCHEMA, TABLE);
         b.groupingIsComplete();
-        AISMerge merge = new AISMerge (t,s.getTable(TABLENAME));
+        AISMerge merge = new AISMerge (aisCloner, t, s.getTable(TABLENAME));
         t = merge.merge().getAIS();
         assertTrue (t.isFrozen());
         
@@ -244,7 +248,7 @@ public class AISMergeTest {
         b.addJoinToGroup("DOUG", "test/t1/test/t2", 0);
         b.groupingIsComplete();
         
-        merge = new AISMerge (t, s.getTable(SCHEMA, "t2"));
+        merge = new AISMerge (aisCloner, t, s.getTable(SCHEMA, "t2"));
         t = merge.merge().getAIS();
     }
 
@@ -261,7 +265,7 @@ public class AISMergeTest {
         b.createGroup("FRED", SCHEMA);
         b.addTableToGroup("FRED", SCHEMA, TABLE);
         b.groupingIsComplete();
-        AISMerge merge = new AISMerge (t,s.getTable(TABLENAME));
+        AISMerge merge = new AISMerge (aisCloner, t, s.getTable(TABLENAME));
         t = merge.merge().getAIS();
         assertTrue (t.isFrozen());
         
@@ -284,7 +288,7 @@ public class AISMergeTest {
         b.addJoinToGroup("DOUG", "test/t1/test/t2", 0);
         b.groupingIsComplete();
         
-        merge = new AISMerge (t, b.akibanInformationSchema().getTable(SCHEMA, "t2"));
+        merge = new AISMerge (aisCloner, t, b.akibanInformationSchema().getTable(SCHEMA, "t2"));
         t = merge.merge().getAIS();
         
     }
@@ -302,7 +306,7 @@ public class AISMergeTest {
         b.createGroup("FRED", SCHEMA);
         b.addTableToGroup("FRED", SCHEMA, TABLE);
         b.groupingIsComplete();
-        AISMerge merge = new AISMerge (t,s.getTable(TABLENAME));
+        AISMerge merge = new AISMerge (aisCloner, t, s.getTable(TABLENAME));
         t = merge.merge().getAIS();
         assertTrue (t.isFrozen());
         
@@ -324,7 +328,7 @@ public class AISMergeTest {
         b.addJoinToGroup("DOUG", "test/t1/test/t2", 0);
         b.groupingIsComplete();
         
-        merge = new AISMerge (t, b.akibanInformationSchema().getTable(SCHEMA, "t2"));
+        merge = new AISMerge (aisCloner, t, b.akibanInformationSchema().getTable(SCHEMA, "t2"));
         t = merge.merge().getAIS();
 
         assertNotNull (t.getTable(SCHEMA, "t2"));
@@ -348,7 +352,7 @@ public class AISMergeTest {
         b.addTableToGroup(TABLE, SCHEMA, TABLE);
         b.groupingIsComplete();
         
-        AISMerge merge = new AISMerge(t, s.getTable(TABLENAME));
+        AISMerge merge = new AISMerge(aisCloner, t, s.getTable(TABLENAME));
         t = merge.merge().getAIS();
         assertTrue(t.isFrozen());
         assertEquals(TABLENAME, t.getTable(TABLENAME).getGroup().getName());
@@ -364,7 +368,7 @@ public class AISMergeTest {
         b.addJoinToGroup(TABLE, "test/t1/test/t2", 0);
         b.groupingIsComplete();
 
-        merge = new AISMerge(t, s.getTable(SCHEMA, "t2"));
+        merge = new AISMerge(aisCloner, t, s.getTable(SCHEMA, "t2"));
         t = merge.merge().getAIS();
 
         assertEquals(1, t.getJoins().size());
@@ -385,7 +389,7 @@ public class AISMergeTest {
         b.addTableToGroup(TABLE, SCHEMA, TABLE);
         b.groupingIsComplete();
 
-        AISMerge merge = new AISMerge(t, s.getTable(TABLENAME));
+        AISMerge merge = new AISMerge(aisCloner, t, s.getTable(TABLENAME));
         t = merge.merge().getAIS();
         assertTrue(t.isFrozen());
         assertEquals(TABLENAME, t.getTable(TABLENAME).getGroup().getName());
@@ -401,7 +405,7 @@ public class AISMergeTest {
         b.addJoinToGroup(TABLE, "test/t1/test/t2", 0);
         b.groupingIsComplete();
 
-        merge = new AISMerge(t, s.getTable(SCHEMA, "t2"));
+        merge = new AISMerge(aisCloner, t, s.getTable(SCHEMA, "t2"));
         t = merge.merge().getAIS();
     }
     
@@ -417,7 +421,7 @@ public class AISMergeTest {
         b.createGroup("FRED", SCHEMA);
         b.addTableToGroup("FRED", SCHEMA, TABLE);
         b.groupingIsComplete();
-        AISMerge merge = new AISMerge (t,s.getTable(TABLENAME));
+        AISMerge merge = new AISMerge (aisCloner, t, s.getTable(TABLENAME));
         t = merge.merge().getAIS();
         
         assertNotNull (t.getTable(TABLENAME).getColumn(0).getIdentityGenerator());
@@ -425,7 +429,7 @@ public class AISMergeTest {
         assertEquals (5, identityGenerator.getStartsWith());
         assertEquals (2, identityGenerator.getIncrement());
         assertEquals (1000, identityGenerator.getMaxValue());
-        assertNotNull (identityGenerator.getTreeName());
+        assertNotNull (identityGenerator.getStorageUniqueKey());
     }
 
     /*
@@ -465,7 +469,7 @@ public class AISMergeTest {
         b.table(SCHEMA, "zap");
         b.column(SCHEMA, "zap", "id", 0, "INT", null, null, false, false, null, null);
         
-        AISMerge merge = new AISMerge(t, s.getTable(SCHEMA, "zap"));
+        AISMerge merge = new AISMerge(aisCloner, t, s.getTable(SCHEMA, "zap"));
         t = merge.merge().getAIS();
     }
 
@@ -504,7 +508,7 @@ public class AISMergeTest {
         b.table(I_S, "zap");
         b.column(I_S, "zap", "id", 0, "INT", null, null, false, false, null, null);
 
-        AISMerge merge = new AISMerge(t, s.getTable(I_S, "zap"));
+        AISMerge merge = new AISMerge(aisCloner, t, s.getTable(I_S, "zap"));
         t = merge.merge().getAIS();
     }
 

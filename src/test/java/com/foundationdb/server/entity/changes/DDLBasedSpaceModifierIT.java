@@ -84,7 +84,7 @@ public final class DDLBasedSpaceModifierIT extends ITBase {
         SpaceDiff.apply(origSpace, updateSpace, new DDLBasedSpaceModifier(ddl(), session(), SCHEMA, updateSpace));
 
         String expected = Strings.dumpFileToString(new File(dir, testName + EXPECTED_SUFFIX));
-        String actual = AISDumper.dumpDeterministicAIS(ais(), SCHEMA);
+        String actual = AISDumper.dumpDeterministicAIS(aisCloner(), ais(), SCHEMA);
         assertEquals("Generated AIS", expected.trim(), actual.trim());
     }
 

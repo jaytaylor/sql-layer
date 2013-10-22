@@ -19,8 +19,10 @@ package com.foundationdb.server.store;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
@@ -32,7 +34,6 @@ import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.KeyCreator;
-import com.foundationdb.server.service.tree.TreeLink;
 import com.persistit.Key;
 import com.persistit.Value;
 
@@ -124,21 +125,21 @@ public interface Store extends KeyCreator {
      * @throws Exception
      */
     void removeTrees(Session session, Table table);
-    void removeTree(Session session, TreeLink treeLink);
-    void truncateTree(Session session, TreeLink treeLink);
+    void removeTree(Session session, HasStorage object);
+    void truncateTree(Session session, HasStorage object);
 
     /**
      * Low level operation. Removes the given trees and <i>only</i> the given trees.
      * To ensure metadata and other state is updated, check if another method for
      * specific entities is more appropriate (e.g. {@link #deleteIndexes(Session, Collection)}).
      */
-    void removeTrees(Session session, Collection<? extends TreeLink> treeLinks);
+    void removeTrees(Session session, Collection<? extends HasStorage> objects);
 
     void truncateIndexes(Session session, Collection<? extends Index> indexes);
 
     StoreAdapter createAdapter(Session session, Schema schema);
 
-    boolean treeExists(Session session, String schemaName, String treeName);
+    boolean treeExists(Session session, StorageDescription storageDescription);
 
     boolean isRetryableException(Throwable t);
 

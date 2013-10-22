@@ -17,9 +17,11 @@
 
 package com.foundationdb.server.entity.changes;
 
+import com.foundationdb.ais.AISCloner;
 import com.foundationdb.junit.NamedParameterizedRunner;
 import com.foundationdb.junit.Parameterization;
 import com.foundationdb.server.entity.model.Space;
+import com.foundationdb.server.store.format.DummyStorageFormatRegistry;
 import com.foundationdb.util.JUnitUtils;
 import com.foundationdb.util.Strings;
 import com.google.common.base.Function;
@@ -70,7 +72,7 @@ public final class EntityToAISTest {
         spaceDef.visit(eToAIS);
 
         String expected = Strings.dumpFileToString(new File(dir, testName + EXPECTED_SUFFIX));
-        String actual = AISDumper.dumpDeterministicAIS(eToAIS.getAIS(), SCHEMA);
+        String actual = AISDumper.dumpDeterministicAIS(DummyStorageFormatRegistry.aisCloner(), eToAIS.getAIS(), SCHEMA);
         assertEquals("Generated AIS", expected.trim(), actual.trim());
     }
 

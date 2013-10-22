@@ -57,9 +57,9 @@ public class GroupIndexCreator {
      * @return GroupIndex representation of the requested
      * @throws GroupIndexCreatorException For any error
      */
-    public static GroupIndex createIndex(AkibanInformationSchema ais, TableName groupName, String indexName,
+    public static GroupIndex createIndex(AISCloner aisCloner, AkibanInformationSchema ais, TableName groupName, String indexName,
                                          String tableColumnList, Index.JoinType joinType) {
-        return createIndex(ais, groupName, indexName, false, tableColumnList, joinType);
+        return createIndex(aisCloner, ais, groupName, indexName, false, tableColumnList, joinType);
     }
     /**
      * Helper function for converting a simple group index specification into an
@@ -73,10 +73,10 @@ public class GroupIndexCreator {
      * @return GroupIndex representation of the requested
      * @throws GroupIndexCreatorException For any error
      */
-    private static GroupIndex createIndex(AkibanInformationSchema ais, TableName groupName, String indexName,
+    private static GroupIndex createIndex(AISCloner aisCloner, AkibanInformationSchema ais, TableName groupName, String indexName,
                                          boolean unique, String tableColumnList, Index.JoinType joinType) {
         if(ais.isFrozen()) {
-            ais = AISCloner.clone(ais);
+            ais = aisCloner.clone(ais);
         }
         final Group group = ais.getGroup(groupName);
         if(group == null) {

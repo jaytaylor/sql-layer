@@ -244,7 +244,8 @@ public final class ModelResource {
     }
 
     private Space spaceForAIS(AkibanInformationSchema ais, String schema) {
-        ais = AISCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(schema));
+        AISCloner aisCloner = reqs.dxlService.ddlFunctions().getAISCloner();
+        ais = aisCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(schema));
         return AisToSpace.create(ais, Space.requireUUIDs);
     }
 

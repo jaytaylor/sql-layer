@@ -25,10 +25,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.foundationdb.ais.model.validation.AISInvariants;
-import com.foundationdb.server.service.tree.TreeCache;
-import com.foundationdb.server.service.tree.TreeLink;
 
-public class Group implements Traversable, TreeLink
+public class Group extends HasStorage implements Traversable
 {
     public static Group create(AkibanInformationSchema ais, String schemaName, String rootTableName)
     {
@@ -146,41 +144,25 @@ public class Group implements Traversable, TreeLink
         }
     }
 
-    public void setTreeName(String treeName) {
-        this.treeName = treeName;
-    }
-
     private Map<String, GroupIndex> internalGetIndexMap() {
         return indexMap;
     }
 
-    // TreeLink
+    public boolean hasMemoryTableFactory()
+    {
+        return (storageDescription != null) && storageDescription.isMemoryTableFactory();
+    }
+
+    // HasStorage
 
     @Override
     public String getSchemaName() {
         return (rootTable != null) ? rootTable.getName().getSchemaName() : null;
     }
 
-    @Override
-    public String getTreeName() {
-        return treeName;
-    }
-
-    @Override
-    public void setTreeCache(TreeCache cache) {
-        treeCache.set(cache);
-    }
-
-    @Override
-    public TreeCache getTreeCache() {
-        return treeCache.get();
-    }
-
     // State
 
     private final TableName name;
     private final Map<String, GroupIndex> indexMap;
-    private final AtomicReference<TreeCache> treeCache = new AtomicReference<>();
-    private String treeName;
     private Table rootTable;
 }
