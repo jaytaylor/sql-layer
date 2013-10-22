@@ -37,6 +37,7 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.JarURLConnection;
 import java.net.URL;
+import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.Map.Entry;
@@ -342,11 +343,18 @@ public abstract class Strings {
 
     private static void readerTo(BufferedReader reader, Appendable out, boolean keepNL) throws IOException {
         try {
-            String line;
-            while ((line=reader.readLine()) != null) {
-                out.append(line);
-                if (keepNL)
-                    out.append(NL);
+            if(keepNL) {
+                CharBuffer buffer = CharBuffer.allocate(1024);
+                while(reader.read(buffer) != -1) {
+                    buffer.flip();
+                    out.append(buffer);
+                    buffer.clear();
+                }
+            } else {
+                String line;
+                while((line = reader.readLine()) != null) {
+                    out.append(line);
+                }
             }
         } finally {
             reader.close();
