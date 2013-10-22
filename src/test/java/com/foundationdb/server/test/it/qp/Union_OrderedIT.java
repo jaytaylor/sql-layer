@@ -28,6 +28,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.error.SetWrongNumColumns;
 import org.junit.Test;
 
 import static com.foundationdb.qp.operator.API.*;
@@ -135,7 +136,7 @@ public class Union_OrderedIT extends OperatorITBase
         }
     }
 
-    @Test (expected = IllegalArgumentException.class)
+    @Test (expected = SetWrongNumColumns.class)
     public void testDifferentInputTypes() 
     {
         // Test different input types

@@ -29,6 +29,7 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.error.SetWrongTypeColumns;
 import com.foundationdb.server.test.ExpressionGenerators;
 import com.foundationdb.server.types.texpressions.Comparison;
 
@@ -153,7 +154,7 @@ public class UnionAllIT extends OperatorITBase {
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = SetWrongTypeColumns.class)
     public void testAllRowTypeMismatch () {
         unionAll_Default (
                 groupScan_Default(tGroupTable),
@@ -163,7 +164,7 @@ public class UnionAllIT extends OperatorITBase {
                 true);
     }
     
-    @Test (expected = IllegalArgumentException.class)
+    @Test (expected = SetWrongTypeColumns.class)
     public void testDifferentInputTypes() 
     {
         // Test different input types
