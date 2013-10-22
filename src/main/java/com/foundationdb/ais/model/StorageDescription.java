@@ -28,6 +28,7 @@ public abstract class StorageDescription
         this.object = object;
     }
     
+    /** Get the AIS object for which this describes the storage. */
     public HasStorage getObject() {
         return object;
     }
@@ -36,16 +37,31 @@ public abstract class StorageDescription
         return object.getSchemaName();
     }
 
+    /** Make a copy of this format (same tree name, for instance), but
+     * pointing to a new object.
+     */
     public abstract StorageDescription cloneForObject(HasStorage forObject);
 
+    /** Populate the extension fields of the <code>Storage</code>
+     * field. */
     public abstract void writeProtobuf(Storage.Builder builder);
 
+    /** If there is a unique identifier for the storage "area"
+     * described by this, return it, else <code>null</code>.
+     */
     public abstract Object getUniqueKey();
 
+    /** Get a string for printing the "location" of the storage
+     * area. */
     public abstract String getNameString();
 
+    /** Check that the <code>StorageDescription</code> has been filled
+     * in completely and consistently before the AIS is frozen and
+     * committed. */
     public abstract void validate(AISValidationOutput output);
 
+    /** Does this describe something that lives in memory rather than
+     * persistently? */
     public boolean isMemoryTableFactory() {
         return false;
     }

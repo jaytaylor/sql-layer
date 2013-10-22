@@ -71,11 +71,18 @@ public class AISBuilder {
         }
 
         public Object getUniqueKey() {
-            return null;
+            if (object instanceof Index)
+                return ((Index)object).getIndexName();
+            else if (object instanceof Group)
+                return ((Group)object).getName();
+            else if (object instanceof Sequence)
+                return ((Sequence)object).getSequenceName();
+            else
+                return null;
         }
 
         public String getNameString() {
-            return "STANDIN!";
+            return getUniqueKey() + "_standin";
         }
 
         public void validate(com.foundationdb.ais.model.validation.AISValidationOutput output) {

@@ -35,6 +35,11 @@ public class SynchronizedNameGenerator implements NameGenerator {
 
 
     @Override
+    public NameGenerator unwrap() {
+        return realNamer;
+    }
+
+    @Override
     public TableName generateIdentitySequenceName(TableName table) {
         synchronized(LOCK) {
             return realNamer.generateIdentitySequenceName(table);

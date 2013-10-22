@@ -348,7 +348,6 @@ public class ProtobufReaderWriterTest {
         assertEquals(Long.MIN_VALUE, sequence.getMinValue());
         assertEquals(Long.MAX_VALUE, sequence.getMaxValue());
         assertTrue(!sequence.isCycle());
-        assertNotNull (sequence.getStorageUniqueKey());
     }
     
     @Test
@@ -363,7 +362,6 @@ public class ProtobufReaderWriterTest {
         assertEquals(42, sequence.getStartsWith());
         assertEquals(-2, sequence.getIncrement());
         assertTrue(sequence.isCycle());
-        assertNotNull (sequence.getStorageUniqueKey());
     }
     
     @Test

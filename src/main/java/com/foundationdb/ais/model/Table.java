@@ -599,7 +599,7 @@ public class Table extends Columnar implements Traversable, HasGroup
 
     public boolean hasMemoryTableFactory()
     {
-        return group.hasMemoryTableFactory();
+        return (group != null) && group.hasMemoryTableFactory();
     }
 
     public boolean hasVersion()

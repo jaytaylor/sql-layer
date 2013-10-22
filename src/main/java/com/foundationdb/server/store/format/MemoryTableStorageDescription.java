@@ -26,6 +26,7 @@ import com.foundationdb.ais.protobuf.CommonProtobuf;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
 
+/** An in-memory <code>INFORMATION_SCHEMA</code> table. */
 public class MemoryTableStorageDescription extends StorageDescription
 {
     MemoryTableFactory memoryTableFactory;
@@ -59,7 +60,8 @@ public class MemoryTableStorageDescription extends StorageDescription
 
     @Override
     public void writeProtobuf(Storage.Builder builder) {
-        builder.setExtension(CommonProtobuf.memoryTableFactory, true);
+        builder.setExtension(CommonProtobuf.memoryTable, 
+                             CommonProtobuf.MemoryTableType.MEMORY_TABLE_FACTORY);
     }
 
     @Override

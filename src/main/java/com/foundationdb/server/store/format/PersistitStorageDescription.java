@@ -27,6 +27,10 @@ import com.foundationdb.server.error.StorageDescriptionInvalidException;
 import com.foundationdb.server.service.tree.TreeCache;
 import com.foundationdb.server.service.tree.TreeLink;
 
+/** Storage in a persistit volume tree. 
+ * Goes to a lot of trouble to arrange for the name of the tree to be
+ * meaningful, while still unique.
+*/
 public class PersistitStorageDescription extends StorageDescription implements TreeLink
 {
     private String treeName;
