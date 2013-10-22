@@ -26,6 +26,7 @@ import com.foundationdb.ais.protobuf.CommonProtobuf;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
 import java.io.File;
 
+/** A full text index saved in the local file system. */
 public class FullTextIndexFileStorageDescription extends StorageDescription
 {
     File path;

@@ -32,8 +32,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.io.File;
 
+/** A registry of mappings between DDL STORAGE_FORMAT clauses and
+ * Protobuf extension fields and {@link StorageDescription} instances.
+ */
 public abstract class StorageFormatRegistry
 {
+    // The MemoryTableFactory itself cannot be serialized, so remember
+    // it by group name and recover that way. Could remember a unique
+    // id and actually write that, but sometimes the memory table AIS
+    // is actually written to disk.
     private final Map<TableName,MemoryTableFactory> memoryTableFactories = new HashMap<>();
     protected final ExtensionRegistry extensionRegistry;
 
@@ -42,13 +49,21 @@ public abstract class StorageFormatRegistry
         CommonProtobuf.registerAllExtensions(extensionRegistry);
     }
 
+    /** Return the Protbuf extension registry. */
     public ExtensionRegistry getExtensionRegistry() {
         return extensionRegistry;
     }
 
     public StorageDescription readProtobuf(Storage pbStorage, HasStorage forObject) {
-        if (pbStorage.hasExtension(CommonProtobuf.memoryTableFactory)) {
-            return new MemoryTableStorageDescription(forObject, memoryTableFactories.get(((Group)forObject).getName()));
+        // TODO: When there are actual storage formats, this will need
+        // to divide the work of filling in the description.
+        if (pbStorage.hasExtension(CommonProtobuf.memoryTable)) {
+            switch (pbStorage.getExtension(CommonProtobuf.memoryTable)) {
+            case MEMORY_TABLE_FACTORY:
+                return new MemoryTableStorageDescription(forObject, memoryTableFactories.get(((Group)forObject).getName()));
+            default:
+                return null;
+            }
         }
         else if (pbStorage.hasExtension(CommonProtobuf.fullTextIndexPath)) {
             return new FullTextIndexFileStorageDescription(forObject, new File(pbStorage.getExtension(CommonProtobuf.fullTextIndexPath)));

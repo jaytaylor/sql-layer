@@ -64,6 +64,12 @@ public class Sequence extends HasStorage {
         this.cacheSize = 20;
     }
     
+    @Override
+    public String toString()
+    {
+        return "Sequence(" + sequenceName + ")";
+    }
+
     public final TableName getSequenceName() {
         return sequenceName;
     }

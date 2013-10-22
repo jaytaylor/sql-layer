@@ -6,8 +6,12 @@ package akiban_schema.protobuf;
 option java_package = "com.foundationdb.ais.protobuf";
 option java_outer_classname = "CommonProtobuf";
 
+enum MemoryTableType {
+    MEMORY_TABLE_FACTORY = 1;
+}
+
 extend Storage {
-    optional bool memory_table_factory = 1001;
+    optional MemoryTableType memory_table = 1001;
     optional string full_text_index_path = 1002;
 
     optional string test = 1999;

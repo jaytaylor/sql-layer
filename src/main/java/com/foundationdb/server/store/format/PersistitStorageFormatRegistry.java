@@ -54,6 +54,9 @@ public class PersistitStorageFormatRegistry extends StorageFormatRegistry
     }
 
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
+        // TODO: Once there are multiple formats, this will need to handle the
+        // case of a (subclass of) PersistitStorageDescription but without its
+        // treeName filled in yet.
         if (object.getStorageDescription() == null) {
             object.setStorageDescription(new PersistitStorageDescription(object, generateTreeName(object, nameGenerator)));
         }

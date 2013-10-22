@@ -1159,7 +1159,7 @@ public class AISBuilderTest
         Column column = table.getColumn(0);
         assertNotNull (column.getDefaultIdentity());
         assertNotNull (column.getIdentityGenerator());
-        assertNotNull (column.getIdentityGenerator().getStorageUniqueKey());
+        assertNotNull (column.getIdentityGenerator().getStorageDescription());
     }
     
     @Test
