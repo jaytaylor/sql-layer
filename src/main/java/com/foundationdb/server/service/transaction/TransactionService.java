@@ -20,6 +20,8 @@ package com.foundationdb.server.service.transaction;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.session.Session;
 
+import java.util.concurrent.Callable;
+
 public interface TransactionService extends Service {
     interface Callback {
         void run(Session session, long timestamp);
@@ -76,21 +78,6 @@ public interface TransactionService extends Service {
     /** Rollback the current transaction if open, otherwise do nothing. */
     void rollbackTransactionIfOpen(Session session);
 
-    /** @return current step for the open transaction. */
-    int getTransactionStep(Session session);
-
-    /**
-     * Sets the current step for the open transaction.
-     * @return previous step value.
-     */
-    int setTransactionStep(Session session, int newStep);
-
-    /**
-     * Increments the current step for the open transaction.
-     * @return previous step value.
-     */
-    int incrementTransactionStep(Session session);
-
     /** Commit the transaction if this is a good time. */
     void periodicallyCommit(Session session);
 
@@ -102,4 +89,13 @@ public interface TransactionService extends Service {
 
     /** Add a callback to transaction that is required to be inactive. */
     void addCallbackOnInactive(Session session, CallbackType type, Callback callback);
+
+    /** Wrap <code>runnable</code> in a <code>Callable</code> and invoke {@link #run(Session, Callable)}. */
+    void run(Session session, Runnable runnable);
+
+    /**
+     * Execute in a new transaction and automatically retry if a rollback exception occurs.
+     * <p>Note: A plain <code>Exception</code> from <code>callable</code> will be <i>rethrown</i>, not retried.</p>
+     */
+    <T> T run(Session session, Callable<T> callable);
 }
