@@ -44,7 +44,6 @@ import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
-import com.foundationdb.server.service.lock.LockService;
 import com.foundationdb.server.service.metrics.LongMetric;
 import com.foundationdb.server.service.metrics.MetricsService;
 import com.foundationdb.server.service.session.Session;
@@ -125,10 +124,9 @@ public class FDBStore extends AbstractStore<FDBStoreData> implements Service {
                     ConfigurationService configService,
                     SchemaManager schemaManager,
                     TransactionService txnService,
-                    LockService lockService,
                     ListenerService listenerService,
                     MetricsService metricsService) {
-        super(lockService, schemaManager, listenerService);
+        super(schemaManager, listenerService);
         this.holder = holder;
         this.configService = configService;
         if(schemaManager instanceof FDBSchemaManager) {
