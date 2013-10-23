@@ -22,10 +22,8 @@ import com.foundationdb.ais.model.HasStorage;
 public class DuplicateStorageDescriptionKeysException extends InvalidOperationException {
     public DuplicateStorageDescriptionKeysException (HasStorage obj1, HasStorage obj2, Object key) {
         super (ErrorCode.DUPLICATE_STORAGE_DESCRIPTION_KEYS,
-               StorageDescriptionInvalidException.getType(obj1), 
-               StorageDescriptionInvalidException.getName(obj1), 
-               StorageDescriptionInvalidException.getType(obj2), 
-               StorageDescriptionInvalidException.getName(obj2), 
+               obj1.getTypeString(), obj1.getNameString(),
+               obj2.getTypeString(), obj2.getNameString(),
                key.toString());
     }
 }

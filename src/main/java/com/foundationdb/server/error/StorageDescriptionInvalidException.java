@@ -25,29 +25,7 @@ import com.foundationdb.ais.model.Sequence;
 public class StorageDescriptionInvalidException extends InvalidOperationException {
     public StorageDescriptionInvalidException(HasStorage obj, String reason) {
         super(ErrorCode.STORAGE_DESCRIPTION_INVALID,
-              getType(obj), getName(obj), reason);
-    }
-
-    protected static String getType(HasStorage obj) {
-        if (obj instanceof Index)
-            return "Index";
-        else if (obj instanceof Sequence)
-            return "Sequence";
-        else if (obj instanceof Group)
-            return "Group";
-        else
-            return obj.getClass().getSimpleName();
-    }
-
-    protected static String getName(HasStorage obj) {
-        if (obj instanceof Index)
-            return ((Index)obj).getIndexName().toString();
-        else if (obj instanceof Sequence)
-            return ((Sequence)obj).getSequenceName().toString();
-        else if (obj instanceof Group)
-            return ((Group)obj).getName().toString();
-        else
-            return obj.toString();
+              obj.getTypeString(), obj.getNameString(), reason);
     }
 
 }

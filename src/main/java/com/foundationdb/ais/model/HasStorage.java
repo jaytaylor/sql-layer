@@ -36,6 +36,10 @@ public abstract class HasStorage
             null;
     }
     
+    public abstract String getTypeString();
+
+    public abstract String getNameString();
+
     public abstract String getSchemaName();
 
     public Object getStorageUniqueKey() {
@@ -44,5 +48,11 @@ public abstract class HasStorage
 
     public String getStorageNameString() {
         return (storageDescription != null) ? storageDescription.getNameString() : null;
+    }
+
+    @Override
+    public String toString()
+    {
+        return getTypeString() + "(" + getNameString() + ")";
     }
 }

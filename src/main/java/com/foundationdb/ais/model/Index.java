@@ -88,8 +88,9 @@ public abstract class Index extends HasStorage implements Traversable
     public String toString()
     {
         StringBuilder buffer = new StringBuilder();
-        buffer.append("Index(");
-        buffer.append(indexName.toString());
+        buffer.append(getTypeString());
+        buffer.append("(");
+        buffer.append(getNameString());
         buffer.append(keyColumns.toString());
         buffer.append(")");
         if (space != null) {
@@ -462,6 +463,16 @@ public abstract class Index extends HasStorage implements Traversable
     }
 
     // HasStorage
+
+    @Override
+    public String getTypeString() {
+        return "Index";
+    }
+
+    @Override
+    public String getNameString() {
+        return indexName.toString();
+    }
 
     @Override
     public String getSchemaName() {

@@ -46,12 +46,6 @@ public class Group extends HasStorage implements Traversable
         this.indexMap = new HashMap<>();
     }
 
-    @Override
-    public String toString()
-    {
-        return "Group(" + name + ")";
-    }
-
     public TableName getName()
     {
         return name;
@@ -154,6 +148,16 @@ public class Group extends HasStorage implements Traversable
     }
 
     // HasStorage
+
+    @Override
+    public String getTypeString() {
+        return "Group";
+    }
+
+    @Override
+    public String getNameString() {
+        return name.toString();
+    }
 
     @Override
     public String getSchemaName() {
