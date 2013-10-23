@@ -74,9 +74,11 @@ public class SchemaFactory {
         return ais;
     }
 
-    public AkibanInformationSchema ais(String... ddl)
-    {
-        return ais(new AkibanInformationSchema(), ddl);
+    public AkibanInformationSchema ais(String... ddl) {
+        DDLFunctions ddlFunctions = new CreateOnlyDDLMock();
+        Session session = null;
+        ddl(ddlFunctions, session, ddl);
+        return ddlFunctions.getAIS(session);
     }
     
     public static AkibanInformationSchema loadAIS(File fromFile, String defaultSchema) {
@@ -88,12 +90,8 @@ public class SchemaFactory {
             throw new RuntimeException(e);
         }
     }
-    
-    public AkibanInformationSchema ais(AkibanInformationSchema baseAIS, String... ddl) {
-        return ais(new CreateOnlyDDLMock(baseAIS), null, ddl);
-    }
 
-    public AkibanInformationSchema ais(DDLFunctions ddlFunctions, Session session, String... ddl) {
+    public void ddl(DDLFunctions ddlFunctions, Session session, String... ddl) {
         StringBuilder buffer = new StringBuilder();
         for (String line : ddl) {
             buffer.append(line);
@@ -122,7 +120,6 @@ public class SchemaFactory {
                 throw new IllegalStateException("Unsupported StatementNode type: " + stmt);
             }
         }
-        return ddlFunctions.getAIS(session);
     }
 
     public void buildRowDefs(AkibanInformationSchema ais) {
@@ -154,18 +151,6 @@ public class SchemaFactory {
 
     private static class CreateOnlyDDLMock extends DDLFunctionsMockBase {
         AkibanInformationSchema ais = new AkibanInformationSchema();
-
-        public CreateOnlyDDLMock(AkibanInformationSchema ais) {
-            this.ais = ais;
-        }
-
-        @Override
-        public AISCloner getAISCloner() {
-            // TODO: Would be better to arrange to get the actual
-            // StorageFormatRegistry for use in ITs? How else will we be able to
-            // handle the STORAGE_FORMAT clause?
-            return DummyStorageFormatRegistry.aisCloner(ais);
-        }
 
         @Override
         public void createTable(Session session, Table newTable) {
