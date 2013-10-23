@@ -20,8 +20,8 @@ package com.foundationdb.server.test.it.bugs.bug1208930;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.test.it.qp.OperatorITBase;
 
@@ -71,11 +71,11 @@ public class PartialCascadeHKeyIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new com.foundationdb.qp.rowtype.Schema(ais());
-        wRowType = schema.userTableRowType(userTable(w));
-        dRowType = schema.userTableRowType(userTable(d));
-        cRowType = schema.userTableRowType(userTable(c));
-        oRowType = schema.userTableRowType(userTable(o));
-        iRowType = schema.userTableRowType(userTable(i));
+        wRowType = schema.tableRowType(table(w));
+        dRowType = schema.tableRowType(table(d));
+        cRowType = schema.tableRowType(table(c));
+        oRowType = schema.tableRowType(table(o));
+        iRowType = schema.tableRowType(table(i));
         wOrdinal = ddl().getTable(session(), w).getOrdinal();
         dOrdinal = ddl().getTable(session(), d).getOrdinal();
         cOrdinal = ddl().getTable(session(), c).getOrdinal();
@@ -104,7 +104,7 @@ public class PartialCascadeHKeyIT extends OperatorITBase
     public void testHKeys()
     {
         Operator plan = API.groupScan_Default(group);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row("{1,(long)1}", wRowType, 1L),
             row("{1,(long)1,2,(long)11}", dRowType, 1L, 11L),
             row("{1,(long)1,2,(long)11,3,(long)111}", cRowType, 1L, 11L, 111L),
@@ -115,7 +115,7 @@ public class PartialCascadeHKeyIT extends OperatorITBase
     }
 
     private int w, d, c, o, i;
-    private UserTableRowType wRowType, dRowType, cRowType, oRowType, iRowType;
+    private TableRowType wRowType, dRowType, cRowType, oRowType, iRowType;
     private Group group;
     private int wOrdinal, dOrdinal, cOrdinal, oOrdinal, iOrdinal;
 }

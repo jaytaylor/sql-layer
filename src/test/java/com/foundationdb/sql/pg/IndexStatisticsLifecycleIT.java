@@ -70,17 +70,17 @@ public class IndexStatisticsLifecycleIT extends PostgresServerFilesITBase
             int count = rs.getInt(3);
             Table table = null;
             Index index = null;
-            UserTable userTable = ais.getUserTable(tableId);
-            if (userTable != null) {
-                table = userTable;
-                for (TableIndex tindex : userTable.getIndexesIncludingInternal()) {
+            Table aTable = ais.getTable(tableId);
+            if (aTable != null) {
+                table = aTable;
+                for (TableIndex tindex : aTable.getIndexesIncludingInternal()) {
                     if (tindex.getIndexId() == indexId) {
                         index = tindex;
                         break;
                     }
                 }
                 if (index == null) {
-                    for (GroupIndex gindex : userTable.getGroupIndexes()) {
+                    for (GroupIndex gindex : aTable.getGroupIndexes()) {
                         if (gindex.getIndexId() == indexId) {
                             index = gindex;
                             break;

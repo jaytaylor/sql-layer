@@ -19,11 +19,8 @@ package com.foundationdb.server.types;
 
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PUnderlying;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
-import com.foundationdb.server.types.pvalue.PValueTargets;
+import com.foundationdb.server.types.value.*;
+import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.util.AkibanAppender;
 
 public abstract class TClassBase extends TClass
@@ -37,7 +34,7 @@ public abstract class TClassBase extends TClass
             Class<A> enumClass,
             TClassFormatter formatter,
             int internalRepVersion, int sVersion, int sSize,
-            PUnderlying pUnderlying,
+            UnderlyingType underlyingType,
             TParser parser,
             int defaultVarcharLen)
      {
@@ -49,14 +46,14 @@ public abstract class TClassBase extends TClass
                internalRepVersion,
                sVersion,
                sSize,
-               pUnderlying);
+                 underlyingType);
          
          this.parser = parser;
          this.defaultVarcharLen = defaultVarcharLen;
      }
 
     @Override
-    public void fromObject(TExecutionContext context, PValueSource in, PValueTarget out) {
+    public void fromObject(TExecutionContext context, ValueSource in, ValueTarget out) {
         if (in.isNull())
             out.putNull();
         else if (!tryFromObject(context, in, out))
@@ -67,7 +64,7 @@ public abstract class TClassBase extends TClass
     public TCast castToVarchar() {
         return new TCastBase(this, MString.VARCHAR) {
             @Override
-            protected void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+            protected void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
                 AkibanAppender appender = (AkibanAppender) context.exectimeObjectAt(APPENDER_CACHE_INDEX);
                 StringBuilder sb;
                 if (appender == null) {
@@ -110,21 +107,21 @@ public abstract class TClassBase extends TClass
     public TCast castFromVarchar() {
         return new TCastBase(MString.VARCHAR, this) {
             @Override
-            protected void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+            protected void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
                 parser.parse(context, source, target);
             }
         };
     }
 
-    protected boolean tryFromObject(TExecutionContext context, PValueSource in, PValueTarget out) {
+    protected boolean tryFromObject(TExecutionContext context, ValueSource in, ValueTarget out) {
         if (in.tInstance().equalsExcludingNullable(out.tInstance())) {
-            PValueTargets.copyFrom(in, out);
+            ValueTargets.copyFrom(in, out);
             return true;
         }
         
         
-        PUnderlying underlyingType = TInstance.pUnderlying(in.tInstance());
-        if (underlyingType == PUnderlying.STRING || underlyingType == PUnderlying.BYTES)
+        UnderlyingType underlyingType = TInstance.underlyingType(in.tInstance());
+        if (underlyingType == UnderlyingType.STRING || underlyingType == UnderlyingType.BYTES)
             return false;
         final String asString;
         switch (underlyingType) {
@@ -157,7 +154,7 @@ public abstract class TClassBase extends TClass
         default:
             throw new AssertionError(underlyingType + ": " + in);
         }
-        parser.parse(context, new PValue(MString.varcharFor(asString), asString), out);
+        parser.parse(context, new Value(MString.varcharFor(asString), asString), out);
         return true;
     }
 

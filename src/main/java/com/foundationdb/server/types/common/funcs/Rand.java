@@ -18,9 +18,9 @@
 package com.foundationdb.server.types.common.funcs;
 
 import com.foundationdb.server.types.*;
-import com.foundationdb.server.types.pvalue.PUnderlying;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.UnderlyingType;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 
@@ -37,7 +37,7 @@ public abstract class Rand extends TScalarBase {
             new Rand(inputType, resultType)
             {
                 @Override
-                protected Random getRandom(LazyList<? extends PValueSource> inputs)
+                protected Random getRandom(LazyList<? extends ValueSource> inputs)
                 {
                     return new Random();
                 }
@@ -51,9 +51,9 @@ public abstract class Rand extends TScalarBase {
             new Rand(inputType, resultType)
             {
                 @Override
-                protected Random getRandom(LazyList<? extends PValueSource> inputs)
+                protected Random getRandom(LazyList<? extends ValueSource> inputs)
                 {
-                    PValueSource input = inputs.get(0);
+                    ValueSource input = inputs.get(0);
                     if (input.isNull())
                         return new Random();
                     else
@@ -69,13 +69,13 @@ public abstract class Rand extends TScalarBase {
         };
     }
     
-    protected abstract  Random getRandom (LazyList<? extends PValueSource> inputs);
+    protected abstract  Random getRandom (LazyList<? extends ValueSource> inputs);
     protected final TClass inputType;
     protected final TClass resultType;
 
     protected Rand(TClass inputType, TClass resultType) {
-        if (inputType.underlyingType() != PUnderlying.INT_64
-                || resultType.underlyingType() != PUnderlying.DOUBLE)
+        if (inputType.underlyingType() != UnderlyingType.INT_64
+                || resultType.underlyingType() != UnderlyingType.DOUBLE)
             throw new IllegalArgumentException("Wrong types");
         this.inputType = inputType;
         this.resultType = resultType;
@@ -109,7 +109,7 @@ public abstract class Rand extends TScalarBase {
     }
     
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget out)
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget out)
     {
         Random rand;
         if (context.hasExectimeObject(RAND_INDEX))

@@ -21,7 +21,7 @@ import com.foundationdb.ais.util.TableChange;
 
 import java.util.List;
 
-/** Attached to a <code>UserTable</code> on which <code>ALTER</code> has been performed
+/** Attached to a <code>Table</code> on which <code>ALTER</code> has been performed
  * by <a href="http://www.percona.com/doc/percona-toolkit/2.1/pt-online-schema-change.html">pt-online-schema-change.html</a>. 
  * The same alter will be done to the <code>originalName</code> when a
  * <code>RENAME</code> is requested after all the row copying.

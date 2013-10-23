@@ -49,8 +49,8 @@ public class PostgresServerSessionIT extends PostgresServerFilesITBase {
         getConnection().createStatement().execute(create);
         
         AkibanInformationSchema ais = ddlServer().getAIS(session());
-        assertNotNull (ais.getUserTable("fake", "t1"));
-        assertNotNull (ais.getUserTable(SCHEMA_NAME, "t1"));
+        assertNotNull (ais.getTable("fake", "t1"));
+        assertNotNull (ais.getTable(SCHEMA_NAME, "t1"));
 
     }
 
@@ -62,8 +62,8 @@ public class PostgresServerSessionIT extends PostgresServerFilesITBase {
         String create = "CREATE TABLE t2 (c2 integer not null primary key)";
         getConnection().createStatement().execute(create);
         AkibanInformationSchema ais = ddlServer().getAIS(session());
-        assertNotNull (ais.getUserTable("fake", "t2"));
-        assertNotNull (ais.getUserTable("fake", "t1"));
+        assertNotNull (ais.getTable("fake", "t2"));
+        assertNotNull (ais.getTable("fake", "t1"));
     }
     
     @Test (expected=PSQLException.class)

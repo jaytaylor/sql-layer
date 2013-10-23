@@ -27,8 +27,8 @@ import com.foundationdb.server.types.TPreptimeContext;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 import java.util.List;
@@ -52,14 +52,14 @@ public class MConcatWS extends TScalarBase
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
         String delim = inputs.get(0).getString();
         StringBuilder ret = new StringBuilder();
 
         for (int n = 1; n < inputs.size(); ++n)
         {
-            PValueSource source = inputs.get(n);
+            ValueSource source = inputs.get(n);
             if (!source.isNull())
                 ret.append(source.getString()).append(delim);
         }

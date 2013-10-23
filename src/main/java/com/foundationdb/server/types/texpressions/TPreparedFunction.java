@@ -27,8 +27,8 @@ import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeContext;
 import com.foundationdb.server.types.TPreptimeValue;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.SparseArray;
 
 import java.util.ArrayList;
@@ -142,7 +142,7 @@ public final class TPreparedFunction implements TPreparedExpression {
         }
 
         @Override
-        public PValueSource resultValue() {
+        public ValueSource resultValue() {
             return resultValue;
         }
 
@@ -159,13 +159,13 @@ public final class TPreparedFunction implements TPreparedExpression {
         {
             this.overload = overload;
             this.inputs = inputs;
-            this.inputValues = new PValueSource[inputs.size()];
+            this.inputValues = new ValueSource[inputs.size()];
             this.context = context;
-            resultValue = new PValue(resultType);
-            this.evaluations = overload.filterInputs(new LazyListBase<PValueSource>() {
+            resultValue = new Value(resultType);
+            this.evaluations = overload.filterInputs(new LazyListBase<ValueSource>() {
                 @Override
-                public PValueSource get(int i) {
-                    PValueSource value = inputValues[i];
+                public ValueSource get(int i) {
+                    ValueSource value = inputValues[i];
                     if (value == null) {
                         TEvaluatableExpression inputExpr = inputs.get(i);
                         inputExpr.evaluate();
@@ -183,10 +183,10 @@ public final class TPreparedFunction implements TPreparedExpression {
         }
 
         private final TValidatedScalar overload;
-        private final PValueSource[] inputValues;
+        private final ValueSource[] inputValues;
         private final List<? extends TEvaluatableExpression> inputs;
-        private final PValue resultValue;
+        private final Value resultValue;
         private final TExecutionContext context;
-        private final LazyList<? extends PValueSource> evaluations;
+        private final LazyList<? extends ValueSource> evaluations;
     }
 }

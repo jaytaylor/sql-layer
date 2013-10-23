@@ -25,9 +25,10 @@ import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueSources;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 
+import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import java.math.BigDecimal;
 import java.io.*;
@@ -43,10 +44,9 @@ public class ServerValueDecoder
 
     /** Decode the given value into a the given bindings at the given position.
      */
-    public void decodePValue(byte[] encoded, ServerType type, boolean binary,
-                             QueryBindings bindings, int index) {
+    public void decodeValue(byte[] encoded, ServerType type, boolean binary,
+                            QueryBindings bindings, int index) {
        
-        TInstance decodedType = null;
         TInstance targetType = type != null ? type.getInstance() : null;
         if (targetType == null)
             targetType = MString.varchar();
@@ -67,7 +67,10 @@ public class ServerValueDecoder
                 switch (type.getBinaryEncoding()) {
                 case BINARY_OCTAL_TEXT:
                 default:
-                    value = encoded;
+                    if (targetType.typeClass() instanceof MString)
+                        value = new String(encoded, encoding);
+                    else
+                        value = encoded;
                     break;
                 case INT_8:
                 case INT_16:
@@ -77,46 +80,51 @@ public class ServerValueDecoder
                     switch (encoded.length) {
                     case 1:
                         value = (long)getDataStream(encoded).read();
-                        decodedType = MNumeric.TINYINT.instance(true);
                         break;
                     case 2:
                         value = (long)getDataStream(encoded).readShort();
-                        decodedType = MNumeric.MEDIUMINT.instance(true);
                         break;
                     case 4:
                         value = (long)getDataStream(encoded).readInt();
-                        decodedType = MNumeric.INT.instance(true);
                         break;
                     case 8:
                         value = getDataStream(encoded).readLong();
-                        decodedType = MNumeric.BIGINT.instance(true);
                         break;
                     default:
                         throw new AkibanInternalException("Not an integer size: " + encoded);
                     }
+                    if (targetType.typeClass() == MDatetimes.YEAR) {
+                        value = ((Long)value) - 1900;
+                    }
                     break;
                 case FLOAT_32:
                     value = getDataStream(encoded).readFloat();
-                    decodedType = MApproximateNumber.FLOAT.instance(true);
                     break;
                 case FLOAT_64:
                     value = getDataStream(encoded).readDouble();
-                    decodedType = MApproximateNumber.DOUBLE.instance(true);
                     break;
                 case STRING_BYTES:
                     value = new String(encoded, encoding);
-                    decodedType = MString.varcharFor((String)value);
                     break;
                 case BOOLEAN_C:
                     value = (encoded[0] != 0);
                     break;
                 case TIMESTAMP_FLOAT64_SECS_2000_NOTZ:
-                    value = seconds2000NoTZ((long)getDataStream(encoded).readDouble());
-                    decodedType = MDatetimes.TIMESTAMP.instance(true);
+                    value = valueForUnixtime(seconds2000NoTZ((int)getDataStream(encoded).readDouble()),
+                                             targetType);
                     break;
                 case TIMESTAMP_INT64_MICROS_2000_NOTZ:
-                    value = seconds2000NoTZ(getDataStream(encoded).readLong() / 1000000L);
-                    decodedType = MDatetimes.TIMESTAMP.instance(true);
+                    value = valueForUnixtime(seconds2000NoTZ((int)(getDataStream(encoded).readLong() / 1000000L)),
+                                             targetType);
+                    break;
+                case DAYS_2000:
+                    value = days2000(getDataStream(encoded).readInt());
+                    break;
+                case TIME_FLOAT64_SECS_NOTZ:
+                    value = timeSecsNoTZ((int)getDataStream(encoded).readDouble());
+                    break;
+                case TIME_INT64_MICROS_NOTZ:
+                    value = timeSecsNoTZ((int)(getDataStream(encoded).readLong() / 1000000L));
                     break;
                 case DECIMAL_PG_NUMERIC_VAR:
                     {
@@ -139,21 +147,47 @@ public class ServerValueDecoder
                 throw new AkibanInternalException("IO error reading from byte array", ex);
             }
         }
-        if (decodedType == null)
-            decodedType = targetType;
-        PValueSource source = PValueSources.pValuefromObject(value, targetType);
-        bindings.setPValue(index, source);
+        ValueSource source = ValueSources.valuefromObject(value, targetType);
+        bindings.setValue(index, source);
     }
 
     private static DataInputStream getDataStream(byte[] bytes) {
         return new DataInputStream(new ByteArrayInputStream(bytes));
     }
 
-    private static long seconds2000NoTZ(long secs) {
-        long unixtime = secs + 946702800L; // 2000-01-01 00:00:00-UTC.
-        DateTimeZone dtz = DateTimeZone.getDefault();
-        unixtime -= (dtz.getOffset(unixtime * 1000) - dtz.getStandardOffset(unixtime * 1000)) / 1000;
+    private static Object valueForUnixtime(int unixtime, TInstance type) {
+        if (type.typeClass() == MDatetimes.DATETIME) {
+            DateTime dt = new DateTime(unixtime * 1000L);
+            return (dt.getYear() * 10000000000L +
+                    dt.getMonthOfYear() * 100000000 +
+                    dt.getDayOfMonth() * 1000000 +
+                    dt.getHourOfDay() * 10000 +
+                    dt.getMinuteOfHour() * 100 +
+                    dt.getSecondOfMinute());
+        }
         return unixtime;
+    }
+
+    private static int seconds2000NoTZ(int secs) {
+        int unixtime = secs + 946684800; // 2000-01-01 00:00:00-UTC.
+        DateTimeZone dtz = DateTimeZone.getDefault();
+        unixtime -= dtz.getOffset(unixtime * 1000L) / 1000;
+        return unixtime;
+    }
+
+    private static int days2000(int days) {
+        int unixtime = seconds2000NoTZ(days * 86400);
+        DateTime dt = new DateTime(unixtime * 1000L);
+        return (dt.getYear() * 512 + 
+                dt.getMonthOfYear() * 32 + 
+                dt.getDayOfMonth());
+    }
+
+    private static int timeSecsNoTZ(int secs) {
+        int h = secs / 3600;
+        int m = (secs / 60) % 60;
+        int s = secs % 60;
+        return (h * 10000 + m * 100 + s);
     }
 
     private static final short NUMERIC_POS = 0x0000;

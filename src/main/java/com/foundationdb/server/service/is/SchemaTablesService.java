@@ -19,7 +19,7 @@ package com.foundationdb.server.service.is;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
 import com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 import com.foundationdb.qp.rowtype.RowType;
@@ -39,7 +39,7 @@ public class SchemaTablesService {
     }
     
     protected void attach(AkibanInformationSchema ais, boolean doRegister, TableName name, Class<? extends BasicFactoryBase> clazz) {
-        UserTable table = ais.getUserTable(name);
+        Table table = ais.getTable(name);
         assert table != null;
         final BasicFactoryBase factory;
         try {

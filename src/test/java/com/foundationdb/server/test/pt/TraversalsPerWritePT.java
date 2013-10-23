@@ -181,7 +181,7 @@ public final class TraversalsPerWritePT extends PTBase {
         writeRow(cTable, 9L, "joda"); // like "iota", the ninth letter. This joke is a bit "forced"
 
         createGroupIndex(
-                getUserTable(cTable).getGroup().getName(),
+                getTable(cTable).getGroup().getName(),
                 "test_gi",
                 "customers.name,orders.when",
                 joinType

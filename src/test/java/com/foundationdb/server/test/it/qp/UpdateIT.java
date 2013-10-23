@@ -28,7 +28,6 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.UpdateFunction;
 import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.RowBase;
 import com.foundationdb.server.test.ExpressionGenerators;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
@@ -58,7 +57,7 @@ public class UpdateIT extends OperatorITBase
 
             @Override
             public Row evaluate(Row original, QueryContext context, QueryBindings bindings) {
-                String name = original.pvalue(1).getString();
+                String name = original.value(1).getString();
                 // TODO eventually use Expression for this
                 name = name.toUpperCase();
                 name = name + name;
@@ -73,20 +72,20 @@ public class UpdateIT extends OperatorITBase
         assertEquals("rows touched", db.length, result.rowsTouched());
 
         Cursor executable = cursor(groupScan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "XYZXYZ"),
-                                           row(orderRowType, 11L, 1L, "ori"),
-                                           row(itemRowType, 111L, 11L),
-                                           row(itemRowType, 112L, 11L),
-                                           row(orderRowType, 12L, 1L, "david"),
-                                           row(itemRowType, 121L, 12L),
-                                           row(itemRowType, 122L, 12L),
-                                           row(customerRowType, 2L, "ABCABC"),
-                                           row(orderRowType, 21L, 2L, "tom"),
-                                           row(itemRowType, 211L, 21L),
-                                           row(itemRowType, 212L, 21L),
-                                           row(orderRowType, 22L, 2L, "jack"),
-                                           row(itemRowType, 221L, 22L),
-                                           row(itemRowType, 222L, 22L)
+        Row[] expected = new Row[]{row(customerRowType, 1L, "XYZXYZ"),
+                                   row(orderRowType, 11L, 1L, "ori"),
+                                   row(itemRowType, 111L, 11L),
+                                   row(itemRowType, 112L, 11L),
+                                   row(orderRowType, 12L, 1L, "david"),
+                                   row(itemRowType, 121L, 12L),
+                                   row(itemRowType, 122L, 12L),
+                                   row(customerRowType, 2L, "ABCABC"),
+                                   row(orderRowType, 21L, 2L, "tom"),
+                                   row(itemRowType, 211L, 21L),
+                                   row(itemRowType, 212L, 21L),
+                                   row(orderRowType, 22L, 2L, "jack"),
+                                   row(itemRowType, 221L, 22L),
+                                   row(itemRowType, 222L, 22L)
         };
         compareRows(expected, executable);
     }
@@ -112,7 +111,7 @@ public class UpdateIT extends OperatorITBase
 
                 @Override
                 public Row evaluate(Row original, QueryContext context, QueryBindings bindings) { 
-                    long id = original.pvalue(0).getInt64();
+                    long id = original.value(0).getInt64();
                     // Make smaller to avoid Halloween (see next test).
                     return new OverlayingRow(original).overlay(0, id - 100);
                 }
@@ -124,7 +123,7 @@ public class UpdateIT extends OperatorITBase
         assertEquals("rows modified", 8, result.rowsModified());
 
         Cursor executable = cursor(scan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[] { 
+        Row[] expected = new Row[] { 
             row(itemRowType, 11L, 11L),
             row(itemRowType, 12L, 11L),
             row(itemRowType, 21L, 12L),
@@ -215,7 +214,7 @@ public class UpdateIT extends OperatorITBase
         assertEquals("rows modified", 8, modified);
 
         Cursor executable = cursor(pkScan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(itemRowType, 1111L, 11L),
             row(itemRowType, 1112L, 11L),
             row(itemRowType, 1121L, 12L),
@@ -252,7 +251,7 @@ public class UpdateIT extends OperatorITBase
         use(db);
         doUpdate();
         compareRows(
-                array(RowBase.class,
+                array(Row.class,
                       row(customerNameIndexRowType, "xyz", 1L),
                       row(customerNameIndexRowType, "zzz", 2L)
                       ),
@@ -270,7 +269,7 @@ public class UpdateIT extends OperatorITBase
         use(db);
         doUpdate();
         compareRows(
-                array(RowBase.class,
+                array(Row.class,
                       row(customerNameItemOidIndexRowType, "xyz", 11L, 1L, 11L, 111L),
                       row(customerNameItemOidIndexRowType, "xyz", 11L, 1L, 11L, 112L),
                       row(customerNameItemOidIndexRowType, "xyz", 12L, 1L, 12L, 121L),

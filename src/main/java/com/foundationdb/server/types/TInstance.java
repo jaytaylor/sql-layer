@@ -18,10 +18,10 @@
 package com.foundationdb.server.types;
 
 import com.foundationdb.server.error.AkibanInternalException;
-import com.foundationdb.server.types.pvalue.PUnderlying;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.UnderlyingType;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.util.AkibanAppender;
@@ -37,34 +37,34 @@ public final class TInstance {
         return tInstance == null ? null : tInstance.typeClass();
     }
 
-    public static PUnderlying pUnderlying(TInstance tInstance) {
+    public static UnderlyingType underlyingType(TInstance tInstance) {
         TClass tClass = tClass(tInstance);
         return tClass == null ? null : tClass.underlyingType();
     }
 
     // TInstance interface
 
-    public void writeCanonical(PValueSource in, PValueTarget out) {
+    public void writeCanonical(ValueSource in, ValueTarget out) {
         tclass.writeCanonical(in, this, out);
     }
 
-    public void writeCollating(PValueSource in, PValueTarget out) {
+    public void writeCollating(ValueSource in, ValueTarget out) {
         tclass.writeCollating(in, this, out);
     }
 
-    public void readCollating(PValue in, PValue out) {
+    public void readCollating(Value in, Value out) {
         tclass.readCollating(in, this, out);
     }
 
-    public void format(PValueSource source, AkibanAppender out) {
+    public void format(ValueSource source, AkibanAppender out) {
         tclass.format(this, source, out);
     }
 
-    public void formatAsLiteral(PValueSource source, AkibanAppender out) {
+    public void formatAsLiteral(ValueSource source, AkibanAppender out) {
         tclass.formatAsLiteral(this, source, out);
     }
 
-    public void formatAsJson(PValueSource source, AkibanAppender out) {
+    public void formatAsJson(ValueSource source, AkibanAppender out) {
         tclass.formatAsJson(this, source, out);
     }
 

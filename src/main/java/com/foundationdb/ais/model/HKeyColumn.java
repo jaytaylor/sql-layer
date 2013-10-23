@@ -44,10 +44,6 @@ public class HKeyColumn
 
     public List<Column> equivalentColumns()
     {
-        if (equivalentColumns == null) {
-            assert column.getTable().isGroupTable() : "null equivalentColumns on non-group-table column: " + column;
-            throw new UnsupportedOperationException("group tables have no equivalent columns");
-        }
         return equivalentColumns;
     }
 
@@ -61,17 +57,12 @@ public class HKeyColumn
         this.segment = segment;
         this.column = column;
         this.positionInHKey = segment.positionInHKey() + segment.columns().size() + 1;
-        if (column.getTable().isUserTable()) {
-            UserTable userTable = (UserTable) column.getTable();
-            this.equivalentColumns = Collections.unmodifiableList(userTable.matchingColumns(column));
-        } else {
-            this.equivalentColumns = null;
-        }
+        this.equivalentColumns = Collections.unmodifiableList(column.getTable().matchingColumns(column));
     }
 
     // For use by this class
     
-    private void findDependentTables(Column column, UserTable table, List<UserTable> dependentTables)
+    private void findDependentTables(Column column, Table table, List<Table> dependentTables)
     {
         boolean dependent = false;
         for (HKeySegment segment : table.hKey().segments()) {

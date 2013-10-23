@@ -21,8 +21,8 @@ import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.persistitadapter.TempVolume;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.storeadapter.TempVolume;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
@@ -74,7 +74,7 @@ public class Sort_GeneralIT extends OperatorITBase
                 ordering(field(customerRowType, 1), true),
                 SortOption.PRESERVE_DUPLICATES);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 2L, "foundation"),
             row(customerRowType, 4L, "highland"),
             row(customerRowType, 5L, "matrix"),
@@ -95,7 +95,7 @@ public class Sort_GeneralIT extends OperatorITBase
                 ordering(field(orderRowType, 2), true, field(orderRowType, 1), false),
                 SortOption.PRESERVE_DUPLICATES);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(orderRowType, 31L, 3L, "david"),
             row(orderRowType, 21L, 2L, "david"),
             row(orderRowType, 12L, 1L, "david"),
@@ -118,7 +118,7 @@ public class Sort_GeneralIT extends OperatorITBase
                 ordering(field(orderRowType, 2), true),
                 SortOption.PRESERVE_DUPLICATES);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             // Order among equals in group.
             row(orderRowType, 12L, 1L, "david"),
             row(orderRowType, 21L, 2L, "david"),
@@ -152,7 +152,7 @@ public class Sort_GeneralIT extends OperatorITBase
                 ordering(cidField, true, oidField, true, iidField, true),
                 SortOption.PRESERVE_DUPLICATES);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(oiType, 11L, 1L, "ori", 111L, 11L),
             row(oiType, 11L, 1L, "ori", 112L, 11L),
             row(oiType, 12L, 1L, "david", 121L, 12L),
@@ -187,7 +187,7 @@ public class Sort_GeneralIT extends OperatorITBase
                 ordering(cidField, true, oidField, true, iidField, false),
                 SortOption.PRESERVE_DUPLICATES);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(oiType, 11L, 1L, "ori", 112L, 11L),
             row(oiType, 11L, 1L, "ori", 111L, 11L),
             row(oiType, 12L, 1L, "david", 122L, 12L),
@@ -222,7 +222,7 @@ public class Sort_GeneralIT extends OperatorITBase
                 ordering(cidField, true, oidField, false, iidField, true),
                 SortOption.PRESERVE_DUPLICATES);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(oiType, 12L, 1L, "david", 121L, 12L),
             row(oiType, 12L, 1L, "david", 122L, 12L),
             row(oiType, 11L, 1L, "ori", 111L, 11L),
@@ -257,7 +257,7 @@ public class Sort_GeneralIT extends OperatorITBase
                 ordering(cidField, true, oidField, false, iidField, false),
                 SortOption.PRESERVE_DUPLICATES);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(oiType, 12L, 1L, "david", 122L, 12L),
             row(oiType, 12L, 1L, "david", 121L, 12L),
             row(oiType, 11L, 1L, "ori", 112L, 11L),
@@ -292,7 +292,7 @@ public class Sort_GeneralIT extends OperatorITBase
                 ordering(cidField, false, oidField, true, iidField, true),
                 SortOption.PRESERVE_DUPLICATES);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(oiType, 21L, 2L, "david", 211L, 21L),
             row(oiType, 21L, 2L, "david", 212L, 21L),
             row(oiType, 22L, 2L, "jack", 221L, 22L),
@@ -327,7 +327,7 @@ public class Sort_GeneralIT extends OperatorITBase
                 ordering(cidField, false, oidField, true, iidField, false),
                 SortOption.PRESERVE_DUPLICATES);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(oiType, 21L, 2L, "david", 212L, 21L),
             row(oiType, 21L, 2L, "david", 211L, 21L),
             row(oiType, 22L, 2L, "jack", 222L, 22L),
@@ -362,7 +362,7 @@ public class Sort_GeneralIT extends OperatorITBase
                 ordering(cidField, false, oidField, false, iidField, true),
                 SortOption.PRESERVE_DUPLICATES);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(oiType, 22L, 2L, "jack", 221L, 22L),
             row(oiType, 22L, 2L, "jack", 222L, 22L),
             row(oiType, 21L, 2L, "david", 211L, 21L),
@@ -397,7 +397,7 @@ public class Sort_GeneralIT extends OperatorITBase
                 ordering(cidField, false, oidField, false, iidField, false),
                 SortOption.PRESERVE_DUPLICATES);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(oiType, 22L, 2L, "jack", 222L, 22L),
             row(oiType, 22L, 2L, "jack", 221L, 22L),
             row(oiType, 21L, 2L, "david", 212L, 21L),
@@ -428,7 +428,7 @@ public class Sort_GeneralIT extends OperatorITBase
                 itemRowType,
                 ordering(oidField, false, iidField, false),
                 SortOption.PRESERVE_DUPLICATES);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(itemRowType, 222L, 22L),
             row(itemRowType, 221L, 22L),
             row(itemRowType, 212L, 21L),
@@ -463,7 +463,7 @@ public class Sort_GeneralIT extends OperatorITBase
                 ordering(field(projectType, 0), true),
                 SortOption.PRESERVE_DUPLICATES);
 
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(projectType, 1L),
             row(projectType, 1L),
             row(projectType, 2L),
@@ -492,7 +492,7 @@ public class Sort_GeneralIT extends OperatorITBase
                 ordering(field(projectType, 0), true),
                 SortOption.SUPPRESS_DUPLICATES);
 
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(projectType, 1L),
             row(projectType, 2L),
             row(projectType, 3L),
@@ -515,9 +515,9 @@ public class Sort_GeneralIT extends OperatorITBase
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
-            public RowBase[] firstExpectedRows()
+            public Row[] firstExpectedRows()
             {
-                return new RowBase[] {
+                return new Row[] {
                     row(customerRowType, 2L, "foundation"),
                     row(customerRowType, 4L, "highland"),
                     row(customerRowType, 5L, "matrix"),

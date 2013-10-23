@@ -18,13 +18,11 @@
 package com.foundationdb.server.store.statistics;
 
 import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.qp.persistitadapter.PersistitAdapter;
-import com.foundationdb.qp.persistitadapter.TempVolume;
+import com.foundationdb.qp.storeadapter.PersistitAdapter;
+import com.foundationdb.qp.storeadapter.TempVolume;
 import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.store.PersistitStore;
 import com.foundationdb.server.store.statistics.histograms.Sampler;
-import com.foundationdb.util.Flywheel;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Value;

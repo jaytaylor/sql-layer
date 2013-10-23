@@ -27,8 +27,8 @@ import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
 
 public final class TPreparedParameter implements TPreparedExpression {
 
@@ -71,15 +71,15 @@ public final class TPreparedParameter implements TPreparedExpression {
     private static class InnerEvaluation implements TEvaluatableExpression {
 
         @Override
-        public PValueSource resultValue() {
-            return pValue;
+        public ValueSource resultValue() {
+            return value;
         }
 
         @Override
         public void evaluate() {
-            if (!pValue.hasAnyValue()) { // only need to compute this once
+            if (!value.hasAnyValue()) { // only need to compute this once
                 TClass tClass = tInstance.typeClass();
-                PValueSource inSource = bindings.getPValue(position);
+                ValueSource inSource = bindings.getValue(position);
                 // TODO need a better execution context thinger
                 TExecutionContext executionContext = new TExecutionContext(
                         null,
@@ -90,7 +90,7 @@ public final class TPreparedParameter implements TPreparedExpression {
                         ErrorHandlingMode.WARN,
                         ErrorHandlingMode.WARN
                 );
-                tClass.fromObject(executionContext, inSource, pValue);
+                tClass.fromObject(executionContext, inSource, value);
             }
         }
 
@@ -111,11 +111,11 @@ public final class TPreparedParameter implements TPreparedExpression {
         private InnerEvaluation(int position, TInstance tInstance) {
             this.position = position;
             this.tInstance = tInstance;
-            this.pValue = new PValue(tInstance);
+            this.value = new Value(tInstance);
         }
 
         private final int position;
-        private final PValue pValue;
+        private final Value value;
         private QueryContext context;
         private QueryBindings bindings;
         private final TInstance tInstance;

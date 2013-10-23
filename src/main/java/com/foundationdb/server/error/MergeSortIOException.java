@@ -21,7 +21,11 @@ import java.io.IOException;
 public class MergeSortIOException extends InvalidOperationException {
 
     public MergeSortIOException(IOException ex) {
-        super(ErrorCode.MERGE_SORT_IO, ex.getMessage());
+        this(ex.getMessage());
+    }
+
+    public MergeSortIOException(String msg) {
+        super(ErrorCode.MERGE_SORT_IO, msg);
     }
 
 }

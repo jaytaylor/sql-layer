@@ -1,0 +1,17 @@
+#
+# Grouping self-join should have a specific error
+#
+---
+- CreateTable:  t(id int NOT NULL PRIMARY KEY, GROUPING FOREIGN KEY(id) REFERENCES t(id))
+- error: ["50030"]
+
+---
+- CreateTable:  t(id int NOT NULL PRIMARY KEY)
+---
+- Statement: ALTER TABLE t ADD GROUPING FOREIGN KEY(id) REFERENCES t(id)
+- error: ["50030"]
+---
+- Statement: ALTER GROUP ADD TABLE t(id) TO t
+- error: ["50030"]
+...
+

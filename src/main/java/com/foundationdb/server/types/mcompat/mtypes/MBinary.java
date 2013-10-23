@@ -29,10 +29,10 @@ import com.foundationdb.server.types.common.types.SimpleDtdTClass;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.StringFactory;
 import com.foundationdb.server.types.mcompat.MBundle;
-import com.foundationdb.server.types.pvalue.PUnderlying;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueSources;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.UnderlyingType;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.Serialization;
 import com.foundationdb.server.types.texpressions.SerializeAs;
 import com.foundationdb.sql.types.TypeId;
@@ -67,7 +67,7 @@ public final class MBinary extends SimpleDtdTClass {
     }
     
     @Override
-    public void fromObject(TExecutionContext context, PValueSource in, PValueTarget out)
+    public void fromObject(TExecutionContext context, ValueSource in, ValueTarget out)
     {
         if (in.isNull()) {
             out.putNull();
@@ -75,11 +75,11 @@ public final class MBinary extends SimpleDtdTClass {
         }
         
         byte[] bytes;
-        PUnderlying underlying = PValueSources.pUnderlying(in);
-        if (underlying == PUnderlying.BYTES) {
+        UnderlyingType underlying = ValueSources.underlyingType(in);
+        if (underlying == UnderlyingType.BYTES) {
             bytes = in.getBytes();
         }
-        else if (underlying == PUnderlying.STRING) {
+        else if (underlying == UnderlyingType.STRING) {
             try {
                 bytes = in.getString().getBytes("utf8");
             } catch (UnsupportedEncodingException e) {
@@ -132,13 +132,13 @@ public final class MBinary extends SimpleDtdTClass {
 
     private MBinary(TypeId typeId, String name, int defaultLength) {
         super(MBundle.INSTANCE.id(), name, AkCategory.STRING_BINARY, NumericFormatter.FORMAT.BYTES, Attrs.class,
-                1, 1, -1, PUnderlying.BYTES, parser, (defaultLength < 0 ? MAX_BYTE_BUF : defaultLength), typeId);
+                1, 1, -1, UnderlyingType.BYTES, parser, (defaultLength < 0 ? MAX_BYTE_BUF : defaultLength), typeId);
         this.defaultLength = defaultLength;
     }
 
     private final int defaultLength;
 
-    public static void putBytes(TExecutionContext context, PValueTarget target, byte[] bytes) {
+    public static void putBytes(TExecutionContext context, ValueTarget target, byte[] bytes) {
         int maxLen = context.outputTInstance().attribute(MBinary.Attrs.LENGTH);
         if (bytes.length > maxLen) {
             context.reportTruncate("bytes of length " + bytes.length,  "bytes of length " + maxLen);
@@ -149,7 +149,7 @@ public final class MBinary extends SimpleDtdTClass {
 
     private static class BinaryParser implements TParser {
         @Override
-        public void parse(TExecutionContext context, PValueSource in, PValueTarget out) {
+        public void parse(TExecutionContext context, ValueSource in, ValueTarget out) {
             String string = in.getString();
             int charsetId = context.inputTInstanceAt(0).attribute(StringAttribute.CHARSET);
             String charsetName = StringFactory.Charset.values()[charsetId].name();

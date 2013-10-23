@@ -16,16 +16,11 @@
  */
 package com.foundationdb.server.service.text;
 
-import static org.junit.Assert.assertEquals;
-
 import java.util.Collections;
 
-import com.foundationdb.qp.operator.Cursor;
-import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.foundationdb.ais.model.IndexName;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.DuplicateIndexException;
@@ -33,6 +28,10 @@ import com.foundationdb.server.service.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Originally testing various sequences of background population but population
+ * is now done in the foreground.
+ */
 public class FullTextIndexServiceBug1172013IT extends FullTextIndexServiceITBase {
     private static final Logger logger = LoggerFactory.getLogger(FullTextIndexServiceBug1172013IT.class);
     private final Object lock = new Object();
@@ -101,11 +100,9 @@ public class FullTextIndexServiceBug1172013IT extends FullTextIndexServiceITBase
 
         t.join();
 
-        if(getUserTable(SCHEMA, "o").getFullTextIndex("idx3_o") != null) {
+        if(getTable(SCHEMA, "o").getFullTextIndex("idx3_o") != null) {
             new DropIndex().run();
         }
-
-        verifyClean();
     }
 
     /** Race concurrent drop vs create, with lined up start. */
@@ -115,7 +112,6 @@ public class FullTextIndexServiceBug1172013IT extends FullTextIndexServiceITBase
         createFullTextIndex(
                 SCHEMA, "o", "idx3_o",
                 "oid", "c1", "c2", "c3", "c4");
-        waitPopulate();
 
         Thread t = new Thread(new DropIndex());
         t.start();
@@ -135,11 +131,9 @@ public class FullTextIndexServiceBug1172013IT extends FullTextIndexServiceITBase
 
         t.join();
 
-        if(getUserTable(SCHEMA, "o").getFullTextIndex("idx3_o") != null) {
+        if(getTable(SCHEMA, "o").getFullTextIndex("idx3_o") != null) {
             new DropIndex().run();
         }
-
-        verifyClean();
     }
 
     /** Serial create and drop. */
@@ -150,11 +144,7 @@ public class FullTextIndexServiceBug1172013IT extends FullTextIndexServiceITBase
                 SCHEMA, "o", "idx3_o",
                 "oid", "c1", "c2", "c3", "c4");
 
-        // Prevents potential rollback for deterministic test
-        waitPopulate();
-
         new DropIndex().run();
-        verifyClean();
     }
 
     @Test
@@ -165,7 +155,6 @@ public class FullTextIndexServiceBug1172013IT extends FullTextIndexServiceITBase
         createFullTextIndex(
                 SCHEMA, "o", "idx3_o",
                 "oid", "c1", "c2", "c3", "c4");
-        waitPopulate();
 
         writeRow(o, 103, 1, "c1", "c2", "c3", "c4", "2012-12-12");
         writeRow(o, 104, 1, "c1", "c2", "c3", "c4", "2012-12-12");
@@ -176,12 +165,6 @@ public class FullTextIndexServiceBug1172013IT extends FullTextIndexServiceITBase
         t.start();
         // But don't let it fall off the end
         t.join();
-    }
-    
-    private static interface Visitor
-    {
-        void visit(IndexName idx);
-        void endOfTree();
     }
 
     private class DropIndex implements Runnable
@@ -195,48 +178,6 @@ public class FullTextIndexServiceBug1172013IT extends FullTextIndexServiceITBase
                 lock.notify();
             }
             ddl().dropTableIndexes(session, tableName, Collections.singletonList("idx3_o"));
-        }
-    }
-
-    private void verifyClean() throws InterruptedException {
-        waitPopulateAndUpdate();
-        traverse(new Visitor()
-                {
-                    int n = 0;
-                   
-                    @Override
-                    public void visit(IndexName idx)
-                    {
-                        ++n;
-                    }
-
-                    @Override
-                    public void endOfTree()
-                    {
-                        assertEquals (0, n);
-                    } 
-                });
-
-    }
-    
-    private void traverse(Visitor visitor)
-    {
-        Cursor cursor = null;
-        try(Session session = createNewSession();
-            CloseableTransaction txn = txnService().beginCloseableTransaction(session))
-        {
-            cursor = fullTextImpl.populateTableCursor(session);
-            cursor.open();
-            IndexName toPopulate;
-            while((toPopulate = fullTextImpl.nextInQueue(session, cursor, true)) != null) {
-                visitor.visit(toPopulate);
-            }
-            visitor.endOfTree();
-            txn.commit();
-        } finally {
-            if(cursor != null) {
-                cursor.close();
-            }
         }
     }
 }

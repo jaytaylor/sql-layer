@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.server;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
@@ -195,7 +195,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
     
     @Override
-    public StoreAdapter getStore(UserTable table) {
+    public StoreAdapter getStore(Table table) {
         if (table.hasMemoryTableFactory()) {
             return adapters.get(StoreAdapter.AdapterType.MEMORY_ADAPTER);
         }

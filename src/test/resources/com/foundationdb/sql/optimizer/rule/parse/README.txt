@@ -120,6 +120,8 @@ trig-functions-1: trigonometric functions
 
 union-1: UNION
 
+union-2: UNION ALL
+
 update-1: change to literal
 
 update-2: change to expressions and unnested subquery condition

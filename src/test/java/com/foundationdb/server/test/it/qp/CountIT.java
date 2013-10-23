@@ -19,7 +19,7 @@ package com.foundationdb.server.test.it.qp;
 
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Before;
@@ -52,7 +52,7 @@ public class CountIT extends OperatorITBase
                                               customerRowType);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowType resultRowType = plan.rowType();
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(orderRowType, 11L, 1L, "ori"),
             row(resultRowType, 3L)
         };
@@ -65,12 +65,12 @@ public class CountIT extends OperatorITBase
         Operator plan = count_TableStatus(customerRowType);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         RowType resultRowType = plan.rowType();
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(resultRowType, 3L)
         };
         compareRows(expected, cursor);
         writeRows(createNewRow(customer, 5L, "matrix"));
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(resultRowType, 4L)
         };
         compareRows(expected, cursor);
@@ -89,9 +89,9 @@ public class CountIT extends OperatorITBase
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
-            public RowBase[] firstExpectedRows()
+            public Row[] firstExpectedRows()
             {
-                return new RowBase[] {
+                return new Row[] {
                     row(resultRowType, 3L),
                 };
             }
@@ -107,9 +107,9 @@ public class CountIT extends OperatorITBase
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
-            public RowBase[] firstExpectedRows()
+            public Row[] firstExpectedRows()
             {
-                return new RowBase[] {
+                return new Row[] {
                     row(resultRowType, 3L),
                 };
             }

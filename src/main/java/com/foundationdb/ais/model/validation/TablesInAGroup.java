@@ -18,7 +18,7 @@
 package com.foundationdb.ais.model.validation;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.error.TableNotInGroupException;
 
 /**
@@ -30,7 +30,7 @@ class TablesInAGroup implements AISValidation {
 
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        for (UserTable table : ais.getUserTables().values()) {
+        for (Table table : ais.getTables().values()) {
             if (table.getGroup() == null) {
                 output.reportFailure(new AISValidationFailure (
                         new TableNotInGroupException (table.getName())));

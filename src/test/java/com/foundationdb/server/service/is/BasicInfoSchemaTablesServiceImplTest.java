@@ -29,7 +29,6 @@ import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.ais.util.ChangedTableDescription;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
@@ -42,7 +41,7 @@ import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -78,7 +77,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
     }
 
     private static void simpleTable(AISBuilder builder, String group, String schema, String table, String parentName, boolean withPk) {
-        builder.userTable(schema, table);
+        builder.table(schema, table);
         builder.column(schema, table, "id", 0, "INT", null, null, false, false, null, null);
         if(parentName != null) {
             builder.column(schema, table, "pid", 1, "INT", null, null, false, false, null, null);
@@ -104,7 +103,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         {
         String schema = "test";
         String table = "foo";
-        builder.userTable(schema, table);
+        builder.table(schema, table);
         builder.column(schema, table, "c1", 0, "INT", null, null, false, false, null, null);
         builder.column(schema, table, "c2", 1, "DOUBLE", null, null, true, false, null, null);
         builder.createGroup(table, schema);
@@ -115,7 +114,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         {
         String schema = "test";
         String table = "bar";
-        builder.userTable(schema, table);
+        builder.table(schema, table);
         builder.column(schema, table, "col", 0, "BIGINT", null, null, false, false, null, null);
         builder.column(schema, table, "name", 1, "INT", null, null, false, false, null, null);
         builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
@@ -125,7 +124,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         schema = "test";
         String childTable = table + "2";
         String indexName = "foo_name";
-        builder.userTable(schema, childTable);
+        builder.table(schema, childTable);
         builder.column(schema, childTable, "foo", 0, "INT", null, null, true, false, null, null);
         builder.column(schema, childTable, "pid", 1, "INT", null, null, true, false, null, null);
 
@@ -143,7 +142,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         String schema = "zap";
         String table = "pow";
         String indexName = "name_value";
-        builder.userTable(schema, table);
+        builder.table(schema, table);
         builder.column(schema, table, "name", 0, "VARCHAR", 32L, null, true, false, null, null);
         builder.column(schema, table, "value", 1, "DECIMAL", 10L, 2L, true, false, null, null);
         builder.index(schema, table, indexName, true, Index.UNIQUE_KEY_CONSTRAINT);
@@ -158,14 +157,14 @@ public class BasicInfoSchemaTablesServiceImplTest {
         // Added for bug1019905: Last table only had GFK show up in constraints/key_column_usage if it had a GFK
         String schema = "zzz";
         String table = schema + "1";
-        builder.userTable(schema, table);
+        builder.table(schema, table);
         builder.column(schema, table, "id", 0, "INT", null, null, false, false, null, null);
         builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn(schema, table, Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
         builder.createGroup(table, schema);
 
         String childTable = schema + "2";
-        builder.userTable(schema, childTable);
+        builder.table(schema, childTable);
         builder.column(schema, childTable, "id", 0, "INT", null, null, false, false, null, null);
         builder.column(schema, childTable, "one_id", 1, "INT", null, null, true, false, null, null);
         builder.index(schema, childTable, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
@@ -206,7 +205,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         
         String table = "seq-table";
         sequence = "_col_sequence";
-        builder.userTable(schema, table);
+        builder.table(schema, table);
         builder.column(schema, table, "col", 0, "BIGINT", null, null, false, false, null, null);
         builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn(schema, table, Index.PRIMARY_KEY_CONSTRAINT, "col", 0, true, null);
@@ -219,7 +218,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         {
         String schema = "test";
         String table = "defaults";
-        builder.userTable(schema, table);
+        builder.table(schema, table);
         builder.column(schema, table, "col1", 0, "VARCHAR", 10L, null, false, false, null, null, "fred", null);
         builder.column(schema, table, "col2", 1, "VARCHAR", 10L, null, false, false, null, null, "", null);
         builder.column(schema, table, "col3", 2, "BIGINT", null, null, false, false, null, null, "0", null);
@@ -232,23 +231,23 @@ public class BasicInfoSchemaTablesServiceImplTest {
         builder.groupingIsComplete();
 
         Map<Table, Integer> ordinalMap = new HashMap<>();
-        List<UserTable> remainingTables = new ArrayList<>();
+        List<Table> remainingTables = new ArrayList<>();
         // Add all roots
-        for(UserTable userTable : ais.getUserTables().values()) {
-            if(userTable.isRoot()) {
-                userTable.getGroup().setTreeName(userTable.getName().getTableName() + "_tree");
-                remainingTables.add(userTable);
+        for(Table table : ais.getTables().values()) {
+            if(table.isRoot()) {
+                table.getGroup().setTreeName(table.getName().getTableName() + "_tree");
+                remainingTables.add(table);
             }
         }
         while(!remainingTables.isEmpty()) {
-            UserTable userTable = remainingTables.remove(remainingTables.size()-1);
-            ordinalMap.put(userTable, 0);
-            for(Index index : userTable.getIndexesIncludingInternal()) {
+            Table table = remainingTables.remove(remainingTables.size()-1);
+            ordinalMap.put(table, 0);
+            for(Index index : table.getIndexesIncludingInternal()) {
                 index.computeFieldAssociations(ordinalMap);
                 index.setTreeName(index.getIndexName().getName() + "_tree");
             }
             // Add all immediate children
-            for(Join join : userTable.getChildJoins()) {
+            for(Join join : table.getChildJoins()) {
                 remainingTables.add(join.getChild());
             }
         }
@@ -288,7 +287,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
     }
 
     private MemoryTableFactory getFactory(TableName name) {
-        UserTable table = ais.getUserTable(name);
+        Table table = ais.getTable(name);
         assertNotNull("No such table: " + name, table);
         MemoryTableFactory factory = table.getMemoryTableFactory();
         assertNotNull("No factory for table " + name, factory);
@@ -320,10 +319,10 @@ public class BasicInfoSchemaTablesServiceImplTest {
             for(int colIndex = 0; colIndex < expectedRows[rowIndex].length; ++colIndex) {
                 final String msg = "row " + rowIndex + ", col " + colIndex;
                 final Object expected = expectedRows[rowIndex][colIndex];
-                final PValueSource actual = row.pvalue(colIndex);
+                final ValueSource actual = row.value(colIndex);
                 
                 if(expected == null || actual.isNull()) {
-                    Column column = row.rowType().userTable().getColumn(colIndex);
+                    Column column = row.rowType().table().getColumn(colIndex);
                     if(!Boolean.TRUE.equals(column.getNullable())) {
                         fail(String.format("Expected (%s) or actual (%s) NULL for column (%s) declared NOT NULL",
                                            expected, actual, column));
@@ -683,12 +682,12 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
 
         @Override
-        public TableName registerStoredInformationSchemaTable(UserTable newTable, int version) {
+        public TableName registerStoredInformationSchemaTable(Table newTable, int version) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public TableName registerMemoryInformationSchemaTable(UserTable newTable, MemoryTableFactory factory) {
+        public TableName registerMemoryInformationSchemaTable(Table newTable, MemoryTableFactory factory) {
             throw new UnsupportedOperationException();
         }
 
@@ -698,7 +697,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
 
         @Override
-        public TableName createTableDefinition(Session session, UserTable newTable) {
+        public TableName createTableDefinition(Session session, Table newTable) {
             throw new UnsupportedOperationException();
         }
 

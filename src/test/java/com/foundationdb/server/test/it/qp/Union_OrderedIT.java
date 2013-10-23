@@ -22,12 +22,13 @@ import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.error.SetWrongNumColumns;
 import org.junit.Test;
 
 import static com.foundationdb.qp.operator.API.*;
@@ -50,7 +51,7 @@ public class Union_OrderedIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        tRowType = schema.userTableRowType(userTable(t));
+        tRowType = schema.tableRowType(table(t));
         tPidIndexRowType = indexType(t, "pid");
         tXIndexRowType = indexType(t, "x");
         coi = group(t);
@@ -133,21 +134,22 @@ public class Union_OrderedIT extends OperatorITBase
             fail();
         } catch (IllegalArgumentException e) {
         }
-        // Test different input types
-        try {
-            union_Ordered(groupScan_Default(coi),
-                          groupScan_Default(coi),
-                          tXIndexRowType,
-                          tPidIndexRowType,
-                          1,
-                          1,
-                          ascending(true),
-                          false);
-            fail();
-        } catch (IllegalArgumentException e) {
-        }
     }
 
+    @Test (expected = SetWrongNumColumns.class)
+    public void testDifferentInputTypes() 
+    {
+        // Test different input types
+        union_Ordered(groupScan_Default(coi),
+                      groupScan_Default(coi),
+                      tXIndexRowType,
+                      tPidIndexRowType,
+                      1,
+                      1,
+                      ascending(true),
+                      false);
+    }
+    
     @Test
     public void testOrderingColumns()
     {
@@ -224,11 +226,11 @@ public class Union_OrderedIT extends OperatorITBase
     public void testBothInputsEmpty()
     {
         Operator plan = unionPlan(0, 0, true, false);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = unionPlan(0, 0, false, false);
-        expected = new RowBase[] {
+        expected = new Row[] {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
@@ -237,14 +239,14 @@ public class Union_OrderedIT extends OperatorITBase
     public void testLeftEmpty()
     {
         Operator plan = unionPlan(0, 1, true, false);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(tRowType, 1L, 1000L),
             row(tRowType, 1L, 1001L),
             row(tRowType, 1L, 1002L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = unionPlan(0, 1, false, false);
-        expected = new RowBase[] {
+        expected = new Row[] {
             row(tRowType, 1L, 1002L),
             row(tRowType, 1L, 1001L),
             row(tRowType, 1L, 1000L),
@@ -256,14 +258,14 @@ public class Union_OrderedIT extends OperatorITBase
     public void testRightEmpty()
     {
         Operator plan = unionPlan(1, 0, true, false);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(tRowType, 1L, 1000L),
             row(tRowType, 1L, 1001L),
             row(tRowType, 1L, 1002L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = unionPlan(1, 0, false, false);
-        expected = new RowBase[] {
+        expected = new Row[] {
             row(tRowType, 1L, 1002L),
             row(tRowType, 1L, 1001L),
             row(tRowType, 1L, 1000L),
@@ -275,21 +277,21 @@ public class Union_OrderedIT extends OperatorITBase
     public void testDuplicates()
     {
         Operator plan = unionPlan(1, 1, true, false);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(tRowType, 1L, 1000L),
             row(tRowType, 1L, 1001L),
             row(tRowType, 1L, 1002L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = unionPlan(1, 1, false, false);
-        expected = new RowBase[] {
+        expected = new Row[] {
             row(tRowType, 1L, 1002L),
             row(tRowType, 1L, 1001L),
             row(tRowType, 1L, 1000L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = unionPlan(1, 1, true, true);
-        expected = new RowBase[] {
+        expected = new Row[] {
             row(tRowType, 1L, 1000L),
             row(tRowType, 1L, 1000L),
             row(tRowType, 1L, 1001L),
@@ -304,7 +306,7 @@ public class Union_OrderedIT extends OperatorITBase
     public void testDisjoint()
     {
         Operator plan = unionPlan(1, 2, true, false);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(tRowType, 1L, 1000L),
             row(tRowType, 1L, 1001L),
             row(tRowType, 1L, 1002L),
@@ -314,7 +316,7 @@ public class Union_OrderedIT extends OperatorITBase
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = unionPlan(1, 2, false, false);
-        expected = new RowBase[] {
+        expected = new Row[] {
             row(tRowType, 2L, 2002L),
             row(tRowType, 2L, 2001L),
             row(tRowType, 2L, 2000L),

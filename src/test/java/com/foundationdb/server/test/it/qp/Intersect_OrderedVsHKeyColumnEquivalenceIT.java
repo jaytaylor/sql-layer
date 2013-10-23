@@ -19,7 +19,7 @@ package com.foundationdb.server.test.it.qp;
 
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -82,8 +82,8 @@ public class Intersect_OrderedVsHKeyColumnEquivalenceIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        itemRowType = schema.userTableRowType(userTable(item));
-        itemValueStateRowType = schema.userTableRowType(userTable(itemValueState));
+        itemRowType = schema.tableRowType(table(item));
+        itemValueStateRowType = schema.tableRowType(table(itemValueState));
         giItemValueState =
             groupIndexType(Index.JoinType.LEFT,
                            "item.app_id",
@@ -124,7 +124,7 @@ public class Intersect_OrderedVsHKeyColumnEquivalenceIT extends OperatorITBase
     public void test()
     {
         Operator plan = intersectPlan();
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(giNoValueItemValueState, 1L, 100L, 1L, 1L, 100L, 1L, 111L, 111L),
             row(giNoValueItemValueState, 1L, 100L, 1L, 1L, 100L, 1L, 222L, 222L),
             row(giNoValueItemValueState, 1L, 100L, 1L, 1L, 100L, 1L, 333L, 333L),

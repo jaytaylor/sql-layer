@@ -26,13 +26,13 @@ import com.foundationdb.server.types.common.types.DoubleAttribute;
 import com.foundationdb.server.types.common.NumericFormatter;
 import com.foundationdb.server.types.common.types.SimpleDtdTClass;
 import com.foundationdb.server.types.mcompat.MBundle;
-import com.foundationdb.server.types.pvalue.PUnderlying;
+import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.sql.types.TypeId;
 
 public class MApproximateNumber extends SimpleDtdTClass
 {
-    public static final TClass DOUBLE = new MApproximateNumber("double", TypeId.DOUBLE_ID, PUnderlying.DOUBLE, TParsers.DOUBLE, NumericFormatter.FORMAT.DOUBLE, 22);
-    public static final TClass DOUBLE_UNSIGNED = new MApproximateNumber("double unsigned", TypeId.DOUBLE_UNSIGNED_ID, PUnderlying.DOUBLE, TParsers.DOUBLE, NumericFormatter.FORMAT.DOUBLE, 22)
+    public static final TClass DOUBLE = new MApproximateNumber("double", TypeId.DOUBLE_ID, UnderlyingType.DOUBLE, TParsers.DOUBLE, NumericFormatter.FORMAT.DOUBLE, 22);
+    public static final TClass DOUBLE_UNSIGNED = new MApproximateNumber("double unsigned", TypeId.DOUBLE_UNSIGNED_ID, UnderlyingType.DOUBLE, TParsers.DOUBLE, NumericFormatter.FORMAT.DOUBLE, 22)
     {
         public TClass widestComparable()
         {
@@ -40,13 +40,13 @@ public class MApproximateNumber extends SimpleDtdTClass
         }
     };
 
-    public static final TClass FLOAT = new MApproximateNumber("float", TypeId.REAL_ID, PUnderlying.FLOAT, TParsers.FLOAT,  NumericFormatter.FORMAT.FLOAT, 12);
-    public static final TClass FLOAT_UNSIGNED = new MApproximateNumber("float unsigned", TypeId.REAL_UNSIGNED_ID, PUnderlying.FLOAT, TParsers.FLOAT, NumericFormatter.FORMAT.FLOAT, 12);
+    public static final TClass FLOAT = new MApproximateNumber("float", TypeId.REAL_ID, UnderlyingType.FLOAT, TParsers.FLOAT,  NumericFormatter.FORMAT.FLOAT, 12);
+    public static final TClass FLOAT_UNSIGNED = new MApproximateNumber("float unsigned", TypeId.REAL_UNSIGNED_ID, UnderlyingType.FLOAT, TParsers.FLOAT, NumericFormatter.FORMAT.FLOAT, 12);
     
     public static final int DEFAULT_DOUBLE_PRECISION = -1;
     public static final int DEFAULT_DOUBLE_SCALE = -1;
 
-    private MApproximateNumber(String name, TypeId typeId, PUnderlying underlying, TParser parser,
+    private MApproximateNumber(String name, TypeId typeId, UnderlyingType underlying, TParser parser,
                                TClassFormatter formatter, int defaultVarcharLen)
     {
         super(MBundle.INSTANCE.id(), name, AkCategory.FLOATING, formatter,

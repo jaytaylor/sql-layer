@@ -18,15 +18,15 @@
 package com.foundationdb.sql.optimizer.plan;
 
 import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 
 import java.util.List;
 
 public interface IndexIntersectionNode<C, N extends IndexIntersectionNode<C,N>> {
-    UserTable getLeafMostUTable();
+    Table getLeafMostAisTable();
     List<IndexColumn> getAllColumns();
     void incrementConditionsCounter(ConditionsCounter<? super C> counter);
     boolean isUseful(ConditionsCount<? super C> counter);
-    UserTable findCommonAncestor(N other);
+    Table findCommonAncestor(N other);
     int getPeggedCount();
 }

@@ -59,7 +59,7 @@ Rows that have been inserted into the StoreAdapter.
 
 <h1>Assumptions</h1>
 
-The inputOperator is returning rows of the UserTableRowType of the table being inserted into.
+The inputOperator is returning rows of the TableRowType of the table being inserted into.
 
 The inputOperator has already placed all the values for the row that need to be written. 
 

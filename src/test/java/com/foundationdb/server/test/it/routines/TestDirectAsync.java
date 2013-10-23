@@ -75,7 +75,7 @@ public class TestDirectAsync extends LoadableDirectObjectPlan
             for (int i = 0; i < 100; i++) {
                 String carg;
                 try {
-                    carg = bindings.getPValue(i).getString();
+                    carg = bindings.getValue(i).getString();
                     //carg = bindings.getValue(i).getString();
                 }
                 catch (BindingNotSetException ex) {

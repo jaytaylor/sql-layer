@@ -24,8 +24,8 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.DefaultNameGenerator;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.ais.util.TableChange;
@@ -36,7 +36,7 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -103,7 +103,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         return schema.indexRowType(index);
     }
 
-    private void scanAndCheckIndex(IndexRowType type, RowBase... expectedRows) {
+    private void scanAndCheckIndex(IndexRowType type, Row... expectedRows) {
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         StoreAdapter adapter = newStoreAdapter(schema);
         QueryContext queryContext = new SimpleQueryContext(adapter);
@@ -122,15 +122,15 @@ public class AlterTableBasicIT extends AlterTableITBase {
     @Test(expected=InvalidAlterException.class)
     public void unspecifiedColumnChange() {
         NewAISBuilder builder = AISBBasedBuilder.create();
-        builder.userTable(SCHEMA, "c").colLong("c1").pk("c1");
-        UserTable table = builder.ais().getUserTable(SCHEMA, "c");
+        builder.table(SCHEMA, "c").colLong("c1").pk("c1");
+        Table table = builder.ais().getTable(SCHEMA, "c");
 
         ddl().createTable(session(),  table);
         updateAISGeneration();
 
         builder = AISBBasedBuilder.create();
-        builder.userTable(SCHEMA, "c").colLong("c1").colLong("c2").colLong("c3").pk("c1");
-        table = builder.ais().getUserTable(SCHEMA, "c");
+        builder.table(SCHEMA, "c").colLong("c1").colLong("c2").colLong("c3").pk("c1");
+        table = builder.ais().getTable(SCHEMA, "c");
 
         ddl().alterTable(session(), table.getName(), table,
                          Arrays.asList(TableChange.createAdd("c2")), NO_CHANGES,
@@ -153,7 +153,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
                 createNewRow(cid, "A", 50)
         );
         expectRows(
-                scanAllIndexRequest(getUserTable(SCHEMA, "c").getIndex(Index.PRIMARY_KEY_CONSTRAINT)),
+                scanAllIndexRequest(getTable(SCHEMA, "c").getIndex(Index.PRIMARY_KEY_CONSTRAINT)),
                 createNewRow(cid, UNDEF, 10),
                 createNewRow(cid, UNDEF, 20),
                 createNewRow(cid, UNDEF, 50)
@@ -168,29 +168,29 @@ public class AlterTableBasicIT extends AlterTableITBase {
         runAlter(ChangeLevel.GROUP, "ALTER TABLE o DROP PRIMARY KEY");
 
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
-        RowType cType = schema.userTableRowType(getUserTable(SCHEMA, "c"));
-        RowType oType = schema.userTableRowType(getUserTable(SCHEMA, "o"));
-        RowType iType = schema.userTableRowType(getUserTable(SCHEMA, "i"));
+        RowType cType = schema.tableRowType(getTable(SCHEMA, "c"));
+        RowType oType = schema.tableRowType(getTable(SCHEMA, "o"));
+        RowType iType = schema.tableRowType(getTable(SCHEMA, "i"));
         StoreAdapter adapter = newStoreAdapter(schema);
         int pk = 1;
         compareRows(
-                new RowBase[]{
+                new Row[]{
                         testRow(cType, 1, "a"),
                         testRow(oType, 10, 1, 11, pk++),
                         testRow(oType, 11, 1, 12, pk++),
                         testRow(cType, 2, "b"),
                         testRow(oType, 30, 3, 33, pk++),
                 },
-                adapter.newGroupCursor(cType.userTable().getGroup())
+                adapter.newGroupCursor(cType.table().getGroup())
         );
         compareRows(
-                new RowBase[]{
+                new Row[]{
                         testRow(iType, 100, 10, 110),
                         testRow(iType, 101, 10, 111),
                         testRow(iType, 111, 11, 122),
                         testRow(iType, 300, 30, 330)
                 },
-                adapter.newGroupCursor(iType.userTable().getGroup())
+                adapter.newGroupCursor(iType.table().getGroup())
         );
     }
 
@@ -243,9 +243,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
     public void addColumnIndexSingleTableNoPrimaryKey() throws StandardException {
         TableName cName = tableName(SCHEMA, "c");
         NewAISBuilder builder = AISBBasedBuilder.create();
-        builder.userTable(cName).colLong("c1", true).colLong("c2", true).colLong("c3", true);
+        builder.table(cName).colLong("c1", true).colLong("c2", true).colLong("c3", true);
 
-        ddl().createTable(session(), builder.unvalidatedAIS().getUserTable(cName));
+        ddl().createTable(session(), builder.unvalidatedAIS().getTable(cName));
         updateAISGeneration();
 
         // Note: Not using standard id due to null index contents
@@ -257,11 +257,11 @@ public class AlterTableBasicIT extends AlterTableITBase {
         );
 
         builder = AISBBasedBuilder.create();
-        builder.userTable(cName).colLong("c1", true).colLong("c2", true).colLong("c3", true).colLong("c4", true).key("c4", "c4");
+        builder.table(cName).colLong("c1", true).colLong("c2", true).colLong("c3", true).colLong("c4", true).key("c4", "c4");
         List<TableChange> changes = new ArrayList<>();
         changes.add(TableChange.createAdd("c4"));
 
-        ddl().alterTable(session(), cName, builder.unvalidatedAIS().getUserTable(cName), changes, changes, queryContext());
+        ddl().alterTable(session(), cName, builder.unvalidatedAIS().getTable(cName), changes, changes, queryContext());
         updateAISGeneration();
 
         expectFullRows(
@@ -272,7 +272,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         );
 
         expectRows(
-                scanAllIndexRequest(getUserTable(tableId).getIndex("c4")),
+                scanAllIndexRequest(getTable(tableId).getIndex("c4")),
                 createNewRow(tableId, UNDEF, UNDEF, UNDEF, null),
                 createNewRow(tableId, UNDEF, UNDEF, UNDEF, null),
                 createNewRow(tableId, UNDEF, UNDEF, UNDEF, null)
@@ -395,7 +395,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         runAlter("ALTER TABLE c DROP COLUMN c1");
 
         expectRows(
-                scanAllIndexRequest(getUserTable(SCHEMA, "c").getIndex("c1_c2")),
+                scanAllIndexRequest(getTable(SCHEMA, "c").getIndex("c1_c2")),
                 createNewRow(cid, UNDEF, 12),
                 createNewRow(cid, UNDEF, 22),
                 createNewRow(cid, UNDEF, 32),
@@ -422,7 +422,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         QueryContext queryContext = new SimpleQueryContext(adapter);
         QueryBindings queryBindings = queryContext.createBindings();
         compareRows(
-                new RowBase[] {
+                new Row[] {
                         testRow(indexRowType, "a", 110, 1, 10, 100),
                         testRow(indexRowType, "a", 111, 1, 10, 101),
                         testRow(indexRowType, "a", 122, 1, 11, 111),
@@ -472,7 +472,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
                 createNewRow(cid, 3, 30)
         );
         expectRows(
-                scanAllIndexRequest(getUserTable(SCHEMA, "c").getIndex("c1")),
+                scanAllIndexRequest(getTable(SCHEMA, "c").getIndex("c1")),
                 createNewRow(cid, UNDEF, 10),
                 createNewRow(cid, UNDEF, 20),
                 createNewRow(cid, UNDEF, 30)
@@ -492,7 +492,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         // Our parser doesn't (yet) support multi-action alters, manually build parameters
         // ALTER TABLE c ADD COLUMN c5 INT, DROP COLUMN c2, ALTER COLUMN c3 SET DATA TYPE char(3)
         AISBuilder builder = new AISBuilder();
-        builder.userTable(SCHEMA, "c");
+        builder.table(SCHEMA, "c");
         builder.column(SCHEMA, "c", "c1", 0, "int", null, null, false, false, null, null);
         builder.column(SCHEMA, "c", "c3", 1, "char", 3L, null, true, false, null, null);
         builder.column(SCHEMA, "c", "c4", 2, "char", 1L, null, true, false, null, null);
@@ -503,7 +503,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         builder.createGroup("c", SCHEMA);
         builder.addTableToGroup("c", SCHEMA, "c");
         builder.groupingIsComplete();
-        UserTable newTable = builder.akibanInformationSchema().getUserTable(SCHEMA, "c");
+        Table newTable = builder.akibanInformationSchema().getTable(SCHEMA, "c");
 
         List<TableChange> changes = new ArrayList<>();
         changes.add(TableChange.createAdd("c5"));
@@ -528,7 +528,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         runAlter(ChangeLevel.INDEX, "ALTER TABLE c ADD UNIQUE(c1)");
         expectIndexes(cid, "PRIMARY", "c1");
         expectRows(
-                scanAllIndexRequest(getUserTable(SCHEMA, "c").getIndex("c1")),
+                scanAllIndexRequest(getTable(SCHEMA, "c").getIndex("c1")),
                 createNewRow(cid, UNDEF, "10"),
                 createNewRow(cid, UNDEF, "20"),
                 createNewRow(cid, UNDEF, "30")
@@ -546,7 +546,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         runAlter(ChangeLevel.METADATA, "ALTER TABLE c ALTER COLUMN c1 NULL");
         // Just check metadata
         // Insert needs more plumbing (e.g. Insert_Default), checked in test-alter-nullability.yaml
-        UserTable table = getUserTable(SCHEMA, "c");
+        Table table = getTable(SCHEMA, "c");
         assertEquals("c1 nullable", true, table.getColumn("c1").getNullable());
     }
 
@@ -561,7 +561,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         runAlter(ChangeLevel.METADATA_NOT_NULL, "ALTER TABLE c ALTER COLUMN c1 NOT NULL");
         // Just check metadata
         // Insert needs more plumbing (e.g. Insert_Default), checked in test-alter-nullability.yaml
-        UserTable table = getUserTable(SCHEMA, "c");
+        Table table = getTable(SCHEMA, "c");
         assertEquals("c1 nullable", false, table.getColumn("c1").getNullable());
     }
 
@@ -575,7 +575,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         );
 
         AkibanInformationSchema ais = AISCloner.clone(ddl().getAIS(session()));
-        UserTable table = ais.getUserTable(SCHEMA, "c");
+        Table table = ais.getTable(SCHEMA, "c");
         table.removeIndexes(Collections.singleton(table.getIndex("foo")));
         AISBuilder builder = new AISBuilder(ais);
         builder.index(SCHEMA, "c", "foo", false, Index.KEY_CONSTRAINT);
@@ -590,7 +590,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         expectIndexes(cid, "foo", "PRIMARY");
         expectRows(
-                scanAllIndexRequest(getUserTable(SCHEMA, "c").getIndex("foo")),
+                scanAllIndexRequest(getTable(SCHEMA, "c").getIndex("foo")),
                 createNewRow(cid, UNDEF, UNDEF, "1"),
                 createNewRow(cid, UNDEF, UNDEF, "2"),
                 createNewRow(cid, UNDEF, UNDEF, "3")
@@ -608,7 +608,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         );
 
         AkibanInformationSchema ais = AISCloner.clone(ddl().getAIS(session()));
-        UserTable table = ais.getUserTable(SCHEMA, "c");
+        Table table = ais.getTable(SCHEMA, "c");
         table.removeIndexes(Collections.singleton(table.getIndex("foo")));
         AISBuilder builder = new AISBuilder(ais);
         builder.index(SCHEMA, "c", "foo", false, Index.KEY_CONSTRAINT);
@@ -623,7 +623,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         expectIndexes(cid, "foo", "PRIMARY");
         expectRows(
-                scanAllIndexRequest(getUserTable(SCHEMA, "c").getIndex("foo")),
+                scanAllIndexRequest(getTable(SCHEMA, "c").getIndex("foo")),
                 createNewRow(cid, UNDEF, "C", "1"),
                 createNewRow(cid, UNDEF, "B", "2"),
                 createNewRow(cid, UNDEF, "A", "3")
@@ -636,7 +636,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         // ALTER TABLE o DROP COLUMN o1, ADD COLUMN o1 INT, ADD INDEX x(o1), ADD INDEX y(cid)
         AkibanInformationSchema ais = AISCloner.clone(ddl().getAIS(session()));
-        UserTable table = ais.getUserTable(SCHEMA, "o");
+        Table table = ais.getTable(SCHEMA, "o");
         table.dropColumn("o1");
         AISBuilder builder = new AISBuilder(ais);
         builder.column(SCHEMA, "o", "o1", 2, "int", null, null, true, false, null, null);
@@ -665,14 +665,14 @@ public class AlterTableBasicIT extends AlterTableITBase {
         expectIndexes(oid, "PRIMARY", "x", "y");
 
         expectRows(
-                scanAllIndexRequest(getUserTable(SCHEMA, "o").getIndex("x")),
+                scanAllIndexRequest(getTable(SCHEMA, "o").getIndex("x")),
                 createNewRow(oid, UNDEF, UNDEF, null),
                 createNewRow(oid, UNDEF, UNDEF, null),
                 createNewRow(oid, UNDEF, UNDEF, null)
         );
 
         expectRows(
-                scanAllIndexRequest(getUserTable(SCHEMA, "o").getIndex("y")),
+                scanAllIndexRequest(getTable(SCHEMA, "o").getIndex("y")),
                 createNewRow(oid, UNDEF, 1, UNDEF),
                 createNewRow(oid, UNDEF, 1, UNDEF),
                 createNewRow(oid, UNDEF, 3, UNDEF)
@@ -705,13 +705,13 @@ public class AlterTableBasicIT extends AlterTableITBase {
         runAlter(ChangeLevel.GROUP, "ALTER TABLE i ADD GROUPING FOREIGN KEY(spare_id) REFERENCES o(id)");
 
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
-        RowType cType = schema.userTableRowType(getUserTable(SCHEMA, "c"));
-        RowType oType = schema.userTableRowType(getUserTable(SCHEMA, "o"));
-        RowType iType = schema.userTableRowType(getUserTable(SCHEMA, "i"));
+        RowType cType = schema.tableRowType(getTable(SCHEMA, "c"));
+        RowType oType = schema.tableRowType(getTable(SCHEMA, "o"));
+        RowType iType = schema.tableRowType(getTable(SCHEMA, "i"));
 
         StoreAdapter adapter = newStoreAdapter(schema);
         compareRows(
-                new RowBase[] {
+                new Row[] {
                         // null c
                             // no o20
                                 testRow(iType, 200, 20, "d"),
@@ -727,7 +727,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
                         testRow(cType, 10, "zxcv")
 
                 },
-                adapter.newGroupCursor(cType.userTable().getGroup())
+                adapter.newGroupCursor(cType.table().getGroup())
         );
     }
 
@@ -750,25 +750,25 @@ public class AlterTableBasicIT extends AlterTableITBase {
         runAlter(ChangeLevel.GROUP, "ALTER TABLE o DROP GROUPING FOREIGN KEY");
 
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
-        RowType cType = schema.userTableRowType(getUserTable(SCHEMA, "c"));
-        RowType oType = schema.userTableRowType(getUserTable(SCHEMA, "o"));
+        RowType cType = schema.tableRowType(getTable(SCHEMA, "c"));
+        RowType oType = schema.tableRowType(getTable(SCHEMA, "o"));
 
         StoreAdapter adapter = newStoreAdapter(schema);
         compareRows(
-                new RowBase[] {
+                new Row[] {
                         testRow(cType, 1L, "asdf"),
                         testRow(cType, 5, "qwer"),
                         testRow(cType, 10, "zxcv")
                 },
-                adapter.newGroupCursor(cType.userTable().getGroup())
+                adapter.newGroupCursor(cType.table().getGroup())
         );
         compareRows(
-                new RowBase[] {
+                new Row[] {
                         testRow(oType, 10, 1, "a"),
                         testRow(oType, 11, 1, "b"),
                         testRow(oType, 60, 6, "c"),
                 },
-                adapter.newGroupCursor(oType.userTable().getGroup())
+                adapter.newGroupCursor(oType.table().getGroup())
         );
     }
 
@@ -798,13 +798,13 @@ public class AlterTableBasicIT extends AlterTableITBase {
         runAlter(ChangeLevel.GROUP, "ALTER TABLE o ADD GROUPING FOREIGN KEY(cid) REFERENCES c(id)");
 
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
-        RowType cType = schema.userTableRowType(getUserTable(SCHEMA, "c"));
-        RowType oType = schema.userTableRowType(getUserTable(SCHEMA, "o"));
-        RowType iType = schema.userTableRowType(getUserTable(SCHEMA, "i"));
+        RowType cType = schema.tableRowType(getTable(SCHEMA, "c"));
+        RowType oType = schema.tableRowType(getTable(SCHEMA, "o"));
+        RowType iType = schema.tableRowType(getTable(SCHEMA, "i"));
 
         StoreAdapter adapter = newStoreAdapter(schema);
         compareRows(
-                new RowBase[] {
+                new Row[] {
                         // ?
                             // null
                                 testRow(iType, 200, 20, "d"),
@@ -819,7 +819,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
                             testRow(oType, 60, 6, "c"),
                         testRow(cType, 10, "zxcv"),
                 },
-                adapter.newGroupCursor(cType.userTable().getGroup())
+                adapter.newGroupCursor(cType.table().getGroup())
         );
     }
 
@@ -849,22 +849,22 @@ public class AlterTableBasicIT extends AlterTableITBase {
         runAlter(ChangeLevel.GROUP, "ALTER TABLE o DROP GROUPING FOREIGN KEY");
 
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
-        RowType cType = schema.userTableRowType(getUserTable(SCHEMA, "c"));
-        RowType oType = schema.userTableRowType(getUserTable(SCHEMA, "o"));
-        RowType iType = schema.userTableRowType(getUserTable(SCHEMA, "i"));
+        RowType cType = schema.tableRowType(getTable(SCHEMA, "c"));
+        RowType oType = schema.tableRowType(getTable(SCHEMA, "o"));
+        RowType iType = schema.tableRowType(getTable(SCHEMA, "i"));
 
         StoreAdapter adapter = newStoreAdapter(schema);
         compareRows(
-                new RowBase[] {
+                new Row[] {
                         testRow(cType, 1, "asdf"),
                         testRow(cType, 5, "qwer"),
                         testRow(cType, 10, "zxcv")
                 },
-                adapter.newGroupCursor(cType.userTable().getGroup())
+                adapter.newGroupCursor(cType.table().getGroup())
         );
 
         compareRows(
-                new RowBase[] {
+                new Row[] {
                         testRow(oType, 10, 1, "a"),
                             testRow(iType, 100, 10, "d"),
                             testRow(iType, 101, 10, "e"),
@@ -874,7 +874,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
                             testRow(iType, 200, 20, "d"),
                         testRow(oType, 60, 6, "c"),
                 },
-                adapter.newGroupCursor(oType.userTable().getGroup())
+                adapter.newGroupCursor(oType.table().getGroup())
         );
     }
 
@@ -957,7 +957,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         runAlter(ChangeLevel.NONE, "ALTER TABLE c ALTER COLUMN cid NOT NULL");
         // Exception from validator due to defaults incorrectly changing
         runAlter("ALTER TABLE c ADD family_size int");
-        UserTable table = getUserTable(C_NAME);
+        Table table = getTable(C_NAME);
         assertEquals("cid default identity", true, table.getColumn("cid").getDefaultIdentity());
         assertEquals("c1 default", "bob", table.getColumn("c1").getDefaultValue());
         assertEquals("c2 default", "42", table.getColumn("c2").getDefaultValue());
@@ -980,7 +980,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         );
 
         AISBuilder builder = new AISBuilder();
-        builder.userTable(SCHEMA, C_TABLE);
+        builder.table(SCHEMA, C_TABLE);
         builder.column(SCHEMA, C_TABLE, "c2", 0, "int", null, null, true, false, null, null);
         builder.column(SCHEMA, C_TABLE, "c1", 1, "int", null, null, false, false, null, null);
         builder.index(SCHEMA, C_TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
@@ -993,7 +993,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         builder.groupingIsComplete();
 
         runAlter(ChangeLevel.TABLE,
-                 C_NAME, builder.akibanInformationSchema().getUserTable(C_NAME),
+                 C_NAME, builder.akibanInformationSchema().getTable(C_NAME),
                  Arrays.asList(TableChange.createModify("c1", "c1"), TableChange.createModify("c2", "c2")),
                  NO_CHANGES);
 
@@ -1031,7 +1031,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         final int id = createTable(SCHEMA, C_TABLE,
                                    "id INT NOT NULL PRIMARY KEY GENERATED BY DEFAULT AS IDENTITY",
                                    "name VARCHAR(255) NOT NULL");
-        Sequence seq = getUserTable(id).getColumn("id").getIdentityGenerator();
+        Sequence seq = getTable(id).getColumn("id").getIdentityGenerator();
         assertNotNull("id column has sequence", seq);
         writeRows(
                 createNewRow(id, 1, "1"),
@@ -1040,7 +1040,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         );
         runAlter(ChangeLevel.GROUP, "ALTER TABLE c ALTER COLUMN id SET DATA TYPE varchar(10)");
         assertNull("sequence was dropped", ddl().getAIS(session()).getSequence(seq.getSequenceName()));
-        assertNull("id column has no sequence", getUserTable(id).getColumn("id").getIdentityGenerator());
+        assertNull("id column has no sequence", getTable(id).getColumn("id").getIdentityGenerator());
         expectFullRows(
                 id,
                 createNewRow(id, "1", "1"),
@@ -1056,7 +1056,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         final int id = createTable(SCHEMA, C_TABLE,
                                    "id INT NOT NULL PRIMARY KEY GENERATED BY DEFAULT AS IDENTITY",
                                    "name VARCHAR(255) NOT NULL");
-        Sequence seq = getUserTable(id).getColumn("id").getIdentityGenerator();
+        Sequence seq = getTable(id).getColumn("id").getIdentityGenerator();
         assertNotNull("id column has sequence", seq);
         writeRows(
                 createNewRow(id, 1, "1"),
@@ -1065,7 +1065,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         );
         runAlter(ChangeLevel.GROUP, "ALTER TABLE c DROP COLUMN id");
         assertNull("sequence was dropped", ddl().getAIS(session()).getSequence(seq.getSequenceName()));
-        assertNull("id column does not exist", getUserTable(id).getColumn("id"));
+        assertNull("id column does not exist", getTable(id).getColumn("id"));
         expectFullRows(
                 id,
                 createNewRow(id, "1"),
@@ -1094,12 +1094,12 @@ public class AlterTableBasicIT extends AlterTableITBase {
         final String schema2 = "test2";
         createAndLoadCOI(schema1);
         createAndLoadCOI(schema2);
-        TableName groupName = getUserTable(schema2, "c").getGroup().getName();
+        TableName groupName = getTable(schema2, "c").getGroup().getName();
         createGroupIndex(groupName, "c1_01", "c.c1,o.o1", Index.JoinType.LEFT);
 
         runAlter(ChangeLevel.TABLE, "ALTER TABLE test2.o ALTER COLUMN o1 SET DATA TYPE bigint");
 
-        Index gi = getUserTable(schema2, "c").getGroup().getIndex("c1_01");
+        Index gi = getTable(schema2, "c").getGroup().getIndex("c1_01");
         assertNotNull("GI still exists", gi);
 
         IndexRowType type = indexRowType(gi);
@@ -1112,12 +1112,12 @@ public class AlterTableBasicIT extends AlterTableITBase {
     public void changeColumnInGICommon(String table, Runnable alterRunnable) {
         String giName = "c1_o1_i1";
         createAndLoadCOI();
-        TableName groupName = getUserTable(SCHEMA, table).getGroup().getName();
+        TableName groupName = getTable(SCHEMA, table).getGroup().getName();
         createGroupIndex(groupName, giName, "c.c1,o.o1,i.i1", Index.JoinType.LEFT);
 
         alterRunnable.run();
 
-        Index gi = getUserTable(SCHEMA, table).getGroup().getIndex(giName);
+        Index gi = getTable(SCHEMA, table).getGroup().getIndex(giName);
         assertNotNull("GI still exists", gi);
 
         IndexRowType type = indexRowType(gi);
@@ -1181,7 +1181,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
     public void alterColumnDefaultIdentity() {
         final int id = createTable(SCHEMA, C_TABLE,
                                    "id INT NOT NULL PRIMARY KEY GENERATED BY DEFAULT AS IDENTITY");
-        Column column = getUserTable(id).getColumn("id");
+        Column column = getTable(id).getColumn("id");
         assertEquals("identity is default", true, column.getDefaultIdentity());
         Sequence seq = column.getIdentityGenerator();
         assertNotNull("id column has sequence", seq);
@@ -1190,7 +1190,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         assertNull("Old seq was dropped", ais().getSequence(seq.getSequenceName()));
 
         runAlter(ChangeLevel.METADATA, "ALTER TABLE c ALTER COLUMN id SET GENERATED ALWAYS AS IDENTITY");
-        Column newColumn = getUserTable(id).getColumn("id");
+        Column newColumn = getTable(id).getColumn("id");
         assertEquals("altered is always", false, newColumn.getDefaultIdentity());
         seq = newColumn.getIdentityGenerator();
         assertEquals("Sequence name prefix",
@@ -1218,11 +1218,11 @@ public class AlterTableBasicIT extends AlterTableITBase {
         writeRows(createNewRow(oid, "dd", 4L));
 
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
-        RowType cType = schema.userTableRowType(getUserTable(SCHEMA, C_TABLE));
-        RowType oType = schema.userTableRowType(getUserTable(SCHEMA, O_TABLE));
+        RowType cType = schema.tableRowType(getTable(SCHEMA, C_TABLE));
+        RowType oType = schema.tableRowType(getTable(SCHEMA, O_TABLE));
         StoreAdapter adapter = newStoreAdapter(schema);
         compareRows(
-                new RowBase[] {
+                new Row[] {
                         testRow(cType, 1L, "a"),
                             testRow(oType, "aa", 1L, 1L),
                         testRow(cType, 2L, "b"),
@@ -1232,7 +1232,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
                         testRow(cType, 4L, "d"),
                             testRow(oType, "dd", 4L, 4L),
                 },
-                adapter.newGroupCursor(cType.userTable().getGroup())
+                adapter.newGroupCursor(cType.table().getGroup())
         );
     }
 }

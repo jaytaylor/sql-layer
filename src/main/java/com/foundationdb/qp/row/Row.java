@@ -17,20 +17,31 @@
 
 package com.foundationdb.qp.row;
 
-// Row and RowHolder implement a reference-counting scheme for rows. Operators should hold onto
-// Rows using a RowHolder. Assignments to RowHolder (using RowHolder.set) cause reference counting
-// to be done, via Row.share() and release(). isShared() is used by data sources (a btree cursor)
-// when the row filled in by the cursor is about to be changed. If isShared() is true, then the cursor
-// allocates a new row and writes into it, otherwise the existing row is reused. (isShared() is true iff the reference
-// count is > 1. If the reference count is = 1, then presumably the reference is from the btree cursor itself.)
-//
-// This implementation is NOT threadsafe. It assumes that all access to a Row is within one thread.
-// E.g., when a Row is returned from an operator's next(), it is often not in a RowHolder owned by that operator,
-// and the reference count could be zero. As long as we're in one thread, the cursor can't be writing new data into
-// the row while this is happening.
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.server.types.value.ValueRecord;
+import com.foundationdb.qp.rowtype.RowType;
 
-import com.foundationdb.util.Shareable;
-
-public interface Row extends RowBase, Shareable
+public interface Row extends ValueRecord
 {
+    RowType rowType();
+    HKey hKey();
+    HKey ancestorHKey(Table table);
+    boolean ancestorOf(Row that);
+    boolean containsRealRowOf(Table table);
+    Row subRow(RowType subRowType);
+
+    /**
+     * Compares two rows and indicates if and where they differ.
+     * @param row The row to be compared to this row.
+     * @param leftStartIndex First field to compare in this row.
+     * @param rightStartIndex First field to compare in the other row.
+     * @param fieldCount Number of fields to compare.
+     * @return 0 if all fields are equal. A negative value indicates that this row had the first field
+     * that was not equal to the corresponding field in the other row. A positive value indicates that the
+     * other row had the first field that was not equal to the corresponding field in this row. In both non-zero
+     * cases, the absolute value of the return value is the position of the field that differed, starting the numbering
+     * at 1. E.g. a return value of -2 means that the first fields of the rows match, and that in the second field,
+     * this row had the smaller value.
+     */
+    int compareTo(Row row, int leftStartIndex, int rightStartIndex, int fieldCount);
 }

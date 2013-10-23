@@ -19,7 +19,7 @@ package com.foundationdb.server.types.common;
 
 import com.foundationdb.server.types.TClassFormatter;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.AkibanAppender;
 
 public class TFormatter {
@@ -27,17 +27,17 @@ public class TFormatter {
     public static enum FORMAT implements TClassFormatter {
         BOOL {
             @Override
-            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void format(TInstance instance, ValueSource source, AkibanAppender out) {
                 out.append(Boolean.toString(source.getBoolean()));
             }
 
             @Override
-            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void formatAsLiteral(TInstance instance, ValueSource source, AkibanAppender out) {
                 out.append(source.getBoolean() ? "TRUE" : "FALSE");
             }
 
             @Override
-            public void formatAsJson(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void formatAsJson(TInstance instance, ValueSource source, AkibanAppender out) {
                 format(instance, source, out);
             }
         }

@@ -22,7 +22,7 @@ import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -65,7 +65,7 @@ public class Intersect_OrderedByteArrayComparisonIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        tRowType = schema.userTableRowType(userTable(t));
+        tRowType = schema.tableRowType(table(t));
         leftIndexRowType = indexType(t, "test", "l1", "l2", "l3");
         rightIndexRowType = indexType(t, "test", "r1", "r2", "r3");
         coi = group(t);
@@ -96,50 +96,50 @@ public class Intersect_OrderedByteArrayComparisonIT extends OperatorITBase
     public void test1()
     {
         plan = intersectPlan(1, IntersectOption.OUTPUT_LEFT, true, false);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(leftIndexRowType, 1L, 502L, "x", 999L, 1001L),
             row(leftIndexRowType, 1L, 502L, "x", 999L, 1002L),
         };
         dump(plan);
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectPlan(1, IntersectOption.OUTPUT_RIGHT, true, false);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(leftIndexRowType, 1L, 502L, "x", 999L, 1001L),
             row(leftIndexRowType, 1L, 502L, "x", 999L, 1002L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectPlan(1, IntersectOption.OUTPUT_LEFT, false, false);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(leftIndexRowType, 1L, 502L, "x", 999L, 1001L),
             row(leftIndexRowType, 1L, 502L, "x", 999L, 1002L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectPlan(1, IntersectOption.OUTPUT_RIGHT, false, false);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(leftIndexRowType, 1L, 502L, "x", 999L, 1001L),
             row(leftIndexRowType, 1L, 502L, "x", 999L, 1002L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectPlan(1, IntersectOption.OUTPUT_LEFT, true, true);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(leftIndexRowType, 1L, 502L, "x", 999L, 1001L),
             row(leftIndexRowType, 1L, 502L, "x", 999L, 1002L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectPlan(1, IntersectOption.OUTPUT_RIGHT, true, true);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(leftIndexRowType, 1L, 502L, "x", 999L, 1001L),
             row(leftIndexRowType, 1L, 502L, "x", 999L, 1002L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectPlan(1, IntersectOption.OUTPUT_LEFT, false, true);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(leftIndexRowType, 1L, 502L, "x", 999L, 1001L),
             row(leftIndexRowType, 1L, 502L, "x", 999L, 1002L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectPlan(1, IntersectOption.OUTPUT_RIGHT, false, true);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(leftIndexRowType, 1L, 502L, "x", 999L, 1001L),
             row(leftIndexRowType, 1L, 502L, "x", 999L, 1002L),
         };
@@ -150,49 +150,49 @@ public class Intersect_OrderedByteArrayComparisonIT extends OperatorITBase
     public void test2()
     {
         plan = intersectPlan(2, IntersectOption.OUTPUT_LEFT, true, false);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(leftIndexRowType, 2L, 500L, "xxx", 999L, 1009L),
             row(leftIndexRowType, 2L, 500L, "xxx", 999L, 1010L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectPlan(2, IntersectOption.OUTPUT_RIGHT, true, false);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(leftIndexRowType, 2L, 500L, "xxx", 999L, 1009L),
             row(leftIndexRowType, 2L, 500L, "xxx", 999L, 1010L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectPlan(2, IntersectOption.OUTPUT_LEFT, false, false);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(leftIndexRowType, 2L, 500L, "xxx", 999L, 1009L),
             row(leftIndexRowType, 2L, 500L, "xxx", 999L, 1010L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectPlan(2, IntersectOption.OUTPUT_RIGHT, false, false);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(leftIndexRowType, 2L, 500L, "xxx", 999L, 1009L),
             row(leftIndexRowType, 2L, 500L, "xxx", 999L, 1010L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectPlan(2, IntersectOption.OUTPUT_LEFT, true, true);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(leftIndexRowType, 2L, 500L, "xxx", 999L, 1009L),
             row(leftIndexRowType, 2L, 500L, "xxx", 999L, 1010L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectPlan(2, IntersectOption.OUTPUT_RIGHT, true, true);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(leftIndexRowType, 2L, 500L, "xxx", 999L, 1009L),
             row(leftIndexRowType, 2L, 500L, "xxx", 999L, 1010L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectPlan(2, IntersectOption.OUTPUT_LEFT, false, true);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(leftIndexRowType, 2L, 500L, "xxx", 999L, 1009L),
             row(leftIndexRowType, 2L, 500L, "xxx", 999L, 1010L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectPlan(2, IntersectOption.OUTPUT_RIGHT, false, true);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(leftIndexRowType, 2L, 500L, "xxx", 999L, 1009L),
             row(leftIndexRowType, 2L, 500L, "xxx", 999L, 1010L),
         };
@@ -203,49 +203,49 @@ public class Intersect_OrderedByteArrayComparisonIT extends OperatorITBase
     public void test3()
     {
         plan = intersectPlan(3, IntersectOption.OUTPUT_LEFT, true, false);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(leftIndexRowType, 3L, 500L, "x", 902L, 1017L),
             row(leftIndexRowType, 3L, 500L, "x", 902L, 1018L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectPlan(3, IntersectOption.OUTPUT_RIGHT, true, false);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(leftIndexRowType, 3L, 500L, "x", 902L, 1017L),
             row(leftIndexRowType, 3L, 500L, "x", 902L, 1018L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectPlan(3, IntersectOption.OUTPUT_LEFT, false, false);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(leftIndexRowType, 3L, 500L, "x", 902L, 1017L),
             row(leftIndexRowType, 3L, 500L, "x", 902L, 1018L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectPlan(3, IntersectOption.OUTPUT_RIGHT, false, false);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(leftIndexRowType, 3L, 500L, "x", 902L, 1017L),
             row(leftIndexRowType, 3L, 500L, "x", 902L, 1018L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectPlan(3, IntersectOption.OUTPUT_LEFT, true, true);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(leftIndexRowType, 3L, 500L, "x", 902L, 1017L),
             row(leftIndexRowType, 3L, 500L, "x", 902L, 1018L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectPlan(3, IntersectOption.OUTPUT_RIGHT, true, true);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(leftIndexRowType, 3L, 500L, "x", 902L, 1017L),
             row(leftIndexRowType, 3L, 500L, "x", 902L, 1018L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectPlan(3, IntersectOption.OUTPUT_LEFT, false, true);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(leftIndexRowType, 3L, 500L, "x", 902L, 1017L),
             row(leftIndexRowType, 3L, 500L, "x", 902L, 1018L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
         plan = intersectPlan(3, IntersectOption.OUTPUT_RIGHT, false, true);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(leftIndexRowType, 3L, 500L, "x", 902L, 1017L),
             row(leftIndexRowType, 3L, 500L, "x", 902L, 1018L),
         };
@@ -256,28 +256,28 @@ public class Intersect_OrderedByteArrayComparisonIT extends OperatorITBase
     public void testCursor()
     {
         plan = intersectPlan(3, IntersectOption.OUTPUT_LEFT, true, false);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(leftIndexRowType, 3L, 500L, "x", 902L, 1017L),
             row(leftIndexRowType, 3L, 500L, "x", 902L, 1018L),
         };
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
-            public RowBase[] firstExpectedRows()
+            public Row[] firstExpectedRows()
             {
                 return expected;
             }
         };
         testCursorLifecycle(plan, testCase);
         plan = intersectPlan(3, IntersectOption.OUTPUT_LEFT, true, true);
-        expected = new RowBase[]{
+        expected = new Row[]{
             row(leftIndexRowType, 3L, 500L, "x", 902L, 1017L),
             row(leftIndexRowType, 3L, 500L, "x", 902L, 1018L),
         };
         testCase = new CursorLifecycleTestCase()
         {
             @Override
-            public RowBase[] firstExpectedRows()
+            public Row[] firstExpectedRows()
             {
                 return expected;
             }
@@ -345,5 +345,5 @@ public class Intersect_OrderedByteArrayComparisonIT extends OperatorITBase
     private IndexRowType leftIndexRowType;
     private IndexRowType rightIndexRowType;
     private Operator plan;
-    private RowBase[] expected;
+    private Row[] expected;
 }

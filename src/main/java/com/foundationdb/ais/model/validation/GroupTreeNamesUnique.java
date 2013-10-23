@@ -19,7 +19,7 @@ package com.foundationdb.ais.model.validation;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.error.DuplicateGroupTreeNamesException;
 
 import java.util.HashMap;
@@ -35,8 +35,8 @@ class GroupTreeNamesUnique implements AISValidation {
             String treeName = group.getTreeName();
             Group curGroup = treeNameMap.put(treeName, group);
             if(curGroup != null) {
-                UserTable root = group.getRoot();
-                UserTable curRoot = curGroup.getRoot();
+                Table root = group.getRoot();
+                Table curRoot = curGroup.getRoot();
                 output.reportFailure(
                     new AISValidationFailure(
                             new DuplicateGroupTreeNamesException(root.getName(), curRoot.getName(), treeName)));

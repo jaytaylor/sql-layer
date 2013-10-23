@@ -19,8 +19,8 @@ package com.foundationdb.server.types;
 
 import com.foundationdb.server.explain.CompoundExplainer;
 import com.foundationdb.server.explain.ExplainContext;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 
 import java.util.List;
@@ -28,7 +28,7 @@ import java.util.List;
 public interface TScalar extends TOverload {
     TPreptimeValue evaluateConstant(TPreptimeContext context, LazyList<? extends TPreptimeValue> inputs);
     void finishPreptimePhase(TPreptimeContext context);
-    void evaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output);
+    void evaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output);
     String toString(List<? extends TPreparedExpression> inputs, TInstance resultType);
     CompoundExplainer getExplainer(ExplainContext context, List<? extends TPreparedExpression> inputs, TInstance resultType);
 }

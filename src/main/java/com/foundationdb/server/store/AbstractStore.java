@@ -24,12 +24,13 @@ import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.HKeyColumn;
 import com.foundationdb.ais.model.HKeySegment;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.IndexRowComposition;
 import com.foundationdb.ais.model.IndexToHKey;
 import com.foundationdb.ais.model.NopVisitor;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.GroupCursor;
@@ -38,10 +39,10 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.persistitadapter.OperatorBasedRowCollector;
-import com.foundationdb.qp.persistitadapter.PValueRowDataCreator;
-import com.foundationdb.qp.persistitadapter.PersistitHKey;
-import com.foundationdb.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
+import com.foundationdb.qp.storeadapter.OperatorBasedRowCollector;
+import com.foundationdb.qp.storeadapter.RowDataCreator;
+import com.foundationdb.qp.storeadapter.PersistitHKey;
+import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.util.SchemaCache;
@@ -60,9 +61,9 @@ import com.foundationdb.server.error.QueryTimedOutException;
 import com.foundationdb.server.error.RowDefNotFoundException;
 import com.foundationdb.server.error.TableChangedByDDLException;
 import com.foundationdb.server.rowdata.FieldDef;
-import com.foundationdb.server.rowdata.IndexDef;
 import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDataPValueSource;
+import com.foundationdb.server.rowdata.RowDataExtractor;
+import com.foundationdb.server.rowdata.RowDataValueSource;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.listener.RowListener;
@@ -126,6 +127,9 @@ public abstract class AbstractStore<SDType> implements Store {
     /** Release (or cache) any data created through {@link #createStoreData(Session, TreeLink)}. */
     abstract void releaseStoreData(Session session, SDType storeData);
 
+    /** Get the <code>TreeLink</code> that this store data works with. */
+    abstract TreeLink getTreeLink(SDType storeData);
+
     /** Get the associated key */
     abstract Key getKey(Session session, SDType storeData);
 
@@ -186,7 +190,7 @@ public abstract class AbstractStore<SDType> implements Store {
         PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKeyOut);
 
         // Metadata for the row's table
-        UserTable table = rowDef.userTable();
+        Table table = rowDef.table();
         FieldDef[] fieldDefs = rowDef.getFieldDefs();
 
         // Only set if parent row is looked up
@@ -202,7 +206,7 @@ public abstract class AbstractStore<SDType> implements Store {
             hKeyAppender.append(segmentRowDef.table().getOrdinal());
             // Segment's columns
             for(HKeyColumn hKeyColumn : hKeySegment.columns()) {
-                UserTable hKeyColumnTable = hKeyColumn.column().getUserTable();
+                Table hKeyColumnTable = hKeyColumn.column().getTable();
                 if(hKeyColumnTable != table) {
                     // HKey column from row of parent table
                     if (parentStoreData == null) {
@@ -210,12 +214,12 @@ public abstract class AbstractStore<SDType> implements Store {
                         RowDef parentRowDef = rowDef.getParentRowDef();
                         TableIndex parentPkIndex = parentRowDef.getPKIndex();
                         indexToHKey = parentPkIndex.indexToHKey();
-                        parentStoreData = createStoreData(session, parentPkIndex.indexDef());
+                        parentStoreData = createStoreData(session, parentPkIndex);
                         parentPKIndexRow = readIndexRow(session, parentPkIndex, parentStoreData, rowDef, rowData);
                         i2hPosition = hKeyColumn.positionInHKey();
                     }
                     if(indexToHKey.isOrdinal(i2hPosition)) {
-                        assert indexToHKey.getOrdinal(i2hPosition) == segmentRowDef.userTable().getOrdinal() : hKeyColumn;
+                        assert indexToHKey.getOrdinal(i2hPosition) == segmentRowDef.table().getOrdinal() : hKeyColumn;
                         ++i2hPosition;
                     }
                     if(parentPKIndexRow != null) {
@@ -256,10 +260,12 @@ public abstract class AbstractStore<SDType> implements Store {
 
     protected boolean hasNullIndexSegments(RowData rowData, Index index)
     {
-        IndexDef indexDef = index.indexDef();
-        assert indexDef.getRowDef().getRowDefId() == rowData.getRowDefId();
-        for (int i : indexDef.getFields()) {
-            if (rowData.isNull(i)) {
+        assert index.leafMostTable().rowDef().getRowDefId() == rowData.getRowDefId();
+        int nkeys = index.getKeyColumns().size();
+        IndexRowComposition indexRowComposition = index.indexRowComposition();
+        for (int i = 0; i < nkeys; i++) {
+            int fi = indexRowComposition.getFieldPosition(i);
+            if (rowData.isNull(fi)) {
                 return true;
             }
         }
@@ -273,7 +279,11 @@ public abstract class AbstractStore<SDType> implements Store {
         int fields = rowDef.getFieldCount();
         // Find the PK and FK fields
         BitSet keyField = new BitSet(fields);
-        for (int pkFieldPosition : rowDef.getPKIndex().indexDef().getFields()) {
+        TableIndex pkIndex = rowDef.getPKIndex();
+        int nkeys = pkIndex.getKeyColumns().size();
+        IndexRowComposition indexRowComposition = pkIndex.indexRowComposition();
+        for (int i = 0; i < nkeys; i++) {
+            int pkFieldPosition = indexRowComposition.getFieldPosition(i);
             keyField.set(pkFieldPosition, true);
         }
         for (int fkFieldPosition : rowDef.getParentJoinFields()) {
@@ -300,12 +310,32 @@ public abstract class AbstractStore<SDType> implements Store {
         return tablesRequiringHKeyMaintenance;
     }
 
+    /** Build a user-friendly representation of the Index row for the given RowData. */
+    protected String formatIndexRowString(Session session, RowData rowData, Index index) {
+        RowDataExtractor extractor = new RowDataExtractor(rowData, rowDefFromExplicitOrId(session, rowData));
+        StringBuilder sb = new StringBuilder();
+        sb.append('(');
+        boolean first = true;
+        for(IndexColumn iCol : index.getKeyColumns()) {
+            Object o = extractor.get(iCol.getColumn().getFieldDef());
+            if(first) {
+                first = false;
+            } else {
+                sb.append(',');
+            }
+            sb.append(o);
+        }
+        sb.append(')');
+        return sb.toString();
+    }
+
+
     private BitSet hKeyDependentTableOrdinals(Session session, int rowDefId)
     {
         RowDef rowDef = getRowDef(session, rowDefId);
-        UserTable table = rowDef.userTable();
+        Table table = rowDef.table();
         BitSet ordinals = new BitSet();
-        for (UserTable hKeyDependentTable : table.hKeyDependentTables()) {
+        for (Table hKeyDependentTable : table.hKeyDependentTables()) {
             int ordinal = hKeyDependentTable.getOrdinal();
             ordinals.set(ordinal, true);
         }
@@ -405,7 +435,7 @@ public abstract class AbstractStore<SDType> implements Store {
 
     @Override
     public RowDef getRowDef(Session session, int rowDefID) {
-        Table table = getAIS(session).getUserTable(rowDefID);
+        Table table = getAIS(session).getTable(rowDefID);
         if(table == null) {
             throw new RowDefNotFoundException(rowDefID);
         }
@@ -424,19 +454,14 @@ public abstract class AbstractStore<SDType> implements Store {
     @Override
     public void writeRow(Session session, RowData rowData, Index[] indexes) {
         AkibanInformationSchema ais = schemaManager.getAis(session);
-        StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais));
-
-        // TODO: Persistit needs adapter created, have it create itself?
         writeRow(session, rowData, indexes, null, true);
-
         WRITE_ROW_GI_TAP.in();
         try {
-            UserTable uTable = ais.getUserTable(rowData.getRowDefId());
+            Table table = ais.getTable(rowData.getRowDefId());
             maintainGroupIndexes(session,
                                  ais,
-                                 adapter,
                                  rowData, null,
-                                 StoreGIHandler.forTable(this, adapter, uTable),
+                                 StoreGIHandler.forTable(this, session, table),
                                  StoreGIHandler.Action.STORE);
         } finally {
             WRITE_ROW_GI_TAP.out();
@@ -448,17 +473,15 @@ public abstract class AbstractStore<SDType> implements Store {
         DELETE_ROW_GI_TAP.in();
         try {
             AkibanInformationSchema ais = schemaManager.getAis(session);
-            StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais));
-            UserTable uTable = ais.getUserTable(rowData.getRowDefId());
+            Table table = ais.getTable(rowData.getRowDefId());
             if(cascadeDelete) {
-                cascadeDeleteMaintainGroupIndex(session, ais, adapter, rowData);
+                cascadeDeleteMaintainGroupIndex(session, ais, rowData);
             } else { // one row, one update to group indexes
                 maintainGroupIndexes(session,
                                      ais,
-                                     adapter,
                                      rowData,
                                      null,
-                                     StoreGIHandler.forTable(this, adapter, uTable),
+                                     StoreGIHandler.forTable(this, session, table),
                                      StoreGIHandler.Action.DELETE);
             }
         } finally {
@@ -471,35 +494,29 @@ public abstract class AbstractStore<SDType> implements Store {
     @Override
     public void updateRow(Session session, RowData oldRow, RowData newRow, ColumnSelector selector) {
         AkibanInformationSchema ais = schemaManager.getAis(session);
-        UserTable userTable = ais.getUserTable(oldRow.getRowDefId());
-
-        // TODO: PersistitStore requires adapter, have it create it?
-        StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais));
-
-        if(canSkipGIMaintenance(userTable)) {
+        Table table = ais.getTable(oldRow.getRowDefId());
+        if(canSkipGIMaintenance(table)) {
             updateRow(session, oldRow, newRow, selector, true);
         } else {
             UPDATE_ROW_GI_TAP.in();
             try {
-                RowData mergedRow = mergeRows(userTable.rowDef(), oldRow, newRow, selector);
-                BitSet changedColumnPositions = changedColumnPositions(userTable.rowDef(), oldRow, mergedRow);
+                RowData mergedRow = mergeRows(table.rowDef(), oldRow, newRow, selector);
+                BitSet changedColumnPositions = changedColumnPositions(table.rowDef(), oldRow, mergedRow);
 
                 maintainGroupIndexes(session,
                                      ais,
-                                     adapter,
                                      oldRow,
                                      changedColumnPositions,
-                                     StoreGIHandler.forTable(this, adapter, userTable),
+                                     StoreGIHandler.forTable(this, session, table),
                                      StoreGIHandler.Action.DELETE);
 
                 updateRow(session, oldRow, mergedRow, null /*already merged*/, true);
 
                 maintainGroupIndexes(session,
                                      ais,
-                                     adapter,
                                      mergedRow,
                                      changedColumnPositions,
-                                     StoreGIHandler.forTable(this, adapter, userTable),
+                                     StoreGIHandler.forTable(this, session, table),
                                      StoreGIHandler.Action.STORE);
             } finally {
                 UPDATE_ROW_GI_TAP.out();
@@ -600,7 +617,7 @@ public abstract class AbstractStore<SDType> implements Store {
     public void dropGroup(final Session session, Group group) {
         group.getRoot().traverseTableAndDescendants(new NopVisitor() {
             @Override
-            public void visitUserTable(UserTable table) {
+            public void visitTable(Table table) {
                 removeTrees(session, table);
             }
         });
@@ -610,7 +627,7 @@ public abstract class AbstractStore<SDType> implements Store {
     public void truncateGroup(final Session session, final Group group) {
         group.getRoot().traverseTableAndDescendants(new NopVisitor() {
             @Override
-            public void visitUserTable(UserTable table) {
+            public void visitTable(Table table) {
                 // Table indexes
                 truncateIndexes(session, table.getIndexesIncludingInternal());
                 // Table statuses
@@ -684,7 +701,7 @@ public abstract class AbstractStore<SDType> implements Store {
                         context, bindings,
                         groupIndex,
                         StoreGIMaintenancePlans.groupIndexCreationPlan(adapter.schema(), groupIndex),
-                        StoreGIHandler.forBuilding(this, adapter),
+                        StoreGIHandler.forBuilding(this, session),
                         StoreGIHandler.Action.STORE
                 );
             }
@@ -694,22 +711,19 @@ public abstract class AbstractStore<SDType> implements Store {
     @Override
     public void deleteIndexes(final Session session, final Collection<? extends Index> indexes) {
         for(Index index : indexes) {
-            final IndexDef indexDef = index.indexDef();
-            if(indexDef != null) {
-                removeTree(session, indexDef);
-            }
+            removeTree(session, index);
         }
     }
 
     @Override
-    public void removeTrees(Session session, UserTable table) {
+    public void removeTrees(Session session, Table table) {
         // Table indexes
         for(Index index : table.getIndexesIncludingInternal()) {
-            removeTree(session, index.indexDef());
+            removeTree(session, index);
         }
         // Group indexes
         for(Index index : table.getGroupIndexes()) {
-            removeTree(session, index.indexDef());
+            removeTree(session, index);
         }
         // Sequence
         if(table.getIdentityColumn() != null) {
@@ -763,7 +777,7 @@ public abstract class AbstractStore<SDType> implements Store {
         }
 
         for(RowListener listener : listenerService.getRowListeners()) {
-            listener.onWrite(session, rowDef.userTable(), hKey, rowData);
+            listener.onWrite(session, rowDef.table(), hKey, rowData);
         }
 
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
@@ -777,7 +791,7 @@ public abstract class AbstractStore<SDType> implements Store {
             }
         }
 
-        if(propagateHKeyChanges && rowDef.userTable().hasChildren()) {
+        if(propagateHKeyChanges && rowDef.table().hasChildren()) {
             /*
              * Row being inserted might be the parent of orphan rows already present.
              * The hKeys of these orphan rows need to be maintained. The ones of interest
@@ -785,11 +799,11 @@ public abstract class AbstractStore<SDType> implements Store {
              */
             hKey.clear();
             PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKey);
-            UserTable table = rowDef.userTable();
+            Table table = rowDef.table();
             List<Column> pkColumns = table.getPrimaryKeyIncludingInternal().getColumns();
             for(HKeySegment segment : table.hKey().segments()) {
                 RowDef segmentRowDef = segment.table().rowDef();
-                hKey.append(segmentRowDef.userTable().getOrdinal());
+                hKey.append(segmentRowDef.table().getOrdinal());
                 for(HKeyColumn hKeyColumn : segment.columns()) {
                     Column column = hKeyColumn.column();
                     if(pkColumns.contains(column)) {
@@ -829,7 +843,7 @@ public abstract class AbstractStore<SDType> implements Store {
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
         if(deleteIndexes) {
             for(RowListener listener : listenerService.getRowListeners()) {
-                listener.onDelete(session, rowDef.userTable(), hKey, rowData);
+                listener.onDelete(session, rowDef.table(), hKey, rowData);
             }
             for(Index index : rowDef.getIndexes()) {
                 deleteIndexRow(session, index, rowData, hKey, indexRow);
@@ -837,7 +851,7 @@ public abstract class AbstractStore<SDType> implements Store {
         }
 
         // Maintain hKeys of any existing descendants (i.e. create orphans)
-        if(propagateHKeyChanges && rowDef.userTable().hasChildren()) {
+        if(propagateHKeyChanges && rowDef.table().hasChildren()) {
             propagateDownGroup(session, storeData, tablesRequiringHKeyMaintenance, indexRow, deleteIndexes, cascadeDelete);
         }
     }
@@ -878,7 +892,7 @@ public abstract class AbstractStore<SDType> implements Store {
             packRowData(storeData, mergedRow);
             store(session, storeData);
             for(RowListener listener : listenerService.getRowListeners()) {
-                listener.onUpdate(session, oldRowDef.userTable(), hKey, oldRow, newRow);
+                listener.onUpdate(session, oldRowDef.table(), hKey, oldRow, newRow);
             }
             PersistitIndexRowBuffer indexRowBuffer = new PersistitIndexRowBuffer(this);
             for(Index index : oldRowDef.getIndexes()) {
@@ -935,12 +949,12 @@ public abstract class AbstractStore<SDType> implements Store {
                 it.next();
                 expandRowData(storeData, rowData);
                 RowDef rowDef = getRowDef(session, rowData.getRowDefId());
-                int ordinal = rowDef.userTable().getOrdinal();
+                int ordinal = rowDef.table().getOrdinal();
                 if(tablesRequiringHKeyMaintenance == null || tablesRequiringHKeyMaintenance.get(ordinal)) {
                     PROPAGATE_REPLACE_TAP.in();
                     try {
                         for(RowListener listener : listenerService.getRowListeners()) {
-                            listener.onDelete(session, rowDef.userTable(), hKey, rowData);
+                            listener.onDelete(session, rowDef.table(), hKey, rowData);
                         }
                         // Don't call deleteRow as the hKey does not need recomputed.
                         clear(session, storeData);
@@ -1004,8 +1018,9 @@ public abstract class AbstractStore<SDType> implements Store {
                              RowData oldRow,
                              RowData newRow, Key hKey,
                              PersistitIndexRowBuffer indexRowBuffer) {
-        IndexDef indexDef = index.indexDef();
-        if(!fieldsEqual(rowDef, oldRow, newRow, indexDef.getFields())) {
+        int nkeys = index.getKeyColumns().size();
+        IndexRowComposition indexRowComposition = index.indexRowComposition();
+        if(!fieldsEqual(rowDef, oldRow, newRow, nkeys, indexRowComposition)) {
             UPDATE_INDEX_TAP.in();
             try {
                 deleteIndexRow(session, index, oldRow, hKey, indexRowBuffer);
@@ -1054,33 +1069,33 @@ public abstract class AbstractStore<SDType> implements Store {
 
     private void maintainGroupIndexes(Session session,
                                       AkibanInformationSchema ais,
-                                      StoreAdapter adapter,
                                       RowData rowData,
                                       BitSet columnDifferences,
                                       StoreGIHandler handler,
                                       StoreGIHandler.Action action)
     {
-        UserTable userTable = ais.getUserTable(rowData.getRowDefId());
-        if(canSkipGIMaintenance(userTable)) {
+        Table table = ais.getTable(rowData.getRowDefId());
+        if(canSkipGIMaintenance(table)) {
             return;
         }
-        SDType storeData = createStoreData(session, userTable.getGroup());
+        SDType storeData = createStoreData(session, table.getGroup());
         try {
             // the "false" at the end of constructHKey toggles whether the RowData should be modified to increment
             // the hidden PK field, if there is one. For PK-less rows, this field have already been incremented by now,
             // so we don't want to increment it again
             Key hKey = getKey(session, storeData);
-            constructHKey(session, userTable.rowDef(), rowData, false, hKey);
+            constructHKey(session, table.rowDef(), rowData, false, hKey);
 
-            PersistitHKey persistitHKey = new PersistitHKey(createKey(), userTable.hKey());
+            PersistitHKey persistitHKey = new PersistitHKey(createKey(), table.hKey());
             persistitHKey.copyFrom(hKey);
 
-            Collection<GroupIndex> branchIndexes = userTable.getGroupIndexes();
+            Collection<GroupIndex> branchIndexes = table.getGroupIndexes();
             for(GroupIndex groupIndex : branchIndexes) {
-                if(columnDifferences == null || groupIndex.columnsOverlap(userTable, columnDifferences)) {
+                if(columnDifferences == null || groupIndex.columnsOverlap(table, columnDifferences)) {
+                    StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais));
                     StoreGIMaintenance plan = StoreGIMaintenancePlans
                             .forAis(ais)
-                            .forRowType(groupIndex, adapter.schema().userTableRowType(userTable));
+                            .forRowType(groupIndex, adapter.schema().tableRowType(table));
                     plan.run(action, persistitHKey, rowData, adapter, handler);
                 } else {
                     SKIP_GI_MAINTENANCE.hit();
@@ -1098,35 +1113,33 @@ public abstract class AbstractStore<SDType> implements Store {
      */
     private void cascadeDeleteMaintainGroupIndex(Session session,
                                                  AkibanInformationSchema ais,
-                                                 StoreAdapter adapter,
                                                  RowData rowData)
     {
-        UserTable uTable = ais.getUserTable(rowData.getRowDefId());
-        Operator plan = PlanGenerator.generateBranchPlan(ais, uTable);
-
+        Table table = ais.getTable(rowData.getRowDefId());
+        Operator plan = PlanGenerator.generateBranchPlan(ais, table);
+        StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(ais));
         QueryContext queryContext = new SimpleQueryContext(adapter);
         QueryBindings queryBindings = queryContext.createBindings();
         Cursor cursor = API.cursor(plan, queryContext, queryBindings);
 
-        List<Column> lookupCols = uTable.getPrimaryKeyIncludingInternal().getColumns();
-        RowDataPValueSource pSource = new RowDataPValueSource();
+        List<Column> lookupCols = table.getPrimaryKeyIncludingInternal().getColumns();
+        RowDataValueSource pSource = new RowDataValueSource();
         for(int i = 0; i < lookupCols.size(); ++i) {
             Column col = lookupCols.get(i);
             pSource.bind(col.getFieldDef(), rowData);
-            queryBindings.setPValue(i, pSource);
+            queryBindings.setValue(i, pSource);
         }
         try {
             Row row;
             cursor.openTopLevel();
             while((row = cursor.next()) != null) {
-                UserTable table = row.rowType().userTable();
-                RowData data = adapter.rowData(table.rowDef(), row, new PValueRowDataCreator());
+                Table aTable = row.rowType().table();
+                RowData data = adapter.rowData(aTable.rowDef(), row, new RowDataCreator());
                 maintainGroupIndexes(session,
                                      ais,
-                                     adapter,
                                      data,
                                      null,
-                                     StoreGIHandler.forTable(this, adapter, uTable),
+                                     StoreGIHandler.forTable(this, session, table),
                                      StoreGIHandler.Action.CASCADE);
             }
             cursor.closeTopLevel();
@@ -1152,8 +1165,9 @@ public abstract class AbstractStore<SDType> implements Store {
         return true;
     }
 
-    protected static boolean fieldsEqual(RowDef rowDef, RowData a, RowData b, int[] fieldIndexes) {
-        for(int fieldIndex : fieldIndexes) {
+    protected static boolean fieldsEqual(RowDef rowDef, RowData a, RowData b, int nkeys, IndexRowComposition indexRowComposition) {
+        for (int i = 0; i < nkeys; i++) {
+            int fieldIndex = indexRowComposition.getFieldPosition(i);
             if(!fieldEqual(rowDef, a, b, fieldIndex)) {
                 return false;
             }
@@ -1197,7 +1211,7 @@ public abstract class AbstractStore<SDType> implements Store {
         return mergedRow.toRowData();
     }
 
-    private static boolean canSkipGIMaintenance(UserTable table) {
+    private static boolean canSkipGIMaintenance(Table table) {
         return table.getGroupIndexes().isEmpty();
     }
 

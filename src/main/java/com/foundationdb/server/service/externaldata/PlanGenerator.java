@@ -18,7 +18,7 @@
 package com.foundationdb.server.service.externaldata;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -31,9 +31,9 @@ import java.util.Map;
 public class PlanGenerator
 {
     private Schema schema;
-    private Map<UserTable,Operator> scanPlans = new HashMap<>();
-    private Map<UserTable,Operator> branchPlans = new HashMap<>();
-    private Map<UserTable,Operator> ancestorPlans = new HashMap<>();
+    private Map<Table,Operator> scanPlans = new HashMap<>();
+    private Map<Table,Operator> branchPlans = new HashMap<>();
+    private Map<Table,Operator> ancestorPlans = new HashMap<>();
 
     public PlanGenerator(AkibanInformationSchema ais) {
         this.schema = SchemaCache.globalSchema(ais);
@@ -45,7 +45,7 @@ public class PlanGenerator
 
     // TODO: Can narrow synchronization to plans and schema.
 
-    public synchronized Operator generateScanPlan(UserTable table) {
+    public synchronized Operator generateScanPlan(Table table) {
         Operator plan = scanPlans.get(table);
         if (plan != null) return plan;
 
@@ -55,7 +55,7 @@ public class PlanGenerator
         return plan;
     }
 
-    public synchronized Operator generateBranchPlan(UserTable table) {
+    public synchronized Operator generateBranchPlan(Table table) {
         Operator plan = branchPlans.get(table);
         if (plan != null) return plan;
         
@@ -65,12 +65,12 @@ public class PlanGenerator
         return plan;
     }
 
-    public Operator generateBranchPlan(UserTable table, Operator scan, RowType scanType) {
+    public Operator generateBranchPlan(Table table, Operator scan, RowType scanType) {
         // No caching possible.
         return com.foundationdb.sql.optimizer.rule.PlanGenerator.generateBranchPlan(table, scan, scanType);
     }
     
-    public Operator generateAncestorPlan (UserTable table) {
+    public Operator generateAncestorPlan (Table table) {
         Operator plan = ancestorPlans.get(table);
         if (plan != null) return plan;
         

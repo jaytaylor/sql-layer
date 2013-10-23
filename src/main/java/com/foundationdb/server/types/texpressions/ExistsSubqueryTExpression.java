@@ -22,7 +22,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueTarget;
 
 public class ExistsSubqueryTExpression extends SubqueryTExpression
 {
@@ -36,7 +36,7 @@ public class ExistsSubqueryTExpression extends SubqueryTExpression
         }
 
         @Override
-        protected void doEval(PValueTarget out)
+        protected void doEval(ValueTarget out)
         {   
             out.putBool(next() != null);
         }

@@ -25,7 +25,7 @@ class ColumnPositionDense implements AISValidation {
 
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        for (Table table : ais.getUserTables().values()) {
+        for (Table table : ais.getTables().values()) {
             checkTable (table, output);
         }
     }

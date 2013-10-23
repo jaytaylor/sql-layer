@@ -23,7 +23,7 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Sequence;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
 
 import java.util.ArrayList;
@@ -40,7 +40,7 @@ public class AISDumper {
         WriteSelector selector = new SingleSchemaSelector(schema);
         AkibanInformationSchema clone = AISCloner.clone(ais, selector);
         Map<Sequence,Column> identityColumns = new HashMap<>();
-        for(UserTable table : clone.getUserTables().values()) {
+        for(Table table : clone.getTables().values()) {
             table.setTableId(-1);
             table.setOrdinal(null);
             table.setVersion(null);

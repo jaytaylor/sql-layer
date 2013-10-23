@@ -24,7 +24,7 @@ import com.foundationdb.sql.parser.ResultColumn;
 import com.foundationdb.sql.parser.StatementNode;
 
 import com.foundationdb.ais.model.Column;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.server.error.NoSuchColumnException;
 import com.foundationdb.server.error.NoSuchTableException;
@@ -45,7 +45,7 @@ import java.util.*;
 /** COPY ... FROM */
 public class PostgresCopyInStatement extends PostgresBaseStatement
 {
-    private UserTable toTable;
+    private Table toTable;
     private List<Column> toColumns;
     private File fromFile;
     private CopyStatementNode.Format format;
@@ -57,7 +57,6 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresCopyInStatement.class);
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresCopyInStatement: execute shared");
-    private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresCopyInStatement: acquire shared lock");
 
     protected PostgresCopyInStatement() {
     }
@@ -88,7 +87,7 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
         String tableName = copyStmt.getTableName().getTableName();
         if (schemaName == null)
             schemaName = server.getDefaultSchemaName();
-        toTable = server.getAIS().getUserTable(schemaName, tableName);
+        toTable = server.getAIS().getTable(schemaName, tableName);
         if (toTable == null)
             throw new NoSuchTableException(schemaName, tableName, 
                                            copyStmt.getTableName());
@@ -141,7 +140,6 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
         ExternalDataService externalData = server.getExternalDataService();
         InputStream istr;
         long nrows = 0;
-        boolean lockSuccess = false;
         if (fromFile != null)
             istr = new FileInputStream(fromFile);
         else
@@ -150,8 +148,7 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
             istr = new PostgresCopyInputStream(server.getMessenger(), 
                                                toColumns.size());
         try {
-            lock(context, DXLFunction.UNSPECIFIED_DML_WRITE);
-            lockSuccess = true;
+            preExecute(context, DXLFunction.UNSPECIFIED_DML_WRITE);
             switch (format) {
             case CSV:
                 nrows = externalData.loadTableFromCsv(session, istr, csvFormat, skipRows,
@@ -168,7 +165,7 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
             }
         }
         finally {
-            unlock(context, DXLFunction.UNSPECIFIED_DML_WRITE, lockSuccess);
+            postExecute(context, DXLFunction.UNSPECIFIED_DML_WRITE);
             istr.close();
         }
         {        
@@ -210,12 +207,6 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
     protected InOutTap executeTap()
     {
         return EXECUTE_TAP;
-    }
-
-    @Override
-    protected InOutTap acquireLockTap()
-    {
-        return ACQUIRE_LOCK_TAP;
     }
 
     @Override

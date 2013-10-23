@@ -21,9 +21,9 @@ import com.foundationdb.server.types.TAggregator;
 import com.foundationdb.server.types.TFixedTypeAggregator;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 
 public abstract class MBit extends TFixedTypeAggregator {
     
@@ -57,7 +57,7 @@ public abstract class MBit extends TFixedTypeAggregator {
     abstract long process(long i0, long i1);
 
     @Override
-    public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, Object o) {
+    public void input(TInstance instance, ValueSource source, TInstance stateType, Value state, Object o) {
         if (!source.isNull()) {
             long incoming = source.getInt64();
             if (!state.hasAnyValue()) {
@@ -71,7 +71,7 @@ public abstract class MBit extends TFixedTypeAggregator {
     }
 
     @Override
-    public void emptyValue(PValueTarget state) {
+    public void emptyValue(ValueTarget state) {
         state.putNull();
     }
 

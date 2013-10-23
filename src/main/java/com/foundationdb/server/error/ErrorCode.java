@@ -270,6 +270,8 @@ public enum ErrorCode {
     PROCEDURE_CALLED_AS_FUNCTION ("42", "51B", Importance.DEBUG, ProcedureCalledAsFunctionException.class),
     NO_SUCH_CURSOR          ("42", "51C", Importance.DEBUG, NoSuchCursorException.class),
     NO_SUCH_PREPARED_STATEMENT ("42", "51D", Importance.DEBUG, NoSuchPreparedStatementException.class),
+    SET_WRONG_NUM_COLUMNS   ("42", "51E", Importance.DEBUG, SetWrongNumColumns.class),
+    SET_WRONG_TYPE_COLUMNS  ("42", "51F", Importance.DEBUG, SetWrongTypeColumns.class),
 
     // Class 42/600 - JSON interface errors
     KEY_COLUMN_MISMATCH     ("42", "600", Importance.DEBUG, KeyColumnMismatchException.class),
@@ -376,6 +378,7 @@ public enum ErrorCode {
     COLUMN_NOT_GENERATED    ("50", "027", Importance.DEBUG, ColumnNotGeneratedException.class),
     COLUMN_ALREADY_GENERATED ("50", "028", Importance.DEBUG, ColumnAlreadyGeneratedException.class),
     DROP_SEQUENCE_NOT_ALLOWED ("50", "029", Importance.DEBUG, DropSequenceNotAllowedException.class),
+    JOIN_TO_SELF            ("50", "030", Importance.DEBUG, JoinToSelfException.class),
 
     // Class 51 - Internal problems created by user configuration
     STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),

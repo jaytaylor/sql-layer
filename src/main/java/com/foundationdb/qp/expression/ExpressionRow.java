@@ -25,7 +25,7 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 
@@ -57,7 +57,7 @@ public class ExpressionRow extends AbstractRow
     }
 
     @Override
-    public PValueSource pvalue(int i) {
+    public ValueSource value(int i) {
         TEvaluatableExpression eval = pEvaluations.get(i);
         eval.evaluate();
         return eval.resultValue();
@@ -66,19 +66,6 @@ public class ExpressionRow extends AbstractRow
     @Override
     public HKey hKey() {
         throw new UnsupportedOperationException();        
-    }
-
-    @Override
-    public void release() {
-    }
-
-    @Override
-    public boolean isShared() {
-        return false;
-    }
-
-    @Override
-    public void acquire() {
     }
 
     /* Object */

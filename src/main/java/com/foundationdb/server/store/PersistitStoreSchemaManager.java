@@ -21,14 +21,13 @@ import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Columnar;
 import com.foundationdb.ais.model.DefaultNameGenerator;
-import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.SynchronizedNameGenerator;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.ais.model.validation.AISValidations;
@@ -39,7 +38,7 @@ import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.memoryadapter.MemoryGroupCursor;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
-import com.foundationdb.qp.row.PValuesRow;
+import com.foundationdb.qp.row.ValuesRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.PersistitAccumulatorTableStatusCache;
@@ -80,7 +79,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.foundationdb.qp.persistitadapter.PersistitAdapter.wrapPersistitException;
+import static com.foundationdb.qp.storeadapter.PersistitAdapter.wrapPersistitException;
 import static com.foundationdb.server.service.transaction.TransactionService.Callback;
 import static com.foundationdb.server.service.transaction.TransactionService.CallbackType;
 import static com.foundationdb.server.service.tree.TreeService.SCHEMA_TREE_NAME;
@@ -355,7 +354,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
 
         this.nameGenerator = SynchronizedNameGenerator.wrap(new DefaultNameGenerator(newAIS));
         this.delayedTreeIDGenerator = new AtomicLong();
-        for(UserTable table : newAIS.getUserTables().values()) {
+        for(Table table : newAIS.getTables().values()) {
             // Note: table.getVersion may be null (pre-1.4.3 volumes)
             tableVersionMap.put(table.getTableId(), table.getVersion());
         }
@@ -468,7 +467,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
                 SCHEMA_TREE_NAME
         );
         for(Map.Entry<TableName,MemoryTableFactory> entry : memoryTableFactories.entrySet()) {
-            UserTable table = newAIS.getUserTable(entry.getKey());
+            Table table = newAIS.getTable(entry.getKey());
             if(table != null) {
                 table.setMemoryTableFactory(entry.getValue());
             }
@@ -508,7 +507,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
 
         reader.loadAIS();
 
-        for(UserTable table : newAIS.getUserTables().values()) {
+        for(Table table : newAIS.getTables().values()) {
             // nameGenerator is only needed to generate hidden PK, which shouldn't happen here
             table.endTable(null);
         }
@@ -549,7 +548,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
             selector = new ProtobufWriter.SingleSchemaSelector(schema) {
                 @Override
                 public Columnar getSelected(Columnar columnar) {
-                    if(columnar.isTable() && ((UserTable)columnar).hasMemoryTableFactory()) {
+                    if(columnar.isTable() && ((Table)columnar).hasMemoryTableFactory()) {
                         return null;
                     }
                     return columnar;
@@ -585,7 +584,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         final ProtobufWriter.WriteSelector selector = new ProtobufWriter.TableFilterSelector() {
             @Override
             public Columnar getSelected(Columnar columnar) {
-                if(columnar.isAISTable() && ((UserTable)columnar).hasMemoryTableFactory()) {
+                if(columnar.isAISTable() && ((Table)columnar).hasMemoryTableFactory()) {
                     return columnar;
                 }
                 return null;
@@ -978,7 +977,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
                     return null;
                 }
                 AISAndTimestamp latest = latestAISCache;
-                return new PValuesRow(rowType,
+                return new ValuesRow(rowType,
                                      aisCacheMissCount.get(),
                                      delayedTreeCount.get(),
                                      (latest == CACHE_SENTINEL) ? null : latest.sAIS.ais.getGeneration(),
@@ -1010,7 +1009,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     private void registerSummaryTable() {
         SchemaManagerSummaryFactory factory = new SchemaManagerSummaryFactory();
         NewAISBuilder builder = AISBBasedBuilder.create();
-        builder.userTable(factory.getName())
+        builder.table(factory.getName())
                 .colBigInt("cache_misses", false)
                 .colBigInt("delayed_tree_count", false)
                 .colBigInt("latest_generation", true)
@@ -1021,7 +1020,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
                 .colBigInt("task_queue_size", false);
 
         AkibanInformationSchema ais = builder.ais();
-        UserTable table = ais.getUserTable(factory.getName());
+        Table table = ais.getTable(factory.getName());
         registerMemoryInformationSchemaTable(table, factory);
     }
 
@@ -1045,7 +1044,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     }
 
     @Override
-    protected void clearTableStatus(Session session, UserTable table) {
+    protected void clearTableStatus(Session session, Table table) {
         treeService.getTableStatusCache().clearTableStatus(session, table);
     }
 
@@ -1055,7 +1054,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     }
 
     /**
-     * Find UserTables without ordinals and look them up in the old Accumulator based location.
+     * Find Tables without ordinals and look them up in the old Accumulator based location.
      * @return count of tables whose ordinal was updated
      */
     private int migrateAccumulatorOrdinals(AkibanInformationSchema newAIS) {
@@ -1064,7 +1063,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         }
         PersistitAccumulatorTableStatusCache tsc = (PersistitAccumulatorTableStatusCache)treeService.getTableStatusCache();
         int recoveredCount = 0;
-        for(UserTable table : newAIS.getUserTables().values()) {
+        for(Table table : newAIS.getTables().values()) {
             if(!table.hasMemoryTableFactory() && (table.getOrdinal() == null)) {
                 int ordinal = tsc.recoverAccumulatorOrdinal(table.rowDef().getTableStatus());
                 table.setOrdinal(ordinal);

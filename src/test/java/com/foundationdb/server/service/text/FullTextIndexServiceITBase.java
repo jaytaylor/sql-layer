@@ -58,16 +58,7 @@ public class FullTextIndexServiceITBase extends ITBase
         fullTextImpl = (FullTextIndexServiceImpl)serviceManager().getServiceByClass(FullTextIndexService.class);
     }
 
-    protected void waitPopulate() {
-        fullTextImpl.waitPopulateCycle();
-    }
-
     protected void waitUpdate() {
         fullTextImpl.waitUpdateCycle();
-    }
-
-    protected void waitPopulateAndUpdate() {
-        waitPopulate();
-        waitUpdate();
     }
 }

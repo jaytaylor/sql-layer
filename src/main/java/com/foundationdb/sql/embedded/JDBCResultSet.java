@@ -32,7 +32,7 @@ import com.foundationdb.direct.DirectResultSet;
 import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.sql.server.ServerJavaValues;
 import com.foundationdb.sql.server.ServerQueryContext;
 
@@ -68,7 +68,7 @@ public class JDBCResultSet implements DirectResultSet
         }
 
         @Override
-        protected PValueSource getPValue(int index) {
+        protected ValueSource getValue(int index) {
             if (row == null) {
                 if (cursor == null)
                     throw JDBCException.wrapped("Already closed.");
@@ -78,7 +78,7 @@ public class JDBCResultSet implements DirectResultSet
             if ((index < 0) || (index >= row.rowType().nFields()))
                 throw JDBCException.wrapped("Column index out of bounds");
 
-            return row.pvalue(index);
+            return row.value(index);
         }
 
         @Override
@@ -96,7 +96,7 @@ public class JDBCResultSet implements DirectResultSet
         }
 
         @Override
-        protected void setPValue(int index, PValueSource source) {
+        protected void setValue(int index, ValueSource source) {
             throw new UnsupportedOperationException("Row update not supported");
         }
     }

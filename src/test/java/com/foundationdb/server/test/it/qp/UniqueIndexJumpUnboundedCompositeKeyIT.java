@@ -20,7 +20,6 @@ package com.foundationdb.server.test.it.qp;
 import org.junit.Ignore;
 import java.util.Arrays;
 import java.lang.Long;
-import com.foundationdb.util.ShareHolder;
 import com.foundationdb.qp.operator.Operator;
 import org.junit.Test;
 import com.foundationdb.qp.operator.API;
@@ -88,7 +87,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        tRowType = schema.userTableRowType(userTable(t));
+        tRowType = schema.tableRowType(table(t));
         idxRowType = indexType(t, "a", "b", "c");
         db = new NewRow[] {
             createNewRow(t, 0L, 1010L, 1L, 11L, 110L),
@@ -2839,13 +2838,10 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
         Row row;
         List<Row> actualRows = new ArrayList<>();
-        List<ShareHolder<Row>> rowHolders = new ArrayList<>();
         
         while ((row = cursor.next()) != null)
         {
-            // Prevent sharing of rows since verification accumulates them
             actualRows.add(row);
-            rowHolders.add(new ShareHolder<>(row));
         }
         cursor.closeTopLevel();
 

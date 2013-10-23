@@ -22,6 +22,7 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.CompoundExplainer;
+import com.foundationdb.server.types.value.ValueRecord;
 
 public class IndexBound
 {
@@ -30,7 +31,7 @@ public class IndexBound
         return String.valueOf(unboundExpressions);
     }
 
-    public BoundExpressions boundExpressions(QueryContext context, QueryBindings bindings)
+    public ValueRecord boundExpressions(QueryContext context, QueryBindings bindings)
     {
         return unboundExpressions.get(context, bindings);
     }
@@ -44,7 +45,7 @@ public class IndexBound
         return unboundExpressions.getExplainer(context);
     }
 
-    public IndexBound(BoundExpressions row, ColumnSelector columnSelector)
+    public IndexBound(ValueRecord row, ColumnSelector columnSelector)
     {
         this(new PreBoundExpressions(row), columnSelector);
     }
@@ -65,7 +66,7 @@ public class IndexBound
     private static class PreBoundExpressions implements UnboundExpressions {
 
         @Override
-        public BoundExpressions get(QueryContext context, QueryBindings bindings) {
+        public ValueRecord get(QueryContext context, QueryBindings bindings) {
             return expressions;
         }
 
@@ -79,10 +80,10 @@ public class IndexBound
             return String.valueOf(expressions);
         }
 
-        public PreBoundExpressions(BoundExpressions expressions) {
+        public PreBoundExpressions(ValueRecord expressions) {
             this.expressions = expressions;
         }
 
-        private final BoundExpressions expressions;
+        private final ValueRecord expressions;
     }
 }

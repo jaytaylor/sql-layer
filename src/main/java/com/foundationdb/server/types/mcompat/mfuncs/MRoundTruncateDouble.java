@@ -26,8 +26,8 @@ import com.foundationdb.server.types.TPreptimeContext;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.common.types.DoubleAttribute;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 
@@ -61,7 +61,7 @@ public class MRoundTruncateDouble extends TScalarBase {
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
         double input = inputs.get(0).getDouble();
         int scale = signatureStrategy.roundToScale(inputs);
         double result = roundingStrategy.apply(input, scale);
@@ -73,7 +73,7 @@ public class MRoundTruncateDouble extends TScalarBase {
         return TOverloadResult.custom(new TCustomOverloadResult() {
             @Override
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                PValueSource incomingScale = signatureStrategy.getScaleOperand(inputs);
+                ValueSource incomingScale = signatureStrategy.getScaleOperand(inputs);
                 int resultScale = (incomingScale == null)
                         ? inputs.get(0).instance().attribute(DoubleAttribute.SCALE)
                         : incomingScale.getInt32();

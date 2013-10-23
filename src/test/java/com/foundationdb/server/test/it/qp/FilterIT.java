@@ -19,13 +19,12 @@ package com.foundationdb.server.test.it.qp;
 
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.AisRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -83,7 +82,7 @@ public class FilterIT extends OperatorITBase
     {
         Operator plan = filter_Default(groupScan_Default(coi), removeDescendentTypes(customerRowType));
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 1L, "northbridge"),
             row(customerRowType, 2L, "foundation")
         };
@@ -95,7 +94,7 @@ public class FilterIT extends OperatorITBase
     {
         Operator plan = filter_Default(groupScan_Default(coi), removeDescendentTypes(orderRowType));
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 1L, "northbridge"),
             row(orderRowType, 11L, 1L, "ori"),
             row(orderRowType, 12L, 1L, "david"),
@@ -115,7 +114,7 @@ public class FilterIT extends OperatorITBase
     {
         Operator plan = filter_Default(groupScan_Default(coi), removeDescendentTypes(itemRowType));
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 1L, "northbridge"),
             row(orderRowType, 11L, 1L, "ori"),
             row(itemRowType, 111L, 11L),
@@ -143,7 +142,7 @@ public class FilterIT extends OperatorITBase
     {
         Operator plan = filter_Default(groupScan_Default(coi), removeDescendentTypes(addressRowType));
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 1L, "northbridge"),
             row(orderRowType, 11L, 1L, "ori"),
             row(itemRowType, 111L, 11L),
@@ -173,7 +172,7 @@ public class FilterIT extends OperatorITBase
     {
         Operator plan = filter_Default(groupScan_Default(coi), typeAndDescendents(customerRowType));
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 1L, "northbridge"),
             row(orderRowType, 11L, 1L, "ori"),
             row(itemRowType, 111L, 11L),
@@ -201,7 +200,7 @@ public class FilterIT extends OperatorITBase
     {
         Operator plan = filter_Default(groupScan_Default(coi), typeAndDescendents(itemRowType));
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(itemRowType, 111L, 11L),
             row(itemRowType, 112L, 11L),
             row(itemRowType, 121L, 12L),
@@ -222,7 +221,7 @@ public class FilterIT extends OperatorITBase
         keepTypes.addAll(typeAndDescendents(orderRowType));
         Operator plan = filter_Default(groupScan_Default(coi), keepTypes);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        RowBase[] expected = new RowBase[]{
+        Row[] expected = new Row[]{
             row(orderRowType, 11L, 1L, "ori"),
             row(itemRowType, 111L, 11L),
             row(itemRowType, 112L, 11L),
@@ -246,9 +245,9 @@ public class FilterIT extends OperatorITBase
     // No test for cursor lifecycle needed -- tested in several other operator ITs, including
     // GroupScanIT.testCursor.
 
-    private Set<UserTableRowType> removeDescendentTypes(AisRowType type)
+    private Set<TableRowType> removeDescendentTypes(AisRowType type)
     {
-        Set<UserTableRowType> keepTypes = type.schema().userTableTypes();
+        Set<TableRowType> keepTypes = type.schema().userTableTypes();
         keepTypes.removeAll(Schema.descendentTypes(type, keepTypes));
         return keepTypes;
     }

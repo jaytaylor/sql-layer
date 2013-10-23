@@ -19,14 +19,14 @@ package com.foundationdb.qp.operator;
 
 import com.foundationdb.ais.model.HKeyColumn;
 import com.foundationdb.ais.model.HKeySegment;
-import com.foundationdb.qp.persistitadapter.PersistitHKey;
+import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.row.HKeyRow;
 import com.foundationdb.qp.row.ProjectedRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.HKeyRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.util.HKeyCache;
-import com.foundationdb.server.PersistitKeyPValueTarget;
+import com.foundationdb.server.PersistitKeyValueTarget;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
@@ -76,7 +76,7 @@ class HKeyRow_Default extends Operator
     @Override
     public String toString() {
         return String.format("hkey for %s (%s)", 
-                             rowType.hKey().userTable().getName(), 
+                             rowType.hKey().table().getName(), 
                              expressions.toString());
     }
 
@@ -196,7 +196,7 @@ class HKeyRow_Default extends Operator
         // For use by this class
 
         private HKeyRow buildHKeyRow() {
-            StoreAdapter store = adapter(rowType.hKey().userTable());
+            StoreAdapter store = adapter(rowType.hKey().table());
             PersistitHKey hkey = store.newHKey(rowType.hKey());
             target.attach(hkey.key());
             int index = 0;
@@ -224,6 +224,6 @@ class HKeyRow_Default extends Operator
         // Object state
         private boolean idle = true;
         private List<TEvaluatableExpression> evalExprs = null;
-        private final PersistitKeyPValueTarget target = new PersistitKeyPValueTarget();
+        private final PersistitKeyValueTarget target = new PersistitKeyValueTarget();
     }
 }

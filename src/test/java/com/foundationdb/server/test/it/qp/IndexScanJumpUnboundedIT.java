@@ -58,7 +58,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        tRowType = schema.userTableRowType(userTable(t));
+        tRowType = schema.tableRowType(table(t));
         idxRowType = indexType(t, "a", "b", "c", "id");
         db = new NewRow[] {
             createNewRow(t, 1000L, null, null, null),
@@ -338,12 +338,12 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
             TestRow target = indexRow(idOrdering[start]);
             // Add nudge to last field
             OverlayingRow nudgedTarget = new OverlayingRow(target);
-            nudgedTarget.overlay(3, ((long)target.pvalue(3).getInt32() + nudge));
+            nudgedTarget.overlay(3, ((long)target.value(3).getInt32() + nudge));
             cursor.jump(nudgedTarget, INDEX_ROW_SELECTOR);
             Row row;
             List<Long> actualIds = new ArrayList<>();
             while ((row = cursor.next()) != null) {
-                actualIds.add((long)row.pvalue(3).getInt32());
+                actualIds.add((long)row.value(3).getInt32());
             }
             List<Long> expectedIds = new ArrayList<>();
             for (int i = start; i < idOrdering.length; i++) {

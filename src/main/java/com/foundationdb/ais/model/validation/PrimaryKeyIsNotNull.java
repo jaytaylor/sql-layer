@@ -20,7 +20,7 @@ package com.foundationdb.ais.model.validation;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.PrimaryKey;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.error.PrimaryKeyNullColumnException;
 
 /**
@@ -34,7 +34,7 @@ class PrimaryKeyIsNotNull implements AISValidation {
 
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        for (UserTable table : ais.getUserTables().values()) {
+        for (Table table : ais.getTables().values()) {
             PrimaryKey index = table.getPrimaryKeyIncludingInternal();
             if(index == null) {
                 continue; // Checked by TableHasPrimaryKey

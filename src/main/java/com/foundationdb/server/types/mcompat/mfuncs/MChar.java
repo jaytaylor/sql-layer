@@ -27,8 +27,8 @@ import com.foundationdb.server.types.TPreptimeContext;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 
@@ -48,7 +48,7 @@ public class MChar extends TScalarBase
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
     {
         // length of the varbin string
         int length = 0;
@@ -57,7 +57,7 @@ public class MChar extends TScalarBase
         int lengths[] = new int[inputs.size()];
         
         int n = 0;
-        for(PValueSource num : inputs)
+        for(ValueSource num : inputs)
             length += lengths[n++] = byteLength(num.getInt64());
 
         byte ret[] = new byte[length];

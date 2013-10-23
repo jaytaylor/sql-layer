@@ -34,7 +34,7 @@ import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.parser.SQLParserException;
 import com.foundationdb.sql.parser.StatementNode;
 
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.server.api.DDLFunctions;
@@ -99,7 +99,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
     }
     
     @Override
-    public StoreAdapter getStore(final UserTable table) {
+    public StoreAdapter getStore(final Table table) {
         if (table.hasMemoryTableFactory()) {
             return adapters.get(StoreAdapter.AdapterType.MEMORY_ADAPTER);
         }
@@ -200,21 +200,11 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
     }
 
     protected void updateAIS(EmbeddedQueryContext context) {
-        boolean locked = false;
-        try {
-            context.lock(DXLFunction.UNSPECIFIED_DDL_READ);
-            locked = true;
-            DDLFunctions ddl = reqs.dxl().ddlFunctions();
-            AkibanInformationSchema newAIS = ddl.getAIS(session);
-            if ((ais != null) && (ais.getGeneration() == newAIS.getGeneration()))
-                return;             // Unchanged.
-            ais = newAIS;
-        }
-        finally {
-            if (locked) {
-                context.unlock(DXLFunction.UNSPECIFIED_DDL_READ);
-            }
-        }
+        DDLFunctions ddl = reqs.dxl().ddlFunctions();
+        AkibanInformationSchema newAIS = ddl.getAIS(session);
+        if ((ais != null) && (ais.getGeneration() == newAIS.getGeneration()))
+            return;             // Unchanged.
+        ais = newAIS;
         rebuildCompiler();
     }
 

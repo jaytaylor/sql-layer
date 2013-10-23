@@ -22,8 +22,8 @@ import static com.foundationdb.server.types.mcompat.mcasts.MNumericCastBase.*;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.Constantness;
 
 public class Cast_From_Time {
@@ -81,7 +81,7 @@ public class Cast_From_Time {
     {
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             // direct cast TIME --> DATETIME results in a truncation to zero
             context.reportTruncate(String.valueOf(source.getInt32()), "0000-00-00 00:00:00");
@@ -93,7 +93,7 @@ public class Cast_From_Time {
     {
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             // direct cast TIME --> DATE results in a truncation to zero
             context.reportTruncate(String.valueOf(source.getInt32()), "0000-00-00");
@@ -105,7 +105,7 @@ public class Cast_From_Time {
     {
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             // direct cast TIME --> TIMESTAMP results in a truncation to zero
             context.reportTruncate(String.valueOf(source.getInt32()), "0000-00-00 00:00:00");

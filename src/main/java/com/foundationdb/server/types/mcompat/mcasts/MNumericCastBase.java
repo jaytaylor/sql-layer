@@ -20,9 +20,9 @@ package com.foundationdb.server.types.mcompat.mcasts;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.types.*;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimalWrapper;
-import com.foundationdb.server.types.pvalue.PUnderlying;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.UnderlyingType;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.Constantness;
 import com.google.common.primitives.UnsignedLongs;
 
@@ -32,12 +32,12 @@ public class MNumericCastBase
     {
         public FromDoubleToInt8(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.DOUBLE),
-                  checkType(target, PUnderlying.INT_8), c);
+            super(checkType(source, UnderlyingType.DOUBLE),
+                  checkType(target, UnderlyingType.INT_8), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt8((byte)CastUtils.round(Byte.MAX_VALUE, Byte.MIN_VALUE, 
                                                  source.getDouble(), context));
@@ -49,12 +49,12 @@ public class MNumericCastBase
     {
         public FromDoubleToUnsignedInt8(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.DOUBLE),
-                  checkType(target, PUnderlying.INT_8), c);
+            super(checkType(source, UnderlyingType.DOUBLE),
+                  checkType(target, UnderlyingType.INT_8), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt16((short)CastUtils.round(Short.MAX_VALUE, 0, 
                                                  source.getDouble(), context));
@@ -65,12 +65,12 @@ public class MNumericCastBase
     {
         public FromDoubleToInt16(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.DOUBLE),
-                  checkType(target, PUnderlying.INT_16), c);
+            super(checkType(source, UnderlyingType.DOUBLE),
+                  checkType(target, UnderlyingType.INT_16), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt16((short)CastUtils.round(Short.MAX_VALUE, Short.MIN_VALUE, 
                                                         source.getDouble(), context));
@@ -81,12 +81,12 @@ public class MNumericCastBase
     {
         public FromDoubleToUnsignedInt16(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.DOUBLE),
-                  checkType(source, PUnderlying.INT_32), c);
+            super(checkType(source, UnderlyingType.DOUBLE),
+                  checkType(source, UnderlyingType.INT_32), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt32((int)CastUtils.round(Integer.MAX_VALUE, 0,
                                                  source.getDouble(), context));
@@ -97,12 +97,12 @@ public class MNumericCastBase
     {
         public FromDoubleToInt32(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.DOUBLE),
-                  checkType(source, PUnderlying.INT_32), c);
+            super(checkType(source, UnderlyingType.DOUBLE),
+                  checkType(source, UnderlyingType.INT_32), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt32((int)CastUtils.round(Integer.MAX_VALUE, Integer.MIN_VALUE,
                                                  source.getDouble(), context));
@@ -113,12 +113,12 @@ public class MNumericCastBase
     {
         public FromDoubleToUnsignedInt32(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.DOUBLE),
-                  checkType(target, PUnderlying.INT_64), c);
+            super(checkType(source, UnderlyingType.DOUBLE),
+                  checkType(target, UnderlyingType.INT_64), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt64((long)CastUtils.round(Long.MAX_VALUE, 0,
                                                   source.getDouble(), context));
@@ -129,12 +129,12 @@ public class MNumericCastBase
     {
         public FromDoubleToInt64(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.DOUBLE),
-                  checkType(target, PUnderlying.INT_64), c);
+            super(checkType(source, UnderlyingType.DOUBLE),
+                  checkType(target, UnderlyingType.INT_64), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt64((long)CastUtils.round(Long.MAX_VALUE, Long.MIN_VALUE,
                                                   source.getDouble(), context));
@@ -145,12 +145,12 @@ public class MNumericCastBase
     {
         public FromDoubleToDecimal(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.DOUBLE),
-                  checkType(source, PUnderlying.BYTES), c);
+            super(checkType(source, UnderlyingType.DOUBLE),
+                  checkType(source, UnderlyingType.BYTES), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             // TODO: determine the target precision and scale then correctly round 
             // the source to that type
@@ -162,12 +162,12 @@ public class MNumericCastBase
     {
         public FromInt8ToUnsignedInt8(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_8),
-                  checkType(target, PUnderlying.INT_16), c);
+            super(checkType(source, UnderlyingType.INT_8),
+                  checkType(target, UnderlyingType.INT_16), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, 0, source.getInt8(), context));
         }
@@ -177,12 +177,12 @@ public class MNumericCastBase
     {
         public FromInt8ToInt16(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_8),
-                  checkType(target, PUnderlying.INT_16), c);
+            super(checkType(source, UnderlyingType.INT_8),
+                  checkType(target, UnderlyingType.INT_16), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt16(source.getInt8());
         }
@@ -192,12 +192,12 @@ public class MNumericCastBase
     {
         public FromInt8ToUnsignedInt16(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_8),
-                  checkType(target, PUnderlying.INT_32), c);
+            super(checkType(source, UnderlyingType.INT_8),
+                  checkType(target, UnderlyingType.INT_32), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, 0, source.getInt8(), context));
         }
@@ -207,12 +207,12 @@ public class MNumericCastBase
     {
         public FromInt8ToInt32(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_8),
-                  checkType(target, PUnderlying.INT_32), c);
+            super(checkType(source, UnderlyingType.INT_8),
+                  checkType(target, UnderlyingType.INT_32), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt32(source.getInt8());
         }
@@ -222,12 +222,12 @@ public class MNumericCastBase
     {
         public FromInt8ToUnsignedInt32(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_8),
-                  checkType(target, PUnderlying.INT_64), c);
+            super(checkType(source, UnderlyingType.INT_8),
+                  checkType(target, UnderlyingType.INT_64), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt64(CastUtils.getInRange(Long.MAX_VALUE, 0, source.getInt8(), context));
         }
@@ -237,12 +237,12 @@ public class MNumericCastBase
     {
         public FromInt8ToInt64(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_8),
-                  checkType(target, PUnderlying.INT_64), c);
+            super(checkType(source, UnderlyingType.INT_8),
+                  checkType(target, UnderlyingType.INT_64), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt64(source.getInt8());
         }
@@ -252,12 +252,12 @@ public class MNumericCastBase
     {
         public FromInt8ToDouble(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_8),
-                  checkType(target, PUnderlying.DOUBLE), c);
+            super(checkType(source, UnderlyingType.INT_8),
+                  checkType(target, UnderlyingType.DOUBLE), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putDouble(source.getInt8());
         }
@@ -267,12 +267,12 @@ public class MNumericCastBase
     {
         public FromInt8ToDecimal(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_8),
-                  checkType(target, PUnderlying.BYTES), c);
+            super(checkType(source, UnderlyingType.INT_8),
+                  checkType(target, UnderlyingType.BYTES), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putObject(new MBigDecimalWrapper(source.getInt8()));
         }
@@ -282,12 +282,12 @@ public class MNumericCastBase
     {
         public FromInt16ToInt8(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_16),
-                  checkType(target, PUnderlying.INT_8), c);
+            super(checkType(source, UnderlyingType.INT_16),
+                  checkType(target, UnderlyingType.INT_8), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt8((byte)CastUtils.getInRange(Byte.MAX_VALUE, Byte.MIN_VALUE, source.getInt16(), context));
         }
@@ -297,12 +297,12 @@ public class MNumericCastBase
     {
         public FromInt16ToUnsignedInt8(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_16),
-                  checkType(target, PUnderlying.INT_16), c);
+            super(checkType(source, UnderlyingType.INT_16),
+                  checkType(target, UnderlyingType.INT_16), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, 0, source.getInt16(), context));
         }
@@ -312,12 +312,12 @@ public class MNumericCastBase
     {
         public FromInt16ToInt16(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_16),
-                  checkType(target, PUnderlying.INT_16), c);
+            super(checkType(source, UnderlyingType.INT_16),
+                  checkType(target, UnderlyingType.INT_16), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt16(source.getInt16());
         }    
@@ -327,12 +327,12 @@ public class MNumericCastBase
     {
         public FromInt16ToUnsignedInt16(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_16),
-                  checkType(target, PUnderlying.INT_32), c);
+            super(checkType(source, UnderlyingType.INT_16),
+                  checkType(target, UnderlyingType.INT_32), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, 0, source.getInt16(), context));
         }
@@ -342,12 +342,12 @@ public class MNumericCastBase
     {
         public FromInt16ToInt32(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_16),
-                  checkType(target, PUnderlying.INT_32), c);
+            super(checkType(source, UnderlyingType.INT_16),
+                  checkType(target, UnderlyingType.INT_32), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt32(source.getInt16());
         }
@@ -357,12 +357,12 @@ public class MNumericCastBase
     {
         public FromInt16ToUnsignedInt32(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_16),
-                  checkType(target, PUnderlying.INT_64), c);
+            super(checkType(source, UnderlyingType.INT_16),
+                  checkType(target, UnderlyingType.INT_64), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt64(CastUtils.getInRange(Long.MAX_VALUE, 0, source.getInt16(), context));
         }
@@ -372,12 +372,12 @@ public class MNumericCastBase
     {
         public FromInt16ToInt64(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_16),
-                  checkType(target, PUnderlying.INT_64), c);
+            super(checkType(source, UnderlyingType.INT_16),
+                  checkType(target, UnderlyingType.INT_64), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt64(source.getInt16());
         }
@@ -387,12 +387,12 @@ public class MNumericCastBase
     {
         public FromInt16ToDouble(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_16),
-                  checkType(target, PUnderlying.DOUBLE), c);
+            super(checkType(source, UnderlyingType.INT_16),
+                  checkType(target, UnderlyingType.DOUBLE), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putDouble(source.getInt16());
         }
@@ -402,12 +402,12 @@ public class MNumericCastBase
     {
         public FromInt16ToDecimal(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_16),
-                  checkType(target, PUnderlying.BYTES), c);
+            super(checkType(source, UnderlyingType.INT_16),
+                  checkType(target, UnderlyingType.BYTES), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putObject(new MBigDecimalWrapper(source.getInt16()));
         }
@@ -417,12 +417,12 @@ public class MNumericCastBase
     {
         public FromInt32ToInt8(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_32),
-                  checkType(target, PUnderlying.INT_8), c);
+            super(checkType(source, UnderlyingType.INT_32),
+                  checkType(target, UnderlyingType.INT_8), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt8((byte)CastUtils.getInRange(Byte.MAX_VALUE, Byte.MIN_VALUE, source.getInt32(), context));
         }
@@ -432,12 +432,12 @@ public class MNumericCastBase
     {
         public FromInt32ToUnsignedInt8(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_32),
-                  checkType(target, PUnderlying.INT_16), c);
+            super(checkType(source, UnderlyingType.INT_32),
+                  checkType(target, UnderlyingType.INT_16), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, 0, source.getInt32(), context));
         }
@@ -447,12 +447,12 @@ public class MNumericCastBase
     {
         public FromInt32ToInt16(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_32),
-                  checkType(target, PUnderlying.INT_16), c);
+            super(checkType(source, UnderlyingType.INT_32),
+                  checkType(target, UnderlyingType.INT_16), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, Short.MIN_VALUE, source.getInt32(), context));
         }
@@ -462,12 +462,12 @@ public class MNumericCastBase
     {
         public FromInt32ToUnsignedInt16(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_32),
-                  checkType(target, PUnderlying.INT_32), c);
+            super(checkType(source, UnderlyingType.INT_32),
+                  checkType(target, UnderlyingType.INT_32), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, 0, source.getInt32(), context));
         }
@@ -477,12 +477,12 @@ public class MNumericCastBase
     {
         public FromInt32ToInt32(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_32),
-                  checkType(target, PUnderlying.INT_32), c);
+            super(checkType(source, UnderlyingType.INT_32),
+                  checkType(target, UnderlyingType.INT_32), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt32(source.getInt32());
         }
@@ -492,12 +492,12 @@ public class MNumericCastBase
     {
         public FromInt32ToUnsignedInt32(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_32),
-                  checkType(target, PUnderlying.INT_64), c);
+            super(checkType(source, UnderlyingType.INT_32),
+                  checkType(target, UnderlyingType.INT_64), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt64(CastUtils.getInRange(Long.MAX_VALUE, 0, source.getInt32(), context));
         }
@@ -507,12 +507,12 @@ public class MNumericCastBase
     {
         public FromInt32ToInt64(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_32),
-                  checkType(target, PUnderlying.INT_64), c);
+            super(checkType(source, UnderlyingType.INT_32),
+                  checkType(target, UnderlyingType.INT_64), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt64(source.getInt32());
         }
@@ -522,12 +522,12 @@ public class MNumericCastBase
     {
         public FromInt32ToDouble(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_32),
-                  checkType(target, PUnderlying.DOUBLE), c);
+            super(checkType(source, UnderlyingType.INT_32),
+                  checkType(target, UnderlyingType.DOUBLE), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putDouble(source.getInt32());
         }
@@ -537,12 +537,12 @@ public class MNumericCastBase
     {
         public FromInt32ToDecimal(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_32),
-                  checkType(target, PUnderlying.BYTES), c);
+            super(checkType(source, UnderlyingType.INT_32),
+                  checkType(target, UnderlyingType.BYTES), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putObject(new MBigDecimalWrapper(source.getInt32()));
         }
@@ -552,12 +552,12 @@ public class MNumericCastBase
     {
         public FromInt64ToInt8(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_64),
-                  checkType(target, PUnderlying.INT_8), c);
+            super(checkType(source, UnderlyingType.INT_64),
+                  checkType(target, UnderlyingType.INT_8), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt8((byte)CastUtils.getInRange(Byte.MAX_VALUE, Byte.MIN_VALUE, source.getInt64(), context));
         }
@@ -567,12 +567,12 @@ public class MNumericCastBase
     {
         public FromInt64ToUnsignedInt8(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_64),
-                  checkType(target, PUnderlying.INT_16), c);
+            super(checkType(source, UnderlyingType.INT_64),
+                  checkType(target, UnderlyingType.INT_16), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, 0, source.getInt64(), context));
         }
@@ -582,12 +582,12 @@ public class MNumericCastBase
     {
         public FromInt64ToInt16(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_64),
-                  checkType(target, PUnderlying.INT_16), c);
+            super(checkType(source, UnderlyingType.INT_64),
+                  checkType(target, UnderlyingType.INT_16), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, Short.MIN_VALUE, source.getInt64(), context));
         }
@@ -597,12 +597,12 @@ public class MNumericCastBase
     {
         public FromInt64ToUnsignedInt16(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_64),
-                  checkType(target, PUnderlying.INT_32), c);
+            super(checkType(source, UnderlyingType.INT_64),
+                  checkType(target, UnderlyingType.INT_32), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, 0, source.getInt64(), context));
         }
@@ -612,12 +612,12 @@ public class MNumericCastBase
     {
         public FromInt64ToInt32(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_64),
-                  checkType(target, PUnderlying.INT_32), c);
+            super(checkType(source, UnderlyingType.INT_64),
+                  checkType(target, UnderlyingType.INT_32), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, Integer.MIN_VALUE, source.getInt64(), context));
         }
@@ -627,12 +627,12 @@ public class MNumericCastBase
     {
         public FromInt64ToUnsignedInt32(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_64),
-                  checkType(target, PUnderlying.INT_64), c);
+            super(checkType(source, UnderlyingType.INT_64),
+                  checkType(target, UnderlyingType.INT_64), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt64(CastUtils.getInRange(Long.MAX_VALUE, 0, source.getInt64(), context));
         }
@@ -642,12 +642,12 @@ public class MNumericCastBase
     {
         public FromInt64ToInt64(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_64),
-                  checkType(target, PUnderlying.INT_64), c);
+            super(checkType(source, UnderlyingType.INT_64),
+                  checkType(target, UnderlyingType.INT_64), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putInt64(source.getInt64());
         }
@@ -657,12 +657,12 @@ public class MNumericCastBase
     {
         public FromInt64ToDouble(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_64),
-                  checkType(target, PUnderlying.DOUBLE), c);
+            super(checkType(source, UnderlyingType.INT_64),
+                  checkType(target, UnderlyingType.DOUBLE), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putDouble(source.getInt64());
         }
@@ -672,12 +672,12 @@ public class MNumericCastBase
     {
         public FromInt64ToDecimal(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_64),
-                    checkType(target, PUnderlying.BYTES), c);
+            super(checkType(source, UnderlyingType.INT_64),
+                    checkType(target, UnderlyingType.BYTES), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             target.putObject(new MBigDecimalWrapper(source.getInt64()));
         }
@@ -687,19 +687,19 @@ public class MNumericCastBase
     {
         public FromUInt64ToDecimal(TClass source, TClass target, boolean auto, Constantness c)
         {
-            super(checkType(source, PUnderlying.INT_64),
-                    checkType(target, PUnderlying.BYTES), c);
+            super(checkType(source, UnderlyingType.INT_64),
+                    checkType(target, UnderlyingType.BYTES), c);
         }
 
         @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target)
         {
             String asString = UnsignedLongs.toString(source.getInt64());
             target.putObject(new MBigDecimalWrapper(asString));
         }
     }
     
-    private static TClass checkType (TClass input, PUnderlying expected)
+    private static TClass checkType (TClass input, UnderlyingType expected)
     {
         if (input.underlyingType() != expected)
             throw new AkibanInternalException("Expected " + expected + " but got " + input.underlyingType());

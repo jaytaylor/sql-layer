@@ -54,7 +54,7 @@ public class DuplicateIndexTreeNameIT extends ITBase
         public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
             Map<String,Index> treeNameMap = new HashMap<>();
 
-            for(UserTable table : ais.getUserTables().values()) {
+            for(Table table : ais.getTables().values()) {
                 checkIndexes(output, treeNameMap, table.getIndexes());
             }
 

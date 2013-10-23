@@ -20,10 +20,10 @@ package com.foundationdb.server.test.it.qp;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.collation.AkCollator;
 import org.junit.Test;
@@ -53,13 +53,13 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        tRowType = schema.userTableRowType(userTable(t));
+        tRowType = schema.tableRowType(table(t));
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         group = group(t);
-        caseSensitiveCollator = tRowType.userTable().getColumn("cs").getCollator();
-        caseInsensitiveCollator = tRowType.userTable().getColumn("ci").getCollator();
+        caseSensitiveCollator = tRowType.table().getColumn("cs").getCollator();
+        caseInsensitiveCollator = tRowType.table().getColumn("ci").getCollator();
         db = new NewRow[]{
             createNewRow(t, 0L, "aa_cs", "aa_ci", 0),
             createNewRow(t, 1L, "bb_cs", "bb_ci", 0),
@@ -94,7 +94,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
                 projectRowType,
                 ordering,
                 SortOption.SUPPRESS_DUPLICATES);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(projectRowType, "AA_cs"),
             row(projectRowType, "Aa_cs"),
             row(projectRowType, "BB_cs"),
@@ -128,7 +128,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
                     SortOption.SUPPRESS_DUPLICATES),
                 projectRowType,
                 convertToUpper);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(projectRowType, "AA_CI"),
             row(projectRowType, "BB_CI"),
             row(projectRowType, "X"),
@@ -152,7 +152,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
                 projectRowType,
                 ordering,
                 SortOption.SUPPRESS_DUPLICATES);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(projectRowType, 0L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
@@ -185,7 +185,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
                     SortOption.SUPPRESS_DUPLICATES),
                 projectRowType,
                 convertCaseInsensitiveToUpper);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(projectRowType, "AA_cs", "AA_CI", 0),
             row(projectRowType, "Aa_cs", "AA_CI", 0),
             row(projectRowType, "BB_cs", "BB_CI", 0),
@@ -216,7 +216,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
                 ordering,
                 SortOption.SUPPRESS_DUPLICATES,
                 db.length);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(projectRowType, "AA_cs"),
             row(projectRowType, "Aa_cs"),
             row(projectRowType, "BB_cs"),
@@ -252,7 +252,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
                     db.length),
                 projectRowType,
                 convertToUpper);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(projectRowType, "AA_CI"),
             row(projectRowType, "BB_CI"),
             row(projectRowType, "X"),
@@ -277,7 +277,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
                 ordering,
                 SortOption.SUPPRESS_DUPLICATES,
                 db.length);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(projectRowType, 0L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
@@ -311,7 +311,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
                     db.length),
                 projectRowType,
                 convertCaseInsensitiveToUpper);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(projectRowType, "AA_cs", "AA_CI", 0),
             row(projectRowType, "Aa_cs", "AA_CI", 0),
             row(projectRowType, "BB_cs", "BB_CI", 0),
@@ -346,7 +346,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
                     db.length),
                 projectRowType,
                 Arrays.asList(caseSensitiveCollator));
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(projectRowType, "AA_cs"),
             row(projectRowType, "Aa_cs"),
             row(projectRowType, "BB_cs"),
@@ -385,7 +385,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
                     Arrays.asList(caseInsensitiveCollator)),
                 projectRowType,
                 convertToUpper);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(projectRowType, "AA_CI"),
             row(projectRowType, "BB_CI"),
             row(projectRowType, "X"),
@@ -413,7 +413,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
                     db.length),
                 projectRowType,
                 Arrays.asList((AkCollator)null));
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(projectRowType, 0L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
@@ -450,7 +450,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
                     Arrays.asList(caseSensitiveCollator, caseInsensitiveCollator, null)),
                 projectRowType,
                 convertCaseInsensitiveToUpper);
-        RowBase[] expected = new RowBase[] {
+        Row[] expected = new Row[] {
             row(projectRowType, "AA_cs", "AA_CI", 0),
             row(projectRowType, "Aa_cs", "AA_CI", 0),
             row(projectRowType, "BB_cs", "BB_CI", 0),
@@ -465,7 +465,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
     }
 
     private int t;
-    private UserTableRowType tRowType;
+    private TableRowType tRowType;
     private Group group;
     private AkCollator caseSensitiveCollator;
     private AkCollator caseInsensitiveCollator;

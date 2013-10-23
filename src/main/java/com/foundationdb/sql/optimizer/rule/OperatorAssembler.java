@@ -19,6 +19,9 @@ package com.foundationdb.sql.optimizer.rule;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.server.expressions.TypesRegistryService;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.sql.optimizer.*;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.ExpressionsSource.DistinctState;
@@ -40,11 +43,12 @@ import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.operator.API.InputPreservationOption;
 import com.foundationdb.qp.operator.API.JoinType;
 import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.expressions.OverloadResolver;
 import com.foundationdb.server.expressions.OverloadResolver.OverloadResult;
 import com.foundationdb.server.types.TCast;
@@ -52,9 +56,6 @@ import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueSources;
 import com.foundationdb.server.types.texpressions.TPreparedLiteral;
 import com.foundationdb.server.types.texpressions.TValidatedScalar;
 import com.foundationdb.server.types.texpressions.AnySubqueryTExpression;
@@ -137,7 +138,7 @@ public class OperatorAssembler extends BaseRule
         RowType valuesRowType(ExpressionsSource expressionsSource);
 
         void fillNulls(Index index, T[] keys);
-        List<T> assembleUpdates(UserTableRowType targetRowType, List<UpdateColumn> updateColumns,
+        List<T> assembleUpdates(TableRowType targetRowType, List<UpdateColumn> updateColumns,
                                          ColumnExpressionToIndex fieldOffsets);
         T[] createNulls(Index index, int nkeys);
         Operator ifEmptyNulls(Operator input, RowType rowType,
@@ -194,7 +195,7 @@ public class OperatorAssembler extends BaseRule
         }
 
         @Override
-        public List<Explainable> assembleUpdates(UserTableRowType targetRowType, List<UpdateColumn> updateColumns,
+        public List<Explainable> assembleUpdates(TableRowType targetRowType, List<UpdateColumn> updateColumns,
                                                 ColumnExpressionToIndex fieldOffsets) {
             return null;
         }
@@ -380,7 +381,7 @@ public class OperatorAssembler extends BaseRule
             }
 
             @Override
-            public List<T> assembleUpdates(UserTableRowType targetRowType, List<UpdateColumn> updateColumns,
+            public List<T> assembleUpdates(TableRowType targetRowType, List<UpdateColumn> updateColumns,
                                            ColumnExpressionToIndex fieldOffsets) {
                 List<T> updates = assembleExpressionsA(updateColumns, fieldOffsets);
                 // Have a list of expressions in the order specified.
@@ -500,8 +501,8 @@ public class OperatorAssembler extends BaseRule
                 TInstance instance = column.tInstance();
                 
                 List<TPreptimeValue> input = new ArrayList<>(2);
-                input.add(PValueSources.fromObject(sequence.getSequenceName().getSchemaName(), MString.varchar()));
-                input.add(PValueSources.fromObject(sequence.getSequenceName().getTableName(), MString.varchar()));
+                input.add(ValueSources.fromObject(sequence.getSequenceName().getSchemaName(), MString.varchar()));
+                input.add(ValueSources.fromObject(sequence.getSequenceName().getTableName(), MString.varchar()));
 
                 TValidatedScalar overload = resolver.get("NEXTVAL", input).getOverload();
 
@@ -547,7 +548,7 @@ public class OperatorAssembler extends BaseRule
         private Schema schema;
         private final PartialAssembler<TPreparedExpression> newPartialAssembler;
         private final PartialAssembler<?> partialAssembler;
-        private final Set<UserTable> affectedTables;
+        private final Set<Table> affectedTables;
 
         public Assembler(PlanContext planContext) {
             this.planContext = planContext;
@@ -649,9 +650,9 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleInsertProjectTable (RowStream input, 
                 List<ExpressionNode> projectFields, InsertStatement insert) {
 
-            UserTableRowType targetRowType = 
+            TableRowType targetRowType =
                     tableRowType(insert.getTargetTable());
-            UserTable table = insert.getTargetTable().getTable();
+            Table table = insert.getTargetTable().getTable();
 
             List<TPreparedExpression> insertsP = null;
             if (projectFields != null) {
@@ -706,23 +707,23 @@ public class OperatorAssembler extends BaseRule
                     }
                     else {
                         final String defaultValue = column.getDefaultValue();
-                        final PValue defaultValueSource;
+                        final Value defaultValueSource;
                         if(defaultValue == null) {
-                            defaultValueSource = new PValue(tinst);
+                            defaultValueSource = new Value(tinst);
                             defaultValueSource.putNull();
                         } else {
                             TCast cast = tinst.typeClass().castFromVarchar();
                             if (cast != null) {
-                                defaultValueSource = new PValue(tinst);
+                                defaultValueSource = new Value(tinst);
                                 TInstance valInst = MString.VARCHAR.instance(defaultValue.length(), false);
                                 TExecutionContext executionContext = new TExecutionContext(
                                         Collections.singletonList(valInst),
                                         tinst, planContext.getQueryContext());
                                 cast.evaluate(executionContext,
-                                              new PValue(MString.varcharFor(defaultValue), defaultValue),
+                                              new Value(MString.varcharFor(defaultValue), defaultValue),
                                               defaultValueSource);
                             } else {
-                                defaultValueSource = new PValue (tinst, defaultValue);
+                                defaultValueSource = new Value(tinst, defaultValue);
                             }
                         }
                         row[i] = new TPreparedLiteral(tinst, defaultValueSource);
@@ -769,7 +770,7 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleUpdateStatement (UpdateStatement updateStatement) {
             UPDATE_COUNT.hit();
             RowStream stream = assembleQuery (updateStatement.getInput());
-            UserTableRowType targetRowType = tableRowType(updateStatement.getTargetTable());
+            TableRowType targetRowType = tableRowType(updateStatement.getTargetTable());
             assert (stream.rowType == targetRowType);
 
             List<UpdateColumn> updateColumns = updateStatement.getUpdateColumns();
@@ -801,7 +802,7 @@ public class OperatorAssembler extends BaseRule
             DELETE_COUNT.hit();
             RowStream stream = assembleQuery(delete.getInput());
             
-            UserTableRowType targetRowType = tableRowType(delete.getTargetTable());
+            TableRowType targetRowType = tableRowType(delete.getTargetTable());
             
             stream.operator = API.delete_Returning(stream.operator, false);
             stream.fieldOffsets = new ColumnSourceFieldOffsets(delete.getTable(), targetRowType);
@@ -824,7 +825,7 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleUpdateInput(UpdateInput updateInput) {
             RowStream stream = assembleQuery(updateInput.getInput());
             TableSource table = updateInput.getTable();
-            UserTableRowType rowType = tableRowType(table);
+            TableRowType rowType = tableRowType(table);
             if ((stream.rowType != rowType) ||
                 !boundRowIsForTable(stream.fieldOffsets, table)) {
                 int rowIndex = lookupNestedBoundRowIndex(table);
@@ -905,6 +906,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleBuffer((Buffer)node);
             else if (node instanceof ExpressionsHKeyScan)
                 return assembleExpressionsHKeyScan((ExpressionsHKeyScan) node);
+            else if (node instanceof Union)
+                return assembleUnion((Union)node);
             else
                 throw new UnsupportedSQLException("Plan node " + node, null);
         }
@@ -1254,7 +1257,7 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleAncestorLookup(AncestorLookup ancestorLookup) {
             RowStream stream;
             Group group = ancestorLookup.getDescendant().getGroup();
-            List<UserTableRowType> outputRowTypes =
+            List<TableRowType> outputRowTypes =
                 new ArrayList<>(ancestorLookup.getAncestors().size());
             for (TableNode table : ancestorLookup.getAncestors()) {
                 outputRowTypes.add(tableRowType(table));
@@ -1310,7 +1313,7 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleBranchLookup(BranchLookup branchLookup) {
             RowStream stream;
             Group group = branchLookup.getSource().getGroup();
-            List<UserTableRowType> outputRowTypes =
+            List<TableRowType> outputRowTypes =
                 new ArrayList<>(branchLookup.getTables().size());
             if (false)      // TODO: Any way to check that this matched?
                 outputRowTypes.add(tableRowType(branchLookup.getBranch()));
@@ -1374,6 +1377,71 @@ public class OperatorAssembler extends BaseRule
             return ((rowType instanceof IndexRowType) ||
                     (rowType instanceof HKeyRowType));
         }
+        
+        protected RowStream assembleUnion(Union union) {
+            PlanNode left = union.getLeft();
+            if (left instanceof ResultSet)
+                left = ((ResultSet)left).getInput();
+            
+            
+            PlanNode right = union.getRight();
+            if (right instanceof ResultSet)
+                right = ((ResultSet)right).getInput();
+            
+            RowStream leftStream = assembleStream (left);
+            RowStream rightStream = assembleStream (right);
+            
+            // TOOD: Replace the expressions in the projectDefault at the top 
+            // of both streams with casts to the common row type.
+            
+            
+            if (union.isAll()) {
+                leftStream.operator = 
+                    API.unionAll_Default(leftStream.operator, leftStream.rowType, 
+                            rightStream.operator, rightStream.rowType, 
+                            rulesContext.getPipelineConfiguration().isUnionAllOpenBoth());
+            } else {
+                
+                //Union ordered assumes sorted order, so sort the input streams. 
+                //TODO: Is there a way to determine if this is a requirement?
+                leftStream.operator = API.sort_General(leftStream.operator, leftStream.rowType,
+                        assembleUnionOrdering(leftStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
+                leftStream.rowType = leftStream.operator.rowType();
+
+                
+                rightStream.operator = API.sort_General(rightStream.operator, rightStream.rowType,
+                        assembleUnionOrdering(rightStream.rowType), API.SortOption.SUPPRESS_DUPLICATES);
+                rightStream.rowType = rightStream.operator.rowType();
+               
+                boolean[] ascending = new boolean[rightStream.rowType.nFields()];
+                Arrays.fill(ascending, Boolean.TRUE);
+                RowType leftRowType = leftStream.rowType;
+                RowType rightRowType = rightStream.rowType;
+                int leftOrderingFields = leftRowType.nFields();
+                int rightOrderingFields = rightRowType.nFields();
+                leftStream.operator = 
+                   API.union_Ordered(leftStream.operator, rightStream.operator, leftRowType, rightRowType,
+                           leftOrderingFields, rightOrderingFields, ascending, false);
+            }
+            leftStream.rowType = leftStream.operator.rowType();
+            
+            return leftStream;
+            
+        }
+        
+        protected API.Ordering assembleUnionOrdering(RowType rowType) {
+            API.Ordering ordering = partialAssembler.createOrdering();
+            for (int i = 0; i < rowType.nFields(); i++) {
+                TPreparedExpression tExpr = newPartialAssembler.field(rowType, i);
+                
+                if(rowType.fieldHasColumn(i))
+                    ordering.append(tExpr, true, rowType.fieldColumn(i).getCollator());
+                else
+                    ordering.append(tExpr, true, AkCollatorFactory.UCS_BINARY_COLLATOR );
+            }
+            return ordering;
+        }
+        
 
         protected RowStream assembleMapJoin(MapJoin mapJoin) {
             int pos = pushBoundRow(null); // Allocate slot in case loops in outer.
@@ -1393,7 +1461,7 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected RowStream assembleProduct(Product product) {
-            UserTableRowType ancestorRowType = null;
+            TableRowType ancestorRowType = null;
             if (product.getAncestor() != null)
                 ancestorRowType = tableRowType(product.getAncestor());
             RowStream pstream = new RowStream();
@@ -1850,21 +1918,21 @@ public class OperatorAssembler extends BaseRule
             return ordering;
         }
 
-        protected UserTableRowType tableRowType(TableSource table) {
+        protected TableRowType tableRowType(TableSource table) {
             return tableRowType(table.getTable());
         }
 
-        protected UserTableRowType tableRowType(TableNode table) {
-            UserTable userTable = table.getTable();
-            affectedTables.add(userTable);
-            return schema.userTableRowType(userTable);
+        protected TableRowType tableRowType(TableNode table) {
+            Table aisTable = table.getTable();
+            affectedTables.add(aisTable);
+            return schema.tableRowType(aisTable);
         }
 
         protected IndexRowType getIndexRowType(SingleIndexScan index) {
             Index aisIndex = index.getIndex();
             AkibanInformationSchema ais = schema.ais();
             for (int i : aisIndex.getAllTableIDs()) {
-                affectedTables.add(ais.getUserTable(i));
+                affectedTables.add(ais.getTable(i));
             }
             return schema.indexRowType(aisIndex);
         }
@@ -2032,8 +2100,8 @@ public class OperatorAssembler extends BaseRule
                 String constant = null;
                 boolean isConstant = false;
                 if (key.isConstant()) {
-                    PValueSource pValueSource = key.getPreptimeValue().value();
-                    constant = (pValueSource == null || pValueSource.isNull()) ? null : pValueSource.getString();
+                    ValueSource valueSource = key.getPreptimeValue().value();
+                    constant = (valueSource == null || valueSource.isNull()) ? null : valueSource.getString();
                     isConstant = true;
                 }
                 else {

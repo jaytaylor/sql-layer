@@ -107,39 +107,29 @@ public class AkibanInformationSchema implements Traversable
         return groups;
     }
 
-    public Map<TableName, UserTable> getUserTables()
+    public Map<TableName, Table> getTables()
     {
-        return userTables;
+        return tables;
     }
 
     public void removeGroup(Group group) {
         groups.remove(group.getName());
     }
 
-    public Table getTable(String schemaName, String tableName)
+    public Table getTable(final String schemaName, final String tableName)
     {
-        return getUserTable(schemaName, tableName);
+        return getTable(new TableName(schemaName, tableName));
     }
 
-    public Table getTable(TableName tableName)
+    public Table getTable(final TableName tableName)
     {
-        return getUserTable(tableName);
+        return tables.get(tableName);
     }
 
-    public UserTable getUserTable(final String schemaName, final String tableName)
-    {
-        return getUserTable(new TableName(schemaName, tableName));
-    }
-
-    public UserTable getUserTable(final TableName tableName)
-    {
-        return userTables.get(tableName);
-    }
-
-    public synchronized UserTable getUserTable(int tableId)
+    public synchronized Table getTable(int tableId)
     {
         ensureTableIdLookup();
-        return userTablesById.get(tableId);
+        return tablesById.get(tableId);
     }
 
     public Map<TableName, View> getViews()
@@ -277,9 +267,9 @@ public class AkibanInformationSchema implements Traversable
         for (Type type : types.values()) {
             visitor.visitType(type);
         }
-        for (UserTable userTable : userTables.values()) {
-            visitor.visitUserTable(userTable);
-            userTable.traversePreOrder(visitor);
+        for (Table table : tables.values()) {
+            visitor.visitTable(table);
+            table.traversePreOrder(visitor);
         }
         for (Join join : joins.values()) {
             visitor.visitJoin(join);
@@ -297,9 +287,9 @@ public class AkibanInformationSchema implements Traversable
         for (Type type : types.values()) {
             visitor.visitType(type);
         }
-        for (UserTable userTable : userTables.values()) {
-            userTable.traversePostOrder(visitor);
-            visitor.visitUserTable(userTable);
+        for (Table table : tables.values()) {
+            table.traversePostOrder(visitor);
+            visitor.visitTable(table);
         }
         for (Join join : joins.values()) {
             join.traversePreOrder(visitor);
@@ -318,10 +308,10 @@ public class AkibanInformationSchema implements Traversable
         groups.put(group.getName(), group);
     }
 
-    public void addUserTable(UserTable table)
+    public void addTable(Table table)
     {
         TableName tableName = table.getName();
-        userTables.put(tableName, table);
+        tables.put(tableName, table);
 
         // TODO: Create on demand until Schema is more of a first class citizen
         Schema schema = getSchema(tableName.getSchemaName());
@@ -329,7 +319,7 @@ public class AkibanInformationSchema implements Traversable
             schema = new Schema(tableName.getSchemaName());
             addSchema(schema);
         }
-        schema.addUserTable(table);
+        schema.addTable(table);
     }
 
     public void addView(View view)
@@ -457,11 +447,11 @@ public class AkibanInformationSchema implements Traversable
      * @deprecated - use {@link #validate(Collection)}
      * @param out
      * @param tables
-     * @param isUserTable
+     * @param isTable
      * @param seenTables
      */
     private void checkTables(List<String> out, Map<TableName, ? extends Table> tables,
-                             boolean isUserTable, Set<TableName> seenTables)
+                             boolean isTable, Set<TableName> seenTables)
     {
         for (Map.Entry<TableName, ? extends Table> entry : tables.entrySet())
         {
@@ -476,11 +466,8 @@ public class AkibanInformationSchema implements Traversable
             else if (!tableName.equals(table.getName())) {
                 out.add("name mismatch, expected <" + tableName + "> for table " + table);
             }
-            else if(table.isGroupTable() == isUserTable) {
-                out.add("wrong value for isGroupTable(): " + tableName);
-            }
-            else if (table.isUserTable() != isUserTable) {
-                out.add("wrong value for isUserTable(): " + tableName);
+            else if (table.isTable() != isTable) {
+                out.add("wrong value for isTable(): " + tableName);
             }
             else if (!seenTables.add(tableName)) {
                 out.add("duplicate table name: " + tableName);
@@ -514,12 +501,12 @@ public class AkibanInformationSchema implements Traversable
             }
             else if(join.checkIntegrity(out))
             {
-                UserTable child = join.getChild();
-                UserTable parent = join.getParent();
-                if (!userTables.containsKey(child.getName())) {
+                Table child = join.getChild();
+                Table parent = join.getParent();
+                if (!tables.containsKey(child.getName())) {
                     out.add("child not in user tables list: " + child.getName());
                 }
-                else if (!userTables.containsKey(parent.getName())) {
+                else if (!tables.containsKey(parent.getName())) {
                     out.add("parent not in user tables list: " + child.getName());
                 }
                 else if (join.getAIS() != this) {
@@ -583,8 +570,8 @@ public class AkibanInformationSchema implements Traversable
     public void checkIntegrity(List<String> out) throws IllegalStateException
     {
         checkGroups(out);
-        Set<TableName> seenTables = new HashSet<>(userTables.size(), 1.0f);
-        checkTables(out, userTables, true, seenTables);
+        Set<TableName> seenTables = new HashSet<>(tables.size(), 1.0f);
+        checkTables(out, tables, true, seenTables);
         checkJoins(out);
         checkTypesNames(out);
     }
@@ -625,21 +612,21 @@ public class AkibanInformationSchema implements Traversable
 
     synchronized void invalidateTableIdMap()
     {
-        userTablesById = null;
+        tablesById = null;
     }
 
     private void ensureTableIdLookup()
     {
-        if (userTablesById == null) {
-            userTablesById = new HashMap<>();
-            for (UserTable userTable : userTables.values()) {
-                userTablesById.put(userTable.getTableId(), userTable);
+        if (tablesById == null) {
+            tablesById = new HashMap<>();
+            for (Table table : tables.values()) {
+                tablesById.put(table.getTableId(), table);
             }
         }
     }
 
     void removeTable(TableName name) {
-        userTables.remove(name);
+        tables.remove(name);
         Schema schema = getSchema(name.getSchemaName());
         if (schema != null) {
             schema.removeTable(name.getTableName());
@@ -715,7 +702,7 @@ public class AkibanInformationSchema implements Traversable
     private static String defaultCollation = "utf8_bin";
 
     private final Map<TableName, Group> groups = new TreeMap<>();
-    private final Map<TableName, UserTable> userTables = new TreeMap<>();
+    private final Map<TableName, Table> tables = new TreeMap<>();
     private final Map<TableName, Sequence> sequences = new TreeMap<>();
     private final Map<TableName, View> views = new TreeMap<>();
     private final Map<TableName, Routine> routines = new TreeMap<>();
@@ -727,7 +714,7 @@ public class AkibanInformationSchema implements Traversable
     private final ConcurrentMap cachedValues = new ConcurrentHashMap(4,0.75f,4); // Very few, write-once entries expected
     private long generation = -1;
 
-    private Map<Integer, UserTable> userTablesById = null;
+    private Map<Integer, Table> tablesById = null;
     private boolean isFrozen = false;
 
     private static class AISFailureList extends AISValidationResults implements AISValidationOutput {

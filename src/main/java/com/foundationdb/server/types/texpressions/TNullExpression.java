@@ -24,8 +24,8 @@ import com.foundationdb.server.explain.*;
 import com.foundationdb.server.explain.std.TExpressionExplainer;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueSources;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 
 public final class TNullExpression implements TPreparedExpression {
 
@@ -66,7 +66,7 @@ public final class TNullExpression implements TPreparedExpression {
 
     private static class InnerEvaluation implements TEvaluatableExpression {
         @Override
-        public PValueSource resultValue() {
+        public ValueSource resultValue() {
             return valueSource;
         }
 
@@ -87,9 +87,9 @@ public final class TNullExpression implements TPreparedExpression {
         }
 
         private InnerEvaluation(TInstance underlying) {
-            this.valueSource = PValueSources.getNullSource(underlying);
+            this.valueSource = ValueSources.getNullSource(underlying);
         }
 
-        private final PValueSource valueSource;
+        private final ValueSource valueSource;
     }
 }

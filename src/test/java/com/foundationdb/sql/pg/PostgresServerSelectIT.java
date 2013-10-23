@@ -101,6 +101,10 @@ public class PostgresServerSelectIT extends PostgresServerFilesITBase
         ResultSet rs;
         try {
             rs = stmt.executeQuery();
+            if (executeTwice()) {
+                rs.close();
+                rs = stmt.executeQuery();
+            }
         }
         catch (Exception ex) {
             if (error == null)
@@ -127,6 +131,10 @@ public class PostgresServerSelectIT extends PostgresServerFilesITBase
     @Override
     public void checkResult(String result) {
         assertEquals(caseName, expected, result);
+    }
+
+    protected boolean executeTwice() {
+        return false;
     }
 
 }

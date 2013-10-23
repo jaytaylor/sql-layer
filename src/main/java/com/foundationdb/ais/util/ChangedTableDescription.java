@@ -17,8 +17,8 @@
 
 package com.foundationdb.ais.util;
 
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.util.ArgumentValidation;
 
 import java.util.Collection;
@@ -42,7 +42,7 @@ public class ChangedTableDescription {
     }
 
     private final TableName tableName;
-    private final UserTable newDefinition;
+    private final Table newDefinition;
     private final Map<String,String> colNames;
     private final ParentChange parentChange;
     private final TableName parentName;
@@ -58,7 +58,7 @@ public class ChangedTableDescription {
      * @param newDefinition New definition of the table.
      * @param preserveIndexes Mapping of new index names to old.
      */
-    public ChangedTableDescription(TableName tableName, UserTable newDefinition, Map<String,String> colNames,
+    public ChangedTableDescription(TableName tableName, Table newDefinition, Map<String,String> colNames,
                                    ParentChange parentChange, TableName parentName, Map<String,String> parentColNames,
                                    Map<String, String> preserveIndexes, Collection<TableName> droppedSequences,
                                    Collection<String> identityAdded,
@@ -86,7 +86,7 @@ public class ChangedTableDescription {
         return (newDefinition != null) ? newDefinition.getName() : tableName;
     }
 
-    public UserTable getNewDefinition() {
+    public Table getNewDefinition() {
         return newDefinition;
     }
 

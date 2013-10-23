@@ -25,9 +25,9 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.PrimaryKey;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.Types;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryContext;
@@ -97,11 +97,11 @@ public abstract class OperatorGenerator {
     }
     
     protected Operator indexAncestorLookup(TableName tableName) {
-        UserTable table = ais().getUserTable(tableName);
+        Table table = ais().getTable(tableName);
         return PlanGenerator.generateAncestorPlan(ais(), table);
     }
 
-    protected RowStream assembleValueScan(UserTable table) {
+    protected RowStream assembleValueScan(Table table) {
         RowStream stream = new RowStream();
         List<BindableRow> bindableRows = new ArrayList<>();
         List<TPreparedExpression> tExprs = parameters (table);
@@ -119,7 +119,7 @@ public abstract class OperatorGenerator {
         return stream;
     }
     
-    protected List<TPreparedExpression> parameters (UserTable table) {
+    protected List<TPreparedExpression> parameters (Table table) {
         TInstance varchar = Column.generateTInstance(null, Types.VARCHAR, 65535L, null, false);
         List<TPreparedExpression> tExprs = new ArrayList<>();
         for (int index = 0; index < table.getColumns().size(); index++) {
@@ -128,7 +128,7 @@ public abstract class OperatorGenerator {
         return tExprs;
     }
     
-    protected RowStream projectTable (RowStream stream, UserTable table) {
+    protected RowStream projectTable (RowStream stream, Table table) {
         List<TPreparedExpression> pExpressions = null;
         if (table.getPrimaryKey() != null) {
             PrimaryKey key = table.getPrimaryKey();
@@ -140,7 +140,7 @@ public abstract class OperatorGenerator {
             }
             stream.operator = API.project_Table(stream.operator,
                     stream.rowType,
-                    schema().userTableRowType(table),
+                    schema().tableRowType(table),
                     pExpressions);
         }
         return stream;

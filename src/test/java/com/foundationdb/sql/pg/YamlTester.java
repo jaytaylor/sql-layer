@@ -897,12 +897,12 @@ class YamlTester
                 checkOutputTypes(rs);
             }
             LOG.debug("Statement output:");
+            List<Warning> reportedWarnings = new ArrayList<>();
             if(output != null) {
                 ResultSetMetaData metaData = rs.getMetaData();
                 int numColumns = metaData.getColumnCount();
                 boolean resultsEmpty = false;
                 List<List<?>> resultsList = new ArrayList<>();
-                List<Warning> reportedWarnings = new ArrayList<>();
                 Statement stmt = rs.getStatement();
                 assert stmt != null;
                 collectWarnings(stmt.getWarnings(), reportedWarnings);
@@ -954,7 +954,6 @@ class YamlTester
                 }
                 checkRowCount(output.size(), !resultsEmpty);
             } else {
-                List<Warning> reportedWarnings = new ArrayList<>();
                 Statement stmt = rs.getStatement();
                 assert stmt != null;
                 collectWarnings(stmt.getWarnings(), reportedWarnings);
@@ -965,8 +964,8 @@ class YamlTester
                 if(rowCount != -1) {
                     checkRowCount(rowCount, false);
                 }
-                checkWarnings(reportedWarnings);
             }
+            checkWarnings(reportedWarnings);
         }
 
         private boolean rowsEqual(List<?> pattern, List<?> row) {

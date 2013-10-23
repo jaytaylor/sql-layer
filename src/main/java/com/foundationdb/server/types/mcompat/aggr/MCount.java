@@ -23,9 +23,9 @@ import com.foundationdb.server.types.TInputSet;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 
 import java.util.Collections;
 import java.util.List;
@@ -40,7 +40,7 @@ public class MCount extends TAggregatorBase {
     };
 
     @Override
-    public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, Object o) {
+    public void input(TInstance instance, ValueSource source, TInstance stateType, Value state, Object o) {
         if (countIfNull || (!source.isNull())) {
             long count = state.hasAnyValue() ? state.getInt64() : 0;
             ++count;
@@ -54,7 +54,7 @@ public class MCount extends TAggregatorBase {
     }
 
     @Override
-    public void emptyValue(PValueTarget state) {
+    public void emptyValue(ValueTarget state) {
         state.putInt64(0L);
     }
 

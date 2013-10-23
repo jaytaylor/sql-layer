@@ -17,8 +17,8 @@
 
 package com.foundationdb.qp.loadableplan.std;
 
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.loadableplan.DirectObjectCursor;
 import com.foundationdb.qp.loadableplan.DirectObjectPlan;
 import com.foundationdb.qp.loadableplan.LoadableDirectObjectPlan;
@@ -31,7 +31,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.NoSuchTableException;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.AkibanAppender;
 
 import java.sql.Types;
@@ -72,9 +72,9 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
     public static class DumpGroupDirectObjectCursor extends DirectObjectCursor {
         private final QueryContext context;
         private final QueryBindings bindings;
-        private UserTable rootTable;
+        private Table rootTable;
         private RowCursor cursor;
-        private Map<UserTable,Integer> tableSizes;
+        private Map<Table,Integer> tableSizes;
         private StringBuilder buffer;
         private GroupRowFormatter formatter;
         private int messagesSent;
@@ -88,20 +88,20 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
         public void open() {
             String currentSchema = context.getCurrentSchema();
             String schemaName, tableName;
-            PValueSource pvalue = valueNotNull(0);
-            if (pvalue == null)
+            ValueSource value = valueNotNull(0);
+            if (value == null)
                 schemaName = currentSchema;
             else
-                schemaName = pvalue.getString();
-            tableName = bindings.getPValue(1).getString();
+                schemaName = value.getString();
+            tableName = bindings.getValue(1).getString();
             rootTable = context.getStore().schema().ais()
-                .getUserTable(schemaName, tableName);
+                .getTable(schemaName, tableName);
             if (rootTable == null)
                 throw new NoSuchTableException(schemaName, tableName);
             int commitFrequency;
-            pvalue = valueNotNull(3);
-            if (pvalue != null)
-                commitFrequency = pvalue.getInt32();
+            value = valueNotNull(3);
+            if (value != null)
+                commitFrequency = value.getInt32();
             else if (context.isTransactionPeriodicallyCommit())
                 commitFrequency = StoreAdapter.COMMIT_FREQUENCY_PERIODICALLY;
             else
@@ -112,22 +112,22 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             tableSizes = new HashMap<>();
             buffer = new StringBuilder();
             int insertMaxRowCount;
-            pvalue = valueNotNull(2);
-            if (pvalue == null)
+            value = valueNotNull(2);
+            if (value == null)
                 insertMaxRowCount = 1;
             else
-                insertMaxRowCount = pvalue.getInt32();
+                insertMaxRowCount = value.getInt32();
             formatter = new SQLRowFormatter(buffer, currentSchema, insertMaxRowCount);
             messagesSent = 0;
         }
 
-        protected PValueSource valueNotNull(int index) {
+        protected ValueSource valueNotNull(int index) {
             try {
-                PValueSource pvalue = bindings.getPValue(index);
-                if (pvalue.isNull())
+                ValueSource value = bindings.getValue(index);
+                if (value.isNull())
                     return null;
                 else
-                    return pvalue;
+                    return value;
             }
             catch (BindingNotSetException ex) {
                 return null;
@@ -147,7 +147,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
                     break;
                 }
                 RowType rowType = row.rowType();
-                UserTable rowTable = rowType.userTable();
+                Table rowTable = rowType.table();
                 int size = tableSize(rowTable);
                 if (size < 0)
                     continue;
@@ -178,7 +178,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             }
         }
 
-        private int tableSize(UserTable table) {
+        private int tableSize(Table table) {
             Integer size = tableSizes.get(table);
             if (size == null) {
                 if (table.isDescendantOf(rootTable))
@@ -206,7 +206,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
     }
 
     public static class SQLRowFormatter extends GroupRowFormatter {
-        private Map<UserTable,String> tableNames = new HashMap<>();
+        private Map<Table,String> tableNames = new HashMap<>();
         private int maxRowCount;
         private AkibanAppender appender;
         private RowType lastRowType;
@@ -231,7 +231,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
                 flush();
                 int pos = buffer.length();
                 buffer.append("INSERT INTO ");
-                buffer.append(tableName(rowType.userTable()));
+                buffer.append(tableName(rowType.table()));
                 buffer.append(" VALUES");
                 insertWidth = buffer.length() - pos;
                 lastRowType = rowType;
@@ -241,7 +241,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             ncols = Math.min(ncols, rowType.nFields());
             for (int i = 0; i < ncols; i++) {
                 if (i > 0) buffer.append(", ");
-                rowType.typeInstanceAt(i).formatAsLiteral(row.pvalue(i), appender);
+                rowType.typeInstanceAt(i).formatAsLiteral(row.value(i), appender);
             }
             buffer.append(')');
         }
@@ -254,7 +254,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             }
         }
 
-        protected String tableName(UserTable table) {
+        protected String tableName(Table table) {
             String name = tableNames.get(table);
             if (name == null) {
                 TableName tableName = table.getName();

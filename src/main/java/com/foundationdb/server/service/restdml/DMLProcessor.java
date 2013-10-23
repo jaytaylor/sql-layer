@@ -22,8 +22,8 @@ import java.util.Map;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.CacheValueGenerator;
 import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
@@ -36,8 +36,8 @@ import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
 
 public abstract class DMLProcessor {
 
@@ -52,7 +52,7 @@ public abstract class DMLProcessor {
 
 
     
-    protected Column getColumn (UserTable table, String field) {
+    protected Column getColumn (Table table, String field) {
         Column column = table.getColumn(field);
         if (column == null) {
             throw new NoSuchColumnException(field);
@@ -60,16 +60,16 @@ public abstract class DMLProcessor {
         return column;
     }
 
-    protected void setValue (QueryBindings queryBindings, Column column, String value) {
-        PValue pvalue = null;
-        if (value == null) {
-            pvalue = new PValue(MString.varchar());
-            pvalue.putNull();
+    protected void setValue (QueryBindings queryBindings, Column column, String svalue) {
+        Value value = null;
+        if (svalue == null) {
+            value = new Value(MString.varchar());
+            value.putNull();
         } else {
-            pvalue = new PValue(MString.varcharFor(value), value);
+            value = new Value(MString.varcharFor(svalue), svalue);
         }
-        queryBindings.setPValue(column.getPosition(), pvalue);
-        
+        queryBindings.setValue(column.getPosition(), value);
+
     }
 
     protected OperatorGenerator getGenerator(CacheValueGenerator<? extends OperatorGenerator> generator, ProcessContext context) {
@@ -80,11 +80,11 @@ public abstract class DMLProcessor {
     
     public class ProcessContext {
         public TableName tableName;
-        public UserTable table;
+        public Table table;
         public QueryContext queryContext;
         public QueryBindings queryBindings;
         public Session session;
-        public Map<Column, PValueSource> pkValues;
+        public Map<Column, ValueSource> pkValues;
         public Map<Column, String> allValues;
         public boolean anyUpdates;
         private final AkibanInformationSchema ais;
@@ -110,14 +110,11 @@ public abstract class DMLProcessor {
             // no writing to the memory tables. 
             if (table.hasMemoryTableFactory())
                 throw new ProtectedTableDDLException (table.getName());
-            StoreAdapter adapter = session.get(StoreAdapter.STORE_ADAPTER_KEY);
-            if (adapter == null)
-                adapter = store.createAdapter(session, schema);
-            return adapter;
+            return store.createAdapter(session, schema);
         }
 
-        private UserTable getTable () {
-            UserTable table = ais.getUserTable(tableName);
+        private Table getTable () {
+            Table table = ais.getTable(tableName);
             if (table == null) {
                 throw new NoSuchTableException(tableName.getSchemaName(), tableName.getTableName());
             } else if (table.isProtectedTable()) {
@@ -125,11 +122,11 @@ public abstract class DMLProcessor {
             }
             return table;
         }
-        protected void setColumnsNull (QueryBindings queryBindings, UserTable table) {
+        protected void setColumnsNull (QueryBindings queryBindings, Table table) {
             for (Column column : table.getColumns()) {
-                PValue pvalue = new PValue (column.tInstance());
-                pvalue.putNull();
-                queryBindings.setPValue(column.getPosition(), pvalue);
+                Value value = new Value(column.tInstance());
+                value.putNull();
+                queryBindings.setValue(column.getPosition(), value);
             }
         }
     }

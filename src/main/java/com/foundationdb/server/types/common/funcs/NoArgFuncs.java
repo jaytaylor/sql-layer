@@ -17,6 +17,8 @@
 
 package com.foundationdb.server.types.common.funcs;
 
+import com.foundationdb.server.types.value.ValueTarget;
+import com.foundationdb.sql.LayerVersionInfo;
 import com.foundationdb.sql.Main;
 import com.foundationdb.server.types.LazyList;
 import com.foundationdb.server.types.TClass;
@@ -27,8 +29,7 @@ import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MDatetimes;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 import com.foundationdb.server.types.texpressions.std.NoArgExpression;
@@ -39,13 +40,26 @@ public class NoArgFuncs
     static final int USER_NAME_LENGTH = 77;
     static final int SCHEMA_NAME_LENGTH = 128;
 
+    protected static String buildVersion(LayerVersionInfo vinfo) {
+        StringBuilder version = new StringBuilder("FoundationDB ");
+        version.append(vinfo.versionShort);
+        version.append(" ");
+        int idx = vinfo.versionShort.length();
+        if (vinfo.versionLong.length() > idx) {
+            if (vinfo.versionLong.charAt(idx) == '-') idx++;
+            version.append(vinfo.versionLong, idx, vinfo.versionLong.length());
+        }
+        return version.toString();
+    }
+
     public static final TScalar SHORT_SERVER_VERSION = new NoArgExpression("version", true)
     {
+        private final String VERSION_STR = buildVersion(Main.VERSION_INFO);
+
         @Override
-        public void evaluate(TExecutionContext context, PValueTarget target)
+        public void evaluate(TExecutionContext context, ValueTarget target)
         {
-            String version = "FoundationDB " + Main.SHORT_VERSION_STRING;
-            target.putString(version, null);
+            target.putString(VERSION_STR, null);
         }
 
         @Override
@@ -55,27 +69,7 @@ public class NoArgFuncs
 
         @Override
         protected int[] resultAttrs() {
-            return new int[] { Main.SHORT_VERSION_STRING.length() + 13 };
-        }
-    };
-
-    public static final TScalar SERVER_FULL_VERSION = new NoArgExpression("version_full", true)
-    {
-
-        @Override
-        public void evaluate(TExecutionContext context, PValueTarget target)
-        {
-            target.putString(Main.VERSION_STRING, null);
-        }
-
-        @Override
-        protected TClass resultTClass() {
-            return MString.VARCHAR;
-        }
-
-        @Override
-        protected int[] resultAttrs() {
-            return new int[] { Main.VERSION_STRING.length() };
+            return new int[] { VERSION_STR.length() };
         }
     };
     
@@ -89,7 +83,7 @@ public class NoArgFuncs
 
         
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
             output.putDouble(Math.PI);
         }
@@ -122,7 +116,7 @@ public class NoArgFuncs
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueTarget target)
+        public void evaluate(TExecutionContext context, ValueTarget target)
         {
             target.putInt32(MDatetimes.encodeDate(context.getCurrentDate(), context.getCurrentTimezone()));
         }
@@ -143,7 +137,7 @@ public class NoArgFuncs
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueTarget target)
+        public void evaluate(TExecutionContext context, ValueTarget target)
         {
             target.putInt32(MDatetimes.encodeTime(context.getCurrentDate(), context.getCurrentTimezone()));
         }   
@@ -164,7 +158,7 @@ public class NoArgFuncs
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueTarget target)
+        public void evaluate(TExecutionContext context, ValueTarget target)
         {
             target.putInt64(MDatetimes.encodeDatetime(context.getCurrentDate(), context.getCurrentTimezone()));
         }
@@ -173,7 +167,7 @@ public class NoArgFuncs
     public static final TScalar UNIX_TIMESTAMP = new NoArgExpression("UNIX_TIMESTAMP", true)
     {
         @Override
-        public void evaluate(TExecutionContext context, PValueTarget target)
+        public void evaluate(TExecutionContext context, ValueTarget target)
         {
             target.putInt32((int)MDatetimes.encodeTimetamp(context.getCurrentDate(), context));
         }
@@ -195,7 +189,7 @@ public class NoArgFuncs
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueTarget target)
+        public void evaluate(TExecutionContext context, ValueTarget target)
         {
             target.putInt64(MDatetimes.encodeDatetime(new Date().getTime(), context.getCurrentTimezone()));
         }
@@ -214,7 +208,7 @@ public class NoArgFuncs
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueTarget target) {
+        public void evaluate(TExecutionContext context, ValueTarget target) {
             target.putString(context.getCurrentUser(), null);
         }
     };
@@ -232,7 +226,7 @@ public class NoArgFuncs
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueTarget target)
+        public void evaluate(TExecutionContext context, ValueTarget target)
         {
             target.putString(context.getSessionUser(), null);
         }
@@ -251,7 +245,7 @@ public class NoArgFuncs
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueTarget target)
+        public void evaluate(TExecutionContext context, ValueTarget target)
         {
             target.putString(context.getSystemUser(), null);
         }
@@ -270,7 +264,7 @@ public class NoArgFuncs
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueTarget target)
+        public void evaluate(TExecutionContext context, ValueTarget target)
         {
             target.putString(context.getCurrentSchema(), null);
         }
@@ -284,7 +278,7 @@ public class NoArgFuncs
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueTarget target)
+        public void evaluate(TExecutionContext context, ValueTarget target)
         {
             target.putInt32(context.getSessionId());
         }

@@ -18,12 +18,12 @@
 package com.foundationdb.server.types;
 
 import com.foundationdb.server.types.common.types.NoAttrTClass;
-import com.foundationdb.server.types.pvalue.PUnderlying;
+import com.foundationdb.server.types.value.UnderlyingType;
 
 public class TypesTestClass extends NoAttrTClass {
 
     public TypesTestClass(String name) {
-        super(bundle, name, TestCategory.ONLY, null, 1, 1, 1, PUnderlying.INT_64, null, 64, null);
+        super(bundle, name, TestCategory.ONLY, null, 1, 1, 1, UnderlyingType.INT_64, null, 64, null);
     }
 
     public enum TestClassCategory {

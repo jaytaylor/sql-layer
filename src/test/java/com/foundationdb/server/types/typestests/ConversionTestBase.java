@@ -23,8 +23,8 @@ import com.foundationdb.junit.OnlyIfNot;
 import com.foundationdb.junit.Parameterization;
 import com.foundationdb.junit.ParameterizationBuilder;
 import com.foundationdb.server.AkType;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -155,12 +155,12 @@ public abstract class ConversionTestBase {
 
     private static class NoCheckLinkedConversion implements LinkedConversion<Object> {
         @Override
-        public PValueSource linkedSource() {
+        public ValueSource linkedSource() {
             return delegate.linkedSource();
         }
 
         @Override
-        public PValueTarget linkedTarget() {
+        public ValueTarget linkedTarget() {
             return delegate.linkedTarget();
         }
 

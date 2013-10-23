@@ -17,9 +17,8 @@
 
 @ECHO OFF
 
-SETLOCAL
+SETLOCAL EnableDelayedExpansion
 
-SET SERVER_JAR=fdb-sql-layer-1.9.1-SNAPSHOT.jar
 SET SERVICE_NAME=fdbsqllayer
 SET SERVICE_DNAME=FoundationDB SQL Layer 
 SET SERVICE_DESC=FoundationDB SQL Layer
@@ -30,7 +29,7 @@ REM Installation Configuration
 
 FOR %%P IN ("%~dp0..") DO SET FDBSQL_HOME=%%~fP
 
-SET JAR_FILE=%FDBSQL_HOME%\sql\lib\%SERVER_JAR%
+CALL:findJarFile "%FDBSQL_HOME%\sql\lib"
 SET DEP_DIR=%FDBSQL_HOME%\sql\lib\server
 SET FDBSQL_HOME_DIR=%FDBSQL_HOME%\sql
 @REM Replaced during install
@@ -58,7 +57,7 @@ REM Build Configuration
 
 FOR %%P IN ("%~dp0..") DO SET BUILD_HOME=%%~fP
 
-SET JAR_FILE=%BUILD_HOME%\target\%SERVER_JAR%
+CALL:findJarFile "%BUILD_HOME%\target"
 SET DEP_DIR=%BUILD_HOME%\target\dependency
 SET FDBSQL_CONF=%BUILD_HOME%\conf
 SET FDBSQL_LOGDIR=\tmp\fdbsqllayer
@@ -168,7 +167,8 @@ REM Each value that might have a space needs a separate ++JvmOptions.
 SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmOptions="%JVM_OPTS: =#%" ++JvmOptions=-Xrs ++JvmOptions="-Dfdbsql.config_dir=%FDBSQL_CONF%" ^
                  ++JvmOptions="-Dlog4j.configuration=file:%FDBSQL_LOGCONF%" ++JvmOptions="-Dfdbsql.home=%FDBSQL_HOME_DIR%"
 IF DEFINED SERVICE_USER SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --ServiceUser=%SERVICE_USER% --ServicePassword=%SERVICE_PASSWORD%
-IF DEFINED MAX_HEAP_SIZE SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmMs=%MAX_HEAP_SIZE% --JvmMx=%MAX_HEAP_SIZE%
+REM Important: JvmMs and JvmMx are in MB and do not accept unit suffix
+IF DEFINED MAX_HEAP_MB SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmMs=%MAX_HEAP_MB% --JvmMx=%MAX_HEAP_MB%
 
 IF "%VERB%"=="install" (
   "%PRUNSRV%" //IS//%SERVICE_NAME% %PRUNSRV_ARGS%
@@ -201,7 +201,7 @@ SET JVM_OPTS=%JVM_OPTS% -Dfdbsql.config_dir="%FDBSQL_CONF%"
 SET JVM_OPTS=%JVM_OPTS% -Dlog4j.configuration="file:%FDBSQL_LOGCONF%"
 SET JVM_OPTS=%JVM_OPTS% -ea
 SET JVM_OPTS=%JVM_OPTS% -Dfdbsql.home="%FDBSQL_HOME_DIR%"
-IF DEFINED MAX_HEAP_SIZE SET JVM_OPTS=%JVM_OPTS% -Xms%MAX_HEAP_SIZE% -Xmx%MAX_HEAP_SIZE%
+IF DEFINED MAX_HEAP_MB SET JVM_OPTS=%JVM_OPTS% -Xms%MAX_HEAP_MB%M -Xmx%MAX_HEAP_MB%M
 IF "%VERB%"=="window" GOTO WINDOW_CMD
 java %JVM_OPTS% -cp "%CLASSPATH%" com.foundationdb.sql.Main
 GOTO EOF
@@ -219,6 +219,20 @@ GOTO EOF
 ECHO There was an error. Please check %FDBSQL_LOGDIR% for more information.
 PAUSE
 GOTO EOF
+
+:findJarFile
+SET JAR_FILE=
+FOR %%P IN ("%~1\fdb-sql-layer*.jar") DO (
+    SET T=%%P
+    REM Ignore files that change with -tests, -sources and -client removed
+    IF "!T:tests=!"=="%%P" IF "!T:sources=!"=="%%P" IF "!T:client=!"=="%%P" (
+        SET JAR_FILE=%%P
+    )
+)
+IF "%JAR_FILE%"=="" (
+    ECHO No jar file in %~1
+)
+GOTO:EOF
 
 :EOF
 ENDLOCAL

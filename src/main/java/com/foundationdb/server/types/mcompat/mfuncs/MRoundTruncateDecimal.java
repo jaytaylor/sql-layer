@@ -20,8 +20,8 @@ import com.foundationdb.server.types.*;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.mcompat.mtypes.MBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueTarget;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 
@@ -54,7 +54,7 @@ public class MRoundTruncateDecimal extends TScalarBase {
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
         BigDecimalWrapper result = MBigDecimal.getWrapper(context, DEC_INDEX);
         result.set(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0)));
         int scale = signatureStrategy.roundToScale(inputs);
@@ -68,7 +68,7 @@ public class MRoundTruncateDecimal extends TScalarBase {
             @Override
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
                 TPreptimeValue valueToRound = inputs.get(0);
-                PValueSource roundToPVal = signatureStrategy.getScaleOperand(inputs);
+                ValueSource roundToPVal = signatureStrategy.getScaleOperand(inputs);
                 int precision, scale;
                 if ((roundToPVal == null) || roundToPVal.isNull()) {
                     precision = 17;

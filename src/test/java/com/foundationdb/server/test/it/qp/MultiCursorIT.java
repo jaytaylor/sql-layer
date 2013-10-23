@@ -18,10 +18,10 @@
 package com.foundationdb.server.test.it.qp;
 
 import com.foundationdb.qp.operator.RowCursor;
-import com.foundationdb.qp.row.PValuesRow;
+import com.foundationdb.qp.row.ValuesRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.rowtype.UserTableRowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.util.MultiCursor;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import org.junit.Test;
@@ -44,7 +44,7 @@ public class MultiCursorIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        tRowType = schema.userTableRowType(userTable(t));
+        tRowType = schema.tableRowType(table(t));
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
@@ -141,7 +141,7 @@ public class MultiCursorIT extends OperatorITBase
     }
 
     private int t;
-    private UserTableRowType tRowType;
+    private TableRowType tRowType;
 
     private class TestCursor implements RowCursor
     {
@@ -209,7 +209,7 @@ public class MultiCursorIT extends OperatorITBase
 
         public Row row()
         {
-            return new PValuesRow(tRowType, items[position]);
+            return new ValuesRow(tRowType, items[position]);
         }
 
         // Object state

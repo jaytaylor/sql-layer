@@ -17,7 +17,6 @@
 
 package com.foundationdb.server.test.it.qp;
 
-import com.foundationdb.util.ShareHolder;
 import com.foundationdb.qp.operator.Operator;
 import org.junit.Test;
 import com.foundationdb.qp.operator.API;
@@ -72,7 +71,7 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema() {
         schema = new Schema(ais());
-        tRowType = schema.userTableRowType(userTable(t));
+        tRowType = schema.tableRowType(table(t));
         idxRowType = indexType(t, "a", "b", "c");
         db = new NewRow[] {
             createNewRow(t, 1010L, 1L, 11L, 110L),
@@ -115,7 +114,7 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
      */
     private int b_of(long id)
     {
-        return (int)indexRow(id).pvalue(1).getInt32();
+        return (int)indexRow(id).value(1).getInt32();
     }
 
     @Test
@@ -222,12 +221,9 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
 
         Row row;
         List<Row> actualRows = new ArrayList<>();
-        List<ShareHolder<Row>> rowHolders = new ArrayList<>();
         while ((row = cursor.next()) != null)
         {
-            // Prevent sharing of rows since verification accumulates them
             actualRows.add(row);
-            rowHolders.add(new ShareHolder<>(row));
         }
         cursor.closeTopLevel();
 

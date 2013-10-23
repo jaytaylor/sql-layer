@@ -25,7 +25,6 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.server.MemoryOnlyTableStatusCache;
 import com.foundationdb.server.api.DDLFunctions;
@@ -140,10 +139,10 @@ public class SchemaFactory {
             Map<Group,List<RowDef>> groupToRowDefs = getRowDefsByGroup();
             Map<Table,Integer> ordinalMap = new HashMap<>();
             for(List<RowDef> allRowDefs  : groupToRowDefs.values()) {
-                int userTableOrdinal = 1;
+                int tableOrdinal = 1;
                 for(RowDef userRowDef : allRowDefs) {
-                    int ordinal = userTableOrdinal++;
-                    userRowDef.userTable().setOrdinal(ordinal);
+                    int ordinal = tableOrdinal++;
+                    userRowDef.table().setOrdinal(ordinal);
                     ordinalMap.put(userRowDef.table(), ordinal);
                 }
             }
@@ -159,7 +158,7 @@ public class SchemaFactory {
         }
 
         @Override
-        public void createTable(Session session, UserTable newTable) {
+        public void createTable(Session session, Table newTable) {
             AISMerge merge = AISMerge.newForAddTable(new DefaultNameGenerator(ais), ais, newTable);
             merge.merge();
             ais = merge.getAIS();

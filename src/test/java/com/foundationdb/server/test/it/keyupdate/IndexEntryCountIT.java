@@ -18,8 +18,8 @@
 package com.foundationdb.server.test.it.keyupdate;
 
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
 import com.foundationdb.server.test.it.ITBase;
@@ -163,9 +163,9 @@ public final class IndexEntryCountIT extends ITBase {
         dml().truncateTable(session(), oId);
         
         List<Index> allIndexes = new ArrayList<>();
-        allIndexes.addAll(getUserTable(cId).getIndexes());
-        allIndexes.addAll(getUserTable(oId).getIndexes());
-        allIndexes.addAll(getUserTable(cId).getGroup().getIndexes());
+        allIndexes.addAll(getTable(cId).getIndexes());
+        allIndexes.addAll(getTable(oId).getIndexes());
+        allIndexes.addAll(getTable(cId).getGroup().getIndexes());
         
         for (Index index : allIndexes) {
             countEntries(index, 0);
@@ -173,7 +173,7 @@ public final class IndexEntryCountIT extends ITBase {
     }
 
     private Index getOrdersFk() {
-        UserTable orders = getUserTable(oId);
+        Table orders = getTable(oId);
         List<Index> possible = new ArrayList<>(1);
         for (Index index : orders.getIndexes()) {
             if ("FOREIGN KEY".equals(index.getConstraint()))
@@ -185,14 +185,14 @@ public final class IndexEntryCountIT extends ITBase {
     }
 
     private TableName groupName() {
-        return getUserTable(cId).getGroup().getName();
+        return getTable(cId).getGroup().getName();
     }
 
     private void countEntries(int tableId, String indexName, int expectedEntryCount) {
-        UserTable uTable = getUserTable(tableId);
+        Table table = getTable(tableId);
         Index index = PK.equals(indexName)
-                ? uTable.getPrimaryKey().getIndex()
-                : uTable.getIndex(indexName);
+                ? table.getPrimaryKey().getIndex()
+                : table.getIndex(indexName);
         countEntries(index, expectedEntryCount);
     }
 

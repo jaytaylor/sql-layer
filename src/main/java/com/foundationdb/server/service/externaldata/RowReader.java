@@ -19,10 +19,10 @@ package com.foundationdb.server.service.externaldata;
 
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.UserTable;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.qp.persistitadapter.PValueRowDataCreator;
+import com.foundationdb.qp.storeadapter.RowDataCreator;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.expressions.TypesRegistryService;
@@ -33,9 +33,9 @@ import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
-import com.foundationdb.server.types.pvalue.PValue;
-import com.foundationdb.server.types.pvalue.PValueSource;
-import com.foundationdb.server.types.pvalue.PValueSources;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.server.types.texpressions.TCastExpression;
 import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
@@ -61,9 +61,9 @@ public abstract class RowReader
     private final int[] constColumns, evalColumns;
     private final byte[] nullBytes;
     private final int tableId;
-    private final PValue pstring;
-    private final PValue[] pvalues; // indexed by column index
-    private final PValueRowDataCreator pvalueCreator;
+    private final Value vstring;
+    private final Value[] values; // indexed by column index
+    private final RowDataCreator rowCreator;
     private final TExecutionContext[] executionContexts; // indexed by column index
     private final TEvaluatableExpression[] expressions; // indexed by field index
     private NewRow row;
@@ -74,7 +74,7 @@ public abstract class RowReader
     private final byte[] fileBuffer = new byte[1024];
     private int fileIndex, fileAvail;
 
-    protected RowReader(UserTable table, List<Column> columns, 
+    protected RowReader(Table table, List<Column> columns, 
                         InputStream inputStream, String encoding, byte[] nullBytes,
                         QueryContext queryContext) {
         this.tableId = table.getTableId();
@@ -108,16 +108,16 @@ public abstract class RowReader
         for (int i = 0; i < evalColumns.length; i++) {
             evalColumns[i] = functionColumns.get(i).getPosition();
         }
-        this.pstring = new PValue(MString.VARCHAR.instance(Integer.MAX_VALUE, false));
-        this.pvalues = new PValue[rowDef.getFieldCount()];
-        this.executionContexts = new TExecutionContext[pvalues.length];
-        List<TInstance> inputs = Collections.singletonList(pstring.tInstance());
+        this.vstring = new Value(MString.VARCHAR.instance(Integer.MAX_VALUE, false));
+        this.values = new Value[rowDef.getFieldCount()];
+        this.executionContexts = new TExecutionContext[values.length];
+        List<TInstance> inputs = Collections.singletonList(vstring.tInstance());
         for (int fi = 0; fi < fieldColumns.length; fi++) {
             int ci = fieldColumns[fi];
             TInstance output = columns.get(fi).tInstance();
-            pvalues[ci] = new PValue(output);
+            values[ci] = new Value(output);
             // TODO: Only needed until every place gets type from
-            // PValueTarget, when there can just be one
+            // ValueTarget, when there can just be one
             // TExecutionContext wrapping the QueryContext.
             executionContexts[ci] = new TExecutionContext(null, 
                                                           inputs, output, queryContext,
@@ -129,15 +129,15 @@ public abstract class RowReader
             int ci = constColumns[fi];
             Column column = defaultColumns.get(fi);
             TInstance output = column.tInstance();
-            PValue pvalue = new PValue(output);
+            Value value = new Value(output);
             TExecutionContext te = new TExecutionContext(null, 
                                                          inputs, output, queryContext,
                                                          ErrorHandlingMode.WARN,
                                                          ErrorHandlingMode.WARN,
                                                          ErrorHandlingMode.WARN);
-            pstring.putString(column.getDefaultValue(), null);
-            pvalue.tInstance().typeClass().fromObject(te, pstring, pvalue);
-            pvalues[ci] = pvalue;
+            vstring.putString(column.getDefaultValue(), null);
+            value.tInstance().typeClass().fromObject(te, vstring, value);
+            values[ci] = value;
         }
         this.expressions = new TEvaluatableExpression[evalColumns.length];
         TypesRegistryService registry = null;
@@ -156,8 +156,8 @@ public abstract class RowReader
                 TableName sequenceName = sequence.getSequenceName();
                 functionName = "NEXTVAL";
                 input = new ArrayList<>(2);
-                input.add(PValueSources.fromObject(sequenceName.getSchemaName(), MString.varcharFor(sequenceName.getSchemaName())));
-                input.add(PValueSources.fromObject(sequenceName.getTableName(), MString.varcharFor(sequenceName.getTableName())));
+                input.add(ValueSources.fromObject(sequenceName.getSchemaName(), MString.varcharFor(sequenceName.getSchemaName())));
+                input.add(ValueSources.fromObject(sequenceName.getTableName(), MString.varcharFor(sequenceName.getTableName())));
                 arguments = new ArrayList<>(input.size());
                 for (TPreptimeValue tpv : input) {
                     arguments.add(new TPreparedLiteral(tpv.instance(), tpv.value()));
@@ -180,7 +180,7 @@ public abstract class RowReader
             eval.with(queryContext);
             expressions[fi] = eval;
         }
-        this.pvalueCreator = new PValueRowDataCreator();
+        this.rowCreator = new RowDataCreator();
         this.inputStream = inputStream;
         this.encoding = encoding;
         this.nullBytes = nullBytes;
@@ -236,11 +236,11 @@ public abstract class RowReader
         int columnIndex = fieldColumns[fieldIndex];
         // bytes -> string -> parsed typed value -> Java object.
         String string = decodeField();
-        pstring.putString(string, null);
-        PValue pvalue = pvalues[columnIndex];
-        pvalue.tInstance().typeClass()
-            .fromObject(executionContexts[columnIndex], pstring, pvalue);
-        pvalueCreator.put(pvalue, row, rowDef.getFieldDef(columnIndex), columnIndex);
+        vstring.putString(string, null);
+        Value value = values[columnIndex];
+        value.tInstance().typeClass()
+            .fromObject(executionContexts[columnIndex], vstring, value);
+        rowCreator.put(value, row, columnIndex);
         fieldIndex++;
         fieldLength = 0;
     }
@@ -291,15 +291,15 @@ public abstract class RowReader
     protected NewRow finishRow() {
         for (int i = 0; i < constColumns.length; i++) {
             int columnIndex = constColumns[i];
-            PValueSource pvalue = pvalues[columnIndex];
-            pvalueCreator.put(pvalue, row, rowDef.getFieldDef(columnIndex), columnIndex);
+            ValueSource value = values[columnIndex];
+            rowCreator.put(value, row, columnIndex);
         }
         for (int i = 0; i < evalColumns.length; i++) {
             int columnIndex = evalColumns[i];
             TEvaluatableExpression expr = expressions[i];
             expr.evaluate();
-            PValueSource pvalue = expr.resultValue();
-            pvalueCreator.put(pvalue, row, rowDef.getFieldDef(columnIndex), columnIndex);
+            ValueSource value = expr.resultValue();
+            rowCreator.put(value, row, columnIndex);
         }
         return row;
     }

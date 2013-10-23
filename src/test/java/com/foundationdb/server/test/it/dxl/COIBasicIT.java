@@ -29,7 +29,7 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.row.RowBase;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.util.SchemaCache;
@@ -41,7 +41,7 @@ import org.junit.Test;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.PrimaryKey;
-import com.foundationdb.ais.model.UserTable;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.NewRowBuilder;
 import com.foundationdb.server.error.InvalidOperationException;
@@ -69,7 +69,7 @@ public final class COIBasicIT extends ITBase {
         AkibanInformationSchema ais = ddl().getAIS(session());
 
         // Lots of checking, the more the merrier
-        final UserTable cTable = ais.getUserTable( ddl().getTableName(session(), cId) );
+        final Table cTable = ais.getTable( ddl().getTableName(session(), cId) );
         {
             assertEquals("c.columns.size()", 2, cTable.getColumns().size());
             assertEquals("c.indexes.size()", 1, cTable.getIndexes().size());
@@ -82,7 +82,7 @@ public final class COIBasicIT extends ITBase {
             assertEquals("parent join", null, cTable.getParentJoin());
             assertEquals("child joins.size", 1, cTable.getChildJoins().size());
         }
-        final UserTable oTable = ais.getUserTable( ddl().getTableName(session(), oId) );
+        final Table oTable = ais.getTable( ddl().getTableName(session(), oId) );
         {
             assertEquals("c.columns.size()", 2, oTable.getColumns().size());
             assertEquals("c.indexes.size()", 2, oTable.getIndexes().size());
@@ -96,7 +96,7 @@ public final class COIBasicIT extends ITBase {
             assertSame("parent join", cTable.getChildJoins().get(0), oTable.getParentJoin());
             assertEquals("child joins.size", 1, oTable.getChildJoins().size());
         }
-        final UserTable iTable = ais.getUserTable( ddl().getTableName(session(), iId) );
+        final Table iTable = ais.getTable( ddl().getTableName(session(), iId) );
         {
             assertEquals("c.columns.size()", 3, iTable.getColumns().size());
             assertEquals("c.indexes.size()", 2, iTable.getIndexes().size());
@@ -224,14 +224,14 @@ public final class COIBasicIT extends ITBase {
     @Test
     public void dropGroup() throws InvalidOperationException {
         final TableIds tids = createTables();
-        final TableName groupName = ddl().getAIS(session()).getUserTable(tableName(tids.i)).getGroup().getName();
+        final TableName groupName = ddl().getAIS(session()).getTable(tableName(tids.i)).getGroup().getName();
 
         ddl().dropGroup(session(), groupName);
 
         AkibanInformationSchema ais = ddl().getAIS(session());
-        assertNull("expected no table", ais.getUserTable("coi", "c"));
-        assertNull("expected no table", ais.getUserTable("coi", "o"));
-        assertNull("expected no table", ais.getUserTable("coi", "i"));
+        assertNull("expected no table", ais.getTable("coi", "c"));
+        assertNull("expected no table", ais.getTable("coi", "o"));
+        assertNull("expected no table", ais.getTable("coi", "i"));
         assertNull("expected no group", ais.getGroup(groupName));
     }
 
@@ -239,9 +239,9 @@ public final class COIBasicIT extends ITBase {
     public void writeRowHKeyChangePropagation() {
         final TableIds tids = createTables();
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
-        RowType cType = schema.userTableRowType(getUserTable(tids.c));
-        RowType oType = schema.userTableRowType(getUserTable(tids.o));
-        RowType iType = schema.userTableRowType(getUserTable(tids.i));
+        RowType cType = schema.tableRowType(getTable(tids.c));
+        RowType oType = schema.tableRowType(getTable(tids.o));
+        RowType iType = schema.tableRowType(getTable(tids.i));
         StoreAdapter adapter = newStoreAdapter(schema);
 
         Object[] o1Cols = { 10, 1 };
@@ -255,27 +255,27 @@ public final class COIBasicIT extends ITBase {
 
         // Unrelated o row, to demonstrate i ordering/adoption
         writeRow(tids.o, o1Cols);
-        compareRows( new RowBase[] { o1Row }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        compareRows( new Row[] { o1Row }, adapter.newGroupCursor(cType.table().getGroup()) );
 
         // i is first due to null cid component
         writeRow(tids.i, iCols);
-        compareRows( new RowBase[] { iRow, o1Row }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        compareRows( new Row[] { iRow, o1Row }, adapter.newGroupCursor(cType.table().getGroup()) );
 
         // i should get adopted by the new o, filling in it's cid component
         writeRow(tids.o, oCols);
-        compareRows( new RowBase[] { o1Row, oRow, iRow, }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        compareRows( new Row[] { o1Row, oRow, iRow, }, adapter.newGroupCursor(cType.table().getGroup()) );
 
         writeRow(tids.c, cCols);
-        compareRows( new RowBase[] { o1Row, cRow, oRow, iRow }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        compareRows( new Row[] { o1Row, cRow, oRow, iRow }, adapter.newGroupCursor(cType.table().getGroup()) );
     }
 
     @Test
     public void deleteRowHKeyChangePropagation() {
         final TableIds tids = createTables();
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
-        RowType cType = schema.userTableRowType(getUserTable(tids.c));
-        RowType oType = schema.userTableRowType(getUserTable(tids.o));
-        RowType iType = schema.userTableRowType(getUserTable(tids.i));
+        RowType cType = schema.tableRowType(getTable(tids.c));
+        RowType oType = schema.tableRowType(getTable(tids.o));
+        RowType iType = schema.tableRowType(getTable(tids.i));
         StoreAdapter adapter = newStoreAdapter(schema);
 
         Object[] o1Cols = { 10, 1 };
@@ -291,29 +291,29 @@ public final class COIBasicIT extends ITBase {
         writeRow(tids.c, cCols);
         writeRow(tids.o, oCols);
         writeRow(tids.i, iCols);
-        compareRows( new RowBase[] { o1Row, cRow, oRow, iRow }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        compareRows( new Row[] { o1Row, cRow, oRow, iRow }, adapter.newGroupCursor(cType.table().getGroup()) );
 
         deleteRow(tids.c, cCols);
-        compareRows( new RowBase[] { o1Row, oRow, iRow }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        compareRows( new Row[] { o1Row, oRow, iRow }, adapter.newGroupCursor(cType.table().getGroup()) );
 
         // Delete o => i.cid becomes null
         deleteRow(tids.o, oCols);
-        compareRows( new RowBase[] { iRow, o1Row }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        compareRows( new Row[] { iRow, o1Row }, adapter.newGroupCursor(cType.table().getGroup()) );
 
         deleteRow(tids.i, iCols);
-        compareRows( new RowBase[] { o1Row }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        compareRows( new Row[] { o1Row }, adapter.newGroupCursor(cType.table().getGroup()) );
 
         deleteRow(tids.o, o1Cols);
-        compareRows( new RowBase[] { }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        compareRows( new Row[] { }, adapter.newGroupCursor(cType.table().getGroup()) );
     }
 
     @Test
     public void updateRowHKeyChangePropagation() {
         final TableIds tids = createTables();
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
-        RowType cType = schema.userTableRowType(getUserTable(tids.c));
-        RowType oType = schema.userTableRowType(getUserTable(tids.o));
-        RowType iType = schema.userTableRowType(getUserTable(tids.i));
+        RowType cType = schema.tableRowType(getTable(tids.c));
+        RowType oType = schema.tableRowType(getTable(tids.o));
+        RowType iType = schema.tableRowType(getTable(tids.i));
         StoreAdapter adapter = newStoreAdapter(schema);
 
         Object[] o1Cols = { 10, 1 };
@@ -331,14 +331,14 @@ public final class COIBasicIT extends ITBase {
         writeRow(tids.c, cCols);
         writeRow(tids.o, oOrig);
         writeRow(tids.i, iCols);
-        compareRows( new RowBase[] { iRow, oOrigRow, o1Row, cRow }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        compareRows( new Row[] { iRow, oOrigRow, o1Row, cRow }, adapter.newGroupCursor(cType.table().getGroup()) );
 
         // updated o moves after o1 and adopts i
         update(tids.o, oOrig).to(oUpdate);
-        compareRows( new RowBase[] { o1Row, cRow, oUpdateRow, iRow }, adapter.newGroupCursor(cType.userTable().getGroup()) );
+        compareRows( new Row[] { o1Row, cRow, oUpdateRow, iRow }, adapter.newGroupCursor(cType.table().getGroup()) );
     }
 
-    protected void compareRows(RowBase[] expected, Cursor cursor) {
+    protected void compareRows(Row[] expected, Cursor cursor) {
         txnService().beginTransaction(session());
         try {
             super.compareRows(expected, cursor);
