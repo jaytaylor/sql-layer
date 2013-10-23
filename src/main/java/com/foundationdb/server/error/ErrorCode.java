@@ -462,6 +462,8 @@ public enum ErrorCode {
     private final Class<? extends InvalidOperationException> exceptionClass;
     private final String formattedValue;
 
+    private static final String ROLLBACK_CLASS = "40";
+
     private static final ResourceBundle resourceBundle = ResourceBundle.getBundle("com.foundationdb.server.error.error_code");
 
     private ErrorCode(String code, String subCode, Importance importance, 
@@ -503,6 +505,10 @@ public enum ErrorCode {
     
     public String getSubCode() {
         return subcode;
+    }
+
+    public boolean isRollbackClass() {
+        return ROLLBACK_CLASS.equals(code);
     }
 
     public void logAtImportance(Logger log, Throwable cause) {
