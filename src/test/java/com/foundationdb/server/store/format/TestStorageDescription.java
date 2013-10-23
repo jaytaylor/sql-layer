@@ -22,7 +22,7 @@ import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.validation.AISValidationFailure;
 import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
-import com.foundationdb.ais.protobuf.CommonProtobuf;
+import com.foundationdb.ais.protobuf.TestProtobuf;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
 
 public class TestStorageDescription extends StorageDescription
@@ -50,7 +50,7 @@ public class TestStorageDescription extends StorageDescription
 
     @Override
     public void writeProtobuf(Storage.Builder builder) {
-        builder.setExtension(CommonProtobuf.test, value);
+        builder.setExtension(TestProtobuf.test, value);
     }
 
     public String getValue() {

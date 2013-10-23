@@ -29,13 +29,14 @@ import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
-import com.foundationdb.ais.protobuf.CommonProtobuf;
+import com.foundationdb.ais.protobuf.TestProtobuf;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 
 public class DummyStorageFormatRegistry extends StorageFormatRegistry
 {
     private DummyStorageFormatRegistry() {
         super();
+        TestProtobuf.registerAllExtensions(extensionRegistry);
     }
 
     public static StorageFormatRegistry create() {
@@ -67,8 +68,8 @@ public class DummyStorageFormatRegistry extends StorageFormatRegistry
         if (common != null) {
             return common;
         }
-        else if (pbStorage.hasExtension(CommonProtobuf.test)) {
-            return new TestStorageDescription(forObject, pbStorage.getExtension(CommonProtobuf.test));
+        else if (pbStorage.hasExtension(TestProtobuf.test)) {
+            return new TestStorageDescription(forObject, pbStorage.getExtension(TestProtobuf.test));
         }
         else {
             // These don't serialize, but we still want to pass

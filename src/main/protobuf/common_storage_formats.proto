@@ -13,6 +13,4 @@ enum MemoryTableType {
 extend Storage {
     optional MemoryTableType memory_table = 1001;
     optional string full_text_index_path = 1002;
-
-    optional string test = 1999;
 }
