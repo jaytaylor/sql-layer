@@ -407,7 +407,7 @@ public enum ErrorCode {
     // Class 53 - Internal error 
     INTERNAL_ERROR          ("53", "000", Importance.ERROR, null),
     INTERNAL_CORRUPTION     ("53", "001", Importance.ERROR, RowDataCorruptionException.class),
-    AIS_TOO_LARGE           ("53", "002", Importance.ERROR, AISTooLargeException.class),
+    // 53,002
     PERSISTIT_ERROR         ("53", "003", Importance.ERROR, PersistitAdapterException.class),
     TABLE_NOT_BOUND         ("53", "004", Importance.ERROR, TableNotBoundException.class),
     ROW_OUTPUT              ("53", "005", Importance.DEBUG, RowOutputException.class),    
