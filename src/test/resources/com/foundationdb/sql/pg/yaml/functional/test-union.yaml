@@ -68,6 +68,10 @@
 - Statement: select cid, null from customers UNION select cat, sku from categories
 - output: [[1, null], [1, 'Square'], [2, null], [2, 'Circle'], [3, null], [3, 'Hexagon']]
 ---
-- Statement: SELECT cid, name from customers UNION SELECT cat, sku FROM categories UNION select 1, cast ('Simple' as VARCHAR(32))
+- Statement: SELECT cid, name from customers UNION SELECT cat, sku FROM categories UNION select 1, 'Simple'
 - output: [[1, 'Simple'], [1, 'Smith'], [1, 'Square'], [2, 'Circle'], [2, 'Jones'],[3, 'Hexagon'],[3, 'Smithson']]
+---
+- Statement: select 0,'#' union select cid,name from customers union all select cat,sku from categories union select 7,'gg';
+- output: [[0, '#'],[1, 'Smith'], [1, 'Square'], [2, 'Circle'], [2, 'Jones'],[3, 'Hexagon'],[3, 'Smithson'], [7, 'gg']]
+
 ...
