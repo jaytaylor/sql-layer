@@ -27,9 +27,7 @@ import com.foundationdb.server.api.dml.scan.LegacyRowOutput;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.RowOutput;
 import com.foundationdb.server.error.CursorIsUnknownException;
-import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
-import com.foundationdb.server.service.lock.LockService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.session.SessionService;
 import com.foundationdb.server.service.transaction.TransactionService;
@@ -83,7 +81,7 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
     @Override
     DDLFunctions createDDLFunctions(BasicDXLMiddleman middleman) {
         return new ConcurrencyAtomicsDDLFunctions(middleman, schemaManager(), store(), indexStatisticsService(),
-                                                  t3Registry(), lockService(), txnService(), listenerService());
+                                                  t3Registry(), txnService(), listenerService());
     }
 
     public static ScanHooks installScanHook(Session session, ScanHooks hook) {
@@ -123,10 +121,10 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
 
     @Inject
     public ConcurrencyAtomicsDXLService(SchemaManager schemaManager, Store store, SessionService sessionService,
-                                        IndexStatisticsService indexStatisticsService, ConfigurationService configService,
-                                        TypesRegistryService t3Registry, TransactionService txnService, LockService lockService,
+                                        IndexStatisticsService indexStatisticsService,
+                                        TypesRegistryService t3Registry, TransactionService txnService,
                                         ListenerService listenerService) {
-        super(schemaManager, store, sessionService, indexStatisticsService, configService, t3Registry, txnService, lockService, listenerService);
+        super(schemaManager, store, sessionService, indexStatisticsService, t3Registry, txnService, listenerService);
     }
 
     public class ScanhooksDMLFunctions extends BasicDMLFunctions {
@@ -213,9 +211,9 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
 
         private ConcurrencyAtomicsDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store,
                                                IndexStatisticsService indexStatisticsService,
-                                               TypesRegistryService t3Registry, LockService lockService,
+                                               TypesRegistryService t3Registry,
                                                TransactionService txnService, ListenerService listenerService) {
-            super(middleman, schemaManager, store, indexStatisticsService, t3Registry, lockService, txnService, listenerService);
+            super(middleman, schemaManager, store, indexStatisticsService, t3Registry, txnService, listenerService);
         }
     }
 }

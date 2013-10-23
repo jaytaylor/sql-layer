@@ -58,10 +58,7 @@ import com.foundationdb.server.error.CursorCloseBadException;
 import com.foundationdb.server.error.CursorIsUnknownException;
 import com.foundationdb.server.error.NoSuchRowException;
 import com.foundationdb.server.error.NoSuchTableException;
-import com.foundationdb.server.error.QueryCanceledException;
-import com.foundationdb.server.error.QueryTimedOutException;
 import com.foundationdb.server.error.RowDefNotFoundException;
-import com.foundationdb.server.error.TableChangedByDDLException;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDataExtractor;
@@ -69,7 +66,6 @@ import com.foundationdb.server.rowdata.RowDataValueSource;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.listener.RowListener;
-import com.foundationdb.server.service.lock.LockService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.sql.optimizer.rule.PlanGenerator;
 import com.foundationdb.util.tap.InOutTap;
@@ -106,13 +102,11 @@ public abstract class AbstractStore<SDType> implements Store {
     private static final InOutTap PROPAGATE_REPLACE_TAP = Tap.createTimer("write: propagate_hkey_change_row_replace");
     private static final Session.MapKey<Integer,List<RowCollector>> COLLECTORS = Session.MapKey.mapNamed("collectors");
 
-    protected final LockService lockService;
     protected final SchemaManager schemaManager;
     protected final ListenerService listenerService;
 
 
-    protected AbstractStore(LockService lockService, SchemaManager schemaManager, ListenerService listenerService) {
-        this.lockService = lockService;
+    protected AbstractStore(SchemaManager schemaManager, ListenerService listenerService) {
         this.schemaManager = schemaManager;
         this.listenerService = listenerService;
     }
@@ -348,9 +342,7 @@ public abstract class AbstractStore<SDType> implements Store {
     }
 
     protected RowDef writeCheck(Session session, RowData rowData) {
-        final RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
-        lockAndCheckVersion(session, rowDef);
-        return rowDef;
+        return rowDefFromExplicitOrId(session, rowData);
     }
 
     protected void writeRow(Session session,
@@ -1033,42 +1025,6 @@ public abstract class AbstractStore<SDType> implements Store {
             } finally {
                 UPDATE_INDEX_TAP.out();
             }
-        }
-    }
-
-    private void lockAndCheckVersion(Session session, RowDef rowDef) {
-        final LockService.Mode mode = LockService.Mode.SHARED;
-        final int tableID = rowDef.getRowDefId();
-
-        // Since this is called on a per-row basis, we can't rely on re-entrancy.
-        if(lockService.isTableClaimed(session, mode, tableID) ||
-                lockService.isTableClaimed(session, LockService.Mode.EXCLUSIVE, tableID)) {
-            return;
-        }
-        /*
-         * No need to retry locks or back off already acquired. Other locker is DDL
-         * and it performs needed backoff to prevent deadlocks.
-         * Note that tryClaim() could be used and if false, throw TableChanged
-         * right away. Instead, desire is for timeout to elapse here so that client
-         * doesn't spin in a try lop.
-         */
-        try {
-            if(session.hasTimeoutAfterNanos()) {
-                long remaining = session.getRemainingNanosBeforeTimeout();
-                if(remaining <= 0 || !lockService.tryClaimTableNanos(session, mode, tableID, remaining)) {
-                    throw new QueryTimedOutException(session.getElapsedMillis());
-                }
-            } else {
-                lockService.claimTableInterruptible(session, mode, tableID);
-            }
-        } catch(InterruptedException e) {
-            throw new QueryCanceledException(session);
-        }
-
-        if(schemaManager.hasTableChanged(session, tableID)) {
-            // Simple: Release claim so we hit this block again. Could also rollback transaction?
-            lockService.releaseTable(session, LockService.Mode.SHARED, tableID);
-            throw new TableChangedByDDLException(rowDef.table().getName());
         }
     }
 

@@ -35,6 +35,8 @@ import java.io.OutputStream;
 import java.io.StringWriter;
 
 import static com.foundationdb.util.JsonUtils.createJsonGenerator;
+import static com.foundationdb.util.JsonUtils.createPrettyJsonGenerator;
+import static com.foundationdb.util.JsonUtils.makePretty;
 
 public class JsonFormatter
 {
@@ -43,10 +45,7 @@ public class JsonFormatter
     public String format(Explainer explainer) {
         StringWriter str = new StringWriter();
         try {
-            JsonGenerator generator = createJsonGenerator(str);
-            if (pretty) {
-                generator.useDefaultPrettyPrinter();
-            }
+            JsonGenerator generator = pretty ? createPrettyJsonGenerator(str) : createJsonGenerator(str);
             generate(generator, explainer);
             generator.flush();
         }
@@ -66,7 +65,7 @@ public class JsonFormatter
 
     public void format(Explainer explainer, JsonGenerator generator) throws IOException {
         if (pretty) {
-            generator.useDefaultPrettyPrinter();
+            makePretty(generator);
         }
         generate(generator, explainer);
         generator.flush();
