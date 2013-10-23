@@ -67,7 +67,6 @@ import com.foundationdb.server.service.transaction.TransactionService.CallbackTy
 import com.foundationdb.server.store.format.StorageFormatRegistry;
 import com.foundationdb.server.util.ReadWriteMap;
 import com.foundationdb.util.ArgumentValidation;
-import com.persistit.exception.PersistitException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -126,19 +125,6 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     // AbstractSchemaManager
     //
 
-    protected interface ThrowingCallable<V> {
-        public V runAndReturn(Session session) throws Exception;
-    }
-
-    protected static abstract class ThrowingRunnable implements ThrowingCallable<Void> {
-        public abstract void run(Session session) throws Exception;
-
-        public Void runAndReturn(Session session) throws Exception {
-            run(session);
-            return null;
-        }
-    }
-
     protected boolean isAlterTableActive(Session session) {
         return session.get(ALTER_TABLE_ACTIVE_KEY) == Boolean.TRUE;
     }
@@ -149,8 +135,6 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     protected abstract void saveAISChangeWithRowDefs(Session session, AkibanInformationSchema newAIS, Collection<String> schemaNames);
     /** validateAndFreeze, serializeMemoryTables, buildRowDefCache */
     protected abstract void unSavedAISChangeWithRowDefs(Session session, AkibanInformationSchema newAIS);
-    /** Run the given callable under a transaction, retrying if necessary. Session should be closed when finished. */
-    protected abstract <V> V transactionally(Session session, ThrowingCallable<V> callable);
     /** Remove any persisted table status state associated with the given table. */
     protected abstract void clearTableStatus(Session session, Table table);
     /** Called immediately prior to {@link #saveAISChangeWithRowDefs} when renaming a table */
@@ -191,24 +175,26 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     @Override
     public TableName registerStoredInformationSchemaTable(final Table newTable, final int version) {
-        transactionally(sessionService.createSession(), new ThrowingRunnable() {
-            @Override
-            public void run(Session session) throws PersistitException {
-                final TableName newName = newTable.getName();
-                checkSystemSchema(newName, true);
-                Table curTable = getAis(session).getTable(newName);
-                if(curTable != null) {
-                    Integer oldVersion = curTable.getVersion();
-                    if(oldVersion != null && oldVersion == version) {
-                        return;
-                    } else {
-                        throw new ISTableVersionMismatchException(oldVersion, version);
+        try(Session session = sessionService.createSession()) {
+            txnService.run(session, new Runnable() {
+                @Override
+                public void run() {
+                    final TableName newName = newTable.getName();
+                    checkSystemSchema(newName, true);
+                    Table curTable = getAis(session).getTable(newName);
+                    if(curTable != null) {
+                        Integer oldVersion = curTable.getVersion();
+                        if(oldVersion != null && oldVersion == version) {
+                            return;
+                        } else {
+                            throw new ISTableVersionMismatchException(oldVersion, version);
+                        }
                     }
-                }
 
-                createTableCommon(session, newTable, true, version, false);
-            }
-        });
+                    createTableCommon(session, newTable, true, version, false);
+                }
+            });
+        }
         return newTable.getName();
     }
 
@@ -221,23 +207,27 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         // Factory will actually get applied at the end of AISMerge.merge() onto
         // a new table.
         storageFormatRegistry.registerMemoryFactory(group.getName(), factory);
-        transactionally(sessionService.createSession(), new ThrowingRunnable() {
+        try(Session session = sessionService.createSession()) {
+            txnService.run(session, new Runnable() {
                 @Override
-                public void run(Session session) throws PersistitException {
+                public void run() {
                     createTableCommon(session, newTable, true, null, true);
                 }
             });
+        }
         return newTable.getName();
     }
 
     @Override
     public void unRegisterMemoryInformationSchemaTable(final TableName tableName) {
-        transactionally(sessionService.createSession(), new ThrowingRunnable() {
-            @Override
-            public void run(Session session) throws PersistitException {
-                dropTableCommon(session, tableName, DropBehavior.RESTRICT, true, true);
-            }
-        });
+        try(Session session = sessionService.createSession()) {
+            txnService.run(session, new Runnable() {
+                @Override
+                public void run() {
+                    dropTableCommon(session, tableName, DropBehavior.RESTRICT, true, true);
+                }
+            });
+        }
         storageFormatRegistry.unregisterMemoryFactory(tableName);
     }
 
@@ -510,22 +500,26 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     @Override
     public void registerSystemRoutine(final Routine routine) {
-        transactionally(sessionService.createSession(), new ThrowingRunnable() {
-            @Override
-            public void run(Session session) throws PersistitException {
-                createRoutineCommon(session, routine, true, false);
-            }
-        });
+        try(Session session = sessionService.createSession()) {
+            txnService.run(session, new Runnable() {
+                @Override
+                public void run() {
+                    createRoutineCommon(session, routine, true, false);
+                }
+            });
+        }
     }
 
     @Override
     public void unRegisterSystemRoutine(final TableName routineName) {
-        transactionally(sessionService.createSession(), new ThrowingRunnable() {
-            @Override
-            public void run(Session session) throws PersistitException {
-                dropRoutineCommon(session, routineName, true);
-            }
-        });
+        try(Session session = sessionService.createSession()) {
+            txnService.run(session, new Runnable() {
+                @Override
+                public void run() {
+                    dropRoutineCommon(session, routineName, true);
+                }
+            });
+        }
     }
 
     @Override
