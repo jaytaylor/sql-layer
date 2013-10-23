@@ -40,8 +40,7 @@ import com.foundationdb.qp.row.ValuesRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.PersistitAccumulatorTableStatusCache;
-import com.foundationdb.server.error.UnsupportedMetadataTypeException;
-import com.foundationdb.server.error.UnsupportedMetadataVersionException;
+import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.rowdata.RowDefCache;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.security.SecurityService;
@@ -452,18 +451,8 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
                 new TreeVisitor() {
                     @Override
                     public void visit(Exchange ex) throws PersistitException{
-                        SerializationType typeForVolume = detectSerializationType(session, ex);
-                        switch(typeForVolume) {
-                            case NONE:
-                                // Empty tree, nothing to do
-                            break;
-                            case PROTOBUF:
-                                checkAndSetSerialization(typeForVolume);
-                                loadProtobuf(ex, newAIS);
-                            break;
-                            default:
-                                throw new UnsupportedMetadataTypeException(typeForVolume.name());
-                        }
+
+                        loadProtobuf(ex, newAIS);
                     }
                 },
                 SCHEMA_TREE_NAME
@@ -486,7 +475,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
             String storedSchema = key.decodeString();
             if(storedVersion != PROTOBUF_PSSM_VERSION) {
                 LOG.debug("Unsupported version {} for schema {}", storedVersion, storedSchema);
-                throw new UnsupportedMetadataVersionException(PROTOBUF_PSSM_VERSION, storedVersion);
+                throw new AkibanInternalException("Unsupported metadata version: " + storedVersion);
             }
 
             byte[] storedAIS = ex.getValue().getByteArray();
@@ -681,7 +670,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
             validateAndFreeze(session, newAIS, GenValue.NEW, GenMap.NO_PUT);
             for(String schema : schemaNames) {
                 ex = schemaTreeExchange(session, schema);
-                buffer = checkAndSerialize(ex, buffer, newAIS, schema);
+                buffer = saveProtobuf(ex, buffer, newAIS, schema);
                 treeService.releaseExchange(session, ex);
                 ex = null;
             }
@@ -736,51 +725,6 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         writer.serialize(buffer);
         buffer.flip();
         return buffer;
-    }
-
-    public static SerializationType detectSerializationType(Session session, Exchange ex) {
-        try {
-            SerializationType type = SerializationType.NONE;
-
-            // Simple heuristic to determine which style AIS storage we have
-            boolean hasProtobuf = false;
-            boolean hasUnknown = false;
-
-            ex.clear().append(AIS_KEY_PREFIX);
-            while(ex.next(true)) {
-                if(ex.getKey().decodeType() != String.class) {
-                    break;
-                }
-                String k = ex.getKey().decodeString();
-                if(!k.startsWith(AIS_KEY_PREFIX)) {
-                    break;
-                }
-                if(k.equals(AIS_PROTOBUF_PARENT_KEY) || k.equals(AIS_MEMORY_TABLE_KEY)) {
-                    hasProtobuf = true;
-                } else {
-                    hasUnknown = true;
-                }
-            }
-
-            if(hasUnknown && hasProtobuf) {
-                throw new IllegalStateException("Both multiple serializations");
-            } else if(hasProtobuf) {
-                type = SerializationType.PROTOBUF;
-            } else if(hasUnknown) {
-                type = SerializationType.UNKNOWN;
-            }
-
-            return type;
-        } catch(PersistitException | RollbackException e) {
-            throw wrapPersistitException(session, e);
-        }
-    }
-
-    private void checkAndSetSerialization(SerializationType newSerializationType) {
-        if((serializationType != SerializationType.NONE) && (serializationType != newSerializationType)) {
-            throw new IllegalStateException("Mixed serialization types: " + serializationType + " vs " + newSerializationType);
-        }
-        serializationType = newSerializationType;
     }
 
     /** Public for test only. Should not generally be called. */
@@ -884,13 +828,6 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         return treeService.getExchange(session, link);
     }
 
-    /**
-     * @return Current serialization type
-     */
-    public SerializationType getSerializationType() {
-        return serializationType;
-    }
-
     @Override
     public long getOldestActiveAISGeneration() {
         aisMap.claimShared();
@@ -941,17 +878,6 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
             old.release();
         } else {
             txnService.addCallbackOnActive(session, CallbackType.END, CLEAR_SESSION_KEY_CALLBACK);
-        }
-    }
-
-    private ByteBuffer checkAndSerialize(Exchange ex, ByteBuffer buffer, AkibanInformationSchema newAIS, String schema) throws PersistitException {
-        if(serializationType == SerializationType.NONE) {
-            serializationType = DEFAULT_SERIALIZATION;
-        }
-        if(serializationType == SerializationType.PROTOBUF) {
-            return saveProtobuf(ex, buffer, newAIS, schema);
-        } else {
-            throw new IllegalStateException("Cannot serialize as " + serializationType);
         }
     }
 

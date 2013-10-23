@@ -29,7 +29,6 @@ import org.junit.Test;
 import java.util.Set;
 import java.util.concurrent.CyclicBarrier;
 
-import static com.foundationdb.server.store.PersistitStoreSchemaManager.SerializationType;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -49,17 +48,6 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
             rows[i] = createNewRow(tid, i+1);
         }
         writeRows(rows);
-    }
-
-
-    @Test
-    public void newDataSetReadAndSavedAsProtobuf() throws Exception {
-        createTable(SCHEMA, T1_NAME, T1_DDL);
-        assertEquals("Saved as PROTOBUF", SerializationType.PROTOBUF, pssm.getSerializationType());
-
-        safeRestart();
-
-        assertEquals("Saw PROTOBUF on load", SerializationType.PROTOBUF, pssm.getSerializationType());
     }
 
     @Test

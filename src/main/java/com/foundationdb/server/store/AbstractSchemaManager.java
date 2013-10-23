@@ -83,14 +83,7 @@ import java.util.Set;
 import java.util.UUID;
 
 public abstract class AbstractSchemaManager implements Service, SchemaManager {
-    public static enum SerializationType {
-        NONE,
-        PROTOBUF,
-        UNKNOWN
-    }
-
     public static final String SKIP_AIS_UPGRADE_PROPERTY = "fdbsql.skip_ais_upgrade";
-    public static final SerializationType DEFAULT_SERIALIZATION = SerializationType.PROTOBUF;
 
     public static final String DEFAULT_CHARSET = "fdbsql.default_charset";
     public static final String DEFAULT_COLLATION = "fdbsql.default_collation";
@@ -106,7 +99,6 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     protected final AISCloner aisCloner;
 
     protected SecurityService securityService;
-    protected SerializationType serializationType = SerializationType.NONE;
     protected ReadWriteMap<Integer,Integer> tableVersionMap;
 
     protected AbstractSchemaManager(ConfigurationService config, SessionService sessionService,
@@ -152,7 +144,6 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     @Override
     public void stop() {
-        this.serializationType = SerializationType.NONE;
     }
 
 
