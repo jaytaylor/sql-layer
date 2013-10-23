@@ -36,7 +36,6 @@ import com.foundationdb.server.rowdata.*;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
-import com.foundationdb.server.service.lock.LockService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.TreeService;
 import com.foundationdb.server.store.format.PersistitStorageDescription;
@@ -69,9 +68,8 @@ public class PersistitStore extends AbstractStore<Exchange> implements Service
     public PersistitStore(TreeService treeService,
                           ConfigurationService config,
                           SchemaManager schemaManager,
-                          LockService lockService,
                           ListenerService listenerService) {
-        super(lockService, schemaManager, listenerService);
+        super(schemaManager, listenerService);
         this.treeService = treeService;
         this.config = config;
     }

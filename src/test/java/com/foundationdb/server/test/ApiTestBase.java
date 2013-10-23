@@ -66,7 +66,6 @@ import com.foundationdb.server.service.config.TestConfigService;
 import com.foundationdb.server.service.dxl.DXLService;
 import com.foundationdb.server.service.dxl.DXLTestHookRegistry;
 import com.foundationdb.server.service.dxl.DXLTestHooks;
-import com.foundationdb.server.service.lock.LockService;
 import com.foundationdb.server.service.routines.RoutineLoader;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
@@ -544,10 +543,6 @@ public class ApiTestBase {
 
     protected final TransactionService txnService() {
         return sm.getServiceByClass(TransactionService.class);
-    }
-
-    protected final LockService lockService() {
-        return sm.getServiceByClass(LockService.class);
     }
 
     protected final RoutineLoader routineLoader() {
