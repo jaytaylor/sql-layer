@@ -1015,7 +1015,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
 
         AkibanInformationSchema ais = builder.ais();
         Table table = ais.getTable(factory.getName());
-        registerMemoryInformationSchemaTable(table, factory, true);
+        registerMemoryInformationSchemaTable(table, factory);
     }
 
     @Override

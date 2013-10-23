@@ -38,7 +38,7 @@ public class SchemaTablesService {
         this.schemaManager = schemaManager;
     }
     
-    protected void attach(AkibanInformationSchema ais, boolean doRegister, TableName name, Class<? extends BasicFactoryBase> clazz) {
+    protected void attach(AkibanInformationSchema ais, TableName name, Class<? extends BasicFactoryBase> clazz) {
         Table table = ais.getTable(name);
         assert table != null;
         final BasicFactoryBase factory;
@@ -47,7 +47,7 @@ public class SchemaTablesService {
         } catch(Exception e) {
             throw new RuntimeException(e);
         }
-        schemaManager.registerMemoryInformationSchemaTable(table, factory, doRegister);
+        schemaManager.registerMemoryInformationSchemaTable(table, factory);
     }
     
     protected abstract class BaseScan implements GroupScan {

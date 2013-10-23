@@ -75,11 +75,10 @@ public interface SchemaManager {
      *
      * @param newTable New table to create.
      * @param factory Factory to service this table.
-     * @param doRegister actually store table in AIS.
      *
      * @return Name of the table that was created.
      */
-    TableName registerMemoryInformationSchemaTable(Table newTable, MemoryTableFactory factory, boolean doRegister);
+    TableName registerMemoryInformationSchemaTable(Table newTable, MemoryTableFactory factory);
 
     /**
      * Delete the definition of a table in the {@link TableName#INFORMATION_SCHEMA}
