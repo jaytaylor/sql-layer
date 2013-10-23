@@ -18,7 +18,6 @@
 package com.foundationdb.server.service.dxl;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -32,7 +31,6 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.DefaultNameGenerator;
 import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexName;
 import com.foundationdb.ais.model.Join;
@@ -63,8 +61,6 @@ import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.AlterMadeNoChangeException;
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.error.InvalidAlterException;
-import com.foundationdb.server.error.QueryCanceledException;
-import com.foundationdb.server.error.QueryTimedOutException;
 import com.foundationdb.server.error.ViewReferencesExist;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.api.DDLFunctions;
@@ -86,7 +82,6 @@ import com.foundationdb.server.error.UnsupportedDropException;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.listener.TableListener;
-import com.foundationdb.server.service.lock.LockService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.service.tree.TreeLink;
@@ -121,7 +116,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     private final IndexStatisticsService indexStatisticsService;
     private final TypesRegistryService t3Registry;
-    private final LockService lockService;
     private final TransactionService txnService;
     private final ListenerService listenerService;
     
@@ -223,21 +217,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     @Override
     public void dropTable(Session session, TableName tableName)
     {
-        final int tableID;
-        txnService.beginTransaction(session);
-        try {
-            Table table = getAIS(session).getTable(tableName);
-            // Dropping a non-existing table is a no-op
-            if(table == null) {
-                return;
-            }
-            tableID = table.getTableId();
-            txnService.commitTransaction(session);
-        } finally {
-            txnService.rollbackTransactionIfOpen(session);
-        }
-
-        lockTables(session, Arrays.asList(tableID));
         txnService.beginTransaction(session);
         try {
             dropTableInternal(session, tableName);
@@ -501,12 +480,13 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                                   List<TableChange> origColChanges, List<TableChange> origIndexChanges,
                                   QueryContext context)
     {
-        final Set<Integer> tableIDs = new HashSet<>();
-        final List<TableChange> columnChanges = new ArrayList<>(origColChanges);
-        final List<TableChange> indexChanges = new ArrayList<>(origIndexChanges);
-        final TableChangeValidator validator;
+        final ChangeLevel level;
         txnService.beginTransaction(session);
         try {
+            final Set<Integer> tableIDs = new HashSet<>();
+            final List<TableChange> columnChanges = new ArrayList<>(origColChanges);
+            final List<TableChange> indexChanges = new ArrayList<>(origIndexChanges);
+            final TableChangeValidator validator;
             Table origTable = getTable(session, tableName);
             validator = new TableChangeValidator(origTable, newDefinition, columnChanges, indexChanges,
                                                  ALTER_AUTO_INDEX_CHANGES);
@@ -537,15 +517,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 }
             }
 
-            txnService.commitTransaction(session);
-        } finally {
-            txnService.rollbackTransactionIfOpen(session);
-        }
-
-        lockTables(session, new ArrayList<>(tableIDs));
-        final ChangeLevel level;
-        txnService.beginTransaction(session);
-        try {
             schemaManager().setAlterTableActive(session, true);
             level = alterTableInternal(session, tableIDs, tableName, newDefinition, columnChanges, indexChanges, validator, context);
             txnService.commitTransaction(session);
@@ -723,30 +694,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     public void alterSequence(Session session, TableName sequenceName, Sequence newDefinition)
     {
         logger.trace("altering sequence {}", sequenceName);
-
-        // Lock the table, if any, that this sequence is an identity generator for
-        // Note: If/when we have expression DEFAULT values, they will need checked too.
-        List<Integer> tableIDs = new ArrayList<>();
-        txnService.beginTransaction(session);
-        try {
-            AkibanInformationSchema ais = getAIS(session);
-            Sequence s = ais.getSequence(sequenceName);
-            if(s != null) {
-                for(Table table : ais.getTables().values()) {
-                    for(Column column : table.getColumnsIncludingInternal()) {
-                        if(column.getIdentityGenerator() == s) {
-                            tableIDs.add(table.getTableId());
-                        }
-                    }
-                }
-            }
-            // else: throw below
-            txnService.commitTransaction(session);
-        } finally {
-            txnService.rollbackTransactionIfOpen(session);
-        }
-
-        lockTables(session, tableIDs);
         txnService.beginTransaction(session);
         try {
             AkibanInformationSchema ais = getAIS(session);
@@ -769,22 +716,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     public void dropSchema(Session session, String schemaName)
     {
         logger.trace("dropping schema {}", schemaName);
-
-        List<Integer> tableIDs = new ArrayList<>();
-        txnService.beginTransaction(session);
-        try {
-            final com.foundationdb.ais.model.Schema schema = getAIS(session).getSchema(schemaName);
-            if(schema != null) {
-                for(Table table : schema.getTables().values()) {
-                    tableIDs.add(table.getTableId());
-                }
-            }
-            txnService.commitTransaction(session);
-        } finally {
-            txnService.rollbackTransactionIfOpen(session);
-        }
-
-        lockTables(session, tableIDs);
         txnService.beginTransaction(session);
         try {
             dropSchemaInternal(session, schemaName);
@@ -905,26 +836,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     public void dropGroup(Session session, TableName groupName)
     {
         logger.trace("dropping group {}", groupName);
-
-        List<Integer> tableIDs = new ArrayList<>();
-        txnService.beginTransaction(session);
-        try {
-            AkibanInformationSchema ais = getAIS(session);
-            Group group = ais.getGroup(groupName);
-            if(group == null) {
-                return;
-            }
-            for(Table table : ais.getTables().values()) {
-                if(table.getGroup() == group) {
-                    tableIDs.add(table.getTableId());
-                }
-            }
-            txnService.commitTransaction(session);
-        } finally {
-            txnService.rollbackTransactionIfOpen(session);
-        }
-
-        lockTables(session, tableIDs);
         txnService.beginTransaction(session);
         try {
             dropGroupInternal(session, groupName);
@@ -1021,38 +932,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     @Override
     public void createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
-        if (indexesToAdd.isEmpty() == true) {
+        logger.debug("creating indexes {}", indexesToAdd);
+        if (indexesToAdd.isEmpty()) {
             return;
         }
-        logger.debug("creating indexes {}", indexesToAdd);
 
-        List<Integer> tableIDs = new ArrayList<>(indexesToAdd.size());
-        txnService.beginTransaction(session);
-        try {
-            AkibanInformationSchema ais = getAIS(session);
-            // Cannot use Index.getAllTableIDs(), stub AIS only has to be name-correct
-            for(Index index : indexesToAdd) {
-                switch(index.getIndexType()) {
-                    case FULL_TEXT: // TODO: More IDs?
-                    case TABLE:
-                        Table table = ais.getTable(index.getIndexName().getFullTableName());
-                        if(table != null) {
-                            tableIDs.add(table.getTableId());
-                        }
-                    break;
-                    case GROUP:
-                        collectAncestorTableIDs(tableIDs, ais.getTable(index.leafMostTable().getName()));
-                    break;
-                    default:
-                        throw new IllegalStateException("Unknown index type: " + index.getIndexType());
-                }
-            }
-            txnService.commitTransaction(session);
-        } finally {
-            txnService.rollbackTransactionIfOpen(session);
-        }
-
-        lockTables(session, tableIDs);
         Collection<Index> newIndexes = null;
         txnService.beginTransaction(session);
         try {
@@ -1089,20 +973,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     public void dropTableIndexes(Session session, TableName tableName, Collection<String> indexNamesToDrop)
     {
         logger.trace("dropping table indexes {} {}", tableName, indexNamesToDrop);
-        if(indexNamesToDrop.isEmpty() == true) {
+        if(indexNamesToDrop.isEmpty()) {
             return;
         }
 
-        final int tableID;
-        txnService.beginTransaction(session);
-        try {
-            tableID = getTable(session, tableName).getTableId();
-            txnService.commitTransaction(session);
-        } finally {
-            txnService.rollbackTransactionIfOpen(session);
-        }
-
-        lockTables(session, Arrays.asList(tableID));
         txnService.beginTransaction(session);
         try {
             final Table table = getTable(session, tableName);
@@ -1136,26 +1010,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         if(indexNamesToDrop.isEmpty()) {
             return;
         }
-
-        List<Integer> tableIDs = new ArrayList<>(3);
-        txnService.beginTransaction(session);
-        try {
-            Group group = getAIS(session).getGroup(groupName);
-            if(group == null) {
-                throw new NoSuchGroupException(groupName);
-            }
-            for(String name : indexNamesToDrop) {
-                GroupIndex index = group.getIndex(name);
-                if(index == null) {
-                    throw new NoSuchIndexException(name);
-                }
-                tableIDs.addAll(index.getAllTableIDs());
-            }
-        } finally {
-            txnService.rollbackTransactionIfOpen(session);
-        }
-
-        lockTables(session, tableIDs);
         txnService.beginTransaction(session);
         try {
             final Group group = getAIS(session).getGroup(groupName);
@@ -1277,58 +1131,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         });
     }
 
-    private void collectAncestorTableIDs(Collection<Integer> tableIDs, Table table) {
-        while(table != null) {
-            tableIDs.add(table.getTableId());
-            table = table.parentTable();
-        }
-    }
-
-    private void lockTables(Session session, List<Integer> tableIDs) {
-        // No locks, whatsoever, expected to be held before DDL calls this
-        assert !lockService.hasAnyClaims(session, LockService.Mode.SHARED) : "Shared claims";
-        assert !lockService.hasAnyClaims(session, LockService.Mode.EXCLUSIVE) : "Shared claims";
-
-        final LockService.Mode mode = LockService.Mode.EXCLUSIVE;
-        /*
-         * Lock order is well defined for DDL, but DML transactions can operate in any
-         * order. Current strategy is to give preference to DML that has already began so
-         * that a DDL doesn't kill off a (potentially large) amount of work and avoid
-         * deadlocks.
-         *
-         * Strategy:
-         * Claim (with timeout) the first table and if there are more, only use
-         * instantaneous claims and back off already acquired locks if unsuccessful.
-         */
-        Collections.sort(tableIDs);
-        final int count = tableIDs.size();
-        for(int i = 0; i < count;) {
-            final int tableID = tableIDs.get(i++);
-            if(i == 0) {
-                try {
-                    if(session.hasTimeoutAfterNanos()) {
-                        final long remaining = session.getRemainingNanosBeforeTimeout();
-                        if(remaining <= 0 || !lockService.tryClaimTableNanos(session, mode, tableID, remaining)) {
-                            throw new QueryTimedOutException(session.getElapsedMillis());
-                        }
-                    } else {
-                        lockService.claimTableInterruptible(session, mode, tableID);
-                    }
-                } catch(InterruptedException e) {
-                    throw new QueryCanceledException(session);
-                }
-            } else {
-                if(!lockService.tryClaimTable(session, mode, tableID)) {
-                    // Didn't get the new lock, unwind previous ones and start over
-                    for(int j = 0; j < (i - 1); ++j) {
-                        lockService.releaseTable(session, mode, tableIDs.get(j));
-                    }
-                    i = 0;
-                }
-            }
-        }
-    }
-    
     public void createSequence(Session session, Sequence sequence) {
         schemaManager().createSequence (session, sequence);
     }
@@ -1351,11 +1153,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     BasicDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store,
                       IndexStatisticsService indexStatisticsService, TypesRegistryService t3Registry,
-                      LockService lockService, TransactionService txnService, ListenerService listenerService) {
+                      TransactionService txnService, ListenerService listenerService) {
         super(middleman, schemaManager, store);
         this.indexStatisticsService = indexStatisticsService;
         this.t3Registry = t3Registry;
-        this.lockService = lockService;
         this.txnService = txnService;
         this.listenerService = listenerService;
     }
