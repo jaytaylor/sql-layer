@@ -36,9 +36,9 @@ import static com.foundationdb.ais.protobuf.ProtobufWriter.WriteSelector;
 import static com.foundationdb.ais.protobuf.ProtobufWriter.SingleSchemaSelector;
 
 public class AISDumper {
-    public static String dumpDeterministicAIS(AkibanInformationSchema ais, String schema) {
+    public static String dumpDeterministicAIS(AISCloner aisCloner, AkibanInformationSchema ais, String schema) {
         WriteSelector selector = new SingleSchemaSelector(schema);
-        AkibanInformationSchema clone = AISCloner.clone(ais, selector);
+        AkibanInformationSchema clone = aisCloner.clone(ais, selector);
         Map<Sequence,Column> identityColumns = new HashMap<>();
         for(Table table : clone.getTables().values()) {
             table.setTableId(-1);
@@ -55,14 +55,14 @@ public class AISDumper {
             }
             for(Index index : table.getIndexesIncludingInternal()) {
                 index.setIndexId(-1);
-                index.setTreeName(null);
+                index.setStorageDescription(null);
             }
         }
         for(Group group : clone.getGroups().values()) {
-            group.setTreeName(null);
+            group.setStorageDescription(null);
             for(Index index : group.getIndexes()) {
                 index.setIndexId(-1);
-                index.setTreeName(null);
+                index.setStorageDescription(null);
             }
         }
         // Get rid of generated tree and sequence names

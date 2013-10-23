@@ -17,6 +17,8 @@
 
 package com.foundationdb.ais.model;
 
+import com.foundationdb.server.store.format.StorageFormatRegistry;
+
 import java.net.URL;
 
 import java.util.ArrayList;
@@ -53,19 +55,53 @@ public class AISBuilder {
         }
     }
 
+    // Used when no format registry is passed to constructor. Adds a
+    // StorageDescription that trivially passes validation and must be
+    // replaced later. NOTE: this does not serialize; cf. TestStorageDescription.
+    public static class StandinStorageDescription extends StorageDescription {
+        public StandinStorageDescription(HasStorage forObject) {
+            super(forObject);
+        }
+        
+        public StorageDescription cloneForObject(HasStorage forObject) {
+            return new StandinStorageDescription(forObject);
+        }
+        
+        public void writeProtobuf(com.foundationdb.ais.protobuf.AISProtobuf.Storage.Builder builder) {
+        }
+
+        public Object getUniqueKey() {
+            if (object instanceof Index)
+                return ((Index)object).getIndexName();
+            else if (object instanceof Group)
+                return ((Group)object).getName();
+            else if (object instanceof Sequence)
+                return ((Sequence)object).getSequenceName();
+            else
+                return null;
+        }
+
+        public String getNameString() {
+            return getUniqueKey() + "_standin";
+        }
+
+        public void validate(com.foundationdb.ais.model.validation.AISValidationOutput output) {
+        }
+    }
 
     public AISBuilder() {
         this(new AkibanInformationSchema());
     }
 
     public AISBuilder(AkibanInformationSchema ais) {
-        this(ais, new SimpleGenerator(ais));
+        this(ais, new SimpleGenerator(ais), null);
     }
 
-    public AISBuilder(AkibanInformationSchema ais, NameGenerator nameGenerator) {
+    public AISBuilder(AkibanInformationSchema ais, NameGenerator nameGenerator, StorageFormatRegistry storageFormatRegistry) {
         LOG.trace("creating builder");
         this.ais = ais;
         this.nameGenerator = nameGenerator;
+        this.storageFormatRegistry = storageFormatRegistry;
     }
 
     public NameGenerator getNameGenerator() {
@@ -76,7 +112,7 @@ public class AISBuilder {
                              long start, long increment, long minValue, long maxValue, boolean cycle) {
         LOG.trace("sequence: {}.{} ", schemaName,sequenceName);
         Sequence identityGenerator = Sequence.create(ais, schemaName, sequenceName, start, increment, minValue, maxValue, cycle);
-        identityGenerator.setTreeName(nameGenerator.generateSequenceTreeName(identityGenerator));
+        finishStorageDescription(identityGenerator);
         return identityGenerator;
     }
     
@@ -166,7 +202,7 @@ public class AISBuilder {
         Table table = ais.getTable(schemaName, tableName);
         checkFound(table, "creating index", "table", concat(schemaName, tableName));
         Index index = TableIndex.create(ais, table, indexName, indexID, unique, constraint);
-        index.setTreeName(nameGenerator.generateIndexTreeName(index));
+        finishStorageDescription(index);
     }
 
     /** @deprecated */
@@ -184,7 +220,7 @@ public class AISBuilder {
         String constraint = unique ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT;
         int indexID = nameGenerator.generateIndexID(getRooTableID(group.getRoot()));
         Index index = GroupIndex.create(ais, group, indexName, indexID, unique, constraint, joinType);
-        index.setTreeName(nameGenerator.generateIndexTreeName(index));
+        finishStorageDescription(index);
     }
 
     public void indexColumn(String schemaName, String tableName,
@@ -435,7 +471,7 @@ public class AISBuilder {
     public void createGroup(String groupName, String groupSchemaName) {
         LOG.trace("createGroup: {} in {}", groupName, groupSchemaName);
         Group group = Group.create(ais, groupSchemaName, groupName);
-        group.setTreeName(nameGenerator.generateGroupTreeName(groupSchemaName, groupName));
+        finishStorageDescription(group);
     }
 
     /** @deprecated **/
@@ -669,18 +705,23 @@ public class AISBuilder {
         // Hook up root tables
         for(Group group : ais.getGroups().values()) {
             setRootIfNeeded(group);
-            if(group.getTreeName() == null) {
-                group.setTreeName(nameGenerator.generateGroupTreeName(group.getSchemaName(), group.getName().getTableName()));
-            }
+            finishStorageDescription(group);
         }
         // Create hidden PKs if needed. Needs group hooked up before it can be called (to generate index id).
         for (Table table : ais.getTables().values()) {
             table.endTable(nameGenerator);
             // endTable may have created new index, set its tree name if so
             Index index = table.getPrimaryKeyIncludingInternal().getIndex();
-            if (index.getTreeName() == null) {
-                index.setTreeName(nameGenerator.generateIndexTreeName(index));
-            }
+            finishStorageDescription(index);
+        }
+    }
+
+    public void finishStorageDescription(HasStorage object) {
+        if (storageFormatRegistry != null) {
+            storageFormatRegistry.finishStorageDescription(object, nameGenerator);
+        }
+        else if (object.getStorageDescription() == null) {
+            object.setStorageDescription(new StandinStorageDescription(object));
         }
     }
 
@@ -795,10 +836,10 @@ public class AISBuilder {
      * must have the same tree name). If testing parts of builder that aren't grouped and
      * LIVE_VALIDATIONS are called, this is a simple work around for that.
      */
-    public void setGroupTreeNamesForTest() {
+    public void setGroupStorageDescriptionsForTest() {
         for(Group group : ais.getGroups().values()) {
-            if(group.getTreeName() == null) {
-                group.setTreeName(group.getName().toString());
+            if(group.getStorageDescription() == null) {
+                group.setStorageDescription(new StandinStorageDescription(group));
             }
         }
     }
@@ -848,11 +889,12 @@ public class AISBuilder {
     public final static int MAX_COLUMN_NAME_LENGTH = 64;
 
     private final AkibanInformationSchema ais;
-    private Map<String, ForwardTableReference> forwardReferences = // join name
-                                                                   // ->
-                                                                   // ForwardTableReference
-    new LinkedHashMap<>();
-    private NameGenerator nameGenerator;
+    private final Map<String, ForwardTableReference> forwardReferences = // join name
+                                                                         // ->
+                                                                         // ForwardTableReference
+        new LinkedHashMap<>();
+    private final NameGenerator nameGenerator;
+    private final StorageFormatRegistry storageFormatRegistry;
 
     // Inner classes
 

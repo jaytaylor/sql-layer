@@ -27,10 +27,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.DefaultNameGenerator;
 import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexName;
 import com.foundationdb.ais.model.Join;
@@ -84,7 +86,6 @@ import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.listener.TableListener;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
-import com.foundationdb.server.service.tree.TreeLink;
 import com.foundationdb.server.expressions.TypesRegistryService;
 import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TExecutionContext;
@@ -245,7 +246,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             // Root table and no child tables, can delete all associated trees
             store().removeTrees(session, table);
         } else {
-            dml.truncateTable(session, table.getTableId());
+            dml.truncateTable(session, table.getTableId(), false);
             store().deleteIndexes(session, table.getIndexesIncludingInternal());
             store().deleteIndexes(session, table.getGroupIndexes());
 
@@ -635,11 +636,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             AkibanInformationSchema curAIS = getAIS(session);
             if(!success && (origAIS != curAIS)) {
                 // Be extra careful with null checks.. In a failure state, don't know what was created.
-                List<TreeLink> links = new ArrayList<>();
+                List<HasStorage> objects = new ArrayList<>();
                 if(removeOldGroupTree) {
                     Table newTable = curAIS.getTable(newDefinition.getName());
                     if(newTable != null) {
-                        links.add(newTable.getGroup());
+                        objects.add(newTable.getGroup());
                     }
                 }
 
@@ -647,7 +648,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     Table oldParent = origTable.getParentJoin().getParent();
                     Table newOldParent = curAIS.getTable(oldParent.getName());
                     if(newOldParent != null) {
-                        links.add(newOldParent.getGroup());
+                        objects.add(newOldParent.getGroup());
                     }
                 }
 
@@ -656,12 +657,12 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     if(table != null) {
                         Index index = table.getIndexIncludingInternal(name.getName());
                         if(index != null) {
-                            links.add(index);
+                            objects.add(index);
                         }
                     }
                 }
 
-                store().removeTrees(session, links);
+                store().removeTrees(session, objects);
             }
         }
 
@@ -872,6 +873,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
+    public AISCloner getAISCloner() {
+        return schemaManager().getAISCloner();
+    }
+
+    @Override
     public int getTableId(Session session, TableName tableName) throws NoSuchTableException {
         logger.trace("getting table ID for {}", tableName);
         Table table = getAIS(session).getTable(tableName);
@@ -948,11 +954,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
             // If indexes left in list, transaction was not committed and trees aren't transactional. Try to clean up.
             if((newIndexes != null) && !newIndexes.isEmpty() && schemaManager().treeRemovalIsDelayed()) {
-                Collection<TreeLink> links = new ArrayList<>(newIndexes.size());
+                Collection<HasStorage> objects = new ArrayList<>(newIndexes.size());
                 for(Index index : newIndexes) {
-                    links.add(index);
+                    objects.add(index);
                 }
-                store().removeTrees(session, links);
+                store().removeTrees(session, objects);
             }
         }
     }
@@ -980,22 +986,32 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         txnService.beginTransaction(session);
         try {
             final Table table = getTable(session, tableName);
-            Collection<Index> indexes = new HashSet<>();
+            Collection<Index> tableIndexes = new HashSet<>();
+            Collection<Index> allIndexes = tableIndexes;
             for(String indexName : indexNamesToDrop) {
                 Index index = table.getIndex(indexName);
-                if(index == null &&
-                   !((index = table.getFullTextIndex(indexName)) != null)) {
-                    throw new NoSuchIndexException (indexName);
+                if(index != null) {
+                    tableIndexes.add(index);
+                }
+                else if ((index = table.getFullTextIndex(indexName)) != null) {
+                    if (allIndexes == tableIndexes) {
+                        allIndexes = new HashSet<>(allIndexes);
+                    }
+                }
+                else {
+                    throw new NoSuchIndexException(indexName);
                 }
                 if(index.isPrimaryKey()) {
                     throw new ProtectedIndexException(indexName, table.getName());
                 }
-                indexes.add(index);
+                if (allIndexes != tableIndexes) {
+                    allIndexes.add(index);
+                }
             }
-            schemaManager().dropIndexes(session, indexes);
-            store().deleteIndexes(session, indexes);
+            schemaManager().dropIndexes(session, allIndexes);
+            store().deleteIndexes(session, tableIndexes);
             for(TableListener listener : listenerService.getTableListeners()) {
-                listener.onDropIndex(session, indexes);
+                listener.onDropIndex(session, allIndexes);
             }
             checkCursorsForDDLModification(session, table);
             txnService.commitTransaction(session);

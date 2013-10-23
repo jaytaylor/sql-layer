@@ -308,8 +308,10 @@ public class ProtobufWriter {
         final Table rootTable = group.getRoot();
         AISProtobuf.Group.Builder groupBuilder = AISProtobuf.Group.newBuilder().
                 setRootTableName(rootTable.getName().getTableName());
-        if(group.getTreeName() != null) {
-                groupBuilder.setTreeName(group.getTreeName());
+        if(group.getStorageDescription() != null) {
+            AISProtobuf.Storage.Builder storageBuilder = AISProtobuf.Storage.newBuilder();
+            group.getStorageDescription().writeProtobuf(storageBuilder);
+            groupBuilder.setStorage(storageBuilder.build());
         }
 
         for(Index index : group.getIndexes()) {
@@ -494,8 +496,10 @@ public class ProtobufWriter {
         if(index.isGroupIndex()) {
             indexBuilder.setJoinType(convertJoinType(index.getJoinType()));
         }
-        if(index.getTreeName() != null) {
-            indexBuilder.setTreeName(index.getTreeName());
+        if(index.getStorageDescription() != null) {
+            AISProtobuf.Storage.Builder storageBuilder = AISProtobuf.Storage.newBuilder();
+            index.getStorageDescription().writeProtobuf(storageBuilder);
+            indexBuilder.setStorage(storageBuilder.build());
         }
         if (index.getIndexMethod() == Index.IndexMethod.Z_ORDER_LAT_LON) {
             indexBuilder.
@@ -619,11 +623,10 @@ public class ProtobufWriter {
                 .setMinValue(sequence.getMinValue())
                 .setMaxValue(sequence.getMaxValue())
                 .setIsCycle(sequence.isCycle());
-        if (sequence.getTreeName() != null) {
-            sequenceBuilder.setTreeName(sequence.getTreeName());
-        }
-        if (sequence.getAccumIndex() != null) {
-            sequenceBuilder.setAccumulator(sequence.getAccumIndex());
+        if(sequence.getStorageDescription() != null) {
+            AISProtobuf.Storage.Builder storageBuilder = AISProtobuf.Storage.newBuilder();
+            sequence.getStorageDescription().writeProtobuf(storageBuilder);
+            sequenceBuilder.setStorage(storageBuilder.build());
         }
         schemaBuilder.addSequences (sequenceBuilder.build());
     }

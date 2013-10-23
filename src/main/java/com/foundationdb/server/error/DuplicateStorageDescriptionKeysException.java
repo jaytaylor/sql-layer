@@ -17,13 +17,13 @@
 
 package com.foundationdb.server.error;
 
-import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.HasStorage;
 
-public class IndexTreeNameIsNullException extends InvalidOperationException {
-    public IndexTreeNameIsNullException(Index index) {
-        super(ErrorCode.INDEX_TREE_NAME_IS_NULL,
-              index.getIndexName().getSchemaName(),
-              index.getIndexName().getTableName(),
-              index.getIndexName().getName());
+public class DuplicateStorageDescriptionKeysException extends InvalidOperationException {
+    public DuplicateStorageDescriptionKeysException (HasStorage obj1, HasStorage obj2, Object key) {
+        super (ErrorCode.DUPLICATE_STORAGE_DESCRIPTION_KEYS,
+               obj1.getTypeString(), obj1.getNameString(),
+               obj2.getTypeString(), obj2.getNameString(),
+               key.toString());
     }
 }

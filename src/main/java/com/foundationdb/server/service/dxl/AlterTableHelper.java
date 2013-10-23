@@ -17,7 +17,6 @@
 
 package com.foundationdb.server.service.dxl;
 
-import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
@@ -116,8 +115,7 @@ public class AlterTableHelper {
     public void createAffectedGroupIndexes(Session session, BasicDDLFunctions ddl, Table origTable, Table newTable, boolean dataChange) {
         // Ideally only would copy the Group, but that is vulnerable to changing group names. Even if we handle that
         // by looking up the new name, index creation in PSSM requires index.getName().getTableName() match the actual.
-        AkibanInformationSchema tempAIS = AISCloner.clone(newTable.getAIS());
-
+        AkibanInformationSchema tempAIS = ddl.getAISCloner().clone(newTable.getAIS());
         List<Index> indexesToBuild = new ArrayList<>();
         Group origGroup = origTable.getGroup();
         Group tempGroup = tempAIS.getGroup(newTable.getGroup().getName());
@@ -135,7 +133,7 @@ public class AlterTableHelper {
                 Column tempColumn = tempTable.getColumn(tcn.newColumnName);
                 IndexColumn.create(tempIndex,  tempColumn, i, true, null);
             }
-            tempIndex.setTreeName(origIndex.getTreeName());
+            tempIndex.copyStorageDescription(origIndex);
             indexesToBuild.add(tempIndex);
         }
 

@@ -17,7 +17,6 @@
 
 package com.foundationdb.ais.model;
 
-import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.util.ArgumentValidation;
 
@@ -600,17 +599,7 @@ public class Table extends Columnar implements Traversable, HasGroup
 
     public boolean hasMemoryTableFactory()
     {
-        return tableFactory != null;
-    }
-
-    public MemoryTableFactory getMemoryTableFactory()
-    {
-        return tableFactory;
-    }
-
-    public void setMemoryTableFactory(MemoryTableFactory tableFactory)
-    {
-        this.tableFactory = tableFactory;
+        return (group != null) && group.hasMemoryTableFactory();
     }
 
     public boolean hasVersion()
@@ -767,7 +756,6 @@ public class Table extends Columnar implements Traversable, HasGroup
     private List<Column> allHKeyColumns;
     private Integer depth = null;
     private volatile List<Table> hKeyDependentTables;
-    private MemoryTableFactory tableFactory;
     private Integer version;
     private PendingOSC pendingOSC;
     private final Collection<FullTextIndex> fullTextIndexes;

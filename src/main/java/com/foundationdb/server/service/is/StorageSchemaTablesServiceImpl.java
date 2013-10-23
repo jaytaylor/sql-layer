@@ -91,37 +91,37 @@ public class StorageSchemaTablesServiceImpl
         AkibanInformationSchema ais = createTablesToRegister();
         
         //STORAGE_ALERTS_SUMMARY
-        attach (ais, true, STORAGE_ALERTS_SUMMARY, AlertSummaryFactory.class);
+        attach (ais, STORAGE_ALERTS_SUMMARY, AlertSummaryFactory.class);
         
         // STORAGE_BUFFER_POOLS
-        attach (ais, true, STORAGE_BUFFER_POOLS, BufferPoolFactory.class);
+        attach (ais, STORAGE_BUFFER_POOLS, BufferPoolFactory.class);
         
         //STORAGE_CHECKPOINT_SUMMARY
-        attach (ais, true, STORAGE_CHECKPOINT_SUMMARY, CheckpointSummaryFactory.class);
+        attach (ais, STORAGE_CHECKPOINT_SUMMARY, CheckpointSummaryFactory.class);
 
         //STORAGE_CLEANUP_MANAGER_SUMMARY
-        attach (ais, true, STORAGE_CLEANUP_MANAGER_SUMMARY, CleanupSummaryFactory.class);
+        attach (ais, STORAGE_CLEANUP_MANAGER_SUMMARY, CleanupSummaryFactory.class);
         
         //STORAGE_IO_METER_SUMMARY
-        attach (ais, true, STORAGE_IO_METER_SUMMARY, IoSummaryFactory.class);
+        attach (ais, STORAGE_IO_METER_SUMMARY, IoSummaryFactory.class);
 
         // STORAGE_IO_METERS
-        attach(ais, true, STORAGE_IO_METERS, IOMetersFactory.class);
+        attach(ais, STORAGE_IO_METERS, IOMetersFactory.class);
 
         //STORAGE_JOURNAL_MANAGER_SUMMARY
-        attach (ais, true, STORAGE_JOURNAL_MANAGER_SUMMARY, JournalManagerFactory.class);
+        attach (ais, STORAGE_JOURNAL_MANAGER_SUMMARY, JournalManagerFactory.class);
 
         //STORAGE_MANAGEMENT_SUMMARY
-        attach(ais, true, STORAGE_MANAGEMENT_SUMMARY, ManagementSummaryFactory.class);
+        attach(ais, STORAGE_MANAGEMENT_SUMMARY, ManagementSummaryFactory.class);
 
         //STORAGE_TRANSACTION_SUMMARY
-        attach (ais, true, STORAGE_TRANSACTION_SUMMARY, TransactionSummaryFactory.class);
+        attach (ais, STORAGE_TRANSACTION_SUMMARY, TransactionSummaryFactory.class);
 
         //STORAGE_TREES
-        attach (ais, true, STORAGE_TREES, TreesFactory.class);
+        attach (ais, STORAGE_TREES, TreesFactory.class);
 
         //STORAGE_VOLUMES
-        attach (ais, true, STORAGE_VOLUMES, VolumesFactory.class);
+        attach (ais, STORAGE_VOLUMES, VolumesFactory.class);
     }
 
     @Override
