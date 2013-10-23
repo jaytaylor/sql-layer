@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.rowdata;
 
+import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.AISMerge;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.DefaultNameGenerator;
@@ -31,6 +32,7 @@ import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.api.ddl.DDLFunctionsMockBase;
 import com.foundationdb.server.service.routines.MockRoutineLoader;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.format.DummyStorageFormatRegistry;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.aisddl.IndexDDL;
 import com.foundationdb.sql.aisddl.RoutineDDL;
@@ -155,6 +157,14 @@ public class SchemaFactory {
 
         public CreateOnlyDDLMock(AkibanInformationSchema ais) {
             this.ais = ais;
+        }
+
+        @Override
+        public AISCloner getAISCloner() {
+            // TODO: Would be better to arrange to get the actual
+            // StorageFormatRegistry for use in ITs? How else will we be able to
+            // handle the STORAGE_FORMAT clause?
+            return DummyStorageFormatRegistry.aisCloner(ais);
         }
 
         @Override
