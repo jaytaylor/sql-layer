@@ -18,6 +18,7 @@
 package com.foundationdb.server.store.format;
 
 import com.foundationdb.ais.AISCloner;
+import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.AISBuilder.StandinStorageDescription;
 import com.foundationdb.ais.model.FullTextIndex;
 import com.foundationdb.ais.model.Group;
@@ -38,13 +39,26 @@ public class DummyStorageFormatRegistry extends StorageFormatRegistry
     }
 
     public static StorageFormatRegistry create() {
-        StorageFormatRegistry dummy = new DummyStorageFormatRegistry();
-        return dummy;
+        return new DummyStorageFormatRegistry();
     }
 
     /** Convenience to make an AISCloner using the dummy. */
     public static AISCloner aisCloner() {
         return new AISCloner(create());
+    }
+
+    // So that SchemaFactory can work within an IT with a live AIS.
+    public static AISCloner aisCloner(AkibanInformationSchema ais) {
+        StorageFormatRegistry dummy = create();
+        // Preserve all memory factories, which are known to the real
+        // StorageFormatRegistry.
+        for (Group group : ais.getGroups().values()) {
+            if (group.hasMemoryTableFactory()) {
+                dummy.registerMemoryFactory(group.getName(),
+                                            ((MemoryTableStorageDescription)group.getStorageDescription()).getMemoryTableFactory());
+            }
+        }
+        return new AISCloner(dummy);
     }
 
     @Override

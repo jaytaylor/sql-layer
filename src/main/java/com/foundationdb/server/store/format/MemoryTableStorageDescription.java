@@ -37,6 +37,7 @@ public class MemoryTableStorageDescription extends StorageDescription
 
     public MemoryTableStorageDescription(HasStorage forObject, MemoryTableFactory memoryTableFactory) {
         super(forObject);
+        assert memoryTableFactory != null;
         this.memoryTableFactory = memoryTableFactory;
     }
 
